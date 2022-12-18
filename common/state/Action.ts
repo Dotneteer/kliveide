@@ -1,4 +1,5 @@
 import { ActionTypes } from "./ActionTypes"
+import { SideBarPanelState } from "./AppState";
 
 /**
  * Available action types you can use with state manangement
@@ -21,7 +22,10 @@ export type Action = {
 export type Payload = {
     flag: boolean;
     id: string;
-    size: number | string;
+    size: number;
+    nextId: string;
+    nextSize: number;
+    panelsState: Record<string, SideBarPanelState>
 }
 
 /**

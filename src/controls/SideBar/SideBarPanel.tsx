@@ -1,5 +1,5 @@
 import styles from "./SideBarPanel.module.scss";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SideBarPanelInfo } from "@/core/abstractions";
 import { useDispatch } from "@/emu/StoreProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
@@ -14,10 +14,11 @@ type Props = {
     index: number;
     expanded?: boolean;
     sizeable?: boolean;
-    startSizing?: (pos: number) => void;
+    suggestedSize?: number;
+    headingSized?: (size: number) => void;
+    startSizing?: (pos: number, size: number) => void;
     sizing?: (pos: number) => void;
     endSizing?: () => void;
-    suggestedSize?: number;
 }
 
 export const SideBarPanel = ({
@@ -25,24 +26,38 @@ export const SideBarPanel = ({
     index,
     expanded = false,
     sizeable = false,
+    suggestedSize = FULL_EXPANDED_SIZE,
+    headingSized,
     startSizing,
     sizing,
     endSizing,
-    suggestedSize = FULL_EXPANDED_SIZE
 }: Props) => {
     const dispatch = useDispatch();
     const [focused, setFocused] = useState(false);
+
+    // --- We need to measure the size of the entire panel
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    // --- We need to measure the size of the header
+    const headerRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        headingSized?.(headerRef.current.clientHeight);
+    }, [headerRef.current])
 
     // --- Functions used while moving
     const _move = (e: MouseEvent) => move(e);
     const _endMove = () => endMove();
     
+    const newHeight = {height: `${suggestedSize}px`}
     return (
-    <div className={classnames(
+    <div
+        ref={panelRef}
+        className={classnames(
         styles.component,
         expanded ? styles.expanded : styles.collapsed)}
-        style={expanded ? {height: `${suggestedSize}px`} : {}}>
+        style={expanded ? newHeight : {}}>
         <div
+            ref={headerRef}
             tabIndex={index}
             className={classnames(
                 styles.header, 
@@ -88,7 +103,7 @@ export const SideBarPanel = ({
         window.addEventListener("mouseup", _endMove);
         window.addEventListener("mousemove", _move);
         document.body.style.cursor = "ns-resize";
-        startSizing?.(e.clientY);
+        startSizing?.(e.clientY, panelRef.current.offsetHeight);
     }
 
     // --- Move the splitter and notify the panel about size changes

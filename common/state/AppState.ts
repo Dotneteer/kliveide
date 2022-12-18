@@ -35,7 +35,7 @@ export type IdeView = {
  */
 export type SideBarPanelState = {
     expanded: boolean;
-    size: number | string;
+    size: number;
 }
 
 /**

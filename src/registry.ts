@@ -41,19 +41,22 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
       id: "explorerPanel",
       title: "Explorer Panel",
       hostActivity: ACTIVITY_FILE_ID,
-      renderer: explorerPanelRenderer
+      renderer: explorerPanelRenderer,
+      expandedOnInit: true,
     },
     {
       id: "cpuPanel",
       title: "CPU Panel",
       hostActivity: ACTIVITY_DEBUG_ID,
-      renderer: cpuPanelRenderer
+      renderer: cpuPanelRenderer,
+      expandedOnInit: true
     },
     {
       id: "ulaPanel",
       title: "ULA Panel",
       hostActivity: ACTIVITY_DEBUG_ID,
-      renderer: ulaPanelRenderer
+      renderer: ulaPanelRenderer,
+      initialSize: 500
     },
     {
       id: "breakpointsPanel",

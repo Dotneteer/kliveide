@@ -47,6 +47,17 @@ export type SideBarPanelInfo = {
      * The function that renders the side bar panel
      */
     readonly renderer: PanelRenderer
+
+    /**
+     * Is the panel expanded when initializing?
+     */
+    readonly expandedOnInit?: boolean;
+
+    /**
+     * The initial size of the panel
+     */
+    readonly initialSize?: number;
+
 }
 
 /**

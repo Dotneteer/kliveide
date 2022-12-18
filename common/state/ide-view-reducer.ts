@@ -15,11 +15,19 @@ import { IdeView } from "./AppState";
                     [payload.id]: {...state.sideBarPanels[payload.id], expanded: payload.flag} 
                 }
             }
+        case "SET_SIDEBAR_PANELS_STATE":
+            return {...state, 
+                sideBarPanels: {
+                    ...state.sideBarPanels,
+                    ...payload.panelsState
+                }
+            }
         case "SET_SIDEBAR_PANEL_SIZE":
             return {...state, 
                 sideBarPanels: {
                     ...state.sideBarPanels, 
-                    [payload.id]: {...state.sideBarPanels[payload.id], size: payload.size} 
+                    [payload.id]: {...state.sideBarPanels[payload.id], size: payload.size},
+                    [payload.nextId]: {...state.sideBarPanels[payload.nextId], size: payload.nextSize},
                 }
             }
         default:

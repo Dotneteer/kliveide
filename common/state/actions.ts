@@ -1,4 +1,5 @@
 import { ActionCreator } from "./Action";
+import { SideBarPanelState } from "./AppState";
 
 export const uiLoadedAction: ActionCreator = (flag: boolean) => ({
     type: "UI_LOADED",
@@ -75,7 +76,16 @@ export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: b
     payload: { id, flag },
 });
 
-export const setSideBarPanelSizeAction: ActionCreator = (id: string, size: number | string) => ({
+export const setSideBarPanelsStateAction: ActionCreator = (panelsState: Record<string, SideBarPanelState>) => ({
+    type: "SET_SIDEBAR_PANELS_STATE",
+    payload: { panelsState },
+});
+
+export const setSideBarPanelSizeAction: ActionCreator = (
+    id: string, 
+    size: number, 
+    nextId: string,
+    nextSize: number) => ({
     type: "SET_SIDEBAR_PANEL_SIZE",
-    payload: { id, size },
+    payload: { id, size, nextId, nextSize },
 });
