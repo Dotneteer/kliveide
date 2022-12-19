@@ -49,6 +49,16 @@ export type ThemeProperties = {
   // --- Document area
   "--bgcolor-docsheader"?: string;
   "--color-doc-icon"?: string;
+  "--color-doc-border"?: string;
+  "--color-doc-activeText"?: string;
+  "--color-doc-inactiveText"?: string;
+  "--bgcolor-doc-activeTab"?: string;
+  "--bgcolor-doc-inactiveTab"?: string;
+  "--bgcolor-docscontainer"?: string;
+  "--color-tabbutton-fill-inactive"?: string;
+  "--color-tabbutton-fill-active"?: string;
+  "--bgcolor-tabbutton-pointed"?: string;
+  "--bgcolor-tabbutton-down"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;

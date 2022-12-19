@@ -1,4 +1,4 @@
-import { activateDocumentAction, createDocumentAction } from "@state/actions";
+import { activateDocumentAction, closeDocumentAction, createDocumentAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { DocumentInfo, DocumentState, IDocumentService } from "./abstractions";
@@ -39,9 +39,8 @@ class DocumentService implements IDocumentService {
     }
 
     closeDocument(id: string): void {
-        // TODO: Implement this method
+        this.store.dispatch(closeDocumentAction(id));
     }
-
     
     closeAllDocuments(): void {
         throw new Error("Method not implemented.");

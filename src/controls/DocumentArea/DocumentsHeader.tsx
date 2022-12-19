@@ -13,7 +13,8 @@ export const DocumentsHeader = () => {
                 id={d.id} 
                 name={d.name} 
                 type={d.type} 
-                isActive={idx === activeDocIndex} />)
+                isActive={idx === activeDocIndex}
+                isTemporary={d.isTemporary} />)
         }
         <div className={styles.closingTab} />
     </div>

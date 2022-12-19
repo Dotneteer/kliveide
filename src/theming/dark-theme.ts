@@ -5,7 +5,7 @@ export const darkTheme: ThemeProperties = {
     "--bgcolor-splitter": "#007acc",
   
     // --- Activity bar
-    "--bgcolor-activitybar": "#383838",
+    "--bgcolor-activitybar": "#303030",
     "--color-activitybar": "#a0a0a0",
     "--bgcolor-activitybar-pointed": "#484848",
     "--bgcolor-activitybar-active": "#007acc",
@@ -22,7 +22,7 @@ export const darkTheme: ThemeProperties = {
     "--shadow-tooltip": "0 6px 12px 0 rgba(0, 0, 0, 0.2)",
 
     // --- Toolbar
-    "--bgcolor-toolbar": "#202020",
+    "--bgcolor-toolbar": "#383838",
     "--bgcolor-keydown-toolbarbutton": "#303030",
     "--bgcolor-toolbarbutton-disabled": "#606060",
     "--color-toolbarbutton": "white",
@@ -48,7 +48,17 @@ export const darkTheme: ThemeProperties = {
     // --- Document area
     "--bgcolor-docsheader": "#282828",
     "--color-doc-icon": "#ffffff",
-
+    "--color-doc-border": "#202020",
+    "--color-doc-activeText": "#ffffff",
+    "--color-doc-inactiveText": "#a0a0a0",
+    "--bgcolor-doc-activeTab": "#202020",
+    "--bgcolor-doc-inactiveTab": "#303030",
+    "--bgcolor-docscontainer": "#202020",
+    "--color-tabbutton-fill-inactive": "#a0a0a0",
+    "--color-tabbutton-fill-active": "#ffffff",
+    "--bgcolor-tabbutton-pointed": "#404040",
+    "--bgcolor-tabbutton-down": "#505050",
+  
     // --- Tool area
     "--bgcolor-toolarea": "#303030",
 }

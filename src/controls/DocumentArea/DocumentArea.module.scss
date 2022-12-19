@@ -4,9 +4,10 @@
     @include fill-parent-flex;
     flex-direction: column;
     background: var(--bgcolor-docsheader);
+    user-select: none;
 }
 
 .documentContainer {
     @include fill-parent-flex;
-    background: #202020;
+    background: var(--bgcolor-docscontainer);
 }

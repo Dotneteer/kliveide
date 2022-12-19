@@ -22,7 +22,7 @@ export const lightTheme: ThemeProperties = {
     "--shadow-tooltip": "0 6px 12px 0 rgba(0, 0, 0, 0.2)",
 
     // --- Toolbar
-    "--bgcolor-toolbar": "#e0e0e0",
+    "--bgcolor-toolbar": "#d8d8d8",
     "--bgcolor-keydown-toolbarbutton": "#d0d0d0",
     "--bgcolor-toolbarbutton-disabled": "#a0a0a0",
     "--color-toolbarbutton": "#000000",
@@ -47,6 +47,16 @@ export const lightTheme: ThemeProperties = {
     // --- Document area
     "--bgcolor-docsheader": "#d8d8d8",
     "--color-doc-icon": "#000000",
+    "--color-doc-border": "#e0e0e0",
+    "--color-doc-activeText": "#000000",
+    "--color-doc-inactiveText": "#404040",
+    "--bgcolor-doc-activeTab": "#e0e0e0",
+    "--bgcolor-doc-inactiveTab": "#c8c8c8",
+    "--bgcolor-docscontainer": "#e0e0e0",
+    "--color-tabbutton-fill-inactive": "#505050",
+    "--color-tabbutton-fill-active": "#000000",
+    "--bgcolor-tabbutton-pointed": "#c0c0c0",
+    "--bgcolor-tabbutton-down": "#b0b0b0",
 
     // --- Tool area
     "--bgcolor-toolarea": "#d0d0d0",
