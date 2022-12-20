@@ -45,12 +45,13 @@ const App = () => {
 
       // --- Temporary: open a few document panels
       dispatch(closeAllDocumentsAction());
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         ideService.documentService.openDocument({
           id: `doc-${i}`,
           name: `Document #${i}`,
-          type: "CodeEditor"
-        })
+          type: "CodeEditor",
+          isReadOnly: i === 2
+        }, i >= 3);
       }
 
       return () => {

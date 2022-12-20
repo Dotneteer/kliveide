@@ -96,6 +96,11 @@ export const createDocumentAction: ActionCreator = (document: DocumentState, ind
     payload: { document, index },
 });
 
+export const changeDocumentAction: ActionCreator = (document: DocumentState, index: number) => ({
+    type: "CHANGE_DOC",
+    payload: { document, index },
+});
+
 export const activateDocumentAction: ActionCreator = (id: string) => ({
     type: "ACTIVATE_DOC",
     payload: { id },

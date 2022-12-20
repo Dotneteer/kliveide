@@ -26,6 +26,11 @@ export type DocumentInfo = {
      * Optional programming language of the document
      */
     language?: string;
+
+    /**
+     * Is the document read-only?
+     */
+    isReadOnly?: boolean;
 }
 
 export type DocumentState = DocumentInfo & {
@@ -47,8 +52,9 @@ export interface IDocumentService {
     /**
      * Opens the specified document
      * @param document Document to open
+     * @param temporary Open it as temporary documents? (Default: true)
      */
-    openDocument(document: DocumentInfo): void;
+    openDocument(document: DocumentInfo, temporary?: boolean): void;
 
     /**
      * Sets the specified document as the active one

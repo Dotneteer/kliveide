@@ -16,6 +16,7 @@ export const DocumentTab = ({
     name,
     type,
     isTemporary,
+    isReadOnly = false,
     path,
     language,
     iconName = "file-code",
@@ -40,6 +41,15 @@ export const DocumentTab = ({
                 isTemporary ? styles.temporaryTitle : "")}>
                 {name}
             </span>
+            {isReadOnly &&
+                <div className={styles.readOnlyIcon}>
+                <Icon
+                    iconName="shield"
+                    width={16}
+                    height={16}
+                    fill={isActive ? "--color-readonly-icon-active" : "--color-readonly-icon-inactive"} />
+                </div>
+            }
             <TabButton 
                 iconName="close" 
                 active={isActive} 

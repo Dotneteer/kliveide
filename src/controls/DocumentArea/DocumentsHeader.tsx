@@ -14,7 +14,8 @@ export const DocumentsHeader = () => {
                 name={d.name} 
                 type={d.type} 
                 isActive={idx === activeDocIndex}
-                isTemporary={d.isTemporary} />)
+                isTemporary={d.isTemporary}
+                isReadOnly={d.isReadOnly} />)
         }
         <div className={styles.closingTab} />
     </div>

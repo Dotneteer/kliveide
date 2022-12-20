@@ -59,6 +59,8 @@ export type ThemeProperties = {
   "--color-tabbutton-fill-active"?: string;
   "--bgcolor-tabbutton-pointed"?: string;
   "--bgcolor-tabbutton-down"?: string;
+  "--color-readonly-icon-active"?: string;
+  "--color-readonly-icon-inactive"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;

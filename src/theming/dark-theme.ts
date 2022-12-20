@@ -58,7 +58,9 @@ export const darkTheme: ThemeProperties = {
     "--color-tabbutton-fill-active": "#ffffff",
     "--bgcolor-tabbutton-pointed": "#404040",
     "--bgcolor-tabbutton-down": "#505050",
-  
+    "--color-readonly-icon-active": "rgb(252, 165, 3)",
+    "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
+
     // --- Tool area
     "--bgcolor-toolarea": "#303030",
 }

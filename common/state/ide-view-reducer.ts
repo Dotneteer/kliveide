@@ -46,6 +46,14 @@ import { IdeView } from "./AppState";
                 activeDocumentIndex: payload.index
             };
 
+        case "CHANGE_DOC":
+                const changedDocs = (state.openDocuments ?? []).slice(0);
+                changedDocs[payload.index] = payload.document
+                return {
+                    ...state, 
+                    openDocuments: changedDocs, 
+                };
+    
         case "ACTIVATE_DOC":
             const index = state.openDocuments.findIndex(d => d.id === payload.id);
             return index >= 0 

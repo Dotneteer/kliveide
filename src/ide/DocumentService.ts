@@ -1,4 +1,4 @@
-import { activateDocumentAction, closeDocumentAction, createDocumentAction } from "@state/actions";
+import { activateDocumentAction, changeDocumentAction, closeDocumentAction, createDocumentAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { DocumentInfo, DocumentState, IDocumentService } from "./abstractions";
@@ -15,7 +15,8 @@ class DocumentService implements IDocumentService {
     setPermanent(id: string): void {
         // TODO: Implement this method
     }
-    openDocument(document: DocumentInfo): void {
+    openDocument(document: DocumentInfo, temporary?: boolean): void {
+        temporary ??= true;
         const state = this.store.getState();
         const dispatch = this.store.dispatch;
         const docs = state?.ideView?.openDocuments ?? [];
@@ -31,9 +32,21 @@ class DocumentService implements IDocumentService {
             return;
         }
 
+        // --- Check for temporary documents
+        if (temporary) {
+            const existingTempIndex = docs.findIndex(d => d.isTemporary);
+            if (existingTempIndex >= 0) {
+                dispatch(changeDocumentAction({
+                    ...document,
+                    isTemporary: true,
+                } as DocumentState, existingTempIndex))
+                return;
+            }
+        }
+
         dispatch(createDocumentAction({
             ...document,
-            isTemporary: true,
+            isTemporary: temporary,
         } as DocumentState, 
             docs.length))
     }

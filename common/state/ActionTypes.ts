@@ -24,6 +24,7 @@
     SET_SIDEBAR_PANEL_SIZE: null;
 
     ACTIVATE_DOC: null;
+    CHANGE_DOC: null;
     CREATE_DOC: null;
     CLOSE_DOC: null;
     CLOSE_ALL_DOCS: null;

@@ -1,13 +1,14 @@
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useSelector } from "@/emu/StoreProvider";
 import styles from "./DocumentArea.module.scss";
+import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
 
 export const DocumentArea = () => {
-    const ideService = useIdeServices();
+    const openDocs = useSelector(s => s.ideView?.openDocuments);
+    const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
+
     return <div className={styles.component}>
         <DocumentsHeader />
-        <div className={styles.documentContainer}>
-            DocumentContainer
-        </div>
+        <DocumentsContainer document={openDocs[activeDocIndex]}/>
     </div>
 }
