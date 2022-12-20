@@ -13,7 +13,7 @@ export const DocumentsHeader = () => {
                 index={idx}
                 id={d.id} 
                 name={d.name} 
-                type={d.type} 
+                type={d.type}   
                 isActive={idx === activeDocIndex}
                 isTemporary={d.isTemporary}
                 isReadOnly={d.isReadOnly} />)

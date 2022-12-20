@@ -3,7 +3,8 @@ import { ThemeProperties } from "./theme";
 export const darkTheme: ThemeProperties = {
     // --- Global theme attributes
     "--bgcolor-splitter": "#007acc",
-  
+    "--color-command-icon": "#c0c0c0",
+
     // --- Activity bar
     "--bgcolor-activitybar": "#303030",
     "--color-activitybar": "#a0a0a0",

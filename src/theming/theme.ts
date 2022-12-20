@@ -4,6 +4,7 @@
 export type ThemeProperties = {
   // --- Global theme attributes
   "--bgcolor-splitter"?: string;
+  "--color-command-icon"?: string;
   
   // --- Activity bar
   "--bgcolor-activitybar"?: string;

@@ -71,6 +71,7 @@ export const DocumentTab = ({
                 iconName="close" 
                 active={isActive} 
                 hide={!pointed && !isActive} 
+                fill={isActive ? "--color-tabbutton-fill-active" : "--color-tabbutton-fill-inactive"}
                 clicked={() => dispatch(closeDocumentAction(id))}/>
         </div>
     )

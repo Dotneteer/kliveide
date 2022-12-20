@@ -3,6 +3,7 @@
 .component {
     @include fill-parent-flex;
     box-sizing: border-box;
+    flex-direction: column;
     background: var(--bgcolor-toolarea);
     border: 1px solid transparent;
     padding: 0 8px;
