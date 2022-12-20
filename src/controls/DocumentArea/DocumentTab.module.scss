@@ -1,0 +1,42 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fix-height-panel(36px);
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 8px 0 12px;
+    border: 1px solid var(--color-doc-border);
+    border-right: none;
+    background: var(--bgcolor-doc-inactiveTab);
+    cursor: pointer;
+}
+
+.active {
+    background: var(--bgcolor-doc-activeTab);
+    color: var(--color-doc-activeText);
+    border-bottom: 1px solid transparent;
+}
+
+.titleText {
+    color: var(--color-doc-inactiveText);
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 0 8px;
+}
+
+.activeTitle {
+    color: var(--color-doc-activeText);
+}
+
+.temporaryTitle {
+    font-style: italic;
+}
+
+.readOnlyIcon {
+    display: flex;
+    align-items: center;
+    padding-right: 8px;
+    color: rgb(252, 165, 3)
+}

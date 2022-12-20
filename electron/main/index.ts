@@ -36,8 +36,8 @@ async function createWindow() {
   emuWindow = new BrowserWindow({
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.svg'),
-    minWidth: 480,
-    minHeight: 320,
+    minWidth: 640,
+    minHeight: 480,
     webPreferences: {
       preload,
       nodeIntegration: true,

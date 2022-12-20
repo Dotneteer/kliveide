@@ -2,22 +2,25 @@ import styles from "@styles/app.module.scss";
 import { ActivityBar } from "./controls/ActivityBar/ActivityBar";
 import { DocumentArea } from "./controls/DocumentArea/DocumentArea";
 import { EmulatorArea } from "./controls/EmulatorArea/EmulatorArea";
-import { SiteBar } from "./controls/SiteBar/SiteBar";
+import { SiteBar } from "./controls/SideBar/SideBar";
 import { SplitPanel } from "./controls/SplitPanel/SplitPanel";
 import { StatusBar } from "./controls/StatusBar/StatusBar";
 import { ToolArea } from "./controls/ToolArea/ToolArea";
 import { Toolbar } from "./controls/Toolbar/Toolbar";
-import { emuStore } from "./emu/emu-store";
-import { useEffect, useRef } from "react";
-import { uiLoadedAction } from "@state/actions";
+import { useEffect, useRef, useState } from "react";
+import { activateToolAction, closeAllDocumentsAction, selectActivityAction, setToolsAction, uiLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
-import { useSelector } from "./emu/StoreProvider";
+import { useDispatch, useSelector } from "./emu/StoreProvider";
+import { activityRegistry, toolPanelRegistry } from "./registry";
+import { useIdeServices } from "./ide/IdeServicesProvider";
+import { ToolInfo } from "./ide/abstractions";
 
 const App = () => {
   // --- Indicate the App has been loaded
   const mounted = useRef(false);
+  const dispatch = useDispatch();
 
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
@@ -31,13 +34,39 @@ const App = () => {
   const primaryBarsPos = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? "right" : "left";
   const docPanelsPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
+  const ideService = useIdeServices();
+
   // --- Signify that the UI has been loaded
   useEffect(() => {
       if (mounted.current) return;
 
       mounted.current = true;
-      const store = emuStore;
-      store.dispatch(uiLoadedAction());
+      dispatch(uiLoadedAction());
+      dispatch(selectActivityAction(activityRegistry[0].id));
+
+      // --- Prepare registered tools
+      const regTools = toolPanelRegistry.map(t => {
+        return {
+          id: t.id,
+          name: t.name,
+          visible: t.visible ?? true
+        } as ToolInfo
+      });
+      dispatch(setToolsAction(regTools));
+      dispatch(activateToolAction(regTools.find(t => t.visible ?? true)?.id))
+
+      // --- Temporary: open a few document panels
+      dispatch(closeAllDocumentsAction());
+      for (let i = 0; i < 5; i++) {
+        ideService.documentService.openDocument({
+          id: `doc-${i}`,
+          name: `Document #${i}`,
+          type: "CodeEditor",
+          isReadOnly: i === 2
+        }, i >= 3);
+      }
+
+
 
       return () => {
           mounted.current = false;
@@ -48,7 +77,9 @@ const App = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        {!useEmuView && <ActivityBar order={activityOrder} />}
+        {!useEmuView && <ActivityBar 
+          activities={activityRegistry} 
+          order={activityOrder} />}
         <SplitPanel
           id="main"
           primaryLocation={primaryBarsPos}
@@ -72,7 +103,7 @@ const App = () => {
                 minSize={25}
               />
               }
-              secondaryPanel={<ToolArea />}
+              secondaryPanel={<ToolArea siblingPosition={docPanelsPos}/>}
               secondaryVisible={!useEmuView && showToolPanels}
             />
           }

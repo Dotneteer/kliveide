@@ -1,0 +1,10 @@
+.tooltip {
+  z-index: 100;
+  background-color: var(--bgcolor-tooltip);
+  color: var(--color-tooltip);
+  border: var(--border-tooltip);
+  font-size: var(--font-size-tooltip);
+  border-radius: var(--radius-tooltip);
+  padding: var(--padding-tooltip);
+  box-shadow: var(--shadow-tooltip);
+}

@@ -1,4 +1,6 @@
+import { DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionCreator } from "./Action";
+import { SideBarPanelState } from "./AppState";
 
 export const uiLoadedAction: ActionCreator = (flag: boolean) => ({
     type: "UI_LOADED",
@@ -12,6 +14,11 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
 
 export const setThemeAction: ActionCreator = (id: string) => ({
     type: "SET_THEME",
+    payload: { id },
+});
+
+export const selectActivityAction: ActionCreator = (id: string) => ({
+    type: "SET_ACTIVITY",
     payload: { id },
 });
 
@@ -64,3 +71,65 @@ export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_FRAME_INFO",
     payload: { flag },
 });
+
+export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: boolean) => ({
+    type: "SET_SIDEBAR_PANEL_EXPANDED",
+    payload: { id, flag },
+});
+
+export const setSideBarPanelsStateAction: ActionCreator = (panelsState: Record<string, SideBarPanelState>) => ({
+    type: "SET_SIDEBAR_PANELS_STATE",
+    payload: { panelsState },
+});
+
+export const setSideBarPanelSizeAction: ActionCreator = (
+    id: string, 
+    size: number, 
+    nextId: string,
+    nextSize: number) => ({
+    type: "SET_SIDEBAR_PANEL_SIZE",
+    payload: { id, size, nextId, nextSize },
+});
+
+export const createDocumentAction: ActionCreator = (document: DocumentState, index: number) => ({
+    type: "CREATE_DOC",
+    payload: { document, index },
+});
+
+export const changeDocumentAction: ActionCreator = (document: DocumentState, index: number) => ({
+    type: "CHANGE_DOC",
+    payload: { document, index },
+});
+
+export const activateDocumentAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_DOC",
+    payload: { id },
+});
+
+export const closeDocumentAction: ActionCreator = (id: string) => ({
+    type: "CLOSE_DOC",
+    payload: { id },
+});
+
+export const closeAllDocumentsAction: ActionCreator = () => ({type: "CLOSE_ALL_DOCS"});
+
+export const setToolsAction: ActionCreator = (tools: ToolState[]) => ({
+    type: "SET_TOOLS",
+    payload: { tools },
+});
+
+export const changeToolVisibilityAction: ActionCreator = (id: string, flag: boolean) => ({
+    type: "CHANGE_TOOL_VISIBILITY",
+    payload: { id, flag },
+});
+
+export const changeToolStateAction: ActionCreator = (tool: ToolState) => ({
+    type: "CHANGE_TOOL_STATE",
+    payload: { tool },
+});
+
+export const activateToolAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_TOOL",
+    payload: { id },
+});
+

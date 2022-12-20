@@ -1,4 +1,6 @@
+import { DocumentInfo, DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionTypes } from "./ActionTypes"
+import { SideBarPanelState } from "./AppState";
 
 /**
  * Available action types you can use with state manangement
@@ -19,8 +21,16 @@ export type Action = {
  * Payload properties
  */
 export type Payload = {
-    flag: boolean,
-    id: string,
+    flag: boolean;
+    id: string;
+    size: number;
+    nextId: string;
+    nextSize: number;
+    panelsState: Record<string, SideBarPanelState>;
+    document: DocumentState;
+    index: number;
+    tool: ToolState;
+    tools: ToolState[];
 }
 
 /**

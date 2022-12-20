@@ -1,0 +1,13 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fix-height-panel(38px);
+    flex-direction: row;
+    background: var();
+}
+
+.commandBar {
+    width: auto;
+    display: flex;
+    align-items: center;
+}

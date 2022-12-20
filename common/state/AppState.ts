@@ -1,3 +1,5 @@
+import { DocumentState, ToolState } from "@/ide/abstractions";
+
 /**
  * Represents the state of the entire application
  */
@@ -6,6 +8,7 @@
     isWindows?: boolean;
     theme?: string;
     emuViewOptions?: EmuViewOptions;
+    ideView?: IdeView;
 }
 
 /**
@@ -24,13 +27,30 @@ export type EmuViewOptions = {
     showSidebar?: boolean;
 }
 
+export type IdeView = {
+    activity?: string;
+    sideBarPanels?: Record<string, SideBarPanelState>;
+    openDocuments?: DocumentState[];
+    activeDocumentIndex?: number;
+    tools?: ToolState[];
+    activeTool?: string;
+}
+
+/**
+ * The state of a particular site bar panel
+ */
+export type SideBarPanelState = {
+    expanded: boolean;
+    size: number;
+}
+
 /**
  * The initial application state
  */
 export const initialAppState: AppState = {
     uiLoaded: false,
     isWindows: false,
-    theme: "light",
+    theme: "dark",
     emuViewOptions:  {
         showToolbar: true,
         showStatusBar: true,
@@ -42,5 +62,11 @@ export const initialAppState: AppState = {
         showFrameInfo: true,
         showKeyboard: false,
         showSidebar: true
+    },
+    ideView: {
+        sideBarPanels: {},
+        openDocuments: [],
+        activeDocumentIndex: -1,
+        tools: [],
     }
 }

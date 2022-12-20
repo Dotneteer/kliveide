@@ -16,7 +16,8 @@ import {
     showToolPanelsAction,
     toolPanelsOnTopAction,
     maximizeToolsAction,
-    setThemeAction} from "../common/state/actions";
+    setThemeAction,
+    changeToolVisibilityAction} from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -28,6 +29,7 @@ const SET_IDE_VIEW = "set_ide_view";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
 const TOGGLE_TOOLS_TOP = "tool_panels_top";
 const MAXIMIZE_TOOLS = "tools_maximize";
+const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
@@ -38,6 +40,7 @@ const DARK_THEME = "dark_theme";
 export function setupMenu(): void {
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     const appState = mainStore.getState();
+    const tools = appState.ideView?.tools ?? [];
 
     /**
      * Application system menu on MacOS
@@ -78,6 +81,20 @@ export function setupMenu(): void {
             ]
         })
     }
+
+    const toolMenus: MenuItemConstructorOptions[] = tools.map(t => {
+        return {
+            id: `${TOOL_PREFIX}${t.id}`,
+            label: `Show ${t.name} Panel`,
+            type: "checkbox",
+            checked: t.visible,
+            enabled: !appState.emuViewOptions.useEmuView,
+            click: (mi) => {
+                const panelId = mi.id.substring(TOOL_PREFIX.length);
+                mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked))
+            }
+        }
+    });
 
     // --- Preapre the view menu
     const viewSubMenu: MenuItemConstructorOptions[] = [
@@ -220,6 +237,8 @@ export function setupMenu(): void {
                 mainStore.dispatch(maximizeToolsAction(checked));
             },
         },
+        { type: "separator" },
+        ...toolMenus
     ];
 
     template.push({
@@ -235,6 +254,8 @@ export function setupMenu(): void {
  * Update the state of menu items whenver the app state changes.
  */
 export function updateMenuState(): void {
+    setupMenu();
+    
     const appState = mainStore.getState();
     const getMenuItem = (id: string) => Menu.getApplicationMenu().getMenuItemById(id);
 

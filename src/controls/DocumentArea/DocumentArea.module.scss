@@ -2,5 +2,12 @@
 
 .component {
     @include fill-parent-flex;
-    background: #a0a0a0;
+    flex-direction: column;
+    background: var(--bgcolor-docsheader);
+    user-select: none;
+}
+
+.documentContainer {
+    @include fill-parent-flex;
+    background: var(--bgcolor-docscontainer);
 }

@@ -1,0 +1,21 @@
+@import "@styles/core.scss";
+
+.component {
+    display: flex;
+    height: auto;
+    align-items: center;
+    border-radius: 4px;
+
+    &:hover {
+        border-radius: 4px;
+        background: var(--bgcolor-tabbutton-pointed);
+    }
+}
+
+.keyDown, .keyDown:hover {
+    background: var(--bgcolor-tabbutton-down);
+}
+
+.placeholder {
+    width: 20px;
+}
