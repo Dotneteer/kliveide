@@ -5,6 +5,8 @@
     box-sizing: border-box;
     background: var(--bgcolor-toolarea);
     border: 1px solid transparent;
+    padding: 0 8px;
+    user-select: none;
 }
 
 .left {

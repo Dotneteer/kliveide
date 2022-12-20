@@ -65,6 +65,8 @@ export type ThemeProperties = {
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;
+  "--color-tooltab-active"?: string;
+  "--color-tooltab-inactive"?: string;
 }
 
 /**

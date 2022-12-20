@@ -33,6 +33,7 @@ export type IdeView = {
     openDocuments?: DocumentState[];
     activeDocumentIndex?: number;
     tools?: ToolState[];
+    activeTool?: string;
 }
 
 /**
@@ -66,5 +67,6 @@ export const initialAppState: AppState = {
         sideBarPanels: {},
         openDocuments: [],
         activeDocumentIndex: -1,
+        tools: [],
     }
 }

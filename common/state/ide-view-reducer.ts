@@ -88,9 +88,9 @@ import { IdeView } from "./AppState";
                 tools: payload.tools
             }
 
-        case "CHANGE_TOOL_STATE":
+        case "CHANGE_TOOL_STATE": {
             const changedTools = state.tools.splice(0) ?? [];
-            const existingToolIndex = (state?.tools ?? []).findIndex(t => t.id === payload.tool.id);
+            const existingToolIndex = (changedTools).findIndex(t => t.id === payload.tool.id);
             if (existingToolIndex >= 0) {
                 changedTools[existingToolIndex] = payload.tool;
                 return {
@@ -99,7 +99,28 @@ import { IdeView } from "./AppState";
                 }
             }
             return state;
+        }
 
+        case "CHANGE_TOOL_VISIBILITY": {
+            const changedTools = state.tools.splice(0) ?? [];
+            const existingToolIndex = (changedTools).findIndex(t => t.id === payload.id);
+            if (existingToolIndex >= 0) {
+                changedTools[existingToolIndex].visible = payload.flag;
+                return {
+                    ...state,
+                    tools: changedTools
+                }
+            }
+            return state;
+        }
+    
+        case "ACTIVATE_TOOL": {
+            return {
+                ...state,
+                activeTool: payload.id
+            }
+        }
+    
         default:
             return state;
     }

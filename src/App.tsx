@@ -8,13 +8,14 @@ import { StatusBar } from "./controls/StatusBar/StatusBar";
 import { ToolArea } from "./controls/ToolArea/ToolArea";
 import { Toolbar } from "./controls/Toolbar/Toolbar";
 import { useEffect, useRef, useState } from "react";
-import { closeAllDocumentsAction, selectActivityAction, uiLoadedAction } from "@state/actions";
+import { activateToolAction, closeAllDocumentsAction, selectActivityAction, setToolsAction, uiLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useDispatch, useSelector } from "./emu/StoreProvider";
-import { activityRegistry } from "./registry";
+import { activityRegistry, toolPanelRegistry } from "./registry";
 import { useIdeServices } from "./ide/IdeServicesProvider";
+import { ToolInfo } from "./ide/abstractions";
 
 const App = () => {
   // --- Indicate the App has been loaded
@@ -43,6 +44,17 @@ const App = () => {
       dispatch(uiLoadedAction());
       dispatch(selectActivityAction(activityRegistry[0].id));
 
+      // --- Prepare registered tools
+      const regTools = toolPanelRegistry.map(t => {
+        return {
+          id: t.id,
+          name: t.name,
+          visible: t.visible ?? true
+        } as ToolInfo
+      });
+      dispatch(setToolsAction(regTools));
+      dispatch(activateToolAction(regTools.find(t => t.visible ?? true)?.id))
+
       // --- Temporary: open a few document panels
       dispatch(closeAllDocumentsAction());
       for (let i = 0; i < 5; i++) {
@@ -53,6 +65,8 @@ const App = () => {
           isReadOnly: i === 2
         }, i >= 3);
       }
+
+
 
       return () => {
           mounted.current = false;

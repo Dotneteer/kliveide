@@ -118,8 +118,18 @@ export const setToolsAction: ActionCreator = (tools: ToolState[]) => ({
     payload: { tools },
 });
 
+export const changeToolVisibilityAction: ActionCreator = (id: string, flag: boolean) => ({
+    type: "CHANGE_TOOL_VISIBILITY",
+    payload: { id, flag },
+});
+
 export const changeToolStateAction: ActionCreator = (tool: ToolState) => ({
     type: "CHANGE_TOOL_STATE",
     payload: { tool },
+});
+
+export const activateToolAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_TOOL",
+    payload: { id },
 });
 
