@@ -10,6 +10,7 @@ export const DocumentsHeader = () => {
         {(openDocs ?? []).map((d, idx) => 
             <DocumentTab 
                 key={d.id} 
+                index={idx}
                 id={d.id} 
                 name={d.name} 
                 type={d.type} 

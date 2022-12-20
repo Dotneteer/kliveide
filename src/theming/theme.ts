@@ -38,6 +38,7 @@ export type ThemeProperties = {
 
   // --- Sitebar
   "--bgcolor-sitebar"?: string;
+  "--color-header"?: string;
   "--color-chevron"?: string;
   "--color-panel-header"?: string;
   "--color-panel-border"?: string;

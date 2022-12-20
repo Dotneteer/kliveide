@@ -1,4 +1,4 @@
-import { DocumentInfo, DocumentState } from "@/ide/abstractions";
+import { DocumentInfo, DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionTypes } from "./ActionTypes"
 import { SideBarPanelState } from "./AppState";
 
@@ -29,6 +29,8 @@ export type Payload = {
     panelsState: Record<string, SideBarPanelState>;
     document: DocumentState;
     index: number;
+    tool: ToolState;
+    tools: ToolState[];
 }
 
 /**

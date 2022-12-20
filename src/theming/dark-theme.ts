@@ -37,6 +37,7 @@ export const darkTheme: ThemeProperties = {
 
     // --- Sitebar
     "--bgcolor-sitebar": "#282828",
+    "--color-header": "#ffffff",
     "--color-chevron": "#ffffff",
     "--color-panel-header": "#ffffff",
     "--color-panel-border": "#606060",
@@ -62,5 +63,5 @@ export const darkTheme: ThemeProperties = {
     "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
 
     // --- Tool area
-    "--bgcolor-toolarea": "#303030",
+    "--bgcolor-toolarea": "#202020",
 }

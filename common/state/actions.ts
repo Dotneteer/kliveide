@@ -1,4 +1,4 @@
-import { DocumentState } from "@/ide/abstractions";
+import { DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
@@ -112,4 +112,14 @@ export const closeDocumentAction: ActionCreator = (id: string) => ({
 });
 
 export const closeAllDocumentsAction: ActionCreator = () => ({type: "CLOSE_ALL_DOCS"});
+
+export const setToolsAction: ActionCreator = (tools: ToolState[]) => ({
+    type: "SET_TOOLS",
+    payload: { tools },
+});
+
+export const changeToolStateAction: ActionCreator = (tool: ToolState) => ({
+    type: "CHANGE_TOOL_STATE",
+    payload: { tool },
+});
 

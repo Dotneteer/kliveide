@@ -1,3 +1,5 @@
+import { PanelRenderer } from "@/core/abstractions";
+
 /**
  * This type describes a document that can have a designer (code editor) associated with it
  */
@@ -46,7 +48,7 @@ export type DocumentState = DocumentInfo & {
 }
 
 /**
- * This interface the functions managing documents within the IDE
+ * This interface defines the functions managing documents within the IDE
  */
 export interface IDocumentService {
     /**
@@ -81,8 +83,64 @@ export interface IDocumentService {
 }
 
 /**
+ * Represents the information about a tool
+ */
+export type ToolInfo = {
+    /**
+     * Unique Tool ID
+     */
+    id: string;
+
+    /**
+     * Name to display
+     */
+    name: string;
+
+    /**
+     * Is the tool visible?
+     */
+    visible?: boolean;
+}
+
+/**
+ * Represents the information about a tool and its renderer
+ */
+export type ToolRendereInfo = ToolInfo & {
+    /**
+     * Renderer function to display the tool
+     */
+    renderer: PanelRenderer;
+}
+
+/**
+ * Represents the state of a particular tool
+ */
+export type ToolState = ToolInfo & {
+    /**
+     * Other tool state
+     */
+    stateValue?: any;
+}
+
+/**
+ * This interface defines the functions managing tools within the IDE
+ */
+export interface IToolService {
+    /**
+     * Gets all available tools
+     */
+    getTools(): ToolRendereInfo[];
+
+    /**
+     * Gets the visible tools
+     */
+    getVisibleTools(): ToolRendereInfo[];
+}
+
+/**
  * This type defines the services the IDE provides
  */
 export type IdeServices = {
     documentService: IDocumentService;
+    toolService: IToolService;
 }

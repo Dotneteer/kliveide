@@ -28,4 +28,7 @@
     CREATE_DOC: null;
     CLOSE_DOC: null;
     CLOSE_ALL_DOCS: null;
+
+    SET_TOOLS: null;
+    CHANGE_TOOL_STATE: null;
 }

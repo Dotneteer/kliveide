@@ -81,6 +81,25 @@ import { IdeView } from "./AppState";
                 openDocuments: [], 
                 activeDocumentIndex: -1
             }
+
+        case "SET_TOOLS":
+            return {
+                ...state,
+                tools: payload.tools
+            }
+
+        case "CHANGE_TOOL_STATE":
+            const changedTools = state.tools.splice(0) ?? [];
+            const existingToolIndex = (state?.tools ?? []).findIndex(t => t.id === payload.tool.id);
+            if (existingToolIndex >= 0) {
+                changedTools[existingToolIndex] = payload.tool;
+                return {
+                    ...state,
+                    tools: changedTools
+                }
+            }
+            return state;
+
         default:
             return state;
     }

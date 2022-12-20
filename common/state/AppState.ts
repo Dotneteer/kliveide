@@ -1,4 +1,4 @@
-import { DocumentState } from "@/ide/abstractions";
+import { DocumentState, ToolState } from "@/ide/abstractions";
 
 /**
  * Represents the state of the entire application
@@ -32,6 +32,7 @@ export type IdeView = {
     sideBarPanels?: Record<string, SideBarPanelState>;
     openDocuments?: DocumentState[];
     activeDocumentIndex?: number;
+    tools?: ToolState[];
 }
 
 /**

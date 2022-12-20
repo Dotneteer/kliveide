@@ -1,4 +1,4 @@
-import { activateDocumentAction, changeDocumentAction, closeDocumentAction, createDocumentAction } from "@state/actions";
+import { activateDocumentAction, changeDocumentAction, closeAllDocumentsAction, closeDocumentAction, createDocumentAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { DocumentInfo, DocumentState, IDocumentService } from "./abstractions";
@@ -10,11 +10,22 @@ class DocumentService implements IDocumentService {
     constructor(private readonly store: Store<AppState>) {
     }
     setActiveDocument(id: string): void {
-        // TODO: Implement this method
+        this.store.dispatch(activateDocumentAction(id));
     }
+    
     setPermanent(id: string): void {
-        // TODO: Implement this method
+        const state = this.store.getState();
+        const dispatch = this.store.dispatch;
+        const docs = state?.ideView?.openDocuments ?? [];
+        const existingIndex = docs.findIndex(d => d.id === id);
+        if (existingIndex >= 0) {
+            const existingDoc = docs[existingIndex];
+            dispatch(changeDocumentAction({
+                ...existingDoc, isTemporary: false
+            } as DocumentState, existingIndex))
+        }
     }
+
     openDocument(document: DocumentInfo, temporary?: boolean): void {
         temporary ??= true;
         const state = this.store.getState();
@@ -56,7 +67,7 @@ class DocumentService implements IDocumentService {
     }
     
     closeAllDocuments(): void {
-        throw new Error("Method not implemented.");
+        this.store.dispatch(closeAllDocumentsAction());
     }
 }
 

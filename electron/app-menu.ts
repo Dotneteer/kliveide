@@ -235,6 +235,8 @@ export function setupMenu(): void {
  * Update the state of menu items whenver the app state changes.
  */
 export function updateMenuState(): void {
+    setupMenu();
+    
     const appState = mainStore.getState();
     const getMenuItem = (id: string) => Menu.getApplicationMenu().getMenuItemById(id);
 

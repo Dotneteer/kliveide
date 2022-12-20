@@ -10,6 +10,8 @@ import { cpuPanelRenderer } from "./ide/CpuPanel";
 import { explorerPanelRenderer } from "./ide/ExplorerPanel";
 import { ulaPanelRenderer } from "./ide/UlaPanel";
 import { breakpointsPanelRenderer } from "./ide/BreakpointsPanel";
+import { ToolRendereInfo } from "./ide/abstractions";
+import { outputPanelRenderer } from "./controls/ToolArea/OutputPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -66,4 +68,16 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     },
   ]
   
-  
+// --- Set up tool panels
+export const toolPanelRegistry: ToolRendereInfo[] = [
+  {
+    id: "output",
+    name: "Output",
+    renderer: outputPanelRenderer
+  },
+  {
+    id: "commands",
+    name: "Commands",
+    renderer: outputPanelRenderer
+  },
+]

@@ -89,7 +89,7 @@ const App = () => {
                 minSize={25}
               />
               }
-              secondaryPanel={<ToolArea />}
+              secondaryPanel={<ToolArea siblingPosition={docPanelsPos}/>}
               secondaryVisible={!useEmuView && showToolPanels}
             />
           }

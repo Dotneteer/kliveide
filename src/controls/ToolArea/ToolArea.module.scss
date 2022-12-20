@@ -2,5 +2,23 @@
 
 .component {
     @include fill-parent-flex;
+    box-sizing: border-box;
     background: var(--bgcolor-toolarea);
+    border: 1px solid transparent;
+}
+
+.left {
+    border-left: 1px solid grey;
+}
+
+.right {
+    border-right: 1px solid grey;
+}
+
+.top {
+    border-top: 1px solid grey;
+}
+
+.bottom {
+    border-bottom: 1px solid grey;
 }

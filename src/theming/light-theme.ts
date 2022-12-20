@@ -37,6 +37,7 @@ export const lightTheme: ThemeProperties = {
 
     // --- Sitebar
     "--bgcolor-sitebar": "#d8d8d8",
+    "--color-header": "#000000",
     "--color-chevron": "#000000",
     "--color-panel-header": "#000000",
     "--color-panel-focused": "#61a4d0",
@@ -57,6 +58,8 @@ export const lightTheme: ThemeProperties = {
     "--color-tabbutton-fill-active": "#000000",
     "--bgcolor-tabbutton-pointed": "#c0c0c0",
     "--bgcolor-tabbutton-down": "#b0b0b0",
+    "--color-readonly-icon-active": "rgb(252, 165, 3)",
+    "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
 
     // --- Tool area
     "--bgcolor-toolarea": "#d0d0d0",

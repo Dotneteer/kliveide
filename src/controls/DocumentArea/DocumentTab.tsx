@@ -3,20 +3,23 @@ import { DocumentState } from "@/ide/abstractions";
 import { Icon } from "../common/Icon";
 import classnames from "@/utils/classnames";
 import { useDispatch } from "@/emu/StoreProvider";
-import { activateDocumentAction, closeDocumentAction, selectActivityAction } from "@state/actions";
+import { activateDocumentAction, changeDocumentAction, closeDocumentAction, selectActivityAction } from "@state/actions";
 import { TabButton } from "../common/TabButton";
 import { useState } from "react";
 
 export type Props = DocumentState & {
+    index: number;
     iconName?: string;
     isActive?: boolean;
 }
 export const DocumentTab = ({
+    index, 
     id,
     name,
     type,
     isTemporary,
     isReadOnly = false,
+    stateValue,
     path,
     language,
     iconName = "file-code",
@@ -29,7 +32,21 @@ export const DocumentTab = ({
             className={classnames(styles.component, isActive ? styles.active : "")}
             onMouseEnter={() => setPointed(true)}
             onMouseLeave={() => setPointed(false)}
-            onClick={() => dispatch(activateDocumentAction(id))}>
+            onClick={() => dispatch(activateDocumentAction(id))}
+            onDoubleClick={() => {
+                if (isTemporary) {
+                    dispatch(changeDocumentAction({
+                        id,
+                        name,
+                        type,
+                        isReadOnly,
+                        isTemporary: false,
+                        language,
+                        path,
+                        stateValue,
+                    } as DocumentState, index))
+                }
+            }}>
             <Icon
                 iconName={iconName}
                 width={16}
