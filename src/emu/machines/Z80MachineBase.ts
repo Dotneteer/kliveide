@@ -33,11 +33,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
     readonly abstract machineId: string;
 
     /**
-     * The name of the machine type to display
-     */
-    readonly abstract displayName: string
-
-    /**
      * This property stores the execution context where the emulated machine runs its execution loop.
      */
     executionContext: ExecutionContext = {
@@ -45,6 +40,18 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
         debugStepMode: DebugStepMode.NoDebug,
         canceled: false
     };
+
+    /**
+     * Sets up the machine (async)
+     */
+    abstract setup(): Promise<void>;
+
+    /**
+     * Dispose the resources held by the machine
+     */
+    dispose(): void {
+        this.machinePropertyChanged?.release();
+    }
 
     /**
      * Gets the value of the machine property with the specified key
@@ -118,7 +125,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
      * @param page Optional ROM page for multi-rom machines
      * @returns The byte array that represents the ROM contents
      */
-    protected static loadRomFromResource(romName: string, page = -1): Uint8Array {
+    protected static async loadRomFromResource(romName: string, page = -1): Promise<Uint8Array> {
         // TODO: Implement this method
         return new Uint8Array();
         // var resourceName = page == -1 ? romName : $"{romName}-{page}";

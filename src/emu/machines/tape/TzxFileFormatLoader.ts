@@ -9,7 +9,7 @@ export abstract class TzxBlockBase {
     /**
      * The ID of the block
      */
-    abstract blockId: number;
+    abstract get blockId(): number;
 
     /**
      * Reads the content of the block from the specified binary stream.

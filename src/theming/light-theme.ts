@@ -34,6 +34,7 @@ export const lightTheme: ThemeProperties = {
 
     // --- Statusbar
     "--bgcolor-statusbar": "#61a4d0",
+    "--color-statusbar-label": "#000000",
 
     // --- Sitebar
     "--bgcolor-sitebar": "#d8d8d8",

@@ -18,6 +18,7 @@ import {
     maximizeToolsAction,
     setThemeAction,
     changeToolVisibilityAction} from "../common/state/actions";
+import { setMachineType } from "./machines";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -33,6 +34,8 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+const MACHINE_TYPES = "machine_types";
+const MACHINE_SP48 = "machine_sp48";
 
 /**
  * Creates and sets the main menu of the app
@@ -96,7 +99,7 @@ export function setupMenu(): void {
         }
     });
 
-    // --- Preapre the view menu
+    // --- Prepare the view menu
     const viewSubMenu: MenuItemConstructorOptions[] = [
         { role: "resetZoom" },
         { role: "zoomIn" },
@@ -245,6 +248,29 @@ export function setupMenu(): void {
         label: "View",
         submenu: viewSubMenu,
     });
+
+    // --- Prepare the machine menu
+
+    template.push({
+        label: "Machine",
+        submenu: [
+            {
+                id: MACHINE_TYPES,
+                label: "Machine type",
+                submenu: [
+                    {
+                        id: MACHINE_SP48,
+                        label: "ZX Spectrum 48K",
+                        type: "checkbox",
+                        checked: appState.ideView?.machineId === "sp48",
+                        click: async () => {
+                            await setMachineType("sp48");
+                        },
+                    },
+                ]
+            },
+        ]
+    })
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);

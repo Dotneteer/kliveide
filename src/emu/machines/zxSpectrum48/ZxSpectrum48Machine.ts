@@ -21,11 +21,6 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     public readonly machineId = "sp48";
 
     /**
-     * The name of the machine type to display
-     */
-    public readonly displayName = "ZX Spectrum 48K";
-
-    /**
      * Initialize the machine
      */
     constructor() {
@@ -42,9 +37,26 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
         this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
         this.tapeDevice = new TapeDevice(this);
         this.reset();
+    }
 
+    /**
+     * Sets up the machine (async)
+     */
+    async setup(): Promise<void> {
         // --- Initialize the machine's ROM (Roms/ZxSpectrum48/sp48.rom)
-        this.uploadRomBytes(Z80MachineBase.loadRomFromResource(this.machineId));
+        this.uploadRomBytes(
+            await Z80MachineBase.loadRomFromResource(this.machineId));
+    }
+
+    /**
+     * Dispose the resources held by the machine
+     */
+    dispose(): void {
+        this.keyboardDevice?.dispose();
+        this.screenDevice?.dispose();
+        this.beeperDevice?.dispose();
+        this.floatingBusDevice?.dispose();
+        this.tapeDevice?.dispose();
     }
 
     /**

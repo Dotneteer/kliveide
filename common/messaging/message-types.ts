@@ -21,6 +21,30 @@ import { Action } from "../state/Action";
     targetid?: MessageSource;
   }
 
+// ================================================================================================
+// Common request types
+
+/**
+ * This message type forwards an action from the main process to the emulator or vice versa
+ */
+export interface ForwardActionRequest extends MessageBase {
+  type: "ForwardAction",
+  action: Action
+}
+
+// ================================================================================================
+// Main to emulator requests
+
+/**
+ * The main process signs that the emulator should change to a new emulated machine type
+ */
+export interface EmuSetMachineTypeRequest extends MessageBase {
+  type: "EmuSetMachineType",
+  machineId: string;
+}
+
+
+
 /**
  * Default response for actions
  */
@@ -28,15 +52,13 @@ export interface DefaultResponse extends MessageBase {
     type: "Ack";
 }
 
-export interface ForwardActionRequest extends MessageBase {
-    type: "ForwardAction",
-    action: Action
-}
 
 /**
  * All request messages
  */
-export type RequestMessage = ForwardActionRequest;
+export type RequestMessage = 
+  | ForwardActionRequest
+  | EmuSetMachineTypeRequest;
 
 /**
  * All Response messages

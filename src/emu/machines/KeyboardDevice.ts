@@ -21,6 +21,13 @@ export class KeyboardDevice implements IKeyboardDevice {
     }
 
     /**
+     * Dispose the resources held by the device
+     */
+    dispose(): void {
+        // --- Nothing to dispose
+    }
+
+    /**
      * Reset the device to its initial state.
      */
     reset(): void {

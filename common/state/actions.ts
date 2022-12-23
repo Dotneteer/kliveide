@@ -133,3 +133,7 @@ export const activateToolAction: ActionCreator = (id: string) => ({
     payload: { id },
 });
 
+export const setMachineTypeAction: ActionCreator = (id: string) => ({
+    type: "SET_MACHINE_TYPE",
+    payload: { id },
+});

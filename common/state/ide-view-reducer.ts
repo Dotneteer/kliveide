@@ -120,6 +120,13 @@ import { IdeView } from "./AppState";
                 activeTool: payload.id
             }
         }
+
+        case "SET_MACHINE_TYPE": {
+            return {
+                ...state,
+                machineId: payload.id
+            }
+        }
     
         default:
             return state;

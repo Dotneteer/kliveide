@@ -33,4 +33,6 @@
     ACTIVATE_TOOL: null;
     CHANGE_TOOL_VISIBILITY: null;
     CHANGE_TOOL_STATE: null;
+
+    SET_MACHINE_TYPE: null;
 }

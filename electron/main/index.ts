@@ -9,6 +9,7 @@ import { release } from 'os'
 import { join } from 'path'
 import { setupMenu, updateMenuState } from '../app-menu'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
+import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
 import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
 
@@ -25,6 +26,7 @@ if (!app.requestSingleInstanceLock()) {
 
 let emuWindow: BrowserWindow | null = null;
 let storeUnsubscribe: Unsubscribe | undefined;
+let machineTypeInitialized = false;
 
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js')
@@ -50,7 +52,11 @@ async function createWindow() {
 
   // --- Prepare the main menu. Update items on application state change
   setupMenu();
-  storeUnsubscribe = mainStore.subscribe(() => {
+  storeUnsubscribe = mainStore.subscribe(async () => {
+    if (!machineTypeInitialized) {
+      machineTypeInitialized = true;
+      await setMachineType("sp48");
+    }
     updateMenuState();
   });
 

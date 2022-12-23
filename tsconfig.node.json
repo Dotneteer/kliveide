@@ -6,6 +6,7 @@
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
     "paths": {
 			"@/*": ["./src/*"],
       "@styles/*": ["./src/assets/styles/*"],

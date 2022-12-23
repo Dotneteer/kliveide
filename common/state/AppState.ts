@@ -34,6 +34,7 @@ export type IdeView = {
     activeDocumentIndex?: number;
     tools?: ToolState[];
     activeTool?: string;
+    machineId?: string;
 }
 
 /**

@@ -9,6 +9,7 @@ import { DocumentInfo, DocumentState, IDocumentService } from "./abstractions";
 class DocumentService implements IDocumentService {
     constructor(private readonly store: Store<AppState>) {
     }
+    
     setActiveDocument(id: string): void {
         this.store.dispatch(activateDocumentAction(id));
     }
@@ -76,6 +77,6 @@ class DocumentService implements IDocumentService {
  * @param dispatch Dispatch function to use
  * @returns Document service instance
  */
-export function createDocumentService(store: Store) {
+export function createDocumentService(store: Store<AppState>) {
     return new DocumentService(store);
 };

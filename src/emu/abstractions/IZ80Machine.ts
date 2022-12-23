@@ -15,14 +15,19 @@ export interface IZ80Machine extends IZ80Cpu
     machineId: string;
     
     /**
-     * The name of the machine type to display
-     */
-    displayName: string;
-    
-    /**
      * This property stores the execution context where the emulated machine runs its execution loop.
      */
     executionContext: ExecutionContext;
+
+    /**
+     * Sets up the machine (async)
+     */
+    setup(): Promise<void>;
+
+    /**
+     * Dispose the resources held by the machine
+     */
+    dispose(): void;
 
     /**
      * Gets the value of the machine property with the specified key

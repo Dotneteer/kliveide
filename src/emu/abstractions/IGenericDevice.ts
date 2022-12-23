@@ -14,4 +14,9 @@ export interface IGenericDevice<TMachine extends IZ80Machine> {
     /// Reset the device to its initial state.
     /// </summary>
     reset(): void;
+
+    /**
+     * Dispose the resources held by the device
+     */
+    dispose(): void;
 }

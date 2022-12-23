@@ -1,10 +1,10 @@
 import { ITapeDevice, TapeMode } from "@/emu/abstractions/ITapeDevice";
 import { FlagsSetMask } from "@/emu/abstractions/IZ80Cpu";
 import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
-import { Z80Cpu } from "@/emu/z80/Z80Cpu";
 import { FAST_LOAD, REWIND_REQUESTED, TAPE_DATA, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDataBlock, PlayPhase, SavePhase, MicPulseType, BIT_0_PL, BIT_1_PL, PILOT_PL, SYNC_1_PL, SYNC_2_PL, TERM_SYNC } from "./abstractions";
 import { ITapeSaver } from "./ITapeSaver";
+import { TzxStandardSpeedBlock } from "./TzxFileFormatLoader";
 
 // --- Pilot pulses in the header blcok 
 const HEADER_PILOT_COUNT = 8063;
@@ -116,7 +116,7 @@ export class TapeDevice implements ITapeDevice {
     private _dataLength: number;
     
     // --- Buffer collecting the date saved
-    private _dataBuffer: number[] = [];
+    private _dataBuffer = new Uint8Array();
 
     // --- Number of data blocks beign saved
     private _dataBlockCount: number;
@@ -128,6 +128,13 @@ export class TapeDevice implements ITapeDevice {
     constructor(public readonly machine: IZxSpectrumMachine) {
         machine.machinePropertyChanged.on(this.onMachinePropertiesChanged);
         this.reset();
+    }
+
+    /**
+     * Dispose the resources held by the device
+     */
+    dispose(): void {
+        // --- Nothing to dispose
     }
 
     /**
@@ -397,7 +404,7 @@ export class TapeDevice implements ITapeDevice {
                     this._bitOffset = 0;
                     this._dataByte = 0;
                     this._dataLength = 0;
-                    this._dataBuffer = [];
+                    this._dataBuffer = new Uint8Array();
                 }
                 break;
             case SavePhase.Data:
@@ -427,10 +434,9 @@ export class TapeDevice implements ITapeDevice {
                     this._dataBlockCount++;
 
                     // --- Create and save the data block
-                    const dataBlock: TzxStandardSpeedBlock = {
-                        data: this._dataBuffer,
-                        dataLength: this._dataLength
-                    };
+                    const dataBlock: TzxStandardSpeedBlock = new TzxStandardSpeedBlock();
+                    dataBlock.data = this._dataBuffer;
+                    dataBlock.dataLength = this._dataLength;
 
                     // --- If this is the first data block, extract the name from the header
                     if (this._dataBlockCount === 1 && this._dataLength == 0x13) {
