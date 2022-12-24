@@ -44,10 +44,11 @@ class MachineService implements IMachineService {
 
         // --- Initialize the new machine
         const machine = machineInfo.factory();
-        this._controller = new MachineController(machine);
+        this._controller = new MachineController(this.store, machine);
         this._newInitializing.fire(machine);
         await machine.setup();
         this._newInitialized.fire(machine);
+        console.log("newInitialized fired.", this._newInitialized.handlers);
 
         // --- Ready, sign the machine type state change
         this.store.dispatch(setMachineTypeAction(machineId));

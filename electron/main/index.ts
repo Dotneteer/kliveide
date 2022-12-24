@@ -82,13 +82,13 @@ async function createWindow() {
 
 app.whenReady().then(createWindow)
 
-app.on('window-all-closed', () => {
+app.on("window-all-closed", () => {
   storeUnsubscribe();
   emuWindow = null
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('second-instance', () => {
+app.on("second-instance", () => {
   if (emuWindow) {
     // Focus on the main window if the user tried to open another
     if (emuWindow.isMinimized()) emuWindow.restore()
@@ -96,11 +96,13 @@ app.on('second-instance', () => {
   }
 })
 
-app.on('activate', () => {
+app.on("activate", () => {
   const allWindows = BrowserWindow.getAllWindows()
   if (allWindows.length) {
     allWindows[0].focus()
   } else {
+    // --- Let's initialize the machine type again after creating the window
+    machineTypeInitialized = false;
     createWindow();
   }
 })

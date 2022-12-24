@@ -1,3 +1,4 @@
+import { MachineControllerState } from "@state/MachineControllerState";
 import { DocumentState, ToolState } from "@/ide/abstractions";
 
 /**
@@ -35,6 +36,10 @@ export type IdeView = {
     tools?: ToolState[];
     activeTool?: string;
     machineId?: string;
+    machineState?: MachineControllerState;
+    soundLevel?: number;
+    soundMuted?: boolean;
+    fastLoad?: boolean;
 }
 
 /**
@@ -69,5 +74,7 @@ export const initialAppState: AppState = {
         openDocuments: [],
         activeDocumentIndex: -1,
         tools: [],
+        soundMuted: false,
+        fastLoad: true,
     }
 }

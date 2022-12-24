@@ -17,12 +17,45 @@ import { IdeServices } from "./ide/abstractions";
         case "ForwardAction":
             // --- The emu sent a state change action. Replay it in the main store without formarding it
             emuStore.dispatch(message.action, false);
-            return defaultResponse();
+            break;
         
         case "EmuSetMachineType":
             // --- Change the current machine type to a new one
             await machineService.setMachineType(message.machineId);
-            return defaultResponse();
+            break;
+        
+        case "EmuMachineCommand":
+            // --- Execute the specified machine command
+            const controller = machineService.getMachineController();
+            if (controller) {
+                switch (message.command) {
+                    case "start":
+                        await controller.start();
+                        break;
+                     case "pause":
+                        await controller.pause();
+                        break;
+                    case "stop":
+                        await controller.stop();
+                        break;
+                    case "restart":
+                        await controller.restart();
+                        break;
+                    case "debug":
+                        await controller.startDebug();
+                        break;
+                    case "stepInto":
+                        await controller.stepInto();
+                        break;
+                    case "stepOver":
+                        await controller.stepOver();
+                        break;
+                    case "stepOut":
+                        await controller.stepOut();
+                        break;
+                }
+            }
+            break;
     }
     return defaultResponse();
 }

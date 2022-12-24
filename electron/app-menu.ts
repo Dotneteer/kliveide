@@ -19,6 +19,9 @@ import {
     setThemeAction,
     changeToolVisibilityAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
+import { MachineControllerState } from "../common/state/MachineControllerState";
+import { sendFromMainToEmu } from "./MainToEmuMessenger";
+import { createMachineCommand } from "../common/messaging/message-types";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -34,8 +37,17 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+
 const MACHINE_TYPES = "machine_types";
 const MACHINE_SP48 = "machine_sp48";
+const START_MACHINE = "start";
+const PAUSE_MACHINE = "pause";
+const STOP_MACHINE = "stop";
+const RESTART_MACHINE = "restart";
+const DEBUG_MACHINE = "debug";
+const STEP_INTO = "step_into";
+const STEP_OVER = "step_over";
+const STEP_OUT = "step_out";
 
 /**
  * Creates and sets the main menu of the app
@@ -269,7 +281,66 @@ export function setupMenu(): void {
                     },
                 ]
             },
-        ]
+            { type: "separator"},
+            {
+                id: START_MACHINE,
+                label: "Start",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("start"));
+                },
+            },
+            {
+                id: PAUSE_MACHINE,
+                label: "Pause",
+                click: async () => {
+                    console.log("Pause");
+                },
+            },
+            {
+                id: STOP_MACHINE,
+                label: "Stop",
+                click: async () => {
+                    console.log("Stop");
+                },
+            },
+            {
+                id: RESTART_MACHINE,
+                label: "Restart",
+                click: async () => {
+                    console.log("Restart");
+                },
+            },
+            { type: "separator"},
+            {
+                id: DEBUG_MACHINE,
+                label: "Start with Debugging",
+                click: async () => {
+                    console.log("Start with debugging");
+                },
+            },
+            {
+                id: STEP_INTO,
+                label: "Step Into",
+                click: async () => {
+                    console.log("Step Into");
+                },
+            },
+            {
+                id: STEP_OVER,
+                label: "Step Over",
+                click: async () => {
+                    console.log("Step Over");
+                },
+            },
+            {
+                id: STEP_OUT,
+                label: "Step Out",
+                click: async () => {
+                    console.log("Step Out");
+                },
+            },
+
+    ]
     })
 
     const menu = Menu.buildFromTemplate(template);
@@ -299,4 +370,21 @@ export function updateMenuState(): void {
     getMenuItem(MAXIMIZE_TOOLS).checked = appState.emuViewOptions.maximizeTools;
     getMenuItem(LIGHT_THEME).checked = appState.theme === "light";
     getMenuItem(DARK_THEME).checked = appState.theme === "dark";
+
+    // --- Machine-related items
+    const state = appState.ideView.machineState;
+    getMenuItem(START_MACHINE).enabled = 
+    getMenuItem(DEBUG_MACHINE).enabled = 
+        state === MachineControllerState.None || 
+        state === MachineControllerState.Paused || 
+        state === MachineControllerState.Stopped;
+    getMenuItem(PAUSE_MACHINE).enabled = state === MachineControllerState.Running;
+    getMenuItem(STOP_MACHINE).enabled = 
+    getMenuItem(RESTART_MACHINE).enabled =
+        state === MachineControllerState.Running || 
+        state === MachineControllerState.Paused;
+    getMenuItem(STEP_INTO).enabled = 
+    getMenuItem(STEP_OVER).enabled = 
+    getMenuItem(STEP_OUT).enabled = 
+        state === MachineControllerState.Paused;
 }

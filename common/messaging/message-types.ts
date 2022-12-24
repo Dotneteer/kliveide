@@ -43,7 +43,23 @@ export interface EmuSetMachineTypeRequest extends MessageBase {
   machineId: string;
 }
 
+export type MachineCommand = 
+  | "start" 
+  | "pause" 
+  | "stop" 
+  | "restart" 
+  | "debug" 
+  | "stepInto" 
+  | "stepOver" 
+  | "stepOut";
 
+/**
+ * The main process sends a machine command to the emulator
+ */
+export interface EmuMachineCommandRequest extends MessageBase {
+  type: "EmuMachineCommand",
+  command: MachineCommand;
+}
 
 /**
  * Default response for actions
@@ -52,13 +68,13 @@ export interface DefaultResponse extends MessageBase {
     type: "Ack";
 }
 
-
 /**
  * All request messages
  */
 export type RequestMessage = 
   | ForwardActionRequest
-  | EmuSetMachineTypeRequest;
+  | EmuSetMachineTypeRequest
+  | EmuMachineCommandRequest;
 
 /**
  * All Response messages
@@ -72,6 +88,13 @@ export type AnyMessage = RequestMessage | ResponseMessage;
 
 // ----------------------------------------------------------------------------
 // Message creators
+
+export function createMachineCommand(command: MachineCommand): EmuMachineCommandRequest {
+  return {
+    type: "EmuMachineCommand",
+    command
+  }
+}
 
 export function defaultResponse(): DefaultResponse {
   return { type: "Ack" };

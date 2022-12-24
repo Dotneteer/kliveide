@@ -128,6 +128,34 @@ import { IdeView } from "./AppState";
             }
         }
     
+        case "SET_MACHINE_STATE": {
+            return {
+                ...state,
+                machineState: payload.state
+            }
+        }
+    
+        case "MUTE_SOUND": {
+            return {
+                ...state,
+                soundMuted: payload.flag
+            }
+        }
+    
+        case "SET_SOUND_LEVEL": {
+            return {
+                ...state,
+                soundLevel: payload.numValue
+            }
+        }
+
+        case "SET_FAST_LOAD": {
+            return {
+                ...state,
+                fastLoad: payload.flag
+            }
+        }
+    
         default:
             return state;
     }

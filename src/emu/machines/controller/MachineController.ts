@@ -7,7 +7,10 @@ import {
 import { FrameStats } from "@/emu/abstractions/FrameStats";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { LiteEvent } from "@/emu/utils/lite-event";
-import { MachineControllerState } from "./MachineControllerState";
+import { setMachineStateAction } from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
+import { MachineControllerState } from "../../../../common/state/MachineControllerState";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -21,9 +24,19 @@ export class MachineController {
      * Initializes the controller to manage the specified machine.
      * @param machine The machine to manage
      */
-    constructor(public readonly machine: IZ80Machine) {
+    constructor(
+        public readonly store: Store<AppState>, 
+        public readonly machine: IZ80Machine) {
         this.context = machine.executionContext;
         this.isDebugging = false;
+        this.frameStats = {
+            frameCount: 0,
+            lastFrameTimeInMs: 0,
+            lastCpuFrameTimeInMs: 0,
+            avgFrameTimeInMs: 0,
+            avgCpuFrameTimeInMs: 0
+        }
+        this.state = MachineControllerState.None;
     }
 
     /**
@@ -45,7 +58,7 @@ export class MachineController {
     private context: ExecutionContext;
 
     /// <summary>
-    /// Get the current state of the machine controller.
+    /// Get or set the current state of the machine controller.
     /// </summary>
     get state(): MachineControllerState {
         return this._machineState;
@@ -55,6 +68,7 @@ export class MachineController {
             
         const oldState = this._machineState;
         this._machineState = value;
+        this.store.dispatch(setMachineStateAction(value));
         this.stateChanged.fire({oldState, newState: this._machineState});
     }
 
@@ -115,10 +129,6 @@ export class MachineController {
     /// Stop the running or paused machine.
     /// </summary>
     async stop(): Promise<void> {
-        if (this.state !== MachineControllerState.Running && this.state !== MachineControllerState.Paused) {
-            throw new Error("The machine is not running");
-        }
-
         // --- Stop the machine
         this.isDebugging = false;
         await this.finishExecutionLoop(MachineControllerState.Stopping, MachineControllerState.Stopped);
@@ -149,7 +159,7 @@ export class MachineController {
     /**
      * Starts the machine in step-into mode.
      */
-    async StepInto(): Promise<void> {
+    async stepInto(): Promise<void> {
         this.isDebugging = true;
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepInto);
         await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);

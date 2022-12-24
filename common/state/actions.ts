@@ -1,3 +1,4 @@
+import { MachineControllerState } from "@state/MachineControllerState";
 import { DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
@@ -137,3 +138,25 @@ export const setMachineTypeAction: ActionCreator = (id: string) => ({
     type: "SET_MACHINE_TYPE",
     payload: { id },
 });
+
+export const setMachineStateAction: ActionCreator = (state: MachineControllerState) => ({
+    type: "SET_MACHINE_STATE",
+    payload: { state },
+});
+
+export const muteSoundAction: ActionCreator = (flag: boolean) => ({
+    type: "MUTE_SOUND",
+    payload: { flag },
+});
+
+export const setSoundLevelAction: ActionCreator = (numValue: number) => ({
+    type: "SET_SOUND_LEVEL",
+    payload: { numValue },
+});
+
+export const setFastLoadAction: ActionCreator = (flag: boolean) => ({
+    type: "SET_FAST_LOAD",
+    payload: { flag },
+});
+
+
