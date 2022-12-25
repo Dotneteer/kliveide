@@ -293,21 +293,21 @@ export function setupMenu(): void {
                 id: PAUSE_MACHINE,
                 label: "Pause",
                 click: async () => {
-                    console.log("Pause");
+                    await sendFromMainToEmu(createMachineCommand("pause"));
                 },
             },
             {
                 id: STOP_MACHINE,
                 label: "Stop",
                 click: async () => {
-                    console.log("Stop");
+                    await sendFromMainToEmu(createMachineCommand("stop"));
                 },
             },
             {
                 id: RESTART_MACHINE,
                 label: "Restart",
                 click: async () => {
-                    console.log("Restart");
+                    await sendFromMainToEmu(createMachineCommand("restart"));
                 },
             },
             { type: "separator"},
@@ -315,31 +315,30 @@ export function setupMenu(): void {
                 id: DEBUG_MACHINE,
                 label: "Start with Debugging",
                 click: async () => {
-                    console.log("Start with debugging");
+                    await sendFromMainToEmu(createMachineCommand("debug"));
                 },
             },
             {
                 id: STEP_INTO,
                 label: "Step Into",
                 click: async () => {
-                    console.log("Step Into");
+                    await sendFromMainToEmu(createMachineCommand("stepInto"));
                 },
             },
             {
                 id: STEP_OVER,
                 label: "Step Over",
                 click: async () => {
-                    console.log("Step Over");
+                    await sendFromMainToEmu(createMachineCommand("stepOver"));
                 },
             },
             {
                 id: STEP_OUT,
                 label: "Step Out",
                 click: async () => {
-                    console.log("Step Out");
+                    await sendFromMainToEmu(createMachineCommand("stepOut"));
                 },
             },
-
     ]
     })
 

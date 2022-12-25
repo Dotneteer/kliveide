@@ -1,3 +1,4 @@
+import { IFileProvider } from "@/core/IFileProvider";
 import { FrameTerminationMode, DebugStepMode, ExecutionContext } from "../abstractions/ExecutionContext";
 import { TapeMode } from "../abstractions/ITapeDevice";
 import { OpCodePrefix } from "../abstractions/IZ80Cpu";
@@ -5,7 +6,7 @@ import { IZ80Machine } from "../abstractions/IZ80Machine";
 import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
-import { REWIND_REQUESTED, TAPE_MODE } from "./machine-props";
+import { FILE_PROVIDER, REWIND_REQUESTED, TAPE_MODE } from "./machine-props";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -59,7 +60,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
      * @returns Value of the property, if found; otherwise, undefined
      */
     getMachineProperty(key: string): any {
-        this._machineProps.get(key);
+        return this._machineProps.get(key);
     }
 
     /**
@@ -81,7 +82,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
         } else {
             const oldValue = this._machineProps.get(key);
             if (oldValue) {
-                if (oldValue == value) return;
+                if (oldValue === value) return;
             }
             this._machineProps.set(key, value);
             this.machinePropertyChanged?.fire({propertyName: key, newValue: value});
@@ -125,23 +126,15 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
      * @param page Optional ROM page for multi-rom machines
      * @returns The byte array that represents the ROM contents
      */
-    protected static async loadRomFromResource(romName: string, page = -1): Promise<Uint8Array> {
-        // TODO: Implement this method
-        return new Uint8Array();
-        // var resourceName = page == -1 ? romName : $"{romName}-{page}";
-        // var currentAsm = typeof(Z80MachineBase).Assembly;
-        // resourceName = $"{currentAsm.GetName().Name}.{ROM_RESOURCE_FOLDER}.{resourceName}.rom";
-        // var resMan = currentAsm.GetManifestResourceStream(resourceName);
-        // if (resMan == null)
-        // {
-        //     throw new InvalidOperationException($"Input stream for the '{romName}' .rom file not found.");
-        // }
-        // using var stream = new StreamReader(resMan).BaseStream;
-        // stream.Seek(0, SeekOrigin.Begin);
-        // var bytes = new byte[stream.Length];
-        // // ReSharper disable once MustUseReturnValue
-        // stream.Read(bytes, 0, bytes.Length);
-        // return bytes;
+    protected loadRomFromResource(romName: string, page = -1): Promise<Uint8Array> {
+        // --- Obtain the IFileProvider instance
+        const fileProvider = this.getMachineProperty(FILE_PROVIDER) as IFileProvider;
+        if (!fileProvider) {
+            throw new Error("Could not obtain file provider instance");
+        }
+
+        const filename = `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
+        return fileProvider.readBinaryFile(filename);
     }
 
     /**
@@ -204,12 +197,10 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
         primary: SpectrumKeyCode, 
         secondary?: SpectrumKeyCode): void;
 
-    /// <summary>
-    /// Executes the machine loop using the current execution context.
-    /// </summary>
-    /// <returns>
-    /// The value indicates the termination reason of the loop. 
-    /// </returns>
+    /**
+     * Executes the machine loop using the current execution context.
+     * @returns The value indicates the termination reason of the loop. 
+     */
     private executeMachineLoopWithNoDebug(): FrameTerminationMode {
         // --- Sign that the loop execution is in progress
         this.executionContext.lastTerminationReason = undefined;

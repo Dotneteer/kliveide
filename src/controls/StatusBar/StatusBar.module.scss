@@ -7,8 +7,36 @@
     background: var(--bgcolor-statusbar);
 }
 
+.sectionWrapper {
+    display: flex;
+    margin: 0 8px;
+    width: 100%;
+    flex-direction: row;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
 .label {
-    padding: 0 8px;
     font-size: 0.8em;
     color: var(--color-statusbar-label);
+    padding: 0 2px
+}
+
+.labelSeparator {
+    width: 4px;
+}
+
+.sectionSeparator {
+    width: 8px;
+}
+
+.section {
+    display: flex;
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 100%;
+    margin: 0 4px;
+    align-content: flex-start;
+    align-items: center;
+    justify-items: start;
 }

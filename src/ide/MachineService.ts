@@ -1,11 +1,14 @@
+import { IFileProvider } from "@/core/IFileProvider";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
+import { FILE_PROVIDER } from "@/emu/machines/machine-props";
 import { LiteEvent } from "@/emu/utils/lite-event";
 import { machineRegistry } from "@/registry";
 import { setMachineTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import { IMachineService, MachineInfo, MachineInstanceEventHandler, MachineTypeEventHandler } from "./abstractions";
+import { FileProvider } from "./FileProvider";
 
 class MachineService implements IMachineService {
     private _oldDisposing = new LiteEvent<string>();
@@ -46,9 +49,11 @@ class MachineService implements IMachineService {
         const machine = machineInfo.factory();
         this._controller = new MachineController(this.store, machine);
         this._newInitializing.fire(machine);
+
+        // --- Seup the machine
+        machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
         await machine.setup();
         this._newInitialized.fire(machine);
-        console.log("newInitialized fired.", this._newInitialized.handlers);
 
         // --- Ready, sign the machine type state change
         this.store.dispatch(setMachineTypeAction(machineId));

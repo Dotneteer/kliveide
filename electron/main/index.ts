@@ -1,10 +1,6 @@
-process.env.DIST_ELECTRON = join(__dirname, '../..')
-process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
-process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
-
 import { RequestMessage } from '@messaging/message-types'
 import { Unsubscribe } from '@state/redux-light'
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { setupMenu, updateMenuState } from '../app-menu'
@@ -12,6 +8,10 @@ import { processEmuToMainMessages } from '../EmuToMainProcessor'
 import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
 import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
+
+process.env.DIST_ELECTRON = join(__dirname, '../..')
+process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
+process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()

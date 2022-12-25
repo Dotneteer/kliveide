@@ -4,7 +4,6 @@ import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../KeyboardDevice";
 import { KBTYPE_48, REWIND_REQUESTED, TAPE_MODE } from "../machine-props";
 import { TapeDevice } from "../tape/TapeDevice";
-import { Z80MachineBase } from "../Z80MachineBase";
 import { AUDIO_SAMPLE_RATE, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrumFloatingBusDevice";
 
@@ -43,9 +42,11 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
      * Sets up the machine (async)
      */
     async setup(): Promise<void> {
-        // --- Initialize the machine's ROM (Roms/ZxSpectrum48/sp48.rom)
-        this.uploadRomBytes(
-            await Z80MachineBase.loadRomFromResource(this.machineId));
+        // --- Get the ROM file
+        const romContents = await this.loadRomFromResource(this.machineId);
+
+        // --- Initialize the machine's ROM (roms/sp48.rom)
+        this.uploadRomBytes(romContents);
     }
 
     /**

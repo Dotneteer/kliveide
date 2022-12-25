@@ -37,6 +37,7 @@ export type ThemeProperties = {
   // --- Statusbar
   "--bgcolor-statusbar"?: string;
   "--color-statusbar-label"?: string;
+  "--color-statusbar-icon"?: string;
 
   // --- Sitebar
   "--bgcolor-sitebar"?: string;

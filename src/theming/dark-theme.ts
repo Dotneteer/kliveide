@@ -36,6 +36,7 @@ export const darkTheme: ThemeProperties = {
     // --- Statusbar
     "--bgcolor-statusbar": "#007acc",
     "--color-statusbar-label": "#ffffff",
+    "--color-statusbar-icon": "#ffffff",
 
     // --- Sitebar
     "--bgcolor-sitebar": "#282828",
