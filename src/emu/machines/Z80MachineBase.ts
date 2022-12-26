@@ -19,9 +19,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
     // --- Store machine-specific properties here
     private readonly _machineProps = new Map<string, any>();
 
-    // --- Hash set to store breakpoints for each address
-    private readonly _breakpoints = new Set<number>();
-    
     // --- This flag indicates that the last machine frame has been completed.
     private _frameCompleted: boolean;
 
@@ -262,7 +259,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
         const z80Machine = this;
         this.executionContext.lastTerminationReason = undefined;
         var instructionsExecuted = 0;
-        createBreakpointMap();
 
         // --- Check the startup breakpoint
         if (this.pc != this.executionContext.debugSupport?.lastStartupBreakpoint) {
@@ -306,9 +302,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
 
                 // --- Calculate the start tact of the next machine frame
                 this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
-                
-                // --- Refresh breakpoints
-                createBreakpointMap();
             }
 
             // --- Set the interrupt signal, if required so
@@ -357,7 +350,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
             // --- The machine must support debugging
             const debugSupport = z80Machine.executionContext.debugSupport;
             if (!debugSupport) return false;
-            
+
             // --- Stop according to the current debug mode strategy
             switch (z80Machine.executionContext.debugStepMode) {
                 case DebugStepMode.StepInto:
@@ -365,7 +358,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
                     return instructionsExecuted > 0;
                 
                 case DebugStepMode.StopAtBreakpoint:
-                    if (z80Machine._breakpoints[z80Machine.pc] && (instructionsExecuted > 0 
+                    if (debugSupport.getExecBreakpoint(z80Machine.pc) && (instructionsExecuted > 0 
                         || debugSupport.lastBreakpoint === undefined
                         || debugSupport.lastBreakpoint !== z80Machine.pc)) {
                         // --- Stop when reach a breakpoint
@@ -405,19 +398,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine
                     break;
             }
             return false;
-        }
-
-        // --- This method gets the current breakpoints and transforms them into a flagmap,
-        // --- a sibgle bit for each address in the 16-bit address space
-        function createBreakpointMap()
-        {
-            var debugSupport = z80Machine.executionContext.debugSupport;
-            if (debugSupport == undefined) return;
-            
-            z80Machine._breakpoints.clear();
-            for (const bp of debugSupport.breakpoints.filter(bp => bp.exec ?? true)) {
-                z80Machine._breakpoints.add(bp.address);
-            }
         }
     }
 

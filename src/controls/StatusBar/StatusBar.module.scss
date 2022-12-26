@@ -14,12 +14,18 @@
     flex-direction: row;
     flex-shrink: 1;
     flex-grow: 1;
+    align-items: center;
 }
 
 .label {
     font-size: 0.8em;
     color: var(--color-statusbar-label);
     padding: 0 2px
+}
+
+.isMonospace {
+    font-family: monospace;
+    font-size: 1em;
 }
 
 .labelSeparator {

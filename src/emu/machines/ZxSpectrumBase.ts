@@ -332,7 +332,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
 
         // --- Apply I/O contention
         function applyContentionDelay(): void {
-            const delay = spectrum.getContentionValue(this.currentFrameTact);
+            const delay = spectrum.getContentionValue(spectrum.currentFrameTact);
             spectrum.tactPlusN(delay);
             spectrum.totalContentionDelaySinceStart += delay;
             spectrum.contentionDelaySincePause += delay;

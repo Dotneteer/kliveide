@@ -1,3 +1,5 @@
+import { ILiteEvent } from "../utils/lite-event";
+
 /**
  * This type defines the execution context in which an emulated machine can run its execution loop.
  */
@@ -107,10 +109,41 @@ export interface IDebugSupport {
     lastStartupBreakpoint?: number;
     
     /**
-     * The list of current breakpoints
+     * The list of current execution breakpoints
      */
-    breakpoints: BreakpointInfo[];
+    readonly execBreakpoints: BreakpointInfo[];
+
+    /**
+     * Gets execution breakpoint information for the specified address/partition
+     * @param address Breakpoint address
+     * @param partition Breakpoint partition
+     */
+    getExecBreakpoint(address: number, partition?: number): BreakpointInfo | undefined;
+
+    /**
+     * The list of current memory operation breakpoints
+     */
+    readonly memoryBreakpoints: BreakpointInfo[];
     
+    /**
+     * Gets memory breakpoint information for the specified address/partition
+     * @param address Breakpoint address
+     * @param partition Breakpoint partition
+     */
+    getMemoryBreakpoint(address: number, partition?: number): BreakpointInfo | undefined;
+
+    /**
+     * The list of current I/O operation breakpoints
+     */
+    readonly ioBreakpoints: BreakpointInfo[];
+   
+    /**
+     * Gets I/O breakpoint information for the specified port address
+     * @param address Breakpoint address
+     * @param partition Breakpoint partition
+     */
+    getIoBreakpoint(address: number): BreakpointInfo | undefined;
+
     /**
      * The last breakpoint we stopped in the frame
      */
@@ -120,6 +153,40 @@ export interface IDebugSupport {
      * Breakpoint used for step-out debugging mode
      */
     imminentBreakpoint?: number;
+
+    /**
+     * Erases all breakpoints
+     */
+    eraseAllBreakpoints(): void;
+
+    /**
+     * Adds a breakpoint to the list of existing ones
+     * @param breakpoint Breakpoint information
+     * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
+     */
+    addBreakpoint(breakpoint: BreakpointInfo): boolean;
+
+    /**
+     * Removes a breakpoint
+     * @param address Breakpoint address
+     * @returns True, if the breakpoint has just been removed; otherwise, false
+     */
+    removeBreakpoint(address: number): boolean
+
+    /**
+     * This event fires when execution breakpoints have been changed
+     */
+    execBreakpointsChanged: ILiteEvent;
+
+    /**
+     * This event fires when memory breakpoints have been changed
+     */
+    memoryBreakpointsChanged: ILiteEvent;
+
+    /**
+     * This event fires when I/O breakpoints have been changed
+     */
+    ioBreakpointsChanged: ILiteEvent;
 }
 
 /**
@@ -135,6 +202,11 @@ export type BreakpointInfo = {
      * Optional partition (reserved for future use)
      */
     partition?: number;
+
+    /**
+     * Optional mask for I/O addresses
+     */
+    mask?: number;
 
     /**
      * Indicates an execution breakpoint
@@ -160,9 +232,4 @@ export type BreakpointInfo = {
      * Indicates an I/O write breakpoint
      */
     ioWrite?: boolean;
-
-    /**
-     * Optional Disassembly
-     */
-    disassembly?: string;
 }

@@ -12,7 +12,15 @@ export const useController = () => {
 
         mounted.current = true;
         const unsubscribe = machineService.newMachineTypeInitialized(() => {
-            setController(machineService.getMachineController());
+            // --- Obtain the new machine controller
+            const newController = machineService.getMachineController();
+            if (newController === controller) return;
+
+            // --- Clean up the old controller
+            controller?.dispose();
+
+            // --- Done
+            setController(newController);
         });
 
         return () => {

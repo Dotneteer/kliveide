@@ -159,4 +159,9 @@ export const setFastLoadAction: ActionCreator = (flag: boolean) => ({
     payload: { flag },
 });
 
+export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
+    type: "SET_CLOCK_MULTIPLIER",
+    payload: { numValue },
+});
+
 

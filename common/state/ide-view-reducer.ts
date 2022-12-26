@@ -156,6 +156,13 @@ import { IdeView } from "./AppState";
             }
         }
     
+        case "SET_CLOCK_MULTIPLIER": {
+            return {
+                ...state,
+                clockMultiplier: payload.numValue
+            }
+        }
+
         default:
             return state;
     }

@@ -219,12 +219,12 @@ export class MachineController {
         this.state = MachineControllerState.Running;
         this._machineTask = (async () => {
             this._cancelRequested = false;
-            const loopStartInTicks = new Date().valueOf();
-            let completedFrames = 0;
             const nextFrameGap = (this.machine.tactsInFrame / this.machine.baseClockFrequency) * 1000;
             let nextFrameTime = performance.now() + nextFrameGap;
             do
             {
+                // --- Use the latest clock multiplier
+                this.machine.targetClockMultiplier = this.store.getState()?.ideView?.clockMultiplier ?? 1;
                 // --- Run the machine frame and measure execution time
                 const frameStartTime = performance.now();
                 const termination = this.machine.executeMachineFrame();
@@ -255,9 +255,7 @@ export class MachineController {
                     return;
                 }
 
-
                 // --- Calculate the time to wait before the next machine frame starts
-                completedFrames++;
                 const curTime = performance.now();
                 const toWait = Math.floor(nextFrameTime - curTime);
                 await delay(toWait - 2);

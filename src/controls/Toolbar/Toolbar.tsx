@@ -7,30 +7,15 @@ import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../common/IconButton";
 import { ToolbarSeparator } from "../common/ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
+import { useController } from "@/core/useController";
 
 export const Toolbar = () => {
     const dispatch = useDispatch();
-    const { machineService } = useIdeServices();
-    const [controller, setController] = useState<MachineController>();
+    const controller = useController();
     const state = useSelector(s => s.ideView?.machineState);
     const showKeyboard = useSelector(s => s.emuViewOptions?.showKeyboard ?? false);
     const muted = useSelector(s => s.ideView?.soundMuted ?? false);
     const fastLoad = useSelector(s => s.ideView?.fastLoad ?? false);
-    const mounted = useRef(false);
-
-    useEffect(() => {
-        if (mounted.current) return;
-
-        mounted.current = true;
-        const unsubscribe = machineService.newMachineTypeInitialized(machine => {
-            setController(machineService.getMachineController());
-        });
-
-        return () => {
-            mounted.current = false;
-            unsubscribe();
-        };
-    })
 
     return <div className={styles.component}>
         <IconButton 

@@ -40,6 +40,7 @@ export type IdeView = {
     soundLevel?: number;
     soundMuted?: boolean;
     fastLoad?: boolean;
+    clockMultiplier?: number;
 }
 
 /**
@@ -76,5 +77,6 @@ export const initialAppState: AppState = {
         tools: [],
         soundMuted: false,
         fastLoad: true,
+        clockMultiplier: 1
     }
 }

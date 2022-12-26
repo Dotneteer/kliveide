@@ -1,6 +1,6 @@
-import { IFileProvider } from "@/core/IFileProvider";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
+import { DebugSupport } from "@/emu/machines/DebugSupport";
 import { FILE_PROVIDER } from "@/emu/machines/machine-props";
 import { LiteEvent } from "@/emu/utils/lite-event";
 import { machineRegistry } from "@/registry";
@@ -48,6 +48,7 @@ class MachineService implements IMachineService {
         // --- Initialize the new machine
         const machine = machineInfo.factory();
         this._controller = new MachineController(this.store, machine);
+        this._controller.debugSupport = new DebugSupport();
         this._newInitializing.fire(machine);
 
         // --- Seup the machine

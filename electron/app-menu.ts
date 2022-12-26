@@ -17,7 +17,8 @@ import {
     toolPanelsOnTopAction,
     maximizeToolsAction,
     setThemeAction,
-    changeToolVisibilityAction} from "../common/state/actions";
+    changeToolVisibilityAction,
+    setClockMultiplierAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
 import { sendFromMainToEmu } from "./MainToEmuMessenger";
@@ -48,6 +49,7 @@ const DEBUG_MACHINE = "debug";
 const STEP_INTO = "step_into";
 const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
+const CLOCK_MULT = "clock_mult"
 
 /**
  * Creates and sets the main menu of the app
@@ -262,6 +264,18 @@ export function setupMenu(): void {
     });
 
     // --- Prepare the machine menu
+    const multiplierValue = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
+    const multiplierMenu: MenuItemConstructorOptions[] = multiplierValue.map(v => {
+        return {
+            id: `${CLOCK_MULT}_${v}`,
+            label: v === 1 ? "Normal" : `${v}x`,
+            type: "checkbox",
+            checked: appState.ideView?.clockMultiplier === v,
+            click: async () => {
+                mainStore.dispatch(setClockMultiplierAction(v));
+            },
+        }
+    })
 
     template.push({
         label: "Machine",
@@ -339,7 +353,13 @@ export function setupMenu(): void {
                     await sendFromMainToEmu(createMachineCommand("stepOut"));
                 },
             },
-    ]
+            { type: "separator" },
+            {
+                id: CLOCK_MULT,
+                label: "Clock Multiplier",
+                submenu: multiplierMenu
+            },
+        ]
     })
 
     const menu = Menu.buildFromTemplate(template);

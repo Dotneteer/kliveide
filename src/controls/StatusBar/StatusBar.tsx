@@ -1,51 +1,70 @@
+import { useController } from "@/core/useController";
 import { useSelector } from "@/emu/StoreProvider";
 import { useIdeServices } from "@/ide/IdeServicesProvider";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "../common/Icon";
 import { SpaceFiller } from "../common/SpaceFiller";
+import { FrameStats } from "../../emu/abstractions/FrameStats";
+import classnames from "../../utils/classnames"
 import styles from "./StatusBar.module.scss";
 
 export const StatusBar = () => {
     const {machineService } = useIdeServices();
+    const controller = useController();
+    const [frameStats, setFrameStats] = useState<FrameStats>();
     const machineId = useSelector(s => s.ideView?.machineId);
     const [machineName, setMachineName] = useState("");
+    const counter = useRef(0);
 
-    // --- Reflect machine ID changes
+    // --- Reflect controlle changes
     useEffect(() => {
         if (machineId) {
             const info = machineService.getMachineInfo();
             setMachineName(info?.displayName ?? "");
         }
-    }, [machineId]);
+        if (controller) {
+            controller.frameCompleted.on((completed) => {
+                if (!completed || counter.current++ % 10) {
+                    setFrameStats({...controller.frameStats});
+                }
+            })
+        }
+
+    }, [controller]);
 
     return <div className={styles.component}>
         <div className={styles.sectionWrapper}>
             <Section>
                 <Icon iconName="vm-running" width={16} height={16} fill="--color-statusbar-icon" />
                 <LabelSeparator />
-                <DataLabel value={123.45678} />
+                <DataLabel value={frameStats?.lastCpuFrameTimeInMs ?? 0.0} />
                 <Label text="/" />
-                <DataLabel value={123.45678} />
+                <DataLabel value={frameStats?.avgCpuFrameTimeInMs ?? 0.0} />
             </Section>
             <SectionSeparator />
             <Section>
                 <Icon iconName="vm" width={16} height={16} fill="--color-statusbar-icon" />
                 <LabelSeparator />
-                <DataLabel value={123.45678} />
+                <DataLabel value={frameStats?.lastFrameTimeInMs ?? 0.0} />
                 <Label text="/" />
-                <DataLabel value={123.45678} />
+                <DataLabel value={frameStats?.avgFrameTimeInMs ?? 0.0} />
             </Section>
             <SectionSeparator />
             <Section>
                 <Icon iconName="window" width={16} height={16} fill="--color-statusbar-icon" />
                 <LabelSeparator />
-                <Label text="48" />
+                <DataLabel 
+                    value={(frameStats?.frameCount ?? 0)} 
+                    minimumFractionDigits={0}
+                    maximumFractionDigits={0}/>
             </Section>
             <SectionSeparator />
             <Section>
                 <Label text="PC:" />
                 <LabelSeparator />
-                <Label text="15EF" />
+                <Label 
+                    text={(controller?.machine?.pc ?? 0).toString(16).toUpperCase().padStart(4, "0")}
+                    isMonospace={true} />
             </Section>
             <SpaceFiller />
             <Label text={machineName} />
@@ -53,18 +72,26 @@ export const StatusBar = () => {
     </div>
 }
 
-type LabelProps = {
-    text: string;
-}
-
 const Section = ({children}: SectionProps) => {
     return <div className={styles.section}>{children}</div>
 }
 
+type LabelProps = {
+    text: string;
+    isMonospace?: boolean;
+}
+
 const Label = ({
-    text
+    text,
+    isMonospace
 }: LabelProps ) => {
-    return <span className={styles.label}>{text}</span>
+    return (
+        <span className={classnames(
+            styles.label,
+            isMonospace ? styles.isMonospace : "")}>
+            {text}
+        </span>
+    )
 }
 
 type SectionProps = {
@@ -73,12 +100,22 @@ type SectionProps = {
 
 type DataLabelProps = {
     value: number;
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+    minimumIntegerDigits?: number;
+
 }
-const DataLabel = ({value}: DataLabelProps) => {
+const DataLabel = ({
+    value,
+    minimumFractionDigits = 3,
+    maximumFractionDigits = 3,
+    minimumIntegerDigits = 2
+}: DataLabelProps) => {
     return <Label text={value.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}/>
+        minimumFractionDigits,
+        maximumFractionDigits,
+        minimumIntegerDigits
+      })} isMonospace={true} />
 }
 
 const LabelSeparator = () => <div className={styles.labelSeparator} />

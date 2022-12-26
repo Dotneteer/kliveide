@@ -39,4 +39,5 @@
     MUTE_SOUND: null;
     SET_SOUND_LEVEL: null;
     SET_FAST_LOAD: null;
+    SET_CLOCK_MULTIPLIER: null;
 }
