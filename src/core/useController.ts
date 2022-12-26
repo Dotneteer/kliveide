@@ -28,6 +28,5 @@ export const useController = () => {
             unsubscribe();
         };
     })
-
     return controller;
 }

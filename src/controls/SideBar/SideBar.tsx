@@ -60,7 +60,7 @@ export const SiteBar = ({
 
     // --- When the side bar panels height changes (window resizing) we update the stored height
     useResizeObserver(sideBarRef, () => {
-        sbHeight.current = sideBarRef.current.offsetHeight;
+        sbHeight.current = sideBarRef.current?.offsetHeight ?? 0;
     });
 
     // --- Follow the current sizing state

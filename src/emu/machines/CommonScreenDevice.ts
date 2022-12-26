@@ -187,6 +187,7 @@ export class CommonScreenDevice implements IScreenDevice {
         // --- Create helper tables for screen rendering
         this.initializeInkAndPaperTables();
         this.initializeRenderingTactTable();
+        console.log(this.renderingTactTable);
     }
 
     /**
@@ -356,7 +357,7 @@ export class CommonScreenDevice implements IScreenDevice {
             this.machine.setContentionValue(tact, 0);
 
             // --- Calculate line index and the tact index within line
-            const line = tact / screenLineTime;
+            const line = Math.floor(tact / screenLineTime);
             const tactInLine = tact % screenLineTime;
 
             // Test, if the current tact is visible
@@ -372,20 +373,20 @@ export class CommonScreenDevice implements IScreenDevice {
                     if (tactInLine == borderPixelFetchTact - 1)
                     {
                         currentTact.phase = RenderingPhase.Border;
-                        currentTact.renderingAction = this.renderTactBorder;
+                        currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
                         this.machine.setContentionValue(tact, this.contentionValues[6]);
                         calculated = true;
                     } else if (tactInLine == borderPixelFetchTact) {
                         // --- Yes, prefetch pixel data
                         currentTact.phase = RenderingPhase.BorderFetchPixel;
                         currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
-                        currentTact.renderingAction = this.renderTactBorderFetchPixel;
+                        currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
                         this.machine.setContentionValue(tact, this.contentionValues[7]);
                         calculated = true;
                     } else if (tactInLine == borderAttrFetchTact) {
                         currentTact.phase = RenderingPhase.BorderFetchAttr;
                         currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
-                        currentTact.renderingAction = this.renderTactBorderFetchAttr;
+                        currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
                         this.machine.setContentionValue(tact, this.contentionValues[0]);
                         calculated = true;
                     }
@@ -406,33 +407,33 @@ export class CommonScreenDevice implements IScreenDevice {
                             case 0:
                                 currentTact.phase = RenderingPhase.DisplayB1FetchB2;
                                 currentTact.pixelAddress = this.calcPixelAddress(line, tactInLine + 4);
-                                currentTact.renderingAction = this.renderTactDislayByte1FetchByte2;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte1FetchByte2(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[1]);
                                 break;
                             case 1:
                                 currentTact.phase = RenderingPhase.DisplayB1FetchA2;
                                 currentTact.attributeAddress = this.calcAttrAddress(line, tactInLine + 3);
-                                currentTact.renderingAction = this.renderTactDislayByte1FetchAttr2;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte1FetchAttr2(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[2]);
                                 break;
                             case 2:
                                 currentTact.phase = RenderingPhase.DisplayB1;
-                                currentTact.renderingAction = this.renderTactDislayByte1;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte1(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[3]);
                                 break;
                             case 3:
                                 currentTact.phase = RenderingPhase.DisplayB1;
-                                currentTact.renderingAction = this.renderTactDislayByte1;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte1(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[4]);
                                 break;
                             case 4:
                                 currentTact.phase = RenderingPhase.DisplayB2;
-                                currentTact.renderingAction = this.renderTactDislayByte2;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[5]);
                                 break;
                             case 5:
                                 currentTact.phase = RenderingPhase.DisplayB2;
-                                currentTact.renderingAction = this.renderTactDislayByte2;
+                                currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[6]);
                                 break;
                             case 6:
@@ -443,12 +444,12 @@ export class CommonScreenDevice implements IScreenDevice {
                                     currentTact.phase = RenderingPhase.DisplayB2FetchB1;
                                     currentTact.pixelAddress = this.calcPixelAddress(line, tactInLine + 
                                         this._configuration.pixelDataPrefetchTime);
-                                    currentTact.renderingAction = this.renderTactDislayByte2FetchByte1;
+                                    currentTact.renderingAction = (rt) => this.renderTactDislayByte2FetchByte1(rt);
                                     this.machine.setContentionValue(tact, this.contentionValues[7]);
                                 } else {
                                     // --- Last byte in this line
                                     currentTact.phase = RenderingPhase.DisplayB2;
-                                    currentTact.renderingAction = this.renderTactDislayByte2;
+                                    currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                                 }
                                 break;
                             case 7:
@@ -459,19 +460,19 @@ export class CommonScreenDevice implements IScreenDevice {
                                     currentTact.phase = RenderingPhase.DisplayB2FetchA1;
                                     currentTact.attributeAddress = this.calcAttrAddress(line, tactInLine + 
                                         this._configuration.attributeDataPrefetchTime);
-                                    currentTact.renderingAction = this.renderTactDislayByte2FetchAttr1;
+                                    currentTact.renderingAction = (rt) => this.renderTactDislayByte2FetchAttr1(rt);
                                     this.machine.setContentionValue(tact, this.contentionValues[0]);
                                 } else {
                                     // --- Last byte in this line
                                     currentTact.phase = RenderingPhase.DisplayB2;
-                                    currentTact.renderingAction = this.renderTactDislayByte2;
+                                    currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                                 }
                                 break;
                         }
                     } else {
                         // --- It is the border area
                         currentTact.phase = RenderingPhase.Border;
-                        currentTact.renderingAction = this.renderTactBorder;
+                        currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
 
                         // --- Left or right border?
                         if (line >= this.firstDisplayLine && line < lastDisplayLine) {
@@ -481,12 +482,12 @@ export class CommonScreenDevice implements IScreenDevice {
                                 // --- Yes, prefetch pixel data
                                 currentTact.phase = RenderingPhase.BorderFetchPixel;
                                 currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
-                                currentTact.renderingAction = this.renderTactBorderFetchPixel;
+                                currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[7]);
                             } else if (tactInLine === borderAttrFetchTact) {
                                 currentTact.phase = RenderingPhase.BorderFetchAttr;
                                 currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
-                                currentTact.renderingAction = this.renderTactBorderFetchAttr;
+                                currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
                                 this.machine.setContentionValue(tact, this.contentionValues[0]);
                             }
                         }

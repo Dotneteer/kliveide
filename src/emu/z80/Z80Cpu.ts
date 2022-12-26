@@ -1,3 +1,4 @@
+import { FrameTerminationMode } from "../abstractions/ExecutionContext";
 import { FlagsSetMask, IZ80Cpu, OpCodePrefix } from "../abstractions/IZ80Cpu";
 
 /**
@@ -482,7 +483,9 @@ export class Z80Cpu implements IZ80Cpu {
      /**
      * Get the current frame tact within the machine frame being executed.
      */
-    currentFrameTact: number;
+    get currentFrameTact(): number {
+        return Math.floor(this.frameTacts/this.clockMultiplier);
+    }
 
     /**
      * Get the number of T-states in a machine frame.
@@ -602,7 +605,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.tacts = 0;
         this.frames = 0;
         this.frameTacts = 0;
-        this.currentFrameTact = 0;
         this.setTactsInFrame(1_000_000);
     }
 
@@ -637,7 +639,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.tacts = 0;
         this.frames = 0;
         this.frameTacts = 0;
-        this.currentFrameTact = 0;
         this.setTactsInFrame(1_000_000);
     }
 

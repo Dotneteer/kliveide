@@ -61,7 +61,7 @@ export const initialAppState: AppState = {
     emuViewOptions:  {
         showToolbar: true,
         showStatusBar: true,
-        useEmuView: false,
+        useEmuView: true,
         primaryBarOnRight: false,
         showToolPanels: true,
         toolPanelsOnTop: false,

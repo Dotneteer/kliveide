@@ -49,6 +49,8 @@ export type ThemeProperties = {
 
   // --- Emulator area
   "--bgcolor-emuarea"?: string;
+  "--bgcolor-emuoverlay"?: string;
+  "--color-emuoverlay"?: string;
 
   // --- Document area
   "--bgcolor-docsheader"?: string;

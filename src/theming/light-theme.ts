@@ -46,6 +46,8 @@ export const lightTheme: ThemeProperties = {
 
     // --- Emulator area
     "--bgcolor-emuarea": "#909090",
+    "--bgcolor-emuoverlay": "#303030",
+    "--color-emuoverlay": "lightgreen",
 
     // --- Document area
     "--bgcolor-docsheader": "#d8d8d8",

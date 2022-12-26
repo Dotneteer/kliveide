@@ -48,7 +48,9 @@ export const darkTheme: ThemeProperties = {
 
     // --- Emulator area
     "--bgcolor-emuarea": "#606060",
-
+    "--bgcolor-emuoverlay": "#303030",
+    "--color-emuoverlay": "lightgreen",
+  
     // --- Document area
     "--bgcolor-docsheader": "#282828",
     "--color-doc-icon": "#ffffff",

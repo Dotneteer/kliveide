@@ -16,7 +16,7 @@ export const StatusBar = () => {
     const [machineName, setMachineName] = useState("");
     const counter = useRef(0);
 
-    // --- Reflect controlle changes
+    // --- Reflect controller changes
     useEffect(() => {
         if (machineId) {
             const info = machineService.getMachineInfo();
