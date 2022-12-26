@@ -100,20 +100,20 @@ export class CommonScreenDevice implements IScreenDevice {
      */
     private readonly s_SpectrumColors: number[] = [
         0xFF000000, // Black
-        0xFF0000AA, // Blue
-        0xFFAA0000, // Red
+        0xFFAA0000, // Blue
+        0xFF0000AA, // Red
         0xFFAA00AA, // Magenta
         0xFF00AA00, // Green
-        0xFF00AAAA, // Cyan
-        0xFFAAAA00, // Yellow
+        0xFFAAAA00, // Cyan
+        0xFF00AAAA, // Yellow
         0xFFAAAAAA, // White
         0xFF000000, // Bright Black
-        0xFF0000FF, // Bright Blue
-        0xFFFF0000, // Bright Red
+        0xFFFF0000, // Bright Blue
+        0xFF0000FF, // Bright Red
         0xFFFF00FF, // Bright Magenta
         0xFF00FF00, // Bright Green
-        0xFF00FFFF, // Bright Cyan
-        0xFFFFFF00, // Bright Yellow
+        0xFFFFFF00, // Bright Cyan
+        0xFF00FFFF, // Bright Yellow
         0xFFFFFFFF, // Bright White
     ];
 
@@ -187,7 +187,6 @@ export class CommonScreenDevice implements IScreenDevice {
         // --- Create helper tables for screen rendering
         this.initializeInkAndPaperTables();
         this.initializeRenderingTactTable();
-        console.log(this.renderingTactTable);
     }
 
     /**
@@ -236,7 +235,7 @@ export class CommonScreenDevice implements IScreenDevice {
      * This method signs that a new screen frame has been started
      */
     onNewFrame(): void {
-        this._flashFlag = (this.machine.frames / this.flashToggleFrames) % 2 === 0;
+        this._flashFlag = (Math.floor(this.machine.frames / this.flashToggleFrames)) % 2 === 0;
     }
 
     /**

@@ -1,6 +1,9 @@
 import { useController } from "@/core/useController";
+import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
+import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
 import { useSelector } from "@/emu/StoreProvider";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import styles from "./EmulatorPanel.module.scss";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
@@ -8,6 +11,7 @@ import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 export const EmulatorPanel = () => {
     // --- Access screen information
     const controller = useController();
+    const controllerRef = useRef(controller);
 
     // --- Element references
     const hostElement = useRef<HTMLDivElement>();
@@ -25,10 +29,49 @@ export const EmulatorPanel = () => {
     const [overlay, setOverlay] = useState(null);
     const [showOverlay, setShowOverlay] = useState(true);
 
-    let imageBuffer: ArrayBuffer;
-    let imageBuffer8: Uint8Array;
-    let pixelData: Uint32Array;
+    // --- Variables for display management
+    const imageBuffer = useRef<ArrayBuffer>();
+    const imageBuffer8 = useRef<Uint8Array>();
+    const pixelData = useRef<Uint32Array>();
 
+    // --- Variables for key management
+    const pressedKeys = useRef<Record<string, boolean>>({});
+    const _handleKeyDown = (e: KeyboardEvent) => {
+        handleKey(e, true);
+    }
+    const _handleKeyUp = (e: KeyboardEvent) => {
+        handleKey(e, false);
+    }
+
+    // --- Set up keyboard handling
+    useEffect(() => {
+        // --- Take care that keys reach the engine
+        window.addEventListener("keydown", _handleKeyDown);
+        window.addEventListener("keyup", _handleKeyUp);
+
+        return () => {
+            window.removeEventListener("keydown", _handleKeyDown);
+            window.removeEventListener("keyup", _handleKeyUp);
+        }
+    }, [hostElement.current])
+
+    // --- Reflect controller changes
+    useEffect(() => {
+        // --- We pass the controller instance to the window key handler;
+        controllerRef.current = controller;
+
+        // --- Set up the controller to repfresh the screen
+        if (controller) {
+            controller.frameCompleted.on((completed) => {
+                displayScreenData();
+                if (completed) {
+                    console.log("Audio");
+                }
+            })
+        }
+    }, [controller]);
+
+    // --- Respond to screen dimension changes
     useEffect(() => {
         shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
         shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
@@ -66,15 +109,6 @@ export const EmulatorPanel = () => {
 
     // --- Respond to resizing the main container
     useResizeObserver(hostElement, () => calculateDimensions());
-
-    // --- Reflect controller changes
-    useEffect(() => {
-        if (controller) {
-            controller.frameCompleted.on((completed) => {
-                displayScreenData();
-            })
-        }
-    }, [controller]);
 
     return (
         <div 
@@ -140,9 +174,9 @@ export const EmulatorPanel = () => {
     function configureScreen(): void {
         const dataLen = (shadowCanvasWidth.current ?? 0) * 
             (shadowCanvasHeight.current ?? 0) * 4;
-        imageBuffer = new ArrayBuffer(dataLen);
-        imageBuffer8 = new Uint8Array(imageBuffer);
-        pixelData = new Uint32Array(imageBuffer);
+        imageBuffer.current = new ArrayBuffer(dataLen);
+        imageBuffer8.current = new Uint8Array(imageBuffer.current);
+        pixelData.current = new Uint32Array(imageBuffer.current);
     }
 
     // --- Displays the screen
@@ -172,14 +206,52 @@ export const EmulatorPanel = () => {
         let j = 0;
 
         const screenData = controller?.machine?.getPixelBuffer();
-        for (let i = 0; i < shadowScreenEl.width * shadowScreenEl.height; i++) {
-            pixelData[j++] = screenData[i];
+        const startIndex = shadowScreenEl.width;
+        const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
+        for (let i = startIndex; i < endIndex; i++) {
+            pixelData.current[j++] = screenData[i];
         }
-        shadowImageData.data.set(imageBuffer8);
+        shadowImageData.data.set(imageBuffer8.current);
         shadowCtx.putImageData(shadowImageData, 0, 0);
         if (screenCtx) {
             screenCtx.imageSmoothingEnabled = false;
             screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
         }
     }
+
+    function handleKey(e: KeyboardEvent, isDown: boolean): void {
+        if (!e || controllerRef.current?.state !== MachineControllerState.Running) return;
+        // --- Special key: both Shift released
+        if (
+          (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+          e.shiftKey === false &&
+          !isDown
+        ) {
+          handleMappedKey("ShiftLeft", false);
+          handleMappedKey("ShiftRight", false);
+        } else {
+          handleMappedKey(e.code, isDown);
+        }
+        if (isDown) {
+          pressedKeys.current[e.code.toString()] = true;
+        } else {
+          delete pressedKeys.current[e.code.toString()];
+        }
+      }
+    
+      function handleMappedKey(code: string, isDown: boolean): void {
+        const mapping = spectrumKeyMappings[code];
+        if (!mapping) return;
+        const machine = controllerRef.current?.machine;
+        if (typeof mapping === "string") {
+            machine?.setKeyStatus(SpectrumKeyCode[mapping], isDown);
+        } else {
+            if (mapping.length > 0) {
+                machine?.setKeyStatus(SpectrumKeyCode[mapping[0]], isDown);
+            }
+            if (mapping.length > 1) {
+                machine?.setKeyStatus(SpectrumKeyCode[mapping[1]], isDown);
+            }
+        }
+      }
 }
