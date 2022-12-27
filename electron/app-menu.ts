@@ -18,7 +18,8 @@ import {
     maximizeToolsAction,
     setThemeAction,
     changeToolVisibilityAction,
-    setClockMultiplierAction} from "../common/state/actions";
+    setClockMultiplierAction,
+    setSoundLevelAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
 import { sendFromMainToEmu } from "./MainToEmuMessenger";
@@ -50,6 +51,7 @@ const STEP_INTO = "step_into";
 const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult"
+const SOUND_LEVEL = "sound_level";
 
 /**
  * Creates and sets the main menu of the app
@@ -264,8 +266,8 @@ export function setupMenu(): void {
     });
 
     // --- Prepare the machine menu
-    const multiplierValue = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
-    const multiplierMenu: MenuItemConstructorOptions[] = multiplierValue.map(v => {
+    const multiplierValues = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
+    const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map(v => {
         return {
             id: `${CLOCK_MULT}_${v}`,
             label: v === 1 ? "Normal" : `${v}x`,
@@ -273,6 +275,25 @@ export function setupMenu(): void {
             checked: appState.ideView?.clockMultiplier === v,
             click: async () => {
                 mainStore.dispatch(setClockMultiplierAction(v));
+            },
+        }
+    });
+
+    const soundLevelValues = [
+        { value: 0.0, label: "Mute" },
+        { value: 0.2, label: "Low" },
+        { value: 0.4, label: "Medium" },
+        { value: 0.8, label: "High" },
+        { value: 1.0, label: "Highest" },
+    ];
+    const soundLeveMenu: MenuItemConstructorOptions[] = soundLevelValues.map(v => {
+        return {
+            id: `${SOUND_LEVEL}_${v.value}`,
+            label: v.label,
+            type: "checkbox",
+            checked: appState.ideView?.soundLevel === v.value,
+            click: async () => {
+                mainStore.dispatch(setSoundLevelAction(v.value));
             },
         }
     })
@@ -358,6 +379,12 @@ export function setupMenu(): void {
                 id: CLOCK_MULT,
                 label: "Clock Multiplier",
                 submenu: multiplierMenu
+            },
+            { type: "separator" },
+            {
+                id: SOUND_LEVEL,
+                label: "Sound Level",
+                submenu: soundLeveMenu
             },
         ]
     })

@@ -2,7 +2,7 @@ import styles from "./EmulatorPanel.module.scss";
 import { useController } from "@/core/useController";
 import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector, useStore } from "@/emu/StoreProvider";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
@@ -12,6 +12,7 @@ import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 
 export const EmulatorPanel = () => {
     // --- Access screen information
+    const store = useStore();
     const controller = useController();
     const controllerRef = useRef(controller);
 
@@ -75,7 +76,8 @@ export const EmulatorPanel = () => {
                     const zxSpectrum = controller.machine as IZxSpectrumMachine;
                     if (zxSpectrum?.beeperDevice) {
                         const samples = zxSpectrum.beeperDevice.getAudioSamples();
-                        beeperRenderer.current.storeSamples(samples);
+                        const soundLevel = store.getState()?.ideView?.soundLevel ?? 0.0;
+                        beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
                     }
                 }
             })

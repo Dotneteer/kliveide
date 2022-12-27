@@ -39,6 +39,7 @@ export type IdeView = {
     machineState?: MachineControllerState;
     soundLevel?: number;
     soundMuted?: boolean;
+    savedSoundLevel?: number;
     fastLoad?: boolean;
     clockMultiplier?: number;
     audioSampleRate?: number;
@@ -78,6 +79,8 @@ export const initialAppState: AppState = {
         tools: [],
         soundMuted: false,
         fastLoad: true,
-        clockMultiplier: 1
+        clockMultiplier: 1,
+        soundLevel: 0.8,
+        savedSoundLevel: 0.8
     }
 }

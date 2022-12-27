@@ -138,14 +138,18 @@ import { IdeView } from "./AppState";
         case "MUTE_SOUND": {
             return {
                 ...state,
-                soundMuted: payload.flag
+                soundMuted: payload.flag,
+                soundLevel: payload.flag ? 0.0 : state.savedSoundLevel,
+                savedSoundLevel: payload.flag ? state.soundLevel : state.savedSoundLevel 
             }
         }
     
         case "SET_SOUND_LEVEL": {
             return {
                 ...state,
-                soundLevel: payload.numValue
+                soundLevel: payload.numValue,
+                soundMuted: payload.numValue === 0.0,
+                savedSoundLevel: payload.numValue === 0.0 ? state.soundLevel : payload.numValue
             }
         }
 
