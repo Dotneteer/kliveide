@@ -12,6 +12,7 @@ import {
   activateToolAction, 
   closeAllDocumentsAction, 
   selectActivityAction, 
+  setAudioSamplerateAction, 
   setToolsAction, 
   uiLoadedAction 
 } from "@state/actions";
@@ -53,11 +54,18 @@ const App = () => {
   useEffect(() => {
       if (mounted.current) return;
 
+      // --- Sign that the UI is ready
       mounted.current = true;
       dispatch(uiLoadedAction());
-      dispatch(selectActivityAction(activityRegistry[0].id));
 
-      // --- Prepare registered tools
+      // --- Set the audio sample rate to use
+      const audioCtx = new AudioContext();
+      const sampleRate = audioCtx.sampleRate;
+      audioCtx.close();
+      dispatch(setAudioSamplerateAction(sampleRate));
+
+      // --- Set up the IDE state
+      dispatch(selectActivityAction(activityRegistry[0].id));
       const regTools = toolPanelRegistry.map(t => {
         return {
           id: t.id,

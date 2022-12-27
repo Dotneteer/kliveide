@@ -1,7 +1,7 @@
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
 import { DebugSupport } from "@/emu/machines/DebugSupport";
-import { FILE_PROVIDER } from "@/emu/machines/machine-props";
+import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@/emu/machines/machine-props";
 import { LiteEvent } from "@/emu/utils/lite-event";
 import { machineRegistry } from "@/registry";
 import { setMachineTypeAction } from "@state/actions";
@@ -53,6 +53,7 @@ class MachineService implements IMachineService {
 
         // --- Seup the machine
         machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
+        machine.setMachineProperty(AUDIO_SAMPLE_RATE, this.store.getState()?.ideView?.audioSampleRate);
         await machine.setup();
         this._newInitialized.fire(machine);
 

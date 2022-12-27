@@ -9,7 +9,7 @@ import { IZ80Machine } from "./IZ80Machine";
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
  * the standard components of a ZX Spectrum.
  */
-export interface    IZxSpectrumMachine extends IZ80Machine {
+export interface IZxSpectrumMachine extends IZ80Machine {
     /**
      * Gets the ULA issue number of the ZX Spectrum model (2 or 3)
      */

@@ -6,9 +6,8 @@ import { IScreenDevice } from "../abstractions/IScreenDevice";
 import { ITapeDevice, TapeMode } from "../abstractions/ITapeDevice";
 import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
 import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
+import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
-
-export const AUDIO_SAMPLE_RATE = 48_000;
 
 /**
  * The common core functionality for all ZX Spectrum machines 
@@ -451,7 +450,10 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
 
         // --- Handle audio sample recalculations when the actual clock frequency changes
         if (this.oldClockMultiplier !== this.clockMultiplier) {
-            this.beeperDevice.setAudioSampleRate(AUDIO_SAMPLE_RATE);
+            const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+            if (typeof audioRate === "number") {
+                this.beeperDevice.setAudioSampleRate(audioRate);
+            }
             this.oldClockMultiplier = this.clockMultiplier;
         }
 

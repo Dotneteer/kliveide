@@ -41,6 +41,7 @@ export type IdeView = {
     soundMuted?: boolean;
     fastLoad?: boolean;
     clockMultiplier?: number;
+    audioSampleRate?: number;
 }
 
 /**
@@ -68,7 +69,7 @@ export const initialAppState: AppState = {
         maximizeTools: false,
         showFrameInfo: true,
         showKeyboard: false,
-        showSidebar: true
+        showSidebar: true,
     },
     ideView: {
         sideBarPanels: {},

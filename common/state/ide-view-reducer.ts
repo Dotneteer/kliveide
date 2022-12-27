@@ -163,6 +163,13 @@ import { IdeView } from "./AppState";
             }
         }
 
+        case "SET_AUDIO_SAMPLE_RATE": {
+            return {
+                ...state,
+                audioSampleRate: payload.numValue
+            }
+        }
+
         default:
             return state;
     }

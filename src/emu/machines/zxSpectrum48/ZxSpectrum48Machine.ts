@@ -2,9 +2,9 @@ import { TapeMode } from "@/emu/abstractions/ITapeDevice";
 import { BeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../KeyboardDevice";
-import { KBTYPE_48, REWIND_REQUESTED, TAPE_MODE } from "../machine-props";
+import { AUDIO_SAMPLE_RATE, KBTYPE_48, REWIND_REQUESTED, TAPE_MODE } from "../machine-props";
 import { TapeDevice } from "../tape/TapeDevice";
-import { AUDIO_SAMPLE_RATE, ZxSpectrumBase } from "../ZxSpectrumBase";
+import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrumFloatingBusDevice";
 
 /**
@@ -85,7 +85,10 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
         this.keyboardDevice.reset();
         this.screenDevice.reset();
         this.beeperDevice.reset();
-        this.beeperDevice.setAudioSampleRate(AUDIO_SAMPLE_RATE);
+        const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+        if (typeof audioRate === "number") {
+            this.beeperDevice.setAudioSampleRate(audioRate);
+        }
         this.floatingBusDevice.reset();
         this.tapeDevice.reset();
         

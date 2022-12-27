@@ -1,3 +1,4 @@
+import styles from "./EmulatorPanel.module.scss";
 import { useController } from "@/core/useController";
 import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
@@ -5,8 +6,9 @@ import { useSelector } from "@/emu/StoreProvider";
 import { useResizeObserver } from "@/hooks/useResizeObserver";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
-import styles from "./EmulatorPanel.module.scss";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
+import { AudioRenderer } from "./AudioRenderer";
+import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 
 export const EmulatorPanel = () => {
     // --- Access screen information
@@ -26,6 +28,7 @@ export const EmulatorPanel = () => {
     const shadowCanvasWidth = useRef(0);
     const shadowCanvasHeight = useRef(0);
     const machineState = useSelector(s => s.ideView?.machineState);
+    const audioSampleRate = useSelector(s => s.ideView?.audioSampleRate);
     const [overlay, setOverlay] = useState(null);
     const [showOverlay, setShowOverlay] = useState(true);
 
@@ -42,6 +45,9 @@ export const EmulatorPanel = () => {
     const _handleKeyUp = (e: KeyboardEvent) => {
         handleKey(e, false);
     }
+
+    // --- Variables for audio management
+    const beeperRenderer = useRef<AudioRenderer>();
 
     // --- Set up keyboard handling
     useEffect(() => {
@@ -62,12 +68,25 @@ export const EmulatorPanel = () => {
 
         // --- Set up the controller to repfresh the screen
         if (controller) {
+            // --- Respond to machine frame completion
             controller.frameCompleted.on((completed) => {
                 displayScreenData();
-                if (completed) {
-                    console.log("Audio");
+                if (completed && beeperRenderer.current) {
+                    const zxSpectrum = controller.machine as IZxSpectrumMachine;
+                    if (zxSpectrum?.beeperDevice) {
+                        const samples = zxSpectrum.beeperDevice.getAudioSamples();
+                        beeperRenderer.current.storeSamples(samples);
+                    }
                 }
             })
+
+            // --- Prepare audio
+            if (audioSampleRate) {
+                const samplesPerFrame = controller.machine.tactsInFrame * audioSampleRate / 
+                    controller.machine.baseClockFrequency / controller.machine.clockMultiplier;
+                beeperRenderer.current = new AudioRenderer(samplesPerFrame);
+                console.log(samplesPerFrame);
+            }
         }
     }, [controller]);
 
@@ -83,23 +102,30 @@ export const EmulatorPanel = () => {
         controller?.machine?.screenHeightInPixels
     ]);
 
-    // --- Update overlay according to machine state
+    // --- Respond to execution state changes
     useEffect(() => {
         let overlay = "";
         switch (machineState) {
-          case 0:
+          case MachineControllerState.None:
             overlay =
               "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
             break;
-          case 1:
+
+          case MachineControllerState.Running:
             overlay = controller?.isDebugging ? "Debug mode" : "";
+            beeperRenderer?.current?.play();
             break;
-          case 3:
+
+          case MachineControllerState.Paused:
             overlay = "Paused";
+            beeperRenderer?.current?.pause();
             break;
-          case 5:
+
+          case MachineControllerState.Stopped:
             overlay = "Stopped";
+            beeperRenderer?.current?.closeAudio();
             break;
+
           default:
             overlay = "";
             break;
@@ -223,23 +249,23 @@ export const EmulatorPanel = () => {
         if (!e || controllerRef.current?.state !== MachineControllerState.Running) return;
         // --- Special key: both Shift released
         if (
-          (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
-          e.shiftKey === false &&
-          !isDown
+            (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+            e.shiftKey === false &&
+            !isDown
         ) {
-          handleMappedKey("ShiftLeft", false);
-          handleMappedKey("ShiftRight", false);
+            handleMappedKey("ShiftLeft", false);
+            handleMappedKey("ShiftRight", false);
         } else {
-          handleMappedKey(e.code, isDown);
+            handleMappedKey(e.code, isDown);
         }
         if (isDown) {
-          pressedKeys.current[e.code.toString()] = true;
+            pressedKeys.current[e.code.toString()] = true;
         } else {
-          delete pressedKeys.current[e.code.toString()];
+            delete pressedKeys.current[e.code.toString()];
         }
-      }
+    }
     
-      function handleMappedKey(code: string, isDown: boolean): void {
+    function handleMappedKey(code: string, isDown: boolean): void {
         const mapping = spectrumKeyMappings[code];
         if (!mapping) return;
         const machine = controllerRef.current?.machine;
@@ -253,5 +279,5 @@ export const EmulatorPanel = () => {
                 machine?.setKeyStatus(SpectrumKeyCode[mapping[1]], isDown);
             }
         }
-      }
+    }
 }
