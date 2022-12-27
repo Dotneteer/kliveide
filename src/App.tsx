@@ -12,7 +12,7 @@ import {
   activateToolAction, 
   closeAllDocumentsAction, 
   selectActivityAction, 
-  setAudioSamplerateAction, 
+  setAudioSampleRateAction, 
   setToolsAction, 
   uiLoadedAction 
 } from "@state/actions";
@@ -62,7 +62,7 @@ const App = () => {
       const audioCtx = new AudioContext();
       const sampleRate = audioCtx.sampleRate;
       audioCtx.close();
-      dispatch(setAudioSamplerateAction(sampleRate));
+      dispatch(setAudioSampleRateAction(sampleRate));
 
       // --- Set up the IDE state
       dispatch(selectActivityAction(activityRegistry[0].id));

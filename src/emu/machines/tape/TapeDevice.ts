@@ -38,10 +38,6 @@ const TOO_LONG_PAUSE = 3_500_000;
 // --- The width tolerance of save pulses
 const SAVE_PULSE_TOLERANCE = 24;
 
-// --- Lenght of the data buffer to allocate for the SAVE operation
-const DATA_BUFFER_LENGTH = 0x1_0000;
-
-
 /**
  * This class implements the ZX Spectrum tape device.
  */
@@ -220,9 +216,6 @@ export class TapeDevice implements ITapeDevice {
         }
     }
 
-    /// <summary>
-    /// This method returns the value of the EAR bit read from the tape.
-    /// </summary>
     /**
      * This method returns the value of the EAR bit read from the tape.
      * @returns 

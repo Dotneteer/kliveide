@@ -1,10 +1,12 @@
 import { 
     app, 
     BrowserWindow, 
+    dialog, 
     Menu, 
     MenuItem, 
     MenuItemConstructorOptions 
 } from "electron";
+import * as fs from "fs";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import { 
@@ -24,6 +26,8 @@ import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
 import { sendFromMainToEmu } from "./MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/message-types";
+import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
+import { BinaryReader } from "@utils/BinaryReader";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -52,14 +56,16 @@ const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult"
 const SOUND_LEVEL = "sound_level";
+const SELECT_TAPE_FILE = "select_tape_file";
 
 /**
  * Creates and sets the main menu of the app
  */
-export function setupMenu(): void {
+export function setupMenu(browserWindow: BrowserWindow): void {
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     const appState = mainStore.getState();
     const tools = appState.ideView?.tools ?? [];
+    const execState = appState?.ideView?.machineState;
 
     /**
      * Application system menu on MacOS
@@ -298,6 +304,14 @@ export function setupMenu(): void {
         }
     })
 
+    // --- Calculate flags from the current machine's execution state
+    const machineWaits = execState === MachineControllerState.None || 
+        execState === MachineControllerState.Paused || 
+        execState === MachineControllerState.Stopped;
+    const machineRuns = execState === MachineControllerState.Running;
+    const machinePaused = execState === MachineControllerState.Paused;
+    const machineRestartable = machineRuns || machinePaused;
+
     template.push({
         label: "Machine",
         submenu: [
@@ -320,6 +334,7 @@ export function setupMenu(): void {
             {
                 id: START_MACHINE,
                 label: "Start",
+                enabled: machineWaits,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("start"));
                 },
@@ -327,6 +342,7 @@ export function setupMenu(): void {
             {
                 id: PAUSE_MACHINE,
                 label: "Pause",
+                enabled: machineRuns,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("pause"));
                 },
@@ -334,6 +350,7 @@ export function setupMenu(): void {
             {
                 id: STOP_MACHINE,
                 label: "Stop",
+                enabled: machineRestartable,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("stop"));
                 },
@@ -341,6 +358,7 @@ export function setupMenu(): void {
             {
                 id: RESTART_MACHINE,
                 label: "Restart",
+                enabled: machineRestartable,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("restart"));
                 },
@@ -349,6 +367,7 @@ export function setupMenu(): void {
             {
                 id: DEBUG_MACHINE,
                 label: "Start with Debugging",
+                enabled: machineWaits,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("debug"));
                 },
@@ -356,6 +375,7 @@ export function setupMenu(): void {
             {
                 id: STEP_INTO,
                 label: "Step Into",
+                enabled: machinePaused,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("stepInto"));
                 },
@@ -363,6 +383,7 @@ export function setupMenu(): void {
             {
                 id: STEP_OVER,
                 label: "Step Over",
+                enabled: machinePaused,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("stepOver"));
                 },
@@ -370,6 +391,7 @@ export function setupMenu(): void {
             {
                 id: STEP_OUT,
                 label: "Step Out",
+                enabled: machinePaused,
                 click: async () => {
                     await sendFromMainToEmu(createMachineCommand("stepOut"));
                 },
@@ -386,6 +408,14 @@ export function setupMenu(): void {
                 label: "Sound Level",
                 submenu: soundLeveMenu
             },
+            { type: "separator" },
+            {
+                id: SELECT_TAPE_FILE,
+                label: "Select Tape File...",
+                click: async () => {
+                    await setTapeFile(browserWindow);
+                },
+            },
         ]
     })
 
@@ -394,43 +424,34 @@ export function setupMenu(): void {
 }
 
 /**
- * Update the state of menu items whenver the app state changes.
+ * Sets the tape file to use with the machine
+ * @param browserWindow Host browser window
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-export function updateMenuState(): void {
-    setupMenu();
-    
-    const appState = mainStore.getState();
-    const getMenuItem = (id: string) => Menu.getApplicationMenu().getMenuItemById(id);
+async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[] | undefined> {
+    const dialogResult = await dialog.showOpenDialog(browserWindow, {
+        title: "Select Tape File",
+        defaultPath: app.getPath("home"),
+        filters: [
+            { name: 'Tape Files', extensions: ["tap", "tzx"] },
+            { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: [
+            "openFile"
+        ]
+    });
+    if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
 
-    // --- Disable IDE-related items in EMU mode
-    const enableIdeMenus = !appState.emuViewOptions.useEmuView;
-    getMenuItem(TOGGLE_PRIMARY_BAR_RIGHT).enabled = enableIdeMenus;
-    getMenuItem(TOGGLE_PRIMARY_BAR_RIGHT).checked = appState.emuViewOptions.primaryBarOnRight;
-    getMenuItem(TOGGLE_SIDE_BAR).enabled = enableIdeMenus;
-    getMenuItem(TOGGLE_SIDE_BAR).checked = appState.emuViewOptions.showSidebar;
-    getMenuItem(TOGGLE_TOOL_PANELS).enabled = enableIdeMenus;
-    getMenuItem(TOGGLE_TOOL_PANELS).checked = appState.emuViewOptions.showToolPanels;
-    getMenuItem(TOGGLE_TOOLS_TOP).enabled = enableIdeMenus;
-    getMenuItem(TOGGLE_TOOLS_TOP).checked = appState.emuViewOptions.toolPanelsOnTop;
-    getMenuItem(MAXIMIZE_TOOLS).enabled = enableIdeMenus;
-    getMenuItem(MAXIMIZE_TOOLS).checked = appState.emuViewOptions.maximizeTools;
-    getMenuItem(LIGHT_THEME).checked = appState.theme === "light";
-    getMenuItem(DARK_THEME).checked = appState.theme === "dark";
-
-    // --- Machine-related items
-    const state = appState.ideView.machineState;
-    getMenuItem(START_MACHINE).enabled = 
-    getMenuItem(DEBUG_MACHINE).enabled = 
-        state === MachineControllerState.None || 
-        state === MachineControllerState.Paused || 
-        state === MachineControllerState.Stopped;
-    getMenuItem(PAUSE_MACHINE).enabled = state === MachineControllerState.Running;
-    getMenuItem(STOP_MACHINE).enabled = 
-    getMenuItem(RESTART_MACHINE).enabled =
-        state === MachineControllerState.Running || 
-        state === MachineControllerState.Paused;
-    getMenuItem(STEP_INTO).enabled = 
-    getMenuItem(STEP_OVER).enabled = 
-    getMenuItem(STEP_OUT).enabled = 
-        state === MachineControllerState.Paused;
+    // --- Read the file
+    try {
+        const contents = fs.readFileSync(dialogResult.filePaths[0]);
+        await sendFromMainToEmu({
+            type: "EmuSetTapeFile",
+            contents
+        });
+    } catch (err) {
+        dialog.showErrorBox(
+            "Error while reading tape file",
+            `Reading file ${dialogResult.filePaths[0]} resulted in error: ${err.message}`);
+    }
 }

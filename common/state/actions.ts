@@ -164,9 +164,14 @@ export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
     payload: { numValue },
 });
 
-export const setAudioSamplerateAction: ActionCreator = (numValue: number) => ({
+export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
     type: "SET_AUDIO_SAMPLE_RATE",
     payload: { numValue },
+});
+
+export const setTapFileAction: ActionCreator = (file: string) => ({
+    type: "SET_TAPE_FILE",
+    payload: { file },
 });
 
 

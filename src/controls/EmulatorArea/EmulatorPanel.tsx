@@ -87,7 +87,6 @@ export const EmulatorPanel = () => {
                 const samplesPerFrame = controller.machine.tactsInFrame * audioSampleRate / 
                     controller.machine.baseClockFrequency / controller.machine.clockMultiplier;
                 beeperRenderer.current = new AudioRenderer(samplesPerFrame);
-                console.log(samplesPerFrame);
             }
         }
     }, [controller]);

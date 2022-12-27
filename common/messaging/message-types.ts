@@ -61,6 +61,14 @@ export interface EmuMachineCommandRequest extends MessageBase {
   command: MachineCommand;
 }
 
+/**
+ * The main process sends a tape file to the emulator
+ */
+export interface EmuSetTapeFileRequest extends MessageBase {
+  type: "EmuSetTapeFile";
+  contents: Uint8Array;
+}
+
 // ================================================================================================
 // IDE or Emu to main requests
 
@@ -116,6 +124,7 @@ export type RequestMessage =
   | ForwardActionRequest
   | EmuSetMachineTypeRequest
   | EmuMachineCommandRequest
+  | EmuSetTapeFileRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest;
 

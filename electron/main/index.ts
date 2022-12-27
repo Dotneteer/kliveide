@@ -3,7 +3,7 @@ import { Unsubscribe } from '@state/redux-light'
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
-import { setupMenu, updateMenuState } from '../app-menu'
+import { setupMenu } from '../app-menu'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
 import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
@@ -51,13 +51,13 @@ async function createWindow() {
   registerMainToEmuMessenger(emuWindow);
 
   // --- Prepare the main menu. Update items on application state change
-  setupMenu();
+  setupMenu(emuWindow);
   storeUnsubscribe = mainStore.subscribe(async () => {
     if (!machineTypeInitialized) {
       machineTypeInitialized = true;
       await setMachineType("sp48");
     }
-    updateMenuState();
+    setupMenu(emuWindow);
   });
 
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298

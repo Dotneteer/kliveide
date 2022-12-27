@@ -56,6 +56,10 @@ import { IdeServices } from "./ide/abstractions";
                 }
             }
             break;
+
+        case "EmuSetTapeFile":
+            console.log(`Tape file received.`, message.contents);
+            break;
     }
     return defaultResponse();
 }

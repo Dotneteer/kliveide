@@ -34,6 +34,7 @@ export type Payload = {
     tools: ToolState[];
     state: MachineControllerState;
     numValue: number;
+    file: string;
 }
 
 /**
