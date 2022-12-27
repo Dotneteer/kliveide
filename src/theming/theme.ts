@@ -36,6 +36,8 @@ export type ThemeProperties = {
 
   // --- Statusbar
   "--bgcolor-statusbar"?: string;
+  "--color-statusbar-label"?: string;
+  "--color-statusbar-icon"?: string;
 
   // --- Sitebar
   "--bgcolor-sitebar"?: string;
@@ -47,6 +49,8 @@ export type ThemeProperties = {
 
   // --- Emulator area
   "--bgcolor-emuarea"?: string;
+  "--bgcolor-emuoverlay"?: string;
+  "--color-emuoverlay"?: string;
 
   // --- Document area
   "--bgcolor-docsheader"?: string;

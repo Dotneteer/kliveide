@@ -1,3 +1,4 @@
+import { FrameTerminationMode } from "../abstractions/ExecutionContext";
 import { FlagsSetMask, IZ80Cpu, OpCodePrefix } from "../abstractions/IZ80Cpu";
 
 /**
@@ -27,6 +28,8 @@ export class Z80Cpu implements IZ80Cpu {
     private _sp: number;
     private _wh: number;
     private _wl: number;
+    private _tacts: number;
+    private _tactsInDisplayLine: number;
 
     // ----------------------------------------------------------------------------------------------------------------
     // Register access
@@ -480,17 +483,34 @@ export class Z80Cpu implements IZ80Cpu {
      /**
      * Get the current frame tact within the machine frame being executed.
      */
-    currentFrameTact: number;
+    get currentFrameTact(): number {
+        return Math.floor(this.frameTacts/this.clockMultiplier);
+    }
 
     /**
      * Get the number of T-states in a machine frame.
      */
-    tactsInFrame: number;
+    get tactsInFrame(): number {
+        return this._tacts;
+    }
+
+    /**
+     * Sets the number of tacts within a single machine frame
+     * @param tacts Tacts to set
+     */
+    setTactsInFrame(tacts: number): void {
+        this._tacts = tacts;
+    }
 
     /**
      * Get the number of T-states in a display line (use -1, if this info is not available)
      */
-    tactsInDisplayLine: number;
+    get tactsInDisplayLine(): number {
+        return this._tactsInDisplayLine;
+    }
+    set tactsInDisplayLine(value: number) {
+        this._tactsInDisplayLine = value;
+    }
 
     /**
      * This flag indicates if bit 3 or 5 of Register F has been updated. We need to keep this value, as we utilize
@@ -585,8 +605,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.tacts = 0;
         this.frames = 0;
         this.frameTacts = 0;
-        this.currentFrameTact = 0;
-        this.tactsInFrame = 1_000_000;
+        this.setTactsInFrame(1_000_000);
     }
 
     /**
@@ -620,8 +639,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.tacts = 0;
         this.frames = 0;
         this.frameTacts = 0;
-        this.currentFrameTact = 0;
-        this.tactsInFrame = 1_000_000;
+        this.setTactsInFrame(1_000_000);
     }
 
     /**

@@ -1,21 +1,24 @@
 {
   "compilerOptions": {
     "composite": true,
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
     "paths": {
 			"@/*": ["./src/*"],
       "@styles/*": ["./src/assets/styles/*"],
       "@messaging/*": ["./common/messaging/*"],
-      "@state/*": ["./common/state/*"]
+      "@state/*": ["./common/state/*"],
+      "@utils/*": ["./common/utils/*"],
 		},
   },
   "include": [
     "package.json", 
     "electron", 
-    "src/emu/abstractions", 
-    "src/emu/z80"
+    "src/**/*",
+    "common/**/*"
   ]
 }

@@ -1,16 +1,17 @@
-process.env.DIST_ELECTRON = join(__dirname, '../..')
-process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
-process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
-
 import { RequestMessage } from '@messaging/message-types'
 import { Unsubscribe } from '@state/redux-light'
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { setupMenu, updateMenuState } from '../app-menu'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
+import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
 import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
+
+process.env.DIST_ELECTRON = join(__dirname, '../..')
+process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
+process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -25,6 +26,7 @@ if (!app.requestSingleInstanceLock()) {
 
 let emuWindow: BrowserWindow | null = null;
 let storeUnsubscribe: Unsubscribe | undefined;
+let machineTypeInitialized = false;
 
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js')
@@ -50,7 +52,11 @@ async function createWindow() {
 
   // --- Prepare the main menu. Update items on application state change
   setupMenu();
-  storeUnsubscribe = mainStore.subscribe(() => {
+  storeUnsubscribe = mainStore.subscribe(async () => {
+    if (!machineTypeInitialized) {
+      machineTypeInitialized = true;
+      await setMachineType("sp48");
+    }
     updateMenuState();
   });
 
@@ -76,13 +82,13 @@ async function createWindow() {
 
 app.whenReady().then(createWindow)
 
-app.on('window-all-closed', () => {
+app.on("window-all-closed", () => {
   storeUnsubscribe();
   emuWindow = null
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('second-instance', () => {
+app.on("second-instance", () => {
   if (emuWindow) {
     // Focus on the main window if the user tried to open another
     if (emuWindow.isMinimized()) emuWindow.restore()
@@ -90,11 +96,13 @@ app.on('second-instance', () => {
   }
 })
 
-app.on('activate', () => {
+app.on("activate", () => {
   const allWindows = BrowserWindow.getAllWindows()
   if (allWindows.length) {
     allWindows[0].focus()
   } else {
+    // --- Let's initialize the machine type again after creating the window
+    machineTypeInitialized = false;
     createWindow();
   }
 })

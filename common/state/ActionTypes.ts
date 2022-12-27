@@ -33,4 +33,12 @@
     ACTIVATE_TOOL: null;
     CHANGE_TOOL_VISIBILITY: null;
     CHANGE_TOOL_STATE: null;
+
+    SET_MACHINE_TYPE: null;
+    SET_MACHINE_STATE: null;
+    MUTE_SOUND: null;
+    SET_SOUND_LEVEL: null;
+    SET_FAST_LOAD: null;
+    SET_CLOCK_MULTIPLIER: null;
+    SET_AUDIO_SAMPLE_RATE: null;
 }

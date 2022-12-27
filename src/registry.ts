@@ -10,8 +10,9 @@ import { cpuPanelRenderer } from "./ide/CpuPanel";
 import { explorerPanelRenderer } from "./ide/ExplorerPanel";
 import { ulaPanelRenderer } from "./ide/UlaPanel";
 import { breakpointsPanelRenderer } from "./ide/BreakpointsPanel";
-import { ToolRendereInfo } from "./ide/abstractions";
+import { MachineInfo, ToolRendereInfo } from "./ide/abstractions";
 import { outputPanelRenderer } from "./controls/ToolArea/OutputPanel";
+import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -80,4 +81,13 @@ export const toolPanelRegistry: ToolRendereInfo[] = [
     name: "Commands",
     renderer: outputPanelRenderer
   },
+]
+
+// --- Set up machine type registry
+export const machineRegistry: MachineInfo[] = [
+  {
+    machineId: "sp48",
+    displayName: "ZX Spectrum 48K",
+    factory: () => new ZxSpectrum48Machine()
+  }
 ]

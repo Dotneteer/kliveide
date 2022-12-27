@@ -35,6 +35,8 @@ export const darkTheme: ThemeProperties = {
 
     // --- Statusbar
     "--bgcolor-statusbar": "#007acc",
+    "--color-statusbar-label": "#ffffff",
+    "--color-statusbar-icon": "#ffffff",
 
     // --- Sitebar
     "--bgcolor-sitebar": "#282828",
@@ -46,7 +48,9 @@ export const darkTheme: ThemeProperties = {
 
     // --- Emulator area
     "--bgcolor-emuarea": "#606060",
-
+    "--bgcolor-emuoverlay": "#303030",
+    "--color-emuoverlay": "lightgreen",
+  
     // --- Document area
     "--bgcolor-docsheader": "#282828",
     "--color-doc-icon": "#ffffff",

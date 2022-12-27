@@ -34,6 +34,8 @@ export const lightTheme: ThemeProperties = {
 
     // --- Statusbar
     "--bgcolor-statusbar": "#61a4d0",
+    "--color-statusbar-label": "#000000",
+    "--color-statusbar-icon": "#000000",
 
     // --- Sitebar
     "--bgcolor-sitebar": "#d8d8d8",
@@ -44,6 +46,8 @@ export const lightTheme: ThemeProperties = {
 
     // --- Emulator area
     "--bgcolor-emuarea": "#909090",
+    "--bgcolor-emuoverlay": "#303030",
+    "--color-emuoverlay": "lightgreen",
 
     // --- Document area
     "--bgcolor-docsheader": "#d8d8d8",

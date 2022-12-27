@@ -17,7 +17,13 @@ import {
     toolPanelsOnTopAction,
     maximizeToolsAction,
     setThemeAction,
-    changeToolVisibilityAction} from "../common/state/actions";
+    changeToolVisibilityAction,
+    setClockMultiplierAction,
+    setSoundLevelAction} from "../common/state/actions";
+import { setMachineType } from "./machines";
+import { MachineControllerState } from "../common/state/MachineControllerState";
+import { sendFromMainToEmu } from "./MainToEmuMessenger";
+import { createMachineCommand } from "../common/messaging/message-types";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -33,6 +39,19 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+
+const MACHINE_TYPES = "machine_types";
+const MACHINE_SP48 = "machine_sp48";
+const START_MACHINE = "start";
+const PAUSE_MACHINE = "pause";
+const STOP_MACHINE = "stop";
+const RESTART_MACHINE = "restart";
+const DEBUG_MACHINE = "debug";
+const STEP_INTO = "step_into";
+const STEP_OVER = "step_over";
+const STEP_OUT = "step_out";
+const CLOCK_MULT = "clock_mult"
+const SOUND_LEVEL = "sound_level";
 
 /**
  * Creates and sets the main menu of the app
@@ -96,7 +115,7 @@ export function setupMenu(): void {
         }
     });
 
-    // --- Preapre the view menu
+    // --- Prepare the view menu
     const viewSubMenu: MenuItemConstructorOptions[] = [
         { role: "resetZoom" },
         { role: "zoomIn" },
@@ -246,6 +265,130 @@ export function setupMenu(): void {
         submenu: viewSubMenu,
     });
 
+    // --- Prepare the machine menu
+    const multiplierValues = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
+    const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map(v => {
+        return {
+            id: `${CLOCK_MULT}_${v}`,
+            label: v === 1 ? "Normal" : `${v}x`,
+            type: "checkbox",
+            checked: appState.ideView?.clockMultiplier === v,
+            click: async () => {
+                mainStore.dispatch(setClockMultiplierAction(v));
+            },
+        }
+    });
+
+    const soundLevelValues = [
+        { value: 0.0, label: "Mute" },
+        { value: 0.2, label: "Low" },
+        { value: 0.4, label: "Medium" },
+        { value: 0.8, label: "High" },
+        { value: 1.0, label: "Highest" },
+    ];
+    const soundLeveMenu: MenuItemConstructorOptions[] = soundLevelValues.map(v => {
+        return {
+            id: `${SOUND_LEVEL}_${v.value}`,
+            label: v.label,
+            type: "checkbox",
+            checked: appState.ideView?.soundLevel === v.value,
+            click: async () => {
+                mainStore.dispatch(setSoundLevelAction(v.value));
+            },
+        }
+    })
+
+    template.push({
+        label: "Machine",
+        submenu: [
+            {
+                id: MACHINE_TYPES,
+                label: "Machine type",
+                submenu: [
+                    {
+                        id: MACHINE_SP48,
+                        label: "ZX Spectrum 48K",
+                        type: "checkbox",
+                        checked: appState.ideView?.machineId === "sp48",
+                        click: async () => {
+                            await setMachineType("sp48");
+                        },
+                    },
+                ]
+            },
+            { type: "separator"},
+            {
+                id: START_MACHINE,
+                label: "Start",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("start"));
+                },
+            },
+            {
+                id: PAUSE_MACHINE,
+                label: "Pause",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("pause"));
+                },
+            },
+            {
+                id: STOP_MACHINE,
+                label: "Stop",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("stop"));
+                },
+            },
+            {
+                id: RESTART_MACHINE,
+                label: "Restart",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("restart"));
+                },
+            },
+            { type: "separator"},
+            {
+                id: DEBUG_MACHINE,
+                label: "Start with Debugging",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("debug"));
+                },
+            },
+            {
+                id: STEP_INTO,
+                label: "Step Into",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("stepInto"));
+                },
+            },
+            {
+                id: STEP_OVER,
+                label: "Step Over",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("stepOver"));
+                },
+            },
+            {
+                id: STEP_OUT,
+                label: "Step Out",
+                click: async () => {
+                    await sendFromMainToEmu(createMachineCommand("stepOut"));
+                },
+            },
+            { type: "separator" },
+            {
+                id: CLOCK_MULT,
+                label: "Clock Multiplier",
+                submenu: multiplierMenu
+            },
+            { type: "separator" },
+            {
+                id: SOUND_LEVEL,
+                label: "Sound Level",
+                submenu: soundLeveMenu
+            },
+        ]
+    })
+
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
 }
@@ -273,4 +416,21 @@ export function updateMenuState(): void {
     getMenuItem(MAXIMIZE_TOOLS).checked = appState.emuViewOptions.maximizeTools;
     getMenuItem(LIGHT_THEME).checked = appState.theme === "light";
     getMenuItem(DARK_THEME).checked = appState.theme === "dark";
+
+    // --- Machine-related items
+    const state = appState.ideView.machineState;
+    getMenuItem(START_MACHINE).enabled = 
+    getMenuItem(DEBUG_MACHINE).enabled = 
+        state === MachineControllerState.None || 
+        state === MachineControllerState.Paused || 
+        state === MachineControllerState.Stopped;
+    getMenuItem(PAUSE_MACHINE).enabled = state === MachineControllerState.Running;
+    getMenuItem(STOP_MACHINE).enabled = 
+    getMenuItem(RESTART_MACHINE).enabled =
+        state === MachineControllerState.Running || 
+        state === MachineControllerState.Paused;
+    getMenuItem(STEP_INTO).enabled = 
+    getMenuItem(STEP_OVER).enabled = 
+    getMenuItem(STEP_OUT).enabled = 
+        state === MachineControllerState.Paused;
 }

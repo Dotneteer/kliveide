@@ -17,6 +17,7 @@ export default defineConfig({
       '@styles': path.join(__dirname, 'src/assets/styles'),
       '@messaging': path.join(__dirname, 'common/messaging'),
       '@state': path.join(__dirname, 'common/state'),
+      '@utils': path.join(__dirname, 'common/utils'),
     },
   },
   plugins: [

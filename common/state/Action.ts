@@ -1,3 +1,4 @@
+import { MachineControllerState } from "@state/MachineControllerState";
 import { DocumentInfo, DocumentState, ToolState } from "@/ide/abstractions";
 import { ActionTypes } from "./ActionTypes"
 import { SideBarPanelState } from "./AppState";
@@ -31,6 +32,8 @@ export type Payload = {
     index: number;
     tool: ToolState;
     tools: ToolState[];
+    state: MachineControllerState;
+    numValue: number;
 }
 
 /**

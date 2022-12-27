@@ -7,15 +7,24 @@ import { SplitPanel } from "./controls/SplitPanel/SplitPanel";
 import { StatusBar } from "./controls/StatusBar/StatusBar";
 import { ToolArea } from "./controls/ToolArea/ToolArea";
 import { Toolbar } from "./controls/Toolbar/Toolbar";
-import { useEffect, useRef, useState } from "react";
-import { activateToolAction, closeAllDocumentsAction, selectActivityAction, setToolsAction, uiLoadedAction } from "@state/actions";
+import { useEffect, useRef } from "react";
+import { 
+  activateToolAction, 
+  closeAllDocumentsAction, 
+  selectActivityAction, 
+  setAudioSamplerateAction, 
+  setToolsAction, 
+  uiLoadedAction 
+} from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useDispatch, useSelector } from "./emu/StoreProvider";
 import { activityRegistry, toolPanelRegistry } from "./registry";
 import { useIdeServices } from "./ide/IdeServicesProvider";
-import { ToolInfo } from "./ide/abstractions";
+import { IdeServices, ToolInfo } from "./ide/abstractions";
+
+let singletonIdeServices: IdeServices;
 
 const App = () => {
   // --- Indicate the App has been loaded
@@ -34,17 +43,29 @@ const App = () => {
   const primaryBarsPos = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? "right" : "left";
   const docPanelsPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
-  const ideService = useIdeServices();
+  const ideServices = useIdeServices();
+
+  // --- Use the current instance of the IDE services
+  useEffect(() => {
+    singletonIdeServices = ideServices;
+  }, [ideServices])
 
   // --- Signify that the UI has been loaded
   useEffect(() => {
       if (mounted.current) return;
 
+      // --- Sign that the UI is ready
       mounted.current = true;
       dispatch(uiLoadedAction());
-      dispatch(selectActivityAction(activityRegistry[0].id));
 
-      // --- Prepare registered tools
+      // --- Set the audio sample rate to use
+      const audioCtx = new AudioContext();
+      const sampleRate = audioCtx.sampleRate;
+      audioCtx.close();
+      dispatch(setAudioSamplerateAction(sampleRate));
+
+      // --- Set up the IDE state
+      dispatch(selectActivityAction(activityRegistry[0].id));
       const regTools = toolPanelRegistry.map(t => {
         return {
           id: t.id,
@@ -58,15 +79,13 @@ const App = () => {
       // --- Temporary: open a few document panels
       dispatch(closeAllDocumentsAction());
       for (let i = 0; i < 5; i++) {
-        ideService.documentService.openDocument({
+        ideServices.documentService.openDocument({
           id: `doc-${i}`,
           name: `Document #${i}`,
           type: "CodeEditor",
           isReadOnly: i === 2
         }, i >= 3);
       }
-
-
 
       return () => {
           mounted.current = false;
@@ -118,7 +137,7 @@ export default App
 
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
-  const response = await processMainToEmuMessages(msg);
+  const response = await processMainToEmuMessages(msg, singletonIdeServices);
   response.correlationId = msg.correlationId;
   ipcRenderer.send("MainToEmuResponse", response);
 });

@@ -224,12 +224,18 @@ export interface IZ80Cpu
     /**
      * Get the number of T-states in a machine frame.
      */
-    tactsInFrame: number;
+    readonly tactsInFrame: number;
+
+    /**
+     * Sets the number of tacts within a single machine frame
+     * @param tacts Tacts to set
+     */
+    setTactsInFrame(tacts: number): void;
     
     /**
      * Get the number of T-states in a display line (use -1, if this info is not available)
      */
-    tactsInDisplayLine: number;
+    get tactsInDisplayLine(): number;
 
     /**
      * This flag indicates if bit 3 or 5 of Register F has been updated. We need to keep this value, as we utilize

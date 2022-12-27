@@ -1,3 +1,4 @@
+import { MachineControllerState } from "@state/MachineControllerState";
 import { DocumentState, ToolState } from "@/ide/abstractions";
 
 /**
@@ -34,6 +35,14 @@ export type IdeView = {
     activeDocumentIndex?: number;
     tools?: ToolState[];
     activeTool?: string;
+    machineId?: string;
+    machineState?: MachineControllerState;
+    soundLevel?: number;
+    soundMuted?: boolean;
+    savedSoundLevel?: number;
+    fastLoad?: boolean;
+    clockMultiplier?: number;
+    audioSampleRate?: number;
 }
 
 /**
@@ -54,19 +63,24 @@ export const initialAppState: AppState = {
     emuViewOptions:  {
         showToolbar: true,
         showStatusBar: true,
-        useEmuView: false,
+        useEmuView: true,
         primaryBarOnRight: false,
         showToolPanels: true,
         toolPanelsOnTop: false,
         maximizeTools: false,
         showFrameInfo: true,
         showKeyboard: false,
-        showSidebar: true
+        showSidebar: true,
     },
     ideView: {
         sideBarPanels: {},
         openDocuments: [],
         activeDocumentIndex: -1,
         tools: [],
+        soundMuted: false,
+        fastLoad: true,
+        clockMultiplier: 1,
+        soundLevel: 0.8,
+        savedSoundLevel: 0.8
     }
 }
