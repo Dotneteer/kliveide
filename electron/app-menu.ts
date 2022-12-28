@@ -7,6 +7,7 @@ import {
     MenuItemConstructorOptions 
 } from "electron";
 import * as fs from "fs";
+import * as path from "path";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import { 
@@ -21,13 +22,13 @@ import {
     setThemeAction,
     changeToolVisibilityAction,
     setClockMultiplierAction,
-    setSoundLevelAction} from "../common/state/actions";
+    setSoundLevelAction,
+    setTapeFileAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
 import { sendFromMainToEmu } from "./MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/message-types";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
-import { BinaryReader } from "@utils/BinaryReader";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -429,9 +430,11 @@ export function setupMenu(browserWindow: BrowserWindow): void {
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[] | undefined> {
+    const lastFile = mainStore.getState()?.ideView?.tapeFile;
+    const defaultPath = lastFile ? path.dirname(lastFile) : app.getPath("home");
     const dialogResult = await dialog.showOpenDialog(browserWindow, {
         title: "Select Tape File",
-        defaultPath: app.getPath("home"),
+        defaultPath,
         filters: [
             { name: 'Tape Files', extensions: ["tap", "tzx"] },
             { name: 'All Files', extensions: ['*'] }
@@ -443,15 +446,21 @@ async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[
     if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
 
     // --- Read the file
+    const filename = dialogResult.filePaths[0];
+
+    // --- Store the last selected tape file
+    mainStore.dispatch(setTapeFileAction(filename));
+
     try {
-        const contents = fs.readFileSync(dialogResult.filePaths[0]);
+        const contents = fs.readFileSync(filename);
         await sendFromMainToEmu({
             type: "EmuSetTapeFile",
+            file: filename,
             contents
         });
     } catch (err) {
         dialog.showErrorBox(
             "Error while reading tape file",
-            `Reading file ${dialogResult.filePaths[0]} resulted in error: ${err.message}`);
+            `Reading file ${filename} resulted in error: ${err.message}`);
     }
 }

@@ -23,7 +23,7 @@ export class TapReader {
      * Reads in the content of the TAP file so that it can be played
      * @returns True, if read was successful; otherwise, false
      */
-    readContent(): boolean {
+    readContent(): string | null {
         try
         {
             while (this.reader.position !== this.reader.length) {
@@ -35,10 +35,10 @@ export class TapReader {
                 }
                 this.dataBlocks.push(tapBlock);
             }
-            return true;
-        } catch {
+            return null;
+        } catch (err) {
             // --- This exception is intentionally ignored
-            return false;
+            return err.message;
         }
     }
 }

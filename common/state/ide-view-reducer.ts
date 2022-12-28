@@ -174,6 +174,13 @@ import { IdeView } from "./AppState";
             }
         }
 
+        case "SET_TAPE_FILE": {
+            return {
+                ...state,
+                tapeFile: payload.file
+            }
+        }
+
         default:
             return state;
     }

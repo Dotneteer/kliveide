@@ -109,7 +109,7 @@ app.on("activate", () => {
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
-  const response = await processEmuToMainMessages(msg);
+  const response = await processEmuToMainMessages(msg, emuWindow);
   response.correlationId = msg.correlationId;
   if (emuWindow?.isDestroyed() === false) {
     emuWindow.webContents.send("EmuToMainResponse", response);

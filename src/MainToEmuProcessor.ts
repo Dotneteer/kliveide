@@ -1,5 +1,11 @@
-import { defaultResponse, RequestMessage, ResponseMessage } from "@messaging/message-types";
+import { defaultResponse, EmuSetTapeFileRequest, RequestMessage, ResponseMessage } from "@messaging/message-types";
+import { BinaryReader } from "@utils/BinaryReader";
 import { emuStore } from "./emu/emu-store";
+import { sendFromEmuToMain } from "./emu/EmuToMainMessenger";
+import { TAPE_DATA } from "./emu/machines/machine-props";
+import { TapeDataBlock } from "./emu/machines/tape/abstractions";
+import { TapReader } from "./emu/machines/tape/TapReader";
+import { TzxReader } from "./emu/machines/tape/TzxFileFormatLoader";
 import { IdeServices } from "./ide/abstractions";
 
 /**
@@ -58,8 +64,48 @@ import { IdeServices } from "./ide/abstractions";
             break;
 
         case "EmuSetTapeFile":
-            console.log(`Tape file received.`, message.contents);
+            await setTapeFile(message);
             break;
     }
     return defaultResponse();
+
+    // --- Parses and sets the tape file
+    async function setTapeFile(message: EmuSetTapeFileRequest): Promise<void> {
+        // --- Try to read a .TZX file
+        let dataBlocks: TapeDataBlock[] = [];
+        const reader = new BinaryReader(message.contents);
+        const tzxReader = new TzxReader(reader);
+        let result = tzxReader.readContent();
+        if (result) {
+            reader.seek(0);
+            const tapReader = new TapReader(reader);
+            result = tapReader.readContent();
+            if (result) {
+                await sendFromEmuToMain({
+                    type: "MainDisplayMessageBox",
+                    messageType: "error",
+                    title: "Tape file error",
+                    message: `Error while processing tape file ${message.file} (${result})`
+                });
+                return;
+            } else {
+                dataBlocks = tapReader.dataBlocks;
+            }
+        } else {
+            dataBlocks = tzxReader.dataBlocks.map(b => b.getDataBlock()).filter(b => b);
+        }
+    
+        // --- Ok, pass the tape file data blocks to the machine
+        const controller = machineService.getMachineController();
+        controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
+
+        // --- Done.
+        await sendFromEmuToMain({
+            type: "MainDisplayMessageBox",
+            messageType: "info",
+            title: "Tape file set",
+            message: `Tape file ${message.file} successfully set.`
+        });
+    }
 }
+

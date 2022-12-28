@@ -66,6 +66,7 @@ export interface EmuMachineCommandRequest extends MessageBase {
  */
 export interface EmuSetTapeFileRequest extends MessageBase {
   type: "EmuSetTapeFile";
+  file: string;
   contents: Uint8Array;
 }
 
@@ -87,6 +88,16 @@ export interface MainReadTextFileRequest extends MessageBase {
 export interface MainReadBinaryFileRequest extends MessageBase {
   type: "MainReadBinaryFile";
   path: string;
+}
+
+/**
+ * The client sends an error message to display
+ */
+export interface MainDisplayMessageBoxRequest extends MessageBase {
+  type: "MainDisplayMessageBox";
+  messageType?: "none" | "info" | "error" | "question" | "warning"; 
+  title?: string;
+  message?: string;
 }
 
 /**
@@ -126,7 +137,8 @@ export type RequestMessage =
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
   | MainReadTextFileRequest
-  | MainReadBinaryFileRequest;
+  | MainReadBinaryFileRequest
+  | MainDisplayMessageBoxRequest;
 
 /**
  * All Response messages

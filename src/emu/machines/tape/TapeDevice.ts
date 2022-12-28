@@ -122,7 +122,8 @@ export class TapeDevice implements ITapeDevice {
     /// </summary>
     /// <param name="machine">The machine hosting this device</param>
     constructor(public readonly machine: IZxSpectrumMachine) {
-        machine.machinePropertyChanged.on(this.onMachinePropertiesChanged);
+        const device = this;
+        machine.machinePropertyChanged.on((args) => this.onMachinePropertiesChanged(device, args));
         this.reset();
     }
 
@@ -574,32 +575,31 @@ export class TapeDevice implements ITapeDevice {
     /**
      * Respond to the tape data changes and rewind requests
      */
-    onMachinePropertiesChanged(handler: {propertyName: string, newValue?: any}): void {
+    onMachinePropertiesChanged(device: TapeDevice, handler: {propertyName: string, newValue?: any}): void {
         switch (handler.propertyName) {
             case TAPE_SAVER:
                 if (handler.newValue.setName) {
-                    this._tapeSaver = handler.newValue as ITapeSaver;
+                    device._tapeSaver = handler.newValue as ITapeSaver;
                 }
                 break;
             
             case TAPE_DATA:
-                if (Array.isArray(handler.newValue))
-                {
-                    this._blocks = handler.newValue as TapeDataBlock[];
-                    this._currentBlockIndex = -1;
-                    this._tapeEof = false;
+                if (Array.isArray(handler.newValue)) {
+                    device._blocks = handler.newValue as TapeDataBlock[];
+                    device._currentBlockIndex = -1;
+                    device._tapeEof = false;
                 }       
                 break;
             
             case REWIND_REQUESTED:
-                if (handler.newValue === true)
-                {
-                    this._currentBlockIndex = -1;
-                    this._tapeEof = false;
-                    this._playPhase = PlayPhase.None;
-                    this.machine.setMachineProperty(REWIND_REQUESTED);
+                if (handler.newValue === true) {
+                    device._currentBlockIndex = -1;
+                    device._tapeEof = false;
+                    device._playPhase = PlayPhase.None;
+                    device.machine.setMachineProperty(REWIND_REQUESTED);
                 }
                 break;
         }
     }
 }
+

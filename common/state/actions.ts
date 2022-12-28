@@ -169,7 +169,7 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
     payload: { numValue },
 });
 
-export const setTapFileAction: ActionCreator = (file: string) => ({
+export const setTapeFileAction: ActionCreator = (file: string) => ({
     type: "SET_TAPE_FILE",
     payload: { file },
 });
