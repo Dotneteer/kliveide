@@ -9,6 +9,7 @@ import {
 import { mainStore } from "./main-store";
 import * as path from "path";
 import * as fs from "fs";
+import { BrowserWindow, dialog } from "electron";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -16,7 +17,8 @@ import * as fs from "fs";
  * @returns Message response
  */
 export async function processEmuToMainMessages(
-    message: RequestMessage
+    message: RequestMessage,
+    window: BrowserWindow
 ): Promise<ResponseMessage> {
     switch (message.type) {
         case "ForwardAction":
@@ -43,6 +45,17 @@ export async function processEmuToMainMessages(
             } catch (err) {
                 return errorResponse(err.toString());
             }
+
+        case "MainDisplayMessageBox":
+            // --- A client wants to display an error message.
+            // --- We intentionally do not wait for confirmation.
+            dialog.showMessageBox(window, {
+                type: message.messageType ?? "none",
+                title: message.title,
+                message: message.message,
+            });
+            break; 
+
     }
     return defaultResponse();
 }

@@ -61,6 +61,15 @@ export interface EmuMachineCommandRequest extends MessageBase {
   command: MachineCommand;
 }
 
+/**
+ * The main process sends a tape file to the emulator
+ */
+export interface EmuSetTapeFileRequest extends MessageBase {
+  type: "EmuSetTapeFile";
+  file: string;
+  contents: Uint8Array;
+}
+
 // ================================================================================================
 // IDE or Emu to main requests
 
@@ -79,6 +88,16 @@ export interface MainReadTextFileRequest extends MessageBase {
 export interface MainReadBinaryFileRequest extends MessageBase {
   type: "MainReadBinaryFile";
   path: string;
+}
+
+/**
+ * The client sends an error message to display
+ */
+export interface MainDisplayMessageBoxRequest extends MessageBase {
+  type: "MainDisplayMessageBox";
+  messageType?: "none" | "info" | "error" | "question" | "warning"; 
+  title?: string;
+  message?: string;
 }
 
 /**
@@ -116,8 +135,10 @@ export type RequestMessage =
   | ForwardActionRequest
   | EmuSetMachineTypeRequest
   | EmuMachineCommandRequest
+  | EmuSetTapeFileRequest
   | MainReadTextFileRequest
-  | MainReadBinaryFileRequest;
+  | MainReadBinaryFileRequest
+  | MainDisplayMessageBoxRequest;
 
 /**
  * All Response messages

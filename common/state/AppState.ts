@@ -43,6 +43,7 @@ export type IdeView = {
     fastLoad?: boolean;
     clockMultiplier?: number;
     audioSampleRate?: number;
+    tapeFile?: string;
 }
 
 /**
