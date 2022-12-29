@@ -156,9 +156,9 @@ export class TapeDevice implements ITapeDevice {
         this._playPhase = PlayPhase.None;
     }
 
-    /// <summary>
-    /// This method updates the current tape mode according to the current ROM index and PC value
-    /// </summary>
+    /**
+     * This method updates the current tape mode according to the current ROM index and PC value
+     */
     updateTapeMode(): void {
         // --- Handle passive mode
         if (this.tapeMode === TapeMode.Passive) {
@@ -231,7 +231,7 @@ export class TapeDevice implements ITapeDevice {
             // --- Generate appropriate pilot or sync EAR bit
             if (pos <= this._tapePilotEndPos) {
                 // --- Alternating pilot pulses
-                return pos / block.pilotPulseLength % 2 == 0;
+                return Math.floor(pos / block.pilotPulseLength) % 2 == 0;
             }
             
             // --- Test SYNC1 position

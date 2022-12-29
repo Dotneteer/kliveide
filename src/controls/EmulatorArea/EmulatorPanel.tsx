@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer } from "./AudioRenderer";
 import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
+import { FAST_LOAD } from "@/emu/machines/machine-props";
 
 export const EmulatorPanel = () => {
     // --- Access screen information
@@ -30,6 +31,7 @@ export const EmulatorPanel = () => {
     const shadowCanvasHeight = useRef(0);
     const machineState = useSelector(s => s.ideView?.machineState);
     const audioSampleRate = useSelector(s => s.ideView?.audioSampleRate);
+    const fastLoad = useSelector(s => s.ideView?.fastLoad);
     const [overlay, setOverlay] = useState(null);
     const [showOverlay, setShowOverlay] = useState(true);
 
@@ -133,6 +135,11 @@ export const EmulatorPanel = () => {
         }
         setOverlay(overlay);
     }, [machineState])
+
+    // --- Respond to the FAST LOAD flag changes
+    useEffect(() => {
+        controller?.machine?.setMachineProperty(FAST_LOAD, fastLoad);
+    }, [fastLoad])
 
     // --- Respond to resizing the main container
     useResizeObserver(hostElement, () => calculateDimensions());

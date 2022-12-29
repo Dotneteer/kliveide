@@ -17,7 +17,7 @@
         "@/*": ["../src/*"],
         "styles/*": ["../src/assets/styles/*"],
         "@messaging/*": ["../common/messaging/*"],
-        "@state/*": ["/common/state/*"],
+        "@state/*": ["../common/state/*"],
         "@z80/*": ["../src/emu/z80/*"],
       },
     },
