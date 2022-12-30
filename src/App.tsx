@@ -74,7 +74,7 @@ const App = () => {
         } as ToolInfo
       });
       dispatch(setToolsAction(regTools));
-      dispatch(activateToolAction(regTools.find(t => t.visible ?? true)?.id))
+      dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
 
       // --- Temporary: open a few document panels
       dispatch(closeAllDocumentsAction());

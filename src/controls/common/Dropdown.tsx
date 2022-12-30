@@ -11,16 +11,18 @@ type OptionProps = {
 type Props = {
     placeholder: string;
     options: OptionProps[];
-    selected?: (value: string) => void;
+    value?: string,
+    onSelectionChanged?: (value: string) => void;
 }
 
 export const Dropdown = ({
     placeholder,
     options,
-    selected
+    value,
+    onSelectionChanged
 }: Props) => {
     const [showMenu, setShowMenu] = useState(false);
-    const [selectedValue, setSelectedValue] = useState<OptionProps>(null);
+    const [selectedValue, setSelectedValue] = useState<OptionProps>(options.find(o => o.value === value));
 
     useEffect(() => {
         const handler = () => setShowMenu(false);
@@ -40,7 +42,7 @@ export const Dropdown = ({
 
     const onItemClick = (option: OptionProps) => {
         setSelectedValue(option);
-        selected?.(option.value);
+        onSelectionChanged?.(option.value);
     }
 
     const isSelected = (option: OptionProps) => 

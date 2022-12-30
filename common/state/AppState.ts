@@ -35,6 +35,7 @@ export type IdeView = {
     activeDocumentIndex?: number;
     tools?: ToolState[];
     activeTool?: string;
+    activeOutputPane?: string;
     machineId?: string;
     machineState?: MachineControllerState;
     soundLevel?: number;
@@ -78,6 +79,8 @@ export const initialAppState: AppState = {
         openDocuments: [],
         activeDocumentIndex: -1,
         tools: [],
+        activeTool: "command",
+        activeOutputPane: "emu",
         soundMuted: false,
         fastLoad: true,
         clockMultiplier: 1,

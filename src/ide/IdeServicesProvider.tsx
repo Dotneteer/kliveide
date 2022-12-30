@@ -3,6 +3,7 @@ import React, { useContext, useRef } from "react";
 import { IdeServices } from "./abstractions";
 import { createDocumentService } from "./DocumentService";
 import { createmachineService } from "./MachineService";
+import { createOutputPaneService } from "./OuputPaneService";
 
 // =====================================================================================================================
 /**
@@ -28,8 +29,8 @@ export function IdeProvider({
     const store = useStore();
     const ideServicesRef = useRef<IdeServices>({
         documentService: createDocumentService(store),
-        toolService: undefined,
         machineService: createmachineService(store),
+        outputPaneService: createOutputPaneService()
     });
     return (
         <IdeServicesContext.Provider value={ideServicesRef.current}>

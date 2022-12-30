@@ -174,4 +174,9 @@ export const setTapeFileAction: ActionCreator = (file: string) => ({
     payload: { file },
 });
 
+export const activateOutputPaneAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_OUTPUT_PANE",
+    payload: { id },
+});
+
 

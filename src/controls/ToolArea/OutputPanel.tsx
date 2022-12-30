@@ -1,10 +1,11 @@
-import { AppContext } from "@/core/abstractions"
+import { useDispatch, useSelector } from "@/emu/StoreProvider";
 import { ToolState } from "@/ide/abstractions";
-import { useEffect, useRef, useState } from "react";
+import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { activateOutputPaneAction, changeToolStateAction } from "@state/actions";
+import { useEffect, useRef } from "react";
 import { Dropdown } from "../common/Dropdown";
 import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
 import { OutputSpan } from "./abstractions";
-import { OutputPaneBuffer } from "./OutputPaneBuffer";
 import styles from "./OutputPanel.module.scss";
 
 type Props = {
@@ -14,25 +15,42 @@ type Props = {
 const OutputPanel = ({
     tool,
 }: Props) => {
-    const api = useRef<VirtualizedListApi>();
-    const buffer = new OutputPaneBuffer();
-    for (let i = 0; i < 100; i++) {
-        buffer.writeLine(`Item #${i}`);
+    const { outputPaneService } = useIdeServices();
+    const dispatch = useDispatch();
+    const activePane = useSelector(s => s.ideView?.activeOutputPane);
+    const paneRef = useRef(activePane);
+    const buffer = outputPaneService.getOutputPaneBuffer(activePane);
+    if (buffer && buffer.getContents().length === 0) {
+        for (let i = 0; i < 100; i++) {
+            buffer.writeLine(`${activePane} Item #${i}`);
+        }
     }
+    const api = useRef<VirtualizedListApi>();
+
     const contents = buffer.getContents();
 
     useEffect(() => {
         if (api.current) {
-            api.current.scrollToOffset(tool.stateValue);
+            api.current.scrollToOffset(tool.stateValue?.[activePane] ?? 0);
         }
-    }, [api.current])
+    }, [api.current, activePane])
+
+    useEffect(() => {
+        paneRef.current = activePane
+    }, [activePane])
+
     return (
         <div className={styles.component}>
             <VirtualizedList 
                 items={contents} 
                 approxSize={20}
                 apiLoaded={vlApi => api.current = vlApi}
-                scrolled={offs => tool.stateValue = offs}
+                scrolled={offs => {
+                    dispatch(changeToolStateAction({
+                        ...tool, 
+                        stateValue: {...tool.stateValue, [paneRef.current]: offs }
+                    }));
+                }}
                 itemRenderer={(idx) => {
                     return <OutputLine spans={contents[idx].spans}/>
             }}/>
@@ -50,36 +68,23 @@ const OutputLine = ({
     return <>{[...spans.map(s => s.text)]}</> 
 }
 
-const OutputPanelHeader = () => {
-    return <span>Header</span>
-}
+export const outputPanelRenderer = (node: ToolState) => <OutputPanel tool={node} />
 
-export const outputPanelRenderer = (
-    id: string, 
-    node: ToolState, 
-    context: AppContext) => <OutputPanel tool={node} />
-
-export const outputPanelHeaderRenderer = (
-    id: string, 
-    node: ToolState, 
-    context: AppContext) => {
-        const options = [
-            {
-                label: "Option #1",
-                value: "1"
-            },
-            {
-                label: "Option #2",
-                value: "2"
-            },
-            {
-                label: "Option #3",
-                value: "3"
-            },
-            {
-                label: "Option #4",
-                value: "4"
-            },
-        ]
-        return <Dropdown placeholder="Select..." options={options} selected={ (option) => console.log(option)}/> 
+export const outputPanelHeaderRenderer = () => {
+    const dispatch = useDispatch();
+    const { outputPaneService } = useIdeServices();
+    const panes = outputPaneService.getRegisteredOutputPanes().map(p => (
+        {
+            value: p.id,
+            label: p.displayName
+        }
+    ));
+    const activePane = useSelector(s => s.ideView?.activeOutputPane);
+        return (
+            <Dropdown 
+                placeholder="Select..." 
+                options={panes} 
+                value={activePane}
+                onSelectionChanged={ (option) => dispatch(activateOutputPaneAction(option))}/> 
+        )
     }

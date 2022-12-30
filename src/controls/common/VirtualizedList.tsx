@@ -38,8 +38,8 @@ export const VirtualizedList = ({
         count: items.length,
         getScrollElement: () => parentRef.current,
         estimateSize: () => approxSize ?? 20,
-        overscan: 5,
-      });
+        overscan: 20,
+    });
     
     const [count, setCount] = useState(0);
 

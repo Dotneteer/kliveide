@@ -14,27 +14,16 @@ type Props = {
 export const ToolArea = ({
     siblingPosition
 }: Props) => {
-    const dispatch = useDispatch();
     const tools = useSelector(s => s.ideView?.tools ?? []);
     const activeTool = useSelector(s => s.ideView.activeTool);
-    const lastInstance = useRef<ToolState>()
     const activeInstance = tools.find(t => t.id === activeTool);
-
-    // --- Manage changes between panels
-    useEffect(() => {
-        if (lastInstance.current) {
-            // --- Save the state of the last instance
-            dispatch(changeToolStateAction({
-                ...lastInstance.current
-            } as ToolState));
-        }
-        lastInstance.current = activeInstance;
-    },[activeTool])
 
     return <div className={classnames(styles.component, styles[siblingPosition])}>
         <ToolsHeader 
             topPosition={siblingPosition !== "top" } 
             tool={activeInstance} />
-        <ToolsContainer tool={activeInstance}/>
+        <div className={styles.wrapper}>
+            <ToolsContainer tool={activeInstance}/>
+        </div>
     </div>
 }
