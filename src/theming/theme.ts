@@ -5,7 +5,35 @@ export type ThemeProperties = {
   // --- Global theme attributes
   "--bgcolor-splitter"?: string;
   "--color-command-icon"?: string;
-  
+  "--bgcolor-scrollbar"?: string;
+  "--bgcolor-scrollbar-thumb"?: string;
+
+  // --- Drowpdown
+  "--bg-color-dropdown-input"?: string;
+  "--color-dropdown-input"?: string;
+  "--bg-color-dropdown-menu"?: string;
+  "--color-dropdown-menu"?: string;
+  "--bg-color-dropdown-menu-pointed"?: string;
+  "--bg-color-dropdown-menu-selected"?: string;
+
+  // --- Console colors
+  "--console-ansi-black"?: string;
+  "--console-ansi-blue"?: string;
+  "--console-ansi-bright-black"?: string;
+  "--console-ansi-bright-blue"?: string;
+  "--console-ansi-bright-cyan"?: string;
+  "--console-ansi-bright-green"?: string;
+  "--console-ansi-bright-magenta"?: string;
+  "--console-ansi-bright-red"?: string;
+  "--console-ansi-bright-white"?: string;
+  "--console-ansi-bright-yellow"?: string;
+  "--console-ansi-cyan"?: string;
+  "--console-ansi-green"?: string;
+  "--console-ansi-magenta"?: string;
+  "--console-ansi-red"?: string;
+  "--console-ansi-white"?: string;
+  "--console-ansi-yellow"?: string;
+
   // --- Activity bar
   "--bgcolor-activitybar"?: string;
   "--color-activitybar"?: string;

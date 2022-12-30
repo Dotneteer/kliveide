@@ -70,4 +70,4 @@ export type AppContext = {
 /**
  * Represents a function that can render a particular panel
  */
-export type PanelRenderer = (appContext: AppContext) => ReactNode
+export type PanelRenderer = (id: string, node: any, appContext: AppContext) => ReactNode

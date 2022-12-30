@@ -1,0 +1,17 @@
+@import "@styles/core.scss";
+
+.component {
+    box-sizing: border-box;
+    flex-direction: column;
+    background: transparent;
+    user-select: none;
+    &::-webkit-scrollbar {
+        background: var(--bgcolor-scrollbar);
+        width: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: var(--bgcolor-scrollbar-thumb);
+
+    }
+}

@@ -3,7 +3,36 @@ import { ThemeProperties } from "./theme";
 export const lightTheme: ThemeProperties = {
     // --- Global theme attributes
     "--bgcolor-splitter": "#61a4d0",
+    "--color-command-icon": "#303030",
+    "--bgcolor-scrollbar": "transparent",
+    "--bgcolor-scrollbar-thumb": "#808080",
   
+    // --- Drowpdown
+    "--bg-color-dropdown-input": "#a0a0a0",
+    "--color-dropdown-input": "#000000",
+    "--bg-color-dropdown-menu": "#a0a0a0",
+    "--color-dropdown-menu": "#000000",
+    "--bg-color-dropdown-menu-pointed": "#909090",
+    "--bg-color-dropdown-menu-selected": "#007acc",
+
+    // --- Console colors
+    "--console-ansi-black": "#000000",
+    "--console-ansi-blue": "#0451a5",
+    "--console-ansi-bright-black": "#666666",
+    "--console-ansi-bright-blue": "#0451a5",
+    "--console-ansi-bright-cyan": "#0598bc",
+    "--console-ansi-bright-green": "#14CE14",
+    "--console-ansi-bright-magenta": "#bc05bc",
+    "--console-ansi-bright-red": "#cd3131",
+    "--console-ansi-bright-white": "#a5a5a5",
+    "--console-ansi-bright-yellow": "#b5ba00",
+    "--console-ansi-cyan": "#0598bc",
+    "--console-ansi-green": "#00BC00",
+    "--console-ansi-magenta": "#bc05bc",
+    "--console-ansi-red": "#cd3131",
+    "--console-ansi-white": "#e5e5e5",
+    "--console-ansi-yellow": "#949800",
+
     // --- Activity bar
     "--bgcolor-activitybar": "#d0d0d0",
     "--color-activitybar": "#404040",
@@ -67,4 +96,7 @@ export const lightTheme: ThemeProperties = {
 
     // --- Tool area
     "--bgcolor-toolarea": "#d0d0d0",
+    "--color-tooltab-active": "#000000",
+    "--color-tooltab-inactive": "#404040"
+
 }

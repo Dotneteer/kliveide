@@ -113,6 +113,11 @@ export type ToolRendereInfo = ToolInfo & {
      * Renderer function to display the tool
      */
     renderer: PanelRenderer;
+
+    /**
+     * Renderer function to display the tool's header
+     */
+    headerRenderer?: PanelRenderer;
 }
 
 /**

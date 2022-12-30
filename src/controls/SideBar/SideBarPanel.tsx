@@ -84,7 +84,7 @@ export const SideBarPanel = ({
         {expanded && 
             <div className={styles.contentWrapper}>
                 <div className={styles.contentHolder}>
-                    {sideBar.renderer(undefined)}
+                    {sideBar.renderer(sideBar.id, sideBar, {})}
                 </div>
                 <div
                     className={classnames(

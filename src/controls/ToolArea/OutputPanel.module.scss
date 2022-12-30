@@ -1,0 +1,8 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fill-parent-flex;
+    box-sizing: border-box;
+    flex-direction: column;
+    user-select: none;
+}
