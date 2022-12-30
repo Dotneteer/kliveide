@@ -54,7 +54,11 @@ export const VirtualizedList = ({
                 scrollToOffset: (offset: number, options: ScrollOptions) =>
                     virtualizer.scrollToOffset(offset, options),
                 scrollToTop: () => virtualizer.scrollToIndex(0),
-                scrollToEnd: () => virtualizer.scrollToIndex(virtualizer.getVirtualItems().length),
+                scrollToEnd: () => {
+                    if (virtualizer.getVirtualItems().length > 0) {
+                        virtualizer.scrollToIndex(virtualizer.getVirtualItems()?.length ?? 0)
+                    }
+                },
                 refresh: () => setCount(count + 1)
             };
             apiLoaded?.(api);

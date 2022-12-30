@@ -109,7 +109,9 @@ export class OutputPaneBuffer implements IOutputBuffer {
         isBold: this._isBold,
         isItalic: this._isItalic,
         isUnderline: this._isUnderline,
-        isStrikeThru: this._isStrikethru
+        isStrikeThru: this._isStrikethru,
+        actionable,
+        data
       }
   
       this._buffer[this._currentLineIndex].spans.push(newSpan);

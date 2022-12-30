@@ -1,3 +1,4 @@
+import { IOutputBuffer } from "@/controls/ToolArea/abstractions";
 import { 
     DebugStepMode, 
     ExecutionContext, 
@@ -46,6 +47,11 @@ export class MachineController {
         this.stateChanged?.release();
         this.frameCompleted?.release();
     }
+
+    /**
+     * The output buffer to write messages to
+     */
+    output?: IOutputBuffer;
 
     /**
      * Gets or sets the object providing debug support
@@ -98,6 +104,9 @@ export class MachineController {
      */
     async start(): Promise<void> {
         this.isDebugging = false;
+        if (this.output) {
+            this.output.writeLine("Machine started");
+        }
         this.run();
         await this.completeExecutionLoop();
     }

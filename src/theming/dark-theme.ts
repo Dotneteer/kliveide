@@ -32,7 +32,8 @@ export const darkTheme: ThemeProperties = {
     "--console-ansi-red": "#cd3131",
     "--console-ansi-white": "#e5e5e5",
     "--console-ansi-yellow": "#e5e510",
-    
+    "--console-default": "#e5e5e5",
+  
     // --- Activity bar
     "--bgcolor-activitybar": "#303030",
     "--color-activitybar": "#a0a0a0",

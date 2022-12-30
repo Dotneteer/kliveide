@@ -33,6 +33,7 @@ export type ThemeProperties = {
   "--console-ansi-red"?: string;
   "--console-ansi-white"?: string;
   "--console-ansi-yellow"?: string;
+  "--console-default"?: string;
 
   // --- Activity bar
   "--bgcolor-activitybar"?: string;

@@ -1,59 +1,75 @@
-import { useDispatch, useSelector } from "@/emu/StoreProvider";
+import { useDispatch, useSelector, useStore } from "@/emu/StoreProvider";
 import { ToolState } from "@/ide/abstractions";
 import { useIdeServices } from "@/ide/IdeServicesProvider";
 import { activateOutputPaneAction, changeToolStateAction } from "@state/actions";
-import { useEffect, useRef } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../common/Dropdown";
 import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
-import { OutputSpan } from "./abstractions";
+import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 
-type Props = {
-    tool: ToolState;
-}
-
-const OutputPanel = ({
-    tool,
-}: Props) => {
+const OutputPanel = () => {
     const { outputPaneService } = useIdeServices();
+    const store = useStore();
+    const tool = useRef<ToolState>();
     const dispatch = useDispatch();
     const activePane = useSelector(s => s.ideView?.activeOutputPane);
     const paneRef = useRef(activePane);
-    const buffer = outputPaneService.getOutputPaneBuffer(activePane);
-    if (buffer && buffer.getContents().length === 0) {
-        for (let i = 0; i < 100; i++) {
-            buffer.writeLine(`${activePane} Item #${i}`);
-        }
-    }
+    const buffer = useRef<IOutputBuffer>();
+    const [contents, setContents] = useState<OutputContentLine[]>();
+    const [version, setVersion] = useState(0);
     const api = useRef<VirtualizedListApi>();
 
-    const contents = buffer.getContents();
+    // --- Respond to api and scroll position changes
+    useEffect(() => {
+        paneRef.current = activePane
+        tool.current = store.getState().ideView?.tools.find(t => t.id === "output") as ToolState;
+        if (api.current) {
+            api.current.refresh();
+            api.current.scrollToOffset(tool.current?.stateValue?.[paneRef.current] ?? 0);
+        }
+        buffer.current = outputPaneService.getOutputPaneBuffer(paneRef.current);
+        setContents((buffer?.current?.getContents() ?? []).slice(0));
+        setVersion(version + 1);
+    }, [activePane])
+
+    useEffect(() => {
+        const handleChanged = () => {
+            setContents((buffer?.current?.getContents() ?? []).slice(0));
+            setVersion(version + 1);
+        }
+
+        if (buffer.current) {
+            buffer.current.contentsChanged.on(handleChanged)
+        }
+
+        return () => buffer.current?.contentsChanged?.off(handleChanged);
+
+    }, [buffer.current])
 
     useEffect(() => {
         if (api.current) {
-            api.current.scrollToOffset(tool.stateValue?.[activePane] ?? 0);
+            api.current.scrollToEnd();
         }
-    }, [api.current, activePane])
-
-    useEffect(() => {
-        paneRef.current = activePane
-    }, [activePane])
-
+    }, [version])
     return (
         <div className={styles.component}>
-            <VirtualizedList 
-                items={contents} 
+            {activePane && <VirtualizedList
+                items={contents ?? []} 
                 approxSize={20}
                 apiLoaded={vlApi => api.current = vlApi}
                 scrolled={offs => {
-                    dispatch(changeToolStateAction({
-                        ...tool, 
-                        stateValue: {...tool.stateValue, [paneRef.current]: offs }
-                    }));
+                    if (!tool.current) return;
+                    const newState = {
+                        ...tool.current, 
+                        stateValue: {...tool.current?.stateValue, [paneRef.current]: offs }
+                    };
+                    dispatch(changeToolStateAction(newState));
                 }}
                 itemRenderer={(idx) => {
-                    return <OutputLine spans={contents[idx].spans}/>
+                    return <OutputLine spans={contents?.[idx]?.spans}/>
             }}/>
+            }
         </div>   
     )
 }
@@ -65,10 +81,23 @@ type LineProps = {
 const OutputLine = ({
     spans
 }: LineProps) => {
-    return <>{[...spans.map(s => s.text)]}</> 
+    const segments = (spans ?? []).map((s, idx) => {
+        const style: CSSProperties ={
+            fontWeight: s.isBold ? 600 : 400,
+            fontStyle: s.isItalic ? "italic" : "normal",
+            backgroundColor: `var(${s.background !== undefined ? `--console-ansi-${s.background}` : "transparent"})`,
+            color: `var(${s.foreGround !== undefined ? `--console-ansi-${s.foreGround}` : "--console-default"})`,
+            textDecoration: `${s.isUnderline ? "underline" : ""} ${s.isStrikeThru ? "line-through" : ""}`,
+            cursor: s.actionable ? "pointer" : undefined
+        };
+        return (
+            <span key={idx} style={style}>{s.text}</span>
+        )
+    });
+    return <>{[...segments]}</> 
 }
 
-export const outputPanelRenderer = (node: ToolState) => <OutputPanel tool={node} />
+export const outputPanelRenderer = () => <OutputPanel />
 
 export const outputPanelHeaderRenderer = () => {
     const dispatch = useDispatch();
