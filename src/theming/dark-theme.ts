@@ -106,5 +106,6 @@ export const darkTheme: ThemeProperties = {
     // --- Tool area
     "--bgcolor-toolarea": "#202020",
     "--color-tooltab-active": "#ffffff",
-    "--color-tooltab-inactive": "#a0a0a0"
+    "--color-tooltab-inactive": "#a0a0a0",
+    "--color-prompt": "#23d18b",
   }

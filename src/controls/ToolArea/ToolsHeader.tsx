@@ -43,13 +43,13 @@ export const ToolsHeader = ({
         <div className={styles.commandBar}>
         <TabButton 
             iconName="layout-panel" 
-            active={true} 
             useSpace={true}
             rotate={topPosition ? 0 : 180}
+            title={topPosition ? "Display at the bottom" : "Display at the top"}
             clicked={() => dispatch(toolPanelsOnTopAction(!topPosition))}/>
         <TabButton 
             iconName="close" 
-            active={true} 
+            useSpace={true}
             clicked={() => dispatch(showToolPanelsAction(false))}/>
         </div>
     </div>

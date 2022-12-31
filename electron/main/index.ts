@@ -11,6 +11,9 @@ import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
 import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
 
+const EMU_QP = "?emu";
+const IDE_QP = "?ide";
+
 process.env.DIST_ELECTRON = join(__dirname, '../..')
 process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
 process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
@@ -31,9 +34,9 @@ let storeUnsubscribe: Unsubscribe | undefined;
 let machineTypeInitialized = false;
 
 // Here, you can also use other preload
-const preload = join(__dirname, '../preload/index.js')
-const url = process.env.VITE_DEV_SERVER_URL
-const indexHtml = join(process.env.DIST, 'index.html')
+const preload = join(__dirname, "../preload/index.js")
+const url = process.env.VITE_DEV_SERVER_URL + IDE_QP
+const indexHtml = join(process.env.DIST, "index.html")
 
 async function createWindow() {
   // --- Create the emulator window
@@ -68,6 +71,7 @@ async function createWindow() {
     // Open devTool if the app is not packaged
     emuWindow.webContents.openDevTools()
   } else {
+    console.log(indexHtml);
     emuWindow.loadFile(indexHtml)
   }
 

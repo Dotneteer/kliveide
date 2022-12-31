@@ -4,6 +4,7 @@ import { useIdeServices } from "@/ide/IdeServicesProvider";
 import { activateOutputPaneAction } from "@state/actions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../common/Dropdown";
+import { TabButton, TabButtonSeparator } from "../common/TabButton";
 import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
@@ -17,7 +18,6 @@ const OutputPanel = () => {
     const [contents, setContents] = useState<OutputContentLine[]>();
     const api = useRef<VirtualizedListApi>();
 
-    // --- Respond to api and scroll position changes
     useEffect(() => {
         tool.current = store.getState().ideView?.tools.find(t => t.id === "output") as ToolState;
         if (api.current) {
@@ -68,7 +68,7 @@ type LineProps = {
     spans: OutputSpan[];
 }
 
-const OutputLine = ({
+export const OutputLine = ({
     spans
 }: LineProps) => {
     const segments = (spans ?? []).map((s, idx) => {
@@ -100,10 +100,24 @@ export const outputPanelHeaderRenderer = () => {
     ));
     const activePane = useSelector(s => s.ideView?.activeOutputPane);
         return (
-            <Dropdown 
-                placeholder="Select..." 
-                options={panes} 
-                value={activePane}
-                onSelectionChanged={ (option) => dispatch(activateOutputPaneAction(option))}/> 
+            <>
+                <Dropdown 
+                    placeholder="Select..." 
+                    options={panes} 
+                    value={activePane}
+                    onSelectionChanged={ (option) => dispatch(activateOutputPaneAction(option))}/> 
+                <TabButtonSeparator />
+                <TabButton 
+                    iconName="clear-all" 
+                    title="Clear"
+                    clicked={() => outputPaneService.getOutputPaneBuffer(activePane)?.clear()}/>
+                <TabButtonSeparator />
+                <TabButton 
+                    iconName="copy" 
+                    title="Copy to clipboard"
+                    clicked={() => navigator.clipboard
+                        .writeText(outputPaneService
+                        .getOutputPaneBuffer(activePane).getBufferText())}/>
+            </>
         )
     }

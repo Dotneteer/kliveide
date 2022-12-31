@@ -113,6 +113,11 @@ export interface IOutputBuffer {
    * This event fires when the contents of the buffer changes.
    */
   readonly contentsChanged: ILiteEvent<void>;
+
+  /**
+   * Gets the string representation of the buffer
+   */
+  getBufferText(): string;
 }
 
 /**

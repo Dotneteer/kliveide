@@ -107,6 +107,7 @@ export type ThemeProperties = {
   "--bgcolor-toolarea"?: string;
   "--color-tooltab-active"?: string;
   "--color-tooltab-inactive"?: string;
+  "--color-prompt"?: string;
 }
 
 /**

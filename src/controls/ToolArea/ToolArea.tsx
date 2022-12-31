@@ -1,11 +1,8 @@
 import styles from "./ToolArea.module.scss";
 import classnames from "@/utils/classnames";
-import { useDispatch, useSelector, useStore } from "@/emu/StoreProvider";
+import { useSelector } from "@/emu/StoreProvider";
 import { ToolsHeader } from "./ToolsHeader";
 import { ToolsContainer } from "./ToolsContainer";
-import { ToolState } from "@/ide/abstractions";
-import { useEffect, useRef } from "react";
-import { changeToolStateAction } from "@state/actions";
 
 type Props = {
     siblingPosition: string;

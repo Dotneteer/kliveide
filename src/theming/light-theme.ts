@@ -104,6 +104,6 @@ export const lightTheme: ThemeProperties = {
     // --- Tool area
     "--bgcolor-toolarea": "#d0d0d0",
     "--color-tooltab-active": "#000000",
-    "--color-tooltab-inactive": "#404040"
-
+    "--color-tooltab-inactive": "#404040",
+    "--color-prompt": "#14CE14",
 }

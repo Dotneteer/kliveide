@@ -263,10 +263,21 @@ export interface IOutputPaneService {
 }
 
 /**
+ * This interface defines the functions managing the interactive commands within the IDE
+ */
+export interface IInteractiveCommandService {
+    /**
+     * Gets the output buffer of the interactive commands
+     */
+    getBuffer(): IOutputBuffer;
+}
+
+/**
  * This type defines the services the IDE provides
  */
 export type IdeServices = {
     documentService: IDocumentService;
     machineService: IMachineService;
     outputPaneService: IOutputPaneService;
+    interactiveCommandsService: IInteractiveCommandService;
 }

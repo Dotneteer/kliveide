@@ -142,4 +142,16 @@ export class OutputPaneBuffer implements IOutputBuffer {
     get contentsChanged(): ILiteEvent<void> {
       return this._contentsChanged;
     }
+
+    /**
+     * Gets the string representation of the buffer
+     */
+    getBufferText(): string {
+      let result = "";
+      this._buffer.forEach(l => {
+        l.spans.forEach(s => result += s.text);
+        result += "\n";
+      })
+      return result;
+    }
   }
