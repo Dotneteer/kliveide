@@ -2,7 +2,9 @@ import { useStore } from "@/emu/StoreProvider";
 import React, { useContext, useRef } from "react";
 import { IdeServices } from "./abstractions";
 import { createDocumentService } from "./DocumentService";
+import { createInteractiveCommandsService } from "./InteractiveCommandService";
 import { createmachineService } from "./MachineService";
+import { createOutputPaneService } from "./OuputPaneService";
 
 // =====================================================================================================================
 /**
@@ -28,8 +30,9 @@ export function IdeProvider({
     const store = useStore();
     const ideServicesRef = useRef<IdeServices>({
         documentService: createDocumentService(store),
-        toolService: undefined,
         machineService: createmachineService(store),
+        outputPaneService: createOutputPaneService(),
+        interactiveCommandsService: createInteractiveCommandsService(store)
     });
     return (
         <IdeServicesContext.Provider value={ideServicesRef.current}>

@@ -5,7 +5,7 @@ import classnames from "../utils/classnames";
 import { darkTheme } from "./dark-theme";
 import { iconLibrary } from "./icon-defs";
 import { lightTheme } from "./light-theme";
-import { ThemeInfo, ThemeManager, ThemeProperties } from "./theme";
+import { ThemeInfo, ThemeManager } from "./theme";
 
 // =====================================================================================================================
 // Collect the supported themes
@@ -67,6 +67,7 @@ function ThemeProvider({
     () => document.getElementById("root") || document.body
   );
   const selectedTheme = useSelector(s => s.theme);
+  const isWindows = useSelector(s => s.isWindows);
 
   const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
 
@@ -76,7 +77,21 @@ function ThemeProvider({
 
   const themeValue = useMemo(() => {
     const activeThemeInfo = availableThemes[selectedTheme];
-    setStyleProps({...activeThemeInfo.properties});
+    const mainFont = activeThemeInfo.properties[
+      isWindows 
+        ? "--shell-windows-font-family" 
+        : "--shell-font-family"
+      ];
+    const monospaceFont = activeThemeInfo.properties[
+      isWindows 
+        ? "--shell-windows-monospace-font-family" 
+        : "--shell-monospace-font-family"
+    ];
+    setStyleProps({
+      ...activeThemeInfo.properties,
+      "--main-font-family": mainFont,
+      "--monospace-font": monospaceFont
+    });
     return {
       theme: activeThemeInfo,
       root,
@@ -85,7 +100,7 @@ function ThemeProvider({
         iconLibrary.find(ic => ic.name === key) 
           ?? iconLibrary.find(ic => ic.name === "unknown")
     };
-  }, [selectedTheme, root]);
+  }, [selectedTheme, root, isWindows]);
 
   return (
     <ThemeContext.Provider value={themeValue}>

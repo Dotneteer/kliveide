@@ -23,6 +23,7 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
+    "@tanstack/react-virtual": "^3.0.0-beta.32",
     "@types/mocha": "^10.0.0",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",

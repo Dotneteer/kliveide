@@ -2,24 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import classnames from "@/utils/classnames";
 import styles from "./TabButton.module.scss";
+import { TooltipFactory } from "./Tooltip";
 
 type Props = {
-    active?: boolean;
     hide?: boolean;
     fill?: string;
     rotate?: number;
     iconName: string;
     useSpace?: boolean;
+    title?: string;
     clicked?: () => void;
 }
 
 export function TabButton({
-    active,
     hide,
     fill = "--color-command-icon",
     rotate = 0,
     iconName,
     useSpace = false,
+    title,
     clicked,
   }: Props) {
     const ref = useRef<HTMLDivElement>(null);
@@ -39,6 +40,15 @@ export function TabButton({
               clicked?.();
               setKeyDown(false);
           }} >
+            { title && <TooltipFactory 
+                  refElement={ref.current}
+                  placement="bottom"
+                  offsetX={-8}
+                  offsetY={32}>
+                 {title}            
+                </TooltipFactory>
+            }
+
               {hide && <div className={styles.placeholder}></div>}
               {!hide && <Icon
                 iconName={iconName}
@@ -48,7 +58,9 @@ export function TabButton({
                 rotate={rotate}
               />}
         </div>
-        {useSpace && <div style={{paddingRight: 8}}/>}
+        {useSpace && <TabButtonSeparator />}
       </>
     );
   }
+
+  export const TabButtonSeparator = () => <div style={{paddingRight: 8}}/>

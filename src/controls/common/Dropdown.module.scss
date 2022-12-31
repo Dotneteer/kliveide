@@ -1,0 +1,44 @@
+@import "@styles/core.scss";
+
+.dropdownContainer {
+    text-align: left;
+    position: relative;
+    border-radius: 4px;
+    font-size: 0.8em;
+    background: var(--bg-color-dropdown-input);
+    width: 200px;
+}
+  
+.dropdownInput {
+    padding: 0px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    color: var(--color-dropdown-input);
+}
+
+.dropdownMenu {
+    position: absolute;
+    transform: translateY(4px);
+    width: 100%;
+    border-radius: 4px;
+    overflow: auto;
+    max-height: 200px;
+    background: var(--bg-color-dropdown-menu);
+    z-index: 10;
+}
+
+.dropdownItem {
+    cursor: pointer;
+    color: var(--color-dropdown-menu);
+    padding: 4px 8px;
+
+    &:hover {
+        background: var(--bg-color-dropdown-menu-pointed);
+    }
+}
+
+.selected {
+    background-color: var(--bg-color-dropdown-menu-selected);
+}

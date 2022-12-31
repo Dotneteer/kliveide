@@ -19,9 +19,8 @@
 }
 
 .active {
-    background: var(--bgcolor-doc-activeTab);
-    color: var(--color-doc-activeText);
-    border-bottom: 1px solid var(--color-doc-activeText);
+    color: var(--color-tooltab-active);
+    border-bottom: 1px solid var(--color-tooltab-active);
 }
 
 .titleText {

@@ -1,10 +1,46 @@
 import { ThemeProperties } from "./theme";
 
 export const darkTheme: ThemeProperties = {
+    // --- Font attributes
+    "--shell-font-family":
+      "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
+    "--shell-windows-monospace-font-family": "Consolas, Courier New, monospace",
+    "--shell-monospace-font-family": "Menlo, Monaco, Courier New, monospace",
+  
     // --- Global theme attributes
     "--bgcolor-splitter": "#007acc",
     "--color-command-icon": "#c0c0c0",
+    "--bgcolor-scrollbar": "transparent",
+    "--bgcolor-scrollbar-thumb": "#808080",
+  
+    // --- Drowpdown
+    "--bg-color-dropdown-input": "#505050",
+    "--color-dropdown-input": "#ffffff",
+    "--bg-color-dropdown-menu": "#505050",
+    "--color-dropdown-menu": "#ffffff",
+    "--bg-color-dropdown-menu-pointed": "#606060",
+    "--bg-color-dropdown-menu-selected": "#007acc",
 
+    // --- Console colors
+    "--console-ansi-black": "#000000",
+    "--console-ansi-blue": "#2472c8",
+    "--console-ansi-bright-black": "#666666",
+    "--console-ansi-bright-blue": "#3b8eea",
+    "--console-ansi-bright-cyan": "#29b8db",
+    "--console-ansi-bright-green": "#23d18b",
+    "--console-ansi-bright-magenta": "#d670d6",
+    "--console-ansi-bright-red": "#f14c4c",
+    "--console-ansi-bright-white": "#e5e5e5",
+    "--console-ansi-bright-yellow": "#f5f543",
+    "--console-ansi-cyan": "#11a8cd",
+    "--console-ansi-green": "#0DBC79",
+    "--console-ansi-magenta": "#bc3fbc",
+    "--console-ansi-red": "#cd3131",
+    "--console-ansi-white": "#e5e5e5",
+    "--console-ansi-yellow": "#e5e510",
+    "--console-default": "#e5e5e5",
+  
     // --- Activity bar
     "--bgcolor-activitybar": "#303030",
     "--color-activitybar": "#a0a0a0",
@@ -70,5 +106,6 @@ export const darkTheme: ThemeProperties = {
     // --- Tool area
     "--bgcolor-toolarea": "#202020",
     "--color-tooltab-active": "#ffffff",
-    "--color-tooltab-inactive": "#a0a0a0"
+    "--color-tooltab-inactive": "#a0a0a0",
+    "--color-prompt": "#23d18b",
   }

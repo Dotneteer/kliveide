@@ -2,10 +2,45 @@
  * Defines the properties of the themes that can be used with Klive.
  */
 export type ThemeProperties = {
+  // --- Font attributes
+  "--shell-windows-font-family"?: string;
+  "--shell-font-family"?: string;
+  "--shell-windows-monospace-font-family"?: string;
+  "--shell-monospace-font-family"?: string;
+
   // --- Global theme attributes
   "--bgcolor-splitter"?: string;
   "--color-command-icon"?: string;
-  
+  "--bgcolor-scrollbar"?: string;
+  "--bgcolor-scrollbar-thumb"?: string;
+
+  // --- Drowpdown
+  "--bg-color-dropdown-input"?: string;
+  "--color-dropdown-input"?: string;
+  "--bg-color-dropdown-menu"?: string;
+  "--color-dropdown-menu"?: string;
+  "--bg-color-dropdown-menu-pointed"?: string;
+  "--bg-color-dropdown-menu-selected"?: string;
+
+  // --- Console colors
+  "--console-ansi-black"?: string;
+  "--console-ansi-blue"?: string;
+  "--console-ansi-bright-black"?: string;
+  "--console-ansi-bright-blue"?: string;
+  "--console-ansi-bright-cyan"?: string;
+  "--console-ansi-bright-green"?: string;
+  "--console-ansi-bright-magenta"?: string;
+  "--console-ansi-bright-red"?: string;
+  "--console-ansi-bright-white"?: string;
+  "--console-ansi-bright-yellow"?: string;
+  "--console-ansi-cyan"?: string;
+  "--console-ansi-green"?: string;
+  "--console-ansi-magenta"?: string;
+  "--console-ansi-red"?: string;
+  "--console-ansi-white"?: string;
+  "--console-ansi-yellow"?: string;
+  "--console-default"?: string;
+
   // --- Activity bar
   "--bgcolor-activitybar"?: string;
   "--color-activitybar"?: string;
@@ -72,6 +107,7 @@ export type ThemeProperties = {
   "--bgcolor-toolarea"?: string;
   "--color-tooltab-active"?: string;
   "--color-tooltab-inactive"?: string;
+  "--color-prompt"?: string;
 }
 
 /**

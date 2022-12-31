@@ -1,5 +1,5 @@
-import { MachineControllerState } from "@state/MachineControllerState";
-import { DocumentState, ToolState } from "@/ide/abstractions";
+import { DocumentState, ToolState } from "../../src/ide/abstractions";
+import { MachineControllerState } from "../state/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
@@ -172,6 +172,11 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
 export const setTapeFileAction: ActionCreator = (file: string) => ({
     type: "SET_TAPE_FILE",
     payload: { file },
+});
+
+export const activateOutputPaneAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_OUTPUT_PANE",
+    payload: { id },
 });
 
 

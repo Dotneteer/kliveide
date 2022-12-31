@@ -1,19 +1,28 @@
 import { useDispatch, useSelector } from "@/emu/StoreProvider";
+import { ToolState } from "@/ide/abstractions";
+import { toolPanelRegistry } from "@/registry";
 import { showToolPanelsAction, toolPanelsOnTopAction } from "@state/actions";
+import { createElement } from "react";
 import { SpaceFiller } from "../common/SpaceFiller";
 import { TabButton } from "../common/TabButton";
 import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 
 type Props = {
+    tool: ToolState,
     topPosition: boolean;
 }
 
 export const ToolsHeader = ({
+    tool,
     topPosition
 } : Props) => {
     const tools = useSelector(s => s.ideView?.tools);
     const activeTool = useSelector(s => s.ideView?.activeTool)
+    const panelRenderer = toolPanelRegistry.find(p => p.id === tool?.id);
+    const headerElement = panelRenderer?.headerRenderer
+        ? createElement(panelRenderer.headerRenderer)
+        : null;
     const dispatch = useDispatch();
 
     return <div className={styles.component}>
@@ -26,16 +35,21 @@ export const ToolsHeader = ({
             />
         )}
         <SpaceFiller />
+        {panelRenderer?.headerRenderer && 
+            <div className={styles.headerBar}>
+                {headerElement}
+            </div>
+        }
         <div className={styles.commandBar}>
         <TabButton 
             iconName="layout-panel" 
-            active={true} 
             useSpace={true}
             rotate={topPosition ? 0 : 180}
+            title={topPosition ? "Display at the bottom" : "Display at the top"}
             clicked={() => dispatch(toolPanelsOnTopAction(!topPosition))}/>
         <TabButton 
             iconName="close" 
-            active={true} 
+            useSpace={true}
             clicked={() => dispatch(showToolPanelsAction(false))}/>
         </div>
     </div>

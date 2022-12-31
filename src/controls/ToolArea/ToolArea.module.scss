@@ -6,7 +6,6 @@
     flex-direction: column;
     background: var(--bgcolor-toolarea);
     border: 1px solid transparent;
-    padding: 0 8px;
     user-select: none;
 }
 
@@ -24,4 +23,11 @@
 
 .bottom {
     border-bottom: 1px solid grey;
+}
+
+.wrapper {
+    @include fill-parent-flex;
+    box-sizing: border-box;
+    flex-direction: column;
+    padding: 12px 0 2px 8px;
 }

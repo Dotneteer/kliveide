@@ -10,9 +10,10 @@ import { cpuPanelRenderer } from "./ide/CpuPanel";
 import { explorerPanelRenderer } from "./ide/ExplorerPanel";
 import { ulaPanelRenderer } from "./ide/UlaPanel";
 import { breakpointsPanelRenderer } from "./ide/BreakpointsPanel";
-import { MachineInfo, ToolRendereInfo } from "./ide/abstractions";
-import { outputPanelRenderer } from "./controls/ToolArea/OutputPanel";
+import { MachineInfo, OutputPaneInfo, ToolRendereInfo } from "./ide/abstractions";
+import { outputPanelHeaderRenderer, outputPanelRenderer } from "./controls/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
+import { commandPanelRenderer } from "./controls/ToolArea/CommandPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -74,13 +75,26 @@ export const toolPanelRegistry: ToolRendereInfo[] = [
   {
     id: "output",
     name: "Output",
-    renderer: outputPanelRenderer
+    renderer: outputPanelRenderer,
+    headerRenderer: outputPanelHeaderRenderer,
   },
   {
     id: "commands",
     name: "Commands",
-    renderer: outputPanelRenderer
+    renderer: commandPanelRenderer
   },
+]
+
+// --- Set up output panes
+export const outputPaneRegistry: OutputPaneInfo[] = [
+  {
+    id: "emu",
+    displayName: "Emulator"
+  },
+  {
+    id: "build",
+    displayName: "Build"
+  }
 ]
 
 // --- Set up machine type registry

@@ -3,7 +3,7 @@ import { useIdeServices } from "@/ide/IdeServicesProvider";
 import { useEffect, useRef, useState } from "react";
 
 export const useController = () => {
-    const { machineService } = useIdeServices();
+    const { machineService, outputPaneService } = useIdeServices();
     const [controller, setController] = useState<MachineController>();
     const mounted = useRef(false);
 
@@ -21,6 +21,7 @@ export const useController = () => {
 
             // --- Done
             setController(newController);
+            newController.output = outputPaneService.getOutputPaneBuffer("emu")
         });
 
         return () => {

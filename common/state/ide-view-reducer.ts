@@ -181,6 +181,13 @@ import { IdeView } from "./AppState";
             }
         }
 
+        case "ACTIVATE_OUTPUT_PANE": {
+            return {
+                ...state,
+                activeOutputPane: payload.id
+            }
+        }
+    
         default:
             return state;
     }

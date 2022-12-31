@@ -42,4 +42,6 @@
     SET_CLOCK_MULTIPLIER: null;
     SET_AUDIO_SAMPLE_RATE: null;
     SET_TAPE_FILE: null;
+    ACTIVATE_OUTPUT_PANE: null;
+
 }

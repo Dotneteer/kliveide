@@ -1,3 +1,4 @@
+import { IOutputBuffer } from "@/controls/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
@@ -113,6 +114,11 @@ export type ToolRendereInfo = ToolInfo & {
      * Renderer function to display the tool
      */
     renderer: PanelRenderer;
+
+    /**
+     * Renderer function to display the tool's header
+     */
+    headerRenderer?: PanelRenderer;
 }
 
 /**
@@ -123,6 +129,21 @@ export type ToolState = ToolInfo & {
      * Other tool state
      */
     stateValue?: any;
+}
+
+/**
+ * This type represents an output pane
+ */
+export type OutputPaneInfo = {
+    /**
+     * The ID of the output pane
+     */
+    id: string;
+
+    /**
+     * The name of the output pane
+     */
+    displayName: string;
 }
 
 /**
@@ -226,10 +247,37 @@ export interface IMachineService {
 }
 
 /**
+ * This interface defines the functions managing the output panes within the IDE
+ */
+export interface IOutputPaneService {
+    /**
+     * Retrieve the registered output panes
+     */
+    getRegisteredOutputPanes(): OutputPaneInfo[];
+
+    /**
+     * Gets an output buffer for the specified pane
+     * @param id ID of the output pane
+     */
+    getOutputPaneBuffer(id: string): IOutputBuffer;
+}
+
+/**
+ * This interface defines the functions managing the interactive commands within the IDE
+ */
+export interface IInteractiveCommandService {
+    /**
+     * Gets the output buffer of the interactive commands
+     */
+    getBuffer(): IOutputBuffer;
+}
+
+/**
  * This type defines the services the IDE provides
  */
 export type IdeServices = {
     documentService: IDocumentService;
-    toolService: IToolService;
     machineService: IMachineService;
+    outputPaneService: IOutputPaneService;
+    interactiveCommandsService: IInteractiveCommandService;
 }
