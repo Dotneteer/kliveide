@@ -20,6 +20,7 @@ export type VirtualizedListApi = {
 type Props = {
     items: any[];
     approxSize?: number;
+    fixItemHeight?: boolean;
     itemRenderer: (index: number) => ReactNode;
     apiLoaded?: (api: VirtualizedListApi) => void;
     scrolled?: (offset: number) => void;
@@ -28,6 +29,7 @@ type Props = {
 export const VirtualizedList = ({
     items,
     approxSize,
+    fixItemHeight = true,
     itemRenderer,
     apiLoaded,
     scrolled
@@ -54,11 +56,7 @@ export const VirtualizedList = ({
                 scrollToOffset: (offset: number, options: ScrollOptions) =>
                     virtualizer.scrollToOffset(offset, options),
                 scrollToTop: () => virtualizer.scrollToIndex(0),
-                scrollToEnd: () => {
-                    if (virtualizer.getVirtualItems().length > 0) {
-                        virtualizer.scrollToIndex(virtualizer.getVirtualItems()?.length ?? 0)
-                    }
-                },
+                scrollToEnd: () => virtualizer.scrollToOffset(10_000_000),
                 refresh: () => setCount(count + 1)
             };
             apiLoaded?.(api);
@@ -80,18 +78,33 @@ export const VirtualizedList = ({
                 position: "relative",
             }} >
                 {virtualizer.getVirtualItems().map((virtualRow) => (
-                    <div
-                        key={virtualRow.key}
-                        data-index={virtualRow.index}
-                        className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
-                        style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            transform: `translateY(${virtualRow.start}px)`,
-                        }} >
-                        {itemRenderer(virtualRow.index)}
+                    fixItemHeight
+                        ? <div
+                            key={virtualRow.key}
+                            data-index={virtualRow.index}
+                            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                transform: `translateY(${virtualRow.start}px)`,
+                            }} >
+                            {itemRenderer(virtualRow.index)}
+                        </div>
+                        : <div
+                            key={virtualRow.key}
+                            data-index={virtualRow.index}
+                            ref={virtualizer.measureElement}
+                            className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                transform: `translateY(${virtualRow.start}px)`,
+                            }} >
+                            {itemRenderer(virtualRow.index)}
                     </div>
                 ))}
             </div>

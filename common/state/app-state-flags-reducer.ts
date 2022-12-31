@@ -10,6 +10,8 @@ export function appStateFlagsReducer(state: AppState, {type, payload}: Action): 
             return {...state, uiLoaded: payload?.flag}
         case "SET_THEME":
             return {...state, theme: payload?.id}
+        case "IS_WINDOWS":
+            return {...state, isWindows: payload?.flag}
         default:
             return state;
     }

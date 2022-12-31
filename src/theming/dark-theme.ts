@@ -1,6 +1,13 @@
 import { ThemeProperties } from "./theme";
 
 export const darkTheme: ThemeProperties = {
+    // --- Font attributes
+    "--shell-font-family":
+      "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
+    "--shell-windows-monospace-font-family": "Consolas, Courier New, monospace",
+    "--shell-monospace-font-family": "Menlo, Monaco, Courier New, monospace",
+  
     // --- Global theme attributes
     "--bgcolor-splitter": "#007acc",
     "--color-command-icon": "#c0c0c0",

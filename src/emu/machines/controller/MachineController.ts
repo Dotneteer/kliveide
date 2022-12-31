@@ -20,6 +20,7 @@ export class MachineController {
     private _cancelRequested: boolean;
     private _machineTask: Promise<void>;
     private _machineState: MachineControllerState;
+    private _loggedEventNo = 0;
 
     /**
      * Initializes the controller to manage the specified machine.
@@ -104,9 +105,11 @@ export class MachineController {
      */
     async start(): Promise<void> {
         this.isDebugging = false;
-        if (this.output) {
-            this.output.writeLine("Machine started");
-        }
+        this.outputOps(o => {
+            o.color("green");
+            o.writeLine("Machine started");
+            o.resetColor();
+        })
         this.run();
         await this.completeExecutionLoop();
     }
@@ -116,6 +119,11 @@ export class MachineController {
      */
     async startDebug(): Promise<void> {
         this.isDebugging = true;
+        this.outputOps(o => {
+            o.color("green");
+            o.writeLine("Machine started in debug mode");
+            o.resetColor();
+        })
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
         await this.completeExecutionLoop();
         if (this.context.lastTerminationReason == FrameTerminationMode.DebugEvent) {
@@ -131,6 +139,11 @@ export class MachineController {
         if (this.state !== MachineControllerState.Running) {
             throw new Error("The machine is not running");
         }
+        this.outputOps(o => {
+            o.color("cyan");
+            o.writeLine(`Machine paused (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`);
+            o.resetColor();
+        })
         await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
     }
 
@@ -140,6 +153,11 @@ export class MachineController {
     async stop(): Promise<void> {
         // --- Stop the machine
         this.isDebugging = false;
+        this.outputOps(o => {
+            o.color("red");
+            o.writeLine(`Machine stopped (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`);
+            o.resetColor();
+        })
         await this.finishExecutionLoop(MachineControllerState.Stopping, MachineControllerState.Stopped);
         this.machine.onStop();
         
@@ -161,6 +179,11 @@ export class MachineController {
      */
     async restart(): Promise<void> {
         await this.stop();
+        this.outputOps(o => {
+            o.color("cyan");
+            o.writeLine("Hard reset");
+            o.resetColor();
+        })
         this.machine.hardReset();
         await this.start();
     }
@@ -170,6 +193,11 @@ export class MachineController {
      */
     async stepInto(): Promise<void> {
         this.isDebugging = true;
+        this.outputOps(o => {
+            o.color("cyan");
+            o.writeLine(`Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`);
+            o.resetColor();
+        })
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepInto);
         await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
     }
@@ -177,9 +205,13 @@ export class MachineController {
     /**
      * Starts the machine in step-over mode.
      */
-    async stepOver(): Promise<void>
-    {
+    async stepOver(): Promise<void> {
         this.isDebugging = true;
+        this.outputOps(o => {
+            o.color("cyan");
+            o.writeLine(`Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`);
+            o.resetColor();
+        })
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOver);
         await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
     }
@@ -189,6 +221,11 @@ export class MachineController {
      */
     async stepOut(): Promise<void> {
         this.isDebugging = true;
+        this.outputOps(o => {
+            o.color("cyan");
+            o.writeLine(`Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`);
+            o.resetColor();
+        })
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
         await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
     }
@@ -308,4 +345,22 @@ export class MachineController {
             this._machineTask = undefined;
         }
     }
+
+    /**
+     * Executes the specified output actions, provided, the output is active
+     */
+    private outputOps(actions: (output: IOutputBuffer) => void): void {
+        if (this.output) {
+            this.outputEventNo();
+            actions(this.output);
+        }
+    }
+
+    private outputEventNo(): void {
+        this._loggedEventNo++;
+        this.output.color("magenta");
+        this.output.write(`[${this._loggedEventNo}] `);
+        this.output.resetColor();
+    }
 }
+

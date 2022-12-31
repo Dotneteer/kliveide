@@ -5,4 +5,11 @@
     box-sizing: border-box;
     flex-direction: column;
     user-select: none;
+    font-family: var(--monospace-font);
+    font-size: 0.9em;
+}
+
+.outputLine {
+    overflow-x: hidden;
+    word-break: break-all;
 }

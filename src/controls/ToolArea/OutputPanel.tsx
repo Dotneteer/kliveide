@@ -1,7 +1,7 @@
 import { useDispatch, useSelector, useStore } from "@/emu/StoreProvider";
 import { ToolState } from "@/ide/abstractions";
 import { useIdeServices } from "@/ide/IdeServicesProvider";
-import { activateOutputPaneAction, changeToolStateAction } from "@state/actions";
+import { activateOutputPaneAction } from "@state/actions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../common/Dropdown";
 import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
@@ -12,31 +12,25 @@ const OutputPanel = () => {
     const { outputPaneService } = useIdeServices();
     const store = useStore();
     const tool = useRef<ToolState>();
-    const dispatch = useDispatch();
     const activePane = useSelector(s => s.ideView?.activeOutputPane);
-    const paneRef = useRef(activePane);
     const buffer = useRef<IOutputBuffer>();
     const [contents, setContents] = useState<OutputContentLine[]>();
-    const [version, setVersion] = useState(0);
     const api = useRef<VirtualizedListApi>();
 
     // --- Respond to api and scroll position changes
     useEffect(() => {
-        paneRef.current = activePane
         tool.current = store.getState().ideView?.tools.find(t => t.id === "output") as ToolState;
         if (api.current) {
             api.current.refresh();
-            api.current.scrollToOffset(tool.current?.stateValue?.[paneRef.current] ?? 0);
+            api.current.scrollToOffset(tool.current?.stateValue?.[activePane] ?? 0);
         }
-        buffer.current = outputPaneService.getOutputPaneBuffer(paneRef.current);
+        buffer.current = outputPaneService.getOutputPaneBuffer(activePane);
         setContents((buffer?.current?.getContents() ?? []).slice(0));
-        setVersion(version + 1);
     }, [activePane])
 
     useEffect(() => {
         const handleChanged = () => {
             setContents((buffer?.current?.getContents() ?? []).slice(0));
-            setVersion(version + 1);
         }
 
         if (buffer.current) {
@@ -49,23 +43,19 @@ const OutputPanel = () => {
 
     useEffect(() => {
         if (api.current) {
-            api.current.scrollToEnd();
+            setTimeout(() => {
+                api.current.scrollToEnd();
+            })
         }
-    }, [version])
+    }, [contents])
+    
     return (
         <div className={styles.component}>
             {activePane && <VirtualizedList
                 items={contents ?? []} 
                 approxSize={20}
+                fixItemHeight={false}
                 apiLoaded={vlApi => api.current = vlApi}
-                scrolled={offs => {
-                    if (!tool.current) return;
-                    const newState = {
-                        ...tool.current, 
-                        stateValue: {...tool.current?.stateValue, [paneRef.current]: offs }
-                    };
-                    dispatch(changeToolStateAction(newState));
-                }}
                 itemRenderer={(idx) => {
                     return <OutputLine spans={contents?.[idx]?.spans}/>
             }}/>
@@ -94,7 +84,7 @@ const OutputLine = ({
             <span key={idx} style={style}>{s.text}</span>
         )
     });
-    return <>{[...segments]}</> 
+    return <div className={styles.outputLine}>{[...segments]}</div> 
 }
 
 export const outputPanelRenderer = () => <OutputPanel />

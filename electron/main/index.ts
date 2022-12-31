@@ -1,9 +1,11 @@
 import { RequestMessage } from '@messaging/message-types'
+import { isWindowsAction } from '../../common/state/actions'
 import { Unsubscribe } from '@state/redux-light'
-import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { setupMenu } from '../app-menu'
+import { __WIN32__ } from '../electron-utils'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
 import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
@@ -56,6 +58,7 @@ async function createWindow() {
     if (!machineTypeInitialized) {
       machineTypeInitialized = true;
       await setMachineType("sp48");
+      mainStore.dispatch(isWindowsAction(__WIN32__));
     }
     setupMenu(emuWindow);
   });
@@ -80,7 +83,9 @@ async function createWindow() {
   })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow();
+})
 
 app.on("window-all-closed", () => {
   storeUnsubscribe();

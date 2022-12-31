@@ -1,6 +1,13 @@
 import { ThemeProperties } from "./theme";
 
 export const lightTheme: ThemeProperties = {
+    // --- Font attributes
+    "--shell-font-family":
+    "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
+    "--shell-windows-monospace-font-family": "Consolas, Courier New, monospace",
+    "--shell-monospace-font-family": "Menlo, Monaco, Courier New, monospace",
+
     // --- Global theme attributes
     "--bgcolor-splitter": "#61a4d0",
     "--color-command-icon": "#303030",

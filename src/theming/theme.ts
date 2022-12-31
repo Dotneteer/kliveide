@@ -2,6 +2,12 @@
  * Defines the properties of the themes that can be used with Klive.
  */
 export type ThemeProperties = {
+  // --- Font attributes
+  "--shell-windows-font-family"?: string;
+  "--shell-font-family"?: string;
+  "--shell-windows-monospace-font-family"?: string;
+  "--shell-monospace-font-family"?: string;
+
   // --- Global theme attributes
   "--bgcolor-splitter"?: string;
   "--color-command-icon"?: string;
