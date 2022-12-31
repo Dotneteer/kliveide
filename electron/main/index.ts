@@ -37,7 +37,6 @@ let machineTypeInitialized = false;
 const preload = join(__dirname, "../preload/index.js")
 const url = process.env.VITE_DEV_SERVER_URL + IDE_QP
 const indexHtml = join(process.env.DIST, "index.html")
-
 async function createWindow() {
   // --- Create the emulator window
   emuWindow = new BrowserWindow({
@@ -71,8 +70,9 @@ async function createWindow() {
     // Open devTool if the app is not packaged
     emuWindow.webContents.openDevTools()
   } else {
-    console.log(indexHtml);
-    emuWindow.loadFile(indexHtml)
+    emuWindow.loadFile(indexHtml, {
+      search: IDE_QP
+    })
   }
 
   // Test actively push message to the Electron-Renderer
