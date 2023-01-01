@@ -11,5 +11,8 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
   }
 }

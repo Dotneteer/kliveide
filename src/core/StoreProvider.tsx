@@ -1,0 +1,84 @@
+import { MessengerBase } from "@messaging/MessengerBase";
+import { Action } from "@state/Action";
+import { AppState } from "@state/AppState";
+import { Dispatch, Store } from "@state/redux-light";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState
+} from "react";
+
+// The renderer app's context
+type RendererAppContext = {
+  store: Store<AppState>;
+  messenger: MessengerBase;
+};
+
+// This object provides the React context of the application state store, which we pass the root component, and thus
+// all nested components may use it.
+const RendererContext = createContext<RendererAppContext>(undefined);
+
+/**
+ * This React hook makes the current state store information available within any component logic using the hook.
+ */
+export function useStore (): Store<AppState> {
+  return useContext(RendererContext)?.store;
+}
+
+/**
+ * This React hook makes the current state store information available within any component logic using the hook.
+ */
+export function useMessenger (): MessengerBase {
+  return useContext(RendererContext)?.messenger;
+}
+
+/**
+ * This React hook makes the current dispatcher function available within any component logic using the hook.
+ */
+export function useDispatch (): Dispatch<Action> {
+  const store = useStore();
+  return store.dispatch;
+}
+
+/**
+ * This React hook makes the a mapped state value available within any component logic using the hook.
+ */
+export function useSelector<Selected> (
+  stateMapper: (state: AppState) => Selected
+): Selected {
+  const store = useStore();
+  const storeState = store.getState();
+  const [state, setState] = useState(
+    storeState ? stateMapper(store.getState()) : undefined
+  );
+
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      const storeState = store.getState();
+      if (!storeState) return;
+
+      setState(stateMapper(storeState));
+    });
+
+    return () => unsubscribe();
+  }, [store]);
+
+  return state;
+}
+
+// --- RendererContext properties
+type Props = {
+  store: Store<AppState>;
+  messenger: MessengerBase;
+  children: ReactNode;
+};
+
+const RendererProvider = ({ store, messenger, children }: Props) => (
+  <RendererContext.Provider value={{ store, messenger }}>
+    {children}
+  </RendererContext.Provider>
+);
+
+export default RendererProvider;

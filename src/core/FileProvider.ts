@@ -3,12 +3,13 @@ import {
   BinaryContentsResponse,
   TextContentsResponse
 } from "@messaging/any-to-main";
-import { sendFromEmuToMain } from "@messaging/EmuToMainMessenger";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 /**
  * This class implements a file provider to read and write files throught the main process
  */
 export class FileProvider implements IFileProvider {
+  constructor (private readonly messenger: MessengerBase) {}
   /**
    * Read an text file from the specified path with the given encoding
    * @param path Absolute path, or one relative to the dist/assets (public) folder
@@ -16,7 +17,7 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as a string
    */
   async readTextFile (path: string, encoding?: string): Promise<string> {
-    const response = (await sendFromEmuToMain({
+    const response = (await this.messenger.sendMessage({
       type: "MainReadTextFile",
       path,
       encoding
@@ -30,7 +31,7 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as an Uint8Array instance
    */
   async readBinaryFile (path: string): Promise<Uint8Array> {
-    const response = (await sendFromEmuToMain({
+    const response = (await this.messenger.sendMessage({
       type: "MainReadBinaryFile",
       path
     })) as BinaryContentsResponse;

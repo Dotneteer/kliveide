@@ -1,4 +1,4 @@
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector } from "@/core/StoreProvider";
 import styles from "./DocumentArea.module.scss";
 import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";

@@ -1,4 +1,4 @@
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector } from "@/core/StoreProvider";
 import { EMPTY_OBJECT } from "@/utils/stablerefs";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import classnames from "../utils/classnames";

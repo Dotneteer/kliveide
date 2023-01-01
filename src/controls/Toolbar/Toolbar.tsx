@@ -1,9 +1,6 @@
-import { MachineController } from "@/emu/machines/controller/MachineController";
 import { MachineControllerState } from "@state/MachineControllerState";
-import { useDispatch, useSelector, useStore } from "@/emu/StoreProvider";
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useDispatch, useSelector } from "@/core/StoreProvider";
 import { muteSoundAction, setFastLoadAction, showKeyboardAction } from "@state/actions";
-import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../common/IconButton";
 import { ToolbarSeparator } from "../common/ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
@@ -13,7 +10,7 @@ export const Toolbar = () => {
     const dispatch = useDispatch();
     const controller = useController();
     const state = useSelector(s => s.ideView?.machineState);
-    const showKeyboard = useSelector(s => s.ideViewOptions?.showKeyboard ?? false);
+    const showKeyboard = useSelector(s => s.emuViewOptions?.showKeyboard ?? false);
     const muted = useSelector(s => s.ideView?.soundMuted ?? false);
     const fastLoad = useSelector(s => s.ideView?.fastLoad ?? false);
 

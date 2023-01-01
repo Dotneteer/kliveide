@@ -25,8 +25,6 @@ export function ideViewOptionsReducer (
       return { ...state, toolPanelsOnTop: payload?.flag };
     case "MAXIMIZE_TOOLS":
       return { ...state, maximizeTools: payload?.flag };
-    case "SHOW_KEYBOARD":
-      return { ...state, showKeyboard: payload?.flag };
     case "SHOW_FRAME_INFO":
       return { ...state, showFrameInfo: payload?.flag };
     default:

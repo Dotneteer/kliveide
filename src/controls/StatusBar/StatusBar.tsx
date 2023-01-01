@@ -1,6 +1,6 @@
 import { useController } from "@/core/useController";
-import { useSelector } from "@/emu/StoreProvider";
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useSelector } from "@/core/StoreProvider";
+import { useAppServices } from "@/ide/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "../common/Icon";
 import { SpaceFiller } from "../common/SpaceFiller";
@@ -9,7 +9,7 @@ import classnames from "../../utils/classnames"
 import styles from "./StatusBar.module.scss";
 
 export const StatusBar = () => {
-    const {machineService } = useIdeServices();
+    const {machineService } = useAppServices();
     const controller = useController();
     const [frameStats, setFrameStats] = useState<FrameStats>();
     const machineId = useSelector(s => s.ideView?.machineId);

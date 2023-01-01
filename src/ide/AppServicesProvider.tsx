@@ -1,9 +1,9 @@
-import { useStore } from "@/emu/StoreProvider";
+import { useMessenger, useStore } from "@/core/StoreProvider";
 import React, { useContext, useRef } from "react";
-import { IdeServices } from "./abstractions";
+import { AppServices } from "./abstractions";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./InteractiveCommandService";
-import { createmachineService } from "./MachineService";
+import { createMachineService } from "../appEmu/MachineService";
 import { createOutputPaneService } from "./OuputPaneService";
 
 // =====================================================================================================================
@@ -11,32 +11,33 @@ import { createOutputPaneService } from "./OuputPaneService";
  * This object provides the React context of IDE services, which we pass the root component, and thus all
  * nested apps and components may use it.
  */
-const IdeServicesContext = React.createContext<IdeServices>(undefined);
+const AppServicesContext = React.createContext<AppServices>(undefined);
 
 // =====================================================================================================================
 /**
  * This React hook makes the current IDE service instance available within any component logic using the hook.
  */
-export function useIdeServices(): IdeServices {
-    return useContext(IdeServicesContext)!;
+export function useAppServices(): AppServices {
+    return useContext(AppServicesContext)!;
   }
   
 type Props = {
     children?: React.ReactNode;
 }
-export function IdeProvider({
+export function AppServicesProvider({
     children
 }: Props) {
     const store = useStore();
-    const ideServicesRef = useRef<IdeServices>({
+    const messenger = useMessenger();
+    const servicesRef = useRef<AppServices>({
         documentService: createDocumentService(store),
-        machineService: createmachineService(store),
+        machineService: createMachineService(store, messenger),
         outputPaneService: createOutputPaneService(),
         interactiveCommandsService: createInteractiveCommandsService(store)
     });
     return (
-        <IdeServicesContext.Provider value={ideServicesRef.current}>
+        <AppServicesContext.Provider value={servicesRef.current}>
             {children}
-        </IdeServicesContext.Provider>
+        </AppServicesContext.Provider>
     );
 }

@@ -62,7 +62,10 @@ const SELECT_TAPE_FILE = "select_tape_file";
 /**
  * Creates and sets the main menu of the app
  */
-export function setupMenu(browserWindow: BrowserWindow): void {
+export function setupMenu(
+    emuWindow: BrowserWindow,
+    ideWindow: BrowserWindow): void {
+        
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     const appState = mainStore.getState();
     const tools = appState.ideView?.tools ?? [];
@@ -414,7 +417,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
                 id: SELECT_TAPE_FILE,
                 label: "Select Tape File...",
                 click: async () => {
-                    await setTapeFile(browserWindow);
+                    await setTapeFile(emuWindow);
                 },
             },
         ]

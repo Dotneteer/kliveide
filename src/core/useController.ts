@@ -1,9 +1,9 @@
 import { MachineController } from "@/emu/machines/controller/MachineController";
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useAppServices } from "@/ide/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 
 export const useController = () => {
-    const { machineService, outputPaneService } = useIdeServices();
+    const { machineService, outputPaneService } = useAppServices();
     const [controller, setController] = useState<MachineController>();
     const mounted = useRef(false);
 

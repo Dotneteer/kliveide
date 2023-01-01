@@ -4,14 +4,15 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { BinaryReader } from "@utils/BinaryReader";
-import { emuStore } from "./emu/emu-store";
-import { sendFromEmuToMain } from "../common/messaging/EmuToMainMessenger";
-import { TAPE_DATA } from "./emu/machines/machine-props";
-import { TapeDataBlock } from "./emu/machines/tape/abstractions";
-import { TapReader } from "./emu/machines/tape/TapReader";
-import { TzxReader } from "./emu/machines/tape/TzxFileFormatLoader";
-import { IdeServices } from "./ide/abstractions";
+import { TAPE_DATA } from "../emu/machines/machine-props";
+import { TapeDataBlock } from "../emu/machines/tape/abstractions";
+import { TapReader } from "../emu/machines/tape/TapReader";
+import { TzxReader } from "../emu/machines/tape/TzxFileFormatLoader";
+import { AppServices } from "../ide/abstractions";
 import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -20,12 +21,14 @@ import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
  */
 export async function processMainToEmuMessages (
   message: RequestMessage,
-  { machineService }: IdeServices
+  store: Store<AppState>,
+  emuToMain: MessengerBase,
+  { machineService }: AppServices
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
-      emuStore.dispatch(message.action, false);
+      store.dispatch(message.action, false);
       break;
 
     case "EmuSetMachineType":
@@ -84,7 +87,7 @@ export async function processMainToEmuMessages (
       const tapReader = new TapReader(reader);
       result = tapReader.readContent();
       if (result) {
-        await sendFromEmuToMain({
+        await emuToMain.sendMessage({
           type: "MainDisplayMessageBox",
           messageType: "error",
           title: "Tape file error",
@@ -105,7 +108,7 @@ export async function processMainToEmuMessages (
     controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
 
     // --- Done.
-    await sendFromEmuToMain({
+    await emuToMain.sendMessage({
       type: "MainDisplayMessageBox",
       messageType: "info",
       title: "Tape file set",

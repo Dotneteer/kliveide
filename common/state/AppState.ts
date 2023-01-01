@@ -25,7 +25,6 @@ export type IdeViewOptions = {
   toolPanelsOnTop?: boolean;
   maximizeTools?: boolean;
   showFrameInfo?: boolean;
-  showKeyboard?: boolean;
   showSidebar?: boolean;
 };
 
@@ -81,7 +80,6 @@ export const initialAppState: AppState = {
     toolPanelsOnTop: false,
     maximizeTools: false,
     showFrameInfo: true,
-    showKeyboard: false,
     showSidebar: true
   },
   ideView: {

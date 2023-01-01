@@ -8,7 +8,7 @@ import { ipcRenderer, IpcRendererEvent } from "electron";
 /**
  * Implements a messenger that send messages from the Emu to the Main process
  */
-class EmuToMainMessenger extends MessengerBase {
+export class EmuToMainMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
@@ -47,15 +47,15 @@ class EmuToMainMessenger extends MessengerBase {
 /**
  * The singleton messenger instance
  */
-const emuToMainMessenger = new EmuToMainMessenger();
+//const emuToMainMessenger = new EmuToMainMessenger();
 
-/**
- * Sends the specified message from the Emu process to Main
- * @param message Message to send
- * @returns Response
- */
-export async function sendFromEmuToMain<TResp extends ResponseMessage> (
-  message: RequestMessage
-): Promise<TResp> {
-  return await emuToMainMessenger.sendMessage(message);
-}
+// /**
+//  * Sends the specified message from the Emu process to Main
+//  * @param message Message to send
+//  * @returns Response
+//  */
+// export async function sendFromEmuToMain<TResp extends ResponseMessage> (
+//   message: RequestMessage
+// ): Promise<TResp> {
+//   return await emuToMainMessenger.sendMessage(message);
+// }

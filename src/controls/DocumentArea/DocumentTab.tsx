@@ -2,7 +2,7 @@ import styles from "./DocumentTab.module.scss";
 import { DocumentState } from "@/ide/abstractions";
 import { Icon } from "../common/Icon";
 import classnames from "@/utils/classnames";
-import { useDispatch } from "@/emu/StoreProvider";
+import { useDispatch } from "@/core/StoreProvider";
 import { activateDocumentAction, changeDocumentAction, closeDocumentAction, selectActivityAction } from "@state/actions";
 import { TabButton } from "../common/TabButton";
 import { useState } from "react";
