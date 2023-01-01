@@ -1,4 +1,4 @@
-import { Channel, RequestMessage, ResponseMessage } from "./message-types";
+import { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 
 /**
  * Base class for messengers that provide renderer-to-main and * main-to-renderer communication
@@ -19,7 +19,7 @@ export abstract class MessengerBase {
    * Sends out a message in a fire-and-forget fashion
    * @param message Message to send out
    */
-  postMessage(message: RequestMessage): void {
+  postMessage (message: RequestMessage): void {
     this.send(message);
   }
 
@@ -28,13 +28,13 @@ export abstract class MessengerBase {
    * @param message Message to send out
    * @returns Response for the message
    */
-  async sendMessage<TResp extends ResponseMessage>(
+  async sendMessage<TResp extends ResponseMessage> (
     message: RequestMessage
   ): Promise<TResp> {
     if (message.correlationId === undefined) {
       message.correlationId = this._requestSeqNo++;
     }
-    const promise = new Promise<TResp>((resolve) => {
+    const promise = new Promise<TResp>(resolve => {
       this._messageResolvers.set(
         message.correlationId ?? 0,
         resolve as (
@@ -50,7 +50,7 @@ export abstract class MessengerBase {
    * Processes the response that arrives back on the response channel
    * @param response Response to process
    */
-  protected processResponse(response: ResponseMessage): void {
+  protected processResponse (response: ResponseMessage): void {
     const resolver = this._messageResolvers.get(response.correlationId);
     if (resolver) {
       resolver(response);

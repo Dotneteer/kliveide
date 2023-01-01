@@ -26,9 +26,9 @@ import {
     setTapeFileAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
-import { sendFromMainToEmu } from "./MainToEmuMessenger";
-import { createMachineCommand } from "../common/messaging/message-types";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
+import { createMachineCommand } from "../common/messaging/main-to-emu";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -114,7 +114,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             label: `Show ${t.name} Panel`,
             type: "checkbox",
             checked: t.visible,
-            enabled: !appState.emuViewOptions.useEmuView,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 const panelId = mi.id.substring(TOOL_PREFIX.length);
                 mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked))
@@ -167,7 +167,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_TOOLBAR,
             label: "Show the Toolbar",
             type: "checkbox",
-            checked: appState.emuViewOptions.showToolbar,
+            checked: appState.ideViewOptions.showToolbar,
             click: (mi) => {
                 mainStore.dispatch(showToolbarAction(mi.checked));
             },
@@ -176,7 +176,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_STATUS_BAR,
             label: "Show the Status Bar",
             type: "checkbox",
-            checked: appState.emuViewOptions.showStatusBar,
+            checked: appState.ideViewOptions.showStatusBar,
             click: (mi) => {
                 mainStore.dispatch(showStatusBarAction(mi.checked));
             },
@@ -186,7 +186,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: SET_EMULATOR_VIEW,
             label: "Use the Emulator view",
             type: "checkbox",
-            checked: appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 mi.checked = true;
                 Menu.getApplicationMenu().getMenuItemById(SET_IDE_VIEW).checked = false;
@@ -197,7 +197,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: SET_IDE_VIEW,
             label: "Use the IDE view",
             type: "checkbox",
-            checked: !appState.emuViewOptions.useEmuView,
+            checked: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 mi.checked = true;
                 Menu.getApplicationMenu().getMenuItemById(SET_EMULATOR_VIEW).checked = false;
@@ -209,8 +209,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_SIDE_BAR,
             label: "Show the Side Bar",
             type: "checkbox",
-            checked: appState.emuViewOptions.showStatusBar,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.showStatusBar,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(showSideBarAction(mi.checked));
             },
@@ -219,8 +219,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_PRIMARY_BAR_RIGHT,
             label: "Move Primary Side Bar Right",
             type: "checkbox",
-            checked: appState.emuViewOptions.primaryBarOnRight,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.primaryBarOnRight,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(primaryBarOnRightAction(mi.checked));
             },
@@ -229,8 +229,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_TOOL_PANELS,
             label: "Show Tool Panels",
             type: "checkbox",
-            checked: appState.emuViewOptions.showToolPanels,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.showToolPanels,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 const checked = mi.checked;
                 mainStore.dispatch(showToolPanelsAction(checked));
@@ -243,8 +243,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_TOOLS_TOP,
             label: "Move Tool Panels Top",
             type: "checkbox",
-            checked: appState.emuViewOptions.toolPanelsOnTop,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.toolPanelsOnTop,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
             },
@@ -253,8 +253,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: MAXIMIZE_TOOLS,
             label: "Maximize Tool Panels",
             type: "checkbox",
-            checked: appState.emuViewOptions.maximizeTools,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.maximizeTools,
+            enabled: !appState.ideViewOptions.useEmuView,
             click: (mi) => {
                 const checked = mi.checked;
                 if (checked) {

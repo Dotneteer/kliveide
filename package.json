@@ -17,7 +17,8 @@
   "main": "dist-electron/electron/main/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder"
+    "build": "tsc && vite build && electron-builder",
+    "build:check": "tsc && vite build"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
@@ -27,11 +28,14 @@
     "@types/mocha": "^10.0.0",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",
+    "@typescript-eslint/parser": "^5.47.1",
     "@vitejs/plugin-react": "^2.1.0",
     "electron": "^21.2.3",
     "electron-builder": "^23.6.0",
+    "eslint": "^8.31.0",
     "expect": "^29.3.1",
     "mocha": "^10.1.0",
+    "prettier": "^2.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-popper": "^2.3.0",

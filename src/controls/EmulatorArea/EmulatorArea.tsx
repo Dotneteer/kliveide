@@ -5,7 +5,7 @@ import styles from "./EmulatorArea.module.scss";
 import { useSelector } from "@/emu/StoreProvider";
 
 export const EmulatorArea = () => {
-    const keyboardVisible = useSelector(s => s.emuViewOptions?.showKeyboard ?? false);
+    const keyboardVisible = useSelector(s => s.ideViewOptions?.showKeyboard ?? false);
     return  (
     <div className={styles.component} >
         <SplitPanel

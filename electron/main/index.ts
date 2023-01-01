@@ -1,4 +1,4 @@
-import { RequestMessage } from '@messaging/message-types'
+import { RequestMessage } from '@messaging/messages-core'
 import { isWindowsAction } from '../../common/state/actions'
 import { Unsubscribe } from '@state/redux-light'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
@@ -9,7 +9,7 @@ import { __WIN32__ } from '../electron-utils'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
 import { setMachineType } from '../machines'
 import { mainStore } from '../main-store'
-import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
+import { registerMainToEmuMessenger } from '../../common/messaging/MainToEmuMessenger'
 
 const EMU_QP = "?emu";
 const IDE_QP = "?ide";

@@ -1,4 +1,4 @@
-import { sendFromMainToEmu } from "./MainToEmuMessenger";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 
 /**
  * This function set the machine type to the specified one

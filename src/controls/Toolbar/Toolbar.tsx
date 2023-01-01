@@ -13,7 +13,7 @@ export const Toolbar = () => {
     const dispatch = useDispatch();
     const controller = useController();
     const state = useSelector(s => s.ideView?.machineState);
-    const showKeyboard = useSelector(s => s.emuViewOptions?.showKeyboard ?? false);
+    const showKeyboard = useSelector(s => s.ideViewOptions?.showKeyboard ?? false);
     const muted = useSelector(s => s.ideView?.soundMuted ?? false);
     const fastLoad = useSelector(s => s.ideView?.fastLoad ?? false);
 

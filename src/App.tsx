@@ -17,7 +17,7 @@ import {
   uiLoadedAction 
 } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { RequestMessage } from "@messaging/message-types";
+import { RequestMessage } from "@messaging/messages-core";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useDispatch, useSelector } from "./emu/StoreProvider";
 import { activityRegistry, toolPanelRegistry } from "./registry";
@@ -32,16 +32,16 @@ const App = () => {
   const dispatch = useDispatch();
 
   // --- Visual state
-  const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
-  const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
-  const useEmuView = useSelector(s => s.emuViewOptions.useEmuView);
-  const showSideBar = useSelector(s => s.emuViewOptions.showSidebar);
-  const showToolPanels = useSelector(s => s.emuViewOptions.showToolPanels);
-  const maximizeToolPanels = useSelector(s => s.emuViewOptions.maximizeTools);
+  const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
+  const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
+  const useEmuView = useSelector(s => s.ideViewOptions.useEmuView);
+  const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
+  const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
+  const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
 
-  const activityOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 3 : 0;
-  const primaryBarsPos = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? "right" : "left";
-  const docPanelsPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
+  const activityOrder = useSelector(s => s.ideViewOptions.primaryBarOnRight) ? 3 : 0;
+  const primaryBarsPos = useSelector(s => s.ideViewOptions.primaryBarOnRight) ? "right" : "left";
+  const docPanelsPos = useSelector(s => s.ideViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
   const ideServices = useIdeServices();
 

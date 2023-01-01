@@ -1,6 +1,6 @@
 import { Action } from "../common/state/Action";
 import createAppStore from "../common/state/store";
-import { sendFromMainToEmu } from "./MainToEmuMessenger";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 
 /**
  * This instance represents the state store in the EMU renderer

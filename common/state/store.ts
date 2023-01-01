@@ -1,9 +1,10 @@
 import { Action } from "./Action";
 import { AppState, initialAppState } from "./AppState";
 import { appStateFlagsReducer } from "./app-state-flags-reducer";
-import { emuViewOptionsReducer } from "./emu-view-options-reducer";
+import { ideViewOptionsReducer } from "./ide-view-options-reducer";
 import { ideViewReducer } from "./ide-view-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
+import { emuViewOptionsReducer } from "./emu-view-options-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -13,6 +14,7 @@ import { ActionForwarder, createStore, Reducer } from "./redux-light";
  */
 function appReducer(state: AppState, action: Action): AppState {
     state = appStateFlagsReducer(state, action);
+    invokeReducer(state.ideViewOptions, ideViewOptionsReducer, (a, n) => a.ideViewOptions = n);
     invokeReducer(state.emuViewOptions, emuViewOptionsReducer, (a, n) => a.emuViewOptions = n);
     invokeReducer(state.ideView, ideViewReducer, (a, n) => a.ideView = n);
     return state;
