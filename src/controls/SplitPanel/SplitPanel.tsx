@@ -1,4 +1,4 @@
-import { useResizeObserver } from "../../hooks/useResizeObserver";
+import { useResizeObserver } from "../../core/useResizeObserver";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./SplitPanel.module.scss";
 

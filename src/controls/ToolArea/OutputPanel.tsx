@@ -1,6 +1,6 @@
-import { useDispatch, useSelector, useStore } from "@/emu/StoreProvider";
+import { useDispatch, useSelector, useStore } from "@/core/RendererProvider";
 import { ToolState } from "@/ide/abstractions";
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useAppServices } from "@/ide/AppServicesProvider";
 import { activateOutputPaneAction } from "@state/actions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../common/Dropdown";
@@ -10,7 +10,7 @@ import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 
 const OutputPanel = () => {
-    const { outputPaneService } = useIdeServices();
+    const { outputPaneService } = useAppServices();
     const store = useStore();
     const tool = useRef<ToolState>();
     const activePane = useSelector(s => s.ideView?.activeOutputPane);
@@ -91,7 +91,7 @@ export const outputPanelRenderer = () => <OutputPanel />
 
 export const outputPanelHeaderRenderer = () => {
     const dispatch = useDispatch();
-    const { outputPaneService } = useIdeServices();
+    const { outputPaneService } = useAppServices();
     const panes = outputPaneService.getRegisteredOutputPanes().map(p => (
         {
             value: p.id,

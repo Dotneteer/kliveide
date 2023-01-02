@@ -275,7 +275,7 @@ export interface IInteractiveCommandService {
 /**
  * This type defines the services the IDE provides
  */
-export type IdeServices = {
+export type AppServices = {
     documentService: IDocumentService;
     machineService: IMachineService;
     outputPaneService: IOutputPaneService;

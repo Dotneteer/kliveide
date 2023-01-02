@@ -1,4 +1,4 @@
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector } from "@/core/RendererProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 

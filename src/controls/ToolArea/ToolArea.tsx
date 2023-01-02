@@ -1,6 +1,6 @@
 import styles from "./ToolArea.module.scss";
 import classnames from "@/utils/classnames";
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector } from "@/core/RendererProvider";
 import { ToolsHeader } from "./ToolsHeader";
 import { ToolsContainer } from "./ToolsContainer";
 

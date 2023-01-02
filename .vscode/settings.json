@@ -1,8 +1,18 @@
 {
-    "mochaExplorer.mochaPath": "node_modules/mocha",
-    "mochaExplorer.files": "test/**/*.test.ts",
-    "mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"],
-    "mochaExplorer.env": {
-        "TS_NODE_PROJECT": "./test/tsconfig.json"
+  "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+
+  "mochaExplorer.mochaPath": "node_modules/mocha",
+  "mochaExplorer.files": "test/**/*.test.ts",
+  "mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"],
+  "mochaExplorer.env": {
+    "TS_NODE_PROJECT": "./test/tsconfig.json"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
   }
 }

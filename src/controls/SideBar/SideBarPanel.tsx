@@ -1,7 +1,7 @@
 import styles from "./SideBarPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { SideBarPanelInfo } from "@/core/abstractions";
-import { useDispatch } from "@/emu/StoreProvider";
+import { useDispatch } from "@/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
 import { Icon } from "../common/Icon";
 import classnames from "@/utils/classnames";

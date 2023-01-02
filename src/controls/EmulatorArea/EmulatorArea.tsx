@@ -2,7 +2,7 @@ import { SplitPanel } from "../SplitPanel/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
 import { KeyboardPanel } from "./KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
-import { useSelector } from "@/emu/StoreProvider";
+import { useSelector } from "@/core/RendererProvider";
 
 export const EmulatorArea = () => {
     const keyboardVisible = useSelector(s => s.emuViewOptions?.showKeyboard ?? false);

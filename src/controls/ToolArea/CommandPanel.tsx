@@ -1,4 +1,4 @@
-import { useIdeServices } from "@/ide/IdeServicesProvider";
+import { useAppServices } from "@/ide/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
@@ -6,7 +6,7 @@ import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
 
 const CommandPanel = () => {
-    const { interactiveCommandsService } = useIdeServices();
+    const { interactiveCommandsService } = useAppServices();
     const buffer = useRef<IOutputBuffer>(interactiveCommandsService.getBuffer());
     const [contents, setContents] = useState<OutputContentLine[]>(buffer.current.getContents());
     const api = useRef<VirtualizedListApi>();

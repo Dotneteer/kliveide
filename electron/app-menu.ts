@@ -11,11 +11,10 @@ import * as path from "path";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import { 
-    showStatusBarAction, 
-    showToolbarAction, 
+    showEmuStatusBarAction, 
+    showEmuToolbarAction, 
     primaryBarOnRightAction, 
     showSideBarAction, 
-    useEmuViewAction, 
     showToolPanelsAction,
     toolPanelsOnTopAction,
     maximizeToolsAction,
@@ -23,20 +22,22 @@ import {
     changeToolVisibilityAction,
     setClockMultiplierAction,
     setSoundLevelAction,
-    setTapeFileAction} from "../common/state/actions";
+    setTapeFileAction,
+    showIdeToolbarAction,
+    showIdeStatusBarAction} from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/state/MachineControllerState";
-import { sendFromMainToEmu } from "./MainToEmuMessenger";
-import { createMachineCommand } from "../common/messaging/message-types";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
+import { createMachineCommand } from "../common/messaging/main-to-emu";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
-const TOGGLE_TOOLBAR = "toggle_toolbar";
 const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right"
-const TOGGLE_STATUS_BAR = "toggle_status_bar";
-const SET_EMULATOR_VIEW = "set_emulator_view";
-const SET_IDE_VIEW = "set_ide_view";
+const TOGGLE_EMU_TOOLBAR = "toggle_emu_toolbar";
+const TOGGLE_EMU_STATUS_BAR = "toggle_emu_status_bar";
+const TOGGLE_IDE_TOOLBAR = "toggle_ide_toolbar";
+const TOGGLE_IDE_STATUS_BAR = "toggle_ide_status_bar";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
 const TOGGLE_TOOLS_TOP = "tool_panels_top";
 const MAXIMIZE_TOOLS = "tools_maximize";
@@ -44,6 +45,8 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+
+const SHOW_IDE_WINDOW = "show_ide_window";
 
 const MACHINE_TYPES = "machine_types";
 const MACHINE_SP48 = "machine_sp48";
@@ -62,11 +65,14 @@ const SELECT_TAPE_FILE = "select_tape_file";
 /**
  * Creates and sets the main menu of the app
  */
-export function setupMenu(browserWindow: BrowserWindow): void {
+export function setupMenu(
+    emuWindow: BrowserWindow,
+    ideWindow: BrowserWindow): void {
+        
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     const appState = mainStore.getState();
     const tools = appState.ideView?.tools ?? [];
-    const execState = appState?.ideView?.machineState;
+    const execState = appState?.emulatorState?.machineState;
 
     /**
      * Application system menu on MacOS
@@ -114,7 +120,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             label: `Show ${t.name} Panel`,
             type: "checkbox",
             checked: t.visible,
-            enabled: !appState.emuViewOptions.useEmuView,
+            visible: appState.ideFocused,
             click: (mi) => {
                 const panelId = mi.id.substring(TOOL_PREFIX.length);
                 mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked))
@@ -164,44 +170,52 @@ export function setupMenu(browserWindow: BrowserWindow): void {
         },
         { type: "separator" },
         {
-            id: TOGGLE_TOOLBAR,
-            label: "Show the Toolbar",
-            type: "checkbox",
-            checked: appState.emuViewOptions.showToolbar,
-            click: (mi) => {
-                mainStore.dispatch(showToolbarAction(mi.checked));
-            },
-        },
-        {
-            id: TOGGLE_STATUS_BAR,
-            label: "Show the Status Bar",
-            type: "checkbox",
-            checked: appState.emuViewOptions.showStatusBar,
-            click: (mi) => {
-                mainStore.dispatch(showStatusBarAction(mi.checked));
+            id: SHOW_IDE_WINDOW,
+            label: "Show IDE",
+            visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
+            click: () => {
+                ideWindow.show();
             },
         },
         { type: "separator" },
         {
-            id: SET_EMULATOR_VIEW,
-            label: "Use the Emulator view",
+            id: TOGGLE_EMU_TOOLBAR,
+            label: "Show the Toolbar",
             type: "checkbox",
-            checked: appState.emuViewOptions.useEmuView,
+            visible: appState.emuFocused,
+            checked: appState.emuViewOptions.showToolbar,
             click: (mi) => {
-                mi.checked = true;
-                Menu.getApplicationMenu().getMenuItemById(SET_IDE_VIEW).checked = false;
-                mainStore.dispatch(useEmuViewAction(true));
+                mainStore.dispatch(showEmuToolbarAction(mi.checked));
             },
         },
         {
-            id: SET_IDE_VIEW,
-            label: "Use the IDE view",
+            id: TOGGLE_IDE_TOOLBAR,
+            label: "Show the Toolbar",
             type: "checkbox",
-            checked: !appState.emuViewOptions.useEmuView,
+            visible: appState.ideFocused,
+            checked: appState.ideViewOptions.showToolbar,
             click: (mi) => {
-                mi.checked = true;
-                Menu.getApplicationMenu().getMenuItemById(SET_EMULATOR_VIEW).checked = false;
-                mainStore.dispatch(useEmuViewAction(false));
+                mainStore.dispatch(showIdeToolbarAction(mi.checked));
+            },
+        },
+        {
+            id: TOGGLE_EMU_STATUS_BAR,
+            label: "Show the Status Bar",
+            type: "checkbox",
+            visible: appState.emuFocused,
+            checked: appState.emuViewOptions.showStatusBar,
+            click: (mi) => {
+                mainStore.dispatch(showEmuStatusBarAction(mi.checked));
+            },
+        },
+        {
+            id: TOGGLE_IDE_STATUS_BAR,
+            label: "Show the Status Bar",
+            type: "checkbox",
+            visible: appState.ideFocused,
+            checked: appState.ideViewOptions.showStatusBar,
+            click: (mi) => {
+                mainStore.dispatch(showIdeStatusBarAction(mi.checked));
             },
         },
         { type: "separator" },
@@ -209,8 +223,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_SIDE_BAR,
             label: "Show the Side Bar",
             type: "checkbox",
-            checked: appState.emuViewOptions.showStatusBar,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.showStatusBar,
+            visible: appState.ideFocused,
             click: (mi) => {
                 mainStore.dispatch(showSideBarAction(mi.checked));
             },
@@ -219,8 +233,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_PRIMARY_BAR_RIGHT,
             label: "Move Primary Side Bar Right",
             type: "checkbox",
-            checked: appState.emuViewOptions.primaryBarOnRight,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.primaryBarOnRight,
+            visible: appState.ideFocused,
             click: (mi) => {
                 mainStore.dispatch(primaryBarOnRightAction(mi.checked));
             },
@@ -229,8 +243,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_TOOL_PANELS,
             label: "Show Tool Panels",
             type: "checkbox",
-            checked: appState.emuViewOptions.showToolPanels,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.showToolPanels,
+            visible: appState.ideFocused,
             click: (mi) => {
                 const checked = mi.checked;
                 mainStore.dispatch(showToolPanelsAction(checked));
@@ -243,8 +257,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: TOGGLE_TOOLS_TOP,
             label: "Move Tool Panels Top",
             type: "checkbox",
-            checked: appState.emuViewOptions.toolPanelsOnTop,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.toolPanelsOnTop,
+            visible: appState.ideFocused,
             click: (mi) => {
                 mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
             },
@@ -253,8 +267,8 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: MAXIMIZE_TOOLS,
             label: "Maximize Tool Panels",
             type: "checkbox",
-            checked: appState.emuViewOptions.maximizeTools,
-            enabled: !appState.emuViewOptions.useEmuView,
+            checked: appState.ideViewOptions.maximizeTools,
+            visible: appState.ideFocused,
             click: (mi) => {
                 const checked = mi.checked;
                 if (checked) {
@@ -279,7 +293,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: `${CLOCK_MULT}_${v}`,
             label: v === 1 ? "Normal" : `${v}x`,
             type: "checkbox",
-            checked: appState.ideView?.clockMultiplier === v,
+            checked: appState.emulatorState?.clockMultiplier === v,
             click: async () => {
                 mainStore.dispatch(setClockMultiplierAction(v));
             },
@@ -298,7 +312,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
             id: `${SOUND_LEVEL}_${v.value}`,
             label: v.label,
             type: "checkbox",
-            checked: appState.ideView?.soundLevel === v.value,
+            checked: appState.emulatorState?.soundLevel === v.value,
             click: async () => {
                 mainStore.dispatch(setSoundLevelAction(v.value));
             },
@@ -324,7 +338,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
                         id: MACHINE_SP48,
                         label: "ZX Spectrum 48K",
                         type: "checkbox",
-                        checked: appState.ideView?.machineId === "sp48",
+                        checked: appState.emulatorState?.machineId === "sp48",
                         click: async () => {
                             await setMachineType("sp48");
                         },
@@ -414,7 +428,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
                 id: SELECT_TAPE_FILE,
                 label: "Select Tape File...",
                 click: async () => {
-                    await setTapeFile(browserWindow);
+                    await setTapeFile(emuWindow);
                 },
             },
         ]
@@ -430,7 +444,7 @@ export function setupMenu(browserWindow: BrowserWindow): void {
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[] | undefined> {
-    const lastFile = mainStore.getState()?.ideView?.tapeFile;
+    const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
     const defaultPath = lastFile ? path.dirname(lastFile) : app.getPath("home");
     const dialogResult = await dialog.showOpenDialog(browserWindow, {
         title: "Select Tape File",

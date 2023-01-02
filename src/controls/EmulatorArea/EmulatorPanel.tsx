@@ -2,8 +2,8 @@ import styles from "./EmulatorPanel.module.scss";
 import { useController } from "@/core/useController";
 import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
-import { useSelector, useStore } from "@/emu/StoreProvider";
-import { useResizeObserver } from "@/hooks/useResizeObserver";
+import { useSelector, useStore } from "@/core/RendererProvider";
+import { useResizeObserver } from "@/core/useResizeObserver";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
@@ -29,9 +29,9 @@ export const EmulatorPanel = () => {
     const [canvasHeight, setCanvasHeight] = useState(0);
     const shadowCanvasWidth = useRef(0);
     const shadowCanvasHeight = useRef(0);
-    const machineState = useSelector(s => s.ideView?.machineState);
-    const audioSampleRate = useSelector(s => s.ideView?.audioSampleRate);
-    const fastLoad = useSelector(s => s.ideView?.fastLoad);
+    const machineState = useSelector(s => s.emulatorState?.machineState);
+    const audioSampleRate = useSelector(s => s.emulatorState?.audioSampleRate);
+    const fastLoad = useSelector(s => s.emulatorState?.fastLoad);
     const [overlay, setOverlay] = useState(null);
     const [showOverlay, setShowOverlay] = useState(true);
 
@@ -78,7 +78,7 @@ export const EmulatorPanel = () => {
                     const zxSpectrum = controller.machine as IZxSpectrumMachine;
                     if (zxSpectrum?.beeperDevice) {
                         const samples = zxSpectrum.beeperDevice.getAudioSamples();
-                        const soundLevel = store.getState()?.ideView?.soundLevel ?? 0.0;
+                        const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
                         beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
                     }
                 }

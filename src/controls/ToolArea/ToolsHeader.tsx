@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "@/emu/StoreProvider";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { ToolState } from "@/ide/abstractions";
 import { toolPanelRegistry } from "@/registry";
 import { showToolPanelsAction, toolPanelsOnTopAction } from "@state/actions";
