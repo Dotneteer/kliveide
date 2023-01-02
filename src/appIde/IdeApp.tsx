@@ -1,13 +1,11 @@
 import styles from "@styles/app.module.scss";
 import { ActivityBar } from "../controls/ActivityBar/ActivityBar";
 import { DocumentArea } from "../controls/DocumentArea/DocumentArea";
-import { EmulatorArea } from "../controls/EmulatorArea/EmulatorArea";
 import { SiteBar } from "../controls/SideBar/SideBar";
 import { SplitPanel } from "../controls/SplitPanel/SplitPanel";
-import { StatusBar } from "../controls/StatusBar/StatusBar";
 import { ToolArea } from "../controls/ToolArea/ToolArea";
 import { Toolbar } from "../controls/Toolbar/Toolbar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   activateToolAction,
   closeAllDocumentsAction,
@@ -17,15 +15,21 @@ import {
   emuLoadedAction
 } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { defaultResponse, RequestMessage } from "@messaging/messages-core";
-import { processMainToEmuMessages } from "../appEmu/MainToEmuProcessor";
-import { useDispatch, useMessenger, useSelector, useStore } from "../core/RendererProvider";
+import { RequestMessage } from "@messaging/messages-core";
+import {
+  useDispatch,
+  useMessenger,
+  useSelector,
+  useStore
+} from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "../ide/AppServicesProvider";
 import { AppServices, ToolInfo } from "../ide/abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Store } from "@state/redux-light";
 import { AppState } from "@state/AppState";
+import { processMainToIdeMessages } from "./MainToIdeProcessor";
+import { IdeStatusBar } from "./IdeStatusBar";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -139,23 +143,14 @@ const IdeApp = () => {
               primaryLocation={docPanelsPos}
               primaryVisible={!maximizeToolPanels}
               minSize={25}
-              primaryPanel={
-                <SplitPanel
-                  id='docs'
-                  primaryLocation='left'
-                  primaryPanel={<EmulatorArea />}
-                  secondaryPanel={<DocumentArea />}
-                  secondaryVisible={!useEmuView}
-                  minSize={25}
-                />
-              }
+              primaryPanel={<DocumentArea />}
               secondaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
               secondaryVisible={!useEmuView && showToolPanels}
             />
           }
         />
       </div>
-      {showStatusBar && <StatusBar />}
+      {showStatusBar && <IdeStatusBar />}
     </div>
   );
 };
@@ -164,7 +159,12 @@ export default IdeApp;
 
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
-  const response = defaultResponse();
+  const response = await processMainToIdeMessages(
+    msg,
+    storeCached,
+    messengerCached,
+    appServicesCached
+  );
   response.correlationId = msg.correlationId;
   response.sourceId = "ide";
   ipcRenderer.send("MainToIdeResponse", response);

@@ -75,7 +75,7 @@ export class MachineController {
             
         const oldState = this._machineState;
         this._machineState = value;
-        this.store.dispatch(setMachineStateAction(value));
+        this.store.dispatch(setMachineStateAction(value), "emu");
         this.stateChanged.fire({oldState, newState: this._machineState});
     }
 
@@ -103,7 +103,7 @@ export class MachineController {
     /**
      * Start the machine in normal mode.
      */
-    async start(): Promise<void> {
+    start(): void {
         this.isDebugging = false;
         this.outputOps(o => {
             o.color("green");
@@ -111,13 +111,12 @@ export class MachineController {
             o.resetColor();
         })
         this.run();
-        await this.completeExecutionLoop();
     }
 
     /**
      * Start the machine in debug mode.
      */
-    async startDebug(): Promise<void> {
+    startDebug(): void {
         this.isDebugging = true;
         this.outputOps(o => {
             o.color("green");
@@ -125,11 +124,6 @@ export class MachineController {
             o.resetColor();
         })
         this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
-        await this.completeExecutionLoop();
-        if (this.context.lastTerminationReason == FrameTerminationMode.DebugEvent) {
-            // --- We are about to pause because of a debug event
-            await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
-        }
     }
     
     /**
@@ -185,7 +179,7 @@ export class MachineController {
             o.resetColor();
         })
         this.machine.hardReset();
-        await this.start();
+        this.start();
     }
 
     /**
@@ -332,18 +326,11 @@ export class MachineController {
         afterState: MachineControllerState): Promise<void> {
         this.state = beforeState;
         this._cancelRequested = true;
-        await this.completeExecutionLoop();
-        this.state = afterState;
-    }
-
-    /**
-     * Completes the current execution loop of the machine
-     */
-    private async completeExecutionLoop(): Promise<void> {
         if (this._machineTask) {
             await this._machineTask;
             this._machineTask = undefined;
         }
+        this.state = afterState;
     }
 
     /**

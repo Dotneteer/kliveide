@@ -2,13 +2,13 @@ import { useController } from "@/core/useController";
 import { useSelector } from "@/core/RendererProvider";
 import { useAppServices } from "@/ide/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Icon } from "../common/Icon";
-import { SpaceFiller } from "../common/SpaceFiller";
-import { FrameStats } from "../../emu/abstractions/FrameStats";
-import classnames from "../../utils/classnames"
-import styles from "./StatusBar.module.scss";
+import { Icon } from "../controls/common/Icon";
+import { SpaceFiller } from "../controls/common/SpaceFiller";
+import { FrameStats } from "../emu/abstractions/FrameStats";
+import classnames from "../utils/classnames"
+import styles from "./EmuStatusBar.module.scss";
 
-export const StatusBar = () => {
+export const EmuStatusBar = () => {
     const {machineService } = useAppServices();
     const controller = useController();
     const [frameStats, setFrameStats] = useState<FrameStats>();

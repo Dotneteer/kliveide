@@ -28,7 +28,6 @@ export async function processMainToEmuMessages (
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
-      console.log("Action from main");
       store.dispatch(message.action, message.sourceId);
       break;
 
@@ -43,7 +42,7 @@ export async function processMainToEmuMessages (
       if (controller) {
         switch (message.command) {
           case "start":
-            await controller.start();
+            controller.start();
             break;
           case "pause":
             await controller.pause();
@@ -55,7 +54,7 @@ export async function processMainToEmuMessages (
             await controller.restart();
             break;
           case "debug":
-            await controller.startDebug();
+            controller.startDebug();
             break;
           case "stepInto":
             await controller.stepInto();

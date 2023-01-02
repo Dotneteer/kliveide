@@ -170,7 +170,7 @@ app.on("activate", () => {
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
-  let response = await forwardActions(msg, emuWindow);
+  let response = await forwardActions(msg);
   if (response === null) {
     response = await processRendererToMainMessages(msg, emuWindow);
   }
@@ -181,8 +181,21 @@ ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
   }
 });
 
+// --- This channel processes ide requests and sends the results back
+ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
+  let response = await forwardActions(msg);
+  if (response === null) {
+    response = await processRendererToMainMessages(msg, ideWindow);
+  }
+  response.correlationId = msg.correlationId;
+  response.sourceId = "main";
+  if (ideWindow?.isDestroyed() === false) {
+    ideWindow.webContents.send("IdeToMainResponse", response);
+  }
+});
+
 // --- Process an action forward message coming from any of the renderers
-async function forwardActions(message: RequestMessage, window: BrowserWindow): Promise<ResponseMessage | null> {
+async function forwardActions(message: RequestMessage): Promise<ResponseMessage | null> {
   if (message.type !== "ForwardAction") return null;
   mainStore.dispatch(message.action, message.sourceId);
   return defaultResponse();

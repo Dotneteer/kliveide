@@ -4,7 +4,6 @@ import {
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
-import { mainStore } from "./main-store";
 import * as path from "path";
 import * as fs from "fs";
 import { BrowserWindow, dialog } from "electron";
@@ -12,6 +11,7 @@ import {
   textContentsResponse,
   binaryContentsResponse
 } from "../common/messaging/any-to-main";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -52,6 +52,11 @@ export async function processRendererToMainMessages (
         message: message.message
       });
       break;
+
+    case "EmuMachineCommand":
+      // --- A client wants to send a machine command (start, pause, stop, etc.)
+      // --- Send this message to the emulator
+      return await sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

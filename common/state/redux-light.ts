@@ -93,7 +93,7 @@ export function createStore<S = any, A extends Action = Action> (
     currentState = state;
   }
 
-  function dispatch (action: A, source?: MessageSource): A {
+  function dispatch (action: A, source: MessageSource = "main"): A {
     if (typeof action !== "object" || Array.isArray(action)) {
       throw new Error("Actions must be plain objects.");
     }

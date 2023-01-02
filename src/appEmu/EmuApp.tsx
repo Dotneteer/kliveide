@@ -1,6 +1,6 @@
 import styles from "@styles/app.module.scss";
 import { EmulatorArea } from "../controls/EmulatorArea/EmulatorArea";
-import { StatusBar } from "../controls/StatusBar/StatusBar";
+import { EmuStatusBar } from "./EmuStatusBar";
 import { Toolbar } from "../controls/Toolbar/Toolbar";
 import { useEffect, useRef } from "react";
 import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
@@ -79,7 +79,7 @@ const EmuApp = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <EmulatorArea />
-      {showStatusBar && <StatusBar />}
+      {showStatusBar && <EmuStatusBar />}
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
 } from "../ide/abstractions";
 import { FileProvider } from "../core/FileProvider";
 import { MessengerBase } from "@messaging/MessengerBase";
+import { MessageSource } from "@messaging/messages-core";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -30,7 +31,8 @@ class MachineService implements IMachineService {
    */
   constructor (
     private readonly store: Store<AppState>,
-    private readonly messenger: MessengerBase
+    private readonly messenger: MessengerBase,
+    private readonly messageSource: MessageSource
   ) {}
 
   /**
@@ -71,7 +73,7 @@ class MachineService implements IMachineService {
     this._newInitialized.fire(machine);
 
     // --- Ready, sign the machine type state change
-    this.store.dispatch(setMachineTypeAction(machineId));
+    this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
   }
 
   /**
@@ -147,7 +149,8 @@ class MachineService implements IMachineService {
  */
 export function createMachineService (
   store: Store<AppState>,
-  messenger: MessengerBase
+  messenger: MessengerBase,
+  messageSource: MessageSource
 ) {
-  return new MachineService(store, messenger);
+  return new MachineService(store, messenger, messageSource);
 }
