@@ -172,7 +172,7 @@ export function setupMenu(
         {
             id: SHOW_IDE_WINDOW,
             label: "Show IDE",
-            visible: !ideWindow.isVisible(),
+            visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
             click: () => {
                 ideWindow.show();
             },

@@ -36,7 +36,7 @@ process.env.PUBLIC = app.isPackaged
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
 // Set application name for Windows 10+ notifications
-if (process.platform === "win32") app.setAppUserModelId(app.getName());
+if (__WIN32__) app.setAppUserModelId(app.getName());
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -48,18 +48,29 @@ let ideWindow: BrowserWindow | null = null;
 let emuWindow: BrowserWindow | null = null;
 
 // --- Sign if closing the IDE window is allowed
-let allowCloseIde = false;
+let allowCloseIde: boolean;
 
+// --- Flag indicating if any virtual machine has been initialized
+let machineTypeInitialized: boolean;
+
+// --- Flag indicating the visibility of the IDE window when the EMU window was closed.
+// --- By default, the IDE window is created, loaded. However, it remains hidden.
+let ideVisibleOnClose = false;
+
+// --- Unsubscribe function for the store state change subscription
 let storeUnsubscribe: Unsubscribe | undefined;
-let machineTypeInitialized = false;
 
-// Here, you can also use other preload
+// --- URLs/URIs for the EMU and IDE windows
 const preload = join(__dirname, "../preload/index.js");
 const emuDevUrl = process.env.VITE_DEV_SERVER_URL + EMU_QP;
 const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
 
 async function createAppWindows () {
+  // --- Reset renderer window flags used during re-activation
+  machineTypeInitialized = false;
+  allowCloseIde = false;
+
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
     title: "Emu window",
@@ -84,7 +95,7 @@ async function createAppWindows () {
       nodeIntegration: true,
       contextIsolation: false
     },
-    show: true
+    show: ideVisibleOnClose
   });
 
   // --- Initialize messaging
@@ -150,13 +161,13 @@ async function createAppWindows () {
     mainStore.dispatch(ideFocusedAction(false));
   });
 
-  ideWindow.on("close", (e) => {
+  ideWindow.on("close", e => {
     if (allowCloseIde) {
       return;
     }
     e.preventDefault();
     ideWindow.hide();
-    setupMenu(emuWindow, ideWindow);
+    mainStore.dispatch(ideFocusedAction(false));
   });
 
   // Test actively push message to the Electron-Renderer
@@ -185,11 +196,12 @@ async function createAppWindows () {
 
   emuWindow.on("close", () => {
     allowCloseIde = true;
+    ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
     if (!ideWindow.isDestroyed()) {
-      ideWindow.destroy();
+      ideWindow.close();
       ideWindow = null;
     }
-  })
+  });
 }
 
 app.whenReady().then(() => {
@@ -198,7 +210,7 @@ app.whenReady().then(() => {
 
 app.on("before-quit", () => {
   allowCloseIde = true;
-}) 
+});
 
 app.on("window-all-closed", () => {
   storeUnsubscribe();
@@ -225,7 +237,8 @@ app.on("activate", () => {
   } else {
     // --- Let's initialize the machine type again after creating the window
     mainStore.dispatch(unloadWindowsAction());
-    machineTypeInitialized = false;
+
+    // --- Now, re-create the renderer windows
     createAppWindows();
   }
 });
