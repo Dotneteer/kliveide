@@ -1,5 +1,5 @@
 import { Activity } from "@/core/abstractions";
-import { useDispatch, useSelector } from "@/core/StoreProvider";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { selectActivityAction } from "@state/actions";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";

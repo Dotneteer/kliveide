@@ -1,5 +1,5 @@
 import { useController } from "@/core/useController";
-import { useSelector } from "@/core/StoreProvider";
+import { useSelector } from "@/core/RendererProvider";
 import { useAppServices } from "@/ide/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "../common/Icon";

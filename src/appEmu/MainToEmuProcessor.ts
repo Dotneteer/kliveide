@@ -28,7 +28,8 @@ export async function processMainToEmuMessages (
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
-      store.dispatch(message.action, false);
+      console.log("Action from main");
+      store.dispatch(message.action, message.sourceId);
       break;
 
     case "EmuSetMachineType":

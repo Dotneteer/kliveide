@@ -1,4 +1,4 @@
-import { RequestMessage } from "@messaging/messages-core";
+import { defaultResponse, RequestMessage, ResponseMessage } from "../../common/messaging/messages-core";
 import { isWindowsAction } from "../../common/state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
@@ -6,7 +6,7 @@ import { release } from "os";
 import { join } from "path";
 import { setupMenu } from "../app-menu";
 import { __WIN32__ } from "../electron-utils";
-import { processEmuToMainMessages } from "../EmuToMainProcessor";
+import { processRendererToMainMessages } from "../RendererToMainProcessor";
 import { setMachineType } from "../machines";
 import { mainStore } from "../main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
@@ -69,12 +69,13 @@ async function createAppWindows () {
       preload,
       nodeIntegration: true,
       contextIsolation: false
-    }
+    },
+    show: true
   });
 
   // --- Initialize messaging
   registerMainToEmuMessenger(emuWindow);
-  registerMainToIdeMessenger(ideWindow)
+  registerMainToIdeMessenger(ideWindow);
 
   // --- Prepare the main menu. Update items on application state change
   setupMenu(emuWindow, ideWindow);
@@ -97,6 +98,7 @@ async function createAppWindows () {
   // --- Load the contents of the browser windows
   if (process.env.VITE_DEV_SERVER_URL) {
     emuWindow.loadURL(emuDevUrl);
+    emuWindow.webContents.openDevTools();
     ideWindow.loadURL(ideDevUrl);
     ideWindow.webContents.openDevTools();
   } else {
@@ -168,9 +170,20 @@ app.on("activate", () => {
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
-  const response = await processEmuToMainMessages(msg, ideWindow);
+  let response = await forwardActions(msg, emuWindow);
+  if (response === null) {
+    response = await processRendererToMainMessages(msg, emuWindow);
+  }
   response.correlationId = msg.correlationId;
-  if (ideWindow?.isDestroyed() === false) {
-    ideWindow.webContents.send("EmuToMainResponse", response);
+  response.sourceId = "main";
+  if (emuWindow?.isDestroyed() === false) {
+    emuWindow.webContents.send("EmuToMainResponse", response);
   }
 });
+
+// --- Process an action forward message coming from any of the renderers
+async function forwardActions(message: RequestMessage, window: BrowserWindow): Promise<ResponseMessage | null> {
+  if (message.type !== "ForwardAction") return null;
+  mainStore.dispatch(message.action, message.sourceId);
+  return defaultResponse();
+}

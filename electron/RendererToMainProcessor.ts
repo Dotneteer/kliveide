@@ -18,16 +18,11 @@ import {
  * @param message Emulator message
  * @returns Message response
  */
-export async function processEmuToMainMessages (
+export async function processRendererToMainMessages (
   message: RequestMessage,
   window: BrowserWindow
 ): Promise<ResponseMessage> {
   switch (message.type) {
-    case "ForwardAction":
-      // --- The emu sent a state change action. Replay it in the main store without formarding it
-      mainStore.dispatch(message.action, false);
-      return defaultResponse();
-
     case "MainReadTextFile":
       // --- A client want to read the contents of a text file
       try {

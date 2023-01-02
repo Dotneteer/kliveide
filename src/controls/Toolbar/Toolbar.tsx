@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@state/MachineControllerState";
-import { useDispatch, useSelector } from "@/core/StoreProvider";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { muteSoundAction, setFastLoadAction, showKeyboardAction } from "@state/actions";
 import { IconButton } from "../common/IconButton";
 import { ToolbarSeparator } from "../common/ToolbarSeparator";

@@ -27,6 +27,7 @@ export class IdeToMainMessenger extends MessengerBase {
    * @param message Message to send
    */
   protected send (message: RequestMessage): void {
+    message.sourceId = "ide";
     ipcRenderer?.send(this.requestChannel, Object.assign({}, message));
   }
 

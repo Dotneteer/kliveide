@@ -1,3 +1,4 @@
+import { MessageSource } from "@messaging/messages-core";
 import { Action } from "./Action";
 
 /**
@@ -49,7 +50,7 @@ export type Reducer<S = any, A extends Action = Action> = (
  */
 export type Dispatch<A extends Action = Action> = <T extends A>(
   action: T,
-  forward?: boolean
+  source?: MessageSource
 ) => T;
 
 /**
@@ -61,7 +62,8 @@ export type Unsubscribe = () => void;
  * Function to forward an action
  */
 export type ActionForwarder<A extends Action = Action> = (
-  action: A
+  action: A,
+  source: MessageSource
 ) => Promise<void>;
 
 /**
@@ -91,7 +93,7 @@ export function createStore<S = any, A extends Action = Action> (
     currentState = state;
   }
 
-  function dispatch (action: A, forward: boolean = true): A {
+  function dispatch (action: A, source?: MessageSource): A {
     if (typeof action !== "object" || Array.isArray(action)) {
       throw new Error("Actions must be plain objects.");
     }
@@ -107,8 +109,8 @@ export function createStore<S = any, A extends Action = Action> (
     try {
       isDispatching = true;
       currentState = currentReducer(currentState, action);
-      if (forward && forwarder) {
-        (async () => await forwarder(action))();
+      if (source && forwarder) {
+        (async () => await forwarder(action, source))();
       }
     } finally {
       isDispatching = false;

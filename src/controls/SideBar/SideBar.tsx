@@ -2,7 +2,7 @@ import styles from "./SideBar.module.scss";
 import { ReactNode, useEffect, useRef } from "react";
 import { SideBarHeader } from "./SideBarHeader";
 import { SideBarPanel } from "./SideBarPanel";
-import { useDispatch, useSelector } from "@/core/StoreProvider";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { activityRegistry, sideBarPanelRegistry } from "@/registry";
 import { SideBarPanelState } from "@state/AppState";
 import { setSideBarPanelSizeAction, setSideBarPanelsStateAction } from "@state/actions";

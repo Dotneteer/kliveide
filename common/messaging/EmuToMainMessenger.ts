@@ -26,6 +26,7 @@ export class EmuToMainMessenger extends MessengerBase {
    * @param message Message to send
    */
   protected send (message: RequestMessage): void {
+    message.sourceId = "emu";
     ipcRenderer?.send(this.requestChannel, Object.assign({}, message));
   }
 

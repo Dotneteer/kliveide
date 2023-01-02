@@ -5,7 +5,8 @@ import { DocumentState, ToolState } from "@/ide/abstractions";
  * Represents the state of the entire application
  */
 export type AppState = {
-  uiLoaded?: boolean;
+  emuLoaded?: boolean;
+  ideLoaded?: boolean;
   isWindows?: boolean;
   theme?: string;
   ideViewOptions?: IdeViewOptions;
@@ -68,7 +69,7 @@ export type SideBarPanelState = {
  * The initial application state
  */
 export const initialAppState: AppState = {
-  uiLoaded: false,
+  emuLoaded: false,
   isWindows: false,
   theme: "dark",
   ideViewOptions: {

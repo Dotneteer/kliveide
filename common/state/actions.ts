@@ -3,9 +3,12 @@ import { MachineControllerState } from "../state/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
-export const uiLoadedAction: ActionCreator = (flag: boolean) => ({
-  type: "UI_LOADED",
-  payload: { flag }
+export const emuLoadedAction: ActionCreator = () => ({
+  type: "EMU_LOADED"
+});
+
+export const ideLoadedAction: ActionCreator = () => ({
+  type: "IDE_LOADED"
 });
 
 export const isWindowsAction: ActionCreator = (flag: boolean) => ({

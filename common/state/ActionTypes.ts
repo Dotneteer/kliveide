@@ -2,7 +2,8 @@
  * Available action types
  */
 export interface ActionTypes {
-  UI_LOADED: null;
+  EMU_LOADED: null;
+  IDE_LOADED: null;
   IS_WINDOWS: null;
   SET_THEME: null;
 

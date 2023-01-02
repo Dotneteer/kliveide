@@ -2,7 +2,7 @@ import styles from "./EmulatorPanel.module.scss";
 import { useController } from "@/core/useController";
 import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
-import { useSelector, useStore } from "@/core/StoreProvider";
+import { useSelector, useStore } from "@/core/RendererProvider";
 import { useResizeObserver } from "@/core/useResizeObserver";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";

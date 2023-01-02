@@ -14,12 +14,12 @@ import {
   selectActivityAction,
   setAudioSampleRateAction,
   setToolsAction,
-  uiLoadedAction
+  emuLoadedAction
 } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { RequestMessage } from "@messaging/messages-core";
+import { defaultResponse, RequestMessage } from "@messaging/messages-core";
 import { processMainToEmuMessages } from "../appEmu/MainToEmuProcessor";
-import { useDispatch, useMessenger, useSelector, useStore } from "../core/StoreProvider";
+import { useDispatch, useMessenger, useSelector, useStore } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "../ide/AppServicesProvider";
 import { AppServices, ToolInfo } from "../ide/abstractions";
@@ -80,7 +80,7 @@ const IdeApp = () => {
 
     // --- Sign that the UI is ready
     mounted.current = true;
-    dispatch(uiLoadedAction());
+    dispatch(emuLoadedAction());
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
@@ -164,12 +164,8 @@ export default IdeApp;
 
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
-  // const response = await processMainToEmuMessages(
-  //   msg,
-  //   storeCached,
-  //   messengerCached,
-  //   appServicesCached
-  // );
-  // response.correlationId = msg.correlationId;
-  // ipcRenderer.send("MainToIdeResponse", response);
+  const response = defaultResponse();
+  response.correlationId = msg.correlationId;
+  response.sourceId = "ide";
+  ipcRenderer.send("MainToIdeResponse", response);
 });

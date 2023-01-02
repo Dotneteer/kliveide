@@ -1,3 +1,4 @@
+import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Action } from "@state/Action";
 import { AppState } from "@state/AppState";
@@ -7,6 +8,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useState
 } from "react";
 
@@ -14,11 +16,19 @@ import {
 type RendererAppContext = {
   store: Store<AppState>;
   messenger: MessengerBase;
+  messageSource: MessageSource;
 };
 
 // This object provides the React context of the application state store, which we pass the root component, and thus
 // all nested components may use it.
 const RendererContext = createContext<RendererAppContext>(undefined);
+
+/**
+ * This React hook makes the current renderer context available within any component logic using the hook.
+ */
+export function useRendererContext (): RendererAppContext {
+  return useContext(RendererContext);
+}
 
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
@@ -35,11 +45,19 @@ export function useMessenger (): MessengerBase {
 }
 
 /**
+ * This React hook makes the current message source information available within any component logic using the hook.
+ */
+export function useMessageSource (): MessageSource {
+  return useContext(RendererContext)?.messageSource;
+}
+
+/**
  * This React hook makes the current dispatcher function available within any component logic using the hook.
  */
 export function useDispatch (): Dispatch<Action> {
-  const store = useStore();
-  return store.dispatch;
+  const {store, messageSource} = useRendererContext();
+  const dispatcher = ((action: Action, _: MessageSource) => store.dispatch(action, messageSource)) as Dispatch<Action>;
+  return useMemo(() => dispatcher, [store, messageSource]);
 }
 
 /**
@@ -72,11 +90,17 @@ export function useSelector<Selected> (
 type Props = {
   store: Store<AppState>;
   messenger: MessengerBase;
+  messageSource: MessageSource;
   children: ReactNode;
 };
 
-const RendererProvider = ({ store, messenger, children }: Props) => (
-  <RendererContext.Provider value={{ store, messenger }}>
+const RendererProvider = ({
+  store,
+  messenger,
+  messageSource,
+  children
+}: Props) => (
+  <RendererContext.Provider value={{ store, messenger, messageSource }}>
     {children}
   </RendererContext.Provider>
 );

@@ -1,4 +1,4 @@
-import { useMessenger, useStore } from "@/core/StoreProvider";
+import { useMessenger, useStore } from "@/core/RendererProvider";
 import React, { useContext, useRef } from "react";
 import { AppServices } from "./abstractions";
 import { createDocumentService } from "./DocumentService";

@@ -3,13 +3,14 @@ import { EmulatorArea } from "../controls/EmulatorArea/EmulatorArea";
 import { StatusBar } from "../controls/StatusBar/StatusBar";
 import { Toolbar } from "../controls/Toolbar/Toolbar";
 import { useEffect, useRef } from "react";
-import { 
-  setAudioSampleRateAction, 
-  uiLoadedAction 
-} from "@state/actions";
+import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { RequestMessage } from "@messaging/messages-core";
-import { useDispatch, useMessenger, useSelector, useStore } from "../core/StoreProvider";
+import { MessageSource, RequestMessage } from "@messaging/messages-core";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "../core/RendererProvider";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { AppServices } from "@/ide/abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -20,6 +21,7 @@ import { useAppServices } from "@/ide/AppServicesProvider";
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
 let messengerCached: MessengerBase;
+let messageSourceCached: MessageSource;
 let storeCached: Store<AppState>;
 
 const EmuApp = () => {
@@ -28,8 +30,7 @@ const EmuApp = () => {
   const dispatch = useDispatch();
 
   const appServices = useAppServices();
-  const messenger = useMessenger();
-  const store = useStore();
+  const { store, messenger, messageSource } = useRendererContext();
 
   // --- Use the current instance of the app services
   useEffect(() => {
@@ -46,27 +47,32 @@ const EmuApp = () => {
     storeCached = store;
   }, [store]);
 
+  // --- Use the current message source instance
+  useEffect(() => {
+    messageSourceCached = messageSource;
+  }, [messageSource]);
+
   // --- Visual state
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
 
   // --- Signify that the UI has been loaded
   useEffect(() => {
-      if (mounted.current) return;
+    if (mounted.current) return;
 
-      // --- Sign that the UI is ready
-      mounted.current = true;
-      dispatch(uiLoadedAction());
+    // --- Sign that the UI is ready
+    mounted.current = true;
+    dispatch(emuLoadedAction());
 
-      // --- Set the audio sample rate to use
-      const audioCtx = new AudioContext();
-      const sampleRate = audioCtx.sampleRate;
-      audioCtx.close();
-      dispatch(setAudioSampleRateAction(sampleRate));
+    // --- Set the audio sample rate to use
+    const audioCtx = new AudioContext();
+    const sampleRate = audioCtx.sampleRate;
+    audioCtx.close();
+    dispatch(setAudioSampleRateAction(sampleRate));
 
-      return () => {
-          mounted.current = false;
-      }
+    return () => {
+      mounted.current = false;
+    };
   });
 
   return (
@@ -75,13 +81,13 @@ const EmuApp = () => {
       <EmulatorArea />
       {showStatusBar && <StatusBar />}
     </div>
-  )
-}
+  );
+};
 
-export default EmuApp
+export default EmuApp;
 
 // --- This channel processes main requests and sends the results back
-ipcRenderer.on("MainToemu", async (_ev, msg: RequestMessage) => {
+ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
   const response = await processMainToEmuMessages(
     msg,
     storeCached,
@@ -89,5 +95,6 @@ ipcRenderer.on("MainToemu", async (_ev, msg: RequestMessage) => {
     appServicesCached
   );
   response.correlationId = msg.correlationId;
+  response.sourceId = "emu";
   ipcRenderer.send("MainToEmuResponse", response);
 });

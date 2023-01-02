@@ -1,4 +1,4 @@
-import { useDispatch, useSelector, useStore } from "@/core/StoreProvider";
+import { useDispatch, useSelector, useStore } from "@/core/RendererProvider";
 import { ToolState } from "@/ide/abstractions";
 import { useAppServices } from "@/ide/AppServicesProvider";
 import { activateOutputPaneAction } from "@state/actions";
