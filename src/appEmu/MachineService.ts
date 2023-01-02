@@ -67,7 +67,7 @@ class MachineService implements IMachineService {
     machine.setMachineProperty(FILE_PROVIDER, new FileProvider(this.messenger));
     machine.setMachineProperty(
       AUDIO_SAMPLE_RATE,
-      this.store.getState()?.ideView?.audioSampleRate
+      this.store.getState()?.emulatorState?.audioSampleRate
     );
     await machine.setup();
     this._newInitialized.fire(machine);
@@ -80,14 +80,14 @@ class MachineService implements IMachineService {
    * Gets the current machine type
    */
   getMachineType (): string | undefined {
-    return this.store.getState()?.ideView?.machineId;
+    return this.store.getState()?.emulatorState?.machineId;
   }
 
   /**
    * Gets descriptive information about the current machine
    */
   getMachineInfo (): MachineInfo | undefined {
-    const currentType = this.store.getState()?.ideView?.machineId;
+    const currentType = this.store.getState()?.emulatorState?.machineId;
     return machineRegistry.find(m => m.machineId === currentType);
   }
 

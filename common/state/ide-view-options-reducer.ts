@@ -13,8 +13,6 @@ export function ideViewOptionsReducer (
       return { ...state, showToolbar: payload?.flag };
     case "SHOW_IDE_STATUSBAR":
       return { ...state, showStatusBar: payload?.flag };
-    case "USE_EMU_VIEW":
-      return { ...state, useEmuView: payload?.flag };
     case "SHOW_SIDE_BAR":
       return { ...state, showSidebar: payload?.flag };
     case "PRIMARY_BAR_ON_RIGHT":

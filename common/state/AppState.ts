@@ -14,6 +14,7 @@ export type AppState = {
   ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;
   emuViewOptions?: EmuViewOptions;
+  emulatorState?: EmulatorState;
 };
 
 /**
@@ -47,6 +48,9 @@ export type IdeView = {
   tools?: ToolState[];
   activeTool?: string;
   activeOutputPane?: string;
+};
+
+export type EmulatorState = {
   machineId?: string;
   machineState?: MachineControllerState;
   soundLevel?: number;
@@ -56,7 +60,7 @@ export type IdeView = {
   clockMultiplier?: number;
   audioSampleRate?: number;
   tapeFile?: string;
-};
+}
 
 /**
  * The state of a particular site bar panel
@@ -93,15 +97,17 @@ export const initialAppState: AppState = {
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
-    soundMuted: false,
-    fastLoad: true,
-    clockMultiplier: 1,
-    soundLevel: 0.8,
-    savedSoundLevel: 0.8
   },
   emuViewOptions: {
     showToolbar: true,
     showStatusBar: true,
     showKeyboard: false
+  },
+  emulatorState: {
+    soundLevel: 0.8,
+    soundMuted: false,
+    savedSoundLevel: 0.8,
+    fastLoad: true,
+    clockMultiplier: 1,
   }
 };

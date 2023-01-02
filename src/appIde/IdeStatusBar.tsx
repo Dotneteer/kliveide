@@ -9,8 +9,8 @@ import styles from "./IdeStatusBar.module.scss";
 
 export const IdeStatusBar = () => {
   const { machineService } = useAppServices();
-  const machineId = useSelector(s => s.ideView?.machineId);
-  const execState = useSelector(s => s.ideView?.machineState);
+  const machineId = useSelector(s => s.emulatorState?.machineId);
+  const execState = useSelector(s => s.emulatorState?.machineState);
   const [machineState, setMachineState] = useState("");
   const [machineName, setMachineName] = useState("");
 

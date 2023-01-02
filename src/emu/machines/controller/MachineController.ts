@@ -264,7 +264,7 @@ export class MachineController {
             do
             {
                 // --- Use the latest clock multiplier
-                this.machine.targetClockMultiplier = this.store.getState()?.ideView?.clockMultiplier ?? 1;
+                this.machine.targetClockMultiplier = this.store.getState()?.emulatorState?.clockMultiplier ?? 1;
                 // --- Run the machine frame and measure execution time
                 const frameStartTime = performance.now();
                 const termination = this.machine.executeMachineFrame();

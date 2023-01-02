@@ -46,6 +46,8 @@ const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
 
+const SHOW_IDE_WINDOW = "show_ide_window";
+
 const MACHINE_TYPES = "machine_types";
 const MACHINE_SP48 = "machine_sp48";
 const START_MACHINE = "start";
@@ -70,7 +72,7 @@ export function setupMenu(
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     const appState = mainStore.getState();
     const tools = appState.ideView?.tools ?? [];
-    const execState = appState?.ideView?.machineState;
+    const execState = appState?.emulatorState?.machineState;
 
     /**
      * Application system menu on MacOS
@@ -165,6 +167,15 @@ export function setupMenu(
                     },
                 },
             ]
+        },
+        { type: "separator" },
+        {
+            id: SHOW_IDE_WINDOW,
+            label: "Show IDE",
+            visible: !ideWindow.isVisible(),
+            click: () => {
+                ideWindow.show();
+            },
         },
         { type: "separator" },
         {
@@ -282,7 +293,7 @@ export function setupMenu(
             id: `${CLOCK_MULT}_${v}`,
             label: v === 1 ? "Normal" : `${v}x`,
             type: "checkbox",
-            checked: appState.ideView?.clockMultiplier === v,
+            checked: appState.emulatorState?.clockMultiplier === v,
             click: async () => {
                 mainStore.dispatch(setClockMultiplierAction(v));
             },
@@ -301,7 +312,7 @@ export function setupMenu(
             id: `${SOUND_LEVEL}_${v.value}`,
             label: v.label,
             type: "checkbox",
-            checked: appState.ideView?.soundLevel === v.value,
+            checked: appState.emulatorState?.soundLevel === v.value,
             click: async () => {
                 mainStore.dispatch(setSoundLevelAction(v.value));
             },
@@ -327,7 +338,7 @@ export function setupMenu(
                         id: MACHINE_SP48,
                         label: "ZX Spectrum 48K",
                         type: "checkbox",
-                        checked: appState.ideView?.machineId === "sp48",
+                        checked: appState.emulatorState?.machineId === "sp48",
                         click: async () => {
                             await setMachineType("sp48");
                         },
@@ -433,7 +444,7 @@ export function setupMenu(
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[] | undefined> {
-    const lastFile = mainStore.getState()?.ideView?.tapeFile;
+    const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
     const defaultPath = lastFile ? path.dirname(lastFile) : app.getPath("home");
     const dialogResult = await dialog.showOpenDialog(browserWindow, {
         title: "Select Tape File",

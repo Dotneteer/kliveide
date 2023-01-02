@@ -16,12 +16,12 @@ import { createMachineCommand } from "@messaging/main-to-emu";
 
 export const Toolbar = () => {
   const dispatch = useDispatch();
-  const state = useSelector(s => s.ideView?.machineState);
+  const state = useSelector(s => s.emulatorState?.machineState);
   const showKeyboard = useSelector(
     s => s.emuViewOptions?.showKeyboard ?? false
   );
-  const muted = useSelector(s => s.ideView?.soundMuted ?? false);
-  const fastLoad = useSelector(s => s.ideView?.fastLoad ?? false);
+  const muted = useSelector(s => s.emulatorState?.soundMuted ?? false);
+  const fastLoad = useSelector(s => s.emulatorState?.fastLoad ?? false);
 
   const { messenger } = useRendererContext();
 

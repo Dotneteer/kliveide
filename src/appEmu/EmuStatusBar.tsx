@@ -12,7 +12,7 @@ export const EmuStatusBar = () => {
     const {machineService } = useAppServices();
     const controller = useController();
     const [frameStats, setFrameStats] = useState<FrameStats>();
-    const machineId = useSelector(s => s.ideView?.machineId);
+    const machineId = useSelector(s => s.emulatorState?.machineId);
     const [machineName, setMachineName] = useState("");
     const counter = useRef(0);
 

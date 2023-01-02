@@ -5,6 +5,7 @@ import { ideViewOptionsReducer } from "./ide-view-options-reducer";
 import { ideViewReducer } from "./ide-view-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
 import { emuViewOptionsReducer } from "./emu-view-options-reducer";
+import { emulatorStateReducer } from "./emulator-state-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -17,6 +18,7 @@ function appReducer(state: AppState, action: Action): AppState {
     invokeReducer(state.ideViewOptions, ideViewOptionsReducer, (a, n) => a.ideViewOptions = n);
     invokeReducer(state.emuViewOptions, emuViewOptionsReducer, (a, n) => a.emuViewOptions = n);
     invokeReducer(state.ideView, ideViewReducer, (a, n) => a.ideView = n);
+    invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => a.emulatorState = n);
     return state;
 
     /**

@@ -43,8 +43,13 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
+// --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
 let emuWindow: BrowserWindow | null = null;
+
+// --- Sign if closing the IDE window is allowed
+let allowCloseIde = false;
+
 let storeUnsubscribe: Unsubscribe | undefined;
 let machineTypeInitialized = false;
 
@@ -145,6 +150,15 @@ async function createAppWindows () {
     mainStore.dispatch(ideFocusedAction(false));
   });
 
+  ideWindow.on("close", (e) => {
+    if (allowCloseIde) {
+      return;
+    }
+    e.preventDefault();
+    ideWindow.hide();
+    setupMenu(emuWindow, ideWindow);
+  });
+
   // Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
     emuWindow?.webContents.send(
@@ -168,15 +182,29 @@ async function createAppWindows () {
   emuWindow.on("blur", () => {
     mainStore.dispatch(emuFocusedAction(false));
   });
+
+  emuWindow.on("close", () => {
+    allowCloseIde = true;
+    if (!ideWindow.isDestroyed()) {
+      ideWindow.destroy();
+      ideWindow = null;
+    }
+  })
 }
 
 app.whenReady().then(() => {
   createAppWindows();
 });
 
+app.on("before-quit", () => {
+  allowCloseIde = true;
+}) 
+
 app.on("window-all-closed", () => {
   storeUnsubscribe();
   ideWindow = null;
+  emuWindow = null;
+  allowCloseIde = true;
   if (process.platform !== "darwin") app.quit();
 });
 
