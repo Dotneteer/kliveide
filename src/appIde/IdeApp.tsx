@@ -44,7 +44,6 @@ const IdeApp = () => {
   // --- Visual state
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
-  const useEmuView = useSelector(s => s.ideViewOptions.useEmuView);
   const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
   const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
   const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
@@ -127,14 +126,12 @@ const IdeApp = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        {!useEmuView && (
-          <ActivityBar activities={activityRegistry} order={activityOrder} />
-        )}
+        <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
           id='main'
           primaryLocation={primaryBarsPos}
           primaryPanel={<SiteBar />}
-          primaryVisible={!useEmuView && showSideBar}
+          primaryVisible={showSideBar}
           initialPrimarySize='160px'
           minSize={60}
           secondaryPanel={
@@ -145,7 +142,7 @@ const IdeApp = () => {
               minSize={25}
               primaryPanel={<DocumentArea />}
               secondaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
-              secondaryVisible={!useEmuView && showToolPanels}
+              secondaryVisible={showToolPanels}
             />
           }
         />

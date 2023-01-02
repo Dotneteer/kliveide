@@ -8,6 +8,8 @@ export type AppState = {
   emuLoaded?: boolean;
   ideLoaded?: boolean;
   isWindows?: boolean;
+  emuFocused?: boolean;
+  ideFocused?: boolean;
   theme?: string;
   ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;
@@ -20,7 +22,6 @@ export type AppState = {
 export type IdeViewOptions = {
   showToolbar?: boolean;
   showStatusBar?: boolean;
-  useEmuView?: boolean;
   primaryBarOnRight?: boolean;
   showToolPanels?: boolean;
   toolPanelsOnTop?: boolean;
@@ -70,12 +71,14 @@ export type SideBarPanelState = {
  */
 export const initialAppState: AppState = {
   emuLoaded: false,
+  ideLoaded: false,
   isWindows: false,
   theme: "dark",
+  emuFocused: false,
+  ideFocused: false,
   ideViewOptions: {
     showToolbar: true,
     showStatusBar: true,
-    useEmuView: false,
     primaryBarOnRight: false,
     showToolPanels: true,
     toolPanelsOnTop: false,

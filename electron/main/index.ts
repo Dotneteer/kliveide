@@ -1,5 +1,14 @@
-import { defaultResponse, RequestMessage, ResponseMessage } from "../../common/messaging/messages-core";
-import { isWindowsAction } from "../../common/state/actions";
+import {
+  defaultResponse,
+  RequestMessage,
+  ResponseMessage
+} from "../../common/messaging/messages-core";
+import {
+  emuFocusedAction,
+  ideFocusedAction,
+  isWindowsAction,
+  unloadWindowsAction
+} from "../../common/state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
@@ -82,7 +91,9 @@ async function createAppWindows () {
 
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
-    if (!machineTypeInitialized) {
+    const state = mainStore.getState();
+    const loaded = state.emuLoaded;
+    if (loaded && !machineTypeInitialized) {
       // --- Set the default machine type to ZX Spectrum 48
       machineTypeInitialized = true;
       await setMachineType("sp48");
@@ -124,6 +135,16 @@ async function createAppWindows () {
     return { action: "deny" };
   });
 
+  // --- Sign when IDE is focused
+  ideWindow.on("focus", () => {
+    mainStore.dispatch(ideFocusedAction(true));
+  });
+
+  // --- Sign when IDE loses the focus
+  ideWindow.on("blur", () => {
+    mainStore.dispatch(ideFocusedAction(false));
+  });
+
   // Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
     emuWindow?.webContents.send(
@@ -136,6 +157,16 @@ async function createAppWindows () {
   emuWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:")) shell.openExternal(url);
     return { action: "deny" };
+  });
+
+  // --- Sign when EMU is focused
+  emuWindow.on("focus", () => {
+    mainStore.dispatch(emuFocusedAction(true));
+  });
+
+  // --- Sign when EMU loses the focus
+  emuWindow.on("blur", () => {
+    mainStore.dispatch(emuFocusedAction(false));
   });
 }
 
@@ -160,9 +191,12 @@ app.on("second-instance", () => {
 app.on("activate", () => {
   const allWindows = BrowserWindow.getAllWindows();
   if (allWindows.length) {
-    allWindows[0].focus();
+    for (let i = allWindows.length - 1; i >= 0; i--) {
+      allWindows[i].focus();
+    }
   } else {
     // --- Let's initialize the machine type again after creating the window
+    mainStore.dispatch(unloadWindowsAction());
     machineTypeInitialized = false;
     createAppWindows();
   }
@@ -195,7 +229,9 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
 });
 
 // --- Process an action forward message coming from any of the renderers
-async function forwardActions(message: RequestMessage): Promise<ResponseMessage | null> {
+async function forwardActions (
+  message: RequestMessage
+): Promise<ResponseMessage | null> {
   if (message.type !== "ForwardAction") return null;
   mainStore.dispatch(message.action, message.sourceId);
   return defaultResponse();

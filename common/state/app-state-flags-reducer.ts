@@ -9,6 +9,8 @@ export function appStateFlagsReducer (
   { type, payload }: Action
 ): AppState {
   switch (type) {
+    case "UNLOAD_WINDOWS":
+      return { ...state, emuLoaded: false, ideLoaded: false };
     case "EMU_LOADED":
       return { ...state, emuLoaded: true };
     case "IDE_LOADED":
@@ -17,6 +19,10 @@ export function appStateFlagsReducer (
       return { ...state, isWindows: payload?.flag };
     case "SET_THEME":
       return { ...state, theme: payload?.id };
+    case "EMU_FOCUSED":
+      return { ...state, emuFocused: payload.flag };
+    case "IDE_FOCUSED":
+      return { ...state, ideFocused: payload.flag };
     default:
       return state;
   }

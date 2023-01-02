@@ -5,7 +5,7 @@ import { Toolbar } from "../controls/Toolbar/Toolbar";
 import { useEffect, useRef } from "react";
 import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { MessageSource, RequestMessage } from "@messaging/messages-core";
+import { RequestMessage } from "@messaging/messages-core";
 import {
   useDispatch,
   useRendererContext,
@@ -21,7 +21,6 @@ import { useAppServices } from "@/ide/AppServicesProvider";
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
 let messengerCached: MessengerBase;
-let messageSourceCached: MessageSource;
 let storeCached: Store<AppState>;
 
 const EmuApp = () => {
@@ -47,14 +46,9 @@ const EmuApp = () => {
     storeCached = store;
   }, [store]);
 
-  // --- Use the current message source instance
-  useEffect(() => {
-    messageSourceCached = messageSource;
-  }, [messageSource]);
-
   // --- Visual state
-  const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
-  const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
+  const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
+  const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
 
   // --- Signify that the UI has been loaded
   useEffect(() => {

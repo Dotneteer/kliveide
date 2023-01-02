@@ -9,9 +9,9 @@ export function ideViewOptionsReducer (
   { type, payload }: Action
 ): IdeViewOptions {
   switch (type) {
-    case "SHOW_TOOLBAR":
+    case "SHOW_IDE_TOOLBAR":
       return { ...state, showToolbar: payload?.flag };
-    case "SHOW_STATUSBAR":
+    case "SHOW_IDE_STATUSBAR":
       return { ...state, showStatusBar: payload?.flag };
     case "USE_EMU_VIEW":
       return { ...state, useEmuView: payload?.flag };

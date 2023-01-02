@@ -9,9 +9,9 @@ export function emuViewOptionsReducer (
   { type, payload }: Action
 ): EmuViewOptions {
   switch (type) {
-    case "SHOW_TOOLBAR":
+    case "SHOW_EMU_TOOLBAR":
       return { ...state, showToolbar: payload?.flag };
-    case "SHOW_STATUSBAR":
+    case "SHOW_EMU_STATUSBAR":
       return { ...state, showStatusBar: payload?.flag };
     case "SHOW_KEYBOARD":
       return { ...state, showKeyboard: payload?.flag };

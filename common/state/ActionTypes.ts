@@ -2,18 +2,22 @@
  * Available action types
  */
 export interface ActionTypes {
+  UNLOAD_WINDOWS: null;
   EMU_LOADED: null;
   IDE_LOADED: null;
   IS_WINDOWS: null;
   SET_THEME: null;
+  IDE_FOCUSED: null,
+  EMU_FOCUSED: null,
 
-  SHOW_TOOLBAR: null;
-  SHOW_STATUSBAR: null;
+  SHOW_EMU_TOOLBAR: null;
+  SHOW_EMU_STATUSBAR: null;
+  SHOW_IDE_TOOLBAR: null;
+  SHOW_IDE_STATUSBAR: null;
   SHOW_TOOL_PANELS: null;
   SHOW_KEYBOARD: null;
   SHOW_FRAME_INFO: null;
 
-  USE_EMU_VIEW: null;
   SHOW_SIDE_BAR: null;
   PRIMARY_BAR_ON_RIGHT: null;
   TOOLS_ON_TOP: null;

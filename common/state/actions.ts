@@ -3,6 +3,10 @@ import { MachineControllerState } from "../state/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
+export const unloadWindowsAction: ActionCreator = () => ({
+  type: "UNLOAD_WINDOWS"
+});
+
 export const emuLoadedAction: ActionCreator = () => ({
   type: "EMU_LOADED"
 });
@@ -16,6 +20,16 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
+export const emuFocusedAction: ActionCreator = (flag: boolean) => ({
+  type: "EMU_FOCUSED",
+  payload: { flag }
+});
+
+export const ideFocusedAction: ActionCreator = (flag: boolean) => ({
+  type: "IDE_FOCUSED",
+  payload: { flag }
+});
+
 export const setThemeAction: ActionCreator = (id: string) => ({
   type: "SET_THEME",
   payload: { id }
@@ -26,18 +40,23 @@ export const selectActivityAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const showToolbarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_TOOLBAR",
+export const showEmuToolbarAction: ActionCreator = (flag: boolean) => ({
+  type: "SHOW_EMU_TOOLBAR",
   payload: { flag }
 });
 
-export const showStatusBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_STATUSBAR",
+export const showEmuStatusBarAction: ActionCreator = (flag: boolean) => ({
+  type: "SHOW_EMU_STATUSBAR",
   payload: { flag }
 });
 
-export const useEmuViewAction: ActionCreator = (flag: boolean) => ({
-  type: "USE_EMU_VIEW",
+export const showIdeToolbarAction: ActionCreator = (flag: boolean) => ({
+  type: "SHOW_IDE_TOOLBAR",
+  payload: { flag }
+});
+
+export const showIdeStatusBarAction: ActionCreator = (flag: boolean) => ({
+  type: "SHOW_IDE_STATUSBAR",
   payload: { flag }
 });
 
