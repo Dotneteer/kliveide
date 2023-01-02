@@ -12,6 +12,7 @@ import {
   binaryContentsResponse
 } from "../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -57,6 +58,10 @@ export async function processRendererToMainMessages (
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
       return await sendFromMainToEmu(message);
+
+    case "DisplayOutput":
+      // --- A client wants to display an output message
+      return await sendFromMainToIde(message);
   }
   return defaultResponse();
 }

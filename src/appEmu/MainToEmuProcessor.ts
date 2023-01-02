@@ -42,7 +42,7 @@ export async function processMainToEmuMessages (
       if (controller) {
         switch (message.command) {
           case "start":
-            controller.start();
+            await controller.start();
             break;
           case "pause":
             await controller.pause();
@@ -54,7 +54,7 @@ export async function processMainToEmuMessages (
             await controller.restart();
             break;
           case "debug":
-            controller.startDebug();
+            await controller.startDebug();
             break;
           case "stepInto":
             await controller.stepInto();

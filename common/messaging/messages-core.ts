@@ -1,3 +1,21 @@
+// ====================================================================================================================
+// This file contains the abstractions the app uses with messaging.
+//
+// |------------------------|   |------------------------|
+// |       EMU process      |   |       IDE process      |
+// | |--------------------| |   | |--------------------| |
+// | | EmuToMainMessenger | |   | | IdeToMainMessenger | |
+// |-|--------------------|-|   |-|--------------------|-|
+//       ^            ^               ^            ^
+//       |            |               |            |
+//       v            v               v            v
+// | |--------------------|-------|--------------------| |
+// | | MainToEmuMessenger |       | MainToIdeMessenger | |
+// | |--------------------|       |--------------------| |
+// |                     MAIN process                    |
+// |-----------------------------------------------------|
+// ====================================================================================================================
+
 import {
   MainReadTextFileRequest,
   MainReadBinaryFileRequest,
@@ -11,12 +29,16 @@ import {
   EmuMachineCommandRequest,
   EmuSetTapeFileRequest
 } from "./main-to-emu";
+import { DisplayOutputRequest } from "./any-to-ide";
 
 /**
  * Potential message sources
  */
 export type MessageSource = "emu" | "ide" | "main";
 
+/**
+ * Available message channels
+ */
 export type Channel =
   | "MainToEmu"
   | "MainToEmuResponse"
@@ -61,7 +83,8 @@ export type RequestMessage =
   | EmuSetTapeFileRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
-  | MainDisplayMessageBoxRequest;
+  | MainDisplayMessageBoxRequest
+  | DisplayOutputRequest;
 
 /**
  * All Response messages
@@ -77,10 +100,17 @@ export type ResponseMessage =
  */
 export type AnyMessage = RequestMessage | ResponseMessage;
 
+/**
+ * Creates the default response message (no result)
+ */
 export function defaultResponse (): DefaultResponse {
   return { type: "Ack" };
 }
 
+/**
+ * Creates an error response
+ * @param message Error message
+ */
 export function errorResponse (message: string): ErrorResponse {
   return {
     type: "Error",
