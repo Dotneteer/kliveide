@@ -1,7 +1,7 @@
 import { activateDocumentAction, changeDocumentAction, closeAllDocumentsAction, closeDocumentAction, createDocumentAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { DocumentInfo, DocumentState, IDocumentService } from "./abstractions";
+import { DocumentInfo, DocumentState, IDocumentService } from "../abstractions";
 
 /**
  * This class provides the default implementation of the document service

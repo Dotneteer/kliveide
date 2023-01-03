@@ -1,4 +1,4 @@
-import { DocumentState } from "@/ide/abstractions";
+import { DocumentState } from "@/appIde/abstractions";
 import styles from "./DocumentsContainer.module.scss";
 
 type Props = {

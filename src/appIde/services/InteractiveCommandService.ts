@@ -1,8 +1,8 @@
-import { IOutputBuffer } from "@/controls/ToolArea/abstractions";
-import { OutputPaneBuffer } from "@/controls/ToolArea/OutputPaneBuffer";
+import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
+import { OutputPaneBuffer } from "@/appIde/ToolArea/OutputPaneBuffer";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { IInteractiveCommandService } from "./abstractions";
+import { IInteractiveCommandService } from "../abstractions";
 
 class InteractiveCommandService implements IInteractiveCommandService {
     private _buffer = new OutputPaneBuffer()

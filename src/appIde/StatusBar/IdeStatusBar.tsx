@@ -1,10 +1,10 @@
 import { useSelector } from "@/core/RendererProvider";
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { ReactNode, useEffect, useState } from "react";
-import { Icon } from "../controls/common/Icon";
-import { SpaceFiller } from "../controls/common/SpaceFiller";
-import classnames from "../utils/classnames";
+import { Icon } from "../../controls/common/Icon";
+import { SpaceFiller } from "../../controls/common/SpaceFiller";
+import classnames from "../../utils/classnames";
 import styles from "./IdeStatusBar.module.scss";
 
 export const IdeStatusBar = () => {

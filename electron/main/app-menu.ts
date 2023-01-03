@@ -31,7 +31,7 @@ import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "@/controls/ToolArea/abstractions";
+import { OutputColor } from "@/appIde/ToolArea/abstractions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";

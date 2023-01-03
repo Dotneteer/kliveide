@@ -1,11 +1,11 @@
 import { useDispatch, useSelector, useStore } from "@/core/RendererProvider";
-import { ToolState } from "@/ide/abstractions";
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { ToolState } from "@/appIde/abstractions";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { activateOutputPaneAction } from "@state/actions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
-import { Dropdown } from "../common/Dropdown";
-import { TabButton, TabButtonSeparator } from "../common/TabButton";
-import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
+import { Dropdown } from "../../controls/common/Dropdown";
+import { TabButton, TabButtonSeparator } from "../../controls/common/TabButton";
+import { VirtualizedList, VirtualizedListApi } from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 

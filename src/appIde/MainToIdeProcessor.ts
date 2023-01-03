@@ -3,7 +3,7 @@ import {
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
-import { AppServices } from "../ide/abstractions";
+import { AppServices } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";

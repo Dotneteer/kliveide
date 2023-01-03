@@ -1,13 +1,9 @@
-import {
-  useMessenger,
-  useRendererContext,
-  useStore
-} from "@/core/RendererProvider";
+import { useRendererContext } from "@/core/RendererProvider";
 import React, { useContext, useRef } from "react";
-import { AppServices } from "./abstractions";
+import { AppServices } from "../abstractions";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./InteractiveCommandService";
-import { createMachineService } from "../appEmu/MachineService";
+import { createMachineService } from "../../appEmu/MachineService";
 import { createOutputPaneService } from "./OuputPaneService";
 
 // =====================================================================================================================

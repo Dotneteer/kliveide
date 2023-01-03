@@ -1,6 +1,6 @@
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
-import { VirtualizedList, VirtualizedListApi } from "../common/VirtualizedList";
+import { VirtualizedList, VirtualizedListApi } from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";

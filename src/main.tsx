@@ -4,7 +4,7 @@ import IdeApp from "./appIde/IdeApp";
 import RendererProvider from "./core/RendererProvider";
 import "@styles/index.css";
 import ThemeProvider from "./theming/ThemeProvider";
-import { AppServicesProvider } from "./ide/AppServicesProvider";
+import { AppServicesProvider } from "./appIde/services/AppServicesProvider";
 import EmuApp from "./appEmu/EmuApp";
 import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
 import { IdeToMainMessenger } from "@messaging/IdeToMainMessenger";

@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@state/MachineControllerState";
-import { DocumentState, ToolState } from "@/ide/abstractions";
+import { DocumentState, ToolState } from "@/appIde/abstractions";
 
 /**
  * Represents the state of the entire application

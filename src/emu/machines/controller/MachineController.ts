@@ -1,4 +1,4 @@
-import { IOutputBuffer, OutputColor } from "@/controls/ToolArea/abstractions";
+import { IOutputBuffer, OutputColor } from "@/appIde/ToolArea/abstractions";
 import {
   DebugStepMode,
   ExecutionContext,

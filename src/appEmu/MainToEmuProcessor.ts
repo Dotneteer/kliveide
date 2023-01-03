@@ -8,7 +8,7 @@ import { TAPE_DATA } from "../emu/machines/machine-props";
 import { TapeDataBlock } from "../emu/machines/tape/abstractions";
 import { TapReader } from "../emu/machines/tape/TapReader";
 import { TzxReader } from "../emu/machines/tape/TzxFileFormatLoader";
-import { AppServices } from "../ide/abstractions";
+import { AppServices } from "../appIde/abstractions";
 import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";

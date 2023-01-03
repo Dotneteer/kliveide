@@ -12,7 +12,7 @@ import {
   MachineInfo,
   MachineInstanceEventHandler,
   MachineTypeEventHandler
-} from "../ide/abstractions";
+} from "../appIde/abstractions";
 import { FileProvider } from "../core/FileProvider";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { MessageSource } from "@messaging/messages-core";

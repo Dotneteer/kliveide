@@ -1,9 +1,9 @@
 import styles from "@styles/app.module.scss";
-import { ActivityBar } from "../controls/ActivityBar/ActivityBar";
-import { DocumentArea } from "../controls/DocumentArea/DocumentArea";
-import { SiteBar } from "../controls/SideBar/SideBar";
+import { ActivityBar } from "./ActivityBar/ActivityBar";
+import { DocumentArea } from "./DocumentArea/DocumentArea";
+import { SiteBar } from "./SideBar/SideBar";
 import { SplitPanel } from "../controls/SplitPanel/SplitPanel";
-import { ToolArea } from "../controls/ToolArea/ToolArea";
+import { ToolArea } from "./ToolArea/ToolArea";
 import { Toolbar } from "../controls/Toolbar/Toolbar";
 import { useEffect, useRef } from "react";
 import {
@@ -23,13 +23,13 @@ import {
   useStore
 } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
-import { useAppServices } from "../ide/AppServicesProvider";
-import { AppServices, ToolInfo } from "../ide/abstractions";
+import { useAppServices } from "./services/AppServicesProvider";
+import { AppServices, ToolInfo } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Store } from "@state/redux-light";
 import { AppState } from "@state/AppState";
 import { processMainToIdeMessages } from "./MainToIdeProcessor";
-import { IdeStatusBar } from "./IdeStatusBar";
+import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;

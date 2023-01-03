@@ -1,6 +1,6 @@
 import styles from "@styles/app.module.scss";
-import { EmulatorArea } from "../controls/EmulatorArea/EmulatorArea";
-import { EmuStatusBar } from "./EmuStatusBar";
+import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
+import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import { Toolbar } from "../controls/Toolbar/Toolbar";
 import { useEffect, useRef } from "react";
 import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
@@ -12,11 +12,11 @@ import {
   useSelector
 } from "../core/RendererProvider";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
-import { AppServices } from "@/ide/abstractions";
+import { AppServices } from "@/appIde/abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;

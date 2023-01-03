@@ -1,5 +1,5 @@
 import styles from "./ToolTab.module.scss";
-import { ToolInfo } from "@/ide/abstractions";
+import { ToolInfo } from "@/appIde/abstractions";
 import classnames from "@/utils/classnames";
 import { useDispatch } from "@/core/RendererProvider";
 import { useState } from "react";

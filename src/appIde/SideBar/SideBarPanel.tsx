@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { SideBarPanelInfo } from "@/core/abstractions";
 import { useDispatch } from "@/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
-import { Icon } from "../common/Icon";
+import { Icon } from "../../controls/common/Icon";
 import classnames from "@/utils/classnames";
 
 // --- Size of a single expanded module

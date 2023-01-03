@@ -1,4 +1,4 @@
-import { ToolInfo } from "@/ide/abstractions";
+import { ToolInfo } from "@/appIde/abstractions";
 import { toolPanelRegistry } from "@/registry";
 import { createElement } from "react";
 import styles from "./ToolsContainer.module.scss";

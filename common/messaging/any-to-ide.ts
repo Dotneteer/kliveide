@@ -1,4 +1,4 @@
-import { OutputColor } from "@/controls/ToolArea/abstractions";
+import { OutputColor } from "@/appIde/ToolArea/abstractions";
 import { MessageBase } from "./messages-core";
 
 /**

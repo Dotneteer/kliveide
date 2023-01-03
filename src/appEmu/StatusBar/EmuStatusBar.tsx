@@ -1,11 +1,11 @@
 import { useController } from "@/core/useController";
 import { useSelector } from "@/core/RendererProvider";
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Icon } from "../controls/common/Icon";
-import { SpaceFiller } from "../controls/common/SpaceFiller";
-import { FrameStats } from "../emu/abstractions/FrameStats";
-import classnames from "../utils/classnames"
+import { Icon } from "../../controls/common/Icon";
+import { SpaceFiller } from "../../controls/common/SpaceFiller";
+import { FrameStats } from "../../emu/abstractions/FrameStats";
+import classnames from "../../utils/classnames"
 import styles from "./EmuStatusBar.module.scss";
 
 export const EmuStatusBar = () => {

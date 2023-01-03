@@ -1,10 +1,10 @@
 import styles from "./DocumentTab.module.scss";
-import { DocumentState } from "@/ide/abstractions";
-import { Icon } from "../common/Icon";
+import { DocumentState } from "@/appIde/abstractions";
+import { Icon } from "../../controls/common/Icon";
 import classnames from "@/utils/classnames";
 import { useDispatch } from "@/core/RendererProvider";
 import { activateDocumentAction, changeDocumentAction, closeDocumentAction, selectActivityAction } from "@state/actions";
-import { TabButton } from "../common/TabButton";
+import { TabButton } from "../../controls/common/TabButton";
 import { useState } from "react";
 
 export type Props = DocumentState & {

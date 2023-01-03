@@ -3,8 +3,8 @@ import { useTheme } from "@/theming/ThemeProvider";
 import classnames from "@/utils/classnames";
 import { noop } from "@/utils/stablerefs";
 import { useRef, useState } from "react";
-import { Icon } from "../common/Icon";
-import { TooltipFactory } from "../common/Tooltip";
+import { Icon } from "../../controls/common/Icon";
+import { TooltipFactory } from "../../controls/common/Tooltip";
 import styles from "./ActivityButton.module.scss";
 
 /**

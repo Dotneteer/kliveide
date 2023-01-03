@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "@/controls/ToolArea/abstractions";
+import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
