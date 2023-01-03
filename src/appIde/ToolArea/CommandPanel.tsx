@@ -1,68 +1,99 @@
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
-import { VirtualizedList, VirtualizedListApi } from "../../controls/common/VirtualizedList";
+import {
+  VirtualizedList,
+  VirtualizedListApi
+} from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
+import classnames from "@/utils/classnames";
 
 const CommandPanel = () => {
-    const { interactiveCommandsService } = useAppServices();
-    const buffer = useRef<IOutputBuffer>(interactiveCommandsService.getBuffer());
-    const [contents, setContents] = useState<OutputContentLine[]>(buffer.current.getContents());
-    const api = useRef<VirtualizedListApi>();
+  const { interactiveCommandsService } = useAppServices();
+  const inputRef = useRef<HTMLInputElement>();
+  const buffer = useRef<IOutputBuffer>(interactiveCommandsService.getBuffer());
+  const [contents, setContents] = useState<OutputContentLine[]>(
+    buffer.current.getContents()
+  );
+  const [executing, setExecuting] = useState(false);
 
-    useEffect(() => {
-        const handleChanged = () => {
-            setContents((buffer?.current?.getContents() ?? []).slice(0));
-        }
+  const api = useRef<VirtualizedListApi>();
 
-        if (buffer.current) {
-            buffer.current.contentsChanged.on(handleChanged)
-        }
+  // --- Set the focus to the input element when the commands panel is activated
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [inputRef.current]);
 
-        return () => buffer.current?.contentsChanged?.off(handleChanged);
+  // --- Respond to output buffer content changes
+  useEffect(() => {
+    const handleChanged = () => {
+      setContents((buffer?.current?.getContents() ?? []).slice(0));
+    };
 
-    }, [buffer.current])
+    if (buffer.current) {
+      buffer.current.contentsChanged.on(handleChanged);
+    }
 
-    useEffect(() => {
-        if (api.current) {
-            setTimeout(() => {
-                api.current.scrollToEnd();
-            })
-        }
-    }, [contents])
-    
+    return () => buffer.current?.contentsChanged?.off(handleChanged);
+  }, [buffer.current]);
 
-    return (
-        <div className={styles.component}>
-            <div className={styles.outputWrapper}>
-                <VirtualizedList
-                    items={contents ?? []} 
-                    approxSize={20}
-                    fixItemHeight={false}
-                    apiLoaded={vlApi => api.current = vlApi}
-                    itemRenderer={(idx) => {
-                        return <OutputLine spans={contents?.[idx]?.spans}/>
-                }}/>
-            </div> 
-            <div className={styles.promptWrapper}>
-                <span className={styles.promptPrefix}>$</span>
-                <input 
-                    className={styles.prompt}
-                    placeholder="Type something"
-                    spellCheck={false}
-                    onKeyDown={e => {
-                        const input = e.target as HTMLInputElement;
-                        if (e.code === "Enter") {
-                            buffer.current.writeLine(input.value);
-                            input.value = "";
-                            setContents(buffer.current.getContents().slice(0));
-                        }
-                    }}
-                    />
-            </div>
-        </div>
-    )
-}
+  // --- Automatically scroll to the end of the output buffer whenever the contents changes
+  useEffect(() => {
+    if (api.current) {
+      setTimeout(() => {
+        api.current.scrollToEnd();
+      });
+    }
+  }, [contents]);
 
-export const commandPanelRenderer = () => <CommandPanel />
+  return (
+    <div
+      className={styles.component}
+      tabIndex={0}
+      onFocus={() => inputRef?.current.focus()}
+    >
+      <div className={styles.outputWrapper}>
+        <VirtualizedList
+          items={contents ?? []}
+          approxSize={20}
+          fixItemHeight={false}
+          apiLoaded={vlApi => (api.current = vlApi)}
+          itemRenderer={idx => {
+            return <OutputLine spans={contents?.[idx]?.spans} />;
+          }}
+        />
+      </div>
+      <div className={styles.promptWrapper}>
+        <span className={styles.promptPrefix}>$</span>
+        <input
+          ref={inputRef}
+          className={classnames(styles.prompt, executing ? styles.executing: "")}
+          placeholder={
+            executing ? "Executing command..." : "Type ? + Enter for help"
+          }
+          spellCheck={false}
+          onKeyDown={async e => {
+            const input = e.target as HTMLInputElement;
+            if (e.code === "Enter") {
+              const command = input.value;
+              input.value = "";
+              await executeCommand(command);
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+
+  // --- Execute the specified command
+  async function executeCommand (command: string): Promise<void> {
+    setExecuting(true);
+    buffer.current.writeLine(command);
+    setContents(buffer.current.getContents().slice(0));
+    await new Promise(resolve => setTimeout(resolve, 400));
+    setExecuting(false);
+  }
+};
+
+export const commandPanelRenderer = () => <CommandPanel />;
