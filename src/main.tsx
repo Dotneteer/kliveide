@@ -31,6 +31,10 @@ const store = createAppStore(async (action, source) => {
   }
 });
 
+document.title = isEmu
+  ? "Klive ZX Spectrum Emulator"
+  : "Klive IDE"
+
 // --- Render the app's UI
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

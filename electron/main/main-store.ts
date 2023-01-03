@@ -1,8 +1,8 @@
-import { Action } from "../common/state/Action";
-import createAppStore from "../common/state/store";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { MessageSource } from "../common/messaging/messages-core";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import { Action } from "../../common/state/Action";
+import createAppStore from "../../common/state/store";
+import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
+import { MessageSource } from "../../common/messaging/messages-core";
+import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ForwardActionRequest } from "@messaging/forwarding";
 
 /**

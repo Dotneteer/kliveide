@@ -8,7 +8,7 @@ import {
 } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-import { __DARWIN__ } from "./electron-utils";
+import { __DARWIN__ } from "../electron-utils";
 import { mainStore } from "./main-store";
 import { 
     showEmuStatusBarAction, 
@@ -24,12 +24,14 @@ import {
     setSoundLevelAction,
     setTapeFileAction,
     showIdeToolbarAction,
-    showIdeStatusBarAction} from "../common/state/actions";
+    showIdeStatusBarAction} from "../../common/state/actions";
 import { setMachineType } from "./machines";
-import { MachineControllerState } from "../common/state/MachineControllerState";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
+import { MachineControllerState } from "../../common/state/MachineControllerState";
+import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
-import { createMachineCommand } from "../common/messaging/main-to-emu";
+import { createMachineCommand } from "../../common/messaging/main-to-emu";
+import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { OutputColor } from "@/controls/ToolArea/abstractions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -61,6 +63,9 @@ const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult"
 const SOUND_LEVEL = "sound_level";
 const SELECT_TAPE_FILE = "select_tape_file";
+
+// --- The number of events logged with the emulator
+let loggedEmuOutputEvents = 0;
 
 /**
  * Creates and sets the main menu of the app
@@ -296,6 +301,7 @@ export function setupMenu(
             checked: appState.emulatorState?.clockMultiplier === v,
             click: async () => {
                 mainStore.dispatch(setClockMultiplierAction(v));
+                logEmuEvent(`Clock multiplier set to ${v}`)
             },
         }
     });
@@ -315,6 +321,7 @@ export function setupMenu(
             checked: appState.emulatorState?.soundLevel === v.value,
             click: async () => {
                 mainStore.dispatch(setSoundLevelAction(v.value));
+                logEmuEvent(`Sound level set to ${v.label} (${v.value})`)
             },
         }
     })
@@ -472,9 +479,33 @@ async function setTapeFile(browserWindow: BrowserWindow): Promise<TapeDataBlock[
             file: filename,
             contents
         });
+        logEmuEvent(`Tape file set to ${filename}`);
     } catch (err) {
         dialog.showErrorBox(
             "Error while reading tape file",
             `Reading file ${filename} resulted in error: ${err.message}`);
     }
+}
+
+/**
+ * Log emulator events
+ * @param text Log text
+ * @param color Text color to use
+ */
+async function logEmuEvent(text: string, color?: OutputColor): Promise<void> {
+    loggedEmuOutputEvents++;
+    await sendFromMainToIde({
+      type: "DisplayOutput",
+      pane: "emu",
+      text: `[${loggedEmuOutputEvents}] `,
+      color: "yellow",
+      writeLine: false
+    });
+    await sendFromMainToIde({
+      type: "DisplayOutput",
+      pane: "emu",
+      text,
+      color,
+      writeLine: true
+    });
 }

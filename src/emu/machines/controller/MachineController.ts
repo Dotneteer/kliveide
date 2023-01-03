@@ -353,7 +353,7 @@ export class MachineController {
    * @param text Text to send
    * @param color Text color to use
    */
-  private async sendOutput (text: string, color: OutputColor): Promise<void> {
+  async sendOutput (text: string, color: OutputColor): Promise<void> {
     this._loggedEventNo++;
     await this.messenger.sendMessage({
       type: "DisplayOutput",

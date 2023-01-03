@@ -3,16 +3,16 @@ import {
   errorResponse,
   RequestMessage,
   ResponseMessage
-} from "../common/messaging/messages-core";
+} from "../../common/messaging/messages-core";
 import * as path from "path";
 import * as fs from "fs";
 import { BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse
-} from "../common/messaging/any-to-main";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+} from "../../common/messaging/any-to-main";
+import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 
 /**
  * Process the messages coming from the emulator to the main process

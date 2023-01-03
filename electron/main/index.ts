@@ -32,11 +32,11 @@ import { Unsubscribe } from "@state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setupMenu } from "../app-menu";
+import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron-utils";
-import { processRendererToMainMessages } from "../RendererToMainProcessor";
-import { setMachineType } from "../machines";
-import { mainStore } from "../main-store";
+import { processRendererToMainMessages } from "./RendererToMainProcessor";
+import { setMachineType } from "./machines";
+import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 
