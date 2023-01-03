@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@state/MachineControllerState";
-import { DocumentState, ToolState } from "@/ide/abstractions";
+import { DocumentState, ToolState } from "@/appIde/abstractions";
 import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
 

@@ -2,9 +2,9 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-  appId: "YourAppID",
-  productName: "YourAppName",
-  copyright: "Copyright © 2022 ${author}",
+  appId: "KliveIDE",
+  productName: "Klive IDE",
+  copyright: "Copyright © 2019-2023 ${author}",
   asar: true,
   directories: {
     output: "release/${version}",

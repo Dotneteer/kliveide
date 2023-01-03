@@ -12,7 +12,7 @@ import {
   MachineInfo,
   MachineInstanceEventHandler,
   MachineTypeEventHandler
-} from "../ide/abstractions";
+} from "../appIde/abstractions";
 import { FileProvider } from "../core/FileProvider";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { MessageSource } from "@messaging/messages-core";
@@ -59,7 +59,7 @@ class MachineService implements IMachineService {
 
     // --- Initialize the new machine
     const machine = machineInfo.factory();
-    this._controller = new MachineController(this.store, machine);
+    this._controller = new MachineController(this.store, this.messenger, machine);
     this._controller.debugSupport = new DebugSupport();
     this._newInitializing.fire(machine);
 

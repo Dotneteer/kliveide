@@ -8,7 +8,7 @@ import { TAPE_DATA } from "../emu/machines/machine-props";
 import { TapeDataBlock } from "../emu/machines/tape/abstractions";
 import { TapReader } from "../emu/machines/tape/TapReader";
 import { TzxReader } from "../emu/machines/tape/TzxFileFormatLoader";
-import { AppServices } from "../ide/abstractions";
+import { AppServices } from "../appIde/abstractions";
 import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
@@ -42,7 +42,7 @@ export async function processMainToEmuMessages (
       if (controller) {
         switch (message.command) {
           case "start":
-            controller.start();
+            await controller.start();
             break;
           case "pause":
             await controller.pause();
@@ -54,7 +54,7 @@ export async function processMainToEmuMessages (
             await controller.restart();
             break;
           case "debug":
-            controller.startDebug();
+            await controller.startDebug();
             break;
           case "stepInto":
             await controller.stepInto();

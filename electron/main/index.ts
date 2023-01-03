@@ -1,3 +1,22 @@
+// ====================================================================================================================
+// This file contains the startup code of the Klive application.
+//
+// This code creates two renderer processes with their corresponding windows:
+// - `emuWindow`: Displays the emulator
+// - `ideWindow`: Displays the IDE tools
+// 
+// By default, only the EMU window is displayed. The app displays the IDE window whenever the user requests directly 
+// (with the Show IDE  function) or indirectly (with any other menu commands that require the IDE).
+//
+// The app manages the communication among the three processes (main, emu, ide). The application state is synched; 
+// thus, if any of these processes change the state, the actions causing the changes are sent to the other two 
+// processes.
+//
+// Both renderer processes load the same `index.html` file into their browsers. However, they add a parameter to let 
+// the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide` 
+// parameter).
+// ====================================================================================================================
+
 import {
   defaultResponse,
   RequestMessage,
@@ -13,11 +32,11 @@ import { Unsubscribe } from "@state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setupMenu } from "../app-menu";
+import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron-utils";
-import { processRendererToMainMessages } from "../RendererToMainProcessor";
-import { setMachineType } from "../machines";
-import { mainStore } from "../main-store";
+import { processRendererToMainMessages } from "./RendererToMainProcessor";
+import { setMachineType } from "./machines";
+import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 
@@ -26,18 +45,20 @@ import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMess
 const EMU_QP = "?emu"; // EMU discriminator
 const IDE_QP = "?ide"; // IDE discriminator
 
+// --- Let's prepare the environment variables
 process.env.DIST_ELECTRON = join(__dirname, "../..");
 process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
 process.env.PUBLIC = app.isPackaged
   ? process.env.DIST
   : join(process.env.DIST_ELECTRON, "../public");
 
-// Disable GPU Acceleration for Windows 7
+// --- Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
-// Set application name for Windows 10+ notifications
+// --- Set application name for Windows 10+ notifications
 if (__WIN32__) app.setAppUserModelId(app.getName());
 
+// --- Make sure, only one instance is running
 if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
@@ -137,7 +158,7 @@ async function createAppWindows () {
     });
   }
 
-  // Test actively push message to the Electron-Renderer
+  // --- Test actively push message to the Electron-Renderer
   ideWindow.webContents.on("did-finish-load", () => {
     ideWindow?.webContents.send(
       "main-process-message",
@@ -145,7 +166,7 @@ async function createAppWindows () {
     );
   });
 
-  // Make all links open with the browser, not with the application
+  // --- Make all links open with the browser, not with the application
   ideWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:")) shell.openExternal(url);
     return { action: "deny" };
@@ -161,6 +182,7 @@ async function createAppWindows () {
     mainStore.dispatch(ideFocusedAction(false));
   });
 
+  // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", e => {
     if (allowCloseIde) {
       return;
@@ -170,7 +192,7 @@ async function createAppWindows () {
     mainStore.dispatch(ideFocusedAction(false));
   });
 
-  // Test actively push message to the Electron-Renderer
+  // --- Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
     emuWindow?.webContents.send(
       "main-process-message",
@@ -178,7 +200,7 @@ async function createAppWindows () {
     );
   });
 
-  // Make all links open with the browser, not with the application
+  // --- Make all links open with the browser, not with the application
   emuWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("https:")) shell.openExternal(url);
     return { action: "deny" };
@@ -194,6 +216,7 @@ async function createAppWindows () {
     mainStore.dispatch(emuFocusedAction(false));
   });
 
+  // --- Close the emu window with the IDE window
   emuWindow.on("close", () => {
     allowCloseIde = true;
     ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
@@ -204,14 +227,18 @@ async function createAppWindows () {
   });
 }
 
+// --- Initialize the renderer windows whenever the app is ready to display them
 app.whenReady().then(() => {
   createAppWindows();
 });
 
+// --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
+// --- behavior prevents the app from quitting).
 app.on("before-quit", () => {
   allowCloseIde = true;
 });
 
+// --- Close all windows when requested so
 app.on("window-all-closed", () => {
   storeUnsubscribe();
   ideWindow = null;
@@ -220,14 +247,15 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
+// --- Focus on the main window if the user tried to open another
 app.on("second-instance", () => {
-  if (ideWindow) {
-    // Focus on the main window if the user tried to open another
+if (ideWindow) {
     if (ideWindow.isMinimized()) ideWindow.restore();
     ideWindow.focus();
   }
 });
 
+// --- Activate the windows either by displaying or re-creating them
 app.on("activate", () => {
   const allWindows = BrowserWindow.getAllWindows();
   if (allWindows.length) {

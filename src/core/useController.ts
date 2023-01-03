@@ -1,5 +1,5 @@
 import { MachineController } from "@/emu/machines/controller/MachineController";
-import { useAppServices } from "@/ide/AppServicesProvider";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 
 export const useController = () => {
