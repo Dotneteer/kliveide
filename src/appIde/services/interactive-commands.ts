@@ -1,4 +1,11 @@
-import { InteractiveCommandInfo, InteractiveCommandContext, InteractiveCommandResult, TraceMessageType, TraceMessage } from "../abstractions";
+import {
+  InteractiveCommandInfo,
+  InteractiveCommandContext,
+  InteractiveCommandResult,
+  ValidationMessageType,
+  ValidationMessage
+} from "../abstractions";
+import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
 import { Token } from "./command-parser";
 
 /**
@@ -36,12 +43,12 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
     const hasError = validationMessages.some(
-      m => m.type === TraceMessageType.Error
+      m => m.type === ValidationMessageType.Error
     );
     if (hasError) {
       validationMessages.push(...this.usageMessage());
     }
-    context.service.displayTraceMessages(validationMessages, context);
+    context.service.interactiveCommandsService.displayTraceMessages(validationMessages, context);
     if (hasError) {
       // --- Sign validation error
       return {
@@ -71,7 +78,9 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
    * @param _args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs(_args: Token[]): Promise<TraceMessage | TraceMessage[]> {
+  async validateArgs(
+    _args: Token[]
+  ): Promise<ValidationMessage | ValidationMessage[]> {
     return [];
   }
 
@@ -79,29 +88,29 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
    * Retrieves the usage message
    * @returns
    */
-  usageMessage(): TraceMessage[] {
+  usageMessage(): ValidationMessage[] {
     const usage = this.usage;
     const messages = typeof usage === "string" ? [usage] : usage;
-    const renderedMessages: TraceMessage[] = [];
-    renderedMessages.push(<TraceMessage>{
-      type: TraceMessageType.Info,
+    const renderedMessages: ValidationMessage[] = [];
+    renderedMessages.push(<ValidationMessage>{
+      type: ValidationMessageType.Info,
       message: this.description
     });
     if (messages.length > 0) {
-      renderedMessages.push(<TraceMessage>{
-        type: TraceMessageType.Info,
+      renderedMessages.push(<ValidationMessage>{
+        type: ValidationMessageType.Info,
         message: `Usage: ${messages[0]}`
       });
       messages.slice(1).forEach(m =>
-        renderedMessages.push(<TraceMessage>{
-          type: TraceMessageType.Info,
+        renderedMessages.push(<ValidationMessage>{
+          type: ValidationMessageType.Info,
           message: m
         })
       );
     }
     if (this.aliases && this.aliases.length > 0) {
-      renderedMessages.push(<TraceMessage>{
-        type: TraceMessageType.Info,
+      renderedMessages.push(<ValidationMessage>{
+        type: ValidationMessageType.Info,
         message: `${
           this.aliases.length === 1 ? "Alias" : "Aliases"
         }: ${this.aliases.map(a => getAlias(a)).join(", ")}`
@@ -113,4 +122,37 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
       return alias;
     }
   }
+}
+
+/**
+ * Represents successful command execution
+ */
+export const commandSuccess: InteractiveCommandResult = { success: true };
+
+/**
+ * Represents a command execution error
+ * @param message Error message
+ */
+export function commandError(message: string): InteractiveCommandResult {
+  return {
+    success: false,
+    finalMessage: message
+  }
+}
+
+/**
+ * Writes a message to the specified output
+ */
+export function writeMessage(output: IOutputBuffer, text: string, color?: OutputColor, closeLine = true): void {
+  if (color) {
+    output.color(color);
+  } else {
+    output.resetColor();
+  }
+  if (closeLine) {
+    output.writeLine(text);
+  } else {
+    output.write(text);
+  }
+  output.resetColor();
 }

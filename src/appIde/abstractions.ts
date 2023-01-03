@@ -2,7 +2,9 @@ import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
-import { Unsubscribe } from "@state/redux-light";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
+import { Store, Unsubscribe } from "@state/redux-light";
 import { Token } from "./services/command-parser";
 
 /**
@@ -298,7 +300,7 @@ export type InteractiveCommandInfo = {
    * Retrieves the usage message
    * @returns
    */
-  usageMessage: () => TraceMessage[];
+  usageMessage: () => ValidationMessage[];
 };
 
 /**
@@ -316,9 +318,19 @@ export type InteractiveCommandContext = {
   output: IOutputBuffer;
 
   /**
+   * The store managing the state
+   */
+  store: Store<AppState>;
+
+  /**
    * The command service instance
    */
-  service: IInteractiveCommandService;
+  service: AppServices;
+
+  /**
+   * The messenger to access the main process
+   */
+  messenger: MessengerBase;
 };
 
 /**
@@ -339,7 +351,7 @@ export type InteractiveCommandResult = {
 /**
  * Available type of trace messages
  */
-export enum TraceMessageType {
+export enum ValidationMessageType {
   Info,
   Warning,
   Error
@@ -348,8 +360,8 @@ export enum TraceMessageType {
 /**
  * Describes a trace message
  */
-export type TraceMessage = {
-  type: TraceMessageType;
+export type ValidationMessage = {
+  type: ValidationMessageType;
   message: string;
 };
 
@@ -402,7 +414,7 @@ export interface IInteractiveCommandService {
    * @param context Context to display the messages in
    */
   displayTraceMessages(
-    messages: TraceMessage[],
+    messages: ValidationMessage[],
     context: InteractiveCommandContext
   ): void;
 }

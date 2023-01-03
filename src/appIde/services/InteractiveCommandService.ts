@@ -1,14 +1,16 @@
 import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
 import { OutputPaneBuffer } from "@/appIde/ToolArea/OutputPaneBuffer";
+import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import {
+  AppServices,
   IInteractiveCommandService,
   InteractiveCommandContext,
   InteractiveCommandInfo,
   InteractiveCommandResult,
-  TraceMessage,
-  TraceMessageType
+  ValidationMessage,
+  ValidationMessageType
 } from "../abstractions";
 import { parseCommand, Token } from "./command-parser";
 import { InteractiveCommandBase } from "./interactive-commands";
@@ -16,12 +18,24 @@ import { InteractiveCommandBase } from "./interactive-commands";
 class InteractiveCommandService implements IInteractiveCommandService {
   private readonly _commands: InteractiveCommandInfo[] = [];
   private readonly _buffer = new OutputPaneBuffer();
+  private _appServices: AppServices;
 
   /**
    * Initializes the interactive command registry
    */
-  constructor (private readonly store: Store<AppState>) {
+  constructor (
+    private readonly store: Store<AppState>,
+    private readonly messenger: MessengerBase
+  ) {
     this.registerCommand(new HelpCommand());
+  }
+
+  /**
+   * Sets the app services instance
+   * @param appServices AppServices instance to use with commands
+   */
+  setAppServices (appServices: AppServices): void {
+    this._appServices = appServices;
   }
 
   /**
@@ -95,9 +109,11 @@ class InteractiveCommandService implements IInteractiveCommandService {
 
     // --- Execute the registered command
     const context: InteractiveCommandContext = {
+      store: this.store,
       argTokens: tokens.slice(1),
       output: buffer,
-      service: this
+      service: this._appServices,
+      messenger: this.messenger
     };
     return await commandInfo.execute(context);
   }
@@ -108,14 +124,14 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * @param context Context to display the messages in
    */
   displayTraceMessages (
-    messages: TraceMessage[],
+    messages: ValidationMessage[],
     context: InteractiveCommandContext
   ): void {
     for (var trace of messages) {
       context.output.color(
-        trace.type === TraceMessageType.Error
+        trace.type === ValidationMessageType.Error
           ? "bright-red"
-          : trace.type === TraceMessageType.Warning
+          : trace.type === ValidationMessageType.Warning
           ? "yellow"
           : "bright-blue"
       );
@@ -144,11 +160,13 @@ class HelpCommand extends InteractiveCommandBase {
    * @param args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs (args: Token[]): Promise<TraceMessage | TraceMessage[]> {
+  async validateArgs (
+    args: Token[]
+  ): Promise<ValidationMessage | ValidationMessage[]> {
     // --- Check argument number
     if (args.length > 1) {
       return {
-        type: TraceMessageType.Error,
+        type: ValidationMessageType.Error,
         message: "Invalid number of arguments."
       };
     }
@@ -163,11 +181,12 @@ class HelpCommand extends InteractiveCommandBase {
     context: InteractiveCommandContext
   ): Promise<InteractiveCommandResult> {
     let count = 0;
+    const cmdSrv = context.service.interactiveCommandsService;
     if (this._arg) {
       // --- Single command help
-      const command = context.service.getCommandByIdOrAlias(this._arg);
+      const command = cmdSrv.getCommandByIdOrAlias(this._arg);
       if (command) {
-        context.service.displayTraceMessages(command.usageMessage(), context);
+        cmdSrv.displayTraceMessages(command.usageMessage(), context);
         return {
           success: true
         };
@@ -178,16 +197,21 @@ class HelpCommand extends InteractiveCommandBase {
         };
       }
     } else {
-      context.output.color("bright-blue");
-      context.output.writeLine("Available interactive commands:");
-      context.service
+      const out = context.output;
+      out.color("bright-blue");
+      out.writeLine("Available interactive commands:");
+      out.writeLine();
+      cmdSrv
         .getRegisteredCommands()
         .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
         .forEach(ci => {
-          context.output.color("bright-magenta");
-          context.output.bold(true);
-          context.output.write(`  ${ci.id}`);
-          context.output.bold(false);
+          out.color("bright-magenta");
+          out.bold(true);
+          out.write(`${ci.id}`);
+          out.bold(false);
+          if ((ci.aliases ?? []).length > 0) {
+            out.write(` (${ci.aliases.join(", ")})`);
+          }
           context.output.color("bright-blue");
           context.output.write(`: `);
           context.output.writeLine(ci.description);
@@ -206,6 +230,9 @@ class HelpCommand extends InteractiveCommandBase {
  * @param dispatch Dispatch function to use
  * @returns Interactive commands service instance
  */
-export function createInteractiveCommandsService (store: Store<AppState>) {
-  return new InteractiveCommandService(store);
+export function createInteractiveCommandsService (
+  store: Store<AppState>,
+  messenger: MessengerBase
+) {
+  return new InteractiveCommandService(store, messenger);
 }

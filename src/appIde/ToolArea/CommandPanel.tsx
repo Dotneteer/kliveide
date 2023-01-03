@@ -88,10 +88,17 @@ const CommandPanel = () => {
 
   // --- Execute the specified command
   async function executeCommand (command: string): Promise<void> {
+    const output = buffer.current;
     setExecuting(true);
-    buffer.current.writeLine(command);
+    output.resetColor();
+    output.writeLine(`$ ${command}`);
     setContents(buffer.current.getContents().slice(0));
-    await new Promise(resolve => setTimeout(resolve, 400));
+    const result = await interactiveCommandsService.executeCommand(command, output);
+    if (!result.success) {
+      output.color("bright-red");
+      output.writeLine(result.finalMessage ?? "Error");
+      output.resetColor();
+    }
     setExecuting(false);
   }
 };

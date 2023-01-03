@@ -24,12 +24,15 @@ import {
 } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "./services/AppServicesProvider";
-import { AppServices, ToolInfo } from "./abstractions";
+import { AppServices, IInteractiveCommandService, ToolInfo } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Store } from "@state/redux-light";
 import { AppState } from "@state/AppState";
 import { processMainToIdeMessages } from "./MainToIdeProcessor";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
+import { app } from "electron/main";
+import { ClearScreenCommand } from "./commands/ClearScreenCommand";
+import { PauseMachineCommand, StartMachineCommand } from "./commands/MachineCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -80,6 +83,9 @@ const IdeApp = () => {
   // --- Signify that the UI has been loaded
   useEffect(() => {
     if (mounted.current) return;
+
+    // --- Register the services to be used with the IDE
+    registerCommands(appServices.interactiveCommandsService);
 
     // --- Sign that the UI is ready
     mounted.current = true;
@@ -166,3 +172,15 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
   response.sourceId = "ide";
   ipcRenderer.send("MainToIdeResponse", response);
 });
+
+// --- Register the interactive commands
+let commandsRegistered = false;
+
+function registerCommands(cmdSrv: IInteractiveCommandService): void {
+  if (commandsRegistered) return;
+
+  commandsRegistered = true;
+  cmdSrv.registerCommand(new ClearScreenCommand());
+  cmdSrv.registerCommand(new StartMachineCommand());
+  cmdSrv.registerCommand(new PauseMachineCommand());
+}
