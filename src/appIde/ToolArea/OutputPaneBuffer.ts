@@ -127,6 +127,8 @@ export class OutputPaneBuffer implements IOutputBuffer {
     writeLine(message?: string, data?: unknown, actionable?: boolean): void {
       if (message) {
         this.write(message, data, actionable);
+      } else {
+        this.write("\xa0", data, actionable);
       }
       if (this._currentLineIndex >= this.bufferedLines) {
         this._buffer.shift();

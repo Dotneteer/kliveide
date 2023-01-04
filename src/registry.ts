@@ -20,7 +20,7 @@ import {
   outputPanelRenderer
 } from "./appIde/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
-import { commandPanelRenderer } from "./appIde/ToolArea/CommandPanel";
+import { commandPanelHeaderRenderer, commandPanelRenderer } from "./appIde/ToolArea/CommandPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -88,7 +88,8 @@ export const toolPanelRegistry: ToolRendereInfo[] = [
   {
     id: "commands",
     name: "Commands",
-    renderer: commandPanelRenderer
+    renderer: commandPanelRenderer,
+    headerRenderer: commandPanelHeaderRenderer
   }
 ];
 

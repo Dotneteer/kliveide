@@ -219,3 +219,8 @@ export const activateOutputPaneAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_OUTPUT_PANE",
   payload: { id }
 });
+
+export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: boolean) => ({
+  type: "SET_IDE_STATUS_MESSAGE",
+  payload: { text, flag }
+});

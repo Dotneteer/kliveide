@@ -48,4 +48,6 @@ export interface ActionTypes {
   SET_AUDIO_SAMPLE_RATE: null;
   SET_TAPE_FILE: null;
   ACTIVATE_OUTPUT_PANE: null;
+
+  SET_IDE_STATUS_MESSAGE: null;
 }

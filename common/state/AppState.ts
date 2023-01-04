@@ -48,6 +48,8 @@ export type IdeView = {
   tools?: ToolState[];
   activeTool?: string;
   activeOutputPane?: string;
+  statusMessage?: string;
+  statusSuccess?: boolean;
 };
 
 export type EmulatorState = {

@@ -39,6 +39,11 @@
     font-weight: 600;
 }
 
+.executing::placeholder {
+    font-style: italic;
+    font-weight: 400;
+}
+
 .outputLine {
     overflow-x: hidden;
     word-break: break-all;

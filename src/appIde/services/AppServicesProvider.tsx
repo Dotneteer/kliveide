@@ -1,5 +1,5 @@
 import { useRendererContext } from "@/core/RendererProvider";
-import React, { useContext, useRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { AppServices } from "../abstractions";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./InteractiveCommandService";
@@ -26,12 +26,19 @@ type Props = {
 };
 export function AppServicesProvider ({ children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
+  const interactiveCommandsService = createInteractiveCommandsService(store, messenger);
   const servicesRef = useRef<AppServices>({
     documentService: createDocumentService(store),
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
-    interactiveCommandsService: createInteractiveCommandsService(store)
+    interactiveCommandsService
   });
+
+  // --- Set the app services instance whenever the provider's value changes
+  useEffect(() => {
+    interactiveCommandsService.setAppServices(servicesRef.current);
+  }, [servicesRef.current]);
+
   return (
     <AppServicesContext.Provider value={servicesRef.current}>
       {children}
