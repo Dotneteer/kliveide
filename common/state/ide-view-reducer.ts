@@ -150,6 +150,14 @@ export function ideViewReducer (
       };
     }
 
+    case "SET_IDE_STATUS_MESSAGE": {
+      return {
+        ...state,
+        statusMessage: payload.text,
+        statusSuccess: payload.flag
+      };
+    }
+
     default:
       return state;
   }

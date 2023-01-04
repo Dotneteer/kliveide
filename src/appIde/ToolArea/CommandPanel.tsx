@@ -8,8 +8,12 @@ import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
 import classnames from "@/utils/classnames";
+import { useDispatch } from "@/core/RendererProvider";
+import { setIdeStatusMessageAction } from "@state/actions";
+import { TabButton, TabButtonSeparator } from "@/controls/common/TabButton";
 
 const CommandPanel = () => {
+  const dispatch = useDispatch();
   const { interactiveCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
   const buffer = useRef<IOutputBuffer>(interactiveCommandsService.getBuffer());
@@ -90,6 +94,7 @@ const CommandPanel = () => {
   async function executeCommand (command: string): Promise<void> {
     const output = buffer.current;
     setExecuting(true);
+    dispatch(setIdeStatusMessageAction("Executing command"))
     output.resetColor();
     output.writeLine(`$ ${command}`);
     setContents(buffer.current.getContents().slice(0));
@@ -98,9 +103,39 @@ const CommandPanel = () => {
       output.color("bright-red");
       output.writeLine(result.finalMessage ?? "Error");
       output.resetColor();
+      dispatch(setIdeStatusMessageAction("Command executed with error", false))
+    } else {
+      dispatch(setIdeStatusMessageAction("Command executed", true))
     }
     setExecuting(false);
   }
 };
 
 export const commandPanelRenderer = () => <CommandPanel />;
+
+export const commandPanelHeaderRenderer = () => {
+  const dispatch = useDispatch();
+  const { interactiveCommandsService } = useAppServices();
+  return (
+    <>
+      <TabButton
+        iconName='clear-all'
+        title='Clear'
+        clicked={() =>
+          interactiveCommandsService.getBuffer().clear()
+        }
+      />
+      <TabButtonSeparator />
+      <TabButton
+        iconName='copy'
+        title='Copy to clipboard'
+        clicked={async () => {
+          navigator.clipboard.writeText(
+            interactiveCommandsService.getBuffer().getBufferText()
+          );
+          dispatch(setIdeStatusMessageAction("Output copied to the clipboard", true));
+        }}
+      />
+    </>
+  );
+};

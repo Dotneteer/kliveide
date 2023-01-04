@@ -35,6 +35,7 @@ export type Payload = {
   state: MachineControllerState;
   numValue: number;
   file: string;
+  text: string;
 };
 
 /**

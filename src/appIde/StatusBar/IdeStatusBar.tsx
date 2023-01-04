@@ -1,5 +1,4 @@
 import { useSelector } from "@/core/RendererProvider";
-import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { ReactNode, useEffect, useState } from "react";
 import { Icon } from "../../controls/common/Icon";
@@ -8,19 +7,10 @@ import classnames from "../../utils/classnames";
 import styles from "./IdeStatusBar.module.scss";
 
 export const IdeStatusBar = () => {
-  const { machineService } = useAppServices();
-  const machineId = useSelector(s => s.emulatorState?.machineId);
   const execState = useSelector(s => s.emulatorState?.machineState);
+  const statusMessage = useSelector(s => s.ideView?.statusMessage);
+  const statusSuccess = useSelector(s => s.ideView?.statusSuccess);
   const [machineState, setMachineState] = useState("");
-  const [machineName, setMachineName] = useState("");
-
-  // --- Reflect machine ID changes
-  useEffect(() => {
-    if (machineId) {
-      const info = machineService.getMachineInfo();
-      setMachineName(info?.displayName ?? "");
-    }
-  }, [machineId]);
 
   // --- Reflect machine execution state changes
   useEffect(() => {
@@ -58,8 +48,19 @@ export const IdeStatusBar = () => {
           <LabelSeparator />
           <Label text={machineState} />
         </Section>
+        {statusMessage && (
+          <Section>
+            <Icon
+              iconName={statusSuccess === undefined ? "circle-outline" : statusSuccess ? "check" : "circle-filled"}
+              width={16}
+              height={16}
+              fill='--color-statusbar-icon'
+            />
+            <LabelSeparator />
+            <Label text={statusMessage} />
+          </Section>
+        )}
         <SpaceFiller />
-        <Label text={machineName} />
       </div>
     </div>
   );
@@ -89,30 +90,6 @@ const Label = ({ text, isMonospace }: LabelProps) => {
 
 type SectionProps = {
   children: ReactNode;
-};
-
-type DataLabelProps = {
-  value: number;
-  minimumFractionDigits?: number;
-  maximumFractionDigits?: number;
-  minimumIntegerDigits?: number;
-};
-const DataLabel = ({
-  value,
-  minimumFractionDigits = 3,
-  maximumFractionDigits = 3,
-  minimumIntegerDigits = 2
-}: DataLabelProps) => {
-  return (
-    <Label
-      text={value.toLocaleString(undefined, {
-        minimumFractionDigits,
-        maximumFractionDigits,
-        minimumIntegerDigits
-      })}
-      isMonospace={true}
-    />
-  );
 };
 
 const LabelSeparator = () => <div className={styles.labelSeparator} />;

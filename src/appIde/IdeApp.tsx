@@ -32,7 +32,7 @@ import { processMainToIdeMessages } from "./MainToIdeProcessor";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { app } from "electron/main";
 import { ClearScreenCommand } from "./commands/ClearScreenCommand";
-import { PauseMachineCommand, StartMachineCommand } from "./commands/MachineCommands";
+import { PauseMachineCommand, RestartMachineCommand, StartDebugMachineCommand, StartMachineCommand, StepIntoMachineCommand, StepOutMachineCommand, StepOverMachineCommand, StopMachineCommand } from "./commands/MachineCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -183,4 +183,10 @@ function registerCommands(cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new ClearScreenCommand());
   cmdSrv.registerCommand(new StartMachineCommand());
   cmdSrv.registerCommand(new PauseMachineCommand());
+  cmdSrv.registerCommand(new StopMachineCommand());
+  cmdSrv.registerCommand(new RestartMachineCommand());
+  cmdSrv.registerCommand(new StartDebugMachineCommand());
+  cmdSrv.registerCommand(new StepIntoMachineCommand());
+  cmdSrv.registerCommand(new StepOverMachineCommand());
+  cmdSrv.registerCommand(new StepOutMachineCommand());
 }
