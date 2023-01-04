@@ -3,6 +3,7 @@
 .component {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .collapsed {
@@ -69,13 +70,5 @@
     flex-shrink: 1;
     flex-grow: 1;
     flex-direction: column;
-}
-.contentHolder {
-    margin: 0;
-    height: 100%;
     overflow: hidden;
-    flex-direction: column;
-    flex-grow: 1;
-    flex-shrink: 1;
-    padding: 4px;
 }

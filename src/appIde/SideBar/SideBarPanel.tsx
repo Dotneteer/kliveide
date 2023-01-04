@@ -1,10 +1,11 @@
 import styles from "./SideBarPanel.module.scss";
-import { useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 import { SideBarPanelInfo } from "@/core/abstractions";
 import { useDispatch } from "@/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
 import { Icon } from "../../controls/common/Icon";
 import classnames from "@/utils/classnames";
+import { ScrollViewer } from "@/controls/common/ScrollViewer";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;
@@ -83,9 +84,9 @@ export const SideBarPanel = ({
         </div>
         {expanded && 
             <div className={styles.contentWrapper}>
-                <div className={styles.contentHolder}>
-                    {sideBar.renderer(sideBar.id, sideBar, {})}
-                </div>
+                <ScrollViewer>
+                    {createElement(sideBar.renderer, [sideBar.id, sideBar, {}])}
+                </ScrollViewer>
                 <div
                     className={classnames(
                         styles.sizingGrip, 

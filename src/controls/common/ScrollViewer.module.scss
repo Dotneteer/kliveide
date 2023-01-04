@@ -1,0 +1,56 @@
+.scrollViewer {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  padding: 4px;
+  //overflow: hidden;
+}
+
+.vScrollbar {
+  position: absolute;
+  height: 100%;
+  background-color: transparent;
+  cursor: default;
+}
+
+.vScrollbarThumb {
+  position: absolute;
+  height: 100%;
+  background-color: transparent;
+  cursor: default;
+  transition: background-color 800ms;
+
+  &.pointed {
+    background-color: var(--bgcolor-scrollbar-thumb);
+  }
+
+  &.unpointed {
+    background-color: transparent;
+  }
+}
+
+.hScrollbar {
+  position: absolute;
+  width: 100%;
+  background-color: transparent;
+  cursor: default;
+}
+
+.hScrollbarThumb {
+  position: absolute;
+  width: 100%;
+  background-color: transparent;
+  cursor: default;
+  transition: background-color 800ms;
+
+  &.pointed {
+    background-color: var(--bgcolor-scrollbar-thumb);
+  }
+
+  &.unpointed {
+    background-color: transparent;
+  }
+}
