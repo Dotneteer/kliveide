@@ -2,10 +2,20 @@ import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
+import { ILiteEvent } from "@/emu/utils/lite-event";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import { Token } from "./services/command-parser";
+
+/**
+ * This type represents UI services available from any part of the UI
+ */
+export type IUiService = {
+  readonly dragging: boolean;
+  setDragging(flag: boolean): void;
+  draggingChanged: ILiteEvent;
+}
 
 /**
  * This type describes a document that can have a designer (code editor) associated with it
@@ -423,6 +433,7 @@ export interface IInteractiveCommandService {
  * This type defines the services the IDE provides
  */
 export type AppServices = {
+  uiService: IUiService
   documentService: IDocumentService;
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;

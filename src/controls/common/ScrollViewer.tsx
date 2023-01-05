@@ -1,7 +1,8 @@
 import { useResizeObserver } from "@/core/useResizeObserver";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import classnames from "@/utils/classnames";
 import styles from "./ScrollViewer.module.scss";
+import { useAppServices } from "@/appIde/services/AppServicesProvider";
 
 type Props = {
   scrollBarWidth?: number;
@@ -17,9 +18,11 @@ export const ScrollViewer = ({
   children
 }: Props) => {
   const ref = useRef<HTMLDivElement>();
+  const { uiService } = useAppServices();
   const [pointed, setPointed] = useState(false);
   const [vThumbPos, setVThumbPos] = useState(0);
   const [hThumbPos, setHThumbPos] = useState(0);
+  const [version, setVersion] = useState(0);
 
   // --- Scrollbar dimensions and positions
   const vScroll = useRef(false);
@@ -52,7 +55,7 @@ export const ScrollViewer = ({
     // --- Calculate vertical scrollbar and thumb dimensions
     vHeight.current = vScroll.current
       ? el.offsetHeight - (hScroll.current ? scrollBarWidth : 0)
-      : 0;
+      : 1;
 
     // --- Ratio of the visible viewport
     const vRatio = el.offsetHeight / el.scrollHeight;
@@ -83,7 +86,7 @@ export const ScrollViewer = ({
     // --- Calculate vertical scrollbar and thumb dimensions
     hWidth.current = hScroll.current
       ? el.offsetWidth - (vScroll.current ? scrollBarWidth : 0)
-      : 0;
+      : 1;
 
     // --- Ratio of the visible viewport
     const hRatio = el.offsetWidth / el.scrollWidth;
@@ -119,15 +122,16 @@ export const ScrollViewer = ({
   }, [pointed, ref.current]);
 
   // --- Start moving the vertical thumb
-  const vStartMove = e => {
+  const vStartMove = (e: MouseEvent | React.MouseEvent) => {
     vGrip.current = e.clientY;
     vGripThumb.current = vThumbPos - vTop.current;
     window.addEventListener("mouseup", vEndMove);
     window.addEventListener("mousemove", vMove);
+    uiService.setDragging(true);
   };
 
   // --- Move the verical thumb
-  const vMove = e => {
+  const vMove = (e: MouseEvent | React.MouseEvent) => {
     const delta = e.clientY - vGrip.current;
     const el = ref.current;
     const newScrollPos =
@@ -144,18 +148,21 @@ export const ScrollViewer = ({
   const vEndMove = () => {
     window.removeEventListener("mouseup", vEndMove);
     window.removeEventListener("mousemove", vMove);
+    uiService.setDragging(false);
+    setVersion(version + 1);
   };
 
   // --- Start moving the horizontal thumb
-  const hStartMove = e => {
+  const hStartMove = (e: MouseEvent | React.MouseEvent) => {
     hGrip.current = e.clientX;
     hGripThumb.current = hThumbPos - hLeft.current;
     window.addEventListener("mouseup", hEndMove);
     window.addEventListener("mousemove", hMove);
+    uiService.setDragging(true);
   };
 
   // --- Move the horizontal thumb
-  const hMove = e => {
+  const hMove = (e: MouseEvent | React.MouseEvent) => {
     const delta = e.clientX - hGrip.current;
     const el = ref.current;
     const newScrollPos =
@@ -172,6 +179,16 @@ export const ScrollViewer = ({
   const hEndMove = () => {
     window.removeEventListener("mouseup", hEndMove);
     window.removeEventListener("mousemove", hMove);
+    uiService.setDragging(false);
+    setVersion(version + 1);
+  };
+
+  const mouseWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey) {
+      ref.current.scrollLeft += e.deltaY / 4;
+    } else {
+      ref.current.scrollTop += e.deltaY / 4;
+    }
   };
 
   return (
@@ -182,6 +199,7 @@ export const ScrollViewer = ({
         onMouseEnter={() => setPointed(true)}
         onMouseLeave={() => setPointed(false)}
         onScroll={() => updateDims()}
+        onWheel={e => mouseWheel(e)}
       >
         {children}
         {/* Vertical scrollbar */}
@@ -190,7 +208,7 @@ export const ScrollViewer = ({
             className={styles.vScrollbar}
             style={{
               left: vLeft.current,
-              top: vTop.current,
+              top: vTop.current ?? 0,
               height: vHeight.current,
               width: scrollBarWidth
             }}
@@ -201,7 +219,9 @@ export const ScrollViewer = ({
         <div
           className={classnames(
             styles.vScrollbarThumb,
-            vScroll.current && pointed ? styles.pointed : styles.unpointed
+            vScroll.current && (pointed || uiService.dragging)
+              ? styles.pointed
+              : styles.unpointed
           )}
           style={{
             left: vLeft.current,
@@ -218,8 +238,8 @@ export const ScrollViewer = ({
           }}
           onMouseUp={() => vEndMove()}
         />
-        {/* Horizontal scrollbar */}
-        {vScroll.current && (
+        {/*Horizontal scrollbar*/}
+        {hScroll.current && (
           <div
             className={styles.hScrollbar}
             style={{
@@ -235,7 +255,9 @@ export const ScrollViewer = ({
         <div
           className={classnames(
             styles.hScrollbarThumb,
-            hScroll.current && pointed ? styles.pointed : styles.unpointed
+            hScroll.current && (pointed || uiService.dragging)
+              ? styles.pointed
+              : styles.unpointed
           )}
           style={{
             left: hThumbPos,
