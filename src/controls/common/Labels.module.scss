@@ -1,0 +1,34 @@
+@import "@styles/core.scss";
+
+.label {
+    display: flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+    color: var(--color-label);
+}
+
+.value {
+    display: flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+    color: var(--color-value);
+}
+
+.secondary {
+    display: flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+    color: var(--color-secondary-label);
+}
+
+.flag {
+    display: flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.separator {
+    height: 1px;
+    background-color: var(--color-toolbar-separator);
+    border: none;
+}

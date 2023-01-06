@@ -41,6 +41,11 @@ export type ThemeProperties = {
   "--console-ansi-yellow"?: string;
   "--console-default"?: string;
 
+  // --- Label colors
+  "--color-label"?: string;
+  "--color-value"?: string;
+  "--color-secondary-label"?: string;
+
   // --- Activity bar
   "--bgcolor-activitybar"?: string;
   "--color-activitybar"?: string;
