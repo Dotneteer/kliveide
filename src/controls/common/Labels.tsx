@@ -10,25 +10,53 @@ type Props = {
   tooltip?: string;
 };
 
-export const Label = ({ text, width, center }: Props) => (
-  <div
-    className={styles.label}
-    style={{
-      width,
-      justifyContent: center ? "center" : undefined
-    }}
-  >
-    {text}
-  </div>
-);
+export const Label = ({ text, width, center, tooltip }: Props) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [_, setVersion] = useState(0);
+
+  const toolTipLines = (tooltip ?? "").split("\n");
+  useEffect(() => {
+    setVersion(1);
+  }, [ref.current]);
+
+  return (
+    <>
+      <div
+        ref={ref}
+        className={styles.label}
+        style={{
+          width,
+          justifyContent: center ? "center" : undefined
+        }}
+      >
+        {text}
+        {tooltip && (
+          <TooltipFactory
+            refElement={ref.current}
+            placement='bottom'
+            offsetX={0}
+            offsetY={16}
+            showDelay={100}
+          >
+            {toolTipLines.map((l, idx) => (
+              <div key={idx}>{l}</div>
+            ))}
+          </TooltipFactory>
+        )}
+      </div>
+    </>
+  );
+};
 
 export const Value = ({ text, width, tooltip }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [version, setVersion] = useState(0);
-  
+  const [_, setVersion] = useState(0);
+
+  const toolTipLines = (tooltip ?? "").split("\n");
   useEffect(() => {
     setVersion(1);
-  }, [ref.current])
+  }, [ref.current]);
+
   return (
     <>
       <div ref={ref} className={styles.value} style={{ width }}>
@@ -41,7 +69,9 @@ export const Value = ({ text, width, tooltip }: Props) => {
             offsetY={16}
             showDelay={100}
           >
-            {tooltip}
+            {toolTipLines.map((l, idx) => (
+              <div key={idx}>{l}</div>
+            ))}
           </TooltipFactory>
         )}
       </div>
@@ -56,27 +86,62 @@ export const Secondary = ({ text, width }: Props) => (
 );
 
 type FlagProps = {
-  value: boolean | number;
+  value?: boolean | number;
   width?: string | number;
   center?: boolean;
+  tooltip?: string;
 };
 
-export const Flag = ({ value, width, center = true }: FlagProps) => (
-  <div
-    className={styles.flag}
-    style={{
-      width,
-      display: "flex",
-      justifyContent: center ? "center" : undefined
-    }}
-  >
-    <Icon
-      iconName={value ? "circle-filled" : "circle-outline"}
-      width={16}
-      height={16}
-      fill='--color-value'
-    />
-  </div>
-);
+export const Flag = ({ value, width, center = true, tooltip }: FlagProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [_, setVersion] = useState(0);
+
+  const toolTipLines = (tooltip ?? "").split("\n");
+  useEffect(() => {
+    setVersion(1);
+  }, [ref.current]);
+
+  return (
+    <div
+      ref={ref}
+      className={styles.flag}
+      style={{
+        width,
+        display: "flex",
+        justifyContent: center ? "center" : undefined
+      }}
+    >
+      <Icon
+        iconName={
+          value === undefined
+            ? "close"
+            : value
+            ? "circle-filled"
+            : "circle-outline"
+        }
+        width={16}
+        height={16}
+        fill='--color-value'
+      />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement='bottom'
+          offsetX={0}
+          offsetY={16}
+          showDelay={100}
+        >
+          {toolTipLines.map((l, idx) => (
+            <div key={idx}>{l}</div>
+          ))}
+        </TooltipFactory>
+      )}
+    </div>
+  );
+};
 
 export const Separator = () => <hr className={styles.separator} />;
+
+export const LabelSeparator = ({width}: {width: number | string}) => (
+  <div className={styles.label} style={{ width }} />
+);

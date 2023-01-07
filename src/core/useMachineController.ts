@@ -3,7 +3,7 @@ import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "@state/MachineControllerState";
 
-export const useController = (
+export const useMachineController = (
   controllerChanged?: (controller: MachineController) => void,
   machineStateChanged?: (states: {
     oldState: MachineControllerState;

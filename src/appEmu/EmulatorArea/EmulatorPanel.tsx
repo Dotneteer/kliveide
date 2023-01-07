@@ -1,5 +1,5 @@
 import styles from "./EmulatorPanel.module.scss";
-import { useController } from "@/core/useController";
+import { useMachineController } from "@/core/useMachineController";
 import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
 import { useSelector, useStore } from "@/core/RendererProvider";
@@ -51,7 +51,7 @@ export const EmulatorPanel = () => {
   const beeperRenderer = useRef<AudioRenderer>();
 
   // --- Prepare the machine controller with event handlers
-  const controller = useController(
+  const controller = useMachineController(
     machineControllerChanged,
     machineStateChanged,
     machineFrameCompleted
