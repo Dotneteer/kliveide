@@ -1,7 +1,14 @@
-import { Flag, Label, LabelSeparator, Separator, Value } from "@/controls/common/Labels";
+import {
+  Flag,
+  Label,
+  LabelSeparator,
+  Separator,
+  Value
+} from "@/controls/common/Labels";
 import { useRendererContext } from "@/core/RendererProvider";
 import { EmuGetCpuStateResponse } from "@messaging/main-to-emu";
-import { useState } from "react";
+import { initialAppState } from "@state/AppState";
+import { useEffect, useRef, useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
 
@@ -46,7 +53,8 @@ const CpuPanel = () => {
   const toFlag = (value: number | undefined, bitNo: number) =>
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
-  useStateRefresh(500, async () => {
+  // --- Take care of refreshing the screen
+  useStateRefresh(250, async () => {
     setCpuState(
       (await messenger.sendMessage({
         type: "EmuGetCpuState"
@@ -238,35 +246,35 @@ const CpuPanel = () => {
         />
       </div>
       <div className={styles.cols}>
-        <Label text='IFF1' width={LAB_WIDTH-3} />
+        <Label text='IFF1' width={LAB_WIDTH - 3} />
         <Flag
           value={cpuState?.iff1}
-          width={FLAG_WIDTH+3}
+          width={FLAG_WIDTH + 3}
           center={false}
           tooltip='Interrupt flip-flop #1'
         />
         <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text='IFF2' width={LAB_WIDTH-3} />
+        <Label text='IFF2' width={LAB_WIDTH - 3} />
         <Flag
           value={cpuState?.iff2}
-          width={FLAG_WIDTH+3}
+          width={FLAG_WIDTH + 3}
           center={false}
           tooltip='Interrupt flip-flop #2'
         />
       </div>
       <div className={styles.cols}>
-        <Label text='INT' width={LAB_WIDTH-3} />
+        <Label text='INT' width={LAB_WIDTH - 3} />
         <Flag
           value={cpuState?.sigINT}
-          width={FLAG_WIDTH+3}
+          width={FLAG_WIDTH + 3}
           center={false}
           tooltip='Interrupt signal'
         />
         <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text='HLT' width={LAB_WIDTH-3} />
+        <Label text='HLT' width={LAB_WIDTH - 3} />
         <Flag
           value={cpuState?.halted}
-          width={R16_WIDTH+3}
+          width={R16_WIDTH + 3}
           center={false}
           tooltip='Halted'
         />

@@ -63,8 +63,9 @@ export async function processRendererToMainMessages (
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
 
+    // --- Forward these messages to the emulator
     case "EmuGetCpuState":
-      // --- A clients want to get CPU state information
+    case "EmuGetUlaState":
       return sendFromMainToEmu(message);
   }
   return defaultResponse();

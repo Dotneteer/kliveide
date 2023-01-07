@@ -14,7 +14,19 @@ import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { clipboard } from "electron";
+import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
+import { RenderingPhase } from "@/emu/abstractions/IScreenDevice";
+
+const borderColors = [
+  "Black",
+  "Blue",
+  "Red",
+  "Magenta",
+  "Green",
+  "Cyan",
+  "Yellow",
+  "White"
+];
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -101,7 +113,41 @@ export async function processMainToEmuMessages (
         iff2: cpu.iff2,
         sigINT: cpu.sigINT,
         halted: cpu.halted
-      }
+      };
+    }
+
+    case "EmuGetUlaState": {
+      const controller = machineService.getMachineController();
+      if (!controller) return errorResponse("Machine controller not available");
+      const machine = controller.machine;
+      const screenDevice = (machine as ZxSpectrumBase).screenDevice;
+      const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
+      return {
+        type: "EmuGetUlaStateResponse",
+        fcl: machine.currentFrameTact,
+        frm: machine.frames,
+        ras: Math.floor(machine.currentFrameTact / machine.screenWidthInPixels),
+        pos: machine.currentFrameTact % machine.screenWidthInPixels,
+        pix: RenderingPhase[
+          screenDevice.renderingTactTable[machine.currentFrameTact].phase
+        ],
+        bor: borderColors[screenDevice.borderColor & 0x07],
+        flo: (machine as ZxSpectrumBase).floatingBusDevice.readFloatingBus(),
+        con: machine.totalContentionDelaySinceStart,
+        lco: machine.contentionDelaySincePause,
+        ear: (machine as ZxSpectrumBase).beeperDevice.earBit,
+        mic: (machine as ZxSpectrumBase).tapeDevice.micBit,
+        keyLines: [
+          kbDevice.getKeyLineValue(0),
+          kbDevice.getKeyLineValue(1),
+          kbDevice.getKeyLineValue(2),
+          kbDevice.getKeyLineValue(3),
+          kbDevice.getKeyLineValue(4),
+          kbDevice.getKeyLineValue(5),
+          kbDevice.getKeyLineValue(6),
+          kbDevice.getKeyLineValue(7)
+        ]
+      };
     }
   }
   return defaultResponse();

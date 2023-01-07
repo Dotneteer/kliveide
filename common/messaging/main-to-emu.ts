@@ -43,6 +43,13 @@ export interface EmuGetCpuStateRequest extends MessageBase {
 }
 
 /**
+ * The Ide process asks the emu process for ULA state information
+ */
+export interface EmuGetUlaStateRequest extends MessageBase {
+  type: "EmuGetUlaState";
+}
+
+/**
  * The Emu process sends back CPU state information
  */
 export interface EmuGetCpuStateResponse extends MessageBase {
@@ -67,6 +74,25 @@ export interface EmuGetCpuStateResponse extends MessageBase {
   iff2: boolean;
   sigINT: boolean;
   halted: boolean;
+}
+
+/**
+ * The Emu process sends back CPU state information
+ */
+export interface EmuGetUlaStateResponse extends MessageBase {
+  type: "EmuGetUlaStateResponse";
+  fcl: number;
+  frm: number;
+  ras: number;
+  pos: number;
+  pix: string;
+  bor: string;
+  flo: number;
+  con: number;
+  lco: number;
+  ear: boolean;
+  mic: boolean;
+  keyLines: number[];
 }
 
 export function createMachineCommand (
