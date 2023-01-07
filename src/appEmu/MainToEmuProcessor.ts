@@ -1,5 +1,6 @@
 import {
   defaultResponse,
+  errorResponse,
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
@@ -13,6 +14,7 @@ import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
+import { clipboard } from "electron";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -72,6 +74,35 @@ export async function processMainToEmuMessages (
     case "EmuSetTapeFile":
       await setTapeFile(message);
       break;
+
+    case "EmuGetCpuState": {
+      const controller = machineService.getMachineController();
+      if (!controller) return errorResponse("Machine controller not available");
+      const cpu = controller.machine;
+      return {
+        type: "EmuGetCpuStateResponse",
+        af: cpu.af,
+        bc: cpu.bc,
+        de: cpu.de,
+        hl: cpu.hl,
+        af_: cpu.af_,
+        bc_: cpu.bc_,
+        de_: cpu.de_,
+        hl_: cpu.hl_,
+        pc: cpu.pc,
+        sp: cpu.sp,
+        ix: cpu.ix,
+        iy: cpu.iy,
+        ir: cpu.ir,
+        wz: cpu.wz,
+        tacts: cpu.tacts,
+        interruptMode: cpu.interruptMode,
+        iff1: cpu.iff1,
+        iff2: cpu.iff2,
+        sigINT: cpu.sigINT,
+        halted: cpu.halted
+      }
+    }
   }
   return defaultResponse();
 

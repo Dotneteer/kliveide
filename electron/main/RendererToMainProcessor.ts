@@ -62,6 +62,10 @@ export async function processRendererToMainMessages (
     case "DisplayOutput":
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
+
+    case "EmuGetCpuState":
+      // --- A clients want to get CPU state information
+      return sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

@@ -1,4 +1,4 @@
-import { useController } from "@/core/useController";
+import { useMachineController } from "@/core/useMachineController";
 import { useSelector } from "@/core/RendererProvider";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import styles from "./EmuStatusBar.module.scss";
 
 export const EmuStatusBar = () => {
     const {machineService } = useAppServices();
-    const controller = useController();
+    const controller = useMachineController();
     const [frameStats, setFrameStats] = useState<FrameStats>();
     const machineId = useSelector(s => s.emulatorState?.machineId);
     const [machineName, setMachineName] = useState("");

@@ -35,6 +35,40 @@ export interface EmuSetTapeFileRequest extends MessageBase {
   contents: Uint8Array;
 }
 
+/**
+ * The Ide process asks the emu process for CPU state information
+ */
+export interface EmuGetCpuStateRequest extends MessageBase {
+  type: "EmuGetCpuState";
+}
+
+/**
+ * The Emu process sends back CPU state information
+ */
+export interface EmuGetCpuStateResponse extends MessageBase {
+  type: "EmuGetCpuStateResponse";
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  af_: number;
+  bc_: number;
+  de_: number;
+  hl_: number;
+  pc: number;
+  sp: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+  tacts: number;
+  interruptMode: number;
+  iff1: boolean;
+  iff2: boolean;
+  sigINT: boolean;
+  halted: boolean;
+}
+
 export function createMachineCommand (
   command: MachineCommand
 ): EmuMachineCommandRequest {

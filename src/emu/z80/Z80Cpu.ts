@@ -588,6 +588,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.sigINT = false;
         this.sigNMI = false;
         this.sigRST = false;
+        this.halted = false;
         this.interruptMode = 0;
         this.iff1 = false;
         this.iff2 = false;
@@ -622,6 +623,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.sigINT = false;
         this.sigNMI = false;
         this.sigRST = false;
+        this.halted = false;
         this.interruptMode = 0;
         this.iff1 = false;
         this.iff2 = false;

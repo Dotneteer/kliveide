@@ -5,6 +5,7 @@ import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./InteractiveCommandService";
 import { createMachineService } from "../../appEmu/MachineService";
 import { createOutputPaneService } from "./OuputPaneService";
+import { createUiService } from "@/core/UiServices";
 
 // =====================================================================================================================
 /**
@@ -28,6 +29,7 @@ export function AppServicesProvider ({ children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
   const interactiveCommandsService = createInteractiveCommandsService(store, messenger);
   const servicesRef = useRef<AppServices>({
+    uiService: createUiService(),
     documentService: createDocumentService(store),
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),

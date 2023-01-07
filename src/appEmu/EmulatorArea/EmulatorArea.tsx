@@ -1,4 +1,4 @@
-import { SplitPanel } from "../../controls/SplitPanel/SplitPanel";
+import { SplitPanel } from "../../controls/common/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
 import { KeyboardPanel } from "./KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
