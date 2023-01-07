@@ -29,7 +29,9 @@ import {
   EmuMachineCommandRequest,
   EmuSetTapeFileRequest,
   EmuGetCpuStateRequest,
-  EmuGetCpuStateResponse
+  EmuGetCpuStateResponse,
+  EmuGetUlaStateRequest,
+  EmuGetUlaStateResponse
 } from "./main-to-emu";
 import { DisplayOutputRequest } from "./any-to-ide";
 
@@ -84,6 +86,7 @@ export type RequestMessage =
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
   | EmuGetCpuStateRequest
+  | EmuGetUlaStateRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -97,7 +100,8 @@ export type ResponseMessage =
   | ErrorResponse
   | TextContentsResponse
   | BinaryContentsResponse
-  | EmuGetCpuStateResponse;
+  | EmuGetCpuStateResponse
+  | EmuGetUlaStateResponse;
 
 /**
  * All messages

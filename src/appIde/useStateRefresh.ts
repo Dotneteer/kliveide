@@ -1,6 +1,6 @@
 import { useSelector } from "@/core/RendererProvider";
 import { MachineControllerState } from "@state/MachineControllerState";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * This react hook executes refresh events whenever the machine's state changes or the specified
@@ -13,6 +13,19 @@ export function useStateRefresh (
   handler: (state: MachineControllerState) => void | Promise<void>
 ): void {
   const machineState = useSelector(s => s.emulatorState?.machineState);
+
+  // --- Initial refresh
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    handler(machineState);
+
+    return () => {
+      initialized.current = false;
+    };
+  }, [initialized.current]);
 
   // --- Respond to machine state change events
   useEffect(() => {
@@ -33,7 +46,7 @@ export function useStateRefresh (
           handler(machineState);
         }, refreshInterval);
         break;
-      
+
       case MachineControllerState.None:
       case MachineControllerState.Paused:
       case MachineControllerState.Stopped:
