@@ -50,6 +50,7 @@ export type IdeView = {
   activeOutputPane?: string;
   statusMessage?: string;
   statusSuccess?: boolean;
+  toolCommandSeqNo: number;
 };
 
 export type EmulatorState = {
@@ -100,6 +101,7 @@ export const initialAppState: AppState = {
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
+    toolCommandSeqNo: 0
   },
   emuViewOptions: {
     showToolbar: true,

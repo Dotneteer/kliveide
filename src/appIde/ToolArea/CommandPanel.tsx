@@ -8,8 +8,11 @@ import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
 import classnames from "@/utils/classnames";
-import { useDispatch } from "@/core/RendererProvider";
-import { setIdeStatusMessageAction } from "@state/actions";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
+import {
+  incToolCommandSeqNoAction,
+  setIdeStatusMessageAction
+} from "@state/actions";
 import { TabButton, TabButtonSeparator } from "@/controls/common/TabButton";
 
 const CommandPanel = () => {
@@ -21,13 +24,15 @@ const CommandPanel = () => {
     buffer.current.getContents()
   );
   const [executing, setExecuting] = useState(false);
+  const commandSeqNo = useSelector(s => s.ideView?.toolCommandSeqNo);
 
   const api = useRef<VirtualizedListApi>();
 
-  // --- Set the focus to the input element when the commands panel is activated
+  // --- Set the focus to the input element when the commands panel is activated, or a new
+  // --- header command has been executed
   useEffect(() => {
     inputRef.current?.focus();
-  }, [inputRef.current]);
+  }, [inputRef.current, commandSeqNo]);
 
   // --- Respond to output buffer content changes
   useEffect(() => {
@@ -129,7 +134,10 @@ export const commandPanelHeaderRenderer = () => {
       <TabButton
         iconName='clear-all'
         title='Clear'
-        clicked={() => interactiveCommandsService.getBuffer().clear()}
+        clicked={() => {
+          interactiveCommandsService.getBuffer().clear();
+          dispatch(incToolCommandSeqNoAction());
+        }}
       />
       <TabButtonSeparator />
       <TabButton
@@ -142,6 +150,7 @@ export const commandPanelHeaderRenderer = () => {
           dispatch(
             setIdeStatusMessageAction("Output copied to the clipboard", true)
           );
+          dispatch(incToolCommandSeqNoAction());
         }}
       />
     </>

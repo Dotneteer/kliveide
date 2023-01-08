@@ -158,6 +158,13 @@ export function ideViewReducer (
       };
     }
 
+    case "INC_TOOL_CMD_SEQ": {
+      return {
+        ...state,
+        toolCommandSeqNo: (state.toolCommandSeqNo ?? 0) + 1,
+      };
+    }
+
     default:
       return state;
   }
