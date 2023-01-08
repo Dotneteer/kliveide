@@ -97,7 +97,7 @@ export class DebugSupport implements IDebugSupport {
         this._memoryBps.clear();
         this._ioBps.length = 0;
         this._ioBpsMap.clear();
-        this.store.dispatch(incBreakpointsVersionAction());
+        this.store.dispatch(incBreakpointsVersionAction(), "emu");
     }
 
     /**
@@ -113,7 +113,7 @@ export class DebugSupport implements IDebugSupport {
             partition: breakpoint.partition,
             exec: true
         })
-        this.store.dispatch(incBreakpointsVersionAction());
+        this.store.dispatch(incBreakpointsVersionAction(), "emu");
         return !oldBp;
     }
 
@@ -126,7 +126,7 @@ export class DebugSupport implements IDebugSupport {
         const bpKey = getBpKey(address);
         const oldBp = this._execBps.get(bpKey);
         this._execBps.delete(bpKey);
-        this.store.dispatch(incBreakpointsVersionAction());
+        this.store.dispatch(incBreakpointsVersionAction(), "emu");
         return !!oldBp;
     }
 }

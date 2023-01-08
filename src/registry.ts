@@ -76,6 +76,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "breakpointsPanel",
     title: "Breakpoints",
     hostActivity: ACTIVITY_DEBUG_ID,
+    noScrollViewer: false,
     renderer: breakpointsPanelRenderer
   }
 ];

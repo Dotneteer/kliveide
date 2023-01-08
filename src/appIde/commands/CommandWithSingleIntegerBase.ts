@@ -41,7 +41,7 @@ export abstract class CommandWithSingleIntegerBase extends InteractiveCommandBas
     this.arg = value;
     if (this.arg < this.minValue || this.arg > this.maxValue) {
       return validationError(
-        `Argument value must be between {MinValue} and {MaxValue}`
+        `Argument value must be between ${this.minValue} and ${this.maxValue}`
       );
     }
     return [];

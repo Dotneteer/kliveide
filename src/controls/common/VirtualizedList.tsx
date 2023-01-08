@@ -41,6 +41,7 @@ export const VirtualizedList = ({
         getScrollElement: () => parentRef.current,
         estimateSize: () => approxSize ?? 20,
         overscan: 20,
+        
     });
     
     const [count, setCount] = useState(0);
