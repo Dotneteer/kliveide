@@ -62,6 +62,7 @@ export type EmulatorState = {
   clockMultiplier?: number;
   audioSampleRate?: number;
   tapeFile?: string;
+  breakpointsVersion: number;
 }
 
 /**
@@ -111,5 +112,6 @@ export const initialAppState: AppState = {
     savedSoundLevel: 0.8,
     fastLoad: true,
     clockMultiplier: 1,
+    breakpointsVersion: 0
   }
 };

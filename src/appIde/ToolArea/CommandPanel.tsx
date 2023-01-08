@@ -47,7 +47,7 @@ const CommandPanel = () => {
     if (api.current) {
       setTimeout(() => {
         api.current.scrollToEnd();
-      });
+      }, 200);
     }
   }, [contents]);
 
@@ -72,7 +72,10 @@ const CommandPanel = () => {
         <span className={styles.promptPrefix}>$</span>
         <input
           ref={inputRef}
-          className={classnames(styles.prompt, executing ? styles.executing: "")}
+          className={classnames(
+            styles.prompt,
+            executing ? styles.executing : ""
+          )}
           placeholder={
             executing ? "Executing command..." : "Type ? + Enter for help"
           }
@@ -94,18 +97,23 @@ const CommandPanel = () => {
   async function executeCommand (command: string): Promise<void> {
     const output = buffer.current;
     setExecuting(true);
-    dispatch(setIdeStatusMessageAction("Executing command"))
+    dispatch(setIdeStatusMessageAction("Executing command"));
     output.resetColor();
     output.writeLine(`$ ${command}`);
     setContents(buffer.current.getContents().slice(0));
-    const result = await interactiveCommandsService.executeCommand(command, output);
-    if (!result.success) {
-      output.color("bright-red");
-      output.writeLine(result.finalMessage ?? "Error");
-      output.resetColor();
-      dispatch(setIdeStatusMessageAction("Command executed with error", false))
+    const result = await interactiveCommandsService.executeCommand(
+      command,
+      output
+    );
+    if (result.success) {
+      dispatch(setIdeStatusMessageAction("Command executed", true));
     } else {
-      dispatch(setIdeStatusMessageAction("Command executed", true))
+      if (result.finalMessage) {
+        output.color("bright-red");
+        output.writeLine(result.finalMessage);
+        output.resetColor();
+      }
+      dispatch(setIdeStatusMessageAction("Command executed with error", false));
     }
     setExecuting(false);
   }
@@ -121,9 +129,7 @@ export const commandPanelHeaderRenderer = () => {
       <TabButton
         iconName='clear-all'
         title='Clear'
-        clicked={() =>
-          interactiveCommandsService.getBuffer().clear()
-        }
+        clicked={() => interactiveCommandsService.getBuffer().clear()}
       />
       <TabButtonSeparator />
       <TabButton
@@ -133,7 +139,9 @@ export const commandPanelHeaderRenderer = () => {
           navigator.clipboard.writeText(
             interactiveCommandsService.getBuffer().getBufferText()
           );
-          dispatch(setIdeStatusMessageAction("Output copied to the clipboard", true));
+          dispatch(
+            setIdeStatusMessageAction("Output copied to the clipboard", true)
+          );
         }}
       />
     </>

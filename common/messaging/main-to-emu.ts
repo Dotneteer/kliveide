@@ -1,3 +1,4 @@
+import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import { MessageBase } from "./messages-core";
 
 /**
@@ -8,7 +9,10 @@ export interface EmuSetMachineTypeRequest extends MessageBase {
   machineId: string;
 }
 
-type MachineCommand =
+/**
+ * Available machine commands
+ */
+export type MachineCommand =
   | "start"
   | "pause"
   | "stop"
@@ -47,6 +51,24 @@ export interface EmuGetCpuStateRequest extends MessageBase {
  */
 export interface EmuGetUlaStateRequest extends MessageBase {
   type: "EmuGetUlaState";
+}
+
+export interface EmuEraseAllBreakpointsRequest extends MessageBase {
+  type: "EmuEraseAllBreakpoints"
+}
+
+export interface EmuSetBreakpointRequest extends MessageBase {
+  type: "EmuSetBreakpoint"
+  bp: number;
+}
+
+export interface EmuRemoveBreakpointRequest extends MessageBase {
+  type: "EmuRemoveBreakpoint"
+  bp: number;
+}
+
+export interface EmuListBreakpointsRequest extends MessageBase {
+  type: "EmuListBreakpoints"
 }
 
 /**
@@ -93,6 +115,14 @@ export interface EmuGetUlaStateResponse extends MessageBase {
   ear: boolean;
   mic: boolean;
   keyLines: number[];
+}
+
+/**
+ * The Emu process sends back CPU state information
+ */
+export interface EmuListBreakpointsResponse extends MessageBase {
+  type: "EmuListBreakpointsResponse";
+  breakpoints: BreakpointInfo[];
 }
 
 export function createMachineCommand (

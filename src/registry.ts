@@ -20,7 +20,10 @@ import {
   outputPanelRenderer
 } from "./appIde/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
-import { commandPanelHeaderRenderer, commandPanelRenderer } from "./appIde/ToolArea/CommandPanel";
+import {
+  commandPanelHeaderRenderer,
+  commandPanelRenderer
+} from "./appIde/ToolArea/CommandPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -57,14 +60,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   },
   {
     id: "cpuPanel",
-    title: "CPU Panel",
+    title: "Z80 CPU",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: cpuPanelRenderer,
     expandedOnInit: true
   },
   {
     id: "ulaPanel",
-    title: "ULA Panel",
+    title: "ULA",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: ulaPanelRenderer,
     initialSize: 500
@@ -80,16 +83,16 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
 // --- Set up tool panels
 export const toolPanelRegistry: ToolRendereInfo[] = [
   {
-    id: "output",
-    name: "Output",
-    renderer: outputPanelRenderer,
-    headerRenderer: outputPanelHeaderRenderer
-  },
-  {
     id: "commands",
     name: "Commands",
     renderer: commandPanelRenderer,
     headerRenderer: commandPanelHeaderRenderer
+  },
+  {
+    id: "output",
+    name: "Output",
+    renderer: outputPanelRenderer,
+    headerRenderer: outputPanelHeaderRenderer
   }
 ];
 

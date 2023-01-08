@@ -1,5 +1,7 @@
+import { incBreakpointsVersionAction } from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
 import { BreakpointInfo, IDebugSupport } from "../abstractions/ExecutionContext";
-import { ILiteEvent, LiteEvent } from "../utils/lite-event";
 
 /**
  * This class implement support functions for debugging
@@ -16,6 +18,12 @@ export class DebugSupport implements IDebugSupport {
 
     // --- I/O breakpoints
     private _ioBpsMap = new Map<number, BreakpointInfo>();
+
+    /**
+     * Initializes the service using the specified store
+     * @param store Application state store
+     */
+    constructor(private readonly store: Store<AppState>) {}
 
     /**
      * This member stores the last startup breakpoint to check. It allows setting a breakpoint to the first
@@ -85,7 +93,11 @@ export class DebugSupport implements IDebugSupport {
      * Erases all breakpoints
      */
     eraseAllBreakpoints(): void {
-        throw new Error("Method not implemented.");
+        this._execBps.clear();
+        this._memoryBps.clear();
+        this._ioBps.length = 0;
+        this._ioBpsMap.clear();
+        this.store.dispatch(incBreakpointsVersionAction());
     }
 
     /**
@@ -93,8 +105,16 @@ export class DebugSupport implements IDebugSupport {
      * @param breakpoint Breakpoint information
      * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
      */
-    addBreakpoint(breakpoint: BreakpointInfo): boolean {
-        throw new Error("Method not implemented.");
+    addExecBreakpoint(breakpoint: BreakpointInfo): boolean {
+        const bpKey = getBpKey(breakpoint.address, breakpoint.partition);
+        const oldBp = this._execBps.get(bpKey);
+        this._execBps.set(bpKey, {
+            address: breakpoint.address,
+            partition: breakpoint.partition,
+            exec: true
+        })
+        this.store.dispatch(incBreakpointsVersionAction());
+        return !oldBp;
     }
 
     /**
@@ -102,25 +122,13 @@ export class DebugSupport implements IDebugSupport {
      * @param address Breakpoint address
      * @returns True, if the breakpoint has just been removed; otherwise, false
      */
-    removeBreakpoint(address: number): boolean {
-        throw new Error("Method not implemented.");
+    removeExecBreakpoint(address: number): boolean {
+        const bpKey = getBpKey(address);
+        const oldBp = this._execBps.get(bpKey);
+        this._execBps.delete(bpKey);
+        this.store.dispatch(incBreakpointsVersionAction());
+        return !!oldBp;
     }
-    
-    /**
-     * This event fires when execution breakpoints have been changed
-     */
-    execBreakpointsChanged: ILiteEvent = new LiteEvent();
-    
-    /**
-     * This event fires when memory breakpoints have been changed
-     */
-    memoryBreakpointsChanged: ILiteEvent = new LiteEvent();
-    
-    /**
-     * This event fires when I/O breakpoints have been changed
-     */
-    ioBreakpointsChanged: ILiteEvent = new LiteEvent();
-
 }
 
 /**

@@ -1,6 +1,8 @@
 import {
   defaultResponse,
+  ErrorResponse,
   errorResponse,
+  flagResponse,
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
@@ -16,6 +18,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
 import { RenderingPhase } from "@/emu/abstractions/IScreenDevice";
+import { stat } from "original-fs";
 
 const borderColors = [
   "Black",
@@ -50,38 +53,38 @@ export async function processMainToEmuMessages (
       await machineService.setMachineType(message.machineId);
       break;
 
-    case "EmuMachineCommand":
+    case "EmuMachineCommand": {
       // --- Execute the specified machine command
       const controller = machineService.getMachineController();
-      if (controller) {
-        switch (message.command) {
-          case "start":
-            await controller.start();
-            break;
-          case "pause":
-            await controller.pause();
-            break;
-          case "stop":
-            await controller.stop();
-            break;
-          case "restart":
-            await controller.restart();
-            break;
-          case "debug":
-            await controller.startDebug();
-            break;
-          case "stepInto":
-            await controller.stepInto();
-            break;
-          case "stepOver":
-            await controller.stepOver();
-            break;
-          case "stepOut":
-            await controller.stepOut();
-            break;
-        }
+      if (!controller) return noControllerResponse();
+      switch (message.command) {
+        case "start":
+          await controller.start();
+          break;
+        case "pause":
+          await controller.pause();
+          break;
+        case "stop":
+          await controller.stop();
+          break;
+        case "restart":
+          await controller.restart();
+          break;
+        case "debug":
+          await controller.startDebug();
+          break;
+        case "stepInto":
+          await controller.stepInto();
+          break;
+        case "stepOver":
+          await controller.stepOver();
+          break;
+        case "stepOut":
+          await controller.stepOut();
+          break;
       }
       break;
+    }
 
     case "EmuSetTapeFile":
       await setTapeFile(message);
@@ -89,7 +92,7 @@ export async function processMainToEmuMessages (
 
     case "EmuGetCpuState": {
       const controller = machineService.getMachineController();
-      if (!controller) return errorResponse("Machine controller not available");
+      if (!controller) return noControllerResponse();
       const cpu = controller.machine;
       return {
         type: "EmuGetCpuStateResponse",
@@ -118,7 +121,7 @@ export async function processMainToEmuMessages (
 
     case "EmuGetUlaState": {
       const controller = machineService.getMachineController();
-      if (!controller) return errorResponse("Machine controller not available");
+      if (!controller) return noControllerResponse();
       const machine = controller.machine;
       const screenDevice = (machine as ZxSpectrumBase).screenDevice;
       const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
@@ -149,8 +152,49 @@ export async function processMainToEmuMessages (
         ]
       };
     }
+
+    case "EmuListBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      return {
+        type: "EmuListBreakpointsResponse",
+        breakpoints: controller.debugSupport.execBreakpoints.map(bp => ({
+          ...bp
+        }))
+      };
+    }
+
+    case "EmuEraseAllBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      controller.debugSupport.eraseAllBreakpoints();
+      break;
+    }
+
+    case "EmuSetBreakpoint": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const status = controller.debugSupport.addExecBreakpoint({
+        address: message.bp,
+        exec: true
+      });
+      return flagResponse(status);
+    }
+    
+    case "EmuRemoveBreakpoint": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const status = controller.debugSupport.removeExecBreakpoint(message.bp);
+      return flagResponse(status);
+    }
+    
   }
   return defaultResponse();
+
+  // --- Retrieves a controller error message
+  function noControllerResponse (): ErrorResponse {
+    return errorResponse("Machine controller not available");
+  }
 
   // --- Parses and sets the tape file
   async function setTapeFile (message: EmuSetTapeFileRequest): Promise<void> {

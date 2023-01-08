@@ -31,7 +31,12 @@ import {
   EmuGetCpuStateRequest,
   EmuGetCpuStateResponse,
   EmuGetUlaStateRequest,
-  EmuGetUlaStateResponse
+  EmuGetUlaStateResponse,
+  EmuEraseAllBreakpointsRequest,
+  EmuSetBreakpointRequest,
+  EmuRemoveBreakpointRequest,
+  EmuListBreakpointsRequest,
+  EmuListBreakpointsResponse
 } from "./main-to-emu";
 import { DisplayOutputRequest } from "./any-to-ide";
 
@@ -73,8 +78,16 @@ export interface DefaultResponse extends MessageBase {
  * Send back error messages
  */
 export interface ErrorResponse extends MessageBase {
-  type: "Error";
+  type: "ErrorResponse";
   message: string;
+}
+
+/**
+ * Send back flagged messages
+ */
+export interface FlagResponse extends MessageBase {
+  type: "FlagResponse";
+  flag: boolean;
 }
 
 /**
@@ -87,6 +100,10 @@ export type RequestMessage =
   | EmuSetTapeFileRequest
   | EmuGetCpuStateRequest
   | EmuGetUlaStateRequest
+  | EmuEraseAllBreakpointsRequest
+  | EmuSetBreakpointRequest
+  | EmuRemoveBreakpointRequest
+  | EmuListBreakpointsRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -98,10 +115,12 @@ export type RequestMessage =
 export type ResponseMessage =
   | DefaultResponse
   | ErrorResponse
+  | FlagResponse
   | TextContentsResponse
   | BinaryContentsResponse
   | EmuGetCpuStateResponse
-  | EmuGetUlaStateResponse;
+  | EmuGetUlaStateResponse
+  | EmuListBreakpointsResponse;
 
 /**
  * All messages
@@ -121,7 +140,18 @@ export function defaultResponse (): DefaultResponse {
  */
 export function errorResponse (message: string): ErrorResponse {
   return {
-    type: "Error",
+    type: "ErrorResponse",
     message
+  };
+}
+
+/**
+ * Creates an error response
+ * @param message Error message
+ */
+export function flagResponse (flag: boolean): FlagResponse {
+  return {
+    type: "FlagResponse",
+    flag
   };
 }
