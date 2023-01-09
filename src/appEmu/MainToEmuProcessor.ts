@@ -156,11 +156,24 @@ export async function processMainToEmuMessages (
     case "EmuListBreakpoints": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
+      const execBreakpoints = controller.debugSupport.execBreakpoints.map(
+        bp => ({
+          ...bp
+        })
+      ).sort((a, b) => a.address - b.address);
+      const segments: number[][] = [];
+      for (let i = 0; i < execBreakpoints.length; i++) {
+        const addr = execBreakpoints[i].address;
+        segments[i] = [];
+        for (let j = 0; j < 32; j++) {
+          segments[i][j] = controller.machine.doReadMemory((addr + j) & 0xffff);
+        }
+      }
+
       return {
         type: "EmuListBreakpointsResponse",
-        breakpoints: controller.debugSupport.execBreakpoints.map(bp => ({
-          ...bp
-        }))
+        breakpoints: execBreakpoints,
+        memorySegments: segments
       };
     }
 
@@ -180,14 +193,13 @@ export async function processMainToEmuMessages (
       });
       return flagResponse(status);
     }
-    
+
     case "EmuRemoveBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.removeExecBreakpoint(message.bp);
       return flagResponse(status);
     }
-    
   }
   return defaultResponse();
 

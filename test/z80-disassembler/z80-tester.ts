@@ -53,7 +53,9 @@ export class Z80Tester {
     const disassembler = new Z80Disassembler(
       map.sections,
       new Uint8Array(opCodes),
-      true
+      {
+        allowExtendedSet: true
+      }
     );
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();

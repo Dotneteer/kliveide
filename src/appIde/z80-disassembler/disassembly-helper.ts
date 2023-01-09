@@ -18,6 +18,11 @@ export type FetchResult = {
   opcode: number;
 };
 
+export type DisassemblyOptions = {
+  allowExtendedSet?: boolean;
+  noLabelPrefix?: boolean;
+}
+
 /**
  * This class represents the output of a single disassembly item
  */

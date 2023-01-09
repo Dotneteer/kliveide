@@ -123,6 +123,7 @@ export interface EmuGetUlaStateResponse extends MessageBase {
 export interface EmuListBreakpointsResponse extends MessageBase {
   type: "EmuListBreakpointsResponse";
   breakpoints: BreakpointInfo[];
+  memorySegments?: number[][];
 }
 
 export function createMachineCommand (

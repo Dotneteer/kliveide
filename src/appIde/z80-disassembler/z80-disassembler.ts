@@ -7,7 +7,8 @@ import {
   intToX2,
   intToX4,
   toSbyte,
-  FetchResult
+  FetchResult,
+  DisassemblyOptions
 } from "./disassembly-helper";
 
 /**
@@ -23,38 +24,20 @@ export class Z80Disassembler {
   private _opCode = 0;
   private _indexMode = 0;
   private _overflow = false;
-  private _lineCount = 0;
-
-  /**
-   * Gets the contents of the memory
-   */
-  readonly memoryContents: Uint8Array;
-
-  /**
-   * Memory sections used by the disassembler
-   */
-  readonly memorySections: MemorySection[];
-
-  /**
-   * Indicates if ZX Spectrum Next extended instruction disassembly is allowed
-   */
-  readonly extendedInstructionsAllowed: boolean;
 
   /**
    * Initializes a new instance of the disassembler
    * @param memorySections Memory map for disassembly
    * @param memoryContents The contents of the memory to disassemble
-   * @param disasmFlags Optional flags to be used with the disassembly
-   * @param extendedSet True, if NEXT operation disassembly is allowed; otherwise, false
+   * 
    */
   constructor (
-    memorySections: MemorySection[],
-    memoryContents: Uint8Array,
-    extendedSet = false
+    public readonly memorySections: MemorySection[],
+    public readonly memoryContents: Uint8Array,
+    public readonly options?: DisassemblyOptions
   ) {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
-    this.extendedInstructionsAllowed = extendedSet;
   }
 
   /**
@@ -90,7 +73,6 @@ export class Z80Disassembler {
       endAddress = this.memoryContents.length - 1;
     }
     const refSection = new MemorySection(startAddress, endAddress);
-    this._lineCount = 0;
 
     // --- Let's go through the memory sections
     for (const section of this.memorySections) {
@@ -233,7 +215,7 @@ export class Z80Disassembler {
 
       this._opCode = this._fetch();
       decodeInfo =
-        !this.extendedInstructionsAllowed && z80NextSet[this._opCode]
+        !(this.options?.allowExtendedSet ?? false) && z80NextSet[this._opCode]
           ? "nop"
           : extendedInstructions[this._opCode] ?? "nop";
     } else if (this._opCode === 0xcb) {
@@ -481,7 +463,7 @@ export class Z80Disassembler {
         // --- #L: absolute label (16 bit address)
         var target = this._fetchWord();
         this._output.createLabel(target, this._opOffset);
-        replacement = `L${intToX4(target)}`;
+        replacement = `${(this.options?.noLabelPrefix ?? false) ? "$" : "L"}${intToX4(target)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = target;
