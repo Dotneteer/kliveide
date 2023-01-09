@@ -1,5 +1,5 @@
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   VirtualizedList,
   VirtualizedListApi
@@ -27,6 +27,8 @@ const CommandPanel = () => {
   const commandSeqNo = useSelector(s => s.ideView?.toolCommandSeqNo);
 
   const api = useRef<VirtualizedListApi>();
+  const historyIndex = useRef(-1);
+
 
   // --- Set the focus to the input element when the commands panel is activated, or a new
   // --- header command has been executed
@@ -85,18 +87,45 @@ const CommandPanel = () => {
             executing ? "Executing command..." : "Type ? + Enter for help"
           }
           spellCheck={false}
-          onKeyDown={async e => {
-            const input = e.target as HTMLInputElement;
-            if (e.code === "Enter") {
-              const command = input.value;
-              input.value = "";
-              await executeCommand(command);
-            }
-          }}
+          onKeyDown={processKey}
         />
       </div>
     </div>
   );
+
+  // --- Process the pressed key
+  async function processKey (e: React.KeyboardEvent): Promise<void> {
+    const input = e.target as HTMLInputElement;
+    switch (e.code) {
+      case "Enter":
+        const command = input.value;
+        input.value = "";
+        if (command.trim()) {
+          await executeCommand(command);
+        }
+        break;
+
+      case "ArrowUp":
+      case "ArrowDown":
+        e.preventDefault();
+        e.stopPropagation();
+        const historyLength =
+          interactiveCommandsService.getCommandHistoryLength();
+        if (historyLength > 0) {
+          historyIndex.current += e.key === "ArrowUp" ? 1 : -1;
+          if (historyIndex.current === -1) {
+            input.value = "";
+          } else {
+            historyIndex.current =
+              (historyIndex.current + historyLength) % historyLength;
+            input.value = interactiveCommandsService.getCommandFromHistory(
+              historyIndex.current
+            );
+          }
+        }
+        break;
+    }
+  }
 
   // --- Execute the specified command
   async function executeCommand (command: string): Promise<void> {

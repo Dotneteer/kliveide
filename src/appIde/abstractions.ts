@@ -410,6 +410,22 @@ export interface IInteractiveCommandService {
   getCommandByIdOrAlias(idOrAlias: string): InteractiveCommandInfo | undefined;
 
   /**
+   * Gets the command with the specified index from the command history
+   * @param index Command index
+   */
+  getCommandFromHistory(index: number): string;
+
+  /**
+   * Gets the length of the command history
+   */
+  getCommandHistoryLength(): number;
+
+  /**
+   * Clears the command history
+   */
+  clearHistory(): void;
+
+  /**
    * Executes the specified command line
    * @param command Command to execute
    */

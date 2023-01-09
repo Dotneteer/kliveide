@@ -32,7 +32,6 @@ const BreakpointsPanel = () => {
       type: "EmuGetCpuState"
     })) as EmuGetCpuStateResponse;
     pcValue.current = cpuResponse.pc;
-    console.log(bpResponse, cpuResponse);
 
     // --- Any memory information received?
     if (!bpResponse.memorySegments) return;

@@ -15,9 +15,12 @@ import {
 import { parseCommand, Token } from "./command-parser";
 import { InteractiveCommandBase } from "./interactive-commands";
 
+const MAX_HISTORY = 1024;
+
 class InteractiveCommandService implements IInteractiveCommandService {
   private readonly _commands: InteractiveCommandInfo[] = [];
   private readonly _buffer = new OutputPaneBuffer();
+  private _history: string[] = [];
   private _appServices: AppServices;
 
   /**
@@ -28,6 +31,28 @@ class InteractiveCommandService implements IInteractiveCommandService {
     private readonly messenger: MessengerBase
   ) {
     this.registerCommand(new HelpCommand());
+  }
+
+  /**
+   * Gets the command with the specified index from the command history
+   * @param index Command index
+   */
+  getCommandFromHistory (index: number): string {
+    return this._history[index];
+  }
+
+  /**
+   * Gets the length of the command history
+   */
+  getCommandHistoryLength (): number {
+    return this._history?.length ?? 0;
+  }
+
+  /**
+   * Clears the command history
+   */
+  clearHistory (): void {
+    this._history.length = 0;
   }
 
   /**
@@ -88,6 +113,12 @@ class InteractiveCommandService implements IInteractiveCommandService {
     command: string,
     buffer: IOutputBuffer
   ): Promise<InteractiveCommandResult> {
+    // --- Add command to history
+    this._history.push(command);
+    if (this._history.length > MAX_HISTORY) {
+      this._history = this._history.slice(1);
+    }
+
     const tokens = parseCommand(command);
     if (tokens.length === 0) {
       // --- No token, no command to execute
@@ -182,42 +213,36 @@ class HelpCommand extends InteractiveCommandBase {
   ): Promise<InteractiveCommandResult> {
     let count = 0;
     const cmdSrv = context.service.interactiveCommandsService;
-    if (this._arg) {
-      // --- Single command help
-      const command = cmdSrv.getCommandByIdOrAlias(this._arg);
-      if (command) {
-        cmdSrv.displayTraceMessages(command.usageMessage(), context);
-        return {
-          success: true
-        };
-      } else {
-        return {
-          success: false,
-          finalMessage: `Cannot find the ${this._arg} interactive command.`
-        };
-      }
-    } else {
-      const out = context.output;
-      out.color("bright-blue");
-      out.writeLine("Available interactive commands:");
-      out.writeLine();
-      cmdSrv
-        .getRegisteredCommands()
-        .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
-        .forEach(ci => {
-          out.color("bright-magenta");
-          out.bold(true);
-          out.write(`${ci.id}`);
-          out.bold(false);
-          if ((ci.aliases ?? []).length > 0) {
-            out.write(` (${ci.aliases.join(", ")})`);
-          }
-          context.output.color("bright-blue");
-          context.output.write(`: `);
-          context.output.writeLine(ci.description);
-          count++;
-        });
-    }
+    const selectedCommands: InteractiveCommandInfo[] = this._arg
+      ? cmdSrv
+          .getRegisteredCommands()
+          .filter(
+            cmd =>
+              cmd.id.toLowerCase().includes(this._arg.toLowerCase()) ||
+              cmd.aliases.some(a =>
+                a.toLowerCase().includes(this._arg.toLowerCase())
+              )
+          )
+      : cmdSrv.getRegisteredCommands();
+    const out = context.output;
+    out.color("bright-blue");
+    out.writeLine("Available interactive commands:");
+    out.writeLine();
+    selectedCommands
+      .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
+      .forEach(ci => {
+        out.color("bright-magenta");
+        out.bold(true);
+        out.write(`${ci.id}`);
+        out.bold(false);
+        if ((ci.aliases ?? []).length > 0) {
+          out.write(` (${ci.aliases.join(", ")})`);
+        }
+        context.output.color("bright-blue");
+        context.output.write(`: `);
+        context.output.writeLine(ci.description);
+        count++;
+      });
     return {
       success: true,
       finalMessage: `${count} command${count > 1 ? "s" : ""} displayed.`
