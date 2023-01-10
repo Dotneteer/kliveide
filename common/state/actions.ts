@@ -224,3 +224,11 @@ export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: bo
   type: "SET_IDE_STATUS_MESSAGE",
   payload: { text, flag }
 });
+
+export const incBreakpointsVersionAction: ActionCreator = () => ({
+  type: "INC_BPS_VERSION"
+});
+
+export const incToolCommandSeqNoAction: ActionCreator = () => ({
+  type: "INC_TOOL_CMD_SEQ"
+});

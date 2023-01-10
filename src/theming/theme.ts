@@ -113,6 +113,11 @@ export type ThemeProperties = {
   "--color-tooltab-active"?: string;
   "--color-tooltab-inactive"?: string;
   "--color-prompt"?: string;
+
+  // --- Breakpoints panel
+  "--color-breakpoint-enabled"?: string;
+  "--color-breakpoint-disabled"?: string;
+  "--color-breakpoint-current"?: string;
 }
 
 /**

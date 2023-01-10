@@ -110,18 +110,18 @@ export class MachineController {
    * Start the machine in normal mode.
    */
   async start (): Promise<void> {
+    await this.sendOutput("Machine started", "green");
     this.isDebugging = false;
     this.run();
-    await this.sendOutput("Machine started", "green");
   }
 
   /**
    * Start the machine in debug mode.
    */
   async startDebug (): Promise<void> {
+    await this.sendOutput("Machine started in debug mode", "green");
     this.isDebugging = true;
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
-    await this.sendOutput("Machine started in debug mode", "green");
   }
 
   /**
@@ -185,14 +185,14 @@ export class MachineController {
    */
   async stepInto (): Promise<void> {
     this.isDebugging = true;
+    await this.sendOutput(
+      `Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
+      "cyan"
+    );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepInto);
     await this.finishExecutionLoop(
       MachineControllerState.Pausing,
       MachineControllerState.Paused
-    );
-    await this.sendOutput(
-      `Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
-      "cyan"
     );
   }
 
@@ -201,14 +201,14 @@ export class MachineController {
    */
   async stepOver (): Promise<void> {
     this.isDebugging = true;
+    await this.sendOutput(
+      `Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
+      "cyan"
+    );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOver);
     await this.finishExecutionLoop(
       MachineControllerState.Pausing,
       MachineControllerState.Paused
-    );
-    await this.sendOutput(
-      `Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
-      "cyan"
     );
   }
 
@@ -217,14 +217,14 @@ export class MachineController {
    */
   async stepOut (): Promise<void> {
     this.isDebugging = true;
+    await this.sendOutput(
+      `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
+      "cyan"
+    );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
     await this.finishExecutionLoop(
       MachineControllerState.Pausing,
       MachineControllerState.Paused
-    );
-    await this.sendOutput(
-      `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
-      "cyan"
     );
   }
 
@@ -301,11 +301,24 @@ export class MachineController {
                 this.frameStats.lastFrameTimeInMs) /
               this.frameStats.frameCount;
 
-        if (
-          termination !== FrameTerminationMode.Normal ||
-          this._cancelRequested
-        ) {
-          this.context.canceled = this._cancelRequested;
+        if (this._cancelRequested) {
+          // --- The machine is paused or stopped
+          this.context.canceled = true;
+          return;
+        }
+        if (termination !== FrameTerminationMode.Normal) {
+          this.state = MachineControllerState.Paused;
+          this._machineTask = undefined;
+          this.context.canceled = true;
+
+          if (termination === FrameTerminationMode.DebugEvent) {
+            await this.sendOutput(
+              `Breakpoint reached at PC=${this.machine.pc
+                .toString(16)
+                .padStart(4, "0")}`,
+              "cyan"
+            );
+          }
           return;
         }
 

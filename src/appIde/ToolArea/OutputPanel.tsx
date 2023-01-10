@@ -1,7 +1,11 @@
 import { useDispatch, useSelector, useStore } from "@/core/RendererProvider";
 import { ToolState } from "@/appIde/abstractions";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
-import { activateOutputPaneAction, setIdeStatusMessageAction } from "@state/actions";
+import {
+  activateOutputPaneAction,
+  incToolCommandSeqNoAction,
+  setIdeStatusMessageAction
+} from "@state/actions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { Dropdown } from "../../controls/common/Dropdown";
 import { TabButton, TabButtonSeparator } from "../../controls/common/TabButton";
@@ -128,9 +132,10 @@ export const outputPanelHeaderRenderer = () => {
       <TabButton
         iconName='clear-all'
         title='Clear'
-        clicked={() =>
-          outputPaneService.getOutputPaneBuffer(activePane)?.clear()
-        }
+        clicked={() => {
+          outputPaneService.getOutputPaneBuffer(activePane)?.clear();
+          dispatch(incToolCommandSeqNoAction());
+        }}
       />
       <TabButtonSeparator />
       <TabButton
@@ -140,7 +145,10 @@ export const outputPanelHeaderRenderer = () => {
           navigator.clipboard.writeText(
             outputPaneService.getOutputPaneBuffer(activePane).getBufferText()
           );
-          dispatch(setIdeStatusMessageAction("Output copied to the clipboard", true));
+          dispatch(
+            setIdeStatusMessageAction("Output copied to the clipboard", true)
+          );
+          dispatch(incToolCommandSeqNoAction());
         }}
       />
     </>

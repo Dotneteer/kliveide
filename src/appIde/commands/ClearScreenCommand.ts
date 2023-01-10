@@ -7,7 +7,7 @@ export class ClearScreenCommand extends CommandWithNoArgBase {
   readonly description = "Clears the interactive command output";
   readonly usage = "cls";
 
-  async execute(
+  async doExecute(
     context: InteractiveCommandContext
   ): Promise<InteractiveCommandResult> {
     context.output.clear();

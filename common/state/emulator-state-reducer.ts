@@ -64,6 +64,13 @@ export function emulatorStateReducer (
       };
     }
 
+    case "INC_BPS_VERSION": {
+      return {
+        ...state,
+        breakpointsVersion: (state.breakpointsVersion ?? 0) + 1
+      };
+    }
+
     default:
       return state;
   }

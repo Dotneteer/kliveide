@@ -164,29 +164,22 @@ export interface IDebugSupport {
      * @param breakpoint Breakpoint information
      * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
      */
-    addBreakpoint(breakpoint: BreakpointInfo): boolean;
+    addExecBreakpoint(breakpoint: BreakpointInfo): boolean;
 
     /**
      * Removes a breakpoint
      * @param address Breakpoint address
      * @returns True, if the breakpoint has just been removed; otherwise, false
      */
-    removeBreakpoint(address: number): boolean
+    removeExecBreakpoint(address: number): boolean
 
     /**
-     * This event fires when execution breakpoints have been changed
+     * Enables or disables the specified breakpoint
+     * @param address Breakpoint address
+     * @param enabled Is the breakpoint enabled?
+     * @returns True, if the breakpoint exists, and it has been updated; otherwise, false
      */
-    execBreakpointsChanged: ILiteEvent;
-
-    /**
-     * This event fires when memory breakpoints have been changed
-     */
-    memoryBreakpointsChanged: ILiteEvent;
-
-    /**
-     * This event fires when I/O breakpoints have been changed
-     */
-    ioBreakpointsChanged: ILiteEvent;
+    enableExecBreakpoint(address: number, enabled: boolean): boolean;
 }
 
 /**
@@ -202,6 +195,11 @@ export type BreakpointInfo = {
      * Optional partition (reserved for future use)
      */
     partition?: number;
+
+    /**
+     * Indicates if a particular breakpoint is disabled
+     */
+    disabled?: boolean;
 
     /**
      * Optional mask for I/O addresses

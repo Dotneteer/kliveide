@@ -24,15 +24,35 @@ import {
 } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "./services/AppServicesProvider";
-import { AppServices, IInteractiveCommandService, ToolInfo } from "./abstractions";
+import {
+  AppServices,
+  IInteractiveCommandService,
+  ToolInfo
+} from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Store } from "@state/redux-light";
 import { AppState } from "@state/AppState";
 import { processMainToIdeMessages } from "./MainToIdeProcessor";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
-import { app } from "electron/main";
 import { ClearScreenCommand } from "./commands/ClearScreenCommand";
-import { PauseMachineCommand, RestartMachineCommand, StartDebugMachineCommand, StartMachineCommand, StepIntoMachineCommand, StepOutMachineCommand, StepOverMachineCommand, StopMachineCommand } from "./commands/MachineCommands";
+import {
+  PauseMachineCommand,
+  RestartMachineCommand,
+  StartDebugMachineCommand,
+  StartMachineCommand,
+  StepIntoMachineCommand,
+  StepOutMachineCommand,
+  StepOverMachineCommand,
+  StopMachineCommand
+} from "./commands/MachineCommands";
+import {
+  EnableBreakpointCommand,
+  EraseAllBreakpointsCommand,
+  ListBreakpointsCommand,
+  RemoveBreakpointCommand,
+  SetBreakpointCommand
+} from "./commands/BreakpointCommands";
+import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -138,7 +158,7 @@ const IdeApp = () => {
           primaryLocation={primaryBarsPos}
           primaryPanel={<SiteBar />}
           primaryVisible={showSideBar}
-          initialPrimarySize='160px'
+          initialPrimarySize='200px'
           minSize={60}
           secondaryPanel={
             <SplitPanel
@@ -176,11 +196,12 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
 // --- Register the interactive commands
 let commandsRegistered = false;
 
-function registerCommands(cmdSrv: IInteractiveCommandService): void {
+function registerCommands (cmdSrv: IInteractiveCommandService): void {
   if (commandsRegistered) return;
 
   commandsRegistered = true;
   cmdSrv.registerCommand(new ClearScreenCommand());
+  cmdSrv.registerCommand(new ClearHistoryCommand());
   cmdSrv.registerCommand(new StartMachineCommand());
   cmdSrv.registerCommand(new PauseMachineCommand());
   cmdSrv.registerCommand(new StopMachineCommand());
@@ -189,4 +210,10 @@ function registerCommands(cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new StepIntoMachineCommand());
   cmdSrv.registerCommand(new StepOverMachineCommand());
   cmdSrv.registerCommand(new StepOutMachineCommand());
+
+  cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
+  cmdSrv.registerCommand(new ListBreakpointsCommand());
+  cmdSrv.registerCommand(new SetBreakpointCommand());
+  cmdSrv.registerCommand(new RemoveBreakpointCommand());
+  cmdSrv.registerCommand(new EnableBreakpointCommand());
 }

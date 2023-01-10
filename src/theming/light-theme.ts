@@ -110,5 +110,10 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-toolarea": "#d0d0d0",
   "--color-tooltab-active": "#000000",
   "--color-tooltab-inactive": "#404040",
-  "--color-prompt": "#14CE14"
+  "--color-prompt": "#14CE14",
+
+  // --- Breakpoints panel
+  "--color-breakpoint-enabled": "red",
+  "--color-breakpoint-disabled": "#a0a0a0",
+  "--color-breakpoint-current": "yellow",
 };

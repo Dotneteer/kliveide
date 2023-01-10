@@ -66,6 +66,11 @@ export async function processRendererToMainMessages (
     // --- Forward these messages to the emulator
     case "EmuGetCpuState":
     case "EmuGetUlaState":
+    case "EmuEraseAllBreakpoints":
+    case "EmuListBreakpoints":
+    case "EmuSetBreakpoint":
+    case "EmuRemoveBreakpoint":
+    case "EmuEnableBreakpoint":
       return sendFromMainToEmu(message);
   }
   return defaultResponse();

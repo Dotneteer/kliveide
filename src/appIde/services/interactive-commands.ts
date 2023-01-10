@@ -6,7 +6,7 @@ import {
   ValidationMessage
 } from "../abstractions";
 import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
-import { Token } from "./command-parser";
+import { Token, TokenType } from "./command-parser";
 
 /**
  * IInteractiveCommandService is responsible for keeping a registry of
@@ -48,7 +48,10 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
     if (hasError) {
       validationMessages.push(...this.usageMessage());
     }
-    context.service.interactiveCommandsService.displayTraceMessages(validationMessages, context);
+    context.service.interactiveCommandsService.displayTraceMessages(
+      validationMessages,
+      context
+    );
     if (hasError) {
       // --- Sign validation error
       return {
@@ -130,6 +133,28 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
 export const commandSuccess: InteractiveCommandResult = { success: true };
 
 /**
+ * Creates a message with the specified count as the expected number of arguments.
+ * @param count Number of expected arguments
+ */
+export function expectArgs(count: number): ValidationMessage {
+  return {
+    type: ValidationMessageType.Error,
+    message: `This command expects ${count} argument${count > 1 ? "s" : ""}`
+  };
+}
+
+/**
+ * Creates a message with the specified count as the expected number of arguments.
+ * @param count Number of expected arguments
+ */
+export function validationError(message: string): ValidationMessage {
+  return {
+    type: ValidationMessageType.Error,
+    message
+  };
+}
+
+/**
  * Represents a command execution error
  * @param message Error message
  */
@@ -137,13 +162,18 @@ export function commandError(message: string): InteractiveCommandResult {
   return {
     success: false,
     finalMessage: message
-  }
+  };
 }
 
 /**
  * Writes a message to the specified output
  */
-export function writeMessage(output: IOutputBuffer, text: string, color?: OutputColor, closeLine = true): void {
+export function writeMessage(
+  output: IOutputBuffer,
+  text: string,
+  color?: OutputColor,
+  closeLine = true
+): void {
   if (color) {
     output.color(color);
   } else {
@@ -155,4 +185,73 @@ export function writeMessage(output: IOutputBuffer, text: string, color?: Output
     output.write(text);
   }
   output.resetColor();
+}
+
+/**
+ * Writes a success message to the specified output
+ * @param output
+ * @param text
+ */
+export function writeSuccessMessage(output: IOutputBuffer, text: string): void {
+  writeMessage(output, text, "green");
+}
+
+export function toHexa4(value: number): string {
+  return value.toString(16).toUpperCase().padStart(4, "0");
+}
+
+export function toHexa2(value: number): string {
+  return value.toString(16).toUpperCase().padStart(2, "0");
+}
+
+/// <summary>
+/// Converts a token to an integer value
+/// </summary>
+/// <param name="token">Token to convert</param>
+/// <returns>Integer value if conversion successful; otherwise, null</returns>
+export function getNumericTokenValue(token: Token): {
+  value?: number;
+  messages?: ValidationMessage[];
+} {
+  const plainText = token.text.replace("'", "").replace("_", "");
+  try {
+    switch (token.type) {
+      case TokenType.DecimalLiteral:
+        return { value: parseInt(plainText, 10) };
+      case TokenType.BinaryLiteral:
+        return { value: parseInt(plainText.substring(1), 2) };
+      case TokenType.HexadecimalLiteral:
+        return { value: parseInt(plainText.substring(1), 16) };
+    }
+  } catch {
+    return {
+      messages: [
+        { type: ValidationMessageType.Error, message: "Invalid numberic value" }
+      ]
+    };
+  }
+}
+
+/**
+ * Converts a token to a 16-bit address value
+ * @param token Token to convert
+ * @param name Optional argument name
+ * @returns 
+ */
+export function getAddressValue(
+  token: Token,
+  name?: string
+): { value?: number; messages?: ValidationMessage[] } {
+  const { value, messages } = getNumericTokenValue(token);
+  if (!value) return { messages };
+  if (value < 0 || value > 65535) {
+    return {
+      messages: [
+        validationError(
+          `Invalid 16-bit address value ${name ? ` (${name})` : ""}`
+        )
+      ]
+    };
+  }
+  return { value };
 }

@@ -50,4 +50,6 @@ export interface ActionTypes {
   ACTIVATE_OUTPUT_PANE: null;
 
   SET_IDE_STATUS_MESSAGE: null;
+  INC_BPS_VERSION: null;
+  INC_TOOL_CMD_SEQ: null;
 }

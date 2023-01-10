@@ -49,6 +49,11 @@ export type SideBarPanelInfo = {
     readonly renderer: PanelRenderer
 
     /**
+     * Indicates if the panel does not require a scroll viewer
+     */
+    readonly noScrollViewer?: boolean;
+
+    /**
      * Is the panel expanded when initializing?
      */
     readonly expandedOnInit?: boolean;

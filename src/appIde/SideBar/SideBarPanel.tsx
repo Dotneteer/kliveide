@@ -7,6 +7,7 @@ import { Icon } from "../../controls/common/Icon";
 import classnames from "@/utils/classnames";
 import { ScrollViewer } from "@/controls/common/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
+import { SiteBar } from "./SideBar";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;
@@ -53,6 +54,7 @@ export const SideBarPanel = ({
   const _endMove = () => endMove();
 
   const newHeight = { height: `${suggestedSize}px` };
+  const useScrollViewer = sideBar.noScrollViewer ?? true;
   return (
     <div
       ref={panelRef}
@@ -92,14 +94,20 @@ export const SideBarPanel = ({
       </div>
       {expanded && (
         <div className={styles.contentWrapper}>
-          <ScrollViewer>
-            {createElement(sideBar.renderer, [sideBar.id, sideBar, {}])}
-          </ScrollViewer>
+          {useScrollViewer && (
+            <ScrollViewer>
+              {createElement(sideBar.renderer, [sideBar.id, sideBar, {}])}
+            </ScrollViewer>
+          )}
+          {!useScrollViewer &&
+            createElement(sideBar.renderer, [sideBar.id, sideBar, {}])}
           <div
             className={classnames(
               styles.sizingGrip,
               sizeable ? styles.sizeable : "",
-              (sizeablePointed && !uiService.dragging) ? styles.pointed : styles.unpointed
+              sizeablePointed && !uiService.dragging
+                ? styles.pointed
+                : styles.unpointed
             )}
             onMouseDown={e => {
               e.stopPropagation();

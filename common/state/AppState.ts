@@ -50,6 +50,7 @@ export type IdeView = {
   activeOutputPane?: string;
   statusMessage?: string;
   statusSuccess?: boolean;
+  toolCommandSeqNo: number;
 };
 
 export type EmulatorState = {
@@ -62,6 +63,7 @@ export type EmulatorState = {
   clockMultiplier?: number;
   audioSampleRate?: number;
   tapeFile?: string;
+  breakpointsVersion: number;
 }
 
 /**
@@ -99,6 +101,7 @@ export const initialAppState: AppState = {
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
+    toolCommandSeqNo: 0
   },
   emuViewOptions: {
     showToolbar: true,
@@ -111,5 +114,6 @@ export const initialAppState: AppState = {
     savedSoundLevel: 0.8,
     fastLoad: true,
     clockMultiplier: 1,
+    breakpointsVersion: 0
   }
 };
