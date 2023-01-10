@@ -1,9 +1,17 @@
 import { Icon } from "@/controls/common/Icon";
-import { Label, Secondary, Value } from "@/controls/common/Labels";
+import {
+  Label,
+  LabelSeparator,
+  Secondary,
+  Value
+} from "@/controls/common/Labels";
 import { VirtualizedList } from "@/controls/common/VirtualizedList";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
-import { EmuGetCpuStateResponse, EmuListBreakpointsResponse } from "@messaging/main-to-emu";
+import {
+  EmuGetCpuStateResponse,
+  EmuListBreakpointsResponse
+} from "@messaging/main-to-emu";
 import { useEffect, useRef, useState } from "react";
 import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
@@ -13,6 +21,7 @@ import {
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
 import styles from "./BreakpointsPanel.module.scss";
+import { MachineControllerState } from "@state/MachineControllerState";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -54,7 +63,8 @@ const BreakpointsPanel = () => {
       const addr = bpResponse.breakpoints[i].address;
       const disass = new Z80Disassembler(
         [new MemorySection(addr, addr, MemorySectionType.Disassemble)],
-        mem, {
+        mem,
+        {
           noLabelPrefix: true
         }
       );
@@ -89,18 +99,30 @@ const BreakpointsPanel = () => {
         fixItemHeight={false}
         itemRenderer={idx => {
           const addr = bps[idx].address;
-          const isCurrent = pcValue.current === addr;
+          const disabled = bps[idx].disabled ?? false;
+          const isCurrent =
+            (machineState === MachineControllerState.Running ||
+              machineState === MachineControllerState.Paused) &&
+            pcValue.current === addr;
           return (
             <div className={styles.breakpoint}>
+              <LabelSeparator width={4} />
               <Icon
-                iconName={isCurrent ? 'debug-current' : 'circle-filled'}
+                iconName={isCurrent ? "debug-current" : "circle-filled"}
                 width={16}
                 height={16}
-                fill={isCurrent ? 'yellow' : 'red'}
+                fill={
+                  isCurrent
+                    ? "--color-breakpoint-current"
+                    : disabled
+                    ? "--color-breakpoint-disabled"
+                    : "--color-breakpoint-enabled"
+                }
               />
+              <LabelSeparator width={4} />
               <Label text={`${toHexa4(addr)}`} width={40} />
               <Secondary text={`(${addr})`} width={64} />
-              <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+              <Value text={disassLines.current[idx] ?? "???"} width='auto' />
             </div>
           );
         }}

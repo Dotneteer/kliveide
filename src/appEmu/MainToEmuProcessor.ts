@@ -200,6 +200,13 @@ export async function processMainToEmuMessages (
       const status = controller.debugSupport.removeExecBreakpoint(message.bp);
       return flagResponse(status);
     }
+
+    case "EmuEnableBreakpoint": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const status = controller.debugSupport.enableExecBreakpoint(message.address, message.enable);
+      return flagResponse(status);
+    }
   }
   return defaultResponse();
 

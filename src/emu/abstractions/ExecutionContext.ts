@@ -172,6 +172,14 @@ export interface IDebugSupport {
      * @returns True, if the breakpoint has just been removed; otherwise, false
      */
     removeExecBreakpoint(address: number): boolean
+
+    /**
+     * Enables or disables the specified breakpoint
+     * @param address Breakpoint address
+     * @param enabled Is the breakpoint enabled?
+     * @returns True, if the breakpoint exists, and it has been updated; otherwise, false
+     */
+    enableExecBreakpoint(address: number, enabled: boolean): boolean;
 }
 
 /**
@@ -187,6 +195,11 @@ export type BreakpointInfo = {
      * Optional partition (reserved for future use)
      */
     partition?: number;
+
+    /**
+     * Indicates if a particular breakpoint is disabled
+     */
+    disabled?: boolean;
 
     /**
      * Optional mask for I/O addresses

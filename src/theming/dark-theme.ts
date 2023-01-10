@@ -112,5 +112,10 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-toolarea": "#202020",
   "--color-tooltab-active": "#ffffff",
   "--color-tooltab-inactive": "#a0a0a0",
-  "--color-prompt": "#23d18b"
+  "--color-prompt": "#23d18b",
+
+  // --- Breakpoints panel
+  "--color-breakpoint-enabled": "red",
+  "--color-breakpoint-disabled": "#606060",
+  "--color-breakpoint-current": "yellow",
 };

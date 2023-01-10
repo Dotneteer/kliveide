@@ -11,6 +11,7 @@
   .center {
     @include fill-parent-flex;
     align-items: center;
+    justify-content: center;
     text-align: center;
     color: var(--color-secondary-label);
   }

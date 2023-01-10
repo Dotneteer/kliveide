@@ -71,6 +71,12 @@ export interface EmuListBreakpointsRequest extends MessageBase {
   type: "EmuListBreakpoints"
 }
 
+export interface EmuEnableBreakpointRequest extends MessageBase {
+  type: "EmuEnableBreakpoint",
+  address: number;
+  enable: boolean;
+}
+
 /**
  * The Emu process sends back CPU state information
  */

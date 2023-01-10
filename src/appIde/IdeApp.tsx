@@ -46,6 +46,7 @@ import {
   StopMachineCommand
 } from "./commands/MachineCommands";
 import {
+  EnableBreakpointCommand,
   EraseAllBreakpointsCommand,
   ListBreakpointsCommand,
   RemoveBreakpointCommand,
@@ -214,4 +215,5 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new ListBreakpointsCommand());
   cmdSrv.registerCommand(new SetBreakpointCommand());
   cmdSrv.registerCommand(new RemoveBreakpointCommand());
+  cmdSrv.registerCommand(new EnableBreakpointCommand());
 }

@@ -36,7 +36,8 @@ import {
   EmuSetBreakpointRequest,
   EmuRemoveBreakpointRequest,
   EmuListBreakpointsRequest,
-  EmuListBreakpointsResponse
+  EmuListBreakpointsResponse,
+  EmuEnableBreakpointRequest
 } from "./main-to-emu";
 import { DisplayOutputRequest } from "./any-to-ide";
 
@@ -104,6 +105,7 @@ export type RequestMessage =
   | EmuSetBreakpointRequest
   | EmuRemoveBreakpointRequest
   | EmuListBreakpointsRequest
+  | EmuEnableBreakpointRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest

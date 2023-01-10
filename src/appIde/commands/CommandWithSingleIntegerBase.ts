@@ -1,7 +1,6 @@
 import { ValidationMessage } from "../abstractions";
 import { Token } from "../services/command-parser";
 import {
-  commandError,
   expectArgs,
   getNumericTokenValue,
   InteractiveCommandBase,
@@ -31,7 +30,6 @@ export abstract class CommandWithSingleIntegerBase extends InteractiveCommandBas
     _args: Token[]
   ): Promise<ValidationMessage | ValidationMessage[]> {
     if (_args.length !== 1) {
-      console.log("Arg error");
       return expectArgs(1);
     }
     const { value, messages } = getNumericTokenValue(_args[0]);
