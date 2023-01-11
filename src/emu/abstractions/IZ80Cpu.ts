@@ -238,18 +238,6 @@ export interface IZ80Cpu
     get tactsInDisplayLine(): number;
 
     /**
-     * This flag indicates if bit 3 or 5 of Register F has been updated. We need to keep this value, as we utilize
-     * it within the `SCF` and `CCF` instructions to calculate the new values of bit 3 and 5 of F.
-     */
-    f53Updated: boolean;
-
-    /**
-     * When calculating the value of bit 3 and 5 of Register F within the `SCF` and `CCF` instructions, we must know
-     * whether the last executed instruction has updated these flags. This field stores this information.
-     */
-    prevF53Updated: boolean;
-
-    /**
      * The last fetched opcode. If an instruction is prefixed, it contains the prefix or the opcode following the
      * prefix, depending on which was fetched last.
      */

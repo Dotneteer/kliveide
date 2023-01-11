@@ -402,18 +402,6 @@ export class Z80Cpu implements IZ80Cpu {
         return this.f & FlagsSetMask.SZPV
     }
         
-    /**
-     * Set the R5 and R3 flags of F after SCF or CCF.
-     */
-    setR5R3ForScfAndCcf(): void {
-        if (this.prevF53Updated) {
-            this.f = (this.f & ~FlagsSetMask.R3R5) | (this.a & FlagsSetMask.R3R5);
-        } else {
-            this.a |= this.a & FlagsSetMask.R3R5;
-        }
-        this.f53Updated = true;
-    }
-
     // ----------------------------------------------------------------------------------------------------------------
     // Z80 signal and state variables
 
@@ -513,18 +501,6 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
-     * This flag indicates if bit 3 or 5 of Register F has been updated. We need to keep this value, as we utilize
-     * it within the `SCF` and `CCF` instructions to calculate the new values of bit 3 and 5 of F.
-     */
-    f53Updated: boolean;
-
-    /**
-     * When calculating the value of bit 3 and 5 of Register F within the `SCF` and `CCF` instructions, we must know
-     * whether the last executed instruction has updated these flags. This field stores this information.
-     */
-    prevF53Updated: boolean;
-
-    /**
      * The last fetched opcode. If an instruction is prefixed, it contains the prefix or the opcode following the
      * prefix, depending on which was fetched last.
      */
@@ -593,8 +569,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.iff1 = false;
         this.iff2 = false;
         this.clockMultiplier = 1;
-        this.f53Updated = false;
-        this.prevF53Updated = false;
 
         this.opCode = 0;
         this.prefix = OpCodePrefix.None;
@@ -628,8 +602,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.iff1 = false;
         this.iff2 = false;
         this.clockMultiplier = 1;
-        this.f53Updated = false;
-        this.prevF53Updated = false;
 
         this.opCode = 0;
         this.prefix = OpCodePrefix.None;
@@ -716,10 +688,6 @@ export class Z80Cpu implements IZ80Cpu {
             this.tactPlus4();
             return;
         }
-
-        // --- The CPU is about to execute the subsequent instruction. First, let's store the previous value of
-        // --- F53Updated, as we will use this value in the SCF and CCF instructions.
-        this.prevF53Updated = this.f53Updated;
 
         // --- Second, let's execute the M1 machine cycle that reads the next opcode from the memory.
         this.opCode = this.readMemory(this.pc);
@@ -1005,7 +973,6 @@ export class Z80Cpu implements IZ80Cpu {
           ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
           ((tmpVal >>> 8) & (FlagsSetMask.R3R5)) |
           halfCarryAddFlags[lookup];
-        this.f53Updated = true;
         return tmpVal & 0xffff;
     }
 
@@ -1027,7 +994,6 @@ export class Z80Cpu implements IZ80Cpu {
           (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
           halfCarryAddFlags[lookup & 0x07] |
           (this.hl !== 0 ? 0 : FlagsSetMask.Z);
-        this.f53Updated = true;
     }
 
     /**
@@ -1049,7 +1015,6 @@ export class Z80Cpu implements IZ80Cpu {
           (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
           halfCarrySubFlags[lookup & 0x07] |
           (this.hl !== 0 ? 0 : FlagsSetMask.Z);
-        this.f53Updated = true;
     }
 
     /**
@@ -1083,7 +1048,6 @@ export class Z80Cpu implements IZ80Cpu {
           halfCarrySubFlags[lookup & 0x07] |
           overflowSubFlags[lookup >>> 4] |
           sz53Table[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1103,7 +1067,6 @@ export class Z80Cpu implements IZ80Cpu {
           halfCarrySubFlags[lookup & 0x07] |
           overflowSubFlags[lookup >>> 4] |
           sz53Table[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1122,7 +1085,6 @@ export class Z80Cpu implements IZ80Cpu {
           halfCarryAddFlags[lookup & 0x07] |
           overflowAddFlags[lookup >> 4] |
           sz53Table[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1141,7 +1103,6 @@ export class Z80Cpu implements IZ80Cpu {
           halfCarryAddFlags[lookup & 0x07] |
           overflowAddFlags[lookup >>> 4] |
           sz53Table[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1151,7 +1112,6 @@ export class Z80Cpu implements IZ80Cpu {
     and8(value: number): void {
         this.a &= value;
         this.f = FlagsSetMask.H | sz53pvTable[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1161,7 +1121,6 @@ export class Z80Cpu implements IZ80Cpu {
     xor8(value: number): void {
         this.a ^= value;
         this.f = sz53pvTable[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1171,7 +1130,6 @@ export class Z80Cpu implements IZ80Cpu {
      or8(value: number): void {
         this.a |= value;
         this.f = sz53pvTable[this.a];
-        this.f53Updated = true;
     }
 
     /**
@@ -1191,7 +1149,6 @@ export class Z80Cpu implements IZ80Cpu {
           overflowSubFlags[lookup >>> 4] |
           (value & FlagsSetMask.R3R5) |
           (tmp & FlagsSetMask.S);
-        this.f53Updated = true;
     }
 
     /**
@@ -1202,7 +1159,6 @@ export class Z80Cpu implements IZ80Cpu {
     rlc8(oper: number): number {
         const result = ((oper << 1) | (oper >>> 7)) & 0xff;
         this.f = (result & FlagsSetMask.C) | sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
 
@@ -1215,7 +1171,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.f = oper & FlagsSetMask.C;
         const result = ((oper >>> 1) | (oper << 7)) & 0xff;
         this.f |= sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1227,7 +1182,6 @@ export class Z80Cpu implements IZ80Cpu {
     rl8(oper: number): number {
         const result = ((oper << 1) | this.flagCValue) & 0xff;
         this.f = ((oper >>> 7) | sz53pvTable[result]);
-        this.f53Updated = true;
         return result;
     }
  
@@ -1239,7 +1193,6 @@ export class Z80Cpu implements IZ80Cpu {
     rr8(oper: number): number {
         const result = ((oper >>> 1) | (this.f << 7)) & 0xff;
         this.f = (oper & FlagsSetMask.C) | sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1252,7 +1205,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.f = oper >>> 7;
         const result = (oper << 1) & 0xff;
         this.f |= sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1265,7 +1217,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.f = oper & FlagsSetMask.C;
         const result = ((oper & 0x80) | (oper >> 1)) & 0xff;
         this.f |= sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1278,7 +1229,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.f = oper >>> 7;
         const result = ((oper << 1) | 0x01) & 0xff;
         this.f |= sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1291,7 +1241,6 @@ export class Z80Cpu implements IZ80Cpu {
         this.f = oper & FlagsSetMask.C;
         const result = oper >>> 1;
         this.f |= sz53pvTable[result];
-        this.f53Updated = true;
         return result;
     }
  
@@ -1307,7 +1256,6 @@ export class Z80Cpu implements IZ80Cpu {
             this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
         }
         this.f |= bitVal & FlagsSetMask.S;
-        this.f53Updated = true;
     }
 
     /**
@@ -1322,7 +1270,6 @@ export class Z80Cpu implements IZ80Cpu {
             this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
         }
         this.f |= bitVal & FlagsSetMask.S;
-        this.f53Updated = true;
     }
 
     // --------------------------------------------------------------------------------------------------------------
@@ -1940,13 +1887,11 @@ function incBc(cpu: Z80Cpu) {
 // 0x04: INC B
 function incB(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.b++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x05: DEC B
 function decB(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.b--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x06: LD B,n
@@ -1964,7 +1909,6 @@ function rlca(cpu: Z80Cpu) {
     }
     cpu.a = rlcaVal;
     cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
-    cpu.f53Updated = true;
 }
 
 // 0x08: EX AF,AF'
@@ -1995,13 +1939,11 @@ function decBc(cpu: Z80Cpu) {
 // 0x0c: INC C
 function incC(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.c++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x0d: DEC C
 function decC(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.c--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x0e: LD C,n
@@ -2020,7 +1962,6 @@ function rrca(cpu: Z80Cpu) {
     }
     cpu.a = rrcaVal;
     cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
-    cpu.f53Updated = true;
 }
 
 // 0x10: DJNZ d
@@ -2054,13 +1995,11 @@ function incDe(cpu: Z80Cpu) {
 // 0x14: INC D
 function incD(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x15: DEC D
 function decD(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.d--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x16: LD D,n
@@ -2078,7 +2017,6 @@ function rla(cpu: Z80Cpu) {
     }
     cpu.a = rlaVal;
     cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
-    cpu.f53Updated = true;
 }
 
 // 0x18: JR e
@@ -2107,13 +2045,11 @@ function decDe(cpu: Z80Cpu) {
 // 0x1c: INC E
 function incE(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.e++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x1d: DEC E
 function decE(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.e--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x1e: LD E,n
@@ -2131,7 +2067,6 @@ function rra(cpu: Z80Cpu) {
     }
     cpu.a = rraVal;
     cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
-    cpu.f53Updated = true;
 }
 
 // 0x20: JR NZ,e
@@ -2163,13 +2098,11 @@ function incHl(cpu: Z80Cpu) {
 // 0x24: INC H
 function incH(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.h++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x25: DEC H
 function decH(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.h--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x26: LD H,n
@@ -2197,7 +2130,6 @@ function daa(cpu: Z80Cpu) {
     }
 
     cpu.f = (cpu.f & ~(FlagsSetMask.C | FlagsSetMask.PV)) | carry | parityTable[cpu.a];
-    cpu.f53Updated = true;
 }
 
 // 0x28: JR Z,e
@@ -2234,13 +2166,11 @@ function decHl(cpu: Z80Cpu) {
 // 0x2c: INC L
 function incL(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.l++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x2d: DEC L
 function decL(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.l--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x2e: LD L,n
@@ -2253,7 +2183,6 @@ function cpl(cpu: Z80Cpu) {
     cpu.a ^= 0xFF;
     cpu.f = (cpu.f & (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
         (cpu.a & FlagsSetMask.R3R5) | FlagsSetMask.N | FlagsSetMask.H;
-    cpu.f53Updated = true;
 }
 
 // 0x30: JR NC,e
@@ -2292,7 +2221,6 @@ function incHli(cpu: Z80Cpu) {
     let memValue = cpu.readMemory(cpu.hl);
     cpu.tactPlus1WithAddress(cpu.hl);
     cpu.f = incFlags[memValue++] | cpu.flagCValue;
-    cpu.f53Updated = true;
     cpu.writeMemory(cpu.hl, memValue);
 }
 
@@ -2301,7 +2229,6 @@ function decHli(cpu: Z80Cpu) {
     let memValue = cpu.readMemory(cpu.hl);
     cpu.tactPlus1WithAddress(cpu.hl);
     cpu.f = decFlags[memValue--] | cpu.flagCValue;
-    cpu.f53Updated = true;
     cpu.writeMemory(cpu.hl, memValue);
 }
 
@@ -2313,7 +2240,7 @@ function ldHliN(cpu: Z80Cpu) {
 // 0x37: SCF
 function scf(cpu: Z80Cpu) {
     cpu.f = cpu.flagsSZPVValue | FlagsSetMask.C;
-    cpu.setR5R3ForScfAndCcf();
+    cpu.f = (cpu.f & ~FlagsSetMask.R3R5) | (cpu.a & FlagsSetMask.R3R5);
 }
 
 // 0x38: JR C,e
@@ -2348,13 +2275,11 @@ function decSp(cpu: Z80Cpu) {
 // 0x3c: INC A
 function incA(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.a++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x3d: DEC A
 function decA(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.a--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x3e: LD A,n
@@ -2365,7 +2290,7 @@ function ldAN(cpu: Z80Cpu) {
 // 0x3f: CCF
 function ccf(cpu: Z80Cpu) {
     cpu.f = cpu.flagsSZPVValue | (cpu.isCFlagSet() ? FlagsSetMask.H : FlagsSetMask.C);
-    cpu.setR5R3ForScfAndCcf();
+    cpu.f = (cpu.f & ~FlagsSetMask.R3R5) | (cpu.a & FlagsSetMask.R3R5);
 }
 
 // 0x41: LD B,C
@@ -6226,13 +6151,11 @@ function incX(cpu: Z80Cpu) {
 // 0x24: INC XH
 function incXh(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.indexH++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x25: DEC XH
 function decXh(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.indexH--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x26: LD XH,n
@@ -6263,13 +6186,11 @@ function decX(cpu: Z80Cpu) {
 // 0x2C: INC XL
 function incXl(cpu: Z80Cpu) {
     cpu.f = incFlags[cpu.indexL++] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x2d: DEC XL
 function decXl(cpu: Z80Cpu) {
     cpu.f = decFlags[cpu.indexL--] | cpu.flagCValue;
-    cpu.f53Updated = true;
 }
 
 // 0x2e: LD XL,n
@@ -6286,7 +6207,6 @@ function incXi(cpu: Z80Cpu) {
     let tmp = cpu.readMemory(cpu.wz);
     cpu.tactPlus1WithAddress(cpu.wz);
     cpu.f = incFlags[tmp++] | cpu.flagCValue;
-    cpu.f53Updated = true;
     cpu.writeMemory(cpu.wz, tmp);
 }
 
@@ -6299,7 +6219,6 @@ function decXi(cpu: Z80Cpu) {
     let tmp = cpu.readMemory(cpu.wz);
     cpu.tactPlus1WithAddress(cpu.wz);
     cpu.f = decFlags[tmp--] | cpu.flagCValue;
-    cpu.f53Updated = true;
     cpu.writeMemory(cpu.wz, tmp);
 }
 
@@ -6755,7 +6674,6 @@ function inBC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.b = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.b];
-    cpu.f53Updated = true;
 }
 
 // 0x41: OUT (C),B
@@ -6804,7 +6722,6 @@ function inCC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.c = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.c];
-    cpu.f53Updated = true;
 }
 
 // 0x49: OUT (C),C
@@ -6840,7 +6757,6 @@ function inDC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.d = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.d];
-    cpu.f53Updated = true;
 }
 
 // 0x51: OUT (C),D
@@ -6870,7 +6786,6 @@ function ldAI(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
     cpu.a = cpu.i;
     cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
-    cpu.f53Updated = true;
 }
 
 // 0x58: IN E,(C)
@@ -6878,7 +6793,6 @@ function inEC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.e = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.e];
-    cpu.f53Updated = true;
 }
 
 // 0x59: OUT (C),E
@@ -6913,7 +6827,6 @@ function ldAR(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
     cpu.a = cpu.r;
     cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
-    cpu.f53Updated = true;
 }
 
 // 0x60: IN H,(C)
@@ -6921,7 +6834,6 @@ function inHC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.h = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.h];
-    cpu.f53Updated = true;
 }
 
 // 0x61: OUT (C),H
@@ -6956,7 +6868,6 @@ function inLC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.l = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.l];
-    cpu.f53Updated = true;
 }
 
 // 0x69: OUT (C),L
@@ -6996,7 +6907,6 @@ function in0C(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     const tmp = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[tmp];
-    cpu.f53Updated = true;
 }
 
 // 0x71: OUT (C),0
@@ -7021,7 +6931,6 @@ function inAC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
     cpu.a = cpu.readPort(cpu.bc);
     cpu.f = cpu.flagCValue | sz53Table[cpu.a];
-    cpu.f53Updated = true;
 }
 
 // 0x79: OUT (C),A
@@ -7059,8 +6968,6 @@ function ldi(cpu: Z80Cpu) {
         (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
         (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
         (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
-
 }
 
 // 0xA1: CPI
@@ -7084,7 +6991,6 @@ function cpi(cpu: Z80Cpu) {
         tmp -= 1;
     }
     cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     cpu.wz++;
 }
 
@@ -7102,7 +7008,6 @@ function ini(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
 }
 
 // 0xA3: OUTI
@@ -7119,7 +7024,6 @@ function outi(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
 }
 
 // 0xA8: LDD
@@ -7135,7 +7039,6 @@ function ldd(cpu: Z80Cpu) {
         (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
         (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
         (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
 }
 
 // 0xA9: CPD
@@ -7159,7 +7062,6 @@ function cpd(cpu: Z80Cpu) {
         tmp -= 1;
     }
     cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     cpu.wz--;
 }
 
@@ -7177,7 +7079,6 @@ function ind(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable![(tmp2 & 0x07) ^ cpu.b] != 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
 }
 
 // 0xAB: OUTD
@@ -7194,7 +7095,6 @@ function outd(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
 }
 
 // 0xB0: LDIR
@@ -7208,7 +7108,6 @@ function ldir(cpu: Z80Cpu) {
         (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
         (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
         (tmp & FlagsSetMask.R3) | ((tmp & 0x02) != 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     if (cpu.bc !== 0) {
         cpu.tactPlus5WithAddress(cpu.de);
         cpu.pc -= 2;
@@ -7238,7 +7137,6 @@ function cpir(cpu: Z80Cpu) {
         tmp -= 1;
     }
     cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     if ((cpu.f & (FlagsSetMask.PV | FlagsSetMask.Z)) === FlagsSetMask.PV) {
         cpu.tactPlus5WithAddress(cpu.hl);
         cpu.pc -= 2;
@@ -7262,7 +7160,6 @@ function inir(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
     if (cpu.b !== 0) {
         cpu.tactPlus5WithAddress(cpu.hl);
         cpu.pc -= 2;
@@ -7284,7 +7181,6 @@ function otir(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
     if (cpu.b === 0) return;
     cpu.tactPlus5WithAddress(cpu.hl);
     cpu.pc -= 2;
@@ -7301,7 +7197,6 @@ function lddr(cpu: Z80Cpu) {
         (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
         (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
         (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     if (cpu.bc !== 0) {
         cpu.tactPlus5WithAddress(cpu.de);
         cpu.pc -= 2;
@@ -7331,7 +7226,6 @@ function cpdr(cpu: Z80Cpu) {
         tmp -= 1;
     }
     cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
-    cpu.f53Updated = true;
     if ((cpu.f & (FlagsSetMask.PV | FlagsSetMask.Z)) === FlagsSetMask.PV) {
         cpu.tactPlus5WithAddress(cpu.hl);
         cpu.pc -= 2;
@@ -7355,7 +7249,6 @@ function indr(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
 
     if (cpu.b !== 0) {
         cpu.tactPlus5WithAddress(cpu.hl);
@@ -7378,7 +7271,6 @@ function otdr(cpu: Z80Cpu) {
         (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
-    cpu.f53Updated = true;
     if (cpu.b === 0) return;
     cpu.tactPlus5WithAddress(cpu.hl);
     cpu.pc -= 2;
