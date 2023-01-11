@@ -9,13 +9,25 @@ type Props = {
   allowHorizontal?: boolean;
   allowVertical?: boolean;
   children?: ReactNode;
+  getScrollHightFn?: () => number;
+  getScrollWidthFn?: () => number;
+  getScrollTopFn?: () => number;
+  getScrollLeftFn?: () => number;
+  scrollVerticalFn?: (pos: number) => void;
+  scrollHorizontalFn?: (pos: number) => void;
 };
 
 export const ScrollViewer = ({
   scrollBarWidth = 10,
   allowHorizontal = true,
   allowVertical = true,
-  children
+  children,
+  getScrollHightFn,
+  getScrollWidthFn,
+  getScrollTopFn,
+  getScrollLeftFn,
+  scrollVerticalFn,
+  scrollHorizontalFn
 }: Props) => {
   const ref = useRef<HTMLDivElement>();
   const { uiService } = useAppServices();
@@ -44,13 +56,33 @@ export const ScrollViewer = ({
   const hGrip = useRef(0);
   const hGripThumb = useRef(0);
 
+  // --- Viewer virtualizer functions
+  const getScrollHeight =
+    getScrollHightFn ?? (() => ref.current?.scrollHeight ?? 1);
+  const getScrollWidth =
+    getScrollWidthFn ?? (() => ref.current?.scrollWidth ?? 1);
+  const getScrollTop = getScrollTopFn ?? (() => ref.current.scrollTop ?? 0);
+  const getScrollLeft = getScrollLeftFn ?? (() => ref.current.scrollLeft ?? 0);
+  const scrollVertical =
+    scrollVerticalFn ??
+    ((pos: number) => ref.current?.scrollTo({ top: pos }));
+  const scrollHorizontal =
+    scrollHorizontalFn ??
+    ((pos: number) => ref.current?.scrollTo({ left: pos }));
+
   const updateDims = () => {
     const el = ref.current;
     if (!el) return;
 
+    // --- Obtain virtualized dimensions
+    const scrollHeight = getScrollHeight();
+    const scrollWidth = getScrollWidth();
+    const scrollTop = getScrollTop();
+    const scrollLeft = getScrollLeft();
+
     // --- Which scrollbast should be displayed?
-    vScroll.current = allowVertical && el.scrollHeight > el.offsetHeight;
-    hScroll.current = allowHorizontal && el.scrollWidth > el.offsetWidth;
+    vScroll.current = allowVertical && scrollHeight > el.offsetHeight;
+    hScroll.current = allowHorizontal && scrollWidth > el.offsetWidth;
 
     // --- Calculate vertical scrollbar and thumb dimensions
     vHeight.current = vScroll.current
@@ -58,7 +90,7 @@ export const ScrollViewer = ({
       : 1;
 
     // --- Ratio of the visible viewport
-    const vRatio = el.offsetHeight / el.scrollHeight;
+    const vRatio = el.offsetHeight / scrollHeight;
 
     // --- Calculate the thumb height. Because we keep the thumb height at least the scrollbar's width,
     // --- we need to store the thumb ratio; we need to use it for scroll position calculation
@@ -78,7 +110,7 @@ export const ScrollViewer = ({
       (vHeight.current - vThumbHeight.current / vThumbRatio.current);
     setVThumbPos(
       vTop.current +
-        ((vThumbAdjustRatio * el.scrollTop * vRatio) / el.offsetHeight) *
+        ((vThumbAdjustRatio * scrollTop * vRatio) / el.offsetHeight) *
           vHeight.current
     );
     vLeft.current = el.offsetLeft + el.offsetWidth - scrollBarWidth;
@@ -89,7 +121,7 @@ export const ScrollViewer = ({
       : 1;
 
     // --- Ratio of the visible viewport
-    const hRatio = el.offsetWidth / el.scrollWidth;
+    const hRatio = el.offsetWidth / scrollWidth;
 
     // --- Calculate the thumb width. Because we keep the thumb width at least the scrollbar's width,
     // --- we need to store the thumb ratio; we need to use it for scroll position calculation
@@ -110,7 +142,7 @@ export const ScrollViewer = ({
       (hWidth.current - hThumbWidth.current / hThumbRatio.current);
     setHThumbPos(
       hLeft.current +
-        ((hThumbAdjustRatio * el.scrollLeft * hRatio) / el.offsetWidth) *
+        ((hThumbAdjustRatio * scrollLeft * hRatio) / el.offsetWidth) *
           hWidth.current
     );
   };
@@ -139,9 +171,7 @@ export const ScrollViewer = ({
         (vHeight.current + scrollBarWidth)) *
         (vHeight.current - vThumbHeight.current / vThumbRatio.current)) /
       (vHeight.current - vThumbHeight.current);
-    el.scrollTo({
-      top: newScrollPos
-    });
+    scrollVertical(newScrollPos);
   };
 
   // --- Finish moving the vertical thumb
@@ -170,9 +200,7 @@ export const ScrollViewer = ({
         (hWidth.current + scrollBarWidth)) *
         (hWidth.current - hThumbWidth.current / hThumbRatio.current)) /
       (hWidth.current - hThumbWidth.current);
-    el.scrollTo({
-      left: newScrollPos
-    });
+    scrollHorizontal(newScrollPos);
   };
 
   // --- Finish moving the horizontal thumb
