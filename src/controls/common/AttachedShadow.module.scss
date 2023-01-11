@@ -1,0 +1,12 @@
+@import "@styles/core.scss";
+
+.attachedShadow {
+  position: absolute;
+  height: 3px;
+  box-shadow: none;
+
+}
+
+.show {
+  box-shadow: var(--bgcolor-attached-shadow) 0 6px 6px -6px inset;
+}

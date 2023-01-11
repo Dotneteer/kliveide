@@ -13,6 +13,7 @@ export const darkTheme: ThemeProperties = {
   "--color-command-icon": "#c0c0c0",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
+  "--bgcolor-attached-shadow": "#000000",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#505050",

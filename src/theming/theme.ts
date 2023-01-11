@@ -13,7 +13,8 @@ export type ThemeProperties = {
   "--color-command-icon"?: string;
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
-
+  "--bgcolor-attached-shadow"?: string;
+  
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;

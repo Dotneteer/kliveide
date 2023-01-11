@@ -3,6 +3,7 @@ import React, { ReactNode, useEffect, useRef, useState } from "react";
 import classnames from "@/utils/classnames";
 import styles from "./ScrollViewer.module.scss";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
+import { AttachedShadow } from "./AttachedShadow";
 
 type Props = {
   scrollBarWidth?: number;
@@ -64,8 +65,7 @@ export const ScrollViewer = ({
   const getScrollTop = getScrollTopFn ?? (() => ref.current.scrollTop ?? 0);
   const getScrollLeft = getScrollLeftFn ?? (() => ref.current.scrollLeft ?? 0);
   const scrollVertical =
-    scrollVerticalFn ??
-    ((pos: number) => ref.current?.scrollTo({ top: pos }));
+    scrollVerticalFn ?? ((pos: number) => ref.current?.scrollTo({ top: pos }));
   const scrollHorizontal =
     scrollHorizontalFn ??
     ((pos: number) => ref.current?.scrollTo({ left: pos }));
@@ -230,6 +230,8 @@ export const ScrollViewer = ({
         onWheel={e => mouseWheel(e)}
       >
         {children}
+        <AttachedShadow parentElement={ref.current} />
+        
         {/* Vertical scrollbar */}
         {vScroll.current && (
           <div
