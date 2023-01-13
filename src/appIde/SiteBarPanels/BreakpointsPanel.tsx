@@ -5,7 +5,6 @@ import {
   Secondary,
   Value
 } from "@/controls/common/Labels";
-import { VirtualizedList } from "@/controls/common/VirtualizedList";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import {
@@ -22,6 +21,7 @@ import {
 } from "../z80-disassembler/disassembly-helper";
 import styles from "./BreakpointsPanel.module.scss";
 import { MachineControllerState } from "@state/MachineControllerState";
+import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -93,7 +93,7 @@ const BreakpointsPanel = () => {
       {bps.length === 0 && (
         <div className={styles.center}>No breakpoints defined </div>
       )}
-      <VirtualizedList
+      <VirtualizedListView
         items={bps}
         approxSize={20}
         fixItemHeight={false}

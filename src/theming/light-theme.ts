@@ -13,6 +13,7 @@ export const lightTheme: ThemeProperties = {
   "--color-command-icon": "#303030",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
+  "--bgcolor-attached-shadow": "#bbbbbb",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#a0a0a0",

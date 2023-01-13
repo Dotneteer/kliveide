@@ -6,16 +6,13 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Dropdown } from "../../controls/common/Dropdown";
 import { TabButton, TabButtonSeparator } from "../../controls/common/TabButton";
-import {
-  VirtualizedList,
-  VirtualizedListApi
-} from "../../controls/common/VirtualizedList";
+import { VirtualizedListApi } from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
-import { delay } from "@/utils/timing";
+import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
@@ -50,18 +47,14 @@ const OutputPanel = () => {
     return () => buffer.current?.contentsChanged?.off(handleChanged);
   }, [buffer.current]);
 
-  useEffect(() => {
-    if (api.current) {
-      setTimeout(() => {
-        api.current.scrollToEnd();
-      });
-    }
+  useLayoutEffect(() => {
+      api.current?.scrollToEnd();
   }, [contents]);
 
   return (
     <div className={styles.component}>
       {activePane && (
-        <VirtualizedList
+        <VirtualizedListView
           items={contents ?? []}
           approxSize={20}
           fixItemHeight={false}
