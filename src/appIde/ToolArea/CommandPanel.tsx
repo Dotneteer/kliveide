@@ -1,7 +1,6 @@
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  VirtualizedList,
   VirtualizedListApi
 } from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
@@ -14,6 +13,7 @@ import {
   setIdeStatusMessageAction
 } from "@state/actions";
 import { TabButton, TabButtonSeparator } from "@/controls/common/TabButton";
+import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 
 const CommandPanel = () => {
   const dispatch = useDispatch();
@@ -28,7 +28,6 @@ const CommandPanel = () => {
 
   const api = useRef<VirtualizedListApi>();
   const historyIndex = useRef(-1);
-
 
   // --- Set the focus to the input element when the commands panel is activated, or a new
   // --- header command has been executed
@@ -50,12 +49,8 @@ const CommandPanel = () => {
   }, [buffer.current]);
 
   // --- Automatically scroll to the end of the output buffer whenever the contents changes
-  useEffect(() => {
-    if (api.current) {
-      setTimeout(() => {
-        api.current.scrollToEnd();
-      }, 200);
-    }
+  useLayoutEffect(() => {
+    api.current?.scrollToEnd();
   }, [contents]);
 
   return (
@@ -65,7 +60,7 @@ const CommandPanel = () => {
       onFocus={() => inputRef?.current.focus()}
     >
       <div className={styles.outputWrapper}>
-        <VirtualizedList
+        <VirtualizedListView
           items={contents ?? []}
           approxSize={20}
           fixItemHeight={false}

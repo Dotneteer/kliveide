@@ -5,12 +5,18 @@ import styles from "./ScrollViewer.module.scss";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { AttachedShadow } from "./AttachedShadow";
 
+export type ScrollViewerApi = {
+  updateDims: () => void;
+};
+
 type Props = {
   scrollBarWidth?: number;
   allowHorizontal?: boolean;
   allowVertical?: boolean;
   children?: ReactNode;
-  getScrollHightFn?: () => number;
+  useOffsetCorrection?: boolean;
+  apiLoaded?: (api: ScrollViewerApi) => void;
+  getScrollHeightFn?: () => number;
   getScrollWidthFn?: () => number;
   getScrollTopFn?: () => number;
   getScrollLeftFn?: () => number;
@@ -23,7 +29,9 @@ export const ScrollViewer = ({
   allowHorizontal = true,
   allowVertical = true,
   children,
-  getScrollHightFn,
+  useOffsetCorrection,
+  apiLoaded,
+  getScrollHeightFn,
   getScrollWidthFn,
   getScrollTopFn,
   getScrollLeftFn,
@@ -59,7 +67,7 @@ export const ScrollViewer = ({
 
   // --- Viewer virtualizer functions
   const getScrollHeight =
-    getScrollHightFn ?? (() => ref.current?.scrollHeight ?? 1);
+    getScrollHeightFn ?? (() => ref.current?.scrollHeight ?? 1);
   const getScrollWidth =
     getScrollWidthFn ?? (() => ref.current?.scrollWidth ?? 1);
   const getScrollTop = getScrollTopFn ?? (() => ref.current.scrollTop ?? 0);
@@ -81,8 +89,9 @@ export const ScrollViewer = ({
     const scrollLeft = getScrollLeft();
 
     // --- Which scrollbast should be displayed?
-    vScroll.current = allowVertical && scrollHeight > el.offsetHeight;
-    hScroll.current = allowHorizontal && scrollWidth > el.offsetWidth;
+    const offset = useOffsetCorrection ? scrollBarWidth : 0;
+    vScroll.current = allowVertical && (scrollHeight - offset) > el.offsetHeight;
+    hScroll.current = allowHorizontal && (scrollWidth - offset) > el.offsetWidth;
 
     // --- Calculate vertical scrollbar and thumb dimensions
     vHeight.current = vScroll.current
@@ -90,7 +99,7 @@ export const ScrollViewer = ({
       : 1;
 
     // --- Ratio of the visible viewport
-    const vRatio = el.offsetHeight / scrollHeight;
+    const vRatio = scrollHeight === 0 ? 0 : el.offsetHeight / scrollHeight;
 
     // --- Calculate the thumb height. Because we keep the thumb height at least the scrollbar's width,
     // --- we need to store the thumb ratio; we need to use it for scroll position calculation
@@ -110,7 +119,7 @@ export const ScrollViewer = ({
       (vHeight.current - vThumbHeight.current / vThumbRatio.current);
     setVThumbPos(
       vTop.current +
-        ((vThumbAdjustRatio * scrollTop * vRatio) / el.offsetHeight) *
+        ((vThumbAdjustRatio * scrollTop * vRatio) / (el.offsetHeight ?? 1)) *
           vHeight.current
     );
     vLeft.current = el.offsetLeft + el.offsetWidth - scrollBarWidth;
@@ -121,7 +130,7 @@ export const ScrollViewer = ({
       : 1;
 
     // --- Ratio of the visible viewport
-    const hRatio = el.offsetWidth / scrollWidth;
+    const hRatio = scrollWidth === 0 ? 0 : el.offsetWidth / scrollWidth;
 
     // --- Calculate the thumb width. Because we keep the thumb width at least the scrollbar's width,
     // --- we need to store the thumb ratio; we need to use it for scroll position calculation
@@ -142,16 +151,24 @@ export const ScrollViewer = ({
       (hWidth.current - hThumbWidth.current / hThumbRatio.current);
     setHThumbPos(
       hLeft.current +
-        ((hThumbAdjustRatio * scrollLeft * hRatio) / el.offsetWidth) *
+        ((hThumbAdjustRatio * scrollLeft * hRatio) / (el.offsetWidth ?? 1)) *
           hWidth.current
     );
   };
 
   // --- Update scrollbar dimensions and positions, whenever something related changes
   useResizeObserver(ref, () => updateDims());
+
   useEffect(() => {
     updateDims();
-  }, [pointed, ref.current]);
+    apiLoaded?.({
+      updateDims
+    });
+  }, [ref.current]);
+
+  useEffect(() => {
+    updateDims();
+  }, [pointed]);
 
   // --- Start moving the vertical thumb
   const vStartMove = (e: MouseEvent | React.MouseEvent) => {
@@ -167,7 +184,19 @@ export const ScrollViewer = ({
     const delta = e.clientY - vGrip.current;
     const el = ref.current;
     const newScrollPos =
-      ((((vGripThumb.current + delta) * el.scrollHeight) /
+      ((((vGripThumb.current + delta) * getScrollHeight()) /
+        (vHeight.current + scrollBarWidth)) *
+        (vHeight.current - vThumbHeight.current / vThumbRatio.current)) /
+      (vHeight.current - vThumbHeight.current);
+    scrollVertical(newScrollPos);
+  };
+
+  // --- Position verticvally when clicked the scrollbar
+  const vPositionTo = (e: React.MouseEvent) => {
+    const el = ref.current;
+    const newScrollPos =
+      ((((e.clientY - vTop.current - vThumbHeight.current / 2) *
+        getScrollHeight()) /
         (vHeight.current + scrollBarWidth)) *
         (vHeight.current - vThumbHeight.current / vThumbRatio.current)) /
       (vHeight.current - vThumbHeight.current);
@@ -196,7 +225,18 @@ export const ScrollViewer = ({
     const delta = e.clientX - hGrip.current;
     const el = ref.current;
     const newScrollPos =
-      ((((hGripThumb.current + delta) * el.scrollWidth) /
+      ((((hGripThumb.current + delta) * getScrollWidth()) /
+        (hWidth.current + scrollBarWidth)) *
+        (hWidth.current - hThumbWidth.current / hThumbRatio.current)) /
+      (hWidth.current - hThumbWidth.current);
+    scrollHorizontal(newScrollPos);
+  };
+
+  // --- Position verticvally when clicked the scrollbar
+  const hPositionTo = (e: React.MouseEvent) => {
+    const el = ref.current;
+    const newScrollPos =
+      ((((e.clientX - hLeft.current - hThumbWidth.current/2) * getScrollWidth()) /
         (hWidth.current + scrollBarWidth)) *
         (hWidth.current - hThumbWidth.current / hThumbRatio.current)) /
       (hWidth.current - hThumbWidth.current);
@@ -231,7 +271,7 @@ export const ScrollViewer = ({
       >
         {children}
         <AttachedShadow parentElement={ref.current} />
-        
+
         {/* Vertical scrollbar */}
         {vScroll.current && (
           <div
@@ -242,7 +282,7 @@ export const ScrollViewer = ({
               height: vHeight.current,
               width: scrollBarWidth
             }}
-            onClick={() => console.log("vscroll clicked")}
+            onClick={e => vPositionTo(e)}
           />
         )}
         {/* Vertical scrollbar thumb */}
@@ -273,12 +313,12 @@ export const ScrollViewer = ({
           <div
             className={styles.hScrollbar}
             style={{
-              left: hLeft.current,
+              left: hLeft.current ?? 0,
               top: hTop.current,
               height: scrollBarWidth,
               width: hWidth.current
             }}
-            onClick={() => console.log("vscroll clicked")}
+            onClick={e => hPositionTo(e)}
           />
         )}
         {/* Horizontal scrollbar thumb */}
@@ -293,7 +333,7 @@ export const ScrollViewer = ({
             left: hThumbPos,
             top: hTop.current,
             height: scrollBarWidth,
-            width: hThumbWidth.current
+            width: hThumbWidth.current ?? 0
           }}
           onMouseDown={e => {
             e.stopPropagation();
