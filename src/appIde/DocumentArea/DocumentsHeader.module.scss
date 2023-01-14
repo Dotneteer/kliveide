@@ -4,6 +4,11 @@
     @include fix-height-panel(38px);
     flex-direction: row;
     background: var(--bgcolor-docsheader);
+
+    .tabWrapper {
+        display: flex;
+        flex-direction: row;
+    }
 }
 
 .closingTab {

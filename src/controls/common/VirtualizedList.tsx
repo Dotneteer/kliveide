@@ -31,7 +31,6 @@ type Props = {
   approxSize?: number;
   fixItemHeight?: boolean;
   hideScrollBars?: boolean;
-  offsetCorrection?: number;
   itemRenderer: (index: number) => ReactNode;
   apiLoaded?: (api: VirtualizedListApi) => void;
   vScrolled?: (offset: number) => void;
@@ -42,7 +41,6 @@ export const VirtualizedList = ({
   approxSize,
   fixItemHeight = true,
   hideScrollBars = false,
-  offsetCorrection,
   itemRenderer,
   apiLoaded,
   vScrolled
@@ -80,8 +78,8 @@ export const VirtualizedList = ({
         scrollToTop: () => virtualizer.scrollToIndex(0),
         scrollToEnd: () => virtualizer.scrollToOffset(10_000_000),
         refresh: () => setCount(count + 1),
-        getScrollHeight: () => (scrollerRef.current?.scrollHeight + (offsetCorrection ?? 0)) ?? 1,
-        getScrollWidth: () => (columnVirtualizer.scrollElement.scrollWidth + (offsetCorrection ?? 0)) ?? 1,
+        getScrollHeight: () => scrollerRef.current?.scrollHeight ?? 1,
+        getScrollWidth: () => columnVirtualizer.scrollElement.scrollWidth ?? 1,
         getScrollTop: () => {
           return virtualizer.scrollOffset;
         },
