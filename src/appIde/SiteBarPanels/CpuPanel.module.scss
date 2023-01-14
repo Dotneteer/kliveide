@@ -1,12 +1,7 @@
 @import "@styles/core.scss";
 
 .component {
-  display: block;
-  height: auto;
-  width: auto;
-  padding: 0;
-  font-family: var(--monospace-font);
-  font-size: 0.8em;
+  @include side-panel-content;
 }
 
 .flags {

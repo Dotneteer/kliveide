@@ -7,6 +7,10 @@ import { AttachedShadow } from "./AttachedShadow";
 
 export type ScrollViewerApi = {
   updateDims: () => void;
+  getScrollTop: () => number;
+  getScrollLeft: () => number;
+  scrollToVertical: (pos: number) => void;
+  scrollToHorizontal: (pos: number) => void;
 };
 
 type Props = {
@@ -14,7 +18,6 @@ type Props = {
   allowHorizontal?: boolean;
   allowVertical?: boolean;
   children?: ReactNode;
-  useOffsetCorrection?: boolean;
   apiLoaded?: (api: ScrollViewerApi) => void;
   getScrollHeightFn?: () => number;
   getScrollWidthFn?: () => number;
@@ -22,6 +25,7 @@ type Props = {
   getScrollLeftFn?: () => number;
   scrollVerticalFn?: (pos: number) => void;
   scrollHorizontalFn?: (pos: number) => void;
+  shadowVisibleFn?: () => boolean;
 };
 
 export const ScrollViewer = ({
@@ -29,21 +33,23 @@ export const ScrollViewer = ({
   allowHorizontal = true,
   allowVertical = true,
   children,
-  useOffsetCorrection,
   apiLoaded,
   getScrollHeightFn,
   getScrollWidthFn,
   getScrollTopFn,
   getScrollLeftFn,
   scrollVerticalFn,
-  scrollHorizontalFn
+  scrollHorizontalFn,
+  shadowVisibleFn
 }: Props) => {
   const ref = useRef<HTMLDivElement>();
   const { uiService } = useAppServices();
   const [pointed, setPointed] = useState(false);
   const [vThumbPos, setVThumbPos] = useState(0);
   const [hThumbPos, setHThumbPos] = useState(0);
+  const [shadowVisible, setShadowVisible] = useState(false);
   const [version, setVersion] = useState(0);
+  const primaryDirVertical = allowVertical ?? true;
 
   // --- Scrollbar dimensions and positions
   const vScroll = useRef(false);
@@ -89,9 +95,8 @@ export const ScrollViewer = ({
     const scrollLeft = getScrollLeft();
 
     // --- Which scrollbast should be displayed?
-    const offset = useOffsetCorrection ? scrollBarWidth : 0;
-    vScroll.current = allowVertical && (scrollHeight - offset) > el.offsetHeight;
-    hScroll.current = allowHorizontal && (scrollWidth - offset) > el.offsetWidth;
+    vScroll.current = allowVertical && scrollHeight > el.offsetHeight;
+    hScroll.current = allowHorizontal && scrollWidth > el.offsetWidth;
 
     // --- Calculate vertical scrollbar and thumb dimensions
     vHeight.current = vScroll.current
@@ -154,16 +159,39 @@ export const ScrollViewer = ({
         ((hThumbAdjustRatio * scrollLeft * hRatio) / (el.offsetWidth ?? 1)) *
           hWidth.current
     );
+
+    // --- Check shadow visibility
+    if (shadowVisibleFn) {
+      setShadowVisible(shadowVisibleFn());
+    }
   };
 
   // --- Update scrollbar dimensions and positions, whenever something related changes
   useResizeObserver(ref, () => updateDims());
 
+  // --- Take care to manage the attached shadow visibility
   useEffect(() => {
     updateDims();
     apiLoaded?.({
-      updateDims
+      updateDims,
+      getScrollLeft: () => ref.current?.scrollLeft ?? 0,
+      getScrollTop: () => ref.current?.scrollTop ?? 0,
+      scrollToVertical: top => ref.current?.scrollTo({ top }),
+      scrollToHorizontal: left => ref.current?.scrollTo({ left })
     });
+
+    const scrolled = () =>
+      setShadowVisible(shadowVisibleFn?.() ?? ref.current?.scrollTop > 0);
+
+    if (ref.current) {
+      ref.current.addEventListener("scroll", scrolled);
+    }
+
+    return () => {
+      if (ref.current) {
+        ref.current.removeEventListener("scroll", scrolled);
+      }
+    };
   }, [ref.current]);
 
   useEffect(() => {
@@ -236,7 +264,8 @@ export const ScrollViewer = ({
   const hPositionTo = (e: React.MouseEvent) => {
     const el = ref.current;
     const newScrollPos =
-      ((((e.clientX - hLeft.current - hThumbWidth.current/2) * getScrollWidth()) /
+      ((((e.clientX - hLeft.current - hThumbWidth.current / 2) *
+        getScrollWidth()) /
         (hWidth.current + scrollBarWidth)) *
         (hWidth.current - hThumbWidth.current / hThumbRatio.current)) /
       (hWidth.current - hThumbWidth.current);
@@ -251,8 +280,13 @@ export const ScrollViewer = ({
     setVersion(version + 1);
   };
 
+  // --- Handle the mouse wheel event
   const mouseWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey) {
+    if (
+      (primaryDirVertical && e.ctrlKey) ||
+      (!primaryDirVertical && !e.ctrlKey) ||
+      (!primaryDirVertical && allowVertical === false)
+    ) {
       ref.current.scrollLeft += e.deltaY / 4;
     } else {
       ref.current.scrollTop += e.deltaY / 4;
@@ -270,7 +304,7 @@ export const ScrollViewer = ({
         onWheel={e => mouseWheel(e)}
       >
         {children}
-        <AttachedShadow parentElement={ref.current} />
+        <AttachedShadow parentElement={ref.current} visible={shadowVisible} />
 
         {/* Vertical scrollbar */}
         {vScroll.current && (

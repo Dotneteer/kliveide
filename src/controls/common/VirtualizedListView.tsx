@@ -1,4 +1,4 @@
-import { ReactNode, useRef } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { ScrollViewer, ScrollViewerApi } from "./ScrollViewer";
 import { VirtualizedList, VirtualizedListApi } from "./VirtualizedList";
 
@@ -31,7 +31,6 @@ export const VirtualizedListView = ({
       scrollBarWidth={scrollBarWidth}
       allowHorizontal={allowHorizontal}
       allowVertical={allowVertical}
-      useOffsetCorrection={true}
       apiLoaded={api => svApi.current = api}
       getScrollHeightFn={() => vlApi.current?.getScrollHeight() ?? 1}
       getScrollWidthFn={() => vlApi.current?.getScrollWidth() ?? 1}
@@ -39,13 +38,13 @@ export const VirtualizedListView = ({
       getScrollLeftFn={() => vlApi.current?.getScrollLeft() ?? 1}
       scrollVerticalFn={pos => vlApi.current?.scrollVertical(pos)}
       scrollHorizontalFn={pos => vlApi.current?.scrollHorizontal(pos)}
+      shadowVisibleFn={() => vlApi.current?.getScrollTop() > 0}
     >
       <VirtualizedList
         hideScrollBars={true}
         items={items}
         approxSize={approxSize}
         fixItemHeight={fixItemHeight}
-        offsetCorrection={scrollBarWidth}
         itemRenderer={itemRenderer}
         apiLoaded={api => {
           vlApi.current = api;
