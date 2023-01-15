@@ -28,10 +28,16 @@
 }
 
 .valueLabel {
-    padding: 10px 2px 8px 8px;
-    font-size: 1em;
-    color: var(--color-value);
-    flex-shrink: 0;
-    flex-grow: 0;
-  }
-  
+  padding: 10px 2px 8px 8px;
+  font-size: 1em;
+  color: var(--color-value);
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.disassemblyWrapper {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+}

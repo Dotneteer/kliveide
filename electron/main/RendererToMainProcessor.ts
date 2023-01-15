@@ -71,6 +71,7 @@ export async function processRendererToMainMessages (
     case "EmuSetBreakpoint":
     case "EmuRemoveBreakpoint":
     case "EmuEnableBreakpoint":
+    case "EmuGetMemory":
       return sendFromMainToEmu(message);
   }
   return defaultResponse();

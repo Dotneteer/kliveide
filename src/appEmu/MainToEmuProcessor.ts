@@ -19,6 +19,7 @@ import { Store } from "@state/redux-light";
 import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
 import { RenderingPhase } from "@/emu/abstractions/IScreenDevice";
 import { stat } from "original-fs";
+import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 
 const borderColors = [
   "Black",
@@ -206,6 +207,16 @@ export async function processMainToEmuMessages (
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.enableExecBreakpoint(message.address, message.enable);
       return flagResponse(status);
+    }
+
+    case "EmuGetMemory": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
+      return {
+        type: "EmuGetMemoryResponse",
+        memory
+      }
     }
   }
   return defaultResponse();
