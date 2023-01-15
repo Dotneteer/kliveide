@@ -21,4 +21,5 @@ export interface IdeDisplayOutputRequest extends MessageBase {
 
 export interface IdeShowDisassemblyRequest extends MessageBase {
   type: "IdeShowDisassembly";
+  show: boolean;
 }

@@ -33,6 +33,7 @@ import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@/appIde/ToolArea/abstractions";
+import { DISASSEMBLY_PANEL_ID } from "../../common/state/common-ids";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -82,6 +83,7 @@ export function setupMenu (
   const appState = mainStore.getState();
   const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
+  const openDocs = appState?.ideView?.openDocuments;
 
   /**
    * Application system menu on MacOS
@@ -450,6 +452,7 @@ export function setupMenu (
     ]
   });
 
+  const disassemblyDisplayed = !!openDocs.find(d => d.id === DISASSEMBLY_PANEL_ID);
   template.push({
     id: IDE_MENU,
     visible: !ideWindow.isDestroyed() && ideWindow.isVisible(),
@@ -458,9 +461,12 @@ export function setupMenu (
       {
         id: IDE_SHOW_DISASSEMBLY,
         label: "Show Z80 Disassembly",
+        type: "checkbox",
+        checked: disassemblyDisplayed,
         click: async () => {
           await sendFromMainToIde({
-            type: "IdeShowDisassembly"
+            type: "IdeShowDisassembly",
+            show: !disassemblyDisplayed
           });
         }
       },

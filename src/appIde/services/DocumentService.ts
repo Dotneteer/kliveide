@@ -26,7 +26,7 @@ class DocumentService implements IDocumentService {
    * @param id The ID of the active document
    */
   setActiveDocument (id: string): void {
-    this.store.dispatch(activateDocumentAction(id));
+    this.store.dispatch(activateDocumentAction(id), "ide");
   }
 
   /**
@@ -47,7 +47,8 @@ class DocumentService implements IDocumentService {
             isTemporary: false
           } as DocumentState,
           existingIndex
-        )
+        ),
+        "ide"
       );
     }
   }
@@ -70,7 +71,7 @@ class DocumentService implements IDocumentService {
         throw new Error(`Duplicated document with ID '${document.id}'`);
       }
 
-      dispatch(activateDocumentAction(document.id));
+      dispatch(activateDocumentAction(document.id), "ide");
       return;
     }
 
@@ -85,7 +86,8 @@ class DocumentService implements IDocumentService {
               isTemporary: true
             } as DocumentState,
             existingTempIndex
-          )
+          ),
+          "ide"
         );
         return;
       }
@@ -98,7 +100,8 @@ class DocumentService implements IDocumentService {
           isTemporary: temporary
         } as DocumentState,
         docs.length
-      )
+      ),
+      "ide"
     );
   }
 
@@ -118,28 +121,28 @@ class DocumentService implements IDocumentService {
    * @param id
    */
   closeDocument (id: string): void {
-    this.store.dispatch(closeDocumentAction(id));
+    this.store.dispatch(closeDocumentAction(id), "ide");
   }
 
   /**
    * Closes all open documents
    */
   closeAllDocuments (): void {
-    this.store.dispatch(closeAllDocumentsAction());
+    this.store.dispatch(closeAllDocumentsAction(), "ide");
   }
 
   /**
    * Moves the active tab to left
    */
   moveActiveToLeft (): void {
-    this.store.dispatch(moveDocumentLeftAction());
+    this.store.dispatch(moveDocumentLeftAction(), "ide");
   }
 
   /**
    * Moves the active tab to right
    */
   moveActiveToRight (): void {
-    this.store.dispatch(moveDocumentRightAction());
+    this.store.dispatch(moveDocumentRightAction(), "ide");
   }
 }
 

@@ -27,6 +27,7 @@ import {
 } from "./appIde/ToolArea/CommandPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
+import { DISASSEMBLY_EDITOR } from "@state/common-ids";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -119,7 +120,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createCodeEditorPanel
   },
   {
-    id: "Disassembly",
+    id: DISASSEMBLY_EDITOR,
     renderer: createDisassemblyPanel
   }
 ]
