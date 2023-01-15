@@ -3,7 +3,6 @@
 .component {
     @include fix-height-panel(38px);
     flex-direction: row;
-    background: var();
 }
 
 .headerBar {

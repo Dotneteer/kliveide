@@ -5,7 +5,9 @@
     height: auto;
     align-items: center;
     border-radius: 4px;
-
+    flex-shrink: 0;
+    flex-grow: 0;
+  
     &:hover {
         border-radius: 4px;
         background: var(--bgcolor-tabbutton-pointed);
@@ -22,4 +24,6 @@
 
 .placeholder {
     width: 20px;
-}
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
