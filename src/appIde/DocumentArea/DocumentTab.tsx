@@ -40,7 +40,7 @@ export const DocumentTab = ({
     if (ref.current) {
       tabDisplayed?.(ref.current);
     }
-  }, [ref.current])
+  }, [ref.current, ref.current?.offsetLeft])
   return (
     <div
       ref={ref}

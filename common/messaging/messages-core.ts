@@ -39,7 +39,7 @@ import {
   EmuListBreakpointsResponse,
   EmuEnableBreakpointRequest
 } from "./main-to-emu";
-import { DisplayOutputRequest } from "./any-to-ide";
+import { IdeDisplayOutputRequest, IdeShowDisassemblyRequest } from "./any-to-ide";
 
 /**
  * Potential message sources
@@ -109,7 +109,8 @@ export type RequestMessage =
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
-  | DisplayOutputRequest;
+  | IdeDisplayOutputRequest
+  | IdeShowDisassemblyRequest
 
 /**
  * All Response messages

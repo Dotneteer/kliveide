@@ -16,6 +16,10 @@
     background: var(--bgcolor-tabbutton-down);
 }
 
+.disabled, .disabled:hover {
+    background: transparent;
+}
+
 .placeholder {
     width: 20px;
 }

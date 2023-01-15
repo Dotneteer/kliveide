@@ -232,3 +232,11 @@ export const incBreakpointsVersionAction: ActionCreator = () => ({
 export const incToolCommandSeqNoAction: ActionCreator = () => ({
   type: "INC_TOOL_CMD_SEQ"
 });
+
+export const moveDocumentLeftAction: ActionCreator = () => ({
+  type: "DOC_MOVE_LEFT"
+});
+
+export const moveDocumentRightAction: ActionCreator = () => ({
+  type: "DOC_MOVE_RIGHT"
+});

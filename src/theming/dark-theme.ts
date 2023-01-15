@@ -11,6 +11,7 @@ export const darkTheme: ThemeProperties = {
   // --- Global theme attributes
   "--bgcolor-splitter": "#007acc",
   "--color-command-icon": "#c0c0c0",
+  "--color-command-icon-disabled": "#606060",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#000000",
@@ -94,6 +95,7 @@ export const darkTheme: ThemeProperties = {
   "--color-emuoverlay": "lightgreen",
 
   // --- Document area
+  "--bgcolor-docspanel": "#202020",
   "--bgcolor-docsheader": "#282828",
   "--color-doc-icon": "#ffffff",
   "--color-doc-border": "#202020",

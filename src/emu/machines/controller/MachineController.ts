@@ -369,14 +369,14 @@ export class MachineController {
   async sendOutput (text: string, color: OutputColor): Promise<void> {
     this._loggedEventNo++;
     await this.messenger.sendMessage({
-      type: "DisplayOutput",
+      type: "IdeDisplayOutput",
       pane: "emu",
       text: `[${this._loggedEventNo}] `,
       color: "magenta",
       writeLine: false
     });
     await this.messenger.sendMessage({
-      type: "DisplayOutput",
+      type: "IdeDisplayOutput",
       pane: "emu",
       text,
       color,

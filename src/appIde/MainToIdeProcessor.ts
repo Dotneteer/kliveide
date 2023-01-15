@@ -26,7 +26,7 @@ export async function processMainToIdeMessages (
       store.dispatch(message.action, message.sourceId);
       break;
 
-    case "DisplayOutput":
+    case "IdeDisplayOutput":
       // --- Display the output message
       const buffer = outputPaneService.getOutputPaneBuffer(message.pane);
       if (!buffer) break;

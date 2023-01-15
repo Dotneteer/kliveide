@@ -33,6 +33,8 @@ export interface ActionTypes {
   CREATE_DOC: null;
   CLOSE_DOC: null;
   CLOSE_ALL_DOCS: null;
+  DOC_MOVE_LEFT: null;
+  DOC_MOVE_RIGHT: null;
 
   SET_TOOLS: null;
   ACTIVATE_TOOL: null;

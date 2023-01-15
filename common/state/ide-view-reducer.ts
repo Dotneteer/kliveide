@@ -100,6 +100,36 @@ export function ideViewReducer (
         activeDocumentIndex: -1
       };
 
+    case "DOC_MOVE_LEFT": {
+      const activeIndex = state.activeDocumentIndex;
+      if (activeIndex === 0) break;
+      const newDocs = state.openDocuments?.slice(0);
+      if (!newDocs) break;
+      const tmp = newDocs[activeIndex - 1];
+      newDocs[activeIndex - 1] = newDocs[activeIndex];
+      newDocs[activeIndex] = tmp;
+      return {
+        ...state,
+        openDocuments: newDocs,
+        activeDocumentIndex: activeIndex - 1
+      };
+    }
+
+    case "DOC_MOVE_RIGHT": {
+      const activeIndex = state.activeDocumentIndex;
+      const newDocs = state.openDocuments?.slice(0);
+      if (!newDocs || activeIndex >= newDocs.length - 1) break;
+
+      const tmp = newDocs[activeIndex + 1];
+      newDocs[activeIndex + 1] = newDocs[activeIndex];
+      newDocs[activeIndex] = tmp;
+      return {
+        ...state,
+        openDocuments: newDocs,
+        activeDocumentIndex: activeIndex + 1
+      };
+    }
+
     case "SET_TOOLS":
       return {
         ...state,
@@ -161,7 +191,7 @@ export function ideViewReducer (
     case "INC_TOOL_CMD_SEQ": {
       return {
         ...state,
-        toolCommandSeqNo: (state.toolCommandSeqNo ?? 0) + 1,
+        toolCommandSeqNo: (state.toolCommandSeqNo ?? 0) + 1
       };
     }
 

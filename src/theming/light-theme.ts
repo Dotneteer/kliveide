@@ -11,6 +11,7 @@ export const lightTheme: ThemeProperties = {
   // --- Global theme attributes
   "--bgcolor-splitter": "#61a4d0",
   "--color-command-icon": "#303030",
+  "--color-command-icon-disabled": "#a0a0a0",
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#bbbbbb",
@@ -92,6 +93,7 @@ export const lightTheme: ThemeProperties = {
   "--color-emuoverlay": "lightgreen",
 
   // --- Document area
+  "--bgcolor-docspanel": "#e0e0e0",
   "--bgcolor-docsheader": "#d8d8d8",
   "--color-doc-icon": "#000000",
   "--color-doc-border": "#e0e0e0",
