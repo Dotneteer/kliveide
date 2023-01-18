@@ -1,10 +1,22 @@
+import { Icon } from "@/controls/common/Icon";
 import { SmallIconButton } from "@/controls/common/IconButton";
+import {
+  Label,
+  LabelSeparator,
+  Secondary,
+  Value
+} from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
+import { TooltipFactory } from "@/controls/common/Tooltip";
+import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
+import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
+import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
+import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
   DisassemblyItem,
@@ -25,34 +37,58 @@ const DisassemblyPanel = () => {
   const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>(
     []
   );
+  const [firstAddr, setFirstAddr] = useState(0);
+  const [lastAddr, setLastAddr] = useState(0);
+  const [pausedPc, setPausedPc] = useState(0);
+  const pcValue = useRef(0);
+  const breakpoints = useRef<BreakpointInfo[]>();
+  const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
+  const vlApi = useRef<VirtualizedListApi>(null);
+  const refreshedOnStateChange = useRef(false);
 
   // --- This function refreshes the memory
   const refreshBreakpoints = async () => {
     // --- Obtain the memory contents
-    const memory = (
-      (await messenger.sendMessage({
-        type: "EmuGetMemory"
-      })) as EmuGetMemoryResponse
-    ).memory;
+    const response = (await messenger.sendMessage({
+      type: "EmuGetMemory"
+    })) as EmuGetMemoryResponse;
+    const memory = response.memory;
+    pcValue.current = response.pc;
+    setPausedPc(response.pc);
+    breakpoints.current = response.memBreakpoints;
 
     // --- Specify memory sections to disassemble
-    const memSections: MemorySection[] = [
-      new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
-    ];
-    if (ram) {
-      if (screen) {
+    const memSections: MemorySection[] = [];
+
+    if (usePc.current) {
+      // --- Disassemble only one KB from the current PC value
+      memSections.push(
+        new MemorySection(
+          pcValue.current,
+          (pcValue.current + 1024) & 0xffff,
+          MemorySectionType.Disassemble
+        )
+      );
+    } else {
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      memSections.push(
+        new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
+      );
+      if (ram) {
+        if (screen) {
+          memSections.push(
+            new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
+          );
+        } else {
+          memSections.push(
+            new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+          );
+        }
+      } else if (screen) {
         memSections.push(
-          new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
-        );
-      } else {
-        memSections.push(
-          new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+          new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
         );
       }
-    } else if (screen) {
-      memSections.push(
-        new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
-      );
     }
 
     // --- Disassemble the specified memory segments
@@ -60,9 +96,21 @@ const DisassemblyPanel = () => {
       noLabelPrefix: true
     });
     const output = await disassembler.disassemble(0x0000, 0xffff);
-    setDisassemblyItems(output.outputItems);
+    const items = output.outputItems;
+    setDisassemblyItems(items);
+
+    if (items.length > 0) {
+      setFirstAddr(items[0].address);
+      setLastAddr(items[items.length - 1].address);
+    }
+
+    // --- Navigate to the top when following the PC
+    if (usePc.current) {
+      vlApi.current?.scrollToTop();
+    }
   };
 
+  // --- Initial view
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
@@ -76,6 +124,7 @@ const DisassemblyPanel = () => {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
           await refreshBreakpoints();
+          refreshedOnStateChange.current = true;
       }
     })();
   }, [machineState]);
@@ -85,12 +134,13 @@ const DisassemblyPanel = () => {
     (async function () {
       await refreshBreakpoints();
     })();
-  }, [ram, screen]);
+  }, [ram, screen, bpsVersion, pausedPc]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
-    if (usePc.current) {
+    if (usePc.current || refreshedOnStateChange.current) {
       refreshBreakpoints();
+      refreshedOnStateChange.current = false;
     }
   });
 
@@ -123,15 +173,60 @@ const DisassemblyPanel = () => {
           clicked={() => setScreen(!screen)}
         />
         <ToolbarSeparator small={true} />
-        <ValueLabel text='0000 - ffff' />
+        <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
       </div>
       <div className={styles.disassemblyWrapper}>
         <VirtualizedListView
           items={disassemblyItems}
           approxSize={20}
           fixItemHeight={false}
+          apiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
-            return <div key={idx}>{disassemblyItems?.[idx].address}</div>;
+            const address = disassemblyItems?.[idx].address;
+            const execPoint = address === pcValue.current;
+            const breakpoint = breakpoints.current.find(
+              bp => bp.address === address
+            );
+            return (
+              <div
+                className={classnames(styles.item, {
+                  [styles.even]: idx % 2 == 0
+                })}
+              >
+                {execPoint || breakpoint ? (
+                  <div>
+                    <Icon
+                      width={16}
+                      height={16}
+                      iconName={execPoint ? "debug-current" : "circle-filled"}
+                      fill={
+                        execPoint
+                          ? "--color-breakpoint-current"
+                          : breakpoint?.disabled ?? false
+                          ? "--color-breakpoint-disabled"
+                          : "--color-breakpoint-enabled"
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className={styles.iconPlaceholder} />
+                  </>
+                )}
+                <LabelSeparator width={4} />
+                <Label text={`${toHexa4(address)}`} width={40} />
+                <Secondary text={disassemblyItems?.[idx].opCodes} width={100} />
+                <Label
+                  text={
+                    disassemblyItems?.[idx].hasLabel
+                      ? `L${toHexa4(address)}:`
+                      : ""
+                  }
+                  width={80}
+                />
+                <Value text={disassemblyItems?.[idx].instruction} />
+              </div>
+            );
           }}
         />
       </div>

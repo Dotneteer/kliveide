@@ -43,9 +43,9 @@ export const lightTheme: ThemeProperties = {
   "--console-ansi-yellow": "#949800",
 
   // --- Label colors
-  "--color-label": "#f89406",
-  "--color-value": "#00afff",
-  "--color-secondary-label": "#51c351",
+  "--color-label": "#b85406",
+  "--color-value": "#003f7f",
+  "--color-secondary-label": "#116321",
 
   // --- Activity bar
   "--bgcolor-activitybar": "#d0d0d0",
@@ -119,4 +119,8 @@ export const lightTheme: ThemeProperties = {
   "--color-breakpoint-enabled": "red",
   "--color-breakpoint-disabled": "#a0a0a0",
   "--color-breakpoint-current": "yellow",
+
+  // --- Disassembly panel
+  "--bgcolor-disass-even-row": "#c8c8c8",
+  "--bgcolor-disass-hover": "#b8b8b8"
 };

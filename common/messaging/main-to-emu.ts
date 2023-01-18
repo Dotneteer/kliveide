@@ -139,6 +139,8 @@ export interface EmuListBreakpointsResponse extends MessageBase {
 export interface EmuGetMemoryResponse extends MessageBase {
   type: "EmuGetMemoryResponse";
   memory: Uint8Array;
+  pc: number;
+  memBreakpoints: BreakpointInfo[];
 }
 
 export function createMachineCommand (

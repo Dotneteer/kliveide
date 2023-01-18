@@ -41,3 +41,22 @@
   flex-direction: column;
   user-select: none;
 }
+
+.item {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0;
+
+  &.even {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.iconPlaceholder {
+  width: 16px;
+  height: 16px;
+}

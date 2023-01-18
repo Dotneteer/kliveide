@@ -121,4 +121,8 @@ export const darkTheme: ThemeProperties = {
   "--color-breakpoint-enabled": "red",
   "--color-breakpoint-disabled": "#606060",
   "--color-breakpoint-current": "yellow",
+
+  // --- Disassembly panel
+  "--bgcolor-disass-even-row": "#282828",
+  "--bgcolor-disass-hover": "#383838"
 };

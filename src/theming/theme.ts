@@ -121,6 +121,10 @@ export type ThemeProperties = {
   "--color-breakpoint-enabled"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
+
+  // --- Disassembly panel
+  "--bgcolor-disass-even-row"?: string;
+  "--bgcolor-disass-hover"?: string;
 }
 
 /**

@@ -156,31 +156,6 @@ export function setupMenu (
     },
     { type: "separator" },
     {
-      id: THEMES,
-      label: "Themes",
-      submenu: [
-        {
-          id: LIGHT_THEME,
-          label: "Light",
-          type: "checkbox",
-          checked: appState.theme === "light",
-          click: () => {
-            mainStore.dispatch(setThemeAction("light"));
-          }
-        },
-        {
-          id: DARK_THEME,
-          label: "Dark",
-          type: "checkbox",
-          checked: appState.theme === "dark",
-          click: () => {
-            mainStore.dispatch(setThemeAction("dark"));
-          }
-        }
-      ]
-    },
-    { type: "separator" },
-    {
       id: SHOW_IDE_WINDOW,
       label: "Show IDE",
       visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
@@ -289,7 +264,32 @@ export function setupMenu (
       }
     },
     { type: "separator" },
-    ...toolMenus
+    ...toolMenus,
+    { type: "separator" },
+    {
+      id: THEMES,
+      label: "Themes",
+      submenu: [
+        {
+          id: LIGHT_THEME,
+          label: "Light",
+          type: "checkbox",
+          checked: appState.theme === "light",
+          click: () => {
+            mainStore.dispatch(setThemeAction("light"));
+          }
+        },
+        {
+          id: DARK_THEME,
+          label: "Dark",
+          type: "checkbox",
+          checked: appState.theme === "dark",
+          click: () => {
+            mainStore.dispatch(setThemeAction("dark"));
+          }
+        }
+      ]
+    },
   ];
 
   template.push({
