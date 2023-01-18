@@ -3,7 +3,7 @@
 .component {
     @include fill-parent-flex;
     flex-direction: column;
-    background: var(--bgcolor-docsheader);
+    background: var(--bgcolor-docspanel);
     user-select: none;
 }
 

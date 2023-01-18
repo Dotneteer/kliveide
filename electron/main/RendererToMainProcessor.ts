@@ -59,7 +59,7 @@ export async function processRendererToMainMessages (
       // --- Send this message to the emulator
       return await sendFromMainToEmu(message);
 
-    case "DisplayOutput":
+    case "IdeDisplayOutput":
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
 
@@ -71,6 +71,7 @@ export async function processRendererToMainMessages (
     case "EmuSetBreakpoint":
     case "EmuRemoveBreakpoint":
     case "EmuEnableBreakpoint":
+    case "EmuGetMemory":
       return sendFromMainToEmu(message);
   }
   return defaultResponse();

@@ -54,27 +54,31 @@ export interface EmuGetUlaStateRequest extends MessageBase {
 }
 
 export interface EmuEraseAllBreakpointsRequest extends MessageBase {
-  type: "EmuEraseAllBreakpoints"
+  type: "EmuEraseAllBreakpoints";
 }
 
 export interface EmuSetBreakpointRequest extends MessageBase {
-  type: "EmuSetBreakpoint"
+  type: "EmuSetBreakpoint";
   bp: number;
 }
 
 export interface EmuRemoveBreakpointRequest extends MessageBase {
-  type: "EmuRemoveBreakpoint"
+  type: "EmuRemoveBreakpoint";
   bp: number;
 }
 
 export interface EmuListBreakpointsRequest extends MessageBase {
-  type: "EmuListBreakpoints"
+  type: "EmuListBreakpoints";
 }
 
 export interface EmuEnableBreakpointRequest extends MessageBase {
-  type: "EmuEnableBreakpoint",
+  type: "EmuEnableBreakpoint";
   address: number;
   enable: boolean;
+}
+
+export interface EmuGetMemoryRequest extends MessageBase {
+  type: "EmuGetMemory";
 }
 
 /**
@@ -130,6 +134,13 @@ export interface EmuListBreakpointsResponse extends MessageBase {
   type: "EmuListBreakpointsResponse";
   breakpoints: BreakpointInfo[];
   memorySegments?: number[][];
+}
+
+export interface EmuGetMemoryResponse extends MessageBase {
+  type: "EmuGetMemoryResponse";
+  memory: Uint8Array;
+  pc: number;
+  memBreakpoints: BreakpointInfo[];
 }
 
 export function createMachineCommand (

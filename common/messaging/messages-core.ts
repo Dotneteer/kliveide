@@ -37,9 +37,14 @@ import {
   EmuRemoveBreakpointRequest,
   EmuListBreakpointsRequest,
   EmuListBreakpointsResponse,
-  EmuEnableBreakpointRequest
+  EmuEnableBreakpointRequest,
+  EmuGetMemoryRequest,
+  EmuGetMemoryResponse
 } from "./main-to-emu";
-import { DisplayOutputRequest } from "./any-to-ide";
+import {
+  IdeDisplayOutputRequest,
+  IdeShowDisassemblyRequest
+} from "./any-to-ide";
 
 /**
  * Potential message sources
@@ -106,10 +111,12 @@ export type RequestMessage =
   | EmuRemoveBreakpointRequest
   | EmuListBreakpointsRequest
   | EmuEnableBreakpointRequest
+  | EmuGetMemoryRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
-  | DisplayOutputRequest;
+  | IdeDisplayOutputRequest
+  | IdeShowDisassemblyRequest;
 
 /**
  * All Response messages
@@ -122,7 +129,8 @@ export type ResponseMessage =
   | BinaryContentsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
-  | EmuListBreakpointsResponse;
+  | EmuListBreakpointsResponse
+  | EmuGetMemoryResponse;
 
 /**
  * All messages

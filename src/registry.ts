@@ -11,9 +11,10 @@ import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
 import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
 import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
 import {
+  DocumentRendererInfo,
   MachineInfo,
   OutputPaneInfo,
-  ToolRendereInfo
+  ToolRendererInfo
 } from "./appIde/abstractions";
 import {
   outputPanelHeaderRenderer,
@@ -24,6 +25,9 @@ import {
   commandPanelHeaderRenderer,
   commandPanelRenderer
 } from "./appIde/ToolArea/CommandPanel";
+import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
+import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
+import { DISASSEMBLY_EDITOR } from "@state/common-ids";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -82,7 +86,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
 ];
 
 // --- Set up tool panels
-export const toolPanelRegistry: ToolRendereInfo[] = [
+export const toolPanelRegistry: ToolRendererInfo[] = [
   {
     id: "commands",
     name: "Commands",
@@ -108,6 +112,18 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
     displayName: "Build"
   }
 ];
+
+// --- Set up document panel renderers
+export const documentPanelRegistry: DocumentRendererInfo[] = [
+  {
+    id: "CodeEditor",
+    renderer: createCodeEditorPanel
+  },
+  {
+    id: DISASSEMBLY_EDITOR,
+    renderer: createDisassemblyPanel
+  }
+]
 
 // --- Set up machine type registry
 export const machineRegistry: MachineInfo[] = [

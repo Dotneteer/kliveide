@@ -19,6 +19,7 @@ import { Store } from "@state/redux-light";
 import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
 import { RenderingPhase } from "@/emu/abstractions/IScreenDevice";
 import { stat } from "original-fs";
+import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 
 const borderColors = [
   "Black",
@@ -156,11 +157,11 @@ export async function processMainToEmuMessages (
     case "EmuListBreakpoints": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const execBreakpoints = controller.debugSupport.execBreakpoints.map(
-        bp => ({
+      const execBreakpoints = controller.debugSupport.execBreakpoints
+        .map(bp => ({
           ...bp
-        })
-      ).sort((a, b) => a.address - b.address);
+        }))
+        .sort((a, b) => a.address - b.address);
       const segments: number[][] = [];
       for (let i = 0; i < execBreakpoints.length; i++) {
         const addr = execBreakpoints[i].address;
@@ -204,8 +205,25 @@ export async function processMainToEmuMessages (
     case "EmuEnableBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.enableExecBreakpoint(message.address, message.enable);
+      const status = controller.debugSupport.enableExecBreakpoint(
+        message.address,
+        message.enable
+      );
       return flagResponse(status);
+    }
+
+    case "EmuGetMemory": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const memory = (
+        controller.machine as IZxSpectrumMachine
+      ).get64KFlatMemory();
+      return {
+        type: "EmuGetMemoryResponse",
+        memory,
+        pc: controller.machine.pc,
+        memBreakpoints: controller.debugSupport.execBreakpoints
+      };
     }
   }
   return defaultResponse();

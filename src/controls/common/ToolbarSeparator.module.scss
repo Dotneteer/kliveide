@@ -1,13 +1,22 @@
 @import "@styles/core.scss";
 
 .component {
-    display: flex;
-    width: 2px;
-    height: 34px;
-    padding: 4px 2px
+  display: flex;
+  width: 2px;
+  height: 34px;
+  padding: 4px 2px;
+  flex-shrink: 0;
+  flex-grow: 0;
+
+  &.small {
+    height: 22px;
+    padding-bottom: 2px;
+  }
 }
 
 .separator {
-    @include fill-parent-flex;
-    border-left: 2px solid var(--color-toolbar-separator);
+  @include fill-parent-flex;
+  border-left: 2px solid var(--color-toolbar-separator);
+  flex-shrink: 0;
+  flex-grow: 0;
 }

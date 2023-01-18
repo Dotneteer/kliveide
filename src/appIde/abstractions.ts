@@ -82,6 +82,13 @@ export interface IDocumentService {
   setActiveDocument(id: string): void;
 
   /**
+   * Gets the document with the specified ID
+   * @param id Document ID
+   * @returns The document with the specified ID, if exists; othwerwise, null
+   */
+  getDocument(id: string): DocumentInfo;
+
+  /**
    * Sets the specified document permanent
    * @param id The ID of the document to set permanent
    */
@@ -97,6 +104,16 @@ export interface IDocumentService {
    * Closes all open documents
    */
   closeAllDocuments(): void;
+
+  /**
+   * Moves the active tab to left
+   */
+  moveActiveToLeft(): void;
+
+  /**
+   * Moves the active tab to right
+   */
+  moveActiveToRight(): void;
 }
 
 /**
@@ -122,7 +139,7 @@ export type ToolInfo = {
 /**
  * Represents the information about a tool and its renderer
  */
-export type ToolRendereInfo = ToolInfo & {
+export type ToolRendererInfo = ToolInfo & {
   /**
    * Renderer function to display the tool
    */
@@ -166,12 +183,12 @@ export interface IToolService {
   /**
    * Gets all available tools
    */
-  getTools(): ToolRendereInfo[];
+  getTools(): ToolRendererInfo[];
 
   /**
    * Gets the visible tools
    */
-  getVisibleTools(): ToolRendereInfo[];
+  getVisibleTools(): ToolRendererInfo[];
 }
 
 /**
@@ -444,6 +461,22 @@ export interface IInteractiveCommandService {
     context: InteractiveCommandContext
   ): void;
 }
+
+/**
+ * Represents the information about a tool and its renderer
+ */
+export type DocumentRendererInfo = {
+  /**
+   * The ID of the document renderer
+   */
+  id: string;
+
+  /**
+   * Renderer function to display the tool
+   */
+  renderer: PanelRenderer;
+};
+
 
 /**
  * This type defines the services the IDE provides

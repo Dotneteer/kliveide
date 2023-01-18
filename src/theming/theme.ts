@@ -11,6 +11,7 @@ export type ThemeProperties = {
   // --- Global theme attributes
   "--bgcolor-splitter"?: string;
   "--color-command-icon"?: string;
+  "--color-command-icon-disabled"?: string;
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
@@ -94,6 +95,7 @@ export type ThemeProperties = {
   "--color-emuoverlay"?: string;
 
   // --- Document area
+  "--bgcolor-docspanel"?: string;
   "--bgcolor-docsheader"?: string;
   "--color-doc-icon"?: string;
   "--color-doc-border"?: string;
@@ -119,6 +121,10 @@ export type ThemeProperties = {
   "--color-breakpoint-enabled"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
+
+  // --- Disassembly panel
+  "--bgcolor-disass-even-row"?: string;
+  "--bgcolor-disass-hover"?: string;
 }
 
 /**

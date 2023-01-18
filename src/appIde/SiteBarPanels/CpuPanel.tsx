@@ -239,7 +239,7 @@ const CpuPanel = () => {
       <div className={styles.cols}>
         <Label text='IM' width={LAB_WIDTH} />
         <Value
-          text={cpuState?.interruptMode.toString() ?? "-"}
+          text={cpuState?.interruptMode?.toString() ?? "-"}
           width={R16_WIDTH}
           tooltip='Interrupt Mode'
         />

@@ -1,16 +1,23 @@
 import { DocumentState } from "@/appIde/abstractions";
+import { documentPanelRegistry } from "@/registry";
+import { createElement } from "react";
 import styles from "./DocumentsContainer.module.scss";
 
 type Props = {
-    document?: DocumentState
-}
+  document?: DocumentState;
+};
 
-export const DocumentsContainer = ({
-    document
-}: Props) => {
-    return document
-        ? <div className={styles.component}>
-            {document.name}
-        </div>
-        : null;
-}
+export const DocumentsContainer = ({ document }: Props) => {
+  // --- Get the document's renderer from the registry
+  const docRenderer = documentPanelRegistry.find(
+    dp => dp.id === document?.type
+  );
+
+  return document ? (
+    docRenderer ? (
+      createElement(docRenderer.renderer, document)
+    ) : (
+      <div className={styles.component}>Cannot find renderer</div>
+    )
+  ) : null;
+};
