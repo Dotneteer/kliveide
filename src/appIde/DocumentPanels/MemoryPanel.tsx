@@ -7,6 +7,7 @@ import {
   Value
 } from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
+import { TooltipFactory } from "@/controls/common/Tooltip";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
@@ -14,8 +15,8 @@ import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
 import createStatsCollector from "mocha/lib/stats-collector";
-import { useEffect, useRef, useState } from "react";
-import { toHexa4 } from "../services/interactive-commands";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { toHexa2, toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemoryPanel.module.scss";
 
@@ -23,6 +24,7 @@ const MemoryPanel = () => {
   const { messenger } = useRendererContext();
   const [autoRefresh, setAutoRefresh] = useState(false);
   const useAutoRefresh = useRef(false);
+  const refreshInProgress = useRef(false);
   const initialized = useRef(false);
   const [twoSections, setTwoSections] = useState(true);
   const [charDump, setCharDump] = useState(true);
@@ -44,47 +46,54 @@ const MemoryPanel = () => {
 
   // --- This function refreshes the memory
   const refreshMemoryView = async () => {
-    // --- Obtain the memory contents
-    const response = (await messenger.sendMessage({
-      type: "EmuGetMemory"
-    })) as EmuGetMemoryResponse;
-    memory.current = response.memory;
-    createDumpSections();
+    if (refreshInProgress.current) return;
+    refreshInProgress.current = true;
+    try {
+      // --- Obtain the memory contents
+      memory.current = new Uint8Array(0x1_0000);
+      const response = (await messenger.sendMessage({
+        type: "EmuGetMemory"
+      })) as EmuGetMemoryResponse;
+      memory.current = response.memory;
+      createDumpSections();
+    } finally {
+      refreshInProgress.current = false;
+    }
   };
 
   // --- Initial view
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    refreshMemoryView();
+    (async () => await refreshMemoryView())();
   });
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
-  useEffect(() => {
-    (async function () {
-      switch (machineState) {
-        case MachineControllerState.Paused:
-        case MachineControllerState.Stopped:
-          await refreshMemoryView();
-          refreshedOnStateChange.current = true;
-      }
-    })();
-  }, [machineState]);
+  // useEffect(() => {
+  //   (async () => {
+  //     switch (machineState) {
+  //       case MachineControllerState.Paused:
+  //       case MachineControllerState.Stopped:
+  //         await refreshMemoryView();
+  //         refreshedOnStateChange.current = true;
+  //     }
+  //   })();
+  // }, [machineState]);
 
   // --- Whenever the state of view options change
-  useEffect(() => {
-    (async function () {
-      await refreshMemoryView();
-    })();
-  }, [twoSections, pausedPc]);
+  // useEffect(() => {
+  //   (async () => {
+  //     await refreshMemoryView();
+  //   })();
+  // }, [twoSections, pausedPc]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, () => {
-    if (useAutoRefresh.current || refreshedOnStateChange.current) {
-      refreshMemoryView();
-      refreshedOnStateChange.current = false;
-    }
-  });
+  // useStateRefresh(500, () => {
+  //   if (useAutoRefresh.current || refreshedOnStateChange.current) {
+  //     refreshMemoryView();
+  //     refreshedOnStateChange.current = false;
+  //   }
+  // });
 
   // --- Whenever two-section mode changes, refresh sections
   useEffect(() => {
@@ -160,16 +169,52 @@ type DumpProps = {
 };
 
 const DumpSection = ({ address, memory, charDump }: DumpProps) => {
+  if (!memory) return null;
+
   return (
     <div className={styles.dumpSection}>
       <LabelSeparator width={8} />
-      <Label text={toHexa4(address)} />
+      <Label text={toHexa4(address)} width={40} />
+      <ByteValue address={address + 0} value={memory[address + 0]} />
+      <ByteValue address={address + 1} value={memory[address + 1]} />
+      <ByteValue address={address + 2} value={memory[address + 2]} />
+      <ByteValue address={address + 3} value={memory[address + 3]} />
+      <ByteValue address={address + 4} value={memory[address + 4]} />
+      <ByteValue address={address + 5} value={memory[address + 5]} />
+      <ByteValue address={address + 6} value={memory[address + 6]} />
+      <ByteValue address={address + 7} value={memory[address + 7]} />
       <LabelSeparator width={8} />
-      <Value text='00 11 22 33 44 55 66 77' />
-      <LabelSeparator width={8} />
-      {charDump && <Secondary text='.Q.Q.Q.Q' />}
     </div>
   );
 };
+
+type ByteValueProps = { 
+  address: number;
+  value: number;
+}
+
+const ByteValue = ({address, value}: ByteValueProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const title = `$${toHexa4(address)} (${address}): $${toHexa2(value)} (${value}, %${value.toString(2)}) `
+  const toolTipLines = (title ?? "").split("\n");
+  return (
+    <div ref={ref} className={styles.value}>
+      {toHexa2(value)}
+      {title && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement='bottom'
+          offsetX={0}
+          offsetY={16}
+          showDelay={100}
+        >
+          {toolTipLines.map((l, idx) => (
+            <div key={idx}>{l}</div>
+          ))}
+        </TooltipFactory>
+      )}
+    </div>
+  )
+}
 
 export const createMemoryPanel = () => <MemoryPanel />;

@@ -47,3 +47,17 @@
   flex-direction: row;
   padding: 2px 0;
 }
+
+.value {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-value);
+  justify-content: center;
+  width: 20px;
+
+  &:hover {
+    background: #606060;
+    opacity: 0.9;
+  }
+}

@@ -48,24 +48,22 @@ export const Value = ({ text, width, tooltip }: Props) => {
   const toolTipLines = (tooltip ?? "").split("\n");
 
   return (
-    <>
-      <div ref={ref} className={styles.value} style={{ width }}>
-        {text}
-        {tooltip && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement='bottom'
-            offsetX={0}
-            offsetY={16}
-            showDelay={100}
-          >
-            {toolTipLines.map((l, idx) => (
-              <div key={idx}>{l}</div>
-            ))}
-          </TooltipFactory>
-        )}
-      </div>
-    </>
+    <div ref={ref} className={styles.value} style={{ width }}>
+      {text}
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement='bottom'
+          offsetX={0}
+          offsetY={16}
+          showDelay={100}
+        >
+          {toolTipLines.map((l, idx) => (
+            <div key={idx}>{l}</div>
+          ))}
+        </TooltipFactory>
+      )}
+    </div>
   );
 };
 
@@ -127,6 +125,6 @@ export const Flag = ({ value, width, center = true, tooltip }: FlagProps) => {
 
 export const Separator = () => <hr className={styles.separator} />;
 
-export const LabelSeparator = ({width}: {width: number | string}) => (
+export const LabelSeparator = ({ width }: { width: number | string }) => (
   <div className={styles.label} style={{ width }} />
 );
