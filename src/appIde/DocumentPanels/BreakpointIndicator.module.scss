@@ -1,0 +1,13 @@
+@import "@styles/core.scss";
+
+.breakpointIndicator {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.iconPlaceholder {
+  width: 16px;
+  height: 16px;
+}

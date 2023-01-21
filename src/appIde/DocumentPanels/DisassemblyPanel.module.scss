@@ -45,7 +45,8 @@
 .item {
   display: flex;
   flex-direction: row;
-  padding: 2px 0;
+  align-items: center;
+  height: 18px;
 
   &.even {
     background: var(--bgcolor-disass-even-row);
