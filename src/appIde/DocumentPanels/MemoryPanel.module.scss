@@ -18,24 +18,7 @@
   flex-grow: 0;
 }
 
-.headerLabel {
-  padding: 10px 2px 8px 8px;
-  font-family: var(--main-font-family);
-  font-size: 1em;
-  color: var(--color-command-icon);
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-
-.valueLabel {
-  padding: 10px 2px 8px 8px;
-  font-size: 1em;
-  color: var(--color-value);
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-
-.disassemblyWrapper {
+.memoryWrapper {
   @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
@@ -44,8 +27,11 @@
 
 .item {
   display: flex;
-  flex-direction: row;
-  padding: 2px 0;
+  flex-direction: column;
+
+  &.twoSections {
+    flex-direction: row;
+  }
 
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -56,7 +42,8 @@
   }
 }
 
-.iconPlaceholder {
-  width: 16px;
-  height: 16px;
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0;
 }

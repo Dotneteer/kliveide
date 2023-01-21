@@ -10,7 +10,7 @@
 }
 
 .header {
-  @include fix-height-panel(30px);
+  @include fix-height-panel(32px);
   flex-direction: row;
   align-items: center;
   padding-left: 4px;
@@ -19,7 +19,8 @@
 }
 
 .headerLabel {
-  padding: 10px 2px 8px 8px;
+  padding-left: 8px;
+  padding-right: 8px;
   font-family: var(--main-font-family);
   font-size: 1em;
   color: var(--color-command-icon);
@@ -45,7 +46,8 @@
 .item {
   display: flex;
   flex-direction: row;
-  padding: 2px 0;
+  align-items: center;
+  height: 18px;
 
   &.even {
     background: var(--bgcolor-disass-even-row);

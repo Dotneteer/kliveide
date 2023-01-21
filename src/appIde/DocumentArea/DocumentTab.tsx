@@ -17,6 +17,7 @@ export type Props = DocumentState & {
   iconFill?: string;
   isActive?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
+  tabClicked?: () => void;
 };
 
 export const DocumentTab = ({
@@ -32,7 +33,8 @@ export const DocumentTab = ({
   iconName = "file-code",
   iconFill = "--color-doc-icon",
   isActive = false,
-  tabDisplayed
+  tabDisplayed,
+  tabClicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -49,7 +51,10 @@ export const DocumentTab = ({
       className={classnames(styles.component, isActive ? styles.active : "")}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
-      onClick={() => dispatch(activateDocumentAction(id))}
+      onClick={() => {
+        tabClicked?.();
+        dispatch(activateDocumentAction(id));
+      }}
       onDoubleClick={() => {
         if (isTemporary) {
           dispatch(
@@ -70,12 +75,7 @@ export const DocumentTab = ({
         }
       }}
     >
-      <Icon
-        iconName={iconName}
-        width={16}
-        height={16}
-        fill={iconFill}
-      />
+      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
       <span
         className={classnames(
           styles.titleText,

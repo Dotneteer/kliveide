@@ -33,22 +33,27 @@ const CpuPanel = () => {
     reg16?: string,
     regH?: string,
     regL?: string
-  ) =>
-    value !== undefined
+  ) => {
+    const valH = value >>> 8;
+    const isNegH = valH > 127;
+    const valL = value & 0xff;
+    const isNegL = valL > 127;
+    return value !== undefined
       ? `${reg16 ? reg16 + ":" : ""} ${value.toString()}, %${value.toString(
           2
         )}` +
-        (regH
-          ? `\n${regH}: ${(value >>> 8).toString()}, %${(value >>> 8).toString(
-              2
-            )}`
-          : "") +
-        (regL
-          ? `\n${regL}: ${(value & 0xff).toString()}, %${(
-              value & 0xff
-            ).toString(2)}`
-          : "")
+          (regH
+            ? `\n${regH}: ${valH.toString()}${
+                isNegH ? ` (${valH - 256})` : ""
+              }, %${valH.toString(2)}`
+            : "") +
+          (regL
+            ? `\n${regL}: ${valL.toString()}${
+                isNegL ? ` (${valL - 256})` : ""
+              }, %${valL.toString(2)}`
+            : "")
       : "n/a";
+  };
   const toFlag = (value: number | undefined, bitNo: number) =>
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 

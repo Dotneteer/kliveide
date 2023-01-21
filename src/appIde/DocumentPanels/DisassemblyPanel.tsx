@@ -1,5 +1,5 @@
-import { Icon } from "@/controls/common/Icon";
 import { SmallIconButton } from "@/controls/common/IconButton";
+import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
 import {
   Label,
   LabelSeparator,
@@ -23,6 +23,7 @@ import {
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
+import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
 
 const DisassemblyPanel = () => {
@@ -45,8 +46,8 @@ const DisassemblyPanel = () => {
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
 
-  // --- This function refreshes the memory
-  const refreshBreakpoints = async () => {
+  // --- This function refreshes the disassembly
+  const refreshDisassembly = async () => {
     // --- Obtain the memory contents
     const response = (await messenger.sendMessage({
       type: "EmuGetMemory"
@@ -113,7 +114,7 @@ const DisassemblyPanel = () => {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    refreshBreakpoints();
+    refreshDisassembly();
   });
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -122,7 +123,7 @@ const DisassemblyPanel = () => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          await refreshBreakpoints();
+          await refreshDisassembly();
           refreshedOnStateChange.current = true;
       }
     })();
@@ -131,14 +132,14 @@ const DisassemblyPanel = () => {
   // --- Whenever the state of view options change
   useEffect(() => {
     (async function () {
-      await refreshBreakpoints();
+      await refreshDisassembly();
     })();
   }, [ram, screen, bpsVersion, pausedPc]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
     if (usePc.current || refreshedOnStateChange.current) {
-      refreshBreakpoints();
+      refreshDisassembly();
       refreshedOnStateChange.current = false;
     }
   });
@@ -148,28 +149,26 @@ const DisassemblyPanel = () => {
       <div className={styles.header}>
         <SmallIconButton iconName='refresh' title={"Refresh now"} />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='Follow PC:' />
-        <SmallIconButton
-          iconName={followPc ? "circle-filled" : "circle-outline"}
+        <LabeledSwitch
+          value={followPc}
+          setterFn={setFollowPc}
+          label='Follow PC:'
           title='Follow the changes of PC'
-          clicked={() => {
-            usePc.current = !followPc;
-            setFollowPc(!followPc);
-          }}
+          clicked={val => (usePc.current = val)}
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='RAM:' />
-        <SmallIconButton
-          iconName={ram ? "circle-filled" : "circle-outline"}
+        <LabeledSwitch
+          value={ram}
+          setterFn={setRam}
+          label='RAM:'
           title='Disasseble RAM?'
-          clicked={() => setRam(!ram)}
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='Screen:' />
-        <SmallIconButton
-          iconName={screen ? "circle-filled" : "circle-outline"}
+        <LabeledSwitch
+          value={screen}
+          setterFn={setScreen}
+          label='Screen:'
           title='Disasseble screen?'
-          clicked={() => setScreen(!screen)}
         />
         <ToolbarSeparator small={true} />
         <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
@@ -192,26 +191,13 @@ const DisassemblyPanel = () => {
                   [styles.even]: idx % 2 == 0
                 })}
               >
-                {execPoint || breakpoint ? (
-                  <div>
-                    <Icon
-                      width={16}
-                      height={16}
-                      iconName={execPoint ? "debug-current" : "circle-filled"}
-                      fill={
-                        execPoint
-                          ? "--color-breakpoint-current"
-                          : breakpoint?.disabled ?? false
-                          ? "--color-breakpoint-disabled"
-                          : "--color-breakpoint-enabled"
-                      }
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.iconPlaceholder} />
-                  </>
-                )}
+                <LabelSeparator width={4} />
+                <BreakpointIndicator
+                  address={address}
+                  hasBreakpoint={!!breakpoint}
+                  current={execPoint}
+                  disabled={breakpoint?.disabled ?? false}
+                />
                 <LabelSeparator width={4} />
                 <Label text={`${toHexa4(address)}`} width={40} />
                 <Secondary text={disassemblyItems?.[idx].opCodes} width={100} />
@@ -235,10 +221,6 @@ const DisassemblyPanel = () => {
 
 type LabelProps = {
   text: string;
-};
-
-const HeaderLabel = ({ text }: LabelProps) => {
-  return <div className={styles.headerLabel}>{text}</div>;
 };
 
 const ValueLabel = ({ text }: LabelProps) => {

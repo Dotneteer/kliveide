@@ -1,5 +1,5 @@
-import { Icon } from "@/controls/common/Icon";
 import { SmallIconButton } from "@/controls/common/IconButton";
+import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
 import {
   Label,
   LabelSeparator,
@@ -10,110 +10,53 @@ import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
-import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
+import createStatsCollector from "mocha/lib/stats-collector";
 import { useEffect, useRef, useState } from "react";
 import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
-import {
-  DisassemblyItem,
-  MemorySection,
-  MemorySectionType
-} from "../z80-disassembler/disassembly-helper";
-import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./MemoryPanel.module.scss";
 
 const MemoryPanel = () => {
   const { messenger } = useRendererContext();
-  const [followPc, setFollowPc] = useState(false);
-  const usePc = useRef(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const useAutoRefresh = useRef(false);
   const initialized = useRef(false);
-  const [ram, setRam] = useState(true);
-  const [screen, setScreen] = useState(false);
+  const [twoSections, setTwoSections] = useState(true);
+  const [charDump, setCharDump] = useState(true);
   const machineState = useSelector(s => s.emulatorState?.machineState);
-  const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>(
-    []
-  );
-  const [firstAddr, setFirstAddr] = useState(0);
-  const [lastAddr, setLastAddr] = useState(0);
+  const memory = useRef<Uint8Array>();
+  const [memoryItems, setMemoryItems] = useState<number[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
-  const pcValue = useRef(0);
-  const breakpoints = useRef<BreakpointInfo[]>();
-  const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
 
+  // --- Creates the addresses to represent dump sections
+  const createDumpSections = () => {
+    const memItems: number[] = [];
+    for (let addr = 0; addr < 0x1_0000; addr += twoSections ? 0x10 : 0x08) {
+      memItems.push(addr);
+    }
+    setMemoryItems(memItems);
+  };
+
   // --- This function refreshes the memory
-  const refreshBreakpoints = async () => {
+  const refreshMemoryView = async () => {
     // --- Obtain the memory contents
     const response = (await messenger.sendMessage({
       type: "EmuGetMemory"
     })) as EmuGetMemoryResponse;
-    const memory = response.memory;
-    pcValue.current = response.pc;
-    setPausedPc(response.pc);
-    breakpoints.current = response.memBreakpoints;
-
-    // --- Specify memory sections to disassemble
-    const memSections: MemorySection[] = [];
-
-    if (usePc.current) {
-      // --- Disassemble only one KB from the current PC value
-      memSections.push(
-        new MemorySection(
-          pcValue.current,
-          (pcValue.current + 1024) & 0xffff,
-          MemorySectionType.Disassemble
-        )
-      );
-    } else {
-      // --- Use the memory segments according to the "ram" and "screen" flags
-      memSections.push(
-        new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
-      );
-      if (ram) {
-        if (screen) {
-          memSections.push(
-            new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
-          );
-        } else {
-          memSections.push(
-            new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
-          );
-        }
-      } else if (screen) {
-        memSections.push(
-          new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
-        );
-      }
-    }
-
-    // --- Disassemble the specified memory segments
-    const disassembler = new Z80Disassembler(memSections, memory, {
-      noLabelPrefix: true
-    });
-    const output = await disassembler.disassemble(0x0000, 0xffff);
-    const items = output.outputItems;
-    setDisassemblyItems(items);
-
-    if (items.length > 0) {
-      setFirstAddr(items[0].address);
-      setLastAddr(items[items.length - 1].address);
-    }
-
-    // --- Navigate to the top when following the PC
-    if (usePc.current) {
-      vlApi.current?.scrollToTop();
-    }
+    memory.current = response.memory;
+    createDumpSections();
   };
 
   // --- Initial view
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    refreshBreakpoints();
+    refreshMemoryView();
   });
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -122,7 +65,7 @@ const MemoryPanel = () => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          await refreshBreakpoints();
+          await refreshMemoryView();
           refreshedOnStateChange.current = true;
       }
     })();
@@ -131,99 +74,76 @@ const MemoryPanel = () => {
   // --- Whenever the state of view options change
   useEffect(() => {
     (async function () {
-      await refreshBreakpoints();
+      await refreshMemoryView();
     })();
-  }, [ram, screen, bpsVersion, pausedPc]);
+  }, [twoSections, pausedPc]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
-    if (usePc.current || refreshedOnStateChange.current) {
-      refreshBreakpoints();
+    if (useAutoRefresh.current || refreshedOnStateChange.current) {
+      refreshMemoryView();
       refreshedOnStateChange.current = false;
     }
   });
+
+  // --- Whenever two-section mode changes, refresh sections
+  useEffect(() => {
+    createDumpSections();
+  }, [twoSections]);
 
   return (
     <div className={styles.memoryPanel}>
       <div className={styles.header}>
         <SmallIconButton iconName='refresh' title={"Refresh now"} />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='Follow PC:' />
-        <SmallIconButton
-          iconName={followPc ? "circle-filled" : "circle-outline"}
-          title='Follow the changes of PC'
-          clicked={() => {
-            usePc.current = !followPc;
-            setFollowPc(!followPc);
-          }}
+        <LabeledSwitch
+          value={autoRefresh}
+          setterFn={setAutoRefresh}
+          label='Auto Refresh:'
+          title='Refresh the memory view periodically'
+          clicked={val => (useAutoRefresh.current = val)}
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='RAM:' />
-        <SmallIconButton
-          iconName={ram ? "circle-filled" : "circle-outline"}
-          title='Disasseble RAM?'
-          clicked={() => setRam(!ram)}
+        <LabeledSwitch
+          value={twoSections}
+          setterFn={setTwoSections}
+          label='Two Sections:'
+          title='Use two-column layout?'
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel text='Screen:' />
-        <SmallIconButton
-          iconName={screen ? "circle-filled" : "circle-outline"}
-          title='Disasseble screen?'
-          clicked={() => setScreen(!screen)}
+        <LabeledSwitch
+          value={charDump}
+          setterFn={setCharDump}
+          label='Char Dump:'
+          title='Show characters dump?'
         />
-        <ToolbarSeparator small={true} />
-        <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
       </div>
-      <div className={styles.disassemblyWrapper}>
+      <div className={styles.memoryWrapper}>
         <VirtualizedListView
-          items={disassemblyItems}
+          items={memoryItems}
           approxSize={20}
           fixItemHeight={false}
           apiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
-            const address = disassemblyItems?.[idx].address;
-            const execPoint = address === pcValue.current;
-            const breakpoint = breakpoints.current.find(
-              bp => bp.address === address
-            );
             return (
               <div
                 className={classnames(styles.item, {
-                  [styles.even]: idx % 2 == 0
+                  [styles.even]: idx % 2 == 0,
+                  [styles.twoSections]: twoSections
                 })}
               >
-                {execPoint || breakpoint ? (
-                  <div>
-                    <Icon
-                      width={16}
-                      height={16}
-                      iconName={execPoint ? "debug-current" : "circle-filled"}
-                      fill={
-                        execPoint
-                          ? "--color-breakpoint-current"
-                          : breakpoint?.disabled ?? false
-                          ? "--color-breakpoint-disabled"
-                          : "--color-breakpoint-enabled"
-                      }
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.iconPlaceholder} />
-                  </>
-                )}
-                <LabelSeparator width={4} />
-                <Label text={`${toHexa4(address)}`} width={40} />
-                <Secondary text={disassemblyItems?.[idx].opCodes} width={100} />
-                <Label
-                  text={
-                    disassemblyItems?.[idx].hasLabel
-                      ? `L${toHexa4(address)}:`
-                      : ""
-                  }
-                  width={80}
+                <DumpSection
+                  address={memoryItems[idx]}
+                  memory={memory.current}
+                  charDump={charDump}
                 />
-                <Value text={disassemblyItems?.[idx].instruction} />
+                {twoSections && (
+                  <DumpSection
+                    address={memoryItems[idx] + 0x08}
+                    memory={memory.current}
+                    charDump={charDump}
+                  />
+                )}
               </div>
             );
           }}
@@ -233,16 +153,23 @@ const MemoryPanel = () => {
   );
 };
 
-type LabelProps = {
-  text: string;
+type DumpProps = {
+  address: number;
+  memory: Uint8Array;
+  charDump: boolean;
 };
 
-const HeaderLabel = ({ text }: LabelProps) => {
-  return <div className={styles.headerLabel}>{text}</div>;
-};
-
-const ValueLabel = ({ text }: LabelProps) => {
-  return <div className={styles.valueLabel}>{text}</div>;
+const DumpSection = ({ address, memory, charDump }: DumpProps) => {
+  return (
+    <div className={styles.dumpSection}>
+      <LabelSeparator width={8} />
+      <Label text={toHexa4(address)} />
+      <LabelSeparator width={8} />
+      <Value text='00 11 22 33 44 55 66 77' />
+      <LabelSeparator width={8} />
+      {charDump && <Secondary text='.Q.Q.Q.Q' />}
+    </div>
+  );
 };
 
 export const createMemoryPanel = () => <MemoryPanel />;

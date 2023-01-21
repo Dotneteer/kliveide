@@ -14,6 +14,7 @@ type Props = {
   enable?: boolean;
   selected?: boolean;
   clicked?: () => void;
+  noPadding?: boolean;
 };
 
 /**
@@ -28,7 +29,8 @@ export const IconButton = ({
   fill,
   enable = true,
   selected,
-  clicked
+  clicked,
+  noPadding
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [keyDown, setKeyDown] = useState(null);
@@ -39,7 +41,10 @@ export const IconButton = ({
   return (
     <div
       ref={ref}
-      className={classnames(styles.iconButton, enable ? styles.enabled : "")}
+      className={classnames(styles.iconButton, {
+        [styles.enabled]: enable,
+        [styles.noPadding]: noPadding
+      })}
       style={{ width: buttonWidth, height: buttonHeight }}
       onMouseDown={() => setKeyDown(true)}
       onMouseLeave={() => setKeyDown(false)}
@@ -94,12 +99,13 @@ export const SmallIconButton = ({
       iconName={iconName}
       iconSize={18}
       buttonHeight={24}
-      buttonWidth={26}
+      buttonWidth={24}
       title={title}
       enable={enable}
       selected={selected}
       clicked={clicked}
       fill='--color-command-icon'
+      noPadding={true}
     />
   );
 };

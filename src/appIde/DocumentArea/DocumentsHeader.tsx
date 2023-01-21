@@ -14,17 +14,15 @@ export const DocumentsHeader = () => {
   let openDocs = useSelector(s => s.ideView?.openDocuments);
   if (openDocs) {
     openDocs = openDocs.map(d => {
-      const cloned: DocumentState = {...d}
-      const docRenderer = documentPanelRegistry.find(
-        dp => dp.id === d?.type
-      );
-    
+      const cloned: DocumentState = { ...d };
+      const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
+
       if (docRenderer) {
         cloned.iconName = docRenderer.icon;
-        cloned.iconFill = docRenderer.iconFill
+        cloned.iconFill = docRenderer.iconFill;
       }
       return cloned;
-    })
+    });
   }
 
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
@@ -78,6 +76,7 @@ export const DocumentsHeader = () => {
               tabDisplayed={el => {
                 tabDims.current[idx] = el;
               }}
+              tabClicked={() => setHeaderVersion(headerVersion + 1)}
             />
           ))}
         </div>
@@ -86,14 +85,14 @@ export const DocumentsHeader = () => {
       <div className={styles.commandBar}>
         <TabButton
           iconName='arrow-small-left'
-          title={'Move the active\ntab to left'}
+          title={"Move the active\ntab to left"}
           disabled={activeDocIndex === 0}
           useSpace={true}
           clicked={() => documentService.moveActiveToLeft()}
         />
         <TabButton
           iconName='arrow-small-right'
-          title={'Move the active\ntab to right'}
+          title={"Move the active\ntab to right"}
           disabled={activeDocIndex === (openDocs?.length ?? 0) - 1}
           useSpace={true}
           clicked={() => {
