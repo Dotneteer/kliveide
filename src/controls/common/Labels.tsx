@@ -12,12 +12,7 @@ type Props = {
 
 export const Label = ({ text, width, center, tooltip }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [_, setVersion] = useState(0);
-
   const toolTipLines = (tooltip ?? "").split("\n");
-  useEffect(() => {
-    setVersion(1);
-  }, [ref.current]);
 
   return (
     <>
@@ -50,12 +45,7 @@ export const Label = ({ text, width, center, tooltip }: Props) => {
 
 export const Value = ({ text, width, tooltip }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [_, setVersion] = useState(0);
-
   const toolTipLines = (tooltip ?? "").split("\n");
-  useEffect(() => {
-    setVersion(1);
-  }, [ref.current]);
 
   return (
     <>
@@ -94,12 +84,7 @@ type FlagProps = {
 
 export const Flag = ({ value, width, center = true, tooltip }: FlagProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [_, setVersion] = useState(0);
-
   const toolTipLines = (tooltip ?? "").split("\n");
-  useEffect(() => {
-    setVersion(1);
-  }, [ref.current]);
 
   return (
     <div

@@ -1,4 +1,3 @@
-import { Icon } from "@/controls/common/Icon";
 import { SmallIconButton } from "@/controls/common/IconButton";
 import {
   Label,
@@ -7,7 +6,6 @@ import {
   Value
 } from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
-import { TooltipFactory } from "@/controls/common/Tooltip";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
@@ -24,6 +22,7 @@ import {
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
+import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
 
 const DisassemblyPanel = () => {
@@ -193,26 +192,13 @@ const DisassemblyPanel = () => {
                   [styles.even]: idx % 2 == 0
                 })}
               >
-                {execPoint || breakpoint ? (
-                  <div>
-                    <Icon
-                      width={16}
-                      height={16}
-                      iconName={execPoint ? "debug-current" : "circle-filled"}
-                      fill={
-                        execPoint
-                          ? "--color-breakpoint-current"
-                          : breakpoint?.disabled ?? false
-                          ? "--color-breakpoint-disabled"
-                          : "--color-breakpoint-enabled"
-                      }
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.iconPlaceholder} />
-                  </>
-                )}
+                <LabelSeparator width={4} />
+                <BreakpointIndicator
+                  address={address}
+                  hasBreakpoint={!!breakpoint}
+                  current={execPoint}
+                  disabled={breakpoint?.disabled ?? false}
+                />
                 <LabelSeparator width={4} />
                 <Label text={`${toHexa4(address)}`} width={40} />
                 <Secondary text={disassemblyItems?.[idx].opCodes} width={100} />

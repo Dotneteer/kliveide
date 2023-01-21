@@ -1,4 +1,3 @@
-import { Icon } from "@/controls/common/Icon";
 import {
   Label,
   LabelSeparator,
@@ -22,6 +21,7 @@ import {
 import styles from "./BreakpointsPanel.module.scss";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -107,17 +107,11 @@ const BreakpointsPanel = () => {
           return (
             <div className={styles.breakpoint}>
               <LabelSeparator width={4} />
-              <Icon
-                iconName={isCurrent ? "debug-current" : "circle-filled"}
-                width={16}
-                height={16}
-                fill={
-                  isCurrent
-                    ? "--color-breakpoint-current"
-                    : disabled
-                    ? "--color-breakpoint-disabled"
-                    : "--color-breakpoint-enabled"
-                }
+              <BreakpointIndicator
+                address={addr}
+                current={isCurrent}
+                hasBreakpoint={true}
+                disabled={disabled}
               />
               <LabelSeparator width={4} />
               <Label text={`${toHexa4(addr)}`} width={40} />

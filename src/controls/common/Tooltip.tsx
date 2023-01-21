@@ -34,13 +34,13 @@ export const Tooltip = ({
   placement = "top",
   offsetX = 8,
   offsetY = 8,
-  isShown = false,
+  isShown = false
 }: Props) => {
   const { root } = useTheme();
   const handle = useRef<any>();
   const [visible, setVisible] = useState(isShown);
   const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(
-      null
+    null
   );
   const [popperElement, setPopperElement] = useState(null);
   let fallbackPlacement: Placement = "bottom";
@@ -59,36 +59,35 @@ export const Tooltip = ({
   }
 
   const { styles: popperStyles, attributes } = usePopper(
-      referenceElement,
-      popperElement,
-      {
-        placement: "right",
-        modifiers: [
-          {
-            name: "flip",
-            options: {
-              fallbackPlacements: [fallbackPlacement],
-
-            },
-          },
-          {
-            name: "offset",
-            options: {
-              offset: [offsetY, offsetX],
-            },
-          },
-        ],
-        strategy: "fixed",
-      }
+    referenceElement,
+    popperElement,
+    {
+      placement: "right",
+      modifiers: [
+        {
+          name: "flip",
+          options: {
+            fallbackPlacements: [fallbackPlacement]
+          }
+        },
+        {
+          name: "offset",
+          options: {
+            offset: [offsetY, offsetX]
+          }
+        }
+      ],
+      strategy: "fixed"
+    }
   );
 
   const onMouseEnter = useCallback(() => {
     handle.current = setTimeout(() => setVisible(true), showDelay);
-    }, []);
+  }, []);
   const onMouseLeave = useCallback(() => {
     if (handle.current !== undefined) {
-        clearTimeout(handle.current);
-        handle.current = undefined;
+      clearTimeout(handle.current);
+      handle.current = undefined;
     }
     setVisible(false);
   }, []);
@@ -111,20 +110,20 @@ export const Tooltip = ({
   }, [refElement, onMouseEnter, onMouseLeave, referenceElement]);
 
   return (
-      <>
-        {visible &&
-            createPortal(
-                <div
-                    className={styles.tooltip}
-                    ref={(el: any) => setPopperElement(el)}
-                    style={popperStyles.popper}
-                    {...attributes.popper}
-                >
-                  {children}
-                </div>,
-                root
-            )}
-      </>
+    <>
+      {visible &&
+        createPortal(
+          <div
+            className={styles.tooltip}
+            ref={(el: any) => setPopperElement(el)}
+            style={popperStyles.popper}
+            {...attributes.popper}
+          >
+            {children}
+          </div>,
+          root
+        )}
+    </>
   );
 };
 
@@ -139,26 +138,31 @@ export const Tooltip = ({
  * @param forTruncatedText Is it only for truncated text?
  * @constructor
  */
-export function TooltipFactory({
+export function TooltipFactory ({
   refElement,
   children,
   showDelay = 800,
   placement = "top",
   offsetX = 8,
   offsetY = 8,
-  isShown = false,
+  isShown = false
 }: Props) {
+  const [_, setVersion] = useState(0);
+
+  useEffect(() => {
+    setVersion(1);
+  }, [refElement]);
+
   return (
-    <>
-        <Tooltip 
-          refElement={refElement}
-          showDelay={showDelay}
-          placement={placement}
-          offsetX={offsetX}
-          offsetY={offsetY}
-          isShown={isShown}>
-            {children}
-        </Tooltip>
-    </>
+    <Tooltip
+      refElement={refElement}
+      showDelay={showDelay}
+      placement={placement}
+      offsetX={offsetX}
+      offsetY={offsetY}
+      isShown={isShown}
+    >
+      {children}
+    </Tooltip>
   );
 }
