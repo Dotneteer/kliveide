@@ -13,6 +13,11 @@ export const DocumentsContainer = ({ document }: Props) => {
     dp => dp.id === document?.type
   );
 
+  if (docRenderer) {
+    document.iconName = docRenderer.icon;
+    document.iconFill = docRenderer.iconFill
+  }
+
   return document ? (
     docRenderer ? (
       createElement(docRenderer.renderer, document)

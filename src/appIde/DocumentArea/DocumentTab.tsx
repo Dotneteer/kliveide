@@ -14,6 +14,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 export type Props = DocumentState & {
   index: number;
   iconName?: string;
+  iconFill?: string;
   isActive?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
 };
@@ -29,6 +30,7 @@ export const DocumentTab = ({
   path,
   language,
   iconName = "file-code",
+  iconFill = "--color-doc-icon",
   isActive = false,
   tabDisplayed
 }: Props) => {
@@ -40,7 +42,7 @@ export const DocumentTab = ({
     if (ref.current) {
       tabDisplayed?.(ref.current);
     }
-  }, [ref.current, ref.current?.offsetLeft])
+  }, [ref.current, ref.current?.offsetLeft]);
   return (
     <div
       ref={ref}
@@ -72,7 +74,7 @@ export const DocumentTab = ({
         iconName={iconName}
         width={16}
         height={16}
-        fill='--color-doc-icon'
+        fill={iconFill}
       />
       <span
         className={classnames(

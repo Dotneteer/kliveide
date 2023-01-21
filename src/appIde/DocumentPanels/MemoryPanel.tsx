@@ -23,9 +23,9 @@ import {
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
-import styles from "./DisassemblyPanel.module.scss";
+import styles from "./MemoryPanel.module.scss";
 
-const DisassemblyPanel = () => {
+const MemoryPanel = () => {
   const { messenger } = useRendererContext();
   const [followPc, setFollowPc] = useState(false);
   const usePc = useRef(false);
@@ -144,7 +144,7 @@ const DisassemblyPanel = () => {
   });
 
   return (
-    <div className={styles.disassemblyPanel}>
+    <div className={styles.memoryPanel}>
       <div className={styles.header}>
         <SmallIconButton iconName='refresh' title={"Refresh now"} />
         <ToolbarSeparator small={true} />
@@ -245,4 +245,4 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
-export const createDisassemblyPanel = () => <DisassemblyPanel />;
+export const createMemoryPanel = () => <MemoryPanel />;

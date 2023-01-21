@@ -50,6 +50,16 @@ export type DocumentInfo = {
    * Is the document read-only?
    */
   isReadOnly?: boolean;
+
+  /**
+   * Optional document icon
+   */
+  iconName?: string;
+
+  /**
+   * Optional document fill color
+   */
+  iconFill?: string;
 };
 
 export type DocumentState = DocumentInfo & {
@@ -475,6 +485,16 @@ export type DocumentRendererInfo = {
    * Renderer function to display the tool
    */
   renderer: PanelRenderer;
+
+  /**
+   * The accompanying icon
+   */
+  icon?: string;
+
+  /**
+   * The icon's fill color
+   */
+  iconFill?: string;
 };
 
 

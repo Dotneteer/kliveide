@@ -1,7 +1,9 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/common/ScrollViewer";
 import { TabButton } from "@/controls/common/TabButton";
 import { useSelector } from "@/core/RendererProvider";
+import { documentPanelRegistry } from "@/registry";
 import { useEffect, useRef, useState } from "react";
+import { DocumentState } from "../abstractions";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
@@ -9,7 +11,22 @@ import { DocumentTab } from "./DocumentTab";
 export const DocumentsHeader = () => {
   const { documentService } = useAppServices();
   const ref = useRef<HTMLDivElement>();
-  const openDocs = useSelector(s => s.ideView?.openDocuments);
+  let openDocs = useSelector(s => s.ideView?.openDocuments);
+  if (openDocs) {
+    openDocs = openDocs.map(d => {
+      const cloned: DocumentState = {...d}
+      const docRenderer = documentPanelRegistry.find(
+        dp => dp.id === d?.type
+      );
+    
+      if (docRenderer) {
+        cloned.iconName = docRenderer.icon;
+        cloned.iconFill = docRenderer.iconFill
+      }
+      return cloned;
+    })
+  }
+
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [headerVersion, setHeaderVersion] = useState(0);
   const svApi = useRef<ScrollViewerApi>();
@@ -56,6 +73,8 @@ export const DocumentsHeader = () => {
               isActive={idx === activeDocIndex}
               isTemporary={d.isTemporary}
               isReadOnly={d.isReadOnly}
+              iconName={d.iconName}
+              iconFill={d.iconFill}
               tabDisplayed={el => {
                 tabDims.current[idx] = el;
               }}
