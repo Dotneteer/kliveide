@@ -30,6 +30,15 @@ class DocumentService implements IDocumentService {
   }
 
   /**
+   * Gets the ID of the active document
+   */
+  getActiveDocumentId (): string {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    return docs?.[state?.ideView?.activeDocumentIndex]?.id;
+  }
+
+  /**
    * Sets the specified document permanent
    * @param id The ID of the document to set permanent
    */
@@ -143,6 +152,49 @@ class DocumentService implements IDocumentService {
    */
   moveActiveToRight (): void {
     this.store.dispatch(moveDocumentRightAction(), "ide");
+  }
+
+  /**
+   * Gets the state of the specified document
+   * @param id Document ID
+   */
+  getDocumentState (id: string): any {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    const existingIndex = docs.findIndex(d => d.id === id);
+    return existingIndex !== undefined
+      ? docs[existingIndex]?.stateValue
+      : undefined;
+  }
+
+  /**
+   * Saves the specified document state
+   * @param id Document ID
+   * @param vieState State to save
+   */
+  saveDocumentState (id: string, viewState: any): void {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    const existingIndex = docs.findIndex(d => d.id === id);
+    if (existingIndex) {
+      const doc = { ...docs[existingIndex], stateValue: viewState };
+      this.store.dispatch(changeDocumentAction(doc, existingIndex));
+    }
+  } 
+
+  /**
+   * Gets the state of the active document
+   */
+  getActiveDocumentState (): any {
+    return this.getDocumentState(this.getActiveDocumentId());
+  }
+
+  /**
+   * Saves the state of the active document
+   * @param viewState State to save
+   */
+  saveActiveDocumentState (viewState: any): void {
+    this.saveDocumentState(this.getActiveDocumentId(), viewState);
   }
 }
 

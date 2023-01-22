@@ -3,8 +3,6 @@ import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
 import {
   Label,
   LabelSeparator,
-  Secondary,
-  Value
 } from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { TooltipFactory } from "@/controls/common/Tooltip";
@@ -14,8 +12,7 @@ import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
-import createStatsCollector from "mocha/lib/stats-collector";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { ZxSpectrumChars } from "./char-codes";
@@ -213,9 +210,9 @@ type ByteValueProps = {
 
 const ByteValue = ({ address, value }: ByteValueProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const title = `Value at $${toHexa4(address)} (${address}):\n$${toHexa2(
-    value
-  )} (${value}, %${value.toString(2)}) `;
+  const title = `Value at $${toHexa4(address)} (${address}):\n${
+    tooltipCache[value]
+  }`;
   const toolTipLines = (title ?? "").split("\n");
   return (
     <div ref={ref} className={styles.value}>
@@ -241,15 +238,10 @@ const CharValue = ({ address, value }: ByteValueProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const valueInfo = ZxSpectrumChars[value & 0xff];
   let text = valueInfo.v ?? ".";
-  let description = valueInfo.t ?? "";
-  if (valueInfo.c === "graph") {
-    description = "(graphics)";
-  } else if (valueInfo.c) {
-    description = valueInfo.t ?? "";
-  }
-  const title = `Char at $${toHexa4(address)} (${address}):\n$${toHexa2(
-    value
-  )}, ${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
+  const title = `Value at $${toHexa4(address)} (${address}):\n${
+    tooltipCache[value]
+  }`;
+  value;
   const toolTipLines = (title ?? "").split("\n");
   return (
     <div ref={ref} className={styles.char}>
@@ -272,3 +264,18 @@ const CharValue = ({ address, value }: ByteValueProps) => {
 };
 
 export const createMemoryPanel = () => <MemoryPanel />;
+
+// --- Cache tooltip value
+const tooltipCache: string[] = [];
+for (let i = 0; i < 0x100; i++) {
+  const valueInfo = ZxSpectrumChars[i];
+  let description = valueInfo.t ?? "";
+  if (valueInfo.c === "graph") {
+    description = "(graphics)";
+  } else if (valueInfo.c) {
+    description = valueInfo.t ?? "";
+  }
+  tooltipCache[i] =
+    `$${toHexa2(i)} (${i}, %${i.toString(2)})\n` +
+    `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
+}

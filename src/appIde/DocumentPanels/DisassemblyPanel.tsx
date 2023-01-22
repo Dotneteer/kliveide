@@ -15,6 +15,7 @@ import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
+import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
@@ -26,8 +27,13 @@ import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
 
+type DisassemblyState = {
+  topAddress: number;
+}
+
 const DisassemblyPanel = () => {
   const { messenger } = useRendererContext();
+  const { documentService } = useAppServices();
   const [followPc, setFollowPc] = useState(false);
   const usePc = useRef(false);
   const initialized = useRef(false);
@@ -37,6 +43,7 @@ const DisassemblyPanel = () => {
   const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>(
     []
   );
+  const cachedItems = useRef<DisassemblyItem[]>([]);
   const [firstAddr, setFirstAddr] = useState(0);
   const [lastAddr, setLastAddr] = useState(0);
   const [pausedPc, setPausedPc] = useState(0);
@@ -45,68 +52,78 @@ const DisassemblyPanel = () => {
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
+  const isRefreshing = useRef(false);
+  const viewState = useRef<DisassemblyState>(null);
 
   // --- This function refreshes the disassembly
   const refreshDisassembly = async () => {
+    if (isRefreshing.current) return;
+
     // --- Obtain the memory contents
-    const response = (await messenger.sendMessage({
-      type: "EmuGetMemory"
-    })) as EmuGetMemoryResponse;
-    const memory = response.memory;
-    pcValue.current = response.pc;
-    setPausedPc(response.pc);
-    breakpoints.current = response.memBreakpoints;
+    isRefreshing.current = true;
+    try {
+      const response = (await messenger.sendMessage({
+        type: "EmuGetMemory"
+      })) as EmuGetMemoryResponse;
+      const memory = response.memory;
+      pcValue.current = response.pc;
+      setPausedPc(response.pc);
+      breakpoints.current = response.memBreakpoints;
 
-    // --- Specify memory sections to disassemble
-    const memSections: MemorySection[] = [];
+      // --- Specify memory sections to disassemble
+      const memSections: MemorySection[] = [];
 
-    if (usePc.current) {
-      // --- Disassemble only one KB from the current PC value
-      memSections.push(
-        new MemorySection(
-          pcValue.current,
-          (pcValue.current + 1024) & 0xffff,
-          MemorySectionType.Disassemble
-        )
-      );
-    } else {
-      // --- Use the memory segments according to the "ram" and "screen" flags
-      memSections.push(
-        new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
-      );
-      if (ram) {
-        if (screen) {
+      if (usePc.current) {
+        // --- Disassemble only one KB from the current PC value
+        memSections.push(
+          new MemorySection(
+            pcValue.current,
+            (pcValue.current + 1024) & 0xffff,
+            MemorySectionType.Disassemble
+          )
+        );
+      } else {
+        // --- Use the memory segments according to the "ram" and "screen" flags
+        memSections.push(
+          new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
+        );
+        if (ram) {
+          if (screen) {
+            memSections.push(
+              new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
+            );
+          } else {
+            memSections.push(
+              new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+            );
+          }
+        } else if (screen) {
           memSections.push(
-            new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
-          );
-        } else {
-          memSections.push(
-            new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+            new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
           );
         }
-      } else if (screen) {
-        memSections.push(
-          new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
-        );
       }
-    }
 
-    // --- Disassemble the specified memory segments
-    const disassembler = new Z80Disassembler(memSections, memory, {
-      noLabelPrefix: true
-    });
-    const output = await disassembler.disassemble(0x0000, 0xffff);
-    const items = output.outputItems;
-    setDisassemblyItems(items);
+      // --- Disassemble the specified memory segments
+      const disassembler = new Z80Disassembler(memSections, memory, {
+        noLabelPrefix: true
+      });
+      const output = await disassembler.disassemble(0x0000, 0xffff);
+      const items = output.outputItems;
+      cachedItems.current = items;
+      setDisassemblyItems(items);
 
-    if (items.length > 0) {
-      setFirstAddr(items[0].address);
-      setLastAddr(items[items.length - 1].address);
-    }
+      if (items.length > 0) {
+        setFirstAddr(items[0].address);
+        setLastAddr(items[items.length - 1].address);
+      }
 
-    // --- Navigate to the top when following the PC
-    if (usePc.current) {
-      vlApi.current?.scrollToTop();
+      // --- Navigate to the top when following the PC
+      if (usePc.current) {
+        vlApi.current?.scrollToTop();
+      }
+    } finally {
+      isRefreshing.current = false;
     }
   };
 
@@ -114,8 +131,9 @@ const DisassemblyPanel = () => {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
+    viewState.current = documentService.getActiveDocumentState();
     refreshDisassembly();
-  });
+  }, []);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -136,6 +154,19 @@ const DisassemblyPanel = () => {
     })();
   }, [ram, screen, bpsVersion, pausedPc]);
 
+  // --- Restore the view state if it changes
+  useEffect(() => {
+    const topAddress = viewState.current?.topAddress;
+    if (topAddress !== undefined && cachedItems.current) {
+      const idx = cachedItems.current.findIndex(di => di.address >= topAddress);
+      if (idx >= 0) {
+        vlApi.current?.scrollToIndex(idx, {
+          align: "start"
+        });
+      }
+    }
+  },[viewState.current]);
+
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
     if (usePc.current || refreshedOnStateChange.current) {
@@ -143,6 +174,18 @@ const DisassemblyPanel = () => {
       refreshedOnStateChange.current = false;
     }
   });
+
+  // --- Save the new view state whenever the view is scrolled
+  const scrolled = () => {
+    if (!vlApi.current || !cachedItems.current) return;
+
+    const range = vlApi.current.getRange();
+    const topAddress = cachedItems.current[range.startIndex].address;
+
+    documentService.saveActiveDocumentState({
+      topAddress
+    });
+  }
 
   return (
     <div className={styles.disassemblyPanel}>
@@ -179,6 +222,7 @@ const DisassemblyPanel = () => {
           approxSize={20}
           fixItemHeight={false}
           apiLoaded={api => (vlApi.current = api)}
+          scrolled={scrolled}
           itemRenderer={idx => {
             const address = disassemblyItems?.[idx].address;
             const execPoint = address === pcValue.current;

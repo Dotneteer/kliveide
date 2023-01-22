@@ -24,6 +24,7 @@ export type VirtualizedListApi = {
   getScrollLeft: () => number;
   scrollVertical: (pos: number) => void;
   scrollHorizontal: (pos: number) => void;
+  getRange: () => { startIndex: number, endIndex: number }
 };
 
 type Props = {
@@ -89,7 +90,8 @@ export const VirtualizedList = ({
         },
         scrollHorizontal: (pos: number) => {
           columnVirtualizer.scrollToOffset(pos);
-        }
+        },
+        getRange: () => virtualizer.range
       };
       apiLoaded?.(api);
       virtualizer.scrollElement.addEventListener("scroll", scrollHandler);

@@ -92,6 +92,11 @@ export interface IDocumentService {
   setActiveDocument(id: string): void;
 
   /**
+   * Gets the ID of the active document
+   */
+  getActiveDocumentId(): string;
+
+  /**
    * Gets the document with the specified ID
    * @param id Document ID
    * @returns The document with the specified ID, if exists; othwerwise, null
@@ -124,6 +129,30 @@ export interface IDocumentService {
    * Moves the active tab to right
    */
   moveActiveToRight(): void;
+
+  /**
+   * Gets the state of the specified document
+   * @param id Document ID
+   */
+  getDocumentState(id: string): any;
+
+  /**
+   * Saves the specified document state
+   * @param id Document ID
+   * @param state State to save
+   */
+  saveDocumentState(id: string, state: any): void;
+
+  /**
+   * Gets the state of the active document
+   */
+  getActiveDocumentState(): any;
+
+  /**
+   * Saves the state of the active document
+   * @param state State to save
+   */
+  saveActiveDocumentState(state: any): void;
 }
 
 /**
