@@ -61,3 +61,15 @@
     opacity: 0.9;
   }
 }
+
+.char {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
+
+  &:hover {
+    background: #606060;
+    opacity: 0.9;
+  }
+}

@@ -18,6 +18,7 @@ import createStatsCollector from "mocha/lib/stats-collector";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
+import { ZxSpectrumChars } from "./char-codes";
 import styles from "./MemoryPanel.module.scss";
 
 const MemoryPanel = () => {
@@ -29,7 +30,7 @@ const MemoryPanel = () => {
   const [twoSections, setTwoSections] = useState(true);
   const [charDump, setCharDump] = useState(true);
   const machineState = useSelector(s => s.emulatorState?.machineState);
-  const memory = useRef<Uint8Array>();
+  const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
   const vlApi = useRef<VirtualizedListApi>(null);
@@ -50,7 +51,7 @@ const MemoryPanel = () => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
-      memory.current = new Uint8Array(0x1_0000);
+      //memory.current = new Uint8Array(0x1_0000);
       const response = (await messenger.sendMessage({
         type: "EmuGetMemory"
       })) as EmuGetMemoryResponse;
@@ -69,31 +70,31 @@ const MemoryPanel = () => {
   });
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
-  // useEffect(() => {
-  //   (async () => {
-  //     switch (machineState) {
-  //       case MachineControllerState.Paused:
-  //       case MachineControllerState.Stopped:
-  //         await refreshMemoryView();
-  //         refreshedOnStateChange.current = true;
-  //     }
-  //   })();
-  // }, [machineState]);
+  useEffect(() => {
+    (async () => {
+      switch (machineState) {
+        case MachineControllerState.Paused:
+        case MachineControllerState.Stopped:
+          await refreshMemoryView();
+          refreshedOnStateChange.current = true;
+      }
+    })();
+  }, [machineState]);
 
   // --- Whenever the state of view options change
-  // useEffect(() => {
-  //   (async () => {
-  //     await refreshMemoryView();
-  //   })();
-  // }, [twoSections, pausedPc]);
+  useEffect(() => {
+    (async () => {
+      await refreshMemoryView();
+    })();
+  }, [pausedPc]);
 
   // --- Take care of refreshing the screen
-  // useStateRefresh(500, () => {
-  //   if (useAutoRefresh.current || refreshedOnStateChange.current) {
-  //     refreshMemoryView();
-  //     refreshedOnStateChange.current = false;
-  //   }
-  // });
+  useStateRefresh(500, () => {
+    if (useAutoRefresh.current || refreshedOnStateChange.current) {
+      refreshMemoryView();
+      refreshedOnStateChange.current = false;
+    }
+  });
 
   // --- Whenever two-section mode changes, refresh sections
   useEffect(() => {
@@ -103,7 +104,11 @@ const MemoryPanel = () => {
   return (
     <div className={styles.memoryPanel}>
       <div className={styles.header}>
-        <SmallIconButton iconName='refresh' title={"Refresh now"} />
+        <SmallIconButton
+          iconName='refresh'
+          title={"Refresh now"}
+          clicked={() => refreshMemoryView()}
+        />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
@@ -184,18 +189,33 @@ const DumpSection = ({ address, memory, charDump }: DumpProps) => {
       <ByteValue address={address + 6} value={memory[address + 6]} />
       <ByteValue address={address + 7} value={memory[address + 7]} />
       <LabelSeparator width={8} />
+      {charDump && (
+        <>
+          <CharValue address={address + 0} value={memory[address + 0]} />
+          <CharValue address={address + 1} value={memory[address + 1]} />
+          <CharValue address={address + 2} value={memory[address + 2]} />
+          <CharValue address={address + 3} value={memory[address + 3]} />
+          <CharValue address={address + 4} value={memory[address + 4]} />
+          <CharValue address={address + 5} value={memory[address + 5]} />
+          <CharValue address={address + 6} value={memory[address + 6]} />
+          <CharValue address={address + 7} value={memory[address + 7]} />
+          <LabelSeparator width={8} />
+        </>
+      )}
     </div>
   );
 };
 
-type ByteValueProps = { 
+type ByteValueProps = {
   address: number;
   value: number;
-}
+};
 
-const ByteValue = ({address, value}: ByteValueProps) => {
+const ByteValue = ({ address, value }: ByteValueProps) => {
   const ref = useRef<HTMLDivElement>(null);
-  const title = `$${toHexa4(address)} (${address}): $${toHexa2(value)} (${value}, %${value.toString(2)}) `
+  const title = `Value at $${toHexa4(address)} (${address}):\n$${toHexa2(
+    value
+  )} (${value}, %${value.toString(2)}) `;
   const toolTipLines = (title ?? "").split("\n");
   return (
     <div ref={ref} className={styles.value}>
@@ -214,7 +234,41 @@ const ByteValue = ({address, value}: ByteValueProps) => {
         </TooltipFactory>
       )}
     </div>
-  )
-}
+  );
+};
+
+const CharValue = ({ address, value }: ByteValueProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const valueInfo = ZxSpectrumChars[value & 0xff];
+  let text = valueInfo.v ?? ".";
+  let description = valueInfo.t ?? "";
+  if (valueInfo.c === "graph") {
+    description = "(graphics)";
+  } else if (valueInfo.c) {
+    description = valueInfo.t ?? "";
+  }
+  const title = `Char at $${toHexa4(address)} (${address}):\n$${toHexa2(
+    value
+  )}, ${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
+  const toolTipLines = (title ?? "").split("\n");
+  return (
+    <div ref={ref} className={styles.char}>
+      {text}
+      {title && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement='bottom'
+          offsetX={0}
+          offsetY={16}
+          showDelay={100}
+        >
+          {toolTipLines.map((l, idx) => (
+            <div key={idx}>{l}</div>
+          ))}
+        </TooltipFactory>
+      )}
+    </div>
+  );
+};
 
 export const createMemoryPanel = () => <MemoryPanel />;
