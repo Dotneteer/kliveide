@@ -15,6 +15,7 @@ import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
+import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
@@ -28,32 +29,41 @@ import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
 
 type DisassemblyState = {
-  topAddress: number;
-}
+  topAddress?: number;
+  followPc?: boolean;
+  ram?: boolean;
+  screen?: boolean;
+};
 
-const DisassemblyPanel = () => {
+const DisassemblyPanel = ({ document }: DocumentProps) => {
+  const viewState = useRef((document.stateValue as DisassemblyState) ?? {});
+
   const { messenger } = useRendererContext();
   const { documentService } = useAppServices();
-  const [followPc, setFollowPc] = useState(false);
-  const usePc = useRef(false);
   const initialized = useRef(false);
-  const [ram, setRam] = useState(true);
-  const [screen, setScreen] = useState(false);
-  const machineState = useSelector(s => s.emulatorState?.machineState);
-  const [disassemblyItems, setDisassemblyItems] = useState<DisassemblyItem[]>(
-    []
-  );
-  const cachedItems = useRef<DisassemblyItem[]>([]);
+
+  const usePc = useRef(viewState.current.followPc ?? false);
+  const [followPc, setFollowPc] = useState(usePc.current);
+  const useRam = useRef(viewState.current.ram ?? true);
+  const [ram, setRam] = useState(useRam.current);
+  const useScreen = useRef(viewState.current.screen ?? false);
+  const [screen, setScreen] = useState(useScreen.current);
+
   const [firstAddr, setFirstAddr] = useState(0);
   const [lastAddr, setLastAddr] = useState(0);
   const [pausedPc, setPausedPc] = useState(0);
   const pcValue = useRef(0);
+  const topAddress = useRef(0);
+
+  const [scrollVersion, setScrollVersion] = useState(0);
+
+  const machineState = useSelector(s => s.emulatorState?.machineState);
+  const cachedItems = useRef<DisassemblyItem[]>([]);
   const breakpoints = useRef<BreakpointInfo[]>();
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
   const isRefreshing = useRef(false);
-  const viewState = useRef<DisassemblyState>(null);
 
   // --- This function refreshes the disassembly
   const refreshDisassembly = async () => {
@@ -111,16 +121,17 @@ const DisassemblyPanel = () => {
       const output = await disassembler.disassemble(0x0000, 0xffff);
       const items = output.outputItems;
       cachedItems.current = items;
-      setDisassemblyItems(items);
 
+      // --- Display the current address range
       if (items.length > 0) {
         setFirstAddr(items[0].address);
         setLastAddr(items[items.length - 1].address);
       }
 
-      // --- Navigate to the top when following the PC
+      // --- Scroll to the top when following PC
       if (usePc.current) {
-        vlApi.current?.scrollToTop();
+        topAddress.current = items[0].address;
+        setScrollVersion(scrollVersion + 1);
       }
     } finally {
       isRefreshing.current = false;
@@ -131,9 +142,25 @@ const DisassemblyPanel = () => {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    viewState.current = documentService.getActiveDocumentState();
-    refreshDisassembly();
+    (async () => {
+      await refreshDisassembly();
+      setScrollVersion(scrollVersion + 1);
+    })();
   }, []);
+
+  // --- Scroll to the desired position whenever the scroll index chenges
+  useEffect(() => {
+    if (viewState.current?.topAddress !== undefined && cachedItems.current) {
+      const idx = cachedItems.current.findIndex(
+        di => di.address >= viewState.current.topAddress
+      );
+      if (idx >= 0 && vlApi && vlApi?.current.getRange().startIndex !== idx) {
+        vlApi.current?.scrollToIndex(idx, {
+          align: "start"
+        });
+      }
+    }
+  }, [scrollVersion]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -149,23 +176,8 @@ const DisassemblyPanel = () => {
 
   // --- Whenever the state of view options change
   useEffect(() => {
-    (async function () {
-      await refreshDisassembly();
-    })();
-  }, [ram, screen, bpsVersion, pausedPc]);
-
-  // --- Restore the view state if it changes
-  useEffect(() => {
-    const topAddress = viewState.current?.topAddress;
-    if (topAddress !== undefined && cachedItems.current) {
-      const idx = cachedItems.current.findIndex(di => di.address >= topAddress);
-      if (idx >= 0) {
-        vlApi.current?.scrollToIndex(idx, {
-          align: "start"
-        });
-      }
-    }
-  },[viewState.current]);
+    refreshDisassembly();
+  }, [ram, screen, followPc, bpsVersion, pausedPc]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
@@ -180,12 +192,20 @@ const DisassemblyPanel = () => {
     if (!vlApi.current || !cachedItems.current) return;
 
     const range = vlApi.current.getRange();
-    const topAddress = cachedItems.current[range.startIndex].address;
+    topAddress.current = cachedItems.current[range.startIndex].address;
+    saveViewState();
+  };
 
-    documentService.saveActiveDocumentState({
-      topAddress
-    });
-  }
+  // --- Save the current vie state
+  const saveViewState = () => {
+    const mergedState: DisassemblyState = {
+      followPc: usePc.current,
+      ram: useRam.current,
+      screen: useScreen.current,
+      topAddress: topAddress.current
+    };
+    documentService.saveActiveDocumentState(mergedState);
+  };
 
   return (
     <div className={styles.disassemblyPanel}>
@@ -197,7 +217,10 @@ const DisassemblyPanel = () => {
           setterFn={setFollowPc}
           label='Follow PC:'
           title='Follow the changes of PC'
-          clicked={val => (usePc.current = val)}
+          clicked={val => {
+            usePc.current = val;
+            saveViewState();
+          }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -205,6 +228,10 @@ const DisassemblyPanel = () => {
           setterFn={setRam}
           label='RAM:'
           title='Disasseble RAM?'
+          clicked={val => {
+            useRam.current = val;
+            saveViewState();
+          }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -212,19 +239,23 @@ const DisassemblyPanel = () => {
           setterFn={setScreen}
           label='Screen:'
           title='Disasseble screen?'
+          clicked={val => {
+            useScreen.current = val;
+            saveViewState();
+          }}
         />
         <ToolbarSeparator small={true} />
         <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
       </div>
       <div className={styles.disassemblyWrapper}>
         <VirtualizedListView
-          items={disassemblyItems}
+          items={cachedItems.current}
           approxSize={20}
           fixItemHeight={false}
           apiLoaded={api => (vlApi.current = api)}
           scrolled={scrolled}
           itemRenderer={idx => {
-            const address = disassemblyItems?.[idx].address;
+            const address = cachedItems.current?.[idx].address;
             const execPoint = address === pcValue.current;
             const breakpoint = breakpoints.current.find(
               bp => bp.address === address
@@ -244,16 +275,19 @@ const DisassemblyPanel = () => {
                 />
                 <LabelSeparator width={4} />
                 <Label text={`${toHexa4(address)}`} width={40} />
-                <Secondary text={disassemblyItems?.[idx].opCodes} width={100} />
+                <Secondary
+                  text={cachedItems.current?.[idx].opCodes}
+                  width={100}
+                />
                 <Label
                   text={
-                    disassemblyItems?.[idx].hasLabel
+                    cachedItems.current?.[idx].hasLabel
                       ? `L${toHexa4(address)}:`
                       : ""
                   }
                   width={80}
                 />
-                <Value text={disassemblyItems?.[idx].instruction} />
+                <Value text={cachedItems.current?.[idx].instruction} />
               </div>
             );
           }}
@@ -271,4 +305,6 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
-export const createDisassemblyPanel = () => <DisassemblyPanel />;
+export const createDisassemblyPanel = ({ document }: DocumentProps) => (
+  <DisassemblyPanel document={document} />
+);
