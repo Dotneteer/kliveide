@@ -10,6 +10,8 @@ import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
+import { useInitializeAsync } from "@/core/useInitializeAsync";
+import { useUncommittedState } from "@/core/useUncommittedState";
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
@@ -36,23 +38,26 @@ type DisassemblyState = {
 };
 
 const DisassemblyPanel = ({ document }: DocumentProps) => {
+  // --- Read the view state of the document
   const viewState = useRef((document.stateValue as DisassemblyState) ?? {});
 
+  // --- Get the used services
   const { messenger } = useRendererContext();
   const { documentService } = useAppServices();
-  const initialized = useRef(false);
 
-  const usePc = useRef(viewState.current.followPc ?? false);
-  const [followPc, setFollowPc] = useState(usePc.current);
-  const useRam = useRef(viewState.current.ram ?? true);
-  const [ram, setRam] = useState(useRam.current);
-  const useScreen = useRef(viewState.current.screen ?? false);
-  const [screen, setScreen] = useState(useScreen.current);
+  const [followPc, usePc, setFollowPc] = useUncommittedState(
+    viewState.current.followPc ?? false
+  );
+  const [ram, useRam, setRam] = useUncommittedState(
+    viewState.current.ram ?? true
+  );
+  const [screen, useScreen, setScreen] = useUncommittedState(
+    viewState.current.screen ?? false
+  );
+  const [pausedPc, pcValue, setPausedPc] = useUncommittedState(0);
 
   const [firstAddr, setFirstAddr] = useState(0);
   const [lastAddr, setLastAddr] = useState(0);
-  const [pausedPc, setPausedPc] = useState(0);
-  const pcValue = useRef(0);
   const topAddress = useRef(0);
 
   const [scrollVersion, setScrollVersion] = useState(0);
@@ -139,20 +144,16 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   };
 
   // --- Initial view
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    (async () => {
-      await refreshDisassembly();
-      setScrollVersion(scrollVersion + 1);
-    })();
-  }, []);
+  useInitializeAsync(async () => {
+    await refreshDisassembly();
+    setScrollVersion(scrollVersion + 1);
+  });
 
-  // --- Scroll to the desired position whenever the scroll index chenges
+  // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
-    if (viewState.current?.topAddress !== undefined && cachedItems.current) {
+    if (cachedItems.current) {
       const idx = cachedItems.current.findIndex(
-        di => di.address >= viewState.current.topAddress
+        di => di.address >= (topAddress.current ?? 0)
       );
       if (idx >= 0 && vlApi && vlApi?.current.getRange().startIndex !== idx) {
         vlApi.current?.scrollToIndex(idx, {
@@ -217,10 +218,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           setterFn={setFollowPc}
           label='Follow PC:'
           title='Follow the changes of PC'
-          clicked={val => {
-            usePc.current = val;
-            saveViewState();
-          }}
+          clicked={() => saveViewState()}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -228,10 +226,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           setterFn={setRam}
           label='RAM:'
           title='Disasseble RAM?'
-          clicked={val => {
-            useRam.current = val;
-            saveViewState();
-          }}
+          clicked={() => saveViewState()}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -239,10 +234,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           setterFn={setScreen}
           label='Screen:'
           title='Disasseble screen?'
-          clicked={val => {
-            useScreen.current = val;
-            saveViewState();
-          }}
+          clicked={() => saveViewState()}
         />
         <ToolbarSeparator small={true} />
         <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />

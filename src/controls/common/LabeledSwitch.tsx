@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useRef } from "react";
+import { useRef } from "react";
 import { Icon } from "./Icon";
 import styles from "./LabeledSwitch.module.scss";
 import { TooltipFactory } from "./Tooltip";
@@ -7,7 +7,7 @@ type Props = {
   label: string;
   title?: string;
   value: boolean;
-  setterFn: Dispatch<SetStateAction<boolean>>;
+  setterFn: (val: boolean) => void;
   clicked?: (val: boolean) => void;
 };
 
@@ -24,8 +24,8 @@ export const LabeledSwitch = ({
       ref={ref}
       className={styles.labeledSwitch}
       onClick={() => {
-        clicked?.(!value);
         setterFn(!value);
+        clicked?.(!value);
       }}
     >
       <span className={styles.headerLabel}>{label}</span>
