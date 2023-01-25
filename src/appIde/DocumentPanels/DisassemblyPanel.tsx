@@ -9,12 +9,17 @@ import {
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
-import { useRendererContext, useSelector } from "@/core/RendererProvider";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { useUncommittedState } from "@/core/useUncommittedState";
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
+import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
@@ -40,11 +45,19 @@ type DisassemblyState = {
 const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Read the view state of the document
   const viewState = useRef((document.stateValue as DisassemblyState) ?? {});
+  const topAddress = useRef(viewState.current?.topAddress ?? 0);
+
+  // --- Use these app state variables
+  const machineState = useSelector(s => s.emulatorState?.machineState);
+  const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
 
   // --- Get the used services
+  const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const { documentService } = useAppServices();
+  const { documentService, machineService } = useAppServices();
 
+  // --- Use these options to set disassembly options. As disassembly in async, we sometimes
+  // --- need to use state changes not yet commetted by React.
   const [followPc, usePc, setFollowPc] = useUncommittedState(
     viewState.current.followPc ?? false
   );
@@ -54,21 +67,19 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   const [screen, useScreen, setScreen] = useUncommittedState(
     viewState.current.screen ?? false
   );
-  const [pausedPc, pcValue, setPausedPc] = useUncommittedState(0);
+  const [pausedPc, setPausedPc] = useState(0);
 
+  // --- Other visual state values
   const [firstAddr, setFirstAddr] = useState(0);
   const [lastAddr, setLastAddr] = useState(0);
-  const topAddress = useRef(0);
 
-  const [scrollVersion, setScrollVersion] = useState(0);
-
-  const machineState = useSelector(s => s.emulatorState?.machineState);
+  // --- Internal state values for disassembly
   const cachedItems = useRef<DisassemblyItem[]>([]);
   const breakpoints = useRef<BreakpointInfo[]>();
-  const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
   const isRefreshing = useRef(false);
+  const [scrollVersion, setScrollVersion] = useState(0);
 
   // --- This function refreshes the disassembly
   const refreshDisassembly = async () => {
@@ -81,7 +92,6 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
         type: "EmuGetMemory"
       })) as EmuGetMemoryResponse;
       const memory = response.memory;
-      pcValue.current = response.pc;
       setPausedPc(response.pc);
       breakpoints.current = response.memBreakpoints;
 
@@ -92,8 +102,8 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
         // --- Disassemble only one KB from the current PC value
         memSections.push(
           new MemorySection(
-            pcValue.current,
-            (pcValue.current + 1024) & 0xffff,
+            response.pc,
+            (response.pc + 1024) & 0xffff,
             MemorySectionType.Disassemble
           )
         );
@@ -143,7 +153,13 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
     }
   };
 
-  // --- Initial view
+  // --- This function directs the current disassembly to the PC address (provided that is visible)
+  const goToPcAddress = () => {
+    topAddress.current = pausedPc;
+    setScrollVersion(scrollVersion + 1);
+  };
+
+  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
   useInitializeAsync(async () => {
     await refreshDisassembly();
     setScrollVersion(scrollVersion + 1);
@@ -155,7 +171,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
       const idx = cachedItems.current.findIndex(
         di => di.address >= (topAddress.current ?? 0)
       );
-      if (idx >= 0 && vlApi && vlApi?.current.getRange().startIndex !== idx) {
+      if (idx >= 0) {
         vlApi.current?.scrollToIndex(idx, {
           align: "start"
         });
@@ -211,7 +227,23 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   return (
     <div className={styles.disassemblyPanel}>
       <div className={styles.header}>
-        <SmallIconButton iconName='refresh' title={"Refresh now"} />
+        <SmallIconButton
+          iconName='refresh'
+          title={"Refresh now"}
+          clicked={async () => {
+            refreshDisassembly();
+            dispatch(setIdeStatusMessageAction("Disassembly refreshed", true));
+          }}
+        />
+        <SmallIconButton
+          iconName='arrow-circle-right'
+          title={"Go to the PC address"}
+          enable={
+            machineState === MachineControllerState.Paused ||
+            machineState === MachineControllerState.Stopped
+          }
+          clicked={() => goToPcAddress()}
+        />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={followPc}
@@ -248,7 +280,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           scrolled={scrolled}
           itemRenderer={idx => {
             const address = cachedItems.current?.[idx].address;
-            const execPoint = address === pcValue.current;
+            const execPoint = address === pausedPc;
             const breakpoint = breakpoints.current.find(
               bp => bp.address === address
             );
