@@ -35,7 +35,7 @@ import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
 
-type DisassemblyState = {
+type DisassemblyViewState = {
   topAddress?: number;
   followPc?: boolean;
   ram?: boolean;
@@ -44,20 +44,20 @@ type DisassemblyState = {
 
 const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Read the view state of the document
-  const viewState = useRef((document.stateValue as DisassemblyState) ?? {});
+  const viewState = useRef((document.stateValue as DisassemblyViewState) ?? {});
   const topAddress = useRef(viewState.current?.topAddress ?? 0);
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
 
-  // --- Get the used services
+  // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const { documentService, machineService } = useAppServices();
 
-  // --- Use these options to set disassembly options. As disassembly in async, we sometimes
-  // --- need to use state changes not yet commetted by React.
+  // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
+  // --- need to use state changes not yet committed by React.
   const [followPc, usePc, setFollowPc] = useUncommittedState(
     viewState.current.followPc ?? false
   );
@@ -213,9 +213,9 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
     saveViewState();
   };
 
-  // --- Save the current vie state
+  // --- Save the current view state
   const saveViewState = () => {
-    const mergedState: DisassemblyState = {
+    const mergedState: DisassemblyViewState = {
       followPc: usePc.current,
       ram: useRam.current,
       screen: useScreen.current,
@@ -236,7 +236,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           }}
         />
         <SmallIconButton
-          iconName='arrow-circle-right'
+          iconName={pausedPc < topAddress.current ? "arrow-circle-up": "arrow-circle-down"}
           title={"Go to the PC address"}
           enable={
             machineState === MachineControllerState.Paused ||

@@ -1,44 +1,79 @@
 import { SmallIconButton } from "@/controls/common/IconButton";
 import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
-import {
-  Label,
-  LabelSeparator,
-} from "@/controls/common/Labels";
+import { Label, LabelSeparator } from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { TooltipFactory } from "@/controls/common/Tooltip";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
-import { useRendererContext, useSelector } from "@/core/RendererProvider";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@/core/RendererProvider";
+import { useInitializeAsync } from "@/core/useInitializeAsync";
+import { useUncommittedState } from "@/core/useUncommittedState";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
+import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
+import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa2, toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { ZxSpectrumChars } from "./char-codes";
 import styles from "./MemoryPanel.module.scss";
 
-const MemoryPanel = () => {
-  const { messenger } = useRendererContext();
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const useAutoRefresh = useRef(false);
-  const refreshInProgress = useRef(false);
-  const initialized = useRef(false);
-  const [twoSections, setTwoSections] = useState(true);
-  const [charDump, setCharDump] = useState(true);
+type MemoryViewState = {
+  topAddress?: number;
+  twoColumns?: boolean;
+  charDump?: boolean;
+  autoRefresh?: boolean;
+};
+
+const MemoryPanel = ({ document }: DocumentProps) => {
+  // --- Read the view state of the document
+  const viewState = useRef((document.stateValue as MemoryViewState) ?? {});
+  const topAddress = useRef(
+    (viewState.current?.topAddress ?? 0) *
+      (viewState.current?.twoColumns ?? true ? 2 : 1)
+  );
+
+  // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
+
+  // --- Get the services used in this component
+  const dispatch = useDispatch();
+  const { messenger } = useRendererContext();
+  const { documentService } = useAppServices();
+
+  // --- Use these options to set memory options. As memory view is async, we sometimes
+  // --- need to use state changes not yet committed by React.
+  const [autoRefresh, useAutoRefresh, setAutoRefresh] = useUncommittedState(
+    viewState.current?.autoRefresh ?? false
+  );
+  const [twoColumns, useTwoColumns, setTwoColumns] = useUncommittedState(
+    viewState.current?.twoColumns ?? true
+  );
+  const [charDump, useCharDump, setCharDump] = useUncommittedState(
+    viewState.current?.charDump ?? true
+  );
+
+  const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
-  const [pausedPc, setPausedPc] = useState(0);
+  const cachedItems = useRef<number[]>([]);
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
+  const [scrollVersion, setScrollVersion] = useState(0);
 
   // --- Creates the addresses to represent dump sections
   const createDumpSections = () => {
     const memItems: number[] = [];
-    for (let addr = 0; addr < 0x1_0000; addr += twoSections ? 0x10 : 0x08) {
+    for (let addr = 0; addr < 0x1_0000; addr += twoColumns ? 0x10 : 0x08) {
       memItems.push(addr);
     }
+    cachedItems.current = memItems;
     setMemoryItems(memItems);
   };
 
@@ -48,7 +83,6 @@ const MemoryPanel = () => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
-      //memory.current = new Uint8Array(0x1_0000);
       const response = (await messenger.sendMessage({
         type: "EmuGetMemory"
       })) as EmuGetMemoryResponse;
@@ -59,12 +93,22 @@ const MemoryPanel = () => {
     }
   };
 
-  // --- Initial view
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    (async () => await refreshMemoryView())();
+  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
+  useInitializeAsync(async () => {
+    await refreshMemoryView();
+    setScrollVersion(scrollVersion + 1);
   });
+
+  // --- Scroll to the desired position whenever the scroll index changes
+  useEffect(() => {
+    if (!memoryItems.length) return;
+    const idx = Math.floor(
+      topAddress.current / (useTwoColumns.current ? 2 : 1)
+    );
+    vlApi.current?.scrollToIndex(idx, {
+      align: "start"
+    });
+  }, [scrollVersion]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -80,10 +124,8 @@ const MemoryPanel = () => {
 
   // --- Whenever the state of view options change
   useEffect(() => {
-    (async () => {
-      await refreshMemoryView();
-    })();
-  }, [pausedPc]);
+    refreshMemoryView();
+  }, [autoRefresh, charDump]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
@@ -96,7 +138,32 @@ const MemoryPanel = () => {
   // --- Whenever two-section mode changes, refresh sections
   useEffect(() => {
     createDumpSections();
-  }, [twoSections]);
+  }, [twoColumns]);
+
+  // --- Save the current top addresds
+  const storeTopAddress = () => {
+    const range = vlApi.current.getRange();
+    topAddress.current = range.startIndex;
+  };
+
+  // --- Save the new view state whenever the view is scrolled
+  const scrolled = () => {
+    if (!vlApi.current || cachedItems.current.length === 0) return;
+
+    storeTopAddress();
+    saveViewState();
+  };
+
+  // --- Save the current view state
+  const saveViewState = () => {
+    const mergedState: MemoryViewState = {
+      topAddress: topAddress.current,
+      twoColumns: useTwoColumns.current,
+      charDump: useCharDump.current,
+      autoRefresh: useAutoRefresh.current
+    };
+    documentService.saveActiveDocumentState(mergedState);
+  };
 
   return (
     <div className={styles.memoryPanel}>
@@ -104,7 +171,10 @@ const MemoryPanel = () => {
         <SmallIconButton
           iconName='refresh'
           title={"Refresh now"}
-          clicked={() => refreshMemoryView()}
+          clicked={async () => {
+            refreshMemoryView();
+            dispatch(setIdeStatusMessageAction("Memory view refreshed", true));
+          }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -112,14 +182,21 @@ const MemoryPanel = () => {
           setterFn={setAutoRefresh}
           label='Auto Refresh:'
           title='Refresh the memory view periodically'
-          clicked={val => (useAutoRefresh.current = val)}
+          clicked={() => saveViewState()}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
-          value={twoSections}
-          setterFn={setTwoSections}
-          label='Two Sections:'
+          value={twoColumns}
+          setterFn={setTwoColumns}
+          label='Two Columns:'
           title='Use two-column layout?'
+          clicked={() => {
+            if (!useTwoColumns.current) {
+              topAddress.current *= 2;
+            }
+            saveViewState();
+            setScrollVersion(scrollVersion + 1);
+          }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -127,6 +204,7 @@ const MemoryPanel = () => {
           setterFn={setCharDump}
           label='Char Dump:'
           title='Show characters dump?'
+          clicked={() => saveViewState()}
         />
       </div>
       <div className={styles.memoryWrapper}>
@@ -134,13 +212,14 @@ const MemoryPanel = () => {
           items={memoryItems}
           approxSize={20}
           fixItemHeight={false}
+          scrolled={scrolled}
           apiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
             return (
               <div
                 className={classnames(styles.item, {
                   [styles.even]: idx % 2 == 0,
-                  [styles.twoSections]: twoSections
+                  [styles.twoSections]: twoColumns
                 })}
               >
                 <DumpSection
@@ -148,7 +227,7 @@ const MemoryPanel = () => {
                   memory={memory.current}
                   charDump={charDump}
                 />
-                {twoSections && (
+                {twoColumns && (
                   <DumpSection
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
@@ -263,7 +342,9 @@ const CharValue = ({ address, value }: ByteValueProps) => {
   );
 };
 
-export const createMemoryPanel = () => <MemoryPanel />;
+export const createMemoryPanel = ({ document }: DocumentProps) => (
+  <MemoryPanel document={document} />
+);
 
 // --- Cache tooltip value
 const tooltipCache: string[] = [];
