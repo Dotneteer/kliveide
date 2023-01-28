@@ -20,7 +20,8 @@ export type MachineCommand =
   | "debug"
   | "stepInto"
   | "stepOver"
-  | "stepOut";
+  | "stepOut"
+  | "rewind";
 
 /**
  * The main process sends a machine command to the emulator
@@ -153,6 +154,7 @@ export interface EmuGetMemoryResponse extends MessageBase {
   iy: number;
   ir: number;
   wz: number;
+  osInitialized: boolean;
 
   memBreakpoints: BreakpointInfo[];
 }

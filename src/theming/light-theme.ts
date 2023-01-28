@@ -122,5 +122,10 @@ export const lightTheme: ThemeProperties = {
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row": "#c8c8c8",
-  "--bgcolor-disass-hover": "#b8b8b8"
+  "--bgcolor-disass-hover": "#b8b8b8",
+
+  // --- Memory panel
+  "--bgcolor-memory-pointed": "#0451a5",
+  "--bgcolor-memory-pc-pointed": "#00BC00",
+  "--color-memory-pointed": "#ffffff"
 };

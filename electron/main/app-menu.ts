@@ -33,7 +33,7 @@ import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@/appIde/ToolArea/abstractions";
-import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../../common/state/common-ids";
+import { BASIC_PANEL_ID, DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../../common/state/common-ids";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -69,6 +69,7 @@ const SELECT_TAPE_FILE = "select_tape_file";
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_disassembly";
+const IDE_SHOW_BASIC = "show_basic";
 
 // --- The number of events logged with the emulator
 let loggedEmuOutputEvents = 0;
@@ -455,6 +456,7 @@ export function setupMenu (
 
   const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
   const disassemblyDisplayed = !!openDocs.find(d => d.id === DISASSEMBLY_PANEL_ID);
+  const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
   template.push({
     id: IDE_MENU,
     visible: !ideWindow.isDestroyed() && ideWindow.isVisible(),
@@ -484,7 +486,19 @@ export function setupMenu (
           });
         }
       },
-      { type: "separator" }
+      { type: "separator" },
+      {
+        id: IDE_SHOW_BASIC,
+        label: "Show BASIC Listing",
+        type: "checkbox",
+        checked: basicDisplayed,
+        click: async () => {
+          await sendFromMainToIde({
+            type: "IdeShowBasic",
+            show: !basicDisplayed
+          });
+        }
+      },
     ]
   });
 
