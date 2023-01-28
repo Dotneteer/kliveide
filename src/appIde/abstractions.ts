@@ -50,6 +50,16 @@ export type DocumentInfo = {
    * Is the document read-only?
    */
   isReadOnly?: boolean;
+
+  /**
+   * Optional document icon
+   */
+  iconName?: string;
+
+  /**
+   * Optional document fill color
+   */
+  iconFill?: string;
 };
 
 export type DocumentState = DocumentInfo & {
@@ -80,6 +90,11 @@ export interface IDocumentService {
    * @param id The ID of the active document
    */
   setActiveDocument(id: string): void;
+
+  /**
+   * Gets the ID of the active document
+   */
+  getActiveDocumentId(): string;
 
   /**
    * Gets the document with the specified ID
@@ -114,6 +129,30 @@ export interface IDocumentService {
    * Moves the active tab to right
    */
   moveActiveToRight(): void;
+
+  /**
+   * Gets the state of the specified document
+   * @param id Document ID
+   */
+  getDocumentState(id: string): any;
+
+  /**
+   * Saves the specified document state
+   * @param id Document ID
+   * @param state State to save
+   */
+  saveDocumentState(id: string, state: any): void;
+
+  /**
+   * Gets the state of the active document
+   */
+  getActiveDocumentState(): any;
+
+  /**
+   * Saves the state of the active document
+   * @param state State to save
+   */
+  saveActiveDocumentState(state: any): void;
 }
 
 /**
@@ -475,6 +514,16 @@ export type DocumentRendererInfo = {
    * Renderer function to display the tool
    */
   renderer: PanelRenderer;
+
+  /**
+   * The accompanying icon
+   */
+  icon?: string;
+
+  /**
+   * The icon's fill color
+   */
+  iconFill?: string;
 };
 
 

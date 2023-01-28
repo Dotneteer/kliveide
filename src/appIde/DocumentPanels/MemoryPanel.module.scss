@@ -1,0 +1,85 @@
+@import "@styles/core.scss";
+
+.memoryPanel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+}
+
+.header {
+  @include fix-height-panel(30px);
+  flex-direction: row;
+  align-items: center;
+  padding-left: 4px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.memoryWrapper {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+
+  &.twoSections {
+    flex-direction: row;
+  }
+
+  &.even {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}
+
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0;
+}
+
+.value {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-value);
+  justify-content: center;
+  width: 20px;
+
+  &:hover {
+    background: #606060;
+    opacity: 0.9;
+  }
+
+  &.pointed {
+    background: var(--bgcolor-memory-pointed);
+    color: var(--color-memory-pointed);
+  }
+
+  &.pcPointed {
+    background: var(--bgcolor-memory-pc-pointed);
+    color: var(--color-memory-pointed);
+  } 
+}
+
+.char {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
+
+  &:hover {
+    background: #606060;
+    opacity: 0.9;
+  }
+}

@@ -215,13 +215,27 @@ export async function processMainToEmuMessages (
     case "EmuGetMemory": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
+      const m = controller.machine;
       const memory = (
         controller.machine as IZxSpectrumMachine
       ).get64KFlatMemory();
       return {
         type: "EmuGetMemoryResponse",
         memory,
-        pc: controller.machine.pc,
+        pc: m.pc,
+        af: m.af,
+        bc: m.bc,
+        de: m.de,
+        hl: m.hl,
+        af_: m.af_,
+        bc_: m.bc_,
+        de_: m.de_,
+        hl_: m.hl_,
+        sp: m.sp,
+        ix: m.ix,
+        iy: m.iy,
+        ir: m.ir,
+        wz: m.wz,
         memBreakpoints: controller.debugSupport.execBreakpoints
       };
     }

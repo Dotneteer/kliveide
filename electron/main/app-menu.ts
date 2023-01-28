@@ -33,7 +33,7 @@ import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@/appIde/ToolArea/abstractions";
-import { DISASSEMBLY_PANEL_ID } from "../../common/state/common-ids";
+import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../../common/state/common-ids";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -67,6 +67,7 @@ const SOUND_LEVEL = "sound_level";
 const SELECT_TAPE_FILE = "select_tape_file";
 
 const IDE_MENU = "ide_menu";
+const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_disassembly";
 
 // --- The number of events logged with the emulator
@@ -452,12 +453,25 @@ export function setupMenu (
     ]
   });
 
+  const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
   const disassemblyDisplayed = !!openDocs.find(d => d.id === DISASSEMBLY_PANEL_ID);
   template.push({
     id: IDE_MENU,
     visible: !ideWindow.isDestroyed() && ideWindow.isVisible(),
     label: "IDE",
     submenu: [
+      {
+        id: IDE_SHOW_MEMORY,
+        label: "Show Machine Memory",
+        type: "checkbox",
+        checked: memoryDisplayed,
+        click: async () => {
+          await sendFromMainToIde({
+            type: "IdeShowMemory",
+            show: !memoryDisplayed
+          });
+        }
+      },
       {
         id: IDE_SHOW_DISASSEMBLY,
         label: "Show Z80 Disassembly",

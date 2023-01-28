@@ -124,5 +124,10 @@ export const darkTheme: ThemeProperties = {
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row": "#282828",
-  "--bgcolor-disass-hover": "#383838"
+  "--bgcolor-disass-hover": "#383838",
+
+  // --- Memory panel
+  "--bgcolor-memory-pointed": "#3b8eea",
+  "--bgcolor-memory-pc-pointed": "#0DBC79",
+  "--color-memory-pointed": "#ffffff",
 };

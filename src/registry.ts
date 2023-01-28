@@ -27,7 +27,8 @@ import {
 } from "./appIde/ToolArea/CommandPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import { DISASSEMBLY_EDITOR } from "@state/common-ids";
+import { DISASSEMBLY_EDITOR, MEMORY_EDITOR } from "@state/common-ids";
+import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -121,8 +122,16 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: DISASSEMBLY_EDITOR,
-    renderer: createDisassemblyPanel
-  }
+    renderer: createDisassemblyPanel,
+    icon: "disassembly-icon",
+    iconFill: "--console-ansi-bright-cyan"
+  },
+  {
+    id: MEMORY_EDITOR,
+    renderer: createMemoryPanel,
+    icon: "memory-icon",
+    iconFill: "--console-ansi-bright-cyan"
+  },
 ]
 
 // --- Set up machine type registry

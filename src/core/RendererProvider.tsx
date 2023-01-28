@@ -55,8 +55,11 @@ export function useMessageSource (): MessageSource {
  * This React hook makes the current dispatcher function available within any component logic using the hook.
  */
 export function useDispatch (): Dispatch<Action> {
-  const {store, messageSource} = useRendererContext();
-  const dispatcher = ((action: Action, _: MessageSource) => store.dispatch(action, messageSource)) as Dispatch<Action>;
+  const { store, messageSource } = useRendererContext();
+
+  const dispatcher = ((action: Action, _: MessageSource) => {
+    return store.dispatch(action, messageSource);
+  }) as Dispatch<Action>;
   return useMemo(() => dispatcher, [store, messageSource]);
 }
 

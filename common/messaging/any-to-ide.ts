@@ -19,6 +19,11 @@ export interface IdeDisplayOutputRequest extends MessageBase {
   writeLine?: boolean;
 }
 
+export interface IdeShowMemoryRequest extends MessageBase {
+  type: "IdeShowMemory";
+  show: boolean;
+}
+
 export interface IdeShowDisassemblyRequest extends MessageBase {
   type: "IdeShowDisassembly";
   show: boolean;

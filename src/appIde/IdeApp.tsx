@@ -143,9 +143,9 @@ const IdeApp = () => {
       );
     }
 
-    return () => {
-      mounted.current = false;
-    };
+    // return () => {
+    //   mounted.current = false;
+    // };
   });
 
   return (

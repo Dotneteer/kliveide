@@ -7,7 +7,7 @@ import { AppServices } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { DISASSEMBLY_EDITOR, DISASSEMBLY_PANEL_ID } from "@state/common-ids";
+import { DISASSEMBLY_EDITOR, DISASSEMBLY_PANEL_ID, MEMORY_EDITOR, MEMORY_PANEL_ID } from "@state/common-ids";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -45,6 +45,22 @@ export async function processMainToIdeMessages (
       }
       break;
 
+      case "IdeShowMemory": {
+        if (message.show) {
+          documentService.openDocument(
+            {
+              id: MEMORY_PANEL_ID,
+              name: "Machine Memory",
+              type: MEMORY_EDITOR
+            },
+            false
+          );
+        } else {
+          documentService.closeDocument(MEMORY_PANEL_ID);
+        }
+        break;
+      }
+  
     case "IdeShowDisassembly": {
       if (message.show) {
         documentService.openDocument(

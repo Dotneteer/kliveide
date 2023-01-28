@@ -14,8 +14,10 @@ import { useLayoutEffect, useRef, useState } from "react";
 export type Props = DocumentState & {
   index: number;
   iconName?: string;
+  iconFill?: string;
   isActive?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
+  tabClicked?: () => void;
 };
 
 export const DocumentTab = ({
@@ -29,8 +31,10 @@ export const DocumentTab = ({
   path,
   language,
   iconName = "file-code",
+  iconFill = "--color-doc-icon",
   isActive = false,
-  tabDisplayed
+  tabDisplayed,
+  tabClicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -40,14 +44,17 @@ export const DocumentTab = ({
     if (ref.current) {
       tabDisplayed?.(ref.current);
     }
-  }, [ref.current, ref.current?.offsetLeft])
+  }, [ref.current, ref.current?.offsetLeft]);
   return (
     <div
       ref={ref}
       className={classnames(styles.component, isActive ? styles.active : "")}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
-      onClick={() => dispatch(activateDocumentAction(id))}
+      onClick={() => {
+        tabClicked?.();
+        dispatch(activateDocumentAction(id));
+      }}
       onDoubleClick={() => {
         if (isTemporary) {
           dispatch(
@@ -68,12 +75,7 @@ export const DocumentTab = ({
         }
       }}
     >
-      <Icon
-        iconName={iconName}
-        width={16}
-        height={16}
-        fill='--color-doc-icon'
-      />
+      <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
       <span
         className={classnames(
           styles.titleText,

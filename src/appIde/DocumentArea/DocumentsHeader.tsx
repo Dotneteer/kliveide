@@ -1,7 +1,9 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/common/ScrollViewer";
 import { TabButton } from "@/controls/common/TabButton";
 import { useSelector } from "@/core/RendererProvider";
+import { documentPanelRegistry } from "@/registry";
 import { useEffect, useRef, useState } from "react";
+import { DocumentState } from "../abstractions";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
@@ -10,10 +12,28 @@ export const DocumentsHeader = () => {
   const { documentService } = useAppServices();
   const ref = useRef<HTMLDivElement>();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
+  const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [headerVersion, setHeaderVersion] = useState(0);
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
+
+  // --- Prepare the open documents to display
+  useEffect(() => {
+    if (openDocs) {
+      const mappedDocs = openDocs.map(d => {
+        const cloned: DocumentState = { ...d };
+        const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
+
+        if (docRenderer) {
+          cloned.iconName = docRenderer.icon;
+          cloned.iconFill = docRenderer.iconFill;
+        }
+        return cloned;
+      });
+      setDocsToDisplay(mappedDocs);
+    }
+  }, [openDocs]);
 
   // --- Respond to active document tab changes: make sure that the activated tab is displayed
   // --- entirely. If necessary, scroll in the active tab
@@ -35,9 +55,9 @@ export const DocumentsHeader = () => {
         tabLeftPos - parent.offsetWidth + tabDim.offsetWidth
       );
     }
-  }, [activeDocIndex, headerVersion]);
+  }, [activeDocIndex, headerVersion, docsToDisplay]);
 
-  return (openDocs.length ?? 0) > 0 ? (
+  return (docsToDisplay?.length ?? 0) > 0 ? (
     <div ref={ref} className={styles.component}>
       <ScrollViewer
         allowHorizontal={true}
@@ -46,7 +66,7 @@ export const DocumentsHeader = () => {
         apiLoaded={api => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>
-          {(openDocs ?? []).map((d, idx) => (
+          {(docsToDisplay ?? []).map((d, idx) => (
             <DocumentTab
               key={d.id}
               index={idx}
@@ -56,9 +76,12 @@ export const DocumentsHeader = () => {
               isActive={idx === activeDocIndex}
               isTemporary={d.isTemporary}
               isReadOnly={d.isReadOnly}
+              iconName={d.iconName}
+              iconFill={d.iconFill}
               tabDisplayed={el => {
                 tabDims.current[idx] = el;
               }}
+              tabClicked={() => setHeaderVersion(headerVersion + 1)}
             />
           ))}
         </div>
@@ -67,15 +90,15 @@ export const DocumentsHeader = () => {
       <div className={styles.commandBar}>
         <TabButton
           iconName='arrow-small-left'
-          title={'Move the active\ntab to left'}
+          title={"Move the active\ntab to left"}
           disabled={activeDocIndex === 0}
           useSpace={true}
           clicked={() => documentService.moveActiveToLeft()}
         />
         <TabButton
           iconName='arrow-small-right'
-          title={'Move the active\ntab to right'}
-          disabled={activeDocIndex === (openDocs?.length ?? 0) - 1}
+          title={"Move the active\ntab to right"}
+          disabled={activeDocIndex === (docsToDisplay?.length ?? 0) - 1}
           useSpace={true}
           clicked={() => {
             documentService.moveActiveToRight();

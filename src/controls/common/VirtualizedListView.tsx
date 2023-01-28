@@ -11,6 +11,7 @@ type Props = {
   fixItemHeight?: boolean;
   itemRenderer: (index: number) => ReactNode;
   apiLoaded?: (api: VirtualizedListApi) => void;
+  scrolled?: () => void;
 };
 
 export const VirtualizedListView = ({
@@ -22,6 +23,7 @@ export const VirtualizedListView = ({
   fixItemHeight,
   itemRenderer,
   apiLoaded,
+  scrolled
 }: Props) => {
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
@@ -52,6 +54,7 @@ export const VirtualizedListView = ({
         }}
         vScrolled={() => {
           svApi.current?.updateDims();
+          scrolled?.();
         }}
       />
     </ScrollViewer>
