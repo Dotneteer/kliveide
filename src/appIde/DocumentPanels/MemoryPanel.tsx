@@ -66,6 +66,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   const vlApi = useRef<VirtualizedListApi>(null);
   const refreshedOnStateChange = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
+  const pointedRegs = useRef<Record<number, string>>({});
 
   // --- Creates the addresses to represent dump sections
   const createDumpSections = () => {
@@ -87,9 +88,40 @@ const MemoryPanel = ({ document }: DocumentProps) => {
         type: "EmuGetMemory"
       })) as EmuGetMemoryResponse;
       memory.current = response.memory;
+
+      // --- Calculate tooltips for pointed addresses
+      pointedRegs.current = {};
+      if (
+        useAutoRefresh.current ||
+        machineState === MachineControllerState.Paused ||
+        machineState === MachineControllerState.Stopped
+      ) {
+        extendPointedAddress("AF", response.af);
+        extendPointedAddress("BC", response.bc);
+        extendPointedAddress("DE", response.de);
+        extendPointedAddress("HL", response.hl);
+        extendPointedAddress("AF'", response.af_);
+        extendPointedAddress("BC'", response.bc_);
+        extendPointedAddress("DE'", response.de_);
+        extendPointedAddress("HL'", response.hl_);
+        extendPointedAddress("PC", response.pc);
+        extendPointedAddress("SP", response.sp);
+        extendPointedAddress("IX", response.ix);
+        extendPointedAddress("IY", response.iy);
+        extendPointedAddress("IR", response.ir);
+        extendPointedAddress("WZ", response.sp);
+      }
       createDumpSections();
     } finally {
       refreshInProgress.current = false;
+    }
+
+    function extendPointedAddress (regName: string, regValue: number): void {
+      if (pointedRegs.current[regValue]) {
+        pointedRegs.current[regValue] += ", " + regName;
+      } else {
+        pointedRegs.current[regValue] = regName;
+      }
     }
   };
 
@@ -226,11 +258,13 @@ const MemoryPanel = ({ document }: DocumentProps) => {
                   address={memoryItems[idx]}
                   memory={memory.current}
                   charDump={charDump}
+                  pointedInfo={pointedRegs.current}
                 />
                 {twoColumns && (
                   <DumpSection
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
+                    pointedInfo={pointedRegs.current}
                     charDump={charDump}
                   />
                 )}
@@ -247,34 +281,99 @@ type DumpProps = {
   address: number;
   memory: Uint8Array;
   charDump: boolean;
+  pointedInfo: Record<number, string>;
 };
 
-const DumpSection = ({ address, memory, charDump }: DumpProps) => {
+const DumpSection = ({ address, memory, charDump, pointedInfo }: DumpProps) => {
   if (!memory) return null;
 
   return (
     <div className={styles.dumpSection}>
       <LabelSeparator width={8} />
       <Label text={toHexa4(address)} width={40} />
-      <ByteValue address={address + 0} value={memory[address + 0]} />
-      <ByteValue address={address + 1} value={memory[address + 1]} />
-      <ByteValue address={address + 2} value={memory[address + 2]} />
-      <ByteValue address={address + 3} value={memory[address + 3]} />
-      <ByteValue address={address + 4} value={memory[address + 4]} />
-      <ByteValue address={address + 5} value={memory[address + 5]} />
-      <ByteValue address={address + 6} value={memory[address + 6]} />
-      <ByteValue address={address + 7} value={memory[address + 7]} />
+      <ByteValue
+        address={address + 0}
+        value={memory[address + 0]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 1}
+        value={memory[address + 1]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 2}
+        value={memory[address + 2]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 3}
+        value={memory[address + 3]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 4}
+        value={memory[address + 4]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 5}
+        value={memory[address + 5]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 6}
+        value={memory[address + 6]}
+        pointedInfo={pointedInfo}
+      />
+      <ByteValue
+        address={address + 7}
+        value={memory[address + 7]}
+        pointedInfo={pointedInfo}
+      />
       <LabelSeparator width={8} />
       {charDump && (
         <>
-          <CharValue address={address + 0} value={memory[address + 0]} />
-          <CharValue address={address + 1} value={memory[address + 1]} />
-          <CharValue address={address + 2} value={memory[address + 2]} />
-          <CharValue address={address + 3} value={memory[address + 3]} />
-          <CharValue address={address + 4} value={memory[address + 4]} />
-          <CharValue address={address + 5} value={memory[address + 5]} />
-          <CharValue address={address + 6} value={memory[address + 6]} />
-          <CharValue address={address + 7} value={memory[address + 7]} />
+          <CharValue
+            address={address + 0}
+            value={memory[address + 0]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 1}
+            value={memory[address + 1]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 2}
+            value={memory[address + 2]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 3}
+            value={memory[address + 3]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 4}
+            value={memory[address + 4]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 5}
+            value={memory[address + 5]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 6}
+            value={memory[address + 6]}
+            pointedInfo={pointedInfo}
+          />
+          <CharValue
+            address={address + 7}
+            value={memory[address + 7]}
+            pointedInfo={pointedInfo}
+          />
           <LabelSeparator width={8} />
         </>
       )}
@@ -285,16 +384,26 @@ const DumpSection = ({ address, memory, charDump }: DumpProps) => {
 type ByteValueProps = {
   address: number;
   value: number;
+  pointedInfo: Record<number, string>;
 };
 
-const ByteValue = ({ address, value }: ByteValueProps) => {
+const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
   const ref = useRef<HTMLDivElement>(null);
+  const pointedHint = pointedInfo[address];
+  const pointed = pointedHint !== undefined;
+  const pcPointed = pointed && pointedHint.indexOf("PC") >= 0;
   const title = `Value at $${toHexa4(address)} (${address}):\n${
     tooltipCache[value]
-  }`;
+  }${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
   const toolTipLines = (title ?? "").split("\n");
   return (
-    <div ref={ref} className={styles.value}>
+    <div
+      ref={ref}
+      className={classnames(styles.value, {
+        [styles.pointed]: pointed,
+        [styles.pcPointed]: pcPointed
+      })}
+    >
       {toHexa2(value)}
       {title && (
         <TooltipFactory
@@ -313,7 +422,7 @@ const ByteValue = ({ address, value }: ByteValueProps) => {
   );
 };
 
-const CharValue = ({ address, value }: ByteValueProps) => {
+const CharValue = ({ address, value, pointedInfo }: ByteValueProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const valueInfo = ZxSpectrumChars[value & 0xff];
   let text = valueInfo.v ?? ".";

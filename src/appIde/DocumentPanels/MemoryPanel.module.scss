@@ -60,6 +60,16 @@
     background: #606060;
     opacity: 0.9;
   }
+
+  &.pointed {
+    background: var(--bgcolor-memory-pointed);
+    color: var(--color-memory-pointed);
+  }
+
+  &.pcPointed {
+    background: var(--bgcolor-memory-pc-pointed);
+    color: var(--color-memory-pointed);
+  } 
 }
 
 .char {

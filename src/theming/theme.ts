@@ -125,6 +125,11 @@ export type ThemeProperties = {
   // --- Disassembly panel
   "--bgcolor-disass-even-row"?: string;
   "--bgcolor-disass-hover"?: string;
+
+  // --- Memory panel
+  "--bgcolor-memory-pointed"?: string;
+  "--bgcolor-memory-pc-pointed"?: string;
+  "--color-memory-pointed"?: string;
 }
 
 /**

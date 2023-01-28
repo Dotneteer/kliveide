@@ -140,6 +140,20 @@ export interface EmuGetMemoryResponse extends MessageBase {
   type: "EmuGetMemoryResponse";
   memory: Uint8Array;
   pc: number;
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  af_: number;
+  bc_: number;
+  de_: number;
+  hl_: number;
+  sp: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+
   memBreakpoints: BreakpointInfo[];
 }
 
