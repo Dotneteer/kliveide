@@ -27,8 +27,9 @@ import {
 } from "./appIde/ToolArea/CommandPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import { DISASSEMBLY_EDITOR, MEMORY_EDITOR } from "@state/common-ids";
+import { BASIC_EDITOR, DISASSEMBLY_EDITOR, MEMORY_EDITOR } from "@state/common-ids";
 import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
+import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -131,6 +132,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createMemoryPanel,
     icon: "memory-icon",
     iconFill: "--console-ansi-bright-cyan"
+  },
+  {
+    id: BASIC_EDITOR,
+    renderer: createBasicPanel,
+    icon: "code",
+    iconFill: "--console-ansi-bright-magenta"
   },
 ]
 

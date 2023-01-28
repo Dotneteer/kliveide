@@ -7,7 +7,7 @@ import { AppServices } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { DISASSEMBLY_EDITOR, DISASSEMBLY_PANEL_ID, MEMORY_EDITOR, MEMORY_PANEL_ID } from "@state/common-ids";
+import { BASIC_EDITOR, BASIC_PANEL_ID, DISASSEMBLY_EDITOR, DISASSEMBLY_PANEL_ID, MEMORY_EDITOR, MEMORY_PANEL_ID } from "@state/common-ids";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -73,6 +73,22 @@ export async function processMainToIdeMessages (
         );
       } else {
         documentService.closeDocument(DISASSEMBLY_PANEL_ID);
+      }
+      break;
+    }
+
+    case "IdeShowBasic": {
+      if (message.show) {
+        documentService.openDocument(
+          {
+            id: BASIC_PANEL_ID,
+            name: "BASIC Listing",
+            type: BASIC_EDITOR
+          },
+          false
+        );
+      } else {
+        documentService.closeDocument(BASIC_PANEL_ID);
       }
       break;
     }

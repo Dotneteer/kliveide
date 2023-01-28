@@ -28,3 +28,8 @@ export interface IdeShowDisassemblyRequest extends MessageBase {
   type: "IdeShowDisassembly";
   show: boolean;
 }
+
+export interface IdeShowBasicRequest extends MessageBase {
+  type: "IdeShowBasic";
+  show: boolean;
+}

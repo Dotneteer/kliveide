@@ -7,7 +7,7 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { BinaryReader } from "@utils/BinaryReader";
-import { TAPE_DATA } from "../emu/machines/machine-props";
+import { REWIND_REQUESTED, TAPE_DATA } from "../emu/machines/machine-props";
 import { TapeDataBlock } from "../emu/machines/tape/abstractions";
 import { TapReader } from "../emu/machines/tape/TapReader";
 import { TzxReader } from "../emu/machines/tape/TzxFileFormatLoader";
@@ -83,6 +83,10 @@ export async function processMainToEmuMessages (
         case "stepOut":
           await controller.stepOut();
           break;
+        case "rewind":
+          controller.machine.setMachineProperty(REWIND_REQUESTED, true);
+          break;
+        
       }
       break;
     }
@@ -236,7 +240,8 @@ export async function processMainToEmuMessages (
         iy: m.iy,
         ir: m.ir,
         wz: m.wz,
-        memBreakpoints: controller.debugSupport.execBreakpoints
+        memBreakpoints: controller.debugSupport.execBreakpoints,
+        osInitialized: (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
       };
     }
   }

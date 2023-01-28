@@ -92,4 +92,9 @@ export interface IZxSpectrumMachine extends IZ80Machine {
      * @returns Array with the audio samples
      */
     getAudioSamples(): number[];
+
+    /**
+     * Indicates if the machine's operating system is initialized
+     */
+    get isOsInitialized(): boolean;
 }

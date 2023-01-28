@@ -164,7 +164,9 @@ export const Toolbar = () => {
         iconName='reverse-tape'
         fill='--color-toolbarbutton'
         title='Rewind the tape'
-        clicked={() => console.log("Rewind the tape")}
+        clicked={async () =>
+          await messenger.sendMessage(createMachineCommand("rewind"))
+        }
       />
     </div>
   );

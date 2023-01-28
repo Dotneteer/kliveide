@@ -43,6 +43,7 @@ import {
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
+  IdeShowBasicRequest,
   IdeShowDisassemblyRequest,
   IdeShowMemoryRequest
 } from "./any-to-ide";
@@ -118,7 +119,8 @@ export type RequestMessage =
   | MainDisplayMessageBoxRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
-  | IdeShowDisassemblyRequest;
+  | IdeShowDisassemblyRequest
+  | IdeShowBasicRequest;
 
 /**
  * All Response messages
