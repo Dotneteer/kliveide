@@ -148,7 +148,7 @@ async function createAppWindows () {
     emuWindow.loadURL(emuDevUrl);
     emuWindow.webContents.openDevTools();
     ideWindow.loadURL(ideDevUrl);
-    ideWindow.webContents.openDevTools();
+    //ideWindow.webContents.openDevTools();
   } else {
     emuWindow.loadFile(indexHtml, {
       search: EMU_QP

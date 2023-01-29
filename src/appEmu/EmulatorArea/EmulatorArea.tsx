@@ -11,11 +11,12 @@ export const EmulatorArea = () => {
   return (
     <div className={styles.component}>
       <SplitPanel
-        primaryLocation='top'
-        primaryPanel={<EmulatorPanel />}
-        initialSecondarySize="33%"
-        secondaryPanel={<KeyboardPanel />}
-        secondaryVisible={keyboardVisible}
+        primaryLocation='bottom'
+        secondaryPanel={<EmulatorPanel />}
+        initialPrimarySize="33%"
+        primaryPanel={<KeyboardPanel />}
+        primaryVisible={keyboardVisible}
+        secondaryVisible={true}
         minSize={40}
       />
     </div>

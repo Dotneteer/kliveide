@@ -154,7 +154,6 @@ const IdeApp = () => {
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
-          id='main'
           primaryLocation={primaryBarsPos}
           primaryPanel={<SiteBar />}
           primaryVisible={showSideBar}
@@ -162,11 +161,11 @@ const IdeApp = () => {
           minSize={60}
           secondaryPanel={
             <SplitPanel
-              id='workbench'
               primaryLocation={docPanelsPos}
               primaryVisible={!maximizeToolPanels}
-              minSize={25}
+              minSize={60}
               primaryPanel={<DocumentArea />}
+              initialPrimarySize="67%"
               secondaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
               secondaryVisible={showToolPanels}
             />
