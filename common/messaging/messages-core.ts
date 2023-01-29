@@ -78,6 +78,13 @@ export interface MessageBase {
 /**
  * Default response for actions
  */
+export interface NotReadyResponse extends MessageBase {
+  type: "NotReady";
+}
+
+/**
+ * Default response for actions
+ */
 export interface DefaultResponse extends MessageBase {
   type: "Ack";
 }
@@ -126,6 +133,7 @@ export type RequestMessage =
  * All Response messages
  */
 export type ResponseMessage =
+  | NotReadyResponse
   | DefaultResponse
   | ErrorResponse
   | FlagResponse
