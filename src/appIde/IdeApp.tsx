@@ -78,8 +78,8 @@ const IdeApp = () => {
     ? "right"
     : "left";
   const docPanelsPos = useSelector(s => s.ideViewOptions.toolPanelsOnTop)
-    ? "bottom"
-    : "top";
+    ? "top"
+    : "bottom";
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -146,12 +146,12 @@ const IdeApp = () => {
           secondaryPanel={
             <SplitPanel
               primaryLocation={docPanelsPos}
-              primaryVisible={!maximizeToolPanels}
+              primaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
+              primaryVisible={showToolPanels}
               minSize={60}
-              primaryPanel={<DocumentArea />}
-              initialPrimarySize='67%'
-              secondaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
-              secondaryVisible={showToolPanels}
+              secondaryPanel={<DocumentArea />}
+              secondaryVisible={!maximizeToolPanels}
+              initialPrimarySize='33%'
             />
           }
         />

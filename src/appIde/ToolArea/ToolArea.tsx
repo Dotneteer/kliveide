@@ -17,7 +17,7 @@ export const ToolArea = ({
 
     return <div className={classnames(styles.component, styles[siblingPosition])}>
         <ToolsHeader 
-            topPosition={siblingPosition !== "top" } 
+            topPosition={siblingPosition !== "bottom" } 
             tool={activeInstance} />
         <div className={styles.wrapper}>
             <ToolsContainer tool={activeInstance}/>

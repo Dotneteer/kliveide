@@ -10,19 +10,19 @@
 }
 
 .left {
-    border-left: 1px solid grey;
+    border-left: 1px solid var(--color-tool-border);
 }
 
 .right {
-    border-right: 1px solid grey;
-}
-
-.top {
-    border-top: 1px solid grey;
+    border-right: 1px solid var(--color-tool-border);
 }
 
 .bottom {
-    border-bottom: 1px solid grey;
+    border-top: 1px solid var(--color-tool-border);
+}
+
+.top {
+    border-bottom: 1px solid var(--color-tool-border);
 }
 
 .wrapper {

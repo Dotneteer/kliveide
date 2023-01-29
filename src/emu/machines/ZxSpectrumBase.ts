@@ -455,6 +455,20 @@ export abstract class ZxSpectrumBase
   }
 
   /**
+   * Gets the length of the key emulation queue
+   */
+  getKeyQueueLength (): number {
+    return this.emulatedKeyStrokes.length;
+  }
+
+  /**
+   * Gets the current cursor mode
+   */
+  getCursorMode (): number {
+    return this.doReadMemory(0x5c41);
+  }
+
+  /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
    * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
