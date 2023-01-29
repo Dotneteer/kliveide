@@ -14,14 +14,14 @@ export const DocumentArea = () => {
   useEffect(() => {
     const current = openDocs?.[activeDocIndex];
     if (current) {
-        setActiveDoc(current);
+      setActiveDoc(current);
     }
   }, [openDocs, activeDocIndex]);
 
   return (
     <div className={styles.component}>
       <DocumentsHeader />
-      <DocumentsContainer document={activeDoc} />
+      {activeDocIndex >= 0 && <DocumentsContainer document={activeDoc} />}
     </div>
   );
 };
