@@ -1,0 +1,15 @@
+@import "@styles/core.scss";
+
+.keyboard {
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  background: var(--bgcolor-keyboard);
+  padding: 8px 12px;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+}

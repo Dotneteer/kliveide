@@ -92,6 +92,15 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-emuoverlay": "#303030",
   "--color-emuoverlay": "lightgreen",
 
+  // --- Keyboard
+  "--bgcolor-keyboard": "#202020",
+  "--bgcolor-key": "#808080",
+  "--color-key-main": "#ffffff",
+  "--color-key-symbol": "#c00000",
+  "--color-key-above": "#00a000",
+  "--color-key-below": "#d02000",
+  "--color-key-highlight": "#0048c0",
+
   // --- Document area
   "--bgcolor-docspanel": "#e0e0e0",
   "--bgcolor-docsheader": "#d8d8d8",
@@ -110,10 +119,11 @@ export const lightTheme: ThemeProperties = {
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
 
   // --- Tool area
-  "--bgcolor-toolarea": "#d0d0d0",
+  "--bgcolor-toolarea": "#e0e0e0",
   "--color-tooltab-active": "#000000",
   "--color-tooltab-inactive": "#404040",
-  "--color-prompt": "#14CE14",
+  "--color-prompt": "#00BC00",
+  "--color-tool-border": "#a0a0a0",
 
   // --- Breakpoints panel
   "--color-breakpoint-enabled": "red",

@@ -97,4 +97,9 @@ export interface IZxSpectrumMachine extends IZ80Machine {
      * Indicates if the machine's operating system is initialized
      */
     get isOsInitialized(): boolean;
+
+    /**
+     * Gets the current cursor mode
+     */
+    getCursorMode(): number;
 }

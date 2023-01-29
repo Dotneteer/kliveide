@@ -128,6 +128,8 @@ export const ScrollViewer = ({
           vHeight.current
     );
     vLeft.current = el.offsetLeft + el.offsetWidth - scrollBarWidth;
+    if (isNaN(vLeft.current)) {
+    }
 
     // --- Calculate vertical scrollbar and thumb dimensions
     hWidth.current = hScroll.current

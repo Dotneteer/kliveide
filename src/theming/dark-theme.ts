@@ -94,6 +94,15 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-emuoverlay": "#303030",
   "--color-emuoverlay": "lightgreen",
 
+  // --- Keyboard
+  "--bgcolor-keyboard": "#202020",
+  "--bgcolor-key": "#808080",
+  "--color-key-main": "#ffffff",
+  "--color-key-symbol": "#c00000",
+  "--color-key-above": "#00a000",
+  "--color-key-below": "#d02000",
+  "--color-key-highlight": "#0048c0",
+
   // --- Document area
   "--bgcolor-docspanel": "#202020",
   "--bgcolor-docsheader": "#282828",
@@ -116,6 +125,7 @@ export const darkTheme: ThemeProperties = {
   "--color-tooltab-active": "#ffffff",
   "--color-tooltab-inactive": "#a0a0a0",
   "--color-prompt": "#23d18b",
+  "--color-tool-border": "#505050",
 
   // --- Breakpoints panel
   "--color-breakpoint-enabled": "red",
@@ -129,5 +139,5 @@ export const darkTheme: ThemeProperties = {
   // --- Memory panel
   "--bgcolor-memory-pointed": "#3b8eea",
   "--bgcolor-memory-pc-pointed": "#0DBC79",
-  "--color-memory-pointed": "#ffffff",
+  "--color-memory-pointed": "#ffffff"
 };

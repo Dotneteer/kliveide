@@ -12,15 +12,14 @@ import {
   selectActivityAction,
   setAudioSampleRateAction,
   setToolsAction,
-  emuLoadedAction
+  ideLoadedAction
 } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { RequestMessage } from "@messaging/messages-core";
+import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
 import {
   useDispatch,
-  useMessenger,
-  useSelector,
-  useStore
+  useRendererContext,
+  useSelector
 } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "./services/AppServicesProvider";
@@ -60,9 +59,10 @@ let messengerCached: MessengerBase;
 let storeCached: Store<AppState>;
 
 const IdeApp = () => {
-  // --- Indicate the App has been loaded
-  const mounted = useRef(false);
+  // --- Used services
   const dispatch = useDispatch();
+  const appServices = useAppServices();
+  const { store, messenger } = useRendererContext();
 
   // --- Visual state
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
@@ -78,38 +78,26 @@ const IdeApp = () => {
     ? "right"
     : "left";
   const docPanelsPos = useSelector(s => s.ideViewOptions.toolPanelsOnTop)
-    ? "bottom"
-    : "top";
-
-  const appServices = useAppServices();
-  const messenger = useMessenger();
-  const store = useStore();
+    ? "top"
+    : "bottom";
 
   // --- Use the current instance of the app services
+  const mounted = useRef(false);
   useEffect(() => {
     appServicesCached = appServices;
-  }, [appServices]);
-
-  // --- Use the current messenger instance
-  useEffect(() => {
     messengerCached = messenger;
-  }, [messenger]);
-
-  // --- Use the current store instance
-  useEffect(() => {
     storeCached = store;
-  }, [store]);
 
-  // --- Signify that the UI has been loaded
-  useEffect(() => {
-    if (mounted.current) return;
+    // --- Whenever each of these props are known, we can state the UI is loaded
+    if (!appServices || !store || !messenger || mounted.current) return;
 
+    // --- Run the app initialiation sequence
+    mounted.current = true;
     // --- Register the services to be used with the IDE
     registerCommands(appServices.interactiveCommandsService);
 
     // --- Sign that the UI is ready
-    mounted.current = true;
-    dispatch(emuLoadedAction());
+    dispatch(ideLoadedAction());
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
@@ -142,11 +130,7 @@ const IdeApp = () => {
         i >= 3
       );
     }
-
-    // return () => {
-    //   mounted.current = false;
-    // };
-  });
+  }, [appServices, store, messenger]);
 
   return (
     <div className={styles.app}>
@@ -154,7 +138,6 @@ const IdeApp = () => {
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
-          id='main'
           primaryLocation={primaryBarsPos}
           primaryPanel={<SiteBar />}
           primaryVisible={showSideBar}
@@ -162,13 +145,13 @@ const IdeApp = () => {
           minSize={60}
           secondaryPanel={
             <SplitPanel
-              id='workbench'
               primaryLocation={docPanelsPos}
-              primaryVisible={!maximizeToolPanels}
-              minSize={25}
-              primaryPanel={<DocumentArea />}
-              secondaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
-              secondaryVisible={showToolPanels}
+              primaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
+              primaryVisible={showToolPanels}
+              minSize={60}
+              secondaryPanel={<DocumentArea />}
+              secondaryVisible={!maximizeToolPanels}
+              initialPrimarySize='33%'
             />
           }
         />
@@ -182,6 +165,14 @@ export default IdeApp;
 
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
+  // --- Do not process messages coming while app services are not cached.
+  if (!appServicesCached) {
+    ipcRenderer.send("MainToIdeResponse", {
+      type: "NotReady"
+    } as NotReadyResponse);
+    return;
+  }
+  
   const response = await processMainToIdeMessages(
     msg,
     storeCached,

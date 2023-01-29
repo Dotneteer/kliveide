@@ -94,6 +94,15 @@ export type ThemeProperties = {
   "--bgcolor-emuoverlay"?: string;
   "--color-emuoverlay"?: string;
 
+  // --- Keyboard
+  "--bgcolor-keyboard"?: string;
+  "--bgcolor-key"?: string;
+  "--color-key-main"?: string;
+  "--color-key-symbol"?: string;
+  "--color-key-above"?: string;
+  "--color-key-below"?: string;
+  "--color-key-highlight"?: string;
+
   // --- Document area
   "--bgcolor-docspanel"?: string;
   "--bgcolor-docsheader"?: string;
@@ -116,6 +125,7 @@ export type ThemeProperties = {
   "--color-tooltab-active"?: string;
   "--color-tooltab-inactive"?: string;
   "--color-prompt"?: string;
+  "--color-tool-border"?: string;
 
   // --- Breakpoints panel
   "--color-breakpoint-enabled"?: string;

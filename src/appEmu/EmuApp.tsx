@@ -5,7 +5,7 @@ import { Toolbar } from "../controls/common/Toolbar";
 import { useEffect, useRef } from "react";
 import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
-import { RequestMessage } from "@messaging/messages-core";
+import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
 import {
   useDispatch,
   useRendererContext,
@@ -24,37 +24,26 @@ let messengerCached: MessengerBase;
 let storeCached: Store<AppState>;
 
 const EmuApp = () => {
-  // --- Indicate the App has been loaded
-  const mounted = useRef(false);
+  // --- Used services
   const dispatch = useDispatch();
-
   const appServices = useAppServices();
-  const { store, messenger, messageSource } = useRendererContext();
-
-  // --- Use the current instance of the app services
-  useEffect(() => {
-    appServicesCached = appServices;
-  }, [appServices]);
-
-  // --- Use the current messenger instance
-  useEffect(() => {
-    messengerCached = messenger;
-  }, [messenger]);
-
-  // --- Use the current store instance
-  useEffect(() => {
-    storeCached = store;
-  }, [store]);
+  const { store, messenger } = useRendererContext();
 
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
 
-  // --- Signify that the UI has been loaded
+  // --- Use the current instance of the app services
+  const mounted = useRef(false);
   useEffect(() => {
-    if (mounted.current) return;
+    appServicesCached = appServices;
+    messengerCached = messenger;
+    storeCached = store;
 
-    // --- Sign that the UI is ready
+    // --- Whenever each of these props are known, we can state the UI is loaded
+    if (!appServices || !store || !messenger || mounted.current) return;
+
+    // --- Run the app initialiation sequence
     mounted.current = true;
     dispatch(emuLoadedAction());
 
@@ -63,11 +52,7 @@ const EmuApp = () => {
     const sampleRate = audioCtx.sampleRate;
     audioCtx.close();
     dispatch(setAudioSampleRateAction(sampleRate));
-
-    return () => {
-      mounted.current = false;
-    };
-  });
+  }, [appServices, store, messenger]);
 
   return (
     <div className={styles.app}>
@@ -82,6 +67,14 @@ export default EmuApp;
 
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
+  // --- Do not process messages coming while app services are not cached.
+  if (!appServicesCached) {
+    ipcRenderer.send("MainToEmuResponse", {
+      type: "NotReady"
+    } as NotReadyResponse);
+    return;
+  }
+
   const response = await processMainToEmuMessages(
     msg,
     storeCached,

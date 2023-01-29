@@ -146,9 +146,7 @@ async function createAppWindows () {
   // --- Load the contents of the browser windows
   if (process.env.VITE_DEV_SERVER_URL) {
     emuWindow.loadURL(emuDevUrl);
-    emuWindow.webContents.openDevTools();
     ideWindow.loadURL(ideDevUrl);
-    ideWindow.webContents.openDevTools();
   } else {
     emuWindow.loadFile(indexHtml, {
       search: EMU_QP

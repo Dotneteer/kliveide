@@ -211,7 +211,7 @@ export function setupMenu (
       id: TOGGLE_SIDE_BAR,
       label: "Show the Side Bar",
       type: "checkbox",
-      checked: appState.ideViewOptions.showStatusBar,
+      checked: appState.ideViewOptions.showSidebar,
       visible: appState.ideFocused,
       click: mi => {
         mainStore.dispatch(showSideBarAction(mi.checked));

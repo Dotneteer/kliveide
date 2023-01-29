@@ -1,5 +1,5 @@
 import { useResizeObserver } from "../../core/useResizeObserver";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import styles from "./SplitPanel.module.scss";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import classnames from "@/utils/classnames";
@@ -10,11 +10,11 @@ type Location = "left" | "right" | "top" | "bottom";
  * The properties of the SplitPanel
  */
 type SplitPanelProps = {
-  id?: string;
   primaryPanel?: JSX.Element;
   primaryLocation?: Location;
   primaryVisible?: boolean;
   initialPrimarySize?: number | string;
+  initialSecondarySize?: number | string;
   minSize?: number;
   secondaryPanel?: JSX.Element;
   secondaryVisible?: boolean;
@@ -26,11 +26,11 @@ type SplitPanelProps = {
  * @returns
  */
 export const SplitPanel = ({
-  id,
   primaryPanel,
   primaryLocation = "left",
   primaryVisible = true,
-  initialPrimarySize = "40%",
+  initialPrimarySize,
+  initialSecondarySize,
   minSize = 20,
   secondaryPanel,
   secondaryVisible = true,
@@ -53,6 +53,7 @@ export const SplitPanel = ({
   const [anchorPosition, setAnchorPosition] = useState(0);
   const [splitterSize, setSplitterSize] = useState(0);
   const [splitterRange, setSplitterRange] = useState(0);
+  const initialLayout = useRef(true);
 
   // --- Calculate properties used for rendering the component
   const horizontal = isHorizontal(primaryLocation);
@@ -66,7 +67,23 @@ export const SplitPanel = ({
     !!secondaryVisible;
 
   // --- Respond to panel visibility changes
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (initialLayout.current) {
+      // --- Calculate the last primary size
+      const containerSize = horizontal
+        ? mainContainer.current.clientWidth
+        : mainContainer.current.clientHeight;
+
+      let mainSize = containerSize;
+      if (initialPrimarySize !== undefined) {
+        mainSize = calculateDim(containerSize, initialPrimarySize);
+      } else if (initialSecondarySize) {
+        mainSize =
+          containerSize - calculateDim(containerSize, initialSecondarySize);
+      }
+      setLastPrimarySize(mainSize);
+      initialLayout.current = false;
+    }
     if (
       (!primaryVisible && lastPrimaryVisible) ||
       (!secondaryVisible && lastSecondaryVisible)
@@ -79,7 +96,7 @@ export const SplitPanel = ({
       (primaryVisible && !lastPrimaryVisible) ||
       (secondaryVisible && !lastSecondaryVisible)
     ) {
-      // --- We're
+      // --- We're displaying the primary panel, restore its size
       setPrimarySize(lastPrimarySize);
     }
 
@@ -186,7 +203,9 @@ export const SplitPanel = ({
           splitterSize={splitterSize}
           minRange={minSize}
           maxRange={splitterRange - minSize}
-          onSplitterMoved={newPos => setPrimarySize(newPos)}
+          onSplitterMoved={newPos => {
+            setPrimarySize(newPos);
+          }}
         />
       )}
     </div>
@@ -307,4 +326,21 @@ function resize (
     newPrimarySize = maxRange;
   }
   return newPrimarySize;
+}
+
+function calculateDim (containerDim: number, dim: string | number): number {
+  if (typeof dim === "number") return dim;
+  dim = dim.trim();
+  if (dim.endsWith("%")) {
+    // --- Calculate percentage
+    const percentage = parseInt(dim.substring(0, dim.length - 1));
+    return isNaN(percentage) ? containerDim : (containerDim * percentage) / 100;
+  } else if (dim.endsWith("px")) {
+    // --- Extract pixels
+    const extracted = parseInt(dim.substring(0, dim.length - 2));
+    return isNaN(extracted) ? containerDim : extracted;
+  }
+
+  // --- Otherwise, return the main container size
+  return containerDim;
 }
