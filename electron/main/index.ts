@@ -29,7 +29,7 @@ import {
   unloadWindowsAction
 } from "../../common/state/actions";
 import { Unsubscribe } from "@state/redux-light";
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, shell, ipcMain, screen } from "electron";
 import { release } from "os";
 import { join } from "path";
 import { setupMenu } from "./app-menu";
@@ -39,6 +39,8 @@ import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
+import { loadAppSettings, saveAppSettings } from "./settings";
+import { createWindowStateManager, IWindowStateManager } from "./WindowStateManager";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -63,6 +65,8 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
+
+const appSettings = loadAppSettings();
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
@@ -92,12 +96,28 @@ async function createAppWindows () {
   machineTypeInitialized = false;
   allowCloseIde = false;
 
+  // --- Create state manager for the EMU window
+  const emuWindowStateManager = createWindowStateManager(appSettings?.windowStates?.emuWindow, {
+    defaultWidth: 640,
+    defaultHeight: 480,
+    maximize: true,
+    fullScreen: true,
+    stateSaver: state => {
+      appSettings.windowStates = { ...appSettings.windowStates, emuWindow: state };
+      saveAppSettings(appSettings);
+    }
+  })
+
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
     title: "Emu window",
     icon: join(process.env.PUBLIC, "favicon.svg"),
     minWidth: 640,
     minHeight: 480,
+    x: emuWindowStateManager.x,
+    y: emuWindowStateManager.y,
+    width: emuWindowStateManager.width,
+    height: emuWindowStateManager.height,
     webPreferences: {
       preload,
       nodeIntegration: true,
@@ -105,26 +125,48 @@ async function createAppWindows () {
     }
   });
 
+  emuWindowStateManager.manage(emuWindow);
+
+  // --- Create state manager for the EMU window
+  const ideWindowStateManager = createWindowStateManager(appSettings?.windowStates?.ideWindow, {
+    defaultWidth: 640,
+    defaultHeight: 480,
+    maximize: false,
+    fullScreen: false,
+    stateSaver: state => {
+      appSettings.windowStates = { ...appSettings.windowStates, ideWindow: state };
+      saveAppSettings(appSettings);
+    }
+  })
+
   // --- Create the IDE window
+  const showIde = ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
+  const maximizeIde = showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
     icon: join(process.env.PUBLIC, "favicon.svg"),
     minWidth: 640,
     minHeight: 480,
+    x: ideWindowStateManager.x,
+    y: ideWindowStateManager.y,
+    width: ideWindowStateManager.width,
+    height: ideWindowStateManager.height,
     webPreferences: {
       preload,
       nodeIntegration: true,
       contextIsolation: false
     },
-    show: ideVisibleOnClose
+    show: ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false),
   });
+
+  ideWindowStateManager.manage(ideWindow);
 
   // --- Initialize messaging
   registerMainToEmuMessenger(emuWindow);
   registerMainToIdeMessenger(ideWindow);
 
   // --- Prepare the main menu. Update items on application state change
-  setupMenu(emuWindow, ideWindow);
+  setupMenu(emuWindow, ideWindow, appSettings);
 
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
@@ -140,7 +182,7 @@ async function createAppWindows () {
     }
 
     // --- Adjust menu items whenever the app state changes
-    setupMenu(emuWindow, ideWindow);
+    setupMenu(emuWindow, ideWindow, appSettings);
   });
 
   // --- Load the contents of the browser windows
@@ -154,6 +196,9 @@ async function createAppWindows () {
     ideWindow.loadFile(indexHtml, {
       search: IDE_QP
     });
+  }
+  if (maximizeIde) {
+    ideWindow.maximize();
   }
 
   // --- Test actively push message to the Electron-Renderer
@@ -187,6 +232,10 @@ async function createAppWindows () {
     }
     e.preventDefault();
     ideWindow.hide();
+    if (appSettings.windowStates) {
+      appSettings.windowStates.showIdeOnStartup = false;
+      saveAppSettings(appSettings);
+    }
     mainStore.dispatch(ideFocusedAction(false));
   });
 

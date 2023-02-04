@@ -34,6 +34,7 @@ import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@/appIde/ToolArea/abstractions";
 import { BASIC_PANEL_ID, DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../../common/state/common-ids";
+import { AppSettings, saveAppSettings } from "./settings";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -79,7 +80,8 @@ let loggedEmuOutputEvents = 0;
  */
 export function setupMenu (
   emuWindow: BrowserWindow,
-  ideWindow: BrowserWindow
+  ideWindow: BrowserWindow,
+  appSettings: AppSettings
 ): void {
   const template: (MenuItemConstructorOptions | MenuItem)[] = [];
   const appState = mainStore.getState();
@@ -163,6 +165,12 @@ export function setupMenu (
       visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
       click: () => {
         ideWindow.show();
+        if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+          ideWindow.maximize();
+        }
+        appSettings.windowStates ??= {};
+        appSettings.windowStates.showIdeOnStartup = true;
+        saveAppSettings(appSettings);
       }
     },
     { type: "separator" },
