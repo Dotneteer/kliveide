@@ -52,6 +52,7 @@ import {
   SetBreakpointCommand
 } from "./commands/BreakpointCommands";
 import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
+import { NumCommand } from "./commands/NumCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -207,4 +208,6 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new SetBreakpointCommand());
   cmdSrv.registerCommand(new RemoveBreakpointCommand());
   cmdSrv.registerCommand(new EnableBreakpointCommand());
+
+  cmdSrv.registerCommand(new NumCommand());
 }
