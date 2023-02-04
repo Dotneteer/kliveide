@@ -7,7 +7,6 @@ import { Icon } from "../../controls/common/Icon";
 import classnames from "@/utils/classnames";
 import { ScrollViewer } from "@/controls/common/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
-import { SiteBar } from "./SideBar";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;
@@ -59,7 +58,7 @@ export const SideBarPanel = ({
     <div
       ref={panelRef}
       className={classnames(
-        styles.component,
+        styles.sideBarPanel,
         expanded ? styles.expanded : styles.collapsed
       )}
       style={expanded ? newHeight : {}}
@@ -67,11 +66,10 @@ export const SideBarPanel = ({
       <div
         ref={headerRef}
         tabIndex={index}
-        className={classnames(
-          styles.header,
-          index ? styles.notFirst : "",
-          focused ? styles.focused : ""
-        )}
+        className={classnames(styles.header, {
+          [styles.notFirst]: index,
+          [styles.focused]: focused
+        })}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onKeyDown={e => {
@@ -104,7 +102,7 @@ export const SideBarPanel = ({
           <div
             className={classnames(
               styles.sizingGrip,
-              sizeable ? styles.sizeable : "",
+              { [styles.sizeable]: sizeable },
               sizeablePointed && !uiService.dragging
                 ? styles.pointed
                 : styles.unpointed

@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.sideBar {
     @include fill-parent-flex;
     flex-direction: column;
     background: var(--bgcolor-sitebar);

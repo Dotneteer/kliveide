@@ -58,7 +58,7 @@ export const DocumentsHeader = () => {
   }, [activeDocIndex, headerVersion, docsToDisplay]);
 
   return (docsToDisplay?.length ?? 0) > 0 ? (
-    <div ref={ref} className={styles.component}>
+    <div ref={ref} className={styles.documentsHeader}>
       <ScrollViewer
         allowHorizontal={true}
         allowVertical={false}

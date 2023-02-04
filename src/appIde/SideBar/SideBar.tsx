@@ -102,7 +102,7 @@ export const SiteBar = ({
     return (
         <div 
             ref={sideBarRef}
-            className={styles.component}
+            className={styles.sideBar}
             style={{order}}>
             <SideBarHeader ref={sideBarHeaderRef} activity={activity} />
             {panelElements}

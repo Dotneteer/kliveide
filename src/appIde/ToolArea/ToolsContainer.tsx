@@ -15,7 +15,7 @@ export const ToolsContainer = ({
         ? createElement(panelRenderer.renderer, tool)
         : null
     return tool
-        ? <div className={styles.component}>
+        ? <div className={styles.toolsContainer}>
             {panelElement}
         </div>
         : null;

@@ -67,7 +67,7 @@ const CpuPanel = () => {
   });
 
   return (
-    <div className={styles.component}>
+    <div className={styles.cpuPanel}>
       <div className={styles.flags}>
         <div className={styles.f}>F</div>
         <div className={styles.rows}>

@@ -29,7 +29,7 @@ const UlaPanel = () => {
   });
 
   return (
-    <div className={styles.component}>
+    <div className={styles.ulaPanel}>
       <div className={styles.cols}>
         <Label text='FCL' width={LAB_WIDTH} />
         <Value

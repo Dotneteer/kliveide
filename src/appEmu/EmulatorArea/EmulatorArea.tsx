@@ -9,11 +9,11 @@ export const EmulatorArea = () => {
     s => s.emuViewOptions?.showKeyboard ?? false
   );
   return (
-    <div className={styles.component}>
+    <div className={styles.emulatorArea}>
       <SplitPanel
         primaryLocation='bottom'
         secondaryPanel={<EmulatorPanel />}
-        initialPrimarySize="33%"
+        initialPrimarySize='33%'
         primaryPanel={<KeyboardPanel />}
         primaryVisible={keyboardVisible}
         secondaryVisible={true}

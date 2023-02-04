@@ -36,7 +36,7 @@ export const IdeStatusBar = () => {
     }
   }, [execState]);
   return (
-    <div className={styles.component}>
+    <div className={styles.ideStatusBar}>
       <div className={styles.sectionWrapper}>
         <Section>
           <Icon
@@ -51,7 +51,13 @@ export const IdeStatusBar = () => {
         {statusMessage && (
           <Section>
             <Icon
-              iconName={statusSuccess === undefined ? "circle-outline" : statusSuccess ? "check" : "circle-filled"}
+              iconName={
+                statusSuccess === undefined
+                  ? "circle-outline"
+                  : statusSuccess
+                  ? "check"
+                  : "circle-filled"
+              }
               width={16}
               height={16}
               fill='--color-statusbar-icon'
@@ -78,10 +84,9 @@ type LabelProps = {
 const Label = ({ text, isMonospace }: LabelProps) => {
   return (
     <span
-      className={classnames(
-        styles.label,
-        isMonospace ? styles.isMonospace : ""
-      )}
+      className={classnames(styles.label, {
+        [styles.isMonospace]: isMonospace
+      })}
     >
       {text}
     </span>

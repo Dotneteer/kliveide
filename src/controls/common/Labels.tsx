@@ -28,9 +28,9 @@ export const Label = ({ text, width, center, tooltip }: Props) => {
         {tooltip && (
           <TooltipFactory
             refElement={ref.current}
-            placement='bottom'
+            placement='right'
             offsetX={0}
-            offsetY={16}
+            offsetY={0}
             showDelay={100}
           >
             {toolTipLines.map((l, idx) => (
@@ -53,9 +53,9 @@ export const Value = ({ text, width, tooltip }: Props) => {
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
-          offsetX={0}
-          offsetY={16}
+          placement='right'
+          offsetX={-8}
+          offsetY={24}
           showDelay={100}
         >
           {toolTipLines.map((l, idx) => (

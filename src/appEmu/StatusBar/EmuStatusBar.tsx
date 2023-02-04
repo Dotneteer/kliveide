@@ -42,7 +42,7 @@ export const EmuStatusBar = () => {
   }, [clockMultiplier]);
 
   return (
-    <div className={styles.component}>
+    <div className={styles.statusBar}>
       <div className={styles.sectionWrapper}>
         <Section>
           <Icon
@@ -105,10 +105,9 @@ type LabelProps = {
 const Label = ({ text, isMonospace }: LabelProps) => {
   return (
     <span
-      className={classnames(
-        styles.label,
-        isMonospace ? styles.isMonospace : ""
-      )}
+      className={classnames(styles.label, {
+        [styles.isMonospace]: isMonospace
+      })}
     >
       {text}
     </span>

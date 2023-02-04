@@ -34,7 +34,7 @@ export const AttachedShadow = ({ parentElement, visible }: Props) => {
 
   return (
     <div
-      className={classnames(styles.attachedShadow, visible ? styles.show : "")}
+      className={classnames(styles.attachedShadow, { [styles.show]: visible })}
       style={{
         top,
         left,

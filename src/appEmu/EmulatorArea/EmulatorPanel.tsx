@@ -90,7 +90,7 @@ export const EmulatorPanel = () => {
   useResizeObserver(hostElement, () => calculateDimensions());
 
   return (
-    <div className={styles.component} ref={hostElement} tabIndex={-1}>
+    <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>
       <div
         style={{
           width: `${canvasWidth ?? 0}px`,

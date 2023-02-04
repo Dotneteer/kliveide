@@ -36,11 +36,10 @@ export function TabButton ({
     <>
       <div
         ref={ref}
-        className={classnames(
-          styles.component,
-          keyDown ? styles.keyDown : "",
-          disabled ? styles.disabled : ""
-        )}
+        className={classnames(styles.tabButton, {
+          [styles.keyDown]: keyDown,
+          [styles.disabled]: disabled
+        })}
         onMouseDown={() => setKeyDown(true)}
         onMouseLeave={() => setKeyDown(false)}
         onClick={() => {
@@ -53,9 +52,9 @@ export function TabButton ({
         {title && (
           <TooltipFactory
             refElement={ref.current}
-            placement='bottom'
-            offsetX={-8}
-            offsetY={32}
+            placement='right'
+            offsetX={8}
+            offsetY={16}
           >
             {toolTipLines.map((l, idx) => (
               <div key={idx}>{l}</div>

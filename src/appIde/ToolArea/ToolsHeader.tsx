@@ -27,7 +27,7 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
   const dispatch = useDispatch();
 
   return (
-    <div className={styles.component}>
+    <div className={styles.toolsHeader}>
       {(tools ?? [])
         .filter(t => t.visible ?? true)
         .map(d => (

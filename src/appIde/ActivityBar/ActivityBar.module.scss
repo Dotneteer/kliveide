@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.activityBar {
     @include fix-width-panel(52px);
     display: flex;
     flex-direction: column;

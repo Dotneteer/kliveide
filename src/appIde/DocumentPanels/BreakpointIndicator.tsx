@@ -84,9 +84,9 @@ export const BreakpointIndicator = ({
       )}
       <TooltipFactory
         refElement={ref.current}
-        placement='bottom'
+        placement='right'
         offsetX={0}
-        offsetY={24}
+        offsetY={40}
         showDelay={100}
       >
         {toolTipLines.map((l, idx) => (
