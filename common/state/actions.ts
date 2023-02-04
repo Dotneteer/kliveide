@@ -11,8 +11,16 @@ export const emuLoadedAction: ActionCreator = () => ({
   type: "EMU_LOADED"
 });
 
+export const emuSynchedAction: ActionCreator = () => ({
+  type: "EMU_STATE_SYNCHED"
+});
+
 export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
+});
+
+export const ideSynchedAction: ActionCreator = () => ({
+  type: "IDE_STATE_SYNCHED"
 });
 
 export const isWindowsAction: ActionCreator = (flag: boolean) => ({

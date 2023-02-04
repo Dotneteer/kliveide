@@ -6,7 +6,9 @@ import { DocumentState, ToolState } from "@/appIde/abstractions";
  */
 export type AppState = {
   emuLoaded?: boolean;
+  emuStateSynched?: boolean;
   ideLoaded?: boolean;
+  ideStateSynched?: boolean;
   isWindows?: boolean;
   emuFocused?: boolean;
   ideFocused?: boolean;

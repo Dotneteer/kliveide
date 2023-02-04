@@ -39,7 +39,7 @@ import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
-import { loadAppSettings, saveAppSettings } from "./settings";
+import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager, IWindowStateManager } from "./WindowStateManager";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
@@ -66,7 +66,7 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-const appSettings = loadAppSettings();
+loadAppSettings();
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
@@ -104,7 +104,7 @@ async function createAppWindows () {
     fullScreen: true,
     stateSaver: state => {
       appSettings.windowStates = { ...appSettings.windowStates, emuWindow: state };
-      saveAppSettings(appSettings);
+      saveAppSettings();
     }
   })
 
@@ -135,7 +135,7 @@ async function createAppWindows () {
     fullScreen: false,
     stateSaver: state => {
       appSettings.windowStates = { ...appSettings.windowStates, ideWindow: state };
-      saveAppSettings(appSettings);
+      saveAppSettings();
     }
   })
 
@@ -166,7 +166,7 @@ async function createAppWindows () {
   registerMainToIdeMessenger(ideWindow);
 
   // --- Prepare the main menu. Update items on application state change
-  setupMenu(emuWindow, ideWindow, appSettings);
+  setupMenu(emuWindow, ideWindow);
 
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
@@ -182,7 +182,7 @@ async function createAppWindows () {
     }
 
     // --- Adjust menu items whenever the app state changes
-    setupMenu(emuWindow, ideWindow, appSettings);
+    setupMenu(emuWindow, ideWindow);
   });
 
   // --- Load the contents of the browser windows
@@ -234,7 +234,7 @@ async function createAppWindows () {
     ideWindow.hide();
     if (appSettings.windowStates) {
       appSettings.windowStates.showIdeOnStartup = false;
-      saveAppSettings(appSettings);
+      saveAppSettings();
     }
     mainStore.dispatch(ideFocusedAction(false));
   });

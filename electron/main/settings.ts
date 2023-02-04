@@ -11,27 +11,30 @@ export type AppSettings = {
     emuWindow?: WindowState,
     ideWindow?: WindowState,
     showIdeOnStartup?: boolean;
-  }
+  },
+  folders?: Record<string, string>
 };
 
-export function saveAppSettings (settings: AppSettings): void {
+export let appSettings: AppSettings = {};
+
+export function saveAppSettings (): void {
   const filename = getSettingsFilePath();
   const filePath = path.dirname(filename);
   if (!fs.existsSync(filePath)) {
     fs.mkdirSync(filePath);
   }
-  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(settings, null, 2), {
+  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
     encoding: "utf8",
     flag: "w"
   });
 }
 
-export function loadAppSettings(): AppSettings {
+export function loadAppSettings(): void {
   try {
     const contents = fs.readFileSync(getSettingsFilePath(), "utf8");
-    return JSON.parse(contents) as AppSettings;
+    appSettings = JSON.parse(contents) as AppSettings;
   } catch {
-    return {} as AppSettings;
+    appSettings = {};
   }
 }
 
