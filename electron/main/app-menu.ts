@@ -33,7 +33,12 @@ import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@/appIde/ToolArea/abstractions";
-import { BASIC_PANEL_ID, DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../../common/state/common-ids";
+import {
+  BASIC_PANEL_ID,
+  DISASSEMBLY_PANEL_ID,
+  MEMORY_PANEL_ID
+} from "../../common/state/common-ids";
+import { appSettings, AppSettings, saveAppSettings } from "./settings";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -163,6 +168,12 @@ export function setupMenu (
       visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
       click: () => {
         ideWindow.show();
+        if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+          ideWindow.maximize();
+        }
+        appSettings.windowStates ??= {};
+        appSettings.windowStates.showIdeOnStartup = true;
+        saveAppSettings();
       }
     },
     { type: "separator" },
@@ -291,7 +302,7 @@ export function setupMenu (
           }
         }
       ]
-    },
+    }
   ];
 
   template.push({
@@ -455,7 +466,9 @@ export function setupMenu (
   });
 
   const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
-  const disassemblyDisplayed = !!openDocs.find(d => d.id === DISASSEMBLY_PANEL_ID);
+  const disassemblyDisplayed = !!openDocs.find(
+    d => d.id === DISASSEMBLY_PANEL_ID
+  );
   const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
   template.push({
     id: IDE_MENU,
@@ -498,7 +511,7 @@ export function setupMenu (
             show: !basicDisplayed
           });
         }
-      },
+      }
     ]
   });
 
@@ -514,8 +527,11 @@ export function setupMenu (
 async function setTapeFile (
   browserWindow: BrowserWindow
 ): Promise<TapeDataBlock[] | undefined> {
+  const TAPE_FILE_FOLDER = "tapeFileFolder";
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
-  const defaultPath = lastFile ? path.dirname(lastFile) : app.getPath("home");
+  const defaultPath =
+    appSettings?.folders?.[TAPE_FILE_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: "Select Tape File",
     defaultPath,
@@ -529,9 +545,15 @@ async function setTapeFile (
 
   // --- Read the file
   const filename = dialogResult.filePaths[0];
+  const tapeFileFolder = path.dirname(filename);
 
   // --- Store the last selected tape file
   mainStore.dispatch(setTapeFileAction(filename));
+
+  // --- Save the folder into settings
+  appSettings.folders ??= {};
+  appSettings.folders[TAPE_FILE_FOLDER] = tapeFileFolder;
+  saveAppSettings();
 
   try {
     const contents = fs.readFileSync(filename);
