@@ -25,7 +25,7 @@ export const DocumentsContainer = ({ document }: DocumentProps) => {
     docRenderer ? (
       createElement(docRenderer.renderer, {document})
     ) : (
-      <div className={styles.component}>Cannot find renderer</div>
+      <div className={styles.documentContainer}>Cannot find renderer</div>
     )
   ) : null;
 };

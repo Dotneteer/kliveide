@@ -48,7 +48,7 @@ export const DocumentTab = ({
   return (
     <div
       ref={ref}
-      className={classnames(styles.component, isActive ? styles.active : "")}
+      className={classnames(styles.documentTab, { [styles.active]: isActive })}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onClick={() => {
@@ -77,11 +77,10 @@ export const DocumentTab = ({
     >
       <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
       <span
-        className={classnames(
-          styles.titleText,
-          isActive ? styles.activeTitle : "",
-          isTemporary ? styles.temporaryTitle : ""
-        )}
+        className={classnames(styles.titleText, {
+          [styles.activeTitle]: isActive,
+          [styles.temporaryTitle]: isTemporary
+        })}
       >
         {name}
       </span>

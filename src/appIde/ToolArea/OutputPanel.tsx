@@ -52,7 +52,7 @@ const OutputPanel = () => {
   }, [contents]);
 
   return (
-    <div className={styles.component}>
+    <div className={styles.outputPanel}>
       {activePane && (
         <VirtualizedListView
           items={contents ?? []}

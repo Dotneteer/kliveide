@@ -26,7 +26,7 @@ export const Toolbar = () => {
   const { messenger } = useRendererContext();
 
   return (
-    <div className={styles.component}>
+    <div className={styles.toolbar}>
       <IconButton
         iconName='play'
         fill='--color-toolbarbutton-green'

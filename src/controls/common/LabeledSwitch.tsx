@@ -39,7 +39,7 @@ export const LabeledSwitch = ({
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
+          placement='right'
           offsetX={-8}
           offsetY={32}
         >

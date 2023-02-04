@@ -15,7 +15,7 @@ export const ActivityBar = ({ order, activities }: Props) => {
   const sideBarVisible = useSelector(s => s.ideViewOptions?.showSidebar);
 
   return (
-    <div className={styles.component} style={{ order }}>
+    <div className={styles.activityBar} style={{ order }}>
       {[
         ...activities.map(act => (
           <ActivityButton

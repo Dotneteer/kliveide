@@ -62,7 +62,7 @@ export const Tooltip = ({
     referenceElement,
     popperElement,
     {
-      placement: "right",
+      placement,
       modifiers: [
         {
           name: "flip",

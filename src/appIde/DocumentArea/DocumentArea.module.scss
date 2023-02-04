@@ -1,13 +1,8 @@
 @import "@styles/core.scss";
 
-.component {
+.documentArea {
     @include fill-parent-flex;
     flex-direction: column;
     background: var(--bgcolor-docspanel);
     user-select: none;
-}
-
-.documentContainer {
-    @include fill-parent-flex;
-    background: var(--bgcolor-docscontainer);
 }

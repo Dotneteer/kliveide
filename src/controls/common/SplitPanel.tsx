@@ -179,7 +179,7 @@ export const SplitPanel = ({
 
   return (
     <div
-      className={[styles.component, containerClass].join(" ")}
+      className={[styles.splitPanel, containerClass].join(" ")}
       ref={mainContainer}
     >
       {primaryVisible && (
@@ -245,10 +245,9 @@ const Splitter = ({
   // --- Handle resizing the component
   return (
     <div
-      className={classnames(
-        styles.splitter,
-        pointed && !uiService.dragging ? styles.pointed : ""
-      )}
+      className={classnames(styles.splitter, {
+        [styles.pointed]: pointed && !uiService.dragging
+      })}
       style={{
         [horizontal ? "width" : "height"]: `${thickness}px`,
         [horizontal ? "height" : "width"]: `${splitterSize}px`,

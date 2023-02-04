@@ -24,7 +24,7 @@ export type VirtualizedListApi = {
   getScrollLeft: () => number;
   scrollVertical: (pos: number) => void;
   scrollHorizontal: (pos: number) => void;
-  getRange: () => { startIndex: number, endIndex: number }
+  getRange: () => { startIndex: number; endIndex: number };
 };
 
 type Props = {
@@ -61,7 +61,7 @@ export const VirtualizedList = ({
     count: 1,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 100,
-    overscan: 0,
+    overscan: 0
   });
 
   const [count, setCount] = useState(0);
@@ -104,10 +104,9 @@ export const VirtualizedList = ({
   return (
     <div
       ref={parentRef}
-      className={classnames(
-        styles.virtualizedList,
-        hideScrollBars ? styles.hideScrollBar : ""
-      )}
+      className={classnames(styles.virtualizedList, {
+        [styles.hideScrollBar]: hideScrollBars
+      })}
       style={{ overflowY: "auto" }}
     >
       <div

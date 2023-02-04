@@ -81,7 +81,7 @@ export const lightTheme: ThemeProperties = {
   "--color-statusbar-icon": "#000000",
 
   // --- Sitebar
-  "--bgcolor-sitebar": "#d8d8d8",
+  "--bgcolor-sitebar": "#e0e0e0",
   "--color-header": "#000000",
   "--color-chevron": "#000000",
   "--color-panel-header": "#000000",
@@ -102,15 +102,15 @@ export const lightTheme: ThemeProperties = {
   "--color-key-highlight": "#0048c0",
 
   // --- Document area
-  "--bgcolor-docspanel": "#e0e0e0",
+  "--bgcolor-docspanel": "#e8e8e8",
   "--bgcolor-docsheader": "#d8d8d8",
   "--color-doc-icon": "#000000",
-  "--color-doc-border": "#e0e0e0",
+  "--color-doc-border": "#e8e8e8",
   "--color-doc-activeText": "#000000",
   "--color-doc-inactiveText": "#404040",
-  "--bgcolor-doc-activeTab": "#e0e0e0",
+  "--bgcolor-doc-activeTab": "#e8e8e8",
   "--bgcolor-doc-inactiveTab": "#c8c8c8",
-  "--bgcolor-docscontainer": "#e0e0e0",
+  "--bgcolor-docscontainer": "#e8e8e8",
   "--color-tabbutton-fill-inactive": "#505050",
   "--color-tabbutton-fill-active": "#000000",
   "--bgcolor-tabbutton-pointed": "#c0c0c0",
@@ -119,7 +119,7 @@ export const lightTheme: ThemeProperties = {
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
 
   // --- Tool area
-  "--bgcolor-toolarea": "#e0e0e0",
+  "--bgcolor-toolarea": "#e8e8e8",
   "--color-tooltab-active": "#000000",
   "--color-tooltab-inactive": "#404040",
   "--color-prompt": "#00BC00",

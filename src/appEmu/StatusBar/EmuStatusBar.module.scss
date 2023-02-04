@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.statusBar {
     @include fix-height-panel(40px);
     flex-direction: row;
     align-items: center;

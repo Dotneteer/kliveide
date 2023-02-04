@@ -54,17 +54,16 @@ export const IconButton = ({
       }}
     >
       <div
-        className={classnames(
-          styles.iconWrapper,
-          keyDown && enable ? styles.keyDown : "",
-          selected ? styles.selected : ""
-        )}
+        className={classnames(styles.iconWrapper, {
+          [styles.keyDown]: keyDown && enable,
+          [styles.selected]: selected
+        })}
       >
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
-          offsetX={-8}
-          offsetY={32}
+          placement='right'
+          offsetX={-16}
+          offsetY={28}
         >
           {title}
         </TooltipFactory>

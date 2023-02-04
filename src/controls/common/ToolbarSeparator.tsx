@@ -9,7 +9,9 @@ type Props = {
  */
 export function ToolbarSeparator ({ small }: Props) {
   return (
-    <div className={classnames(styles.component, small ? styles.small : "")}>
+    <div
+      className={classnames(styles.toolbarSeparator, { [styles.small]: small })}
+    >
       <div className={styles.separator} />
     </div>
   );

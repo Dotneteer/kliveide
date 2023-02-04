@@ -19,7 +19,7 @@ export const DocumentArea = () => {
   }, [openDocs, activeDocIndex]);
 
   return (
-    <div className={styles.component}>
+    <div className={styles.documentArea}>
       <DocumentsHeader />
       {activeDocIndex >= 0 && <DocumentsContainer document={activeDoc} />}
     </div>

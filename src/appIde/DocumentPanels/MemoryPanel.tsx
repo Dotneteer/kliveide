@@ -408,9 +408,9 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
-          offsetX={0}
-          offsetY={16}
+          placement='right'
+          offsetX={8}
+          offsetY={32}
           showDelay={100}
         >
           {toolTipLines.map((l, idx) => (
@@ -437,9 +437,9 @@ const CharValue = ({ address, value, pointedInfo }: ByteValueProps) => {
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='bottom'
-          offsetX={0}
-          offsetY={16}
+          placement='right'
+          offsetX={8}
+          offsetY={32}
           showDelay={100}
         >
           {toolTipLines.map((l, idx) => (

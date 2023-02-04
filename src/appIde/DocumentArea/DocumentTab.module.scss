@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.documentTab {
     @include fix-height-panel(36px);
     width: auto;
     display: flex;

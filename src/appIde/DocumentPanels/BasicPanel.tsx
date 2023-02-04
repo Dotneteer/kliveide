@@ -10,7 +10,6 @@ import {
 } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { useUncommittedState } from "@/core/useUncommittedState";
-import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@state/MachineControllerState";
@@ -51,7 +50,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
   const [autoRefresh, useAutoRefresh, setAutoRefresh] = useUncommittedState(
-    viewState.current?.autoRefresh ?? false
+    viewState.current?.autoRefresh ?? true
   );
   const [showCodes, useCodes, setShowCodes] = useUncommittedState(
     viewState.current?.showCodes ?? false
@@ -379,9 +378,12 @@ const BasicPanel = ({ document }: DocumentProps) => {
               programBuffer.current.getBufferText()
             );
             dispatch(
-              setIdeStatusMessageAction("BASIC listing copied to the clipboard", true)
+              setIdeStatusMessageAction(
+                "BASIC listing copied to the clipboard",
+                true
+              )
             );
-            }}
+          }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
@@ -405,7 +407,12 @@ const BasicPanel = ({ document }: DocumentProps) => {
           Machine OS has not been initialized yet
         </div>
       )}
-      {showListing.current && (
+      {showListing.current && basicLines && !basicLines.length && (
+        <div className={styles.center}>
+          BASIC program area is empty
+        </div>
+      )}
+      {showListing.current && basicLines && basicLines.length > 0 && (
         <div className={styles.listWrapper}>
           <VirtualizedListView
             items={basicLines}
@@ -415,7 +422,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
             apiLoaded={api => (vlApi.current = api)}
             itemRenderer={idx => {
               return (
-                <div className={classnames(styles.item)}>
+                <div className={styles.item}>
                   <BasicLineDisplay spans={basicLines[idx].spans} />
                 </div>
               );

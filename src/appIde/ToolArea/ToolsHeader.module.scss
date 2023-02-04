@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.toolsHeader {
     @include fix-height-panel(38px);
     flex-direction: row;
 }

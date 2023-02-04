@@ -82,7 +82,7 @@ export const darkTheme: ThemeProperties = {
   "--color-statusbar-icon": "#ffffff",
 
   // --- Sitebar
-  "--bgcolor-sitebar": "#282828",
+  "--bgcolor-sitebar": "#202020",
   "--color-header": "#ffffff",
   "--color-chevron": "#ffffff",
   "--color-panel-header": "#ffffff",
@@ -95,7 +95,7 @@ export const darkTheme: ThemeProperties = {
   "--color-emuoverlay": "lightgreen",
 
   // --- Keyboard
-  "--bgcolor-keyboard": "#202020",
+  "--bgcolor-keyboard": "#181818",
   "--bgcolor-key": "#808080",
   "--color-key-main": "#ffffff",
   "--color-key-symbol": "#c00000",
@@ -104,15 +104,15 @@ export const darkTheme: ThemeProperties = {
   "--color-key-highlight": "#0048c0",
 
   // --- Document area
-  "--bgcolor-docspanel": "#202020",
+  "--bgcolor-docspanel": "#181818",
   "--bgcolor-docsheader": "#282828",
   "--color-doc-icon": "#ffffff",
-  "--color-doc-border": "#202020",
+  "--color-doc-border": "#181818",
   "--color-doc-activeText": "#ffffff",
   "--color-doc-inactiveText": "#a0a0a0",
-  "--bgcolor-doc-activeTab": "#202020",
-  "--bgcolor-doc-inactiveTab": "#303030",
-  "--bgcolor-docscontainer": "#202020",
+  "--bgcolor-doc-activeTab": "#181818",
+  "--bgcolor-doc-inactiveTab": "#282828",
+  "--bgcolor-docscontainer": "#181818",
   "--color-tabbutton-fill-inactive": "#a0a0a0",
   "--color-tabbutton-fill-active": "#ffffff",
   "--bgcolor-tabbutton-pointed": "#404040",
@@ -121,7 +121,7 @@ export const darkTheme: ThemeProperties = {
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
 
   // --- Tool area
-  "--bgcolor-toolarea": "#202020",
+  "--bgcolor-toolarea": "#181818",
   "--color-tooltab-active": "#ffffff",
   "--color-tooltab-inactive": "#a0a0a0",
   "--color-prompt": "#23d18b",

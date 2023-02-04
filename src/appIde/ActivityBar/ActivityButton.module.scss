@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.component {
+.activityButton {
     @include fix-height-panel(48px);
     display: flex;
     justify-content: center;

@@ -1,8 +1,6 @@
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  VirtualizedListApi
-} from "../../controls/common/VirtualizedList";
+import { VirtualizedListApi } from "../../controls/common/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
@@ -55,7 +53,7 @@ const CommandPanel = () => {
 
   return (
     <div
-      className={styles.component}
+      className={styles.commandPanel}
       tabIndex={0}
       onFocus={() => inputRef?.current.focus()}
     >
@@ -74,10 +72,9 @@ const CommandPanel = () => {
         <span className={styles.promptPrefix}>$</span>
         <input
           ref={inputRef}
-          className={classnames(
-            styles.prompt,
-            executing ? styles.executing : ""
-          )}
+          className={classnames(styles.prompt, {
+            [styles.executing]: executing
+          })}
           placeholder={
             executing ? "Executing command..." : "Type ? + Enter for help"
           }

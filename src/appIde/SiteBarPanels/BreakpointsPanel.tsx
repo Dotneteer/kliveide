@@ -89,7 +89,7 @@ const BreakpointsPanel = () => {
   });
 
   return (
-    <div className={styles.component}>
+    <div className={styles.breakpointsPanel}>
       {bps.length === 0 && (
         <div className={styles.center}>No breakpoints defined </div>
       )}

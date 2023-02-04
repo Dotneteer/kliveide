@@ -8,7 +8,7 @@ type Props = {
   
 export const SideBarHeader = forwardRef(({ activity }: Props, ref: ForwardedRef<HTMLDivElement>) => {
     return (
-        <div ref={ref} className={styles.component}>
+        <div ref={ref} className={styles.sideBarHeader}>
           <span className={styles.text}>{activity?.title}</span>
         </div>
     );

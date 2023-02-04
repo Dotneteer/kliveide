@@ -15,7 +15,7 @@ export const ToolArea = ({
     const activeTool = useSelector(s => s.ideView.activeTool);
     const activeInstance = tools.find(t => t.id === activeTool);
 
-    return <div className={classnames(styles.component, styles[siblingPosition])}>
+    return <div className={classnames(styles.toolArea, styles[siblingPosition])}>
         <ToolsHeader 
             topPosition={siblingPosition !== "bottom" } 
             tool={activeInstance} />
