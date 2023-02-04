@@ -26,8 +26,8 @@ export const DocumentsHeader = () => {
         const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
 
         if (docRenderer) {
-          cloned.iconName = docRenderer.icon;
-          cloned.iconFill = docRenderer.iconFill;
+          cloned.iconName ||= docRenderer.icon;
+          cloned.iconFill ||= docRenderer.iconFill;
         }
         return cloned;
       });

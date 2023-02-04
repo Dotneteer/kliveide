@@ -77,7 +77,17 @@ export const VirtualizedList = ({
         scrollToOffset: (offset: number, options: ScrollOptions) =>
           virtualizer.scrollToOffset(offset, options),
         scrollToTop: () => virtualizer.scrollToIndex(0),
-        scrollToEnd: () => virtualizer.scrollToOffset(10_000_000),
+        scrollToEnd: () => {
+          if (items?.length > 0) {
+            virtualizer.scrollToIndex(
+              (items?.length > 0 ? items.length - 1 : 0) ?? 0,
+              {
+                align: "end",
+                behavior: "auto"
+              }
+            );
+          }
+        },
         refresh: () => setCount(count + 1),
         getScrollHeight: () => scrollerRef.current?.scrollHeight ?? 1,
         getScrollWidth: () => columnVirtualizer.scrollElement.scrollWidth ?? 1,

@@ -27,9 +27,15 @@ import {
 } from "./appIde/ToolArea/CommandPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import { BASIC_EDITOR, DISASSEMBLY_EDITOR, MEMORY_EDITOR } from "@state/common-ids";
+import {
+  BASIC_EDITOR,
+  DISASSEMBLY_EDITOR,
+  MEMORY_EDITOR,
+  COMMAND_RESULT_EDITOR
+} from "@state/common-ids";
 import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
+import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -139,7 +145,13 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "code",
     iconFill: "--console-ansi-bright-magenta"
   },
-]
+  {
+    id: COMMAND_RESULT_EDITOR,
+    renderer: createCommandResultPanel,
+    icon: "code",
+    iconFill: "--console-ansi-bright-magenta"
+  }
+];
 
 // --- Set up machine type registry
 export const machineRegistry: MachineInfo[] = [

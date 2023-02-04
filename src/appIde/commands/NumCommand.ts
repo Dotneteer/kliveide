@@ -1,6 +1,6 @@
 import { InteractiveCommandContext, InteractiveCommandResult } from "../abstractions";
 import { CommandWithSingleIntegerBase} from "./CommandWithSingleIntegerBase"
-import { writeSuccessMessage, toHexa4, commandSuccess } from "../services/interactive-commands";
+import { writeSuccessMessage, commandSuccess } from "../services/interactive-commands";
 
 export class NumCommand extends CommandWithSingleIntegerBase {
     protected minValue = -(2**32);

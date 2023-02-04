@@ -10,7 +10,7 @@ import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "rea
 import { Dropdown } from "../../controls/common/Dropdown";
 import { TabButton, TabButtonSeparator } from "../../controls/common/TabButton";
 import { VirtualizedListApi } from "../../controls/common/VirtualizedList";
-import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
+import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
 
@@ -68,11 +68,7 @@ const OutputPanel = () => {
   );
 };
 
-type LineProps = {
-  spans: OutputSpan[];
-};
-
-export const OutputLine = ({ spans }: LineProps) => {
+export const OutputLine = ({ spans }: OutputContentLine) => {
   const segments = (spans ?? []).map((s, idx) => {
     const style: CSSProperties = {
       fontWeight: s.isBold ? 600 : 400,
