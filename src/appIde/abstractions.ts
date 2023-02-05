@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
+import { IOutputBuffer, OutputContentLine } from "@/appIde/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
@@ -381,6 +381,11 @@ export type InteractiveCommandInfo = {
  */
 export type InteractiveCommandContext = {
   /**
+   * The text of the interactive command
+   */
+  commandtext: string;
+
+  /**
    * The set of tokens used as command arguments
    */
   argTokens: Token[];
@@ -544,3 +549,11 @@ export type AppServices = {
   outputPaneService: IOutputPaneService;
   interactiveCommandsService: IInteractiveCommandService;
 };
+
+/**
+ * Represents the data passed to a command result documents
+ */
+export type CommandResultData = {
+  title: string;
+  lines: OutputContentLine[];
+}

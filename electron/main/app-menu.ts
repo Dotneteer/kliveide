@@ -165,7 +165,7 @@ export function setupMenu (
     {
       id: SHOW_IDE_WINDOW,
       label: "Show IDE",
-      visible: ideWindow.isDestroyed() || !ideWindow.isVisible(),
+      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
       click: () => {
         ideWindow.show();
         if (appSettings?.windowStates?.ideWindow?.isMaximized) {
@@ -472,7 +472,7 @@ export function setupMenu (
   const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
   template.push({
     id: IDE_MENU,
-    visible: !ideWindow.isDestroyed() && ideWindow.isVisible(),
+    visible: !ideWindow?.isDestroyed() && ideWindow?.isVisible(),
     label: "IDE",
     submenu: [
       {

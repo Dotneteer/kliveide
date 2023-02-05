@@ -140,6 +140,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
 
     // --- Execute the registered command
     const context: InteractiveCommandContext = {
+      commandtext: command,
       store: this.store,
       argTokens: tokens.slice(1),
       output: buffer,

@@ -1,4 +1,5 @@
 import { SmallIconButton } from "@/controls/common/IconButton";
+import { Label, LabelSeparator } from "@/controls/common/Labels";
 import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
 import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
@@ -6,28 +7,27 @@ import { useDispatch, useRendererContext } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useEffect, useRef, useState } from "react";
+import { CommandResultData } from "../abstractions";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
-import styles from "./BasicPanel.module.scss";
+import { OutputLine } from "../ToolArea/OutputPanel";
+import styles from "./CommandResult.module.scss";
 
 type CommandResultViewState = {
   topIndex?: number;
-  startAddress?: number;
-  endAddress?: number;
 };
 
-const CommandResultPanel = ({ document }: DocumentProps) => {
+const CommandResultPanel = ({ document, data }: DocumentProps) => {
   // --- Read the view state of the document
   const viewState = useRef(
     (document.stateValue as CommandResultViewState) ?? {}
   );
   const topIndex = useRef(viewState.current?.topIndex ?? 0);
-  const startAddress = useRef(viewState.current?.startAddress ?? 0);
-  const endAddress = useRef(viewState.current?.endAddress ?? 0);
+  const title = (data as CommandResultData)?.title;
+  const output = (data as CommandResultData)?.lines ?? [];
 
   // --- Get the services used in this component
   const dispatch = useDispatch();
-  const { messenger } = useRendererContext();
   const { documentService } = useAppServices();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
@@ -35,7 +35,6 @@ const CommandResultPanel = ({ document }: DocumentProps) => {
 
   const refreshInProgress = useRef(false);
   const vlApi = useRef<VirtualizedListApi>(null);
-  const refreshedOnStateChange = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
 
   // --- This function refreshes the memory
@@ -79,25 +78,14 @@ const CommandResultPanel = ({ document }: DocumentProps) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: CommandResultViewState = {
-      topIndex: topIndex.current,
-      startAddress: startAddress.current,
-      endAddress: endAddress.current
+      topIndex: topIndex.current
     };
     documentService.saveActiveDocumentState(mergedState);
   };
 
   return (
-    <div className={styles.basicPanel}>
+    <div className={styles.commandResultPanel}>
       <div className={styles.header}>
-        <SmallIconButton
-          iconName='refresh'
-          title={"Refresh now"}
-          clicked={async () => {
-            refreshView();
-            dispatch(setIdeStatusMessageAction("Output refreshed", true));
-          }}
-        />
-        <ToolbarSeparator small={true} />
         <SmallIconButton
           iconName='copy'
           title={"Copy to clipboard"}
@@ -114,25 +102,31 @@ const CommandResultPanel = ({ document }: DocumentProps) => {
             );
           }}
         />
+        <ToolbarSeparator small={true} />
+        <LabelSeparator width={8} />
+        <Label text={title} />
       </div>
-      {false && (
-        <div className={styles.listWrapper}>
-          <VirtualizedListView
-            items={[]}
-            approxSize={20}
-            fixItemHeight={false}
-            scrolled={scrolled}
-            apiLoaded={api => (vlApi.current = api)}
-            itemRenderer={idx => {
-              return <div className={styles.item}></div>;
-            }}
-          />
-        </div>
-      )}
+      <div className={styles.listWrapper}>
+        <VirtualizedListView
+          items={output}
+          approxSize={20}
+          fixItemHeight={false}
+          scrolled={scrolled}
+          apiLoaded={api => (vlApi.current = api)}
+          itemRenderer={idx => {
+            return (
+              <div className={styles.item}>
+                <LabelSeparator width={4} />
+                <OutputLine spans={output[idx].spans} />
+              </div>
+            );
+          }}
+        />
+      </div>
     </div>
   );
 };
 
-export const createCommandResultPanel = ({ document }: DocumentProps) => (
-  <CommandResultPanel document={document} />
+export const createCommandResultPanel = ({ document, data }: DocumentProps) => (
+  <CommandResultPanel document={document} data={data} />
 );
