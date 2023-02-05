@@ -22,8 +22,11 @@ let disassemblyIndex = 1;
 
 export class DisassemblyCommand extends CommandWithAddressRangeBase {
   readonly id = "dis";
-  readonly description = "Disassembles the specified memory section";
-  readonly usage = "dis <start> <end>";
+  readonly description =
+    "Disassembles the specified memory section. " +
+    "Options: '-c': concise output; '-s': close with semicolon; " +
+    "'-lc': terminate labels with colon";
+  readonly usage = "dis <start> <end> [-c] [-s] [-lc]";
   readonly aliases = [];
 
   protected extraArgCount: number;
@@ -100,7 +103,10 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       }
       buffer.color("green");
       buffer.write(
-        (item.hasLabel ? `L${toHexa4(item.address)}${useColons ? ":" : ""}` : "").padEnd(12, " ")
+        (item.hasLabel
+          ? `L${toHexa4(item.address)}${useColons ? ":" : ""}`
+          : ""
+        ).padEnd(12, " ")
       );
       buffer.color("bright-cyan");
       buffer.writeLine(`${item.instruction}${useSemicolons ? ";" : ""}`);

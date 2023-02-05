@@ -242,6 +242,9 @@ class HelpCommand extends InteractiveCommandBase {
         context.output.color("bright-blue");
         context.output.write(`: `);
         context.output.writeLine(ci.description);
+        if (ci.usage) {
+          context.output.writeLine(`  usage: ${ci.usage}`);
+        }
         count++;
       });
     return {
