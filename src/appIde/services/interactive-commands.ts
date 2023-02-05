@@ -63,6 +63,7 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
     try {
       return await this.doExecute(context);
     } catch (err) {
+      console.log(err);
       return {
         success: false,
         finalMessage: `Error caught: ${err.toString()}`

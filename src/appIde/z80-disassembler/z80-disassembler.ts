@@ -454,7 +454,7 @@ export class Z80Disassembler {
         var distance = this._fetch();
         var labelAddr = (this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
-        replacement = `L${intToX4(labelAddr)}`;
+        replacement = `${(this.options?.noLabelPrefix ?? false) ? "$" : "L"}${intToX4(labelAddr)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;

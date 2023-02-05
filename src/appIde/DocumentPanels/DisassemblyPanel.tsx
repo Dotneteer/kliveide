@@ -131,7 +131,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
 
       // --- Disassemble the specified memory segments
       const disassembler = new Z80Disassembler(memSections, memory, {
-        noLabelPrefix: true
+        noLabelPrefix: false
       });
       const output = await disassembler.disassemble(0x0000, 0xffff);
       const items = output.outputItems;

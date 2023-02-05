@@ -65,7 +65,7 @@ const BreakpointsPanel = () => {
         [new MemorySection(addr, addr, MemorySectionType.Disassemble)],
         mem,
         {
-          noLabelPrefix: true
+          noLabelPrefix: false
         }
       );
       const output = await disass.disassemble(addr, addr);

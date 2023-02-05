@@ -556,4 +556,5 @@ export type AppServices = {
 export type CommandResultData = {
   title: string;
   lines: OutputContentLine[];
+  bufferText: string;
 }

@@ -25,6 +25,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
   const topIndex = useRef(viewState.current?.topIndex ?? 0);
   const title = (data as CommandResultData)?.title;
   const output = (data as CommandResultData)?.lines ?? [];
+  const bufferText = (data as CommandResultData)?.bufferText;
 
   // --- Get the services used in this component
   const dispatch = useDispatch();
@@ -90,10 +91,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
           iconName='copy'
           title={"Copy to clipboard"}
           clicked={async () => {
-            navigator.clipboard.writeText(
-              // TODO: Get disassembly text
-              ""
-            );
+            navigator.clipboard.writeText(bufferText);
             dispatch(
               setIdeStatusMessageAction(
                 "Command output text copied to the clipboard",

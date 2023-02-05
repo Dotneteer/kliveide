@@ -10,10 +10,8 @@ import {
   commandSuccess,
   toHexa4
 } from "../services/interactive-commands";
-import { OutputContentLine } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import {
-  DisassemblyOutput,
   MemorySection,
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
@@ -28,15 +26,17 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   readonly usage = "dis <start> <end>";
   readonly aliases = [];
 
-  protected extraArgCount = 0;
+  protected extraArgCount: number;
 
   async doExecute (
     context: InteractiveCommandContext
   ): Promise<InteractiveCommandResult> {
     const fromH = toHexa4(this.startAddress);
     const toH = toHexa4(this.endAddress);
-    const lines = await this.getDisassembly(context);
-    const title = `Result of running '${context.commandtext.trim()}'`
+    const buffer = await this.getDisassembly(context);
+    const lines = buffer.getContents();
+    const bufferText = buffer.getBufferText();
+    const title = `Result of running '${context.commandtext.trim()}'`;
     context.service.documentService.openDocument(
       {
         id: `disOutput-${disassemblyIndex++}`,
@@ -47,21 +47,27 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       },
       {
         title,
-        lines
+        lines,
+        bufferText
       } as CommandResultData,
       false
     );
 
     writeSuccessMessage(
       context.output,
-      `Disassembly: $${fromH} - $${toH}: ${lines.length}`
+      `Disassembly of address range $${fromH} - $${toH} successfully created`
     );
     return commandSuccess;
   }
 
   async getDisassembly (
     context: InteractiveCommandContext
-  ): Promise<OutputContentLine[]> {
+  ): Promise<OutputPaneBuffer> {
+    const conciseMode = context.argTokens.some(t => t.text === "-c");
+    const useSemicolons = context.argTokens.some(t => t.text === "-s");
+    const useColons = context.argTokens.some(t => t.text === "-lc");
+
+    // --- Get the memory
     const response = (await context.messenger.sendMessage({
       type: "EmuGetMemory"
     })) as EmuGetMemoryResponse;
@@ -80,22 +86,25 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     );
 
     // --- Disassemble the specified memory segments
-    const disassembler = new Z80Disassembler(memSections, memory, {
-      noLabelPrefix: true
-    });
-    const disassItems = (await disassembler.disassemble(this.startAddress, this.endAddress)).outputItems;
+    const disassembler = new Z80Disassembler(memSections, memory, {});
+    const disassItems = (
+      await disassembler.disassemble(this.startAddress, this.endAddress)
+    ).outputItems;
 
     const buffer = new OutputPaneBuffer(0x1_0000);
     disassItems.forEach(item => {
       buffer.resetColor();
-      buffer.write(`${toHexa4(item.address)} `);
-      buffer.write(item.opCodes.padEnd(13, " "));
+      if (!conciseMode) {
+        buffer.write(`${toHexa4(item.address)} `);
+        buffer.write(item.opCodes.padEnd(13, " "));
+      }
       buffer.color("green");
-      buffer.write((item.hasLabel ? `L${toHexa4(item.address)}:` : "").padEnd(12, " ") );
+      buffer.write(
+        (item.hasLabel ? `L${toHexa4(item.address)}${useColons ? ":" : ""}` : "").padEnd(12, " ")
+      );
       buffer.color("bright-cyan");
-      buffer.writeLine(item.instruction);
+      buffer.writeLine(`${item.instruction}${useSemicolons ? ";" : ""}`);
     });
-    console.log(buffer.getContents());
-    return buffer.getContents();
+    return buffer;
   }
 }
