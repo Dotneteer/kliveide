@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
+import { IOutputBuffer, OutputContentLine } from "@/appIde/ToolArea/abstractions";
 import { PanelRenderer } from "@/core/abstractions";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
@@ -81,9 +81,10 @@ export interface IDocumentService {
   /**
    * Opens the specified document
    * @param document Document to open
+   * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument(document: DocumentInfo, temporary?: boolean): void;
+  openDocument(document: DocumentInfo, data?: any, temporary?: boolean): void;
 
   /**
    * Sets the specified document as the active one
@@ -153,6 +154,12 @@ export interface IDocumentService {
    * @param state State to save
    */
   saveActiveDocumentState(state: any): void;
+
+  /**
+   * Gets the data of the document associated with the specified ID
+   * @param id 
+   */
+  getDocumentData(id: string): any;
 }
 
 /**
@@ -374,6 +381,11 @@ export type InteractiveCommandInfo = {
  */
 export type InteractiveCommandContext = {
   /**
+   * The text of the interactive command
+   */
+  commandtext: string;
+
+  /**
    * The set of tokens used as command arguments
    */
   argTokens: Token[];
@@ -537,3 +549,12 @@ export type AppServices = {
   outputPaneService: IOutputPaneService;
   interactiveCommandsService: IInteractiveCommandService;
 };
+
+/**
+ * Represents the data passed to a command result documents
+ */
+export type CommandResultData = {
+  title: string;
+  lines: OutputContentLine[];
+  bufferText: string;
+}

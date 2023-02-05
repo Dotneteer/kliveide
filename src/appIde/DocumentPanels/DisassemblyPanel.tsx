@@ -54,7 +54,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const { documentService, machineService } = useAppServices();
+  const { documentService } = useAppServices();
 
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -131,7 +131,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
 
       // --- Disassemble the specified memory segments
       const disassembler = new Z80Disassembler(memSections, memory, {
-        noLabelPrefix: true
+        noLabelPrefix: false
       });
       const output = await disassembler.disassemble(0x0000, 0xffff);
       const items = output.outputItems;
@@ -236,7 +236,11 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           }}
         />
         <SmallIconButton
-          iconName={pausedPc < topAddress.current ? "arrow-circle-up": "arrow-circle-down"}
+          iconName={
+            pausedPc < topAddress.current
+              ? "arrow-circle-up"
+              : "arrow-circle-down"
+          }
           title={"Go to the PC address"}
           enable={
             machineState === MachineControllerState.Paused ||
@@ -329,6 +333,6 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
-export const createDisassemblyPanel = ({ document }: DocumentProps) => (
-  <DisassemblyPanel document={document} />
+export const createDisassemblyPanel = ({ document, data }: DocumentProps) => (
+  <DisassemblyPanel document={document} data={data} />
 );

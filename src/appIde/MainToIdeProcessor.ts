@@ -53,6 +53,7 @@ export async function processMainToIdeMessages (
               name: "Machine Memory",
               type: MEMORY_EDITOR
             },
+            undefined,
             false
           );
         } else {
@@ -69,6 +70,7 @@ export async function processMainToIdeMessages (
             name: "Z80 Disassembly",
             type: DISASSEMBLY_EDITOR
           },
+          undefined,
           false
         );
       } else {
@@ -85,6 +87,7 @@ export async function processMainToIdeMessages (
             name: "BASIC Listing",
             type: BASIC_EDITOR
           },
+          undefined,
           false
         );
       } else {

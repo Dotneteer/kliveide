@@ -140,6 +140,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
 
     // --- Execute the registered command
     const context: InteractiveCommandContext = {
+      commandtext: command,
       store: this.store,
       argTokens: tokens.slice(1),
       output: buffer,
@@ -241,6 +242,9 @@ class HelpCommand extends InteractiveCommandBase {
         context.output.color("bright-blue");
         context.output.write(`: `);
         context.output.writeLine(ci.description);
+        if (ci.usage) {
+          context.output.writeLine(`  usage: ${ci.usage}`);
+        }
         count++;
       });
     return {

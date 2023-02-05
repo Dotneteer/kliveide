@@ -53,6 +53,7 @@ import {
 } from "./commands/BreakpointCommands";
 import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
 import { NumCommand } from "./commands/NumCommand";
+import { DisassemblyCommand } from "./commands/DisAssemblyCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -128,6 +129,7 @@ const IdeApp = () => {
           type: "CodeEditor",
           isReadOnly: i === 2
         },
+        undefined,
         i >= 3
       );
     }
@@ -210,4 +212,5 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new EnableBreakpointCommand());
 
   cmdSrv.registerCommand(new NumCommand());
+  cmdSrv.registerCommand(new DisassemblyCommand());
 }

@@ -15,6 +15,8 @@ import { DocumentInfo, DocumentState, IDocumentService } from "../abstractions";
  * This class provides the default implementation of the document service
  */
 class DocumentService implements IDocumentService {
+  private documentData = new Map<string, any>();
+
   /**
    * Initializes the service instance to use the specified store
    * @param store Store instance to use
@@ -65,9 +67,10 @@ class DocumentService implements IDocumentService {
   /**
    * Opens the specified document
    * @param document Document to open
+   * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument (document: DocumentInfo, temporary?: boolean): void {
+  openDocument (document: DocumentInfo, data?: any, temporary?: boolean): void {
     temporary ??= true;
     const state = this.store.getState();
     const dispatch = this.store.dispatch;
@@ -80,6 +83,12 @@ class DocumentService implements IDocumentService {
         throw new Error(`Duplicated document with ID '${document.id}'`);
       }
 
+      // --- Save the document data
+      if (data) {
+        this.documentData.set(document.id, data);
+      }
+
+      // --- Now, open the document
       dispatch(activateDocumentAction(document.id), "ide");
       return;
     }
@@ -88,6 +97,10 @@ class DocumentService implements IDocumentService {
     if (temporary) {
       const existingTempIndex = docs.findIndex(d => d.isTemporary);
       if (existingTempIndex >= 0) {
+        // --- Save the document data
+        if (data) {
+          this.documentData.set(document.id, data);
+        }
         dispatch(
           changeDocumentAction(
             {
@@ -102,6 +115,10 @@ class DocumentService implements IDocumentService {
       }
     }
 
+    // --- Save the document data
+    if (data) {
+      this.documentData.set(document.id, data);
+    }
     dispatch(
       createDocumentAction(
         {
@@ -131,6 +148,13 @@ class DocumentService implements IDocumentService {
    */
   closeDocument (id: string): void {
     this.store.dispatch(closeDocumentAction(id), "ide");
+    if (this.documentData.has(id)) {
+      const data = this.documentData.get(id);
+      if (data?.dispose) {
+        data.dispose();
+      }
+      this.documentData.delete(id);
+    }
   }
 
   /**
@@ -138,6 +162,12 @@ class DocumentService implements IDocumentService {
    */
   closeAllDocuments (): void {
     this.store.dispatch(closeAllDocumentsAction(), "ide");
+    for (const doc of this.documentData) {
+      if (doc[1]?.dispose) {
+        doc[1].dispose();
+      }
+    }
+    this.documentData.clear();
   }
 
   /**
@@ -180,7 +210,7 @@ class DocumentService implements IDocumentService {
       const doc = { ...docs[existingIndex], stateValue: viewState };
       this.store.dispatch(changeDocumentAction(doc, existingIndex));
     }
-  } 
+  }
 
   /**
    * Gets the state of the active document
@@ -195,6 +225,14 @@ class DocumentService implements IDocumentService {
    */
   saveActiveDocumentState (viewState: any): void {
     this.saveDocumentState(this.getActiveDocumentId(), viewState);
+  }
+
+  /**
+   * Gets the data of the document associated with the specified ID
+   * @param id
+   */
+  getDocumentData (id: string): any {
+    return this.documentData.get(id);
   }
 }
 
