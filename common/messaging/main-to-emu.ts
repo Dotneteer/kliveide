@@ -102,6 +102,7 @@ export interface EmuGetCpuStateResponse extends MessageBase {
   ir: number;
   wz: number;
   tacts: number;
+  tactsAtLastStart: number;
   interruptMode: number;
   iff1: boolean;
   iff2: boolean;

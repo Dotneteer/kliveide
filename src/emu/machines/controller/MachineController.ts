@@ -258,6 +258,7 @@ export class MachineController {
 
     // --- Set up the state
     this.machine.contentionDelaySincePause = 0;
+    this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Now, run!
     this.state = MachineControllerState.Running;

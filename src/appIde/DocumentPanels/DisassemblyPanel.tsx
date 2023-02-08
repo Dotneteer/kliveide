@@ -1,3 +1,4 @@
+import { AddressInput } from "@/controls/common/AddressInput";
 import { SmallIconButton } from "@/controls/common/IconButton";
 import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
 import {
@@ -274,6 +275,12 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
         />
         <ToolbarSeparator small={true} />
         <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
+        <LabelSeparator width={4} />
+        <ToolbarSeparator small={true} />
+        <AddressInput label="Go To:" onAddressSent={async (address) => {
+          topAddress.current = address;
+          setScrollVersion(scrollVersion + 1);
+        }}/>
       </div>
       <div className={styles.disassemblyWrapper}>
         <VirtualizedListView

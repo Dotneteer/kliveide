@@ -277,6 +277,11 @@ export interface IZ80Cpu
     contentionDelaySincePause: number;
 
     /**
+     * Number of clock cycles at the last machine frame cycle start
+     */
+    tactsAtLastStart: number;
+
+    /**
      * Executes a hard reset as if the machine and the CPU had just been turned on.
      */
     hardReset(): void;

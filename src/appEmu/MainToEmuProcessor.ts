@@ -116,6 +116,7 @@ export async function processMainToEmuMessages (
         ir: cpu.ir,
         wz: cpu.wz,
         tacts: cpu.tacts,
+        tactsAtLastStart: cpu.tactsAtLastStart,
         interruptMode: cpu.interruptMode,
         iff1: cpu.iff1,
         iff2: cpu.iff2,

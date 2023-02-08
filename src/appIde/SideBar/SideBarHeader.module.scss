@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.sidebarHeader {
+.sideBarHeader {
     @include fix-height-panel(36px);
     padding-left: 4px;
     align-items: center;
