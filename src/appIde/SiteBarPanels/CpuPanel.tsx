@@ -242,6 +242,18 @@ const CpuPanel = () => {
         />
       </div>
       <div className={styles.cols}>
+        <Label text='TSP' width={LAB_WIDTH} />
+        <Value
+          text={
+            (
+              (cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)
+            ).toString() ?? "---"
+          }
+          width={TACT_WIDTH}
+          tooltip='T-States since last start after pause'
+        />
+      </div>
+      <div className={styles.cols}>
         <Label text='IM' width={LAB_WIDTH} />
         <Value
           text={cpuState?.interruptMode?.toString() ?? "-"}

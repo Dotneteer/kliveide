@@ -1,3 +1,4 @@
+import { AddressInput } from "@/controls/common/AddressInput";
 import { SmallIconButton } from "@/controls/common/IconButton";
 import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
 import { Label, LabelSeparator } from "@/controls/common/Labels";
@@ -238,6 +239,11 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           title='Show characters dump?'
           clicked={() => saveViewState()}
         />
+        <AddressInput label="Go To:" onAddressSent={async (address) => {
+          topAddress.current = Math.floor(address/8);
+          setScrollVersion(scrollVersion + 1);
+        }}/>
+
       </div>
       <div className={styles.memoryWrapper}>
         <VirtualizedListView

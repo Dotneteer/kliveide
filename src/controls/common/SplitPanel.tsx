@@ -254,8 +254,8 @@ const Splitter = ({
         [location]: `${position}px`,
         cursor: !uiService.dragging
           ? horizontal
-            ? "ew-resize"
-            : "ns-resize"
+            ? "col-resize"
+            : "row-resize"
           : "inherit"
       }}
       onMouseDown={e => {
@@ -279,7 +279,7 @@ const Splitter = ({
     // --- Capture mouse move via window events
     window.addEventListener("mouseup", _endMove);
     window.addEventListener("mousemove", _move);
-    document.body.style.cursor = horizontal ? "ew-resize" : "ns-resize";
+    document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
   }
 
   // --- Move the splitter and notify the splitter panel about size changes
