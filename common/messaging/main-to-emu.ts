@@ -1,4 +1,5 @@
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
+import { SysVar } from "@/emu/abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 
 /**
@@ -82,6 +83,10 @@ export interface EmuGetMemoryRequest extends MessageBase {
   type: "EmuGetMemory";
 }
 
+export interface EmuGetSysVarsRequest extends MessageBase {
+  type: "EmuGetSysVars";
+}
+
 /**
  * The Emu process sends back CPU state information
  */
@@ -156,9 +161,14 @@ export interface EmuGetMemoryResponse extends MessageBase {
   ir: number;
   wz: number;
   osInitialized: boolean;
-
   memBreakpoints: BreakpointInfo[];
 }
+
+export interface EmuGetSysVarsResponse extends MessageBase {
+  type: "EmuGetSysVarsResponse";
+  sysVars: SysVar[];
+}
+
 
 export function createMachineCommand (
   command: MachineCommand

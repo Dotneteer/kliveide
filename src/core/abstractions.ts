@@ -2,7 +2,7 @@ import { ReactElement } from "react";
 
 export const ACTIVITY_FILE_ID = "file-view";
 export const ACTIVITY_DEBUG_ID = "debug-view";
-export const ACTIVITY_LOG_ID = "log-view";
+export const ACTIVITY_MACHINE_INFO_ID = "log-view";
 export const ACTIVITY_TEST_ID = "test-view";
 
 /**

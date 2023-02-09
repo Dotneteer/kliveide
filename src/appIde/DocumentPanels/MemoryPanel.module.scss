@@ -79,7 +79,7 @@
   color: var(--color-secondary-label);
 
   &:hover {
-    background: #606060;
+    background: var(--bgcolor-disass-hover);
     opacity: 0.9;
   }
 }

@@ -4,6 +4,7 @@ import { IKeyboardDevice } from "./IKeyboardDevice";
 import { IScreenDevice } from "./IScreenDevice";
 import { ITapeDevice } from "./ITapeDevice";
 import { IZ80Machine } from "./IZ80Machine";
+import { SysVar } from "./SysVar";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
@@ -102,4 +103,9 @@ export interface IZxSpectrumMachine extends IZ80Machine {
      * Gets the current cursor mode
      */
     getCursorMode(): number;
+
+    /**
+     * Gets the structure describing system variables
+     */
+    get sysVars(): SysVar[];
 }

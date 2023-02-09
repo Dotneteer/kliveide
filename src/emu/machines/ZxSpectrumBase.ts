@@ -6,6 +6,7 @@ import { IScreenDevice } from "../abstractions/IScreenDevice";
 import { ITapeDevice, TapeMode } from "../abstractions/ITapeDevice";
 import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
 import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
+import { SysVar } from "../abstractions/SysVar";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
 
@@ -116,6 +117,11 @@ export abstract class ZxSpectrumBase
    * Gets the audio samples rendered in the current frame
    */
   abstract getAudioSamples(): number[];
+
+  /**
+   * Gets the structure describing system variables
+   */
+  abstract get sysVars(): SysVar[];
 
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
