@@ -39,7 +39,9 @@ import {
   EmuListBreakpointsResponse,
   EmuEnableBreakpointRequest,
   EmuGetMemoryRequest,
-  EmuGetMemoryResponse
+  EmuGetMemoryResponse,
+  EmuGetSysVarsRequest,
+  EmuGetSysVarsResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -121,6 +123,7 @@ export type RequestMessage =
   | EmuListBreakpointsRequest
   | EmuEnableBreakpointRequest
   | EmuGetMemoryRequest
+  | EmuGetSysVarsRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -142,7 +145,8 @@ export type ResponseMessage =
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse
-  | EmuGetMemoryResponse;
+  | EmuGetMemoryResponse
+  | EmuGetSysVarsResponse;
 
 /**
  * All messages

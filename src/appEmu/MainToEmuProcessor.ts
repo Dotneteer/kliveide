@@ -245,6 +245,15 @@ export async function processMainToEmuMessages (
         osInitialized: (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
       };
     }
+
+    case "EmuGetSysVars":
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const m = controller.machine;
+      return {
+        type: "EmuGetSysVarsResponse",
+        sysVars: (m as ZxSpectrumBase).sysVars
+      }
   }
   return defaultResponse();
 

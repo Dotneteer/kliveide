@@ -2,7 +2,7 @@ import {
   Activity,
   ACTIVITY_DEBUG_ID,
   ACTIVITY_FILE_ID,
-  ACTIVITY_LOG_ID,
+  ACTIVITY_MACHINE_INFO_ID,
   ACTIVITY_TEST_ID,
   SideBarPanelInfo
 } from "./core/abstractions";
@@ -36,6 +36,7 @@ import {
 import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
+import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [
@@ -50,8 +51,8 @@ export const activityRegistry: Activity[] = [
     iconName: "debug-alt"
   },
   {
-    id: ACTIVITY_LOG_ID,
-    title: "Machine logs",
+    id: ACTIVITY_MACHINE_INFO_ID,
+    title: "Machine info",
     iconName: "output"
   },
   {
@@ -90,7 +91,15 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
     renderer: breakpointsPanelRenderer
+  },
+  {
+    id: "sysVarsPanel",
+    title: "System Variables",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    noScrollViewer: false,
+    renderer: sysVarsPanelRenderer
   }
+
 ];
 
 // --- Set up tool panels
