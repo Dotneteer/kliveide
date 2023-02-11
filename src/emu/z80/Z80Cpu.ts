@@ -945,7 +945,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param addr Restart address to call
    */
   rstCore (addr: number): void {
-    this.tactPlus1WithAddress(this.pc);
+    this.tactPlus1WithAddress(this.ir);
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
@@ -4270,7 +4270,7 @@ function exSpiHl (cpu: Z80Cpu) {
   const sp1 = cpu.sp + 1;
   const tempL = cpu.readMemory(cpu.sp);
   const tempH = cpu.readMemory(sp1);
-  cpu.tactPlus1WithAddress(cpu.sp);
+  cpu.tactPlus1WithAddress(sp1);
   cpu.writeMemory(sp1, cpu.h);
   cpu.writeMemory(cpu.sp, cpu.l);
   cpu.tactPlus2WithAddress(cpu.sp);
@@ -4394,7 +4394,7 @@ function callP (cpu: Z80Cpu) {
   }
 }
 
-// 0xf5: PUSH HL
+// 0xf5: PUSH AF
 function pushAf (cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
@@ -7220,7 +7220,7 @@ function addXBc (cpu: Z80Cpu) {
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.bc);
 }
 
-// 0x19: ADD IX,BC
+// 0x19: ADD IX,DE
 function addXDe (cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.de);
@@ -7237,7 +7237,7 @@ function ldNNiX (cpu: Z80Cpu) {
   cpu.store16(cpu.indexL, cpu.indexH);
 }
 
-// 0x33: INC IX
+// 0x23: INC IX
 function incX (cpu: Z80Cpu) {
   cpu.indexReg++;
   cpu.tactPlus2WithAddress(cpu.ir);
@@ -7653,7 +7653,7 @@ function andAXl (cpu: Z80Cpu) {
   cpu.and8(cpu.indexL);
 }
 
-// 0xA6: SBC A,(IX+d)
+// 0xA6: AND A,(IX+d)
 function andAXi (cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
@@ -7732,7 +7732,7 @@ function exSpiX (cpu: Z80Cpu) {
   const sp1 = cpu.sp + 1;
   const tempL = cpu.readMemory(cpu.sp);
   const tempH = cpu.readMemory(sp1);
-  cpu.tactPlus1WithAddress(cpu.sp);
+  cpu.tactPlus1WithAddress(sp1);
   cpu.writeMemory(sp1, cpu.indexH);
   cpu.writeMemory(cpu.sp, cpu.indexL);
   cpu.tactPlus2WithAddress(cpu.sp);
