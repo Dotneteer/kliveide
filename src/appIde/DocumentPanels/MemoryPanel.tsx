@@ -1,11 +1,11 @@
-import { AddressInput } from "@/controls/common/AddressInput";
-import { SmallIconButton } from "@/controls/common/IconButton";
-import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
-import { Label, LabelSeparator } from "@/controls/common/Labels";
-import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
-import { TooltipFactory } from "@/controls/common/Tooltip";
-import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { AddressInput } from "@/controls/AddressInput";
+import { SmallIconButton } from "@/controls/IconButton";
+import { LabeledSwitch } from "@/controls/LabeledSwitch";
+import { Label, LabelSeparator } from "@/controls/Labels";
+import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
+import { TooltipFactory } from "@/controls/Tooltip";
+import { VirtualizedListApi } from "@/controls/VirtualizedList";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import {
   useDispatch,
   useRendererContext,

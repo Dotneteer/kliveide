@@ -1,8 +1,8 @@
 import { useSelector } from "@/core/RendererProvider";
 import { MachineControllerState } from "@state/MachineControllerState";
 import { ReactNode, useEffect, useState } from "react";
-import { Icon } from "../../controls/common/Icon";
-import { SpaceFiller } from "../../controls/common/SpaceFiller";
+import { Icon } from "../../controls/Icon";
+import { SpaceFiller } from "../../controls/SpaceFiller";
 import classnames from "../../utils/classnames";
 import styles from "./IdeStatusBar.module.scss";
 

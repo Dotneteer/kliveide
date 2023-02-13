@@ -1,4 +1,4 @@
-import { useResizeObserver } from "../../core/useResizeObserver";
+import { useResizeObserver } from "../core/useResizeObserver";
 import React, { useLayoutEffect, useRef, useState } from "react";
 import styles from "./SplitPanel.module.scss";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";

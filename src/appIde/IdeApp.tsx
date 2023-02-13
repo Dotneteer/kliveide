@@ -2,9 +2,9 @@ import styles from "@styles/app.module.scss";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import { DocumentArea } from "./DocumentArea/DocumentArea";
 import { SiteBar } from "./SideBar/SideBar";
-import { SplitPanel } from "../controls/common/SplitPanel";
+import { SplitPanel } from "../controls/SplitPanel";
 import { ToolArea } from "./ToolArea/ToolArea";
-import { Toolbar } from "../controls/common/Toolbar";
+import { Toolbar } from "../controls/Toolbar";
 import { useEffect, useRef } from "react";
 import {
   activateToolAction,

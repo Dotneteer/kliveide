@@ -4,7 +4,7 @@ import {
   LabelSeparator,
   Separator,
   Value
-} from "@/controls/common/Labels";
+} from "@/controls/Labels";
 import { useRendererContext } from "@/core/RendererProvider";
 import { EmuGetCpuStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";

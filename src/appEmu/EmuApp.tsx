@@ -1,7 +1,7 @@
 import styles from "@styles/app.module.scss";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
-import { Toolbar } from "../controls/common/Toolbar";
+import { Toolbar } from "../controls/Toolbar";
 import { useEffect, useRef } from "react";
 import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";

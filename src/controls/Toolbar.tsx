@@ -9,8 +9,8 @@ import {
   setFastLoadAction,
   showKeyboardAction
 } from "@state/actions";
-import { IconButton } from "../common/IconButton";
-import { ToolbarSeparator } from "../common/ToolbarSeparator";
+import { IconButton } from "./IconButton";
+import { ToolbarSeparator } from "./ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
 import { createMachineCommand } from "@messaging/main-to-emu";
 

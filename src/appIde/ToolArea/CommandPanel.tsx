@@ -1,6 +1,6 @@
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { VirtualizedListApi } from "../../controls/common/VirtualizedList";
+import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import { OutputLine } from "./OutputPanel";
@@ -10,8 +10,8 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { TabButton, TabButtonSeparator } from "@/controls/common/TabButton";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { TabButton, TabButtonSeparator } from "@/controls/TabButton";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 
 const CommandPanel = () => {
   const dispatch = useDispatch();
