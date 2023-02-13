@@ -1,3 +1,4 @@
+import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 import { MessageBase } from "./messages-core";
 
 /**
@@ -28,6 +29,14 @@ export interface MainDisplayMessageBoxRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get the contents of a directory
+ */
+export interface MainGetDirectoryContent extends MessageBase {
+  type: "MainGetDirectoryContent";
+  directory: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -41,6 +50,14 @@ export interface TextContentsResponse extends MessageBase {
 export interface BinaryContentsResponse extends MessageBase {
   type: "BinaryContents";
   contents: Uint8Array;
+}
+
+/**
+ * The client wants to get the contents of a directory
+ */
+export interface MainGetDirectoryContentResponse extends MessageBase {
+  type: "MainGetDirectoryContentResponse";
+  contents: ProjectNodeWithChildren;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

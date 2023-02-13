@@ -21,7 +21,9 @@ import {
   MainReadBinaryFileRequest,
   MainDisplayMessageBoxRequest,
   BinaryContentsResponse,
-  TextContentsResponse
+  TextContentsResponse,
+  MainGetDirectoryContent,
+  MainGetDirectoryContentResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -127,6 +129,7 @@ export type RequestMessage =
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
+  | MainGetDirectoryContent
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -142,6 +145,7 @@ export type ResponseMessage =
   | FlagResponse
   | TextContentsResponse
   | BinaryContentsResponse
+  | MainGetDirectoryContentResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse
