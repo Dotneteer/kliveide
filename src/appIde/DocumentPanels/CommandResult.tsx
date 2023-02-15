@@ -110,7 +110,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
           approxSize={20}
           fixItemHeight={false}
           scrolled={scrolled}
-          apiLoaded={api => (vlApi.current = api)}
+          vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
             return (
               <div className={styles.item}>

@@ -151,6 +151,11 @@ export interface ITreeView<TNode> {
    * Builds the indexed list of visible nodes to display
    */
   buildIndex(): void;
+
+  /**
+   * Gets the array of currently visible tree nodes
+   */
+  getVisibleNodes(): ITreeNode<TNode>[];
 }
 
 /**
@@ -190,14 +195,13 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
     return this._nodeChanged;
   }
 
-    /**
+  /**
    * This event is raised when a child of this node has been changed. The event argument
    * is the new parent of the node.
    */
-  get childChanged(): ILiteEvent<ITreeNode<TNode>> {
+  get childChanged (): ILiteEvent<ITreeNode<TNode>> {
     return this._childChanged;
   }
-
 
   /**
    * Retrieves the string representation of the node's data.
@@ -561,6 +565,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
  */
 export class TreeView<TNode> implements ITreeView<TNode> {
   private _rootNode: ITreeNode<TNode> | undefined;
+  private _visibleNodes: ITreeNode<TNode>[];
 
   // ========================================================================
   // Lifecycle methods
@@ -571,6 +576,7 @@ export class TreeView<TNode> implements ITreeView<TNode> {
    */
   constructor (root?: ITreeNode<TNode>, public readonly displayRootNode = true) {
     this._rootNode = root;
+    this.buildIndex();
   }
 
   // ========================================================================
@@ -664,12 +670,21 @@ export class TreeView<TNode> implements ITreeView<TNode> {
       visitNode(this._rootNode);
     }
 
+    this._visibleNodes = indexes;
+
     function visitNode (node: ITreeNode<TNode>): void {
       if (node.isHidden) return;
       indexes.push(node);
       if (!node.isExpanded) return;
       node.children.forEach(child => visitNode(child));
     }
+  }
+
+  /**
+   * Gets the array of currently visible tree nodes
+   */
+  getVisibleNodes (): ITreeNode<TNode>[] {
+    return this._visibleNodes;
   }
 
   // ========================================================================

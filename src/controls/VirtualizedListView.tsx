@@ -10,7 +10,8 @@ type Props = {
   approxSize?: number;
   fixItemHeight?: boolean;
   itemRenderer: (index: number) => ReactNode;
-  apiLoaded?: (api: VirtualizedListApi) => void;
+  vlApiLoaded?: (vlApi: VirtualizedListApi) => void;
+  svApiLoaded?: (svApi: ScrollViewerApi) => void;
   scrolled?: () => void;
 };
 
@@ -22,7 +23,8 @@ export const VirtualizedListView = ({
   approxSize,
   fixItemHeight,
   itemRenderer,
-  apiLoaded,
+  vlApiLoaded,
+  svApiLoaded,
   scrolled
 }: Props) => {
   const svApi = useRef<ScrollViewerApi>();
@@ -33,7 +35,10 @@ export const VirtualizedListView = ({
       scrollBarWidth={scrollBarWidth}
       allowHorizontal={allowHorizontal}
       allowVertical={allowVertical}
-      apiLoaded={api => svApi.current = api}
+      apiLoaded={api => {
+        svApi.current = api;
+        svApiLoaded?.(svApi.current);
+      }}
       getScrollHeightFn={() => vlApi.current?.getScrollHeight() ?? 1}
       getScrollWidthFn={() => vlApi.current?.getScrollWidth() ?? 1}
       getScrollTopFn={() => vlApi.current?.getScrollTop() ?? 1}
@@ -50,7 +55,7 @@ export const VirtualizedListView = ({
         itemRenderer={itemRenderer}
         apiLoaded={api => {
           vlApi.current = api;
-          apiLoaded?.(api);
+          vlApiLoaded?.(api);
         }}
         vScrolled={() => {
           svApi.current?.updateDims();

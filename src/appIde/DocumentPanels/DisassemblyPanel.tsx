@@ -287,7 +287,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           items={cachedItems.current}
           approxSize={20}
           fixItemHeight={false}
-          apiLoaded={api => (vlApi.current = api)}
+          vlApiLoaded={api => (vlApi.current = api)}
           scrolled={scrolled}
           itemRenderer={idx => {
             const address = cachedItems.current?.[idx].address;
