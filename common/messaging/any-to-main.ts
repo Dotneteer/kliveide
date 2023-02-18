@@ -37,6 +37,16 @@ export interface MainGetDirectoryContent extends MessageBase {
 }
 
 /**
+ * The client wants to create a new Klive project
+ */
+export interface MainCreateKliveProject extends MessageBase {
+  type: "MainCreateKliveProject";
+  machineId: string;
+  projectName: string;
+  projectFolder?: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -58,6 +68,15 @@ export interface BinaryContentsResponse extends MessageBase {
 export interface MainGetDirectoryContentResponse extends MessageBase {
   type: "MainGetDirectoryContentResponse";
   contents: ProjectNodeWithChildren;
+}
+
+/**
+ * The client wants to create a new Klive project
+ */
+export interface MainCreateKliveProjectResponse extends MessageBase {
+  type: "MainCreateKliveProjectResponse";
+  path?: string;
+  errorMessage?: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

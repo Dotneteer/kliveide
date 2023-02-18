@@ -23,7 +23,9 @@ import {
   BinaryContentsResponse,
   TextContentsResponse,
   MainGetDirectoryContent,
-  MainGetDirectoryContentResponse
+  MainGetDirectoryContentResponse,
+  MainCreateKliveProject,
+  MainCreateKliveProjectResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -130,6 +132,7 @@ export type RequestMessage =
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
   | MainGetDirectoryContent
+  | MainCreateKliveProject
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -146,6 +149,7 @@ export type ResponseMessage =
   | TextContentsResponse
   | BinaryContentsResponse
   | MainGetDirectoryContentResponse
+  | MainCreateKliveProjectResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse

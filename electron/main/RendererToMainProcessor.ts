@@ -10,10 +10,12 @@ import { app, BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse,
+  MainCreateKliveProjectResponse
 } from "../../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
+import { createKliveProject } from "./projects";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -62,6 +64,18 @@ export async function processRendererToMainMessages (
         contents: folderContent
       };
 
+    case "MainCreateKliveProject":
+      const createFolderResponse = createKliveProject(
+        message.machineId,
+        message.projectName,
+        message.projectFolder
+      );
+      return {
+        type: "MainCreateKliveProjectResponse",
+        path: createFolderResponse.path,
+        errorMessage: createFolderResponse.errorMessage
+      } as MainCreateKliveProjectResponse;
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -99,7 +113,7 @@ function resolvePublicFilePath (toResolve: string): string {
 
 /**
  * Gets the contents of the specified directory
- * @param root 
+ * @param root
  */
 async function getDirectoryContent (
   root: string
@@ -109,9 +123,17 @@ async function getDirectoryContent (
   }
 
   let fileEntryCount = 0;
-  return getFileEntryInfo(root, root);
+  const folderSegments = root.replace("\\", "/").split("/");
+  const lastFolder =
+    folderSegments.length > 0
+      ? folderSegments[folderSegments.length - 1]
+      : root;
+  return getFileEntryInfo(root, lastFolder);
 
-  function getFileEntryInfo(entryPath: string, name: string): ProjectNodeWithChildren {
+  function getFileEntryInfo (
+    entryPath: string,
+    name: string
+  ): ProjectNodeWithChildren {
     // --- Store the root node information
     const fileEntryInfo = fs.statSync(entryPath);
     const entry: ProjectNodeWithChildren = {
@@ -119,7 +141,7 @@ async function getDirectoryContent (
       name,
       fullPath: entryPath,
       children: []
-    }
+    };
     if (fileEntryInfo.isFile()) {
       fileEntryCount++;
       return entry;
