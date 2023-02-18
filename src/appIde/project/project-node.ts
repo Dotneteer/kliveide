@@ -82,7 +82,7 @@ export function getNodeExtension (node: ProjectNode | string): string {
 export function buildProjectTree (
   root: ProjectNodeWithChildren
 ): ITreeView<ProjectNode> {
-  return new TreeView<ProjectNode>(toTreeNode(root));
+  return new TreeView<ProjectNode>(toTreeNode(root), false);
 
   function toTreeNode (node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
     // --- Create the initial node

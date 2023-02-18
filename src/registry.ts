@@ -66,7 +66,7 @@ export const activityRegistry: Activity[] = [
 export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   {
     id: "explorerPanel",
-    title: "Explorer Panel",
+    title: "Klive Project",
     hostActivity: ACTIVITY_FILE_ID,
     renderer: explorerPanelRenderer,
     expandedOnInit: true

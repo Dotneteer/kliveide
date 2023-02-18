@@ -54,6 +54,7 @@ import {
 import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
 import { NumCommand } from "./commands/NumCommand";
 import { DisassemblyCommand } from "./commands/DisAssemblyCommand";
+import { NewProjectCommand } from "./commands/NewProjectCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -213,4 +214,5 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
 
   cmdSrv.registerCommand(new NumCommand());
   cmdSrv.registerCommand(new DisassemblyCommand());
+  cmdSrv.registerCommand(new NewProjectCommand());
 }
