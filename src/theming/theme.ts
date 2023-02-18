@@ -148,6 +148,9 @@ export type ThemeProperties = {
   "--bgcolor-explorer-selected"?: string;
   "--bgcolor-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
+  "--bgcolor-open-button"?: string;
+  "--bgcolor-open-button-pointed"?: string;
+  "--color-open-button"?: string;
 }
 
 /**

@@ -15,7 +15,7 @@ import {
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
-import { createKliveProject } from "./projects";
+import { createKliveProject, openFolder, openFolderByPath } from "./projects";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -63,6 +63,17 @@ export async function processRendererToMainMessages (
         type: "MainGetDirectoryContentResponse",
         contents: folderContent
       };
+
+    case "MainOpenFolder":
+      if (message.folder) {
+        const openError = openFolderByPath(message.folder);
+        if (openError) {
+          return errorResponse(openError);
+        }
+      } else {
+        openFolder(window);
+      }
+      break;
 
     case "MainCreateKliveProject":
       const createFolderResponse = createKliveProject(

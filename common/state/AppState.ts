@@ -17,6 +17,7 @@ export type AppState = {
   ideView?: IdeView;
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
+  project?: IdeProject;
 };
 
 /**
@@ -68,6 +69,11 @@ export type EmulatorState = {
   breakpointsVersion: number;
 }
 
+export type IdeProject = {
+  folderPath?: string;
+  isKliveProject?: boolean;
+}
+
 /**
  * The state of a particular site bar panel
  */
@@ -117,5 +123,6 @@ export const initialAppState: AppState = {
     fastLoad: true,
     clockMultiplier: 1,
     breakpointsVersion: 0
-  }
+  },
+  project: {}
 };
