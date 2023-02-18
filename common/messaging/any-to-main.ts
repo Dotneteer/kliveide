@@ -39,6 +39,14 @@ export interface MainGetDirectoryContent extends MessageBase {
 /**
  * The client wants to create a new Klive project
  */
+export interface MainOpenFolder extends MessageBase {
+  type: "MainOpenFolder";
+  folder?: string;
+}
+
+/**
+ * The client wants to create a new Klive project
+ */
 export interface MainCreateKliveProject extends MessageBase {
   type: "MainCreateKliveProject";
   machineId: string;

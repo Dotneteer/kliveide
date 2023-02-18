@@ -148,4 +148,7 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-explorer-selected": "#303035",
   "--bgcolor-explorer-focused-selected": "#002952",
   "--border-explorer-focused": "#0076c9",
+  "--bgcolor-open-button-pointed": "#0070c1",
+  "--bgcolor-open-button": "#006daf",
+  "--color-open-button": "#ffffff",
 };

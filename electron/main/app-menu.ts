@@ -24,7 +24,8 @@ import {
   setSoundLevelAction,
   setTapeFileAction,
   showIdeToolbarAction,
-  showIdeStatusBarAction
+  showIdeStatusBarAction,
+  closeFolderAction
 } from "../../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../../common/state/MachineControllerState";
@@ -38,8 +39,11 @@ import {
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "../../common/state/common-ids";
-import { appSettings, AppSettings, saveAppSettings } from "./settings";
+import { appSettings, saveAppSettings } from "./settings";
+import { openFolder } from "./projects";
 
+const OPEN_FOLDER = "open_folder";
+const CLOSE_FOLDER = "close_folder";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
 const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right";
@@ -91,6 +95,7 @@ export function setupMenu (
   const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
   const openDocs = appState?.ideView?.openDocuments;
+  const folderOpen = appState?.project?.folderPath;
 
   /**
    * Application system menu on MacOS
@@ -111,6 +116,31 @@ export function setupMenu (
       ]
     });
   }
+
+  /**
+   * File menu
+   */
+  template.push({
+    label: "File",
+    submenu: [
+      {
+        id: OPEN_FOLDER,
+        label: "Open folder...",
+        click: async () => {
+          await openFolder(ideWindow);
+        }
+      },
+      { type: "separator"},
+      {
+        id: CLOSE_FOLDER,
+        label: "Close Folder",
+        enabled: !!folderOpen,
+        click: () => {
+          mainStore.dispatch(closeFolderAction());
+        }
+      },
+    ]
+  })
 
   /**
    * Edit menu on MacOS

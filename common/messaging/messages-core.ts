@@ -25,7 +25,8 @@ import {
   MainGetDirectoryContent,
   MainGetDirectoryContentResponse,
   MainCreateKliveProject,
-  MainCreateKliveProjectResponse
+  MainCreateKliveProjectResponse,
+  MainOpenFolder
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -132,6 +133,7 @@ export type RequestMessage =
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
   | MainGetDirectoryContent
+  | MainOpenFolder
   | MainCreateKliveProject
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest

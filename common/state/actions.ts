@@ -248,3 +248,12 @@ export const moveDocumentLeftAction: ActionCreator = () => ({
 export const moveDocumentRightAction: ActionCreator = () => ({
   type: "DOC_MOVE_RIGHT"
 });
+
+export const openFolderAction: ActionCreator = (file: string, flag: boolean) => ({
+  type: "OPEN_FOLDER",
+  payload: { file, flag }
+});
+
+export const closeFolderAction: ActionCreator = () => ({
+  type: "CLOSE_FOLDER",
+});
