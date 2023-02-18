@@ -3,9 +3,9 @@ import { createElement, useEffect, useRef, useState } from "react";
 import { SideBarPanelInfo } from "@/core/abstractions";
 import { useDispatch } from "@/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
-import { Icon } from "../../controls/common/Icon";
+import { Icon } from "../../controls/Icon";
 import classnames from "@/utils/classnames";
-import { ScrollViewer } from "@/controls/common/ScrollViewer";
+import { ScrollViewer } from "@/controls/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
 
 // --- Size of a single expanded module

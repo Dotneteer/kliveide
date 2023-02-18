@@ -1,15 +1,15 @@
-import { AddressInput } from "@/controls/common/AddressInput";
-import { SmallIconButton } from "@/controls/common/IconButton";
-import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
+import { AddressInput } from "@/controls/AddressInput";
+import { SmallIconButton } from "@/controls/IconButton";
+import { LabeledSwitch } from "@/controls/LabeledSwitch";
 import {
   Label,
   LabelSeparator,
   Secondary,
   Value
-} from "@/controls/common/Labels";
-import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
-import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+} from "@/controls/Labels";
+import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
+import { VirtualizedListApi } from "@/controls/VirtualizedList";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import {
   useDispatch,
   useRendererContext,
@@ -287,7 +287,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
           items={cachedItems.current}
           approxSize={20}
           fixItemHeight={false}
-          apiLoaded={api => (vlApi.current = api)}
+          vlApiLoaded={api => (vlApi.current = api)}
           scrolled={scrolled}
           itemRenderer={idx => {
             const address = cachedItems.current?.[idx].address;

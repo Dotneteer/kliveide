@@ -3,7 +3,7 @@ import {
   Label,
   Separator,
   Value
-} from "@/controls/common/Labels";
+} from "@/controls/Labels";
 import { useRendererContext } from "@/core/RendererProvider";
 import {
   EmuGetUlaStateResponse

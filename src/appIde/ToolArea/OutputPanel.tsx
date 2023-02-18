@@ -7,12 +7,12 @@ import {
   setIdeStatusMessageAction
 } from "@state/actions";
 import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Dropdown } from "../../controls/common/Dropdown";
-import { TabButton, TabButtonSeparator } from "../../controls/common/TabButton";
-import { VirtualizedListApi } from "../../controls/common/VirtualizedList";
+import { Dropdown } from "../../controls/Dropdown";
+import { TabButton, TabButtonSeparator } from "../../controls/TabButton";
+import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
@@ -58,7 +58,7 @@ const OutputPanel = () => {
           items={contents ?? []}
           approxSize={20}
           fixItemHeight={false}
-          apiLoaded={vlApi => (api.current = vlApi)}
+          vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
             return <OutputLine spans={contents?.[idx]?.spans} />;
           }}

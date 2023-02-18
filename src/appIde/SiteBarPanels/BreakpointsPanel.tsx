@@ -3,7 +3,7 @@ import {
   LabelSeparator,
   Secondary,
   Value
-} from "@/controls/common/Labels";
+} from "@/controls/Labels";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import {
@@ -20,7 +20,7 @@ import {
 } from "../z80-disassembler/disassembly-helper";
 import styles from "./BreakpointsPanel.module.scss";
 import { MachineControllerState } from "@state/MachineControllerState";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 
 const BreakpointsPanel = () => {

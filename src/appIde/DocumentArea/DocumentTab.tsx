@@ -1,6 +1,6 @@
 import styles from "./DocumentTab.module.scss";
 import { DocumentState } from "@/appIde/abstractions";
-import { Icon } from "../../controls/common/Icon";
+import { Icon } from "../../controls/Icon";
 import classnames from "@/utils/classnames";
 import { useDispatch } from "@/core/RendererProvider";
 import {
@@ -8,7 +8,7 @@ import {
   changeDocumentAction,
   closeDocumentAction
 } from "@state/actions";
-import { TabButton } from "../../controls/common/TabButton";
+import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
 
 export type Props = DocumentState & {

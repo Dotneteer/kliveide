@@ -1,5 +1,5 @@
-import { ScrollViewer, ScrollViewerApi } from "@/controls/common/ScrollViewer";
-import { TabButton } from "@/controls/common/TabButton";
+import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
+import { TabButton } from "@/controls/TabButton";
 import { useSelector } from "@/core/RendererProvider";
 import { documentPanelRegistry } from "@/registry";
 import { useEffect, useRef, useState } from "react";

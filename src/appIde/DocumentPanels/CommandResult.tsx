@@ -1,9 +1,9 @@
-import { SmallIconButton } from "@/controls/common/IconButton";
-import { Label, LabelSeparator } from "@/controls/common/Labels";
-import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
-import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
-import { useDispatch, useRendererContext } from "@/core/RendererProvider";
+import { SmallIconButton } from "@/controls/IconButton";
+import { Label, LabelSeparator } from "@/controls/Labels";
+import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
+import { VirtualizedListApi } from "@/controls/VirtualizedList";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
+import { useDispatch } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useEffect, useRef, useState } from "react";
@@ -110,7 +110,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
           approxSize={20}
           fixItemHeight={false}
           scrolled={scrolled}
-          apiLoaded={api => (vlApi.current = api)}
+          vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
             return (
               <div className={styles.item}>

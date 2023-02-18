@@ -7,8 +7,8 @@ import {
   toolPanelsOnTopAction
 } from "@state/actions";
 import { createElement } from "react";
-import { SpaceFiller } from "../../controls/common/SpaceFiller";
-import { TabButton } from "../../controls/common/TabButton";
+import { SpaceFiller } from "../../controls/SpaceFiller";
+import { TabButton } from "../../controls/TabButton";
 import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 

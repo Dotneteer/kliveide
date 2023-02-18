@@ -1,4 +1,4 @@
-import { SplitPanel } from "../../controls/common/SplitPanel";
+import { SplitPanel } from "../../controls/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
 import { useSelector } from "@/core/RendererProvider";
 import { KeyboardPanel } from "../Keyboard/KeyboardPanel";

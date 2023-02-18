@@ -1,4 +1,4 @@
-import { TooltipFactory } from "@/controls/common/Tooltip";
+import { TooltipFactory } from "@/controls/Tooltip";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import styles from "./ExecutionStateOverlay.module.scss";
 

@@ -1,8 +1,8 @@
-import { SmallIconButton } from "@/controls/common/IconButton";
-import { LabeledSwitch } from "@/controls/common/LabeledSwitch";
-import { ToolbarSeparator } from "@/controls/common/ToolbarSeparator";
-import { VirtualizedListApi } from "@/controls/common/VirtualizedList";
-import { VirtualizedListView } from "@/controls/common/VirtualizedListView";
+import { SmallIconButton } from "@/controls/IconButton";
+import { LabeledSwitch } from "@/controls/LabeledSwitch";
+import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
+import { VirtualizedListApi } from "@/controls/VirtualizedList";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import {
   useDispatch,
   useRendererContext,
@@ -419,7 +419,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
             approxSize={20}
             fixItemHeight={false}
             scrolled={scrolled}
-            apiLoaded={api => (vlApi.current = api)}
+            vlApiLoaded={api => (vlApi.current = api)}
             itemRenderer={idx => {
               return (
                 <div className={styles.item}>

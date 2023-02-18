@@ -49,7 +49,7 @@ export const darkTheme: ThemeProperties = {
   "--color-secondary-label": "#51c351",
 
   // --- Activity bar
-  "--bgcolor-activitybar": "#303030",
+  "--bgcolor-activitybar": "#2d2d2d",
   "--color-activitybar": "#a0a0a0",
   "--bgcolor-activitybar-pointed": "#484848",
   "--bgcolor-activitybar-active": "#007acc",
@@ -139,5 +139,13 @@ export const darkTheme: ThemeProperties = {
   // --- Memory panel
   "--bgcolor-memory-pointed": "#3b8eea",
   "--bgcolor-memory-pc-pointed": "#0DBC79",
-  "--color-memory-pointed": "#ffffff"
+  "--color-memory-pointed": "#ffffff",
+
+  // --- Explorer
+  "--color-explorer": "#cccccc",
+  "--bgcolor-explorer-pointed": "#252829",
+  "--fill-explorer-icon": "#29b8db",
+  "--bgcolor-explorer-selected": "#303035",
+  "--bgcolor-explorer-focused-selected": "#002952",
+  "--border-explorer-focused": "#0076c9",
 };

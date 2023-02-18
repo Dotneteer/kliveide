@@ -6,13 +6,14 @@ import {
 } from "../../common/messaging/messages-core";
 import * as path from "path";
 import * as fs from "fs";
-import { BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
-  binaryContentsResponse
+  binaryContentsResponse,
 } from "../../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -54,6 +55,13 @@ export async function processRendererToMainMessages (
       });
       break;
 
+    case "MainGetDirectoryContent":
+      const folderContent = await getDirectoryContent(message.directory);
+      return {
+        type: "MainGetDirectoryContentResponse",
+        contents: folderContent
+      };
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -87,4 +95,43 @@ function resolvePublicFilePath (toResolve: string): string {
   return path.isAbsolute(toResolve)
     ? toResolve
     : path.join(process.env.PUBLIC, toResolve);
+}
+
+/**
+ * Gets the contents of the specified directory
+ * @param root 
+ */
+async function getDirectoryContent (
+  root: string
+): Promise<ProjectNodeWithChildren> {
+  if (!path.isAbsolute(root)) {
+    root = path.join(app.getPath("home"), root);
+  }
+
+  let fileEntryCount = 0;
+  return getFileEntryInfo(root, root);
+
+  function getFileEntryInfo(entryPath: string, name: string): ProjectNodeWithChildren {
+    // --- Store the root node information
+    const fileEntryInfo = fs.statSync(entryPath);
+    const entry: ProjectNodeWithChildren = {
+      isFolder: false,
+      name,
+      fullPath: entryPath,
+      children: []
+    }
+    if (fileEntryInfo.isFile()) {
+      fileEntryCount++;
+      return entry;
+    }
+    if (fileEntryInfo.isDirectory()) {
+      entry.isFolder = true;
+      const names = fs.readdirSync(entryPath);
+      for (const name of names) {
+        if (fileEntryCount++ > 10240) break;
+        entry.children.push(getFileEntryInfo(path.join(entryPath, name), name));
+      }
+      return entry;
+    }
+  }
 }
