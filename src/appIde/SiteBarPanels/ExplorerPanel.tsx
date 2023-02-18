@@ -8,6 +8,8 @@ import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { Icon } from "@/controls/Icon";
 import { ScrollViewerApi } from "@/controls/ScrollViewer";
 import { VirtualizedListApi } from "@/controls/VirtualizedList";
+import { LabelSeparator } from "@/controls/Labels";
+import classnames from "@/utils/classnames";
 
 const ExplorerPanel = () => {
   const { messenger } = useRendererContext();
@@ -15,6 +17,8 @@ const ExplorerPanel = () => {
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
   );
+  const [selected, setSelected] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
 
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
@@ -35,25 +39,57 @@ const ExplorerPanel = () => {
   }, [messenger]);
 
   return visibleNodes && visibleNodes.length > 0 ? (
-    <div className={styles.explorerPanel}>
+    <div className={styles.explorerPanel} tabIndex={0}
+    onFocus={() => setIsFocused(true)}
+    onBlur={() => setIsFocused(false)}>
       <VirtualizedListView
         items={visibleNodes}
         approxSize={20}
         fixItemHeight={false}
-        svApiLoaded={api => svApi.current = api}
-        vlApiLoaded={api => vlApi.current = api}
+        svApiLoaded={api => (svApi.current = api)}
+        vlApiLoaded={api => (vlApi.current = api)}
         itemRenderer={idx => {
           const node = tree.getViewNodeByIndex(idx);
           return (
-            <div className={styles.item} onClick={() => {
-              node.isExpanded = !node.isExpanded;
-              tree.buildIndex();
-              setVisibleNodes(tree.getVisibleNodes());
-            }}>
-              <div className={styles.indent} style={{width: (node.level + 1) * 16}}></div>
-              {node.data.isFolder && <Icon iconName={node.isExpanded ? "chevron-down": "chevron-right"} width={16} height={16} />}
+            <div
+              className={classnames(styles.item, {
+                [styles.selected]: idx === selected,
+                [styles.focused]: isFocused
+              })}
+              tabIndex={idx}
+              onMouseDown={e => {
+                if (e.button === 0) {
+                  setSelected(idx);
+                }
+              }}
+              onClick={() => {
+                node.isExpanded = !node.isExpanded;
+                tree.buildIndex();
+                setVisibleNodes(tree.getVisibleNodes());
+              }}
+            >
+              <div
+                className={styles.indent}
+                style={{ width: (node.level + 1) * 16 }}
+              ></div>
+              {node.data.isFolder && (
+                <Icon
+                  iconName={node.isExpanded ? "chevron-down" : "chevron-right"}
+                  width={16}
+                  height={16}
+                />
+              )}
+              {!node.data.isFolder && (
+                  <Icon
+                    iconName='file-code'
+                    fill='--fill-explorer-icon'
+                    width={16}
+                    height={16}
+                  />
+              )}
+              <LabelSeparator width={8} />
               <span className={styles.name}>{node.data.name}</span>
-              <div className={styles.indent} style={{width: 8}}></div>
+              <div className={styles.indent} style={{ width: 8 }}></div>
             </div>
           );
         }}

@@ -13,14 +13,28 @@
     flex-direction: row;
     flex-grow: 1;
     flex-shrink: 1;
-    color: white;
+    color: var(--color-explorer);
     overflow: hidden;
-    width: 100%;
-    height: 22px;
+    outline: none;
+    width: calc(100% - 2px);
+    height: 20px;
     align-items: center;
+    border: 1px solid transparent;
 
     &:hover {
-        background-color: red;
+        background-color: var(--bgcolor-explorer-pointed)
+    }
+
+    &.focused:focus-within {
+      border-color: var(--border-explorer-focused);
+    }
+
+    &.selected {
+      background-color: var(--bgcolor-explorer-selected);
+
+      &.focused {
+        background-color: var(--bgcolor-explorer-focused-selected);
+      }
     }
   }
 

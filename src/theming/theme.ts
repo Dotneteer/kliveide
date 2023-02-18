@@ -140,6 +140,14 @@ export type ThemeProperties = {
   "--bgcolor-memory-pointed"?: string;
   "--bgcolor-memory-pc-pointed"?: string;
   "--color-memory-pointed"?: string;
+
+  // --- Explorer
+  "--color-explorer"?: string;
+  "--bgcolor-explorer-pointed"?: string;
+  "--fill-explorer-icon"?: string;
+  "--bgcolor-explorer-selected"?: string;
+  "--bgcolor-explorer-focused-selected"?: string;
+  "--border-explorer-focused"?: string;
 }
 
 /**
