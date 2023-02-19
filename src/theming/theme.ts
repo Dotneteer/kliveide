@@ -85,6 +85,7 @@ export type ThemeProperties = {
   "--bgcolor-sitebar"?: string;
   "--color-header"?: string;
   "--color-chevron"?: string;
+  "--color-chevron-selected"?: string;
   "--color-panel-header"?: string;
   "--color-panel-border"?: string;
   "--color-panel-focused"?: string;
@@ -147,6 +148,8 @@ export type ThemeProperties = {
   "--fill-explorer-icon"?: string;
   "--bgcolor-explorer-selected"?: string;
   "--bgcolor-explorer-focused-selected"?: string;
+  "--color-explorer-selected"?: string;
+  "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
   "--bgcolor-open-button"?: string;
   "--bgcolor-open-button-pointed"?: string;

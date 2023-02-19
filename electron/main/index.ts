@@ -4,19 +4,20 @@
 // This code creates two renderer processes with their corresponding windows:
 // - `emuWindow`: Displays the emulator
 // - `ideWindow`: Displays the IDE tools
-// 
-// By default, only the EMU window is displayed. The app displays the IDE window whenever the user requests directly 
+//
+// By default, only the EMU window is displayed. The app displays the IDE window whenever the user requests directly
 // (with the Show IDE  function) or indirectly (with any other menu commands that require the IDE).
 //
-// The app manages the communication among the three processes (main, emu, ide). The application state is synched; 
-// thus, if any of these processes change the state, the actions causing the changes are sent to the other two 
+// The app manages the communication among the three processes (main, emu, ide). The application state is synched;
+// thus, if any of these processes change the state, the actions causing the changes are sent to the other two
 // processes.
 //
-// Both renderer processes load the same `index.html` file into their browsers. However, they add a parameter to let 
-// the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide` 
+// Both renderer processes load the same `index.html` file into their browsers. However, they add a parameter to let
+// the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide`
 // parameter).
 // ====================================================================================================================
 
+import * as path from "path";
 import {
   defaultResponse,
   RequestMessage,
@@ -29,7 +30,7 @@ import {
   unloadWindowsAction
 } from "../../common/state/actions";
 import { Unsubscribe } from "@state/redux-light";
-import { app, BrowserWindow, shell, ipcMain, screen } from "electron";
+import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";
 import { setupMenu } from "./app-menu";
@@ -40,7 +41,11 @@ import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
-import { createWindowStateManager, IWindowStateManager } from "./WindowStateManager";
+import {
+  createWindowStateManager,
+  IWindowStateManager
+} from "./WindowStateManager";
+import { fileChangeWatcher } from "./file-watcher";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -91,22 +96,32 @@ const emuDevUrl = process.env.VITE_DEV_SERVER_URL + EMU_QP;
 const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
 
+// --- Start watching file changes
+const homeDir = path.join(app.getPath("home"), "KliveProjects");
+fileChangeWatcher.startWatching(homeDir);
+
 async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
   allowCloseIde = false;
 
   // --- Create state manager for the EMU window
-  const emuWindowStateManager = createWindowStateManager(appSettings?.windowStates?.emuWindow, {
-    defaultWidth: 640,
-    defaultHeight: 480,
-    maximize: true,
-    fullScreen: true,
-    stateSaver: state => {
-      appSettings.windowStates = { ...appSettings.windowStates, emuWindow: state };
-      saveAppSettings();
+  const emuWindowStateManager = createWindowStateManager(
+    appSettings?.windowStates?.emuWindow,
+    {
+      defaultWidth: 640,
+      defaultHeight: 480,
+      maximize: true,
+      fullScreen: true,
+      stateSaver: state => {
+        appSettings.windowStates = {
+          ...appSettings.windowStates,
+          emuWindow: state
+        };
+        saveAppSettings();
+      }
     }
-  })
+  );
 
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
@@ -128,20 +143,28 @@ async function createAppWindows () {
   emuWindowStateManager.manage(emuWindow);
 
   // --- Create state manager for the EMU window
-  const ideWindowStateManager = createWindowStateManager(appSettings?.windowStates?.ideWindow, {
-    defaultWidth: 640,
-    defaultHeight: 480,
-    maximize: false,
-    fullScreen: false,
-    stateSaver: state => {
-      appSettings.windowStates = { ...appSettings.windowStates, ideWindow: state };
-      saveAppSettings();
+  const ideWindowStateManager = createWindowStateManager(
+    appSettings?.windowStates?.ideWindow,
+    {
+      defaultWidth: 640,
+      defaultHeight: 480,
+      maximize: false,
+      fullScreen: false,
+      stateSaver: state => {
+        appSettings.windowStates = {
+          ...appSettings.windowStates,
+          ideWindow: state
+        };
+        saveAppSettings();
+      }
     }
-  })
+  );
 
   // --- Create the IDE window
-  const showIde = ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
-  const maximizeIde = showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
+  const showIde =
+    ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
+  const maximizeIde =
+    showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
     icon: join(process.env.PUBLIC, "favicon.svg"),
@@ -156,7 +179,8 @@ async function createAppWindows () {
       nodeIntegration: true,
       contextIsolation: false
     },
-    show: ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false),
+    show:
+      ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
   });
 
   ideWindowStateManager.manage(ideWindow);
@@ -296,7 +320,7 @@ app.on("window-all-closed", () => {
 
 // --- Focus on the main window if the user tried to open another
 app.on("second-instance", () => {
-if (ideWindow) {
+  if (ideWindow) {
     if (ideWindow.isMinimized()) ideWindow.restore();
     ideWindow.focus();
   }

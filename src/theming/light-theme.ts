@@ -81,9 +81,10 @@ export const lightTheme: ThemeProperties = {
   "--color-statusbar-icon": "#000000",
 
   // --- Sitebar
-  "--bgcolor-sitebar": "#e0e0e0",
+  "--bgcolor-sitebar": "#f1f1f1",
   "--color-header": "#000000",
   "--color-chevron": "#000000",
+  "--color-chevron-selected": "#ffffff",
   "--color-panel-header": "#000000",
   "--color-panel-focused": "#61a4d0",
 
@@ -137,5 +138,19 @@ export const lightTheme: ThemeProperties = {
   // --- Memory panel
   "--bgcolor-memory-pointed": "#0451a5",
   "--bgcolor-memory-pc-pointed": "#00BC00",
-  "--color-memory-pointed": "#ffffff"
+  "--color-memory-pointed": "#ffffff",
+
+    // --- Explorer
+    "--color-explorer": "#616161",
+    "--bgcolor-explorer-pointed": "#e4e4e4",
+    "--fill-explorer-icon": "#29b8db",
+    "--bgcolor-explorer-selected": "#dfe2ee",
+    "--bgcolor-explorer-focused-selected": "#0057b3",
+    "--color-explorer-selected": "#616161",
+    "--color-explorer-focused-selected": "#ffffff",
+    "--border-explorer-focused": "#0076c9",
+    "--bgcolor-open-button-pointed": "#005995",
+    "--bgcolor-open-button": "#0071c1",
+    "--color-open-button": "#ffffff",
+  
 };

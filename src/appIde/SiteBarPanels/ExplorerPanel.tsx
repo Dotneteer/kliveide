@@ -11,6 +11,7 @@ import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
+import { Modal } from "@/controls/Modal";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -22,6 +23,8 @@ const ExplorerPanel = () => {
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
   );
+  const [isOpen, setIsOpen] = useState(false);
+
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
   const folderPath = useSelector(s => s.project?.folderPath);
@@ -82,7 +85,18 @@ const ExplorerPanel = () => {
         tabIndex={0}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        onClick={() => {
+          //setIsOpen(true);
+        }}
       >
+        <Modal
+          title="Rename file"
+          isOpen={isOpen}
+          fullScreen={false}
+          onClose={() => {
+            setIsOpen(false);
+          }}
+        ></Modal>
         <VirtualizedListView
           items={visibleNodes}
           approxSize={20}
@@ -91,11 +105,12 @@ const ExplorerPanel = () => {
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
             const node = tree.getViewNodeByIndex(idx);
+            const isSelected = idx === selected;
             const isRoot = tree.rootNode === node;
             return (
               <div
                 className={classnames(styles.item, {
-                  [styles.selected]: idx === selected,
+                  [styles.selected]: isSelected,
                   [styles.focused]: isFocused
                 })}
                 tabIndex={idx}
@@ -121,6 +136,7 @@ const ExplorerPanel = () => {
                     }
                     width={16}
                     height={16}
+                    fill={isSelected ? "--color-chevron-selected" : "--color-chevron"}
                   />
                 )}
                 {!node.data.isFolder && (

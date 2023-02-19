@@ -65,7 +65,7 @@ export function createKliveProject (
  */
 export async function openFolder (
   browserWindow: BrowserWindow
-): Promise<TapeDataBlock[] | undefined> {
+): Promise<void> {
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
@@ -83,7 +83,8 @@ export async function openFolder (
 
 /**
  * Opens the specified path
- * @param projectFolder
+ * @param projectFolder Folder to open
+ * @returns null, if the operation is successful; otherwise, the error message
  */
 export function openFolderByPath (projectFolder: string): string | null {
   // --- Check if project files exists
@@ -108,6 +109,16 @@ export function openFolderByPath (projectFolder: string): string | null {
   return null;
 }
 
+/**
+ * Deletes the specified file entry
+ * @param name File entry to delete
+ * @returns null, if the operation is successful; otherwise, the error message
+ */
+export function deleteFileEntry(name: string): string | null {
+  return null;
+}
+
+// --- Gets the klive folder for the specified project folder
 function getKliveProjectFolder (projectFolder: string): string {
   return projectFolder
     ? path.isAbsolute(projectFolder)
