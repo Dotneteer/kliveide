@@ -74,3 +74,12 @@
     background-color: var(--bgcolor-open-button-pointed);
   }
 }
+
+.editor {
+  outline: none;
+  border: none;
+  color: white;
+  background: transparent;
+  font-family: var(--main-font);
+  font-size: 1em;
+}

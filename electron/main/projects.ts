@@ -1,5 +1,5 @@
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
-import { openFolderAction } from "../../common/state/actions";
+import { closeFolderAction, openFolderAction } from "../../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
 import * as path from "path";
@@ -94,8 +94,10 @@ export function openFolderByPath (projectFolder: string): string | null {
   const projectFile = path.join(projectFolder, PROJECT_FILE);
   if (fs.existsSync(projectFile)) {
     // TODO: Check, if project file is valid
+    mainStore.dispatch(closeFolderAction());
     mainStore.dispatch(openFolderAction(projectFolder, true));
   } else {
+    mainStore.dispatch(closeFolderAction());
     mainStore.dispatch(openFolderAction(projectFolder, false));
   }
 

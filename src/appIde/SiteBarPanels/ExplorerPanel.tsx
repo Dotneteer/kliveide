@@ -10,9 +10,14 @@ import { ScrollViewerApi } from "@/controls/ScrollViewer";
 import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
+import { useAppServices } from "../services/AppServicesProvider";
+
+const folderCache = new Map<string, ITreeView<ProjectNode>>();
+let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   const { messenger } = useRendererContext();
+  const { projectService } = useAppServices();
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
@@ -25,22 +30,48 @@ const ExplorerPanel = () => {
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
 
+  // --- Remove the last explorer tree from the cache when closing the folder
+  useEffect(() => {
+    const projectClosed = () => {
+      if (lastExplorerPath) folderCache.delete(lastExplorerPath);
+    };
+    projectService.projectClosed.on(projectClosed);
+    return () => {
+      projectService.projectClosed.off(projectClosed);
+    };
+  }, [projectService]);
+
   useEffect(() => {
     (async () => {
+      // --- No open folder
       if (!folderPath) {
         setSelected(-1);
-        return 
-      };
+        return;
+      }
+
+      // --- Check the cache for the folder
+      lastExplorerPath = folderPath;
+      const cachedTree = folderCache.get(folderPath);
+      if (cachedTree) {
+        // --- Folder tree found in the cache
+        setTree(cachedTree);
+        setVisibleNodes(cachedTree.getVisibleNodes());
+        return;
+      }
+
+      // --- Read the folder tree
       const dir = (
         (await messenger.sendMessage({
           type: "MainGetDirectoryContent",
           directory: folderPath
         })) as MainGetDirectoryContentResponse
       ).contents;
+
+      // --- Build the folder tree
       const projectTree = buildProjectTree(dir);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
-      console.log(projectTree.getVisibleNodes());
+      folderCache.set(folderPath, projectTree);
     })();
   }, [folderPath]);
 
@@ -100,14 +131,14 @@ const ExplorerPanel = () => {
                     height={16}
                   />
                 )}
-                {isRoot && isKliveProject &&
+                {isRoot && isKliveProject && (
                   <Icon
-                  iconName='home'
-                  fill='--console-ansi-bright-magenta'
-                  width={16}
-                  height={16}
-                />
-              }
+                    iconName='home'
+                    fill='--console-ansi-bright-magenta'
+                    width={16}
+                    height={16}
+                  />
+                )}
                 <LabelSeparator width={8} />
                 <span className={styles.name}>{node.data.name}</span>
                 <div className={styles.indent} style={{ width: 8 }}></div>
@@ -119,12 +150,17 @@ const ExplorerPanel = () => {
     ) : null
   ) : (
     <>
-    <div className={styles.noFolder}>You have not yet opened a folder.</div>
-    <button className={styles.openButton} onClick={async () => {
-      await messenger.sendMessage({
-        type: "MainOpenFolder"
-      })
-    }}>Open Folder</button>
+      <div className={styles.noFolder}>You have not yet opened a folder.</div>
+      <button
+        className={styles.openButton}
+        onClick={async () => {
+          await messenger.sendMessage({
+            type: "MainOpenFolder"
+          });
+        }}
+      >
+        Open Folder
+      </button>
     </>
   );
 };
