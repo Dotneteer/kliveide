@@ -63,28 +63,6 @@
 
 }
 
-.openButton {
-  background-color: var(--bgcolor-button);
-  border: none;
-  border-radius: 2px;
-  margin: 0 16px 16px 16px;
-  padding: 8px;
-  color: var(--color-button);
-  font-family: var(--main-font);
-  font-size: 0.9em;
-  cursor: pointer;
-
-  &:hover {
-    color: var(--color-button-pointed);
-    background-color: var(--bgcolor-button-pointed);
-  }
-
-  &:disabled {
-    background: var(--bgcolor-button-disabled);
-    color: var(--color-button-disabled);
-  }
-}
-
 .editor {
   outline: none;
   border: none;
@@ -92,4 +70,8 @@
   background: transparent;
   font-family: var(--main-font);
   font-size: 1em;
+}
+
+.hilite {
+  color: var(--color-text-hilite);
 }

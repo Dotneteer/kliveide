@@ -12,6 +12,8 @@ import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
 import { Modal, ModalApi } from "@/controls/Modal";
+import { Button } from "@/controls/Button";
+import { TextInput } from "@/controls/TextInput";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -23,7 +25,8 @@ const ExplorerPanel = () => {
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
   );
-  const [isOpen, setIsOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
 
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
@@ -87,28 +90,25 @@ const ExplorerPanel = () => {
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onClick={() => {
-          setIsOpen(true);
+          setIsNewItemDialogOpen(true);
         }}
       >
-        <Modal
-          title="Rename file"
-          isOpen={isOpen}
-          fullScreen={false}
-          width={500}
-          cancelEnabled={false}
-          secondaryVisible={true}
-          secondaryLabel="Other"
-          onApiLoaded={(api) => modalApi.current = api }
-          onPrimaryClicked={() => {
-            modalApi.current?.enableCancel(true);
-            return false;
-          }}
+        <RenameDialog
+          isFolder={true}
+          oldPath='dddfdfd'
+          isOpen={isRenameDialogOpen}
           onClose={() => {
-            setIsOpen(false);
+            setIsRenameDialogOpen(false);
           }}
-        >
-          Rename the file...
-        </Modal>
+        />
+        <NewItemDialog
+          isFolder={false}
+          rootPath='dddfdfd'
+          isOpen={isNewItemDialogOpen}
+          onClose={() => {
+            setIsNewItemDialogOpen(false);
+          }}
+        />
         <VirtualizedListView
           items={visibleNodes}
           approxSize={20}
@@ -148,7 +148,11 @@ const ExplorerPanel = () => {
                     }
                     width={16}
                     height={16}
-                    fill={isSelected ? "--color-chevron-selected" : "--color-chevron"}
+                    fill={
+                      isSelected
+                        ? "--color-chevron-selected"
+                        : "--color-chevron"
+                    }
                   />
                 )}
                 {!node.data.isFolder && (
@@ -179,18 +183,122 @@ const ExplorerPanel = () => {
   ) : (
     <>
       <div className={styles.noFolder}>You have not yet opened a folder.</div>
-      <button
-        className={styles.openButton}
+      <Button
+        text='Open Folder'
         disabled={false}
-        onClick={async () => {
+        spaceLeft={16}
+        spaceRight={16}
+        clicked={async () => {
           await messenger.sendMessage({
             type: "MainOpenFolder"
           });
         }}
-      >
-        Open Folder
-      </button>
+      />
     </>
+  );
+};
+
+type RenameDialogProps = {
+  isFolder?: boolean;
+  oldPath: string;
+  isOpen?: boolean;
+  onClose: () => void;
+};
+
+const RenameDialog = ({
+  isFolder,
+  oldPath,
+  isOpen,
+  onClose
+}: RenameDialogProps) => {
+  const modalApi = useRef<ModalApi>(null);
+  const [newPath, setNewPath] = useState(oldPath);
+  return (
+    <Modal
+      title={isFolder ? "Rename folder" : "Rename file"}
+      isOpen={isOpen}
+      fullScreen={false}
+      width={500}
+      onApiLoaded={api => (modalApi.current = api)}
+      primaryLabel='Rename'
+      initialFocus='none'
+      onPrimaryClicked={() => {
+        console.log("Renamed to " + newPath)
+        return false;
+      }}
+      onClose={() => {
+        onClose();
+      }}
+    >
+      <div>
+        Rename <span className={styles.hilite}>{oldPath}</span> to:
+      </div>
+      <TextInput
+        value={oldPath}
+        focusOnInit={true}
+        keyPressed={e => {
+          if (e.code === "Enter") {
+            modalApi.current.triggerPrimary(newPath);
+          }
+        }}
+        valueChanged={val => {
+          setNewPath(val);
+          return false;
+        }}
+      />
+    </Modal>
+  );
+};
+
+type NewItemProps = {
+  isFolder?: boolean;
+  rootPath?: string;
+  isOpen?: boolean;
+  onClose: () => void;
+};
+
+const NewItemDialog = ({
+  isFolder,
+  rootPath,
+  isOpen,
+  onClose
+}: NewItemProps) => {
+  const modalApi = useRef<ModalApi>(null);
+  const [newItem, setNewItem] = useState<string>();
+  return (
+    <Modal
+      title={isFolder ? "Create new folder" : "Create new file"}
+      isOpen={isOpen}
+      fullScreen={false}
+      width={500}
+      onApiLoaded={api => (modalApi.current = api)}
+      primaryLabel='Create'
+      initialFocus='none'
+      onPrimaryClicked={() => {
+        console.log("Create " + newItem)
+        return false;
+      }}
+      onClose={() => {
+        onClose();
+      }}
+    >
+      <div>
+        Create a new {isFolder ? "folder" : "file"} in <span className={styles.hilite}>{rootPath}</span>:
+      </div>
+      <TextInput
+        value={""}
+        focusOnInit={true}
+        keyPressed={e => {
+          if (e.code === "Enter") {
+            modalApi.current.triggerPrimary(newItem);
+          }
+        }}
+        valueChanged={val => {
+          setNewItem(val);
+          return false;
+        }}
+      />
+    </Modal>
   );
 };
 

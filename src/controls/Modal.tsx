@@ -7,6 +7,7 @@ import {
   useState
 } from "react";
 import { createPortal } from "react-dom";
+import { Button } from "./Button";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.scss";
 
@@ -14,6 +15,10 @@ export interface ModalApi {
   enablePrimaryButton: (flag: boolean) => void;
   enableSecondaryButton: (flag: boolean) => void;
   enableCancel: (flag: boolean) => void;
+  setDialogResult: (result?: any) => void;
+  triggerPrimary: (result?: any) => void;
+  triggerSecondary: (result?: any) => void;
+  triggerCancel: (result?: any) => void;
   triggerClose: () => void;
 }
 
@@ -35,11 +40,12 @@ export type ModalProps = {
   cancelLabel?: string;
   cancelEnabled?: boolean;
   cancelVisible?: boolean;
+  initialFocus?: "none" | "primary" | "secondary" | "cancel"
   onApiLoaded?: (api: ModalApi) => void;
-  onClose: (...args: any[]) => any;
-  onPrimaryClicked?: () => boolean;
-  onSecondaryClicked?: () => boolean;
-  onCancelClicked?: () => boolean;
+  onClose: (result?: any) => any;
+  onPrimaryClicked?: (result?: any) => boolean;
+  onSecondaryClicked?: (result?: any) => boolean;
+  onCancelClicked?: (result?: any) => boolean;
 };
 
 export const Modal = ({
@@ -59,6 +65,7 @@ export const Modal = ({
   cancelLabel = "Cancel",
   cancelEnabled = true,
   cancelVisible = true,
+  initialFocus = "primary",
   onApiLoaded,
   onClose,
   onPrimaryClicked,
@@ -69,6 +76,7 @@ export const Modal = ({
   const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
   const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
   const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
+  const [dialogResult, setDialogResult] = useState<any>();
 
   const handleKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.code === "Escape") {
@@ -79,11 +87,35 @@ export const Modal = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // --- Define button click handlers
+  const primaryClickHandler = (result?: any) => {
+    const close = onPrimaryClicked?.(result ?? dialogResult);
+    if (!close) {
+      onClose();
+    }
+  }
+  const secondaryClickHandler = (result?: any) => {
+    const close = onSecondaryClicked?.(result ?? dialogResult);
+    if (!close) {
+      onClose();
+    }
+  }
+  const cancelClickHandler = (result?: any) => {
+    const close = onCancelClicked?.(result);
+    if (!close) {
+      onClose();
+    }
+  }
+
   useEffect(() => {
     onApiLoaded?.({
       enablePrimaryButton: (flag: boolean) => setButton1Enabled(flag),
       enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
       enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
+      setDialogResult: (result?: any) => setDialogResult(result),
+      triggerPrimary: () => primaryClickHandler(), 
+      triggerSecondary: () => primaryClickHandler(), 
+      triggerCancel: () => primaryClickHandler(), 
       triggerClose: () => onClose()
     });
   }, [modalRef.current]);
@@ -159,52 +191,37 @@ export const Modal = ({
                   className={styles.closeButton}
                   onClick={onClose}
                 >
-                  <Icon iconName='close' height={16} width={16} />
+                  <Icon iconName='close' height={16} width={16} fill="--color-command-icon" />
                 </button>
               </div>
 
               <div className={styles.dialogBody}>{children}</div>
+
               <div>
                 <footer className={styles.dialogFooter}>
-                  {primaryVisible && (
-                    <button
-                      disabled={!button1Enabled}
-                      onClick={() => {
-                        const close = onPrimaryClicked?.();
-                        if (!close) {
-                          onClose();
-                        }
-                      }}
-                    >
-                      {primaryLabel}
-                    </button>
-                  )}
-                  {secondaryVisible && (
-                    <button
-                      disabled={!button2Enabled}
-                      onClick={() => {
-                        const close = onSecondaryClicked?.();
-                        if (!close) {
-                          onClose();
-                        }
-                      }}
-                    >
-                      {secondaryLabel}
-                    </button>
-                  )}
-                  {cancelVisible && (
-                    <button
-                      disabled={!cancelButtonEnabled}
-                      onClick={() => {
-                        const close = onCancelClicked?.();
-                        if (!close) {
-                          onClose();
-                        }
-                      }}
-                    >
-                      {cancelLabel}
-                    </button>
-                  )}
+                  <Button
+                    text={primaryLabel}
+                    visible={primaryVisible}
+                    focusOnInit={primaryEnabled && initialFocus === "primary"}
+                    disabled={!button1Enabled}
+                    spaceLeft={8}
+                    clicked={primaryClickHandler}
+                  />
+                  <Button
+                    text={secondaryLabel}
+                    visible={secondaryVisible}
+                    focusOnInit={secondaryEnabled && initialFocus === "secondary"}
+                    disabled={!button2Enabled}
+                    spaceLeft={8}
+                    clicked={secondaryClickHandler}
+                  />
+                  <Button
+                    text={cancelLabel}
+                    visible={cancelVisible}
+                    disabled={!cancelButtonEnabled}
+                    focusOnInit={cancelButtonEnabled && initialFocus === "cancel"}
+                    clicked={cancelClickHandler}
+                  />
                 </footer>
               </div>
             </div>

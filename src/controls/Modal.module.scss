@@ -74,21 +74,12 @@
   border-radius: none;
 
   &:focus {
-    outline: 0.2em solid blue;
+    outline: 0.2em solid var(--color-button-focused);
   }
 
   &:not([disabled]) {
     &:hover {
-      background-color: lightblue;
-      * {
-        color: red;
-      }
-    }
-    &:active {
-      background-color: blue;
-      * {
-        color: lightblue;
-      }
+      background: var(--bgcolor-tabbutton-pointed);
     }
   }
   &:disabled {
@@ -106,7 +97,10 @@
 .dialogBody {
   display: flex;
   flex: 1;
-  padding: 8px;
+  flex-direction: column;
+  padding: 16px 8px;
+  background-color: var(--bgcolor-modal-body);
+  color: var(--color-modal-body);
 }
 
 .dialogFooter {

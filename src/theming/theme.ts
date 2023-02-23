@@ -21,6 +21,10 @@ export type ThemeProperties = {
   "--color-button"?: string;
   "--bgcolor-button-pointed"?: string;
   "--color-button-pointed"?: string;
+  "--color-button-focused"?: string;
+  "--color-text-hilite"?: string;
+  "--bgcolor-input"?: string;
+  "--color-input"?: string;
  
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
@@ -38,6 +42,8 @@ export type ThemeProperties = {
   "--radius-modal"?: string;
   "--bgcolor-modal-header"?: string;
   "--color-modal-header"?: string;
+  "--bgcolor-modal-body"?: string;
+  "--color-modal-body"?: string;
   "--bgcolor-modal-footer"?: string;
   "--color-modal-footer"?: string;
 

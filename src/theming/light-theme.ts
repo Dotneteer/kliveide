@@ -15,6 +15,13 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#bbbbbb",
+  "--bgcolor-button-disabled": "#606060",
+  "--color-button-disabled": "#aaaaaa",
+  "--bgcolor-button": "#006daf",
+  "--color-button": "#dddddd",
+  "--bgcolor-button-pointed": "#0070c1",
+  "--color-button-pointed": "#ffffff",
+  "--color-button-focused": "#00a0ff",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#a0a0a0",
@@ -29,6 +36,12 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-modal": "#e8e8e8",
   "--border-modal": "1px solid #0076c9",
   "--radius-modal": "2px",
+  "--bgcolor-modal-header": "#d0d0d0",
+  "--color-modal-header": "#000000",
+  "--bgcolor-modal-body": "#f0f0f0",
+  "--color-modal-body": "#414141",
+  "--bgcolor-modal-footer": "#d0d0d0",
+  "--color-modal-footer": "#000000",
 
   // --- Console colors
   "--console-ansi-black": "#000000",
@@ -147,7 +160,7 @@ export const lightTheme: ThemeProperties = {
   "--color-memory-pointed": "#ffffff",
 
     // --- Explorer
-    "--color-explorer": "#616161",
+    "--color-explorer": "#414141",
     "--bgcolor-explorer-pointed": "#e4e4e4",
     "--fill-explorer-icon": "#29b8db",
     "--bgcolor-explorer-selected": "#dfe2ee",
@@ -155,8 +168,4 @@ export const lightTheme: ThemeProperties = {
     "--color-explorer-selected": "#616161",
     "--color-explorer-focused-selected": "#ffffff",
     "--border-explorer-focused": "#0076c9",
-    "--bgcolor-open-button-pointed": "#005995",
-    "--bgcolor-open-button": "#0071c1",
-    "--color-open-button": "#ffffff",
-  
 };

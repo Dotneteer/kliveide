@@ -21,6 +21,10 @@ export const darkTheme: ThemeProperties = {
   "--color-button": "#dddddd",
   "--bgcolor-button-pointed": "#0070c1",
   "--color-button-pointed": "#ffffff",
+  "--color-button-focused": "#00a0ff",
+  "--color-text-hilite": "#00a0ff",
+  "--bgcolor-input": "#282828",
+  "--color-input": "#ffffff",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#505050",
@@ -38,6 +42,8 @@ export const darkTheme: ThemeProperties = {
   "--radius-modal": "2px",
   "--bgcolor-modal-header": "#303030",
   "--color-modal-header": "#ffffff",
+  "--bgcolor-modal-body": "#484848",
+  "--color-modal-body": "#ffffff",
   "--bgcolor-modal-footer": "#303030",
   "--color-modal-footer": "#ffffff",
 
