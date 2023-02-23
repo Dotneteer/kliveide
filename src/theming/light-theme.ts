@@ -24,6 +24,12 @@ export const lightTheme: ThemeProperties = {
   "--bg-color-dropdown-menu-pointed": "#909090",
   "--bg-color-dropdown-menu-selected": "#007acc",
 
+  // --- Modal 
+  "--bgcolor-backdrop": "#ffffff80",
+  "--bgcolor-modal": "#e8e8e8",
+  "--border-modal": "1px solid #0076c9",
+  "--radius-modal": "2px",
+
   // --- Console colors
   "--console-ansi-black": "#000000",
   "--console-ansi-blue": "#0451a5",

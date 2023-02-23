@@ -11,7 +11,7 @@ import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
-import { Modal } from "@/controls/Modal";
+import { Modal, ModalApi } from "@/controls/Modal";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -32,6 +32,7 @@ const ExplorerPanel = () => {
 
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
+  const modalApi = useRef<ModalApi>();
 
   // --- Remove the last explorer tree from the cache when closing the folder
   useEffect(() => {
@@ -86,17 +87,28 @@ const ExplorerPanel = () => {
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onClick={() => {
-          //setIsOpen(true);
+          setIsOpen(true);
         }}
       >
         <Modal
           title="Rename file"
           isOpen={isOpen}
           fullScreen={false}
+          width={500}
+          cancelEnabled={false}
+          secondaryVisible={true}
+          secondaryLabel="Other"
+          onApiLoaded={(api) => modalApi.current = api }
+          onPrimaryClicked={() => {
+            modalApi.current?.enableCancel(true);
+            return false;
+          }}
           onClose={() => {
             setIsOpen(false);
           }}
-        ></Modal>
+        >
+          Rename the file...
+        </Modal>
         <VirtualizedListView
           items={visibleNodes}
           approxSize={20}
@@ -169,6 +181,7 @@ const ExplorerPanel = () => {
       <div className={styles.noFolder}>You have not yet opened a folder.</div>
       <button
         className={styles.openButton}
+        disabled={false}
         onClick={async () => {
           await messenger.sendMessage({
             type: "MainOpenFolder"

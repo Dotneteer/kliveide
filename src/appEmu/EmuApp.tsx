@@ -55,7 +55,7 @@ const EmuApp = () => {
   }, [appServices, store, messenger]);
 
   return (
-    <div className={styles.app}>
+    <div id="appMain" className={styles.app}>
       {showToolbar && <Toolbar />}
       <EmulatorArea />
       {showStatusBar && <EmuStatusBar />}

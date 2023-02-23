@@ -15,7 +15,13 @@ export type ThemeProperties = {
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
-  
+  "--bgcolor-button-disabled"?: string;
+  "--color-button-disabled"?: string;
+  "--bgcolor-button"?: string;
+  "--color-button"?: string;
+  "--bgcolor-button-pointed"?: string;
+  "--color-button-pointed"?: string;
+ 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
@@ -23,6 +29,17 @@ export type ThemeProperties = {
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
   "--bg-color-dropdown-menu-selected"?: string;
+
+  // --- Modal 
+  "--bgcolor-backdrop"?: string;
+  "--bgcolor-modal"?: string;
+  "--color-modal"?: string;
+  "--border-modal"?: string;
+  "--radius-modal"?: string;
+  "--bgcolor-modal-header"?: string;
+  "--color-modal-header"?: string;
+  "--bgcolor-modal-footer"?: string;
+  "--color-modal-footer"?: string;
 
   // --- Console colors
   "--console-ansi-black"?: string;
@@ -151,9 +168,6 @@ export type ThemeProperties = {
   "--color-explorer-selected"?: string;
   "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
-  "--bgcolor-open-button"?: string;
-  "--bgcolor-open-button-pointed"?: string;
-  "--color-open-button"?: string;
 }
 
 /**

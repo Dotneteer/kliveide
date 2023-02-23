@@ -60,21 +60,28 @@
 .noFolder {
   color: var(--color-explorer);
   padding: 16px;
+
 }
 
 .openButton {
-  background-color: var(--bgcolor-open-button);
+  background-color: var(--bgcolor-button);
   border: none;
   border-radius: 2px;
   margin: 0 16px 16px 16px;
   padding: 8px;
-  color: var(--color-open-button);
+  color: var(--color-button);
   font-family: var(--main-font);
   font-size: 0.9em;
   cursor: pointer;
 
   &:hover {
-    background-color: var(--bgcolor-open-button-pointed);
+    color: var(--color-button-pointed);
+    background-color: var(--bgcolor-button-pointed);
+  }
+
+  &:disabled {
+    background: var(--bgcolor-button-disabled);
+    color: var(--color-button-disabled);
   }
 }
 

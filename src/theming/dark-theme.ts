@@ -15,6 +15,12 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#000000",
+  "--bgcolor-button-disabled": "#606060",
+  "--color-button-disabled": "#aaaaaa",
+  "--bgcolor-button": "#006daf",
+  "--color-button": "#dddddd",
+  "--bgcolor-button-pointed": "#0070c1",
+  "--color-button-pointed": "#ffffff",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#505050",
@@ -23,6 +29,17 @@ export const darkTheme: ThemeProperties = {
   "--color-dropdown-menu": "#ffffff",
   "--bg-color-dropdown-menu-pointed": "#606060",
   "--bg-color-dropdown-menu-selected": "#007acc",
+
+  // --- Modal 
+  "--bgcolor-backdrop": "#00000080",
+  "--bgcolor-modal": "#202020",
+  "--color-modal": "#cccccc",
+  "--border-modal": "1px solid #0076c9",
+  "--radius-modal": "2px",
+  "--bgcolor-modal-header": "#303030",
+  "--color-modal-header": "#ffffff",
+  "--bgcolor-modal-footer": "#303030",
+  "--color-modal-footer": "#ffffff",
 
   // --- Console colors
   "--console-ansi-black": "#000000",
@@ -151,7 +168,4 @@ export const darkTheme: ThemeProperties = {
   "--color-explorer-selected": "#ffffff",
   "--color-explorer-focused-selected": "#ffffff",
   "--border-explorer-focused": "#0076c9",
-  "--bgcolor-open-button-pointed": "#0070c1",
-  "--bgcolor-open-button": "#006daf",
-  "--color-open-button": "#ffffff",
 };
