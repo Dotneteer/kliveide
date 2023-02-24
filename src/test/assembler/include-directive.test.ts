@@ -44,11 +44,11 @@ describe("Assembler - include directive", () => {
   });
 
   it("fails with repetition", async () => {
-    compileFileFails("RepetitionInclude.z80asm", "Z0202");
+    await compileFileFails("RepetitionInclude.z80asm", "Z0202");
   });
 
   it("fails with single circularity", async () => {
-    compileFileFails("SingleCircular.z80asm", "Z0203");
+    await compileFileFails("SingleCircular.z80asm", "Z0203");
   });
 
   it("nested include works", async () => {
@@ -73,27 +73,27 @@ describe("Assembler - include directive", () => {
   });
 
   it("missing endif detected #1", async () => {
-    compileFileFails("MissingEndIf1.z80asm", "Z0205");
+    await compileFileFails("MissingEndIf1.z80asm", "Z0205");
   });
 
   it("missing endif detected #2", async () => {
-    compileFileFails("MissingEndIf2.z80asm", "Z0205");
+    await compileFileFails("MissingEndIf2.z80asm", "Z0205");
   });
 
   it("missing endif detected #3", async () => {
-    compileFileFails("MissingEndIf3.z80asm", "Z0205");
+    await compileFileFails("MissingEndIf3.z80asm", "Z0205");
   });
 
   it("missing endif detected #4", async () => {
-    compileFileFails("MissingEndIf4.z80asm", "Z0205");
+    await compileFileFails("MissingEndIf4.z80asm", "Z0205");
   });
 
   it("scenario works #1", async () => {
-    testCodeFileEmit("Scenario1.z80asm", 0x78, 0x01, 0xcd, 0xab, 0x41);
+    await testCodeFileEmit("Scenario1.z80asm", 0x78, 0x01, 0xcd, 0xab, 0x41);
   });
 
   it("scenario works #2", async () => {
-    testCodeFileEmit(
+    await testCodeFileEmit(
       "Scenario2.z80asm",
       0x78,
       0x01,

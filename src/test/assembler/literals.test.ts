@@ -7,15 +7,15 @@ import {
 } from "../../main/z80-compiler/assembler-types";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 
-describe("Assembler - literals", () => {
+describe("Assembler - literals", async () => {
   const decimalLiterals = [
     { source: "0", value: 0 },
     { source: "12345", value: 12345 },
     { source: "99999", value: 34463 },
   ];
   decimalLiterals.forEach((lit) => {
-    it(`Decimal literal ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Decimal literal ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -30,8 +30,8 @@ describe("Assembler - literals", () => {
     { source: "78AFh", value: 0x78af },
   ];
   hexadecimalLiterals.forEach((lit) => {
-    it(`Hexadecimal literal ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Hexadecimal literal ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -44,8 +44,8 @@ describe("Assembler - literals", () => {
     { source: "%101_010_100_101_0101", value: 0xaa55 },
   ];
   binaryLiterals.forEach((lit) => {
-    it(`Binary literal ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary literal ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -56,8 +56,8 @@ describe("Assembler - literals", () => {
     { source: "111111Q", value: 37449 },
   ];
   octalLiterals.forEach((lit) => {
-    it(`Octal literal ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Octal literal ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -74,8 +74,8 @@ describe("Assembler - literals", () => {
     { source: "3e-188888", value: 0 },
   ];
   realLiterals.forEach((lit) => {
-    it(`Real literal ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Real literal ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 });

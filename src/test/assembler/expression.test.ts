@@ -3,12 +3,12 @@ import { ExpressionValue } from "../../main/z80-compiler/expressions";
 import { expressionFails, testExpression } from "./test-helpers";
 import { SymbolValueMap } from "../../main/z80-compiler/assembler-types";
 
-describe("Assembler - expressions", () => {
-  it("Known symbol evaluates to its value", () => {
+describe("Assembler - expressions", async () => {
+  it("Known symbol evaluates to its value", async () => {
     const symbols: SymbolValueMap = {
       known: new ExpressionValue(0x23ea),
     };
-    testExpression("known", 0x23ea, symbols);
+    await testExpression("known", 0x23ea, symbols);
   });
 
   const unarySamples = [
@@ -52,8 +52,8 @@ describe("Assembler - expressions", () => {
     { source: "!false", value: 1 },
   ];
   unarySamples.forEach((lit) => {
-    it(`Unary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Unary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -64,8 +64,8 @@ describe("Assembler - expressions", () => {
     { source: '!"abc"', pattern: "integral types" },
   ];
   unaryFails.forEach((lit) => {
-    it(`Unary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Unary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -98,8 +98,8 @@ describe("Assembler - expressions", () => {
     { source: "false <? 1.2", value: 0 },
   ];
   minOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -113,8 +113,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" <? "def"', pattern: "cannot be a string" },
   ];
   minOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -147,8 +147,8 @@ describe("Assembler - expressions", () => {
     { source: "false >? 1.2", value: 1 },
   ];
   maxOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -162,8 +162,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" >? "def"', pattern: "cannot be a string" },
   ];
   maxOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -196,8 +196,8 @@ describe("Assembler - expressions", () => {
     { source: "false * 1.2", value: 0 },
   ];
   mulOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -211,8 +211,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" * "def"', pattern: "cannot be a string" },
   ];
   mulOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -239,8 +239,8 @@ describe("Assembler - expressions", () => {
     { source: "false / 1.2", value: 0 },
   ];
   divOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -253,8 +253,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" / "def"', pattern: "cannot be a string" },
   ];
   divOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -274,8 +274,8 @@ describe("Assembler - expressions", () => {
     { source: "true % 1e1", value: 1 },
   ];
   modOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -288,8 +288,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" % "def"', pattern: "cannot be a string" },
   ];
   modOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -313,8 +313,8 @@ describe("Assembler - expressions", () => {
     { source: '"" + "def"', value: "def" },
   ];
   addOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -327,8 +327,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" + 1.1', pattern: "string can be added" },
   ];
   addOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -349,8 +349,8 @@ describe("Assembler - expressions", () => {
     { source: "0.0 - 3.14", value: -3.14 },
   ];
   subtOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -363,8 +363,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" - 1.1', pattern: "left" },
   ];
   subtOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -384,8 +384,8 @@ describe("Assembler - expressions", () => {
     { source: "true << 1e1", value: 1024 },
   ];
   lshiftOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -398,8 +398,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" << 1.1', pattern: "left" },
   ];
   lshiftOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -419,8 +419,8 @@ describe("Assembler - expressions", () => {
     { source: "true >> 1e1", value: 0 },
   ];
   rshiftOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -433,8 +433,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" >> 1.1', pattern: "left" },
   ];
   rshiftOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -459,8 +459,8 @@ describe("Assembler - expressions", () => {
     { source: '"" < ""', value: 0 },
   ];
   ltOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -473,8 +473,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" < 1.1', pattern: "another" },
   ];
   ltOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -499,8 +499,8 @@ describe("Assembler - expressions", () => {
     { source: '"" <= ""', value: 1 },
   ];
   lteOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -513,8 +513,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" <= 1.1', pattern: "another" },
   ];
   lteOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -539,8 +539,8 @@ describe("Assembler - expressions", () => {
     { source: '"" >= ""', value: 1 },
   ];
   gteOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -553,8 +553,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" >= 1.1', pattern: "another" },
   ];
   gteOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -579,8 +579,8 @@ describe("Assembler - expressions", () => {
     { source: '"" > ""', value: 0 },
   ];
   gtOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -593,8 +593,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" > 1.1', pattern: "another" },
   ];
   gtOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -619,8 +619,8 @@ describe("Assembler - expressions", () => {
     { source: '"" == ""', value: 1 },
   ];
   eqOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -633,8 +633,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" == 1.1', pattern: "another" },
   ];
   eqOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -659,8 +659,8 @@ describe("Assembler - expressions", () => {
     { source: '"" === ""', value: 1 },
   ];
   ciEqOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -673,8 +673,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" === 1.1', pattern: "another" },
   ];
   ciEqOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -699,8 +699,8 @@ describe("Assembler - expressions", () => {
     { source: '"" !== ""', value: 0 },
   ];
   ciNeqOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -713,8 +713,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" !== 1.1', pattern: "another" },
   ];
   ciNeqOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -739,8 +739,8 @@ describe("Assembler - expressions", () => {
     { source: '"" != ""', value: 0 },
   ];
   neqOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -753,8 +753,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" != 1.1', pattern: "another" },
   ];
   neqOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -775,8 +775,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" & "def"', value: "abc\r\ndef" },
   ];
   bandOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -789,8 +789,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" & 1.1', pattern: "string" },
   ];
   bandOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -810,8 +810,8 @@ describe("Assembler - expressions", () => {
     { source: "true | 1e1", value: 11 },
   ];
   borOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -824,8 +824,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" | 1.1', pattern: "left" },
   ];
   borOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -845,8 +845,8 @@ describe("Assembler - expressions", () => {
     { source: "true ^ 1e1", value: 11 },
   ];
   bxorOpSamples.forEach((lit) => {
-    it(`Binary: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Binary: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -859,8 +859,8 @@ describe("Assembler - expressions", () => {
     { source: '"abc" ^ 1.1', pattern: "left" },
   ];
   bxorOpFails.forEach((lit) => {
-    it(`Binary fails: ${lit.source}`, () => {
-      expressionFails(lit.source, null, [undefined, lit.pattern]);
+    it(`Binary fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source, null, [undefined, lit.pattern]);
     });
   });
 
@@ -869,15 +869,15 @@ describe("Assembler - expressions", () => {
     { source: "23 + 11 < 3 ? 123 : 456", value: 456 },
   ];
   conditionalOpSamples.forEach((lit) => {
-    it(`Conditional: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Conditional: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
   const currentAddressSamples = [{ source: "$", value: 0x8000 }];
   currentAddressSamples.forEach((lit) => {
-    it(`Current address: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Current address: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 });

@@ -25,21 +25,21 @@ describe("Assembler - stack operations", () => {
   });
 
   it("push/pop: invalid operand", async () => {
-    codeRaisesError("pop af'", "Z0413");
-    codeRaisesError("push af'", "Z0413");
-    codeRaisesError("pop a", "Z0413");
-    codeRaisesError("push a", "Z0413");
-    codeRaisesError("pop xl", "Z0413");
-    codeRaisesError("push yh", "Z0413");
-    codeRaisesError("pop (bc)", "Z0413");
-    codeRaisesError("push (bc)", "Z0413");
-    codeRaisesError("pop (#A234)", "Z0413");
-    codeRaisesError("push (#A234)", "Z0413");
-    codeRaisesError("pop (c)", "Z0413");
-    codeRaisesError("push (c)", "Z0413");
-    codeRaisesError("pop (ix+3)", "Z0413");
-    codeRaisesError("push (iy-4)", "Z0413");
-    codeRaisesError("pop #123", "Z0412");
-    codeRaisesError("push #123", "Z0414");
+    await codeRaisesError("pop af'", "Z0413");
+    await codeRaisesError("push af'", "Z0413");
+    await codeRaisesError("pop a", "Z0413");
+    await codeRaisesError("push a", "Z0413");
+    await codeRaisesError("pop xl", "Z0413");
+    await codeRaisesError("push yh", "Z0413");
+    await codeRaisesError("pop (bc)", "Z0413");
+    await codeRaisesError("push (bc)", "Z0413");
+    await codeRaisesError("pop (#A234)", "Z0413");
+    await codeRaisesError("push (#A234)", "Z0413");
+    await codeRaisesError("pop (c)", "Z0413");
+    await codeRaisesError("push (c)", "Z0413");
+    await codeRaisesError("pop (ix+3)", "Z0413");
+    await codeRaisesError("push (iy-4)", "Z0413");
+    await codeRaisesError("pop #123", "Z0412");
+    await codeRaisesError("push #123", "Z0414");
   });
 });

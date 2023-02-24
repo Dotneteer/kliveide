@@ -6070,6 +6070,14 @@ const conditionOrder: { [key: string]: number } = {
   pe: 5,
   p: 6,
   m: 7,
+  NZ: 0,
+  Z: 1,
+  NC: 2,
+  C: 3,
+  PO: 4,
+  PE: 5,
+  P: 6,
+  M: 7,
 };
 
 /**
