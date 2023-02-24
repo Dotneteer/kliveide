@@ -4,9 +4,9 @@ import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
-describe("Assembler - struct invocation", () => {
-  it("defb #1", () => {
-    testCodeEmit(
+describe("Assembler - struct invocation", async () => {
+  it("defb #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
     .struct
@@ -20,8 +20,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb #2", () => {
-    testCodeEmit(
+  it("defb #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
     .struct
@@ -36,8 +36,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb #3", () => {
-    testCodeEmit(
+  it("defb #3", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -54,8 +54,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb #4", () => {
-    testCodeEmit(
+  it("defb #4", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -74,8 +74,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb #5", () => {
-    testCodeEmit(
+  it("defb #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
     .struct
@@ -90,8 +90,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #1", () => {
-    testCodeEmit(
+  it("defb, fixup #1", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -107,8 +107,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #2", () => {
-    testCodeEmit(
+  it("defb, fixup #2", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -124,8 +124,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #3", () => {
-    testCodeEmit(
+  it("defb, fixup #3", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -142,8 +142,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #4", () => {
-    testCodeEmit(
+  it("defb, fixup #4", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -163,8 +163,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #5", () => {
-    testCodeEmit(
+  it("defb, fixup #5", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -185,8 +185,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #6", () => {
-    testCodeEmit(
+  it("defb, fixup #6", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -208,8 +208,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defb, fixup #7", () => {
-    testCodeEmit(
+  it("defb, fixup #7", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -231,8 +231,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defb", () => {
-    codeRaisesError(
+  it("oversize defb", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -253,8 +253,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #1", () => {
-    testCodeEmit(
+  it("defw #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -269,8 +269,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #2", () => {
-    testCodeEmit(
+  it("defw #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -285,8 +285,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #3", () => {
-    testCodeEmit(
+  it("defw #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -303,8 +303,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #4", () => {
-    testCodeEmit(
+  it("defw #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -322,8 +322,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #5", () => {
-    testCodeEmit(
+  it("defw #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -341,8 +341,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #6", () => {
-    testCodeEmit(
+  it("defw #6", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -362,8 +362,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #7", () => {
-    testCodeEmit(
+  it("defw #7", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -383,8 +383,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw #8", () => {
-    testCodeEmit(
+  it("defw #8", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -405,8 +405,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #1", () => {
-    testCodeEmit(
+  it("defw, fixup #1", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -424,8 +424,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #2", () => {
-    testCodeEmit(
+  it("defw, fixup #2", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -443,8 +443,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #3", () => {
-    testCodeEmit(
+  it("defw, fixup #3", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -464,8 +464,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #4", () => {
-    testCodeEmit(
+  it("defw, fixup #4", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -487,8 +487,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #5", () => {
-    testCodeEmit(
+  it("defw, fixup #5", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -511,8 +511,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #6", () => {
-    testCodeEmit(
+  it("defw, fixup #6", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -535,8 +535,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #7", () => {
-    testCodeEmit(
+  it("defw, fixup #7", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -560,8 +560,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #8", () => {
-    testCodeEmit(
+  it("defw, fixup #8", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -585,8 +585,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defw, fixup #9", () => {
-    testCodeEmit(
+  it("defw, fixup #9", async () => {
+    await testCodeEmit(
       `
     MyStruct:
       .struct
@@ -610,8 +610,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defw", () => {
-    codeRaisesError(
+  it("oversize defw", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -632,8 +632,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defm #1", () => {
-    testCodeEmit(
+  it("defm #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -649,8 +649,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defm #2", () => {
-    testCodeEmit(
+  it("defm #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -668,8 +668,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defm #3", () => {
-    testCodeEmit(
+  it("defm #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -688,8 +688,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defm #4", () => {
-    testCodeEmit(
+  it("defm #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -710,8 +710,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defm #5", () => {
-    testCodeEmit(
+  it("defm #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -727,8 +727,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defm", () => {
-    codeRaisesError(
+  it("oversize defm", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -749,8 +749,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defn #1", () => {
-    testCodeEmit(
+  it("defn #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -767,8 +767,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defn #2", () => {
-    testCodeEmit(
+  it("defn #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -788,8 +788,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defn #3", () => {
-    testCodeEmit(
+  it("defn #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -810,8 +810,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defn #4", () => {
-    testCodeEmit(
+  it("defn #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -834,8 +834,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defn #5", () => {
-    testCodeEmit(
+  it("defn #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -852,8 +852,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defn", () => {
-    codeRaisesError(
+  it("oversize defn", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -874,8 +874,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defc #1", () => {
-    testCodeEmit(
+  it("defc #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -891,8 +891,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defc #2", () => {
-    testCodeEmit(
+  it("defc #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -910,8 +910,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defc #3", () => {
-    testCodeEmit(
+  it("defc #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -930,8 +930,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defc #4", () => {
-    testCodeEmit(
+  it("defc #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -952,8 +952,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defc #5", () => {
-    testCodeEmit(
+  it("defc #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -969,8 +969,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defc", () => {
-    codeRaisesError(
+  it("oversize defc", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -991,8 +991,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defh #1", () => {
-    testCodeEmit(
+  it("defh #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1007,8 +1007,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defh #2", () => {
-    testCodeEmit(
+  it("defh #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1024,8 +1024,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defh #3", () => {
-    testCodeEmit(
+  it("defh #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1042,8 +1042,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defh #4", () => {
-    testCodeEmit(
+  it("defh #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1062,8 +1062,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defh #5", () => {
-    testCodeEmit(
+  it("defh #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1083,8 +1083,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defh", () => {
-    codeRaisesError(
+  it("oversize defh", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -1105,8 +1105,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defs #1", () => {
-    testCodeEmit(
+  it("defs #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1122,8 +1122,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defs #2", () => {
-    testCodeEmit(
+  it("defs #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1140,8 +1140,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defs #3", () => {
-    testCodeEmit(
+  it("defs #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1159,8 +1159,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defs #4", () => {
-    testCodeEmit(
+  it("defs #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1180,8 +1180,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defs #5", () => {
-    testCodeEmit(
+  it("defs #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1202,8 +1202,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defs", () => {
-    codeRaisesError(
+  it("oversize defs", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -1224,8 +1224,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillb #1", () => {
-    testCodeEmit(
+  it("fillb #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1241,8 +1241,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillb #2", () => {
-    testCodeEmit(
+  it("fillb #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1259,8 +1259,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillb #3", () => {
-    testCodeEmit(
+  it("fillb #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1278,8 +1278,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillb #4", () => {
-    testCodeEmit(
+  it("fillb #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1299,8 +1299,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillb #5", () => {
-    testCodeEmit(
+  it("fillb #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1321,8 +1321,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize fillb", () => {
-    codeRaisesError(
+  it("oversize fillb", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -1343,8 +1343,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillw #1", () => {
-    testCodeEmit(
+  it("fillw #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1361,8 +1361,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillw #2", () => {
-    testCodeEmit(
+  it("fillw #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1382,8 +1382,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillw #3", () => {
-    testCodeEmit(
+  it("fillw #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1404,8 +1404,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillw #4", () => {
-    testCodeEmit(
+  it("fillw #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1428,8 +1428,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("fillw #5", () => {
-    testCodeEmit(
+  it("fillw #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1447,8 +1447,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize fillw", () => {
-    codeRaisesError(
+  it("oversize fillw", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -1469,8 +1469,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defg #1", () => {
-    testCodeEmit(
+  it("defg #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1488,8 +1488,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defg #2", () => {
-    testCodeEmit(
+  it("defg #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1504,8 +1504,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defg #3", () => {
-    testCodeEmit(
+  it("defg #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1524,8 +1524,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defg #4", () => {
-    testCodeEmit(
+  it("defg #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1546,8 +1546,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defg #5", () => {
-    testCodeEmit(
+  it("defg #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1563,8 +1563,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defg", () => {
-    codeRaisesError(
+  it("oversize defg", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct
@@ -1585,8 +1585,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defgx #1", () => {
-    testCodeEmit(
+  it("defgx #1", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1601,8 +1601,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defgx #2", () => {
-    testCodeEmit(
+  it("defgx #2", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1620,8 +1620,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defgx #3", () => {
-    testCodeEmit(
+  it("defgx #3", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1640,8 +1640,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defgx #4", () => {
-    testCodeEmit(
+  it("defgx #4", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1658,8 +1658,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("defgx #5", () => {
-    testCodeEmit(
+  it("defgx #5", async () => {
+    await testCodeEmit(
       `
     MyStruct
       .struct
@@ -1677,8 +1677,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("oversize defgx", () => {
-    codeRaisesError(
+  it("oversize defgx", async () => {
+    await codeRaisesError(
       `
     MyStruct:
       .struct

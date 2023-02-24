@@ -1,9 +1,9 @@
 import "mocha";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
-describe("Assembler - macro emit", () => {
-  it("fails with unknown name", () => {
-    codeRaisesError(
+describe("Assembler - macro emit", async () => {
+  it("fails with unknown name", async () => {
+    await codeRaisesError(
       `
       MyMacro()
       `,
@@ -11,8 +11,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with known name", () => {
-    testCodeEmit(
+  it("works with known name", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro()
         nop
@@ -23,8 +23,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with known name and arguments", () => {
-    testCodeEmit(
+  it("works with known name and arguments", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first, second)
         nop
@@ -35,8 +35,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with less arguments #1", () => {
-    testCodeEmit(
+  it("works with less arguments #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first, second)
         nop
@@ -47,8 +47,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with less arguments #2", () => {
-    testCodeEmit(
+  it("works with less arguments #2", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first)
         nop
@@ -59,8 +59,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("fails with more arguments", () => {
-    codeRaisesError(
+  it("fails with more arguments", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(first)
         nop
@@ -71,8 +71,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with equ", () => {
-    testCodeEmit(
+  it("works with equ", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first)
         nop
@@ -84,8 +84,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with late binding", () => {
-    testCodeEmit(
+  it("works with late binding", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first)
         nop
@@ -97,8 +97,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("fails with evaluation error #1", () => {
-    codeRaisesError(
+  it("fails with evaluation error #1", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(first)
         nop
@@ -110,8 +110,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with multiple late binding #1", () => {
-    testCodeEmit(
+  it("works with multiple late binding #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first, second)
         nop
@@ -123,8 +123,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("works with multiple late binding #2", () => {
-    testCodeEmit(
+  it("works with multiple late binding #2", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(first, second)
         nop
@@ -136,8 +136,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("simple emit", () => {
-    testCodeEmit(
+  it("simple emit", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         nop
@@ -152,8 +152,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("simple emit - internal label", () => {
-    testCodeEmit(
+  it("simple emit - internal label", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ThisLabel: ld bc,ThisLabel
@@ -166,8 +166,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("multiple emit - internal label", () => {
-    testCodeEmit(
+  it("multiple emit - internal label", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ThisLabel: ld bc,ThisLabel
@@ -184,8 +184,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("multiple emit - internal label, fixup", () => {
-    testCodeEmit(
+  it("multiple emit - internal label, fixup", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,ThisLabel
@@ -205,8 +205,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro with start label", () => {
-    testCodeEmit(
+  it("macro with start label", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,Simple
@@ -226,8 +226,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro with end label", () => {
-    testCodeEmit(
+  it("macro with end label", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,EndLabel
@@ -247,8 +247,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro with external fixup label #1", () => {
-    testCodeEmit(
+  it("macro with external fixup label #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,OuterLabel
@@ -270,8 +270,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro with external fixup label #2", () => {
-    testCodeEmit(
+  it("macro with external fixup label #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,OuterLabel
@@ -293,8 +293,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #1", () => {
-    testCodeEmit(
+  it("macro nested loop #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         ld bc,#1234
@@ -320,8 +320,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #2", () => {
-    testCodeEmit(
+  it("macro nested loop #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         inc a
@@ -350,8 +350,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #3", () => {
-    testCodeEmit(
+  it("macro nested loop #3", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         inc a
@@ -384,8 +384,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #4", () => {
-    testCodeEmit(
+  it("macro nested loop #4", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         index = 1;
@@ -406,8 +406,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #5", () => {
-    testCodeEmit(
+  it("macro nested loop #5", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         index = 1;
@@ -429,8 +429,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested loop #6", () => {
-    testCodeEmit(
+  it("macro nested loop #6", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .loop 3
@@ -449,8 +449,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #1", () => {
-    testCodeEmit(
+  it("macro nested repeat #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -470,8 +470,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #2", () => {
-    testCodeEmit(
+  it("macro nested repeat #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -493,8 +493,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #3", () => {
-    testCodeEmit(
+  it("macro nested repeat #3", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 3
@@ -516,8 +516,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #4", () => {
-    testCodeEmit(
+  it("macro nested repeat #4", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -537,8 +537,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #5", () => {
-    testCodeEmit(
+  it("macro nested repeat #5", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -561,8 +561,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #6", () => {
-    testCodeEmit(
+  it("macro nested repeat #6", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -585,8 +585,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #7", () => {
-    testCodeEmit(
+  it("macro nested repeat #7", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -609,8 +609,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #8", () => {
-    testCodeEmit(
+  it("macro nested repeat #8", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -635,8 +635,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #9", () => {
-    testCodeEmit(
+  it("macro nested repeat #9", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -661,8 +661,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat/loop #1", () => {
-    testCodeEmit(
+  it("macro nested repeat/loop #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -691,8 +691,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested repeat #10", () => {
-    testCodeEmit(
+  it("macro nested repeat #10", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -713,8 +713,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #1", () => {
-    testCodeEmit(
+  it("macro nested while #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -734,8 +734,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #2", () => {
-    testCodeEmit(
+  it("macro nested while #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -757,8 +757,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #3", () => {
-    testCodeEmit(
+  it("macro nested while #3", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -778,8 +778,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #4", () => {
-    testCodeEmit(
+  it("macro nested while #4", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -802,8 +802,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #5", () => {
-    testCodeEmit(
+  it("macro nested while #5", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -826,8 +826,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #6", () => {
-    testCodeEmit(
+  it("macro nested while #6", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -850,8 +850,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #7", () => {
-    testCodeEmit(
+  it("macro nested while #7", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -876,8 +876,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #8", () => {
-    testCodeEmit(
+  it("macro nested while #8", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0
@@ -902,8 +902,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested while #9", () => {
-    testCodeEmit(
+  it("macro nested while #9", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         counter = 0;
@@ -924,8 +924,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #1", () => {
-    testCodeEmit(
+  it("macro nested for #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 1 .to 2
@@ -943,8 +943,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #2", () => {
-    testCodeEmit(
+  it("macro nested for #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 1 .to 2
@@ -964,8 +964,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #3", () => {
-    testCodeEmit(
+  it("macro nested for #3", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 2 .to 1 step -1
@@ -985,8 +985,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #4", () => {
-    testCodeEmit(
+  it("macro nested for #4", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 1 .to 2
@@ -1004,8 +1004,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #5", () => {
-    testCodeEmit(
+  it("macro nested for #5", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 2 .to 1 step -1
@@ -1026,8 +1026,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #6", () => {
-    testCodeEmit(
+  it("macro nested for #6", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         StartLabel: .for _i = 1 to 2
@@ -1048,8 +1048,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #7", () => {
-    testCodeEmit(
+  it("macro nested for #7", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 1 .to 2
@@ -1070,8 +1070,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #8", () => {
-    testCodeEmit(
+  it("macro nested for #8", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 2 to 1 step -1
@@ -1094,8 +1094,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #9", () => {
-    testCodeEmit(
+  it("macro nested for #9", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 2 to 1 step -1
@@ -1118,8 +1118,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #10", () => {
-    testCodeEmit(
+  it("macro nested for #10", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 6 to 8
@@ -1138,8 +1138,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested for #11", () => {
-    testCodeEmit(
+  it("macro nested for #11", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .for _i = 6 to 8
@@ -1158,8 +1158,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("multiple macros", () => {
-    testCodeEmit(
+  it("multiple macros", async () => {
+    await testCodeEmit(
       `
       Simple1: .macro()
         .db #01
@@ -1184,8 +1184,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested if #1", () => {
-    testCodeEmit(
+  it("macro nested if #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         cond = false;
@@ -1198,8 +1198,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested if #2", () => {
-    testCodeEmit(
+  it("macro nested if #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         cond = true;
@@ -1213,8 +1213,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested if #3", () => {
-    testCodeEmit(
+  it("macro nested if #3", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         cond = true;
@@ -1230,8 +1230,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested if #4", () => {
-    testCodeEmit(
+  it("macro nested if #4", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         cond = false;
@@ -1247,8 +1247,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("macro nested if #5", () => {
-    testCodeEmit(
+  it("macro nested if #5", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         cond = false;
@@ -1272,7 +1272,7 @@ describe("Assembler - macro emit", () => {
     { expr: "123", expected: 0x14 },
   ];
   trueConditions.forEach((tc) => {
-    it(`macro if true conditions: ${tc.expr}`, () => {
+    it(`macro if true conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1288,7 +1288,7 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -1299,7 +1299,7 @@ describe("Assembler - macro emit", () => {
     { expr: "123", expected: 0x06 },
   ];
   equConditions.forEach((tc) => {
-    it(`macro if equ conditions: ${tc.expr}`, () => {
+    it(`macro if equ conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1316,12 +1316,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
   equConditions.forEach((tc) => {
-    it(`macro if var conditions: ${tc.expr}`, () => {
+    it(`macro if var conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1339,7 +1339,7 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -1350,7 +1350,7 @@ describe("Assembler - macro emit", () => {
     { expr: "123", expected: 0x14 },
   ];
   labelConditions.forEach((tc) => {
-    it(`macro if branch: ${tc.expr}`, () => {
+    it(`macro if branch: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1374,12 +1374,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`macro if branch with hanging labels: ${tc.expr}`, () => {
+    it(`macro if branch with hanging labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1407,12 +1407,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`macro if branch with middle labels: ${tc.expr}`, () => {
+    it(`macro if branch with middle labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1436,12 +1436,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`macro if branch with end labels: ${tc.expr}`, () => {
+    it(`macro if branch with end labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
         cond = ${tc.expr}
@@ -1465,12 +1465,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
     });
   });
 
-  it("macro nested if #6", () => {
-    testCodeEmit(
+  it("macro nested if #6", async () => {
+    await testCodeEmit(
       `
       Simple: .macro()
         .if true
@@ -1487,8 +1487,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("fails with missing label", () => {
-    codeRaisesError(
+  it("fails with missing label", async () => {
+    await codeRaisesError(
       `
       Simple: .macro()
         .if false
@@ -1518,7 +1518,7 @@ describe("Assembler - macro emit", () => {
     { row: 123, col: 123, expected: 0x0b },
   ];
   nestedConditions.forEach((tc) => {
-    it(`macro nested if branches: ${tc.row}/${tc.col}`, () => {
+    it(`macro nested if branches: ${tc.row}/${tc.col}`, async () => {
       const source = `
       Simple: .macro()
         row = ${tc.row}
@@ -1559,12 +1559,12 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
-  it("Unpassed argument #1", () => {
-    testCodeEmit(
+  it("Unpassed argument #1", async () => {
+    await testCodeEmit(
       `
       Simple: .macro(arg1, arg2)
         .if def({{arg1}})
@@ -1586,8 +1586,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("Unpassed argument #2", () => {
-    testCodeEmit(
+  it("Unpassed argument #2", async () => {
+    await testCodeEmit(
       `
       Simple: .macro(arg1, arg2)
         .if def({{arg1}})
@@ -1605,8 +1605,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("Unpassed argument #3", () => {
-    testCodeEmit(
+  it("Unpassed argument #3", async () => {
+    await testCodeEmit(
       `
       LdBcDeHl:
         .macro(bcVal, deVal, hlVal)
@@ -1631,8 +1631,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("fails with macro parameter in argument", () => {
-    codeRaisesError(
+  it("fails with macro parameter in argument", async () => {
+    await codeRaisesError(
       `
       Simple: 
       .macro(arg1, arg2)
@@ -1644,8 +1644,8 @@ describe("Assembler - macro emit", () => {
     );
   });
 
-  it("Macro in macro", () => {
-    testCodeEmit(
+  it("Macro in macro", async () => {
+    await testCodeEmit(
       `
       LdHl:
         .macro(value)

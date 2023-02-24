@@ -5,9 +5,9 @@ import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
-describe("Assembler - .while", () => {
-  it("ent - fails in while", () => {
-    codeRaisesError(
+describe("Assembler - .while", async () => {
+  it("ent - fails in while", async () => {
+    await codeRaisesError(
       `
       counter = 0
       .while counter < 3
@@ -19,8 +19,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("xent - fails in while", () => {
-    codeRaisesError(
+  it("xent - fails in while", async () => {
+    await codeRaisesError(
       `
       counter = 0
       .while counter < 3
@@ -32,19 +32,19 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it(".endw - fails without while", () => {
-    codeRaisesError(".endw", "Z0704");
-    codeRaisesError(".ENDW", "Z0704");
-    codeRaisesError("endw", "Z0704");
-    codeRaisesError("ENDW", "Z0704");
-    codeRaisesError(".wend", "Z0704");
-    codeRaisesError(".WEND", "Z0704");
-    codeRaisesError("wend", "Z0704");
-    codeRaisesError("WEND", "Z0704");
+  it(".endw - fails without while", async () => {
+    await codeRaisesError(".endw", "Z0704");
+    await codeRaisesError(".ENDW", "Z0704");
+    await codeRaisesError("endw", "Z0704");
+    await codeRaisesError("ENDW", "Z0704");
+    await codeRaisesError(".wend", "Z0704");
+    await codeRaisesError(".WEND", "Z0704");
+    await codeRaisesError("wend", "Z0704");
+    await codeRaisesError("WEND", "Z0704");
   });
 
-  it("while - missing loop end", () => {
-    codeRaisesError(
+  it("while - missing loop end", async () => {
+    await codeRaisesError(
       `
       .while true
       ld a,b
@@ -53,8 +53,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("while - fails with string", () => {
-    codeRaisesError(
+  it("while - fails with string", async () => {
+    await codeRaisesError(
       `
       .while "Hello"
       ld a,b
@@ -64,8 +64,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("while - too long loop", () => {
-    codeRaisesError(
+  it("while - too long loop", async () => {
+    await codeRaisesError(
       `
       .while true
       .endw
@@ -92,8 +92,8 @@ describe("Assembler - .while", () => {
     expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
-  it("while - empty body", () => {
-    testCodeEmit(
+  it("while - empty body", async () => {
+    await testCodeEmit(
       `
       .while false
       .wend
@@ -101,8 +101,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("while - executes zero time", () => {
-    testCodeEmit(
+  it("while - executes zero time", async () => {
+    await testCodeEmit(
       `
       .while false
         inc a
@@ -175,8 +175,8 @@ describe("Assembler - .while", () => {
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("while - invalid condition", () => {
-    codeRaisesError(
+  it("while - invalid condition", async () => {
+    await codeRaisesError(
       `
       .while 3+unknown
       .wend
@@ -185,8 +185,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("while - valid counter", () => {
-    testCodeEmit(
+  it("while - valid counter", async () => {
+    await testCodeEmit(
       `
       later: .equ 5
       count = 1
@@ -197,8 +197,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - single line", () => {
-    testCodeEmit(
+  it("emit - single line", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -215,8 +215,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - multiple lines", () => {
-    testCodeEmit(
+  it("emit - multiple lines", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -235,8 +235,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - internal label", () => {
-    testCodeEmit(
+  it("emit - internal label", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -253,8 +253,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - internal label with fixup", () => {
-    testCodeEmit(
+  it("emit - internal label with fixup", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -274,8 +274,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - with start label", () => {
-    testCodeEmit(
+  it("emit - with start label", async () => {
+    await testCodeEmit(
       `
     counter = 0
     StartLabel: .while counter < 2
@@ -295,8 +295,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - with end label", () => {
-    testCodeEmit(
+  it("emit - with end label", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -316,8 +316,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - external fixup label", () => {
-    testCodeEmit(
+  it("emit - external fixup label", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -339,8 +339,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - nested loop, no label", () => {
-    testCodeEmit(
+  it("emit - nested loop, no label", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 2
@@ -366,8 +366,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - nested loop, end labels #1", () => {
-    testCodeEmit(
+  it("emit - nested loop, end labels #1", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 1
@@ -397,8 +397,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - nested loop, end labels #2", () => {
-    testCodeEmit(
+  it("emit - nested loop, end labels #2", async () => {
+    await testCodeEmit(
       `
     counter = 0
     .while counter < 1
@@ -430,8 +430,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - while with counter", () => {
-    testCodeEmit(
+  it("emit - while with counter", async () => {
+    await testCodeEmit(
       `
     counter = 0;
     .while counter < 3
@@ -445,8 +445,8 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("emit - nested loop with counters", () => {
-    testCodeEmit(
+  it("emit - nested loop with counters", async () => {
+    await testCodeEmit(
       `
     counter = 0;
     .while counter < 3

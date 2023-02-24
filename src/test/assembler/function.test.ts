@@ -1,7 +1,7 @@
 import "mocha";
 import { expressionFails, testExpression } from "./test-helpers";
 
-describe("Assembler - functions", () => {
+describe("Assembler - functions", async () => {
   const functionSamples = [
     { source: "abs(false)", value: 0 },
     { source: "abs(true)", value: 1 },
@@ -351,8 +351,8 @@ describe("Assembler - functions", () => {
     { source: "attraddr(191, 255)", value: 0x5aff },
   ];
   functionSamples.forEach((lit) => {
-    it(`Invoke: ${lit.source}`, () => {
-      testExpression(lit.source, lit.value);
+    it(`Invoke: ${lit.source}`, async () => {
+      await testExpression(lit.source, lit.value);
     });
   });
 
@@ -442,8 +442,8 @@ describe("Assembler - functions", () => {
     { source: "attraddr(0, 256)" },
   ];
   functionFailSamples.forEach((lit) => {
-    it(`Invoke fails: ${lit.source}`, () => {
-      expressionFails(lit.source);
+    it(`Invoke fails: ${lit.source}`, async () => {
+      await expressionFails(lit.source);
     });
   });
 });

@@ -7,9 +7,9 @@ import {
 } from "./test-helpers";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
-describe("Assembler - .module", () => {
-  it("empty module", () => {
-    testCodeEmit(
+describe("Assembler - .module", async () => {
+  it("empty module", async () => {
+    await testCodeEmit(
       `
     .org #6000
     MyModule: .module
@@ -20,8 +20,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with no name", () => {
-    codeRaisesError(
+  it("fails with no name", async () => {
+    await codeRaisesError(
       `
     .org #6000
     .module
@@ -32,8 +32,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with local name", () => {
-    codeRaisesError(
+  it("fails with local name", async () => {
+    await codeRaisesError(
       `
     .org #6000
     .module \`MyModule
@@ -44,8 +44,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with temp label", () => {
-    codeRaisesError(
+  it("fails with temp label", async () => {
+    await codeRaisesError(
       `
     .org #6000
     \`MyModule .module
@@ -147,8 +147,8 @@ describe("Assembler - .module", () => {
     expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
-  it("fails without module end", () => {
-    codeRaisesError(
+  it("fails without module end", async () => {
+    await codeRaisesError(
       `
     .org #6000
     .module
@@ -158,8 +158,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with unexpected module end", () => {
-    codeRaisesError(
+  it("fails with unexpected module end", async () => {
+    await codeRaisesError(
       `
     .org #6000
     .endmodule
@@ -168,8 +168,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("emit with label", () => {
-    testCodeEmit(
+  it("emit with label", async () => {
+    await testCodeEmit(
       `
     .org #6000
     LabelOnly: .module
@@ -184,8 +184,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("emit with hanging label", () => {
-    testCodeEmit(
+  it("emit with hanging label", async () => {
+    await testCodeEmit(
       `
     .org #6000
     LabelOnly:
@@ -201,8 +201,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("emit with multiple label", () => {
-    testCodeEmit(
+  it("emit with multiple label", async () => {
+    await testCodeEmit(
       `
     .org #6000
     MyModule:
@@ -223,8 +223,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("org with hanging label", () => {
-    testCodeEmit(
+  it("org with hanging label", async () => {
+    await testCodeEmit(
       `
     MyModule: .module
     LabelOnly:
@@ -240,8 +240,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("equ with hanging label", () => {
-    testCodeEmit(
+  it("equ with hanging label", async () => {
+    await testCodeEmit(
       `
     MyModule: .module
     LabelOnly:
@@ -259,8 +259,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("var with hanging label", () => {
-    testCodeEmit(
+  it("var with hanging label", async () => {
+    await testCodeEmit(
       `
     MyModule: .module
     LabelOnly:
@@ -278,8 +278,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("orphan hanging label", () => {
-    testCodeEmit(
+  it("orphan hanging label", async () => {
+    await testCodeEmit(
       `
     .module MyModule
       .org #6000
@@ -295,8 +295,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("temp label - backward reference", () => {
-    testCodeEmit(
+  it("temp label - backward reference", async () => {
+    await testCodeEmit(
       `
     Start:
       .org #6000
@@ -313,8 +313,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("temp label - forward reference", () => {
-    testCodeEmit(
+  it("temp label - forward reference", async () => {
+    await testCodeEmit(
       `
     Start:
       .module MyModule
@@ -333,8 +333,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("start and end label - forward reference", () => {
-    testCodeEmit(
+  it("start and end label - forward reference", async () => {
+    await testCodeEmit(
       `
     Start:
       .module MyModule
@@ -353,8 +353,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("temp labels - different scopes", () => {
-    testCodeEmit(
+  it("temp labels - different scopes", async () => {
+    await testCodeEmit(
       `
     Start:
       .module MyModule
@@ -383,8 +383,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("module temp labels are independent", () => {
-    testCodeEmit(
+  it("module temp labels are independent", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -415,8 +415,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("module labels are independent", () => {
-    testCodeEmit(
+  it("module labels are independent", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -447,8 +447,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("internal labels need scope", () => {
-    codeRaisesError(
+  it("internal labels need scope", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -464,8 +464,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Nested modules work", () => {
-    testCodeEmit(
+  it("Nested modules work", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -497,8 +497,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module sees symbols outside #1", () => {
-    testCodeEmit(
+  it("Module sees symbols outside #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -516,8 +516,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module sees symbols outside #2", () => {
-    testCodeEmit(
+  it("Module sees symbols outside #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Outside1:
@@ -543,8 +543,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module sees symbols outside #3", () => {
-    testCodeEmit(
+  it("Module sees symbols outside #3", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Outside1:
@@ -573,8 +573,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module sees symbols outside #4", () => {
-    testCodeEmit(
+  it("Module sees symbols outside #4", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Outside:
@@ -603,8 +603,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module sees symbols outside #5", () => {
-    testCodeEmit(
+  it("Module sees symbols outside #5", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Outside:
@@ -637,8 +637,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Global symbol resolution works", () => {
-    testCodeEmit(
+  it("Global symbol resolution works", async () => {
+    await testCodeEmit(
       `
     .org #6000
     MyStart:
@@ -652,8 +652,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Global symbol resolution within module", () => {
-    testCodeEmit(
+  it("Global symbol resolution within module", async () => {
+    await testCodeEmit(
       `
     .org #6000
     MyStart:
@@ -676,8 +676,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Global symbol resolution within module - fixup", () => {
-    testCodeEmit(
+  it("Global symbol resolution within module - fixup", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -703,8 +703,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within module #1", () => {
-    testCodeEmit(
+  it("Module resolution - within module #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -734,8 +734,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within module #2", () => {
-    testCodeEmit(
+  it("Module resolution - within module #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -765,8 +765,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within module, fixup #1", () => {
-    testCodeEmit(
+  it("Module resolution - within module, fixup #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -794,8 +794,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within module, fixup #2", () => {
-    testCodeEmit(
+  it("Module resolution - within module, fixup #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -823,8 +823,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module #1", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -860,8 +860,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module #2", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -897,8 +897,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #1", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -932,8 +932,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #2", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -967,8 +967,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #3", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #3", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1002,8 +1002,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #4", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #4", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1037,8 +1037,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #5", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #5", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1072,8 +1072,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #6", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #6", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1107,8 +1107,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #7", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #7", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1142,8 +1142,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module resolution - within nested module, fixup #8", () => {
-    testCodeEmit(
+  it("Module resolution - within nested module, fixup #8", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1177,8 +1177,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - local resolution", () => {
-    testCodeEmit(
+  it("Module - local resolution", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1204,8 +1204,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - local resolution, fixup", () => {
-    testCodeEmit(
+  it("Module - local resolution, fixup", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1231,8 +1231,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - nestedlocal resolution #1", () => {
-    testCodeEmit(
+  it("Module - nestedlocal resolution #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1264,8 +1264,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - nestedlocal resolution #2", () => {
-    testCodeEmit(
+  it("Module - nestedlocal resolution #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1297,8 +1297,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - nestedlocal resolution #3", () => {
-    testCodeEmit(
+  it("Module - nestedlocal resolution #3", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1330,8 +1330,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module - nestedlocal resolution #4", () => {
-    testCodeEmit(
+  it("Module - nestedlocal resolution #4", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1359,8 +1359,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with unknown module name #1", () => {
-    codeRaisesError(
+  it("fails with unknown module name #1", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -1376,8 +1376,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("fails with unknown module name #2", () => {
-    codeRaisesError(
+  it("fails with unknown module name #2", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -1393,8 +1393,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Module local is resolved at the first level", () => {
-    testCodeEmit(
+  it("Module local is resolved at the first level", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1417,8 +1417,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("local module name is hidden #1", () => {
-    codeRaisesError(
+  it("local module name is hidden #1", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -1437,8 +1437,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("local module name is hidden #2", () => {
-    codeRaisesError(
+  it("local module name is hidden #2", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -1457,8 +1457,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("local module name is hidden #3", () => {
-    codeRaisesError(
+  it("local module name is hidden #3", async () => {
+    await codeRaisesError(
       `
     .org #6000
     Start:
@@ -1498,8 +1498,8 @@ describe("Assembler - .module", () => {
     expect(output.errorCount).toBe(0);
   });
 
-  it("Module start can be addressed with label", () => {
-    testCodeEmit(
+  it("Module start can be addressed with label", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1526,8 +1526,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Nested module start can be addressed with label #1", () => {
-    testCodeEmit(
+  it("Nested module start can be addressed with label #1", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
@@ -1554,8 +1554,8 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("Nested module start can be addressed with label #2", () => {
-    testCodeEmit(
+  it("Nested module start can be addressed with label #2", async () => {
+    await testCodeEmit(
       `
     .org #6000
     Start:
