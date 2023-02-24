@@ -2,7 +2,7 @@ import styles from "./ExplorerPanel.module.scss";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { ITreeNode, ITreeView } from "@/core/tree-node";
 import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
-import { useEffect, useRef, useState } from "react";
+import { MouseEvent, useEffect, useRef, useState } from "react";
 import { buildProjectTree, ProjectNode } from "../project/project-node";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { Icon } from "@/controls/Icon";
@@ -14,6 +14,11 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { Modal, ModalApi } from "@/controls/Modal";
 import { Button } from "@/controls/Button";
 import { TextInput } from "@/controls/TextInput";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator
+} from "@/controls/ContextMenu";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -30,12 +35,19 @@ const ExplorerPanel = () => {
 
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
+
+  const [contextVisible, setContextVisible] = useState(false);
+  const [contextX, setContextX] = useState(0);
+  const [contextY, setContextY] = useState(0);
+
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
 
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
   const modalApi = useRef<ModalApi>();
+
+  const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
 
   // --- Remove the last explorer tree from the cache when closing the folder
   useEffect(() => {
@@ -89,10 +101,20 @@ const ExplorerPanel = () => {
         tabIndex={0}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        onClick={() => {
-          setIsNewItemDialogOpen(true);
-        }}
+        onClick={() => {}}
       >
+        <ContextMenu
+          isVisible={contextVisible}
+          offsetX={0}
+          offsetY={0}
+          onClickAway={() => setContextVisible(false)}
+        >
+          <ContextMenuItem text='Item 1' />
+          <ContextMenuItem text='Item 2' disabled={true} />
+          <ContextMenuSeparator />
+          <ContextMenuItem text='Item Other' />
+        </ContextMenu>
+
         <RenameDialog
           isFolder={true}
           oldPath='dddfdfd'
@@ -116,16 +138,36 @@ const ExplorerPanel = () => {
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
+            const nodeItemRef = useRef<HTMLDivElement>();
             const node = tree.getViewNodeByIndex(idx);
             const isSelected = idx === selected;
             const isRoot = tree.rootNode === node;
             return (
               <div
+                ref={nodeItemRef}
                 className={classnames(styles.item, {
                   [styles.selected]: isSelected,
                   [styles.focused]: isFocused
                 })}
                 tabIndex={idx}
+                onContextMenu={(e: MouseEvent) => {
+                  if (contextVisible) {
+                    setContextX(e.nativeEvent.screenX);
+                    setContextY(
+                      e.nativeEvent.screenY -
+                        contextRef.current.offsetHeight -
+                        20
+                    );
+                  } else {
+                    setContextVisible(true);
+                    setContextX(e.nativeEvent.screenX);
+                    setContextY(
+                      e.nativeEvent.screenY -
+                        contextRef.current.offsetHeight -
+                        20
+                    );
+                  }
+                }}
                 onMouseDown={e => {
                   if (e.button === 0) {
                     setSelected(idx);
@@ -223,7 +265,7 @@ const RenameDialog = ({
       primaryLabel='Rename'
       initialFocus='none'
       onPrimaryClicked={() => {
-        console.log("Renamed to " + newPath)
+        console.log("Renamed to " + newPath);
         return false;
       }}
       onClose={() => {
@@ -275,7 +317,7 @@ const NewItemDialog = ({
       primaryLabel='Create'
       initialFocus='none'
       onPrimaryClicked={() => {
-        console.log("Create " + newItem)
+        console.log("Create " + newItem);
         return false;
       }}
       onClose={() => {
@@ -283,7 +325,8 @@ const NewItemDialog = ({
       }}
     >
       <div>
-        Create a new {isFolder ? "folder" : "file"} in <span className={styles.hilite}>{rootPath}</span>:
+        Create a new {isFolder ? "folder" : "file"} in{" "}
+        <span className={styles.hilite}>{rootPath}</span>:
       </div>
       <TextInput
         value={""}

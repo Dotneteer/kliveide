@@ -34,6 +34,14 @@ export type ThemeProperties = {
   "--bg-color-dropdown-menu-pointed"?: string;
   "--bg-color-dropdown-menu-selected"?: string;
 
+  // --- Context menu
+  "--bgcolor-context-menu"?: string;
+  "--color-context-item"?: string;
+  "--color-context-item-disabled"?: string;
+  "--bgcolor-context-item-pointed"?: string;
+  "--color-context-item-pointed"?: string;
+  "--color-context-separator"?: string;
+
   // --- Modal 
   "--bgcolor-backdrop"?: string;
   "--bgcolor-modal"?: string;

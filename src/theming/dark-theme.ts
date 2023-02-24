@@ -34,6 +34,14 @@ export const darkTheme: ThemeProperties = {
   "--bg-color-dropdown-menu-pointed": "#606060",
   "--bg-color-dropdown-menu-selected": "#007acc",
 
+  // --- Context menu
+  "--bgcolor-context-menu": "#282828",
+  "--color-context-item": "#cccccc",
+  "--color-context-item-disabled": "#606060",
+  "--bgcolor-context-item-pointed": "#007acc",
+  "--color-context-item-pointed": "#ffffff",
+  "--color-context-separator": "#606060",
+
   // --- Modal 
   "--bgcolor-backdrop": "#00000080",
   "--bgcolor-modal": "#202020",
