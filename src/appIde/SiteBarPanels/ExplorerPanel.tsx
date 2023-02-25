@@ -173,13 +173,11 @@ const ExplorerPanel = () => {
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
-            const nodeItemRef = useRef<HTMLDivElement>();
             const node = tree.getViewNodeByIndex(idx);
             const isSelected = idx === selected;
             const isRoot = tree.rootNode === node;
             return (
               <div
-                ref={nodeItemRef}
                 className={classnames(styles.item, {
                   [styles.selected]: isSelected,
                   [styles.focused]: isFocused
