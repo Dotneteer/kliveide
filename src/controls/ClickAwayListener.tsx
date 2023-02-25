@@ -87,7 +87,6 @@ export const ClickAwayListener = ({
 
     const handleEvents = (event: Events): void => {
       if (!mountedRef.current) return;
-
       if (
         (node.current && node.current.contains(event.target as Node)) ||
         bubbledEventTarget.current === event.target ||
@@ -95,7 +94,6 @@ export const ClickAwayListener = ({
       ) {
         return;
       }
-
       onClickAway(event);
     };
 

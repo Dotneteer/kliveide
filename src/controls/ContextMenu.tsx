@@ -1,10 +1,12 @@
 import classnames from "@/utils/classnames";
 import { ReactNode, useRef, useState } from "react";
 import { usePopper } from "react-popper";
+import { Button } from "./Button";
 import { ClickAwayListener } from "./ClickAwayListener";
 import localStyles from "./ContextMenu.module.scss";
 
 type Props = {
+  refElement: HTMLElement;
   isVisible: boolean;
   children: ReactNode;
   offsetX?: number;
@@ -14,6 +16,7 @@ type Props = {
 };
 
 export const ContextMenu = ({
+  refElement,
   isVisible,
   children,
   offsetX,
@@ -22,8 +25,7 @@ export const ContextMenu = ({
   onClickAway
 }: Props) => {
   const [popperElement, setPopperElement] = useState(null);
-  const [referenceElement, setReferenceElement] = useState<HTMLElement>(null);
-  const { styles, attributes } = usePopper(referenceElement, popperElement, {
+  const { styles, attributes } = usePopper(refElement, popperElement, {
     placement: placement as any,
     modifiers: [
       {
@@ -34,19 +36,26 @@ export const ContextMenu = ({
       }
     ]
   });
-
   return (
     <>
-      <div ref={el => setReferenceElement(el)}></div>
       {isVisible && (
+        <ClickAwayListener mouseEvent="mousedown" onClickAway={() => onClickAway?.()}>
           <div
             ref={setPopperElement}
             className={localStyles.contextMenu}
             style={styles.popper}
             {...attributes.popper}
+            onMouseDown={e => {
+              if (e.currentTarget !== e.target) {
+                return;
+              }
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             {children}
           </div>
+        </ClickAwayListener>
       )}
     </>
   );
@@ -55,14 +64,23 @@ export const ContextMenu = ({
 type ContextMenuItemProps = {
   text?: string;
   disabled?: boolean;
+  clicked?: () => void;
 };
 
-export const ContextMenuItem = ({ text, disabled }: ContextMenuItemProps) => {
+export const ContextMenuItem = ({ text, disabled, clicked }: ContextMenuItemProps) => {
   return (
     <div
       className={classnames(localStyles.menuItem, {
         [localStyles.disabled]: disabled
       })}
+      onMouseDown={e => {
+        if (!disabled) {
+          if (e.button === 0) clicked?.();
+        } else {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
     >
       {text}
     </div>
@@ -70,5 +88,5 @@ export const ContextMenuItem = ({ text, disabled }: ContextMenuItemProps) => {
 };
 
 export const ContextMenuSeparator = () => {
-  return <div className={localStyles.separator}></div>
-}
+  return <div className={localStyles.separator}></div>;
+};

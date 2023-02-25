@@ -36,18 +36,30 @@ const ExplorerPanel = () => {
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
 
+  // --- State and helpers for the selected node's context menu
+  const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
   const [contextVisible, setContextVisible] = useState(false);
+  const [selectedContextItem, setSelectedContextItem] = useState(-1);
   const [contextX, setContextX] = useState(0);
   const [contextY, setContextY] = useState(0);
+  const selectedContextNode =
+    selectedContextItem >= 0 && tree
+      ? tree.getViewNodeByIndex(selectedContextItem)
+      : null;
+  
+  const selectedContextNodeIsFolder =
+    selectedContextNode?.data?.isFolder ?? false;
 
+  // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
 
+  // --- APIs used to manage the tree view
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
-  const modalApi = useRef<ModalApi>();
 
-  const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
+  // --- API to manage dialogs
+  const modalApi = useRef<ModalApi>();
 
   // --- Remove the last explorer tree from the cache when closing the folder
   useEffect(() => {
@@ -60,6 +72,7 @@ const ExplorerPanel = () => {
     };
   }, [projectService]);
 
+  // --- Get the current project tree when the project path changes
   useEffect(() => {
     (async () => {
       // --- No open folder
@@ -94,6 +107,7 @@ const ExplorerPanel = () => {
     })();
   }, [folderPath]);
 
+  // --- Render the Explorer panel
   return folderPath ? (
     visibleNodes && visibleNodes.length > 0 ? (
       <div
@@ -104,15 +118,36 @@ const ExplorerPanel = () => {
         onClick={() => {}}
       >
         <ContextMenu
+          refElement={contextRef.current}
           isVisible={contextVisible}
-          offsetX={0}
-          offsetY={0}
-          onClickAway={() => setContextVisible(false)}
+          offsetX={contextX}
+          offsetY={contextY}
+          onClickAway={() => {
+            setContextVisible(false);
+            setSelectedContextItem(-1);
+          }}
         >
-          <ContextMenuItem text='Item 1' />
-          <ContextMenuItem text='Item 2' disabled={true} />
-          <ContextMenuSeparator />
-          <ContextMenuItem text='Item Other' />
+          {selectedContextNodeIsFolder && (
+            <>
+              <ContextMenuItem
+                text='New file...'
+                clicked={() => console.log("New file clicked")}
+              />
+              <ContextMenuItem
+                text='New folder...'
+                clicked={() => console.log("New folder clicked")}
+              />
+              <ContextMenuSeparator />
+            </>
+          )}
+          <ContextMenuItem
+            text='Rename...'
+            clicked={() => console.log("Rename clicked")}
+          />
+          <ContextMenuItem
+            text='Delete'
+            clicked={() => console.log("Delete clicked")}
+          />
         </ContextMenu>
 
         <RenameDialog
@@ -151,22 +186,13 @@ const ExplorerPanel = () => {
                 })}
                 tabIndex={idx}
                 onContextMenu={(e: MouseEvent) => {
-                  if (contextVisible) {
-                    setContextX(e.nativeEvent.screenX);
-                    setContextY(
-                      e.nativeEvent.screenY -
-                        contextRef.current.offsetHeight -
-                        20
-                    );
-                  } else {
-                    setContextVisible(true);
-                    setContextX(e.nativeEvent.screenX);
-                    setContextY(
-                      e.nativeEvent.screenY -
-                        contextRef.current.offsetHeight -
-                        20
-                    );
-                  }
+                  console.log(node);
+                  setSelectedContextItem(idx);
+                  setContextVisible(!contextVisible);
+                  setContextX(e.nativeEvent.screenX);
+                  setContextY(
+                    e.nativeEvent.screenY - contextRef.current.offsetHeight - 20
+                  );
                 }}
                 onMouseDown={e => {
                   if (e.button === 0) {
