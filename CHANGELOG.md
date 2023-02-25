@@ -1,5 +1,13 @@
 # Klive IDE Changelog
 
+## 0.12.4
+
+### IDE
+
+#### Fixes
+
+- Uppercase conditions in Z80 instructions (like `call Z,nnnn`) now work correctly
+
 ## 0.12.3
 
 ### IDE
