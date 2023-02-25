@@ -3,7 +3,11 @@ import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { ITreeNode, ITreeView } from "@/core/tree-node";
 import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
-import { buildProjectTree, getNodeDir, ProjectNode } from "../project/project-node";
+import {
+  buildProjectTree,
+  getNodeDir,
+  ProjectNode
+} from "../project/project-node";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { Icon } from "@/controls/Icon";
 import { ScrollViewerApi } from "@/controls/ScrollViewer";
@@ -20,6 +24,7 @@ import {
   ContextMenuSeparator
 } from "@/controls/ContextMenu";
 import { RenameDialog } from "./RenameDialog";
+import { DeleteDialog } from "./DeleteDialog";
 
 const PROJECT_FILE_NAME = "klive.project";
 
@@ -34,6 +39,7 @@ const ExplorerPanel = () => {
     []
   );
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
 
   const [selected, setSelected] = useState(-1);
@@ -53,7 +59,8 @@ const ExplorerPanel = () => {
     !selectedContextNode?.data.isFolder &&
     selectedContextNode?.data.name === PROJECT_FILE_NAME &&
     selectedContextNode?.level === 1;
-
+  const selectedNodeIsRoot = !selectedContextNode?.parentNode
+    
   // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
@@ -145,15 +152,13 @@ const ExplorerPanel = () => {
           )}
           <ContextMenuItem
             text='Rename...'
-            disabled={selectedNodeIsProjectFile}
-            clicked={() => {
-              setIsRenameDialogOpen(true);
-            }}
+            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot }
+            clicked={() => setIsRenameDialogOpen(true)}
           />
           <ContextMenuItem
             text='Delete'
-            disabled={selectedNodeIsProjectFile}
-            clicked={() => console.log("Delete clicked")}
+            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
+            clicked={() => setIsDeleteDialogOpen(true)}
           />
         </ContextMenu>
 
@@ -163,19 +168,21 @@ const ExplorerPanel = () => {
             oldPath={selectedContextNode?.data?.name}
             onRename={async (newName: string) => {
               // --- Start renaming the item
-              const newFullName = `${getNodeDir(selectedContextNode.data.fullPath)}/${newName}`;
+              const newFullName = `${getNodeDir(
+                selectedContextNode.data.fullPath
+              )}/${newName}`;
               const response = await messenger.sendMessage({
                 type: "MainRenameFileEntry",
                 oldName: selectedContextNode.data.fullPath,
                 newName: newFullName
               });
-              if (response.type === "ErrorResponse") {  
+              if (response.type === "ErrorResponse") {
                 await messenger.sendMessage({
                   type: "MainDisplayMessageBox",
                   messageType: "error",
                   title: "Rename Error",
                   message: response.message
-                })
+                });
               } else {
                 // --- Succesfully renamed
                 selectedContextNode.data.fullPath = newFullName;
@@ -189,6 +196,37 @@ const ExplorerPanel = () => {
           />
         )}
 
+        {isDeleteDialogOpen && (
+          <DeleteDialog
+            isFolder={selectedContextNodeIsFolder}
+            entry={selectedContextNode.data.fullPath}
+            onDelete={async () => {
+              const response = await messenger.sendMessage({
+                type: "MainDeleteFileEntry",
+                isFolder: selectedContextNodeIsFolder,
+                name: selectedContextNode.data.fullPath
+              });
+              if (response.type === "ErrorResponse") {
+                await messenger.sendMessage({
+                  type: "MainDisplayMessageBox",
+                  messageType: "error",
+                  title: "Delete Error",
+                  message: response.message
+                });
+              } else {
+                // --- Succesfully renamed
+                selectedContextNode.parentNode.removeChild(selectedContextNode);
+                tree.buildIndex();
+                setVisibleNodes(tree.getVisibleNodes());
+                vlApi.current.refresh();
+              }
+            }}
+            onClose={() => {
+              setIsDeleteDialogOpen(false);
+            }}
+          />
+        )}
+
         <NewItemDialog
           isFolder={false}
           rootPath='dddfdfd'
@@ -197,7 +235,7 @@ const ExplorerPanel = () => {
             setIsNewItemDialogOpen(false);
           }}
         />
-        
+
         <VirtualizedListView
           items={visibleNodes}
           approxSize={20}

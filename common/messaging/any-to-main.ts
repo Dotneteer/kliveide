@@ -59,6 +59,7 @@ export interface MainCreateKliveProject extends MessageBase {
  */
 export interface MainDeleteFileEntry extends MessageBase {
   type: "MainDeleteFileEntry";
+  isFolder: boolean;
   name: string;
 }
 

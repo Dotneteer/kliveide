@@ -95,6 +95,19 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
+    case "MainDeleteFileEntry":
+      try {
+        if (message.isFolder) {
+          fs.rmdirSync(message.name, {recursive: true})
+        } else {
+          fs.unlinkSync(message.name);
+        }
+        break;
+      } catch (err) {
+        return errorResponse(err.toString());
+      }
+
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator

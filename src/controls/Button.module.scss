@@ -27,4 +27,18 @@
     border: 2px solid var(--color-button-focused);
     color: var(--color-button-pointed);
   }
+
+  &.isDanger {
+    background-color: var(--console-ansi-red);
+
+    &:hover {
+      color: var(--color-button-pointed);
+      background-color: var(--console-ansi-bright-red);
+    }
+
+    &:focus {
+      border: 2px solid var(--console-ansi-bright-red);
+      color: var(--color-button-pointed);
+    }
+  }
 }
