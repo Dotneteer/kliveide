@@ -140,7 +140,7 @@ const IdeApp = () => {
   }, [appServices, store, messenger]);
 
   return (
-    <div className={styles.app}>
+    <div id="appMain" className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />

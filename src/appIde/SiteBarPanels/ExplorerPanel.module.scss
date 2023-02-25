@@ -7,6 +7,7 @@
   user-select: none;
   font-family: var(--main-font);
   font-size: 0.9em;
+  font-weight: 500;
   outline: none;
 
   .item {
@@ -32,9 +33,11 @@
 
     &.selected {
       background-color: var(--bgcolor-explorer-selected);
+      color: var(--color-explorer-selected);
 
       &.focused {
         background-color: var(--bgcolor-explorer-focused-selected);
+        color: var(--color-explorer-focused-selected);
       }
     }
   }
@@ -57,20 +60,14 @@
 .noFolder {
   color: var(--color-explorer);
   padding: 16px;
+
 }
 
-.openButton {
-  background-color: var(--bgcolor-open-button);
+.editor {
+  outline: none;
   border: none;
-  border-radius: 2px;
-  margin: 0 16px 16px 16px;
-  padding: 8px;
-  color: var(--color-open-button);
+  color: white;
+  background: transparent;
   font-family: var(--main-font);
-  font-size: 0.9em;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--bgcolor-open-button-pointed);
-  }
+  font-size: 1em;
 }

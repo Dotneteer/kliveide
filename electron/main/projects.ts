@@ -1,5 +1,5 @@
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
-import { openFolderAction } from "../../common/state/actions";
+import { closeFolderAction, openFolderAction } from "../../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
 import * as path from "path";
@@ -65,7 +65,7 @@ export function createKliveProject (
  */
 export async function openFolder (
   browserWindow: BrowserWindow
-): Promise<TapeDataBlock[] | undefined> {
+): Promise<void> {
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
@@ -83,7 +83,8 @@ export async function openFolder (
 
 /**
  * Opens the specified path
- * @param projectFolder
+ * @param projectFolder Folder to open
+ * @returns null, if the operation is successful; otherwise, the error message
  */
 export function openFolderByPath (projectFolder: string): string | null {
   // --- Check if project files exists
@@ -94,8 +95,10 @@ export function openFolderByPath (projectFolder: string): string | null {
   const projectFile = path.join(projectFolder, PROJECT_FILE);
   if (fs.existsSync(projectFile)) {
     // TODO: Check, if project file is valid
+    mainStore.dispatch(closeFolderAction());
     mainStore.dispatch(openFolderAction(projectFolder, true));
   } else {
+    mainStore.dispatch(closeFolderAction());
     mainStore.dispatch(openFolderAction(projectFolder, false));
   }
 
@@ -106,6 +109,16 @@ export function openFolderByPath (projectFolder: string): string | null {
   return null;
 }
 
+/**
+ * Deletes the specified file entry
+ * @param name File entry to delete
+ * @returns null, if the operation is successful; otherwise, the error message
+ */
+export function deleteFileEntry(name: string): string | null {
+  return null;
+}
+
+// --- Gets the klive folder for the specified project folder
 function getKliveProjectFolder (projectFolder: string): string {
   return projectFolder
     ? path.isAbsolute(projectFolder)

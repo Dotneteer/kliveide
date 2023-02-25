@@ -538,6 +538,11 @@ export type DocumentRendererInfo = {
   iconFill?: string;
 };
 
+export type IProjectService = {
+  readonly projectOpened: ILiteEvent<void>;
+  readonly projectClosed: ILiteEvent<void>;
+}
+
 
 /**
  * This type defines the services the IDE provides
@@ -548,6 +553,7 @@ export type AppServices = {
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;
   interactiveCommandsService: IInteractiveCommandService;
+  projectService: IProjectService;
 };
 
 /**

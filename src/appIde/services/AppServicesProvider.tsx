@@ -6,6 +6,7 @@ import { createInteractiveCommandsService } from "./InteractiveCommandService";
 import { createMachineService } from "../../appEmu/MachineService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createUiService } from "@/core/UiServices";
+import { createProjectService } from "./ProjectService";
 
 // =====================================================================================================================
 /**
@@ -33,7 +34,8 @@ export function AppServicesProvider ({ children }: Props) {
     documentService: createDocumentService(store),
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
-    interactiveCommandsService
+    interactiveCommandsService,
+    projectService: createProjectService(store)
   });
 
   // --- Set the app services instance whenever the provider's value changes

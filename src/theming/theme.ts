@@ -15,7 +15,17 @@ export type ThemeProperties = {
   "--bgcolor-scrollbar"?: string;
   "--bgcolor-scrollbar-thumb"?: string;
   "--bgcolor-attached-shadow"?: string;
-  
+  "--bgcolor-button-disabled"?: string;
+  "--color-button-disabled"?: string;
+  "--bgcolor-button"?: string;
+  "--color-button"?: string;
+  "--bgcolor-button-pointed"?: string;
+  "--color-button-pointed"?: string;
+  "--color-button-focused"?: string;
+  "--color-text-hilite"?: string;
+  "--bgcolor-input"?: string;
+  "--color-input"?: string;
+ 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
@@ -23,6 +33,27 @@ export type ThemeProperties = {
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
   "--bg-color-dropdown-menu-selected"?: string;
+
+  // --- Context menu
+  "--bgcolor-context-menu"?: string;
+  "--color-context-item"?: string;
+  "--color-context-item-disabled"?: string;
+  "--bgcolor-context-item-pointed"?: string;
+  "--color-context-item-pointed"?: string;
+  "--color-context-separator"?: string;
+
+  // --- Modal 
+  "--bgcolor-backdrop"?: string;
+  "--bgcolor-modal"?: string;
+  "--color-modal"?: string;
+  "--border-modal"?: string;
+  "--radius-modal"?: string;
+  "--bgcolor-modal-header"?: string;
+  "--color-modal-header"?: string;
+  "--bgcolor-modal-body"?: string;
+  "--color-modal-body"?: string;
+  "--bgcolor-modal-footer"?: string;
+  "--color-modal-footer"?: string;
 
   // --- Console colors
   "--console-ansi-black"?: string;
@@ -85,6 +116,7 @@ export type ThemeProperties = {
   "--bgcolor-sitebar"?: string;
   "--color-header"?: string;
   "--color-chevron"?: string;
+  "--color-chevron-selected"?: string;
   "--color-panel-header"?: string;
   "--color-panel-border"?: string;
   "--color-panel-focused"?: string;
@@ -147,10 +179,9 @@ export type ThemeProperties = {
   "--fill-explorer-icon"?: string;
   "--bgcolor-explorer-selected"?: string;
   "--bgcolor-explorer-focused-selected"?: string;
+  "--color-explorer-selected"?: string;
+  "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
-  "--bgcolor-open-button"?: string;
-  "--bgcolor-open-button-pointed"?: string;
-  "--color-open-button"?: string;
 }
 
 /**

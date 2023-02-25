@@ -55,6 +55,41 @@ export interface MainCreateKliveProject extends MessageBase {
 }
 
 /**
+ * The client wants to delete a file entry
+ */
+export interface MainDeleteFileEntry extends MessageBase {
+  type: "MainDeleteFileEntry";
+  name: string;
+}
+
+/**
+ * The client wants to delete a file entry
+ */
+export interface MainAddNewFile extends MessageBase {
+  type: "MainAddNewFile";
+  folder?: string;
+  name: string;
+}
+
+/**
+ * The client wants to delete a file entry
+ */
+export interface MainAddNewFolder extends MessageBase {
+  type: "MainAddNewFolder";
+  folder?: string;
+  name: string;
+}
+
+/**
+ * The client wants to delete a file entry
+ */
+export interface MainRenameFileEntry extends MessageBase {
+  type: "MainRenameFileEntry";
+  oldName: string;
+  newName: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {

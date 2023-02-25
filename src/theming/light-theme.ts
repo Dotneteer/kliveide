@@ -15,6 +15,13 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#bbbbbb",
+  "--bgcolor-button-disabled": "#606060",
+  "--color-button-disabled": "#aaaaaa",
+  "--bgcolor-button": "#006daf",
+  "--color-button": "#dddddd",
+  "--bgcolor-button-pointed": "#0070c1",
+  "--color-button-pointed": "#ffffff",
+  "--color-button-focused": "#00a0ff",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#a0a0a0",
@@ -23,6 +30,18 @@ export const lightTheme: ThemeProperties = {
   "--color-dropdown-menu": "#000000",
   "--bg-color-dropdown-menu-pointed": "#909090",
   "--bg-color-dropdown-menu-selected": "#007acc",
+
+  // --- Modal 
+  "--bgcolor-backdrop": "#ffffff80",
+  "--bgcolor-modal": "#e8e8e8",
+  "--border-modal": "1px solid #0076c9",
+  "--radius-modal": "2px",
+  "--bgcolor-modal-header": "#d0d0d0",
+  "--color-modal-header": "#000000",
+  "--bgcolor-modal-body": "#f0f0f0",
+  "--color-modal-body": "#414141",
+  "--bgcolor-modal-footer": "#d0d0d0",
+  "--color-modal-footer": "#000000",
 
   // --- Console colors
   "--console-ansi-black": "#000000",
@@ -81,9 +100,10 @@ export const lightTheme: ThemeProperties = {
   "--color-statusbar-icon": "#000000",
 
   // --- Sitebar
-  "--bgcolor-sitebar": "#e0e0e0",
+  "--bgcolor-sitebar": "#f1f1f1",
   "--color-header": "#000000",
   "--color-chevron": "#000000",
+  "--color-chevron-selected": "#ffffff",
   "--color-panel-header": "#000000",
   "--color-panel-focused": "#61a4d0",
 
@@ -137,5 +157,15 @@ export const lightTheme: ThemeProperties = {
   // --- Memory panel
   "--bgcolor-memory-pointed": "#0451a5",
   "--bgcolor-memory-pc-pointed": "#00BC00",
-  "--color-memory-pointed": "#ffffff"
+  "--color-memory-pointed": "#ffffff",
+
+    // --- Explorer
+    "--color-explorer": "#414141",
+    "--bgcolor-explorer-pointed": "#e4e4e4",
+    "--fill-explorer-icon": "#29b8db",
+    "--bgcolor-explorer-selected": "#dfe2ee",
+    "--bgcolor-explorer-focused-selected": "#0057b3",
+    "--color-explorer-selected": "#616161",
+    "--color-explorer-focused-selected": "#ffffff",
+    "--border-explorer-focused": "#0076c9",
 };
