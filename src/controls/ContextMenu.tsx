@@ -1,7 +1,6 @@
 import classnames from "@/utils/classnames";
-import { ReactNode, useRef, useState } from "react";
+import { ReactNode, useState } from "react";
 import { usePopper } from "react-popper";
-import { Button } from "./Button";
 import { ClickAwayListener } from "./ClickAwayListener";
 import localStyles from "./ContextMenu.module.scss";
 
@@ -49,6 +48,7 @@ export const ContextMenu = ({
               if (e.currentTarget !== e.target) {
                 return;
               }
+              console.log("prevent");
               e.preventDefault();
               e.stopPropagation();
             }}
@@ -77,6 +77,7 @@ export const ContextMenuItem = ({ text, disabled, clicked }: ContextMenuItemProp
         if (!disabled) {
           if (e.button === 0) clicked?.();
         } else {
+          console.log("prevent")
           e.preventDefault();
           e.stopPropagation();
         }

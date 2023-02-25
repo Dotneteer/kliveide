@@ -1,8 +1,10 @@
+import classnames from "@/utils/classnames";
 import { useEffect, useRef, useState } from "react";
 import styles from "./TextInput.module.scss";
 
 type Props = {
   value?: string;
+  isValid?: boolean;
   maxLength?: number;
   focusOnInit?: boolean;
   keyPressed?: (e: React.KeyboardEvent) => void;
@@ -11,6 +13,7 @@ type Props = {
 
 export const TextInput = ({
   value,
+  isValid,
   maxLength,
   focusOnInit,
   keyPressed,
@@ -33,7 +36,7 @@ export const TextInput = ({
   return (
     <input
       ref={ref}
-      className={styles.input}
+      className={classnames(styles.input, {[styles.invalid]: !isValid})}
       value={inputValue}
       maxLength={maxLength}
       spellCheck={false}

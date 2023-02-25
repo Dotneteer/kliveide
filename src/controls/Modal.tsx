@@ -43,9 +43,9 @@ export type ModalProps = {
   initialFocus?: "none" | "primary" | "secondary" | "cancel"
   onApiLoaded?: (api: ModalApi) => void;
   onClose: (result?: any) => any;
-  onPrimaryClicked?: (result?: any) => boolean;
-  onSecondaryClicked?: (result?: any) => boolean;
-  onCancelClicked?: (result?: any) => boolean;
+  onPrimaryClicked?: (result?: any) => Promise<boolean>;
+  onSecondaryClicked?: (result?: any) => Promise<boolean>;
+  onCancelClicked?: (result?: any) => Promise<boolean>;
 };
 
 export const Modal = ({
@@ -88,20 +88,20 @@ export const Modal = ({
   const modalRef = useRef<HTMLDivElement>(null);
 
   // --- Define button click handlers
-  const primaryClickHandler = (result?: any) => {
-    const close = onPrimaryClicked?.(result ?? dialogResult);
+  const primaryClickHandler = async (result?: any) => {
+    const close = await onPrimaryClicked?.(result ?? dialogResult);
     if (!close) {
       onClose();
     }
   }
-  const secondaryClickHandler = (result?: any) => {
-    const close = onSecondaryClicked?.(result ?? dialogResult);
+  const secondaryClickHandler = async (result?: any) => {
+    const close = await onSecondaryClicked?.(result ?? dialogResult);
     if (!close) {
       onClose();
     }
   }
-  const cancelClickHandler = (result?: any) => {
-    const close = onCancelClicked?.(result);
+  const cancelClickHandler = async (result?: any) => {
+    const close = await onCancelClicked?.(result);
     if (!close) {
       onClose();
     }
@@ -113,10 +113,10 @@ export const Modal = ({
       enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
       enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
       setDialogResult: (result?: any) => setDialogResult(result),
-      triggerPrimary: () => primaryClickHandler(), 
-      triggerSecondary: () => primaryClickHandler(), 
-      triggerCancel: () => primaryClickHandler(), 
-      triggerClose: () => onClose()
+      triggerPrimary: (result?: any) => primaryClickHandler(result), 
+      triggerSecondary: (result?: any) => primaryClickHandler(result), 
+      triggerCancel: (result?: any) => primaryClickHandler(result), 
+      triggerClose: (result?: any) => onClose(result)
     });
   }, [modalRef.current]);
 
@@ -205,7 +205,7 @@ export const Modal = ({
                     focusOnInit={primaryEnabled && initialFocus === "primary"}
                     disabled={!button1Enabled}
                     spaceLeft={8}
-                    clicked={primaryClickHandler}
+                    clicked={async () => await primaryClickHandler()}
                   />
                   <Button
                     text={secondaryLabel}
@@ -213,14 +213,14 @@ export const Modal = ({
                     focusOnInit={secondaryEnabled && initialFocus === "secondary"}
                     disabled={!button2Enabled}
                     spaceLeft={8}
-                    clicked={secondaryClickHandler}
+                    clicked={async () => await secondaryClickHandler()}
                   />
                   <Button
                     text={cancelLabel}
                     visible={cancelVisible}
                     disabled={!cancelButtonEnabled}
                     focusOnInit={cancelButtonEnabled && initialFocus === "cancel"}
-                    clicked={cancelClickHandler}
+                    clicked={async () => await cancelClickHandler()}
                   />
                 </footer>
               </div>

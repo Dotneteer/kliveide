@@ -11,4 +11,8 @@
   &:active, &:focus {
     outline: 2px solid var(--color-button-focused);
   }
+
+  &.invalid {
+    outline: 2px solid var(--console-ansi-red);
+  }
 }
