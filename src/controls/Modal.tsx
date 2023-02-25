@@ -34,6 +34,7 @@ export type ModalProps = {
   primaryLabel?: string;
   primaryEnabled?: boolean;
   primaryVisible?: boolean;
+  primaryDanger?: boolean;
   secondaryLabel?: string;
   secondaryEnabled?: boolean;
   secondaryVisible?: boolean;
@@ -59,6 +60,7 @@ export const Modal = ({
   primaryLabel = "Ok",
   primaryEnabled = true,
   primaryVisible = true,
+  primaryDanger,
   secondaryLabel = "Secondary",
   secondaryVisible = false,
   secondaryEnabled = true,
@@ -203,6 +205,7 @@ export const Modal = ({
                     text={primaryLabel}
                     visible={primaryVisible}
                     focusOnInit={primaryEnabled && initialFocus === "primary"}
+                    isDanger={primaryDanger}
                     disabled={!button1Enabled}
                     spaceLeft={8}
                     clicked={async () => await primaryClickHandler()}

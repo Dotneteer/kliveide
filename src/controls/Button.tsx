@@ -1,3 +1,4 @@
+import classnames from "@/utils/classnames";
 import { useEffect, useRef } from "react";
 import styles from "./Button.module.scss";
 
@@ -6,6 +7,7 @@ type Props = {
   visible?: boolean;
   disabled?: boolean;
   focusOnInit?: boolean;
+  isDanger?: boolean,
   spaceLeft?: number;
   spaceRight?: number;
   clicked?: () => void;
@@ -16,6 +18,7 @@ export const Button = ({
   visible = true,
   disabled = false,
   focusOnInit,
+  isDanger,
   spaceLeft,
   spaceRight,
   clicked
@@ -36,7 +39,7 @@ export const Button = ({
     <button
       ref={ref}
       style={{ marginLeft: spaceLeft, marginRight: spaceRight }}
-      className={styles.button}
+      className={classnames(styles.button, {[styles.isDanger]: isDanger})}
       disabled={disabled}
       onClick={() => clicked?.()}
     >
