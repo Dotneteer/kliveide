@@ -1,10 +1,11 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
-import { ITreeNode, ITreeView } from "@/core/tree-node";
+import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
 import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
+  compareProjectNode,
   getNodeDir,
   ProjectNode
 } from "../project/project-node";
@@ -15,9 +16,8 @@ import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
-import { Modal, ModalApi } from "@/controls/Modal";
+import { ModalApi } from "@/controls/Modal";
 import { Button } from "@/controls/Button";
-import { TextInput } from "@/controls/TextInput";
 import {
   ContextMenu,
   ContextMenuItem,
@@ -25,6 +25,7 @@ import {
 } from "@/controls/ContextMenu";
 import { RenameDialog } from "./RenameDialog";
 import { DeleteDialog } from "./DeleteDialog";
+import { NewItemDialog } from "./NewItemDialog";
 
 const PROJECT_FILE_NAME = "klive.project";
 
@@ -41,6 +42,7 @@ const ExplorerPanel = () => {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+  const [newItemIsFolder, setNewItemIsFolder] = useState(false);
 
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
@@ -59,8 +61,8 @@ const ExplorerPanel = () => {
     !selectedContextNode?.data.isFolder &&
     selectedContextNode?.data.name === PROJECT_FILE_NAME &&
     selectedContextNode?.level === 1;
-  const selectedNodeIsRoot = !selectedContextNode?.parentNode
-    
+  const selectedNodeIsRoot = !selectedContextNode?.parentNode;
+
   // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
@@ -141,18 +143,24 @@ const ExplorerPanel = () => {
             <>
               <ContextMenuItem
                 text='New file...'
-                clicked={() => console.log("New file clicked")}
+                clicked={() => {
+                  setNewItemIsFolder(false);
+                  setIsNewItemDialogOpen(true);
+                }}
               />
               <ContextMenuItem
                 text='New folder...'
-                clicked={() => console.log("New folder clicked")}
+                clicked={() => {
+                  setNewItemIsFolder(true);
+                  setIsNewItemDialogOpen(true);
+                }}
               />
               <ContextMenuSeparator />
             </>
           )}
           <ContextMenuItem
             text='Rename...'
-            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot }
+            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
             clicked={() => setIsRenameDialogOpen(true)}
           />
           <ContextMenuItem
@@ -187,6 +195,13 @@ const ExplorerPanel = () => {
                 // --- Succesfully renamed
                 selectedContextNode.data.fullPath = newFullName;
                 selectedContextNode.data.name = newName;
+                selectedContextNode.parentNode.sortChildren((a, b) =>
+                  compareProjectNode(a.data, b.data)
+                );
+                const newIndex = tree.findIndex(selectedContextNode)
+                if (newIndex >= 0) {
+                  setSelected(newIndex);
+                }
                 vlApi.current.refresh();
               }
             }}
@@ -201,12 +216,15 @@ const ExplorerPanel = () => {
             isFolder={selectedContextNodeIsFolder}
             entry={selectedContextNode.data.fullPath}
             onDelete={async () => {
+              // --- Delete the item
               const response = await messenger.sendMessage({
                 type: "MainDeleteFileEntry",
                 isFolder: selectedContextNodeIsFolder,
                 name: selectedContextNode.data.fullPath
               });
+
               if (response.type === "ErrorResponse") {
+                // --- Delete failed
                 await messenger.sendMessage({
                   type: "MainDisplayMessageBox",
                   messageType: "error",
@@ -214,7 +232,7 @@ const ExplorerPanel = () => {
                   message: response.message
                 });
               } else {
-                // --- Succesfully renamed
+                // --- Succesfully deleted
                 selectedContextNode.parentNode.removeChild(selectedContextNode);
                 tree.buildIndex();
                 setVisibleNodes(tree.getVisibleNodes());
@@ -227,14 +245,54 @@ const ExplorerPanel = () => {
           />
         )}
 
-        <NewItemDialog
-          isFolder={false}
-          rootPath='dddfdfd'
-          isOpen={isNewItemDialogOpen}
-          onClose={() => {
-            setIsNewItemDialogOpen(false);
-          }}
-        />
+        {isNewItemDialogOpen && (
+          <NewItemDialog
+            isFolder={newItemIsFolder}
+            path={selectedContextNode?.data?.name}
+            itemNames={(selectedContextNode.children ?? []).map(
+              item => item.data.name
+            )}
+            onAdd={async (newName: string) => {
+              // --- Add the item
+              const response = await messenger.sendMessage({
+                type: "MainAddNewFileEntry",
+                isFolder: newItemIsFolder,
+                folder: selectedContextNode.data.fullPath,
+                name: newName
+              });
+
+              if (response.type === "ErrorResponse") {
+                // --- Delete failed
+                await messenger.sendMessage({
+                  type: "MainDisplayMessageBox",
+                  messageType: "error",
+                  title: "Add new item error",
+                  message: response.message
+                });
+              } else {
+                // --- Succesfully deleted
+                const newNode = new TreeNode({
+                  isFolder: newItemIsFolder,
+                  name: newName,
+                  fullPath: `${selectedContextNode.data.fullPath}/${newName}`
+                });
+                selectedContextNode.insertAndSort(newNode, (a, b) =>
+                  compareProjectNode(a.data, b.data)
+                );
+                tree.buildIndex();
+                setVisibleNodes(tree.getVisibleNodes());
+                const newIndex = tree.findIndex(newNode)
+                if (newIndex >= 0) {
+                  setSelected(newIndex);
+                }
+                vlApi.current.refresh();
+              }
+            }}
+            onClose={() => {
+              setIsNewItemDialogOpen(false);
+            }}
+          />
+        )}
 
         <VirtualizedListView
           items={visibleNodes}
@@ -330,59 +388,6 @@ const ExplorerPanel = () => {
         }}
       />
     </>
-  );
-};
-
-type NewItemProps = {
-  isFolder?: boolean;
-  rootPath?: string;
-  isOpen?: boolean;
-  onClose: () => void;
-};
-
-const NewItemDialog = ({
-  isFolder,
-  rootPath,
-  isOpen,
-  onClose
-}: NewItemProps) => {
-  const modalApi = useRef<ModalApi>(null);
-  const [newItem, setNewItem] = useState<string>();
-  return (
-    <Modal
-      title={isFolder ? "Create new folder" : "Create new file"}
-      isOpen={isOpen}
-      fullScreen={false}
-      width={500}
-      onApiLoaded={api => (modalApi.current = api)}
-      primaryLabel='Create'
-      initialFocus='none'
-      onPrimaryClicked={async () => {
-        console.log("Create " + newItem);
-        return false;
-      }}
-      onClose={() => {
-        onClose();
-      }}
-    >
-      <div>
-        Create a new {isFolder ? "folder" : "file"} in{" "}
-        <span className={styles.hilite}>{rootPath}</span>:
-      </div>
-      <TextInput
-        value={""}
-        focusOnInit={true}
-        keyPressed={e => {
-          if (e.code === "Enter") {
-            modalApi.current.triggerPrimary(newItem);
-          }
-        }}
-        valueChanged={val => {
-          setNewItem(val);
-          return false;
-        }}
-      />
-    </Modal>
   );
 };
 

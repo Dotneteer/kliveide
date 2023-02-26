@@ -66,17 +66,9 @@ export interface MainDeleteFileEntry extends MessageBase {
 /**
  * The client wants to delete a file entry
  */
-export interface MainAddNewFile extends MessageBase {
-  type: "MainAddNewFile";
-  folder?: string;
-  name: string;
-}
-
-/**
- * The client wants to delete a file entry
- */
-export interface MainAddNewFolder extends MessageBase {
-  type: "MainAddNewFolder";
+export interface MainAddNewFileEntry extends MessageBase {
+  type: "MainAddNewFileEntry";
+  isFolder?: boolean;
   folder?: string;
   name: string;
 }

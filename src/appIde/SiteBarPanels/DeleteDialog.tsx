@@ -2,7 +2,7 @@ import styles from "./DeleteDialog.module.scss";
 import { ModalApi, Modal } from "@/controls/Modal";
 import { useRef } from "react";
 
-type DeleteDialogProps = {
+type Props = {
   isFolder?: boolean;
   entry: string;
   onClose: () => void;
@@ -14,7 +14,7 @@ export const DeleteDialog = ({
   entry,
   onClose,
   onDelete
-}: DeleteDialogProps) => {
+}: Props) => {
   const modalApi = useRef<ModalApi>(null);
 
   return (
@@ -26,7 +26,7 @@ export const DeleteDialog = ({
       onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Delete'
       primaryDanger={true}
-      initialFocus='none'
+      initialFocus='cancel'
       onPrimaryClicked={async result => {
         await onDelete?.();
         return false;
