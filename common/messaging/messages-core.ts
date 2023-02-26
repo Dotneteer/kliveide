@@ -27,10 +27,9 @@ import {
   MainCreateKliveProject,
   MainCreateKliveProjectResponse,
   MainOpenFolder,
-  MainAddNewFile,
+  MainAddNewFileEntry,
   MainDeleteFileEntry,
-  MainRenameFileEntry,
-  MainAddNewFolder
+  MainRenameFileEntry
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -139,8 +138,7 @@ export type RequestMessage =
   | MainGetDirectoryContent
   | MainOpenFolder
   | MainCreateKliveProject
-  | MainAddNewFile
-  | MainAddNewFolder
+  | MainAddNewFileEntry
   | MainDeleteFileEntry
   | MainRenameFileEntry
   | IdeDisplayOutputRequest

@@ -1,4 +1,4 @@
-import styles from "./RenameDialog.module.scss";
+import styles from "./NewItemDialog.module.scss";
 import { ModalApi, Modal } from "@/controls/Modal";
 import { TextInput } from "@/controls/TextInput";
 import { useRef, useState } from "react";
@@ -7,35 +7,39 @@ const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
 
 type Props = {
   isFolder?: boolean;
-  oldPath: string;
+  path: string;
+  itemNames: string[];
   onClose: () => void;
-  onRename: (newName: string) => Promise<void>;
+  onAdd: (newName: string) => Promise<void>;
 };
 
-export const RenameDialog = ({
+export const NewItemDialog = ({
   isFolder,
-  oldPath,
+  path,
+  itemNames,
   onClose,
-  onRename
+  onAdd: onRename
 }: Props) => {
   const modalApi = useRef<ModalApi>(null);
-  const [newPath, setNewPath] = useState(oldPath);
+  const [newItem, setNewItem] = useState("");
+  const subject = isFolder ? "folder" : "file";
 
-  const validate = (fn: string) => fn !== oldPath && VALID_FILENAME.test(fn);
-  const isValid = validate(newPath);
+  const validate = (fn: string) =>
+    !itemNames.some(item => fn === item) && VALID_FILENAME.test(fn);
+  const isValid = validate(newItem);
 
   return (
     <Modal
-      title={isFolder ? "Rename folder" : "Rename file"}
+      title={`Add new ${subject}`}
       isOpen={true}
       fullScreen={false}
       width={500}
       onApiLoaded={api => (modalApi.current = api)}
-      primaryLabel='Rename'
+      primaryLabel='Add'
       primaryEnabled={isValid}
       initialFocus='none'
       onPrimaryClicked={async result => {
-        await onRename?.(result ?? newPath);
+        await onRename?.(result ?? newItem);
         return false;
       }}
       onClose={() => {
@@ -43,21 +47,22 @@ export const RenameDialog = ({
       }}
     >
       <div>
-        Rename <span className={styles.hilite}>{oldPath}</span> to:
+        {`Name of the new ${subject} to create in `}
+        <span className={styles.hilite}>{path}</span>:
       </div>
       <TextInput
-        value={oldPath}
+        value={""}
         isValid={isValid}
         focusOnInit={true}
         keyPressed={e => {
           if (e.code === "Enter") {
-            if (validate(newPath)) {
-              modalApi.current.triggerPrimary(newPath);
+            if (validate(newItem)) {
+              modalApi.current.triggerPrimary(newItem);
             }
           }
         }}
         valueChanged={val => {
-          setNewPath(val);
+          setNewItem(val);
           modalApi.current.enablePrimaryButton(validate(val));
           return false;
         }}

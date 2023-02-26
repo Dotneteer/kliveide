@@ -48,6 +48,24 @@ export interface ITreeNode<TNode> {
   appendChild(child: ITreeNode<TNode>): number;
 
   /**
+   * Sorts the children of this node
+   * @param sortFn Compare function to sort children
+   */
+  sortChildren(
+    sortFn?: (item1: ITreeNode<TNode>, item2: ITreeNode<TNode>) => number
+  ): void;
+
+  /**
+   * Appends a new child to this child node. and then sorts children
+   * @param child The child to append to this child node.
+   * @param sortFn Compare function to sort children
+   */
+  insertAndSort(
+    child: ITreeNode<TNode>,
+    sortFn?: (item1: ITreeNode<TNode>, item2: ITreeNode<TNode>) => number
+  ): void;
+
+  /**
    * Inserts a child into this child node at the specified position.
    * Takes care of avoiding circular references.
    * @param index Insertion index.
@@ -151,6 +169,13 @@ export interface ITreeView<TNode> {
    * Builds the indexed list of visible nodes to display
    */
   buildIndex(): void;
+
+  /**
+   * Finds the index of the specified node
+   * @param node Node to find
+   * @returns Index, if node found; otherwise, -1
+   */
+  findIndex(node: ITreeNode<TNode>): number;
 
   /**
    * Gets the array of currently visible tree nodes
@@ -263,6 +288,31 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
    */
   appendChild (child: ITreeNode<TNode>): number {
     return this._insertChild(this._children.length, child);
+  }
+
+  /**
+   * Sorts the children of this node
+   * @param sortFn Compare function to sort children
+   */
+  sortChildren (
+    sortFn?: (item1: ITreeNode<TNode>, item2: ITreeNode<TNode>) => number
+  ): void {
+    if (sortFn) {
+      this._children = this._children.sort(sortFn);
+    }
+  }
+
+  /**
+   * Appends a new child to this child node. and then sorts children
+   * @param child The child to append to this child node.
+   * @param sortFn Compare function to sort children
+   */
+  insertAndSort (
+    child: ITreeNode<TNode>,
+    sortFn?: (item1: ITreeNode<TNode>, item2: ITreeNode<TNode>) => number
+  ): void {
+    this.appendChild(child);
+    this.sortChildren(sortFn);
   }
 
   /**
@@ -678,6 +728,15 @@ export class TreeView<TNode> implements ITreeView<TNode> {
       if (!node.isExpanded) return;
       node.children.forEach(child => visitNode(child));
     }
+  }
+
+  /**
+   * Finds the index of the specified node
+   * @param node Node to find
+   * @returns Index, if node found; otherwise, -1
+   */
+  findIndex (node: ITreeNode<TNode>): number {
+    return this._visibleNodes.indexOf(node);
   }
 
   /**

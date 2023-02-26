@@ -95,11 +95,7 @@ export function buildProjectTree (
     }
 
     // --- Add child nodes alphabetically
-    childNodes = childNodes.sort((a, b) => {
-      if (a.data.name < b.data.name) return -1;
-      if (a.data.name > b.data.name) return 1;
-      return 0;
-    });
+    childNodes = childNodes.sort((a, b) => compareProjectNode(a.data, b.data));
     childNodes.forEach(cn => rootNode.appendChild(cn));
 
     // --- Drop the child nodes from the data
@@ -108,4 +104,16 @@ export function buildProjectTree (
     // --- Done
     return rootNode;
   }
+}
+
+/**
+ * Compares two project node accordig to their order in the file explorer
+ * @param a First node
+ * @param b Second node
+ * @returns Comparison result
+ */
+export function compareProjectNode (a: ProjectNode, b: ProjectNode): number {
+  const compType = a.isFolder ? (b.isFolder ? 0 : -1) : b.isFolder ? 1 : 0;
+  if (compType) return compType;
+  return a.name < b.name ? -1 : a.name > b.name ? 0 : 1;
 }

@@ -98,7 +98,7 @@ export async function processRendererToMainMessages (
     case "MainDeleteFileEntry":
       try {
         if (message.isFolder) {
-          fs.rmdirSync(message.name, {recursive: true})
+          fs.rmdirSync(message.name, { recursive: true });
         } else {
           fs.unlinkSync(message.name);
         }
@@ -107,6 +107,21 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
+    case "MainAddNewFileEntry":
+      const newItemName = path.join(message.folder, message.name);
+      if (fs.existsSync(newItemName)) {
+        return errorResponse(`${newItemName} already exists`);
+      }
+      try {
+        if (message.isFolder) {
+          fs.mkdirSync(newItemName);
+        } else {
+          fs.closeSync(fs.openSync(newItemName, "w"));
+        }
+        break;
+      } catch (err) {
+        return errorResponse(err.toString());
+      }
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
