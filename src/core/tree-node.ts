@@ -118,6 +118,16 @@ export interface ITreeNode<TNode> {
   getNextViewNode(): ITreeNode<TNode> | undefined;
 
   /**
+   * Expands this node and all children recursively
+   */
+  expandAll(): void;
+
+  /**
+   * Collapses this node and all children recursively
+   */
+  collapseAll(): void;
+
+  /**
    * Traverses from the first parent to the root element and executes
    * the specified action on each node.
    * @param action Action to execute.
@@ -462,6 +472,22 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
     }
   }
 
+  /**
+   * Expands this node and all children recursively
+   */
+  expandAll (): void {
+    this._isExpanded = true;
+    this._children.forEach(c => c.expandAll());
+  }
+
+  /**
+   * Collapses this node and all children recursively
+   */
+  collapseAll (): void {
+    this._isExpanded = false;
+    this._children.forEach(c => c.collapseAll());
+  }
+
   // ========================================================================
   // Helpers
 
@@ -656,56 +682,7 @@ export class TreeView<TNode> implements ITreeView<TNode> {
    */
   getViewNodeByIndex (index: number): ITreeNode<TNode> | undefined {
     this._checkRootNodeAssigned();
-    let currentNode = this._rootNode;
-    if (!currentNode) {
-      return undefined;
-    }
-    while (true) {
-      // --- If we're right at the indexed node and that is not hidden,
-      // --- we found the node.
-      if (index === 0 && !currentNode.isHidden) {
-        return currentNode;
-      }
-
-      if (!currentNode.isExpanded) {
-        // --- The node is not expanded, it counts 1.
-        index--;
-
-        // --- We move to the sibling of the node
-        const parent = currentNode.parentNode;
-        if (!parent) {
-          // --- No parent, abort search
-          return undefined;
-        }
-
-        // --- Obtain the parent's index of the current node
-        const childIndex = parent.children.indexOf(currentNode);
-        if (childIndex < 0 || childIndex >= parent.childCount) {
-          // --- No more children, abort the search
-          return undefined;
-        }
-
-        // --- Go on with the sibling item
-        currentNode = parent.children[childIndex + 1];
-      } else {
-        // --- Search the children of the current item
-        let viewItemSum = 0;
-        let found = false;
-        for (let i = 0; i < currentNode.childCount; i++) {
-          const child = currentNode.children[i];
-          const oldViewItemSum = viewItemSum;
-          viewItemSum += child.viewItemCount;
-          if (viewItemSum >= index) {
-            (currentNode = child), (index = index - oldViewItemSum - 1);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          return undefined;
-        }
-      }
-    }
+    return this._visibleNodes[index];
   }
 
   /**
@@ -743,7 +720,7 @@ export class TreeView<TNode> implements ITreeView<TNode> {
    * Gets the array of currently visible tree nodes
    */
   getVisibleNodes (): ITreeNode<TNode>[] {
-    return this._visibleNodes;
+    return this._visibleNodes.slice(0);
   }
 
   // ========================================================================

@@ -9,6 +9,7 @@ type Props = {
   items: any[];
   approxSize?: number;
   fixItemHeight?: boolean;
+  getItemKey?: (index: number) => string | number;
   itemRenderer: (index: number) => ReactNode;
   vlApiLoaded?: (vlApi: VirtualizedListApi) => void;
   svApiLoaded?: (svApi: ScrollViewerApi) => void;
@@ -22,6 +23,7 @@ export const VirtualizedListView = ({
   items,
   approxSize,
   fixItemHeight,
+  getItemKey,
   itemRenderer,
   vlApiLoaded,
   svApiLoaded,
@@ -53,6 +55,7 @@ export const VirtualizedListView = ({
         approxSize={approxSize}
         fixItemHeight={fixItemHeight}
         itemRenderer={itemRenderer}
+        getItemKey={getItemKey}
         apiLoaded={api => {
           vlApi.current = api;
           vlApiLoaded?.(api);
