@@ -50,7 +50,7 @@ export const darkTheme: ThemeProperties = {
   "--radius-modal": "2px",
   "--bgcolor-modal-header": "#303030",
   "--color-modal-header": "#ffffff",
-  "--bgcolor-modal-body": "#484848",
+  "--bgcolor-modal-body": "#383838",
   "--color-modal-body": "#ffffff",
   "--bgcolor-modal-footer": "#303030",
   "--color-modal-footer": "#ffffff",

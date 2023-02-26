@@ -54,6 +54,7 @@ export type IdeView = {
   statusMessage?: string;
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
+  dialogToDisplay?: number;
 };
 
 export type EmulatorState = {

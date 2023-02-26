@@ -1,0 +1,26 @@
+.inputRow {
+  display: flex;
+  flex-direction: row;
+}
+
+.fullWidth {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  flex-shrink: 1;
+  flex-grow: 1;
+  justify-content: stretch;
+}
+
+.dropdownWrapper {
+    display: flex;
+    padding: 8px 0;
+}
+
+.iconWrapper {
+    display:flex;
+    margin-left: 0px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    align-items: center;
+}

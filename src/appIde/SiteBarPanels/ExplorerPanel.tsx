@@ -23,9 +23,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator
 } from "@/controls/ContextMenu";
-import { RenameDialog } from "./RenameDialog";
-import { DeleteDialog } from "./DeleteDialog";
-import { NewItemDialog } from "./NewItemDialog";
+import { RenameDialog } from "../dialogs/RenameDialog";
+import { DeleteDialog } from "../dialogs/DeleteDialog";
+import { NewItemDialog } from "../dialogs/NewItemDialog";
 
 const PROJECT_FILE_NAME = "klive.project";
 

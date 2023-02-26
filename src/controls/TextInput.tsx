@@ -8,7 +8,7 @@ type Props = {
   maxLength?: number;
   focusOnInit?: boolean;
   keyPressed?: (e: React.KeyboardEvent) => void;
-  valueChanged?: (newValue: string) => (boolean | undefined);
+  valueChanged?: (newValue: string) => boolean | undefined;
 };
 
 export const TextInput = ({
@@ -34,19 +34,21 @@ export const TextInput = ({
   }, [ref.current]);
 
   return (
-    <input
-      ref={ref}
-      className={classnames(styles.input, {[styles.invalid]: !isValid})}
-      value={inputValue}
-      maxLength={maxLength}
-      spellCheck={false}
-      onKeyDown={e => keyPressed?.(e)}
-      onChange={e => {
-        const newValue = e.target.value;
-        if (!valueChanged?.(newValue)) {
+    <div className={styles.inputContainer}>
+      <input
+        ref={ref}
+        className={classnames(styles.input, { [styles.invalid]: !isValid })}
+        value={inputValue}
+        maxLength={maxLength}
+        spellCheck={false}
+        onKeyDown={e => keyPressed?.(e)}
+        onChange={e => {
+          const newValue = e.target.value;
+          if (!valueChanged?.(newValue)) {
             setInputValue(e.target.value);
-        }
-      }}
-    />
+          }
+        }}
+      />
+    </div>
   );
 };

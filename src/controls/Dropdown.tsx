@@ -45,6 +45,7 @@ export const Dropdown = ({
   const onItemClick = (option: OptionProps) => {
     setSelectedValue(option);
     onSelectionChanged?.(option.value);
+    setShowMenu(false);
   };
 
   const isSelected = (option: OptionProps) =>
