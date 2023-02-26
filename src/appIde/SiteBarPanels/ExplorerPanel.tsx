@@ -74,6 +74,12 @@ const ExplorerPanel = () => {
   // --- API to manage dialogs
   const modalApi = useRef<ModalApi>();
 
+  const refreshTree = () => {
+    tree.buildIndex();
+    setVisibleNodes(tree.getVisibleNodes());
+    vlApi.current.refresh();
+  };
+
   // --- Remove the last explorer tree from the cache when closing the folder
   useEffect(() => {
     const projectClosed = () => {
@@ -156,6 +162,21 @@ const ExplorerPanel = () => {
                 }}
               />
               <ContextMenuSeparator />
+              <ContextMenuItem
+                text='Expand all'
+                clicked={() => {
+                  selectedContextNode.expandAll();
+                  refreshTree();
+                }}
+              />
+              <ContextMenuItem
+                text='Collapse all'
+                clicked={() => {
+                  selectedContextNode.collapseAll();
+                  refreshTree();
+                }}
+              />
+              <ContextMenuSeparator />
             </>
           )}
           <ContextMenuItem
@@ -198,11 +219,11 @@ const ExplorerPanel = () => {
                 selectedContextNode.parentNode.sortChildren((a, b) =>
                   compareProjectNode(a.data, b.data)
                 );
-                const newIndex = tree.findIndex(selectedContextNode)
+                refreshTree();
+                const newIndex = tree.findIndex(selectedContextNode);
                 if (newIndex >= 0) {
                   setSelected(newIndex);
                 }
-                vlApi.current.refresh();
               }
             }}
             onClose={() => {
@@ -234,9 +255,7 @@ const ExplorerPanel = () => {
               } else {
                 // --- Succesfully deleted
                 selectedContextNode.parentNode.removeChild(selectedContextNode);
-                tree.buildIndex();
-                setVisibleNodes(tree.getVisibleNodes());
-                vlApi.current.refresh();
+                refreshTree();
               }
             }}
             onClose={() => {
@@ -279,13 +298,11 @@ const ExplorerPanel = () => {
                 selectedContextNode.insertAndSort(newNode, (a, b) =>
                   compareProjectNode(a.data, b.data)
                 );
-                tree.buildIndex();
-                setVisibleNodes(tree.getVisibleNodes());
-                const newIndex = tree.findIndex(newNode)
+                refreshTree();
+                const newIndex = tree.findIndex(newNode);
                 if (newIndex >= 0) {
                   setSelected(newIndex);
                 }
-                vlApi.current.refresh();
               }
             }}
             onClose={() => {
@@ -300,6 +317,7 @@ const ExplorerPanel = () => {
           fixItemHeight={false}
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
+          getItemKey={index => tree.getViewNodeByIndex(index).data.fullPath}
           itemRenderer={idx => {
             const node = tree.getViewNodeByIndex(idx);
             const isSelected = idx === selected;

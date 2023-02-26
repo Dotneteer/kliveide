@@ -32,6 +32,7 @@ type Props = {
   approxSize?: number;
   fixItemHeight?: boolean;
   hideScrollBars?: boolean;
+  getItemKey?: (index: number) => string | number;
   itemRenderer: (index: number) => ReactNode;
   apiLoaded?: (api: VirtualizedListApi) => void;
   vScrolled?: (offset: number) => void;
@@ -42,6 +43,7 @@ export const VirtualizedList = ({
   approxSize,
   fixItemHeight = true,
   hideScrollBars = false,
+  getItemKey,
   itemRenderer,
   apiLoaded,
   vScrolled
@@ -53,7 +55,8 @@ export const VirtualizedList = ({
     count: items.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => approxSize ?? 20,
-    overscan: 20
+    getItemKey,
+    overscan: 20,
   });
 
   const columnVirtualizer = useVirtualizer({
@@ -61,6 +64,7 @@ export const VirtualizedList = ({
     count: 1,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 100,
+    getItemKey,
     overscan: 0
   });
 
