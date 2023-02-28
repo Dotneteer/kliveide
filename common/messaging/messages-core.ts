@@ -30,7 +30,8 @@ import {
   MainAddNewFileEntryRequest,
   MainDeleteFileEntryRequest,
   MainRenameFileEntryRequest,
-  MainShowOpenFolderDialogRequest
+  MainShowOpenFolderDialogRequest,
+  MainShowOpenFolderDialogResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -162,6 +163,7 @@ export type ResponseMessage =
   | BinaryContentsResponse
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
+  | MainShowOpenFolderDialogResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse

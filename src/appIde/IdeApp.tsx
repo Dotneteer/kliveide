@@ -142,13 +142,6 @@ const IdeApp = () => {
     }
   }, [appServices, store, messenger]);
 
-  // --- Display the IDE dialog
-  useEffect(() => {
-    if (dialogId) {
-      console.log(`Display dialog ${dialogId}`);
-    }
-  }, [dialogId]);
-
   return (
     <div id='appMain' className={styles.app}>
       {showToolbar && <Toolbar />}

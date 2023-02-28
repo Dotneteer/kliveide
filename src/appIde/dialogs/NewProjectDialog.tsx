@@ -1,11 +1,14 @@
 import styles from "./NewProjectDialog.module.scss";
 import { ModalApi, Modal } from "@/controls/Modal";
 import { TextInput } from "@/controls/TextInput";
-import { useRef, useState } from "react";
-import { IconButton } from "@/controls/IconButton";
+import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@/controls/Dropdown";
+import { useRendererContext } from "@/core/RendererProvider";
+import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
 
+const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
+const VALID_FOLDERNAME = /^[^>:"|?*]+$/;
 
 const machineIds = [
   {
@@ -28,13 +31,21 @@ type Props = {
 };
 
 export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
+  const { messenger } = useRendererContext();
   const modalApi = useRef<ModalApi>(null);
+  const [machineId, setMachineId] = useState("sp48");
   const [projectFolder, setProjectFolder] = useState("");
   const [projectName, setProjectName] = useState("");
+  const [folderIsValid, setFolderIsValid] = useState(true);
+  const [projectIsValid, setProjectIsValid] = useState(true);
 
-  const validate = (fn: string) => VALID_FILENAME.test(fn);
-  const folderIsValid = projectFolder.trim() === "" || validate(projectFolder);
-  const projectIsValid = projectName.trim() !== "" && validate(projectName);
+  useEffect(() => {
+    const fValid = projectFolder.trim() === "" || VALID_FOLDERNAME.test(projectFolder)
+    const nValid = projectName.trim() !== "" && VALID_FILENAME.test(projectName)
+    setFolderIsValid(fValid);
+    setProjectIsValid(nValid);
+    modalApi.current.enablePrimaryButton(fValid && nValid);
+  }, [projectFolder, projectName])
 
   return (
     <Modal
@@ -46,8 +57,16 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       primaryLabel='Create'
       primaryEnabled={folderIsValid && projectIsValid}
       initialFocus='none'
-      onPrimaryClicked={async result => {
-        // TODO: Create
+      onPrimaryClicked={async () => {
+        // --- Create the project
+        console.log(machineId, projectName, projectFolder);
+        const response = await messenger.sendMessage({
+          type: "MainCreateKliveProject",
+          machineId,
+          projectName,
+          projectFolder
+        });
+        console.log(response);
         return false;
       }}
       onClose={() => {
@@ -60,44 +79,40 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           placeholder='Select...'
           options={machineIds}
           value={"sp48"}
-          onSelectionChanged={option => {}}
+          onSelectionChanged={option => setMachineId(option)}
         />
       </div>
       <div>Project folder:</div>
       <div className={styles.inputRow}>
-        <div className={styles.fullWidth}>
-          <TextInput
-            value={""}
-            isValid={folderIsValid}
-            focusOnInit={true}
-            valueChanged={val => {
-              setProjectFolder(val);
-              modalApi.current.enablePrimaryButton(
-                val.trim() === "" || validate(val) && projectIsValid
-              );
-              return false;
-            }}
-          />
-        </div>
-        <div className={styles.iconWrapper}>
-          <IconButton
-            iconName='folder'
-            iconSize={24}
-            title='Select project folder'
-            fill="--color-command-icon"
-          />
-        </div>
+        <TextInput
+          value={projectFolder}
+          isValid={folderIsValid}
+          focusOnInit={true}
+          buttonIcon='folder'
+          buttonTitle='Select the root project folder'
+          buttonClicked={async () => {
+            const response = (await messenger.sendMessage({
+              type: "MainShowOpenFolderDialog",
+              settingsId: NEW_PROJECT_FOLDER_ID
+            })) as MainShowOpenFolderDialogResponse;
+            if (response.folder) {
+              setProjectFolder(response.folder);
+            }
+            return response.folder;
+          }}
+          valueChanged={val => {
+            setProjectFolder(val);
+            return false;
+          }}
+        />
       </div>
       <div>Project name: *</div>
       <TextInput
-        value={""}
+        value={projectName}
         isValid={projectIsValid}
         focusOnInit={true}
         valueChanged={val => {
           setProjectName(val);
-          modalApi.current.enablePrimaryButton(
-            (val.trim() !== "" || validate(val)) && folderIsValid
-          );
           return false;
         }}
       />

@@ -87,9 +87,9 @@ export interface MainRenameFileEntryRequest extends MessageBase {
  */
 export interface MainShowOpenFolderDialogRequest extends MessageBase {
   type: "MainShowOpenFolderDialog";
-  folder?: string;
+  title?: string;
+  settingsId?: string;
 }
-
 
 /**
  * Response for text file read action
@@ -123,6 +123,15 @@ export interface MainCreateKliveProjectResponse extends MessageBase {
   path?: string;
   errorMessage?: string;
 }
+
+/**
+ * The client wants to display the open folder dialog
+ */
+export interface MainShowOpenFolderDialogResponse extends MessageBase {
+  type: "MainShowOpenFolderDialogResponse";
+  folder?: string;
+}
+
 
 export function textContentsResponse (contents: string): TextContentsResponse {
   return {
