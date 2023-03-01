@@ -195,6 +195,13 @@ export function ideViewReducer (
       };
     }
 
+    case "DISPLAY_DIALOG": {
+      return {
+        ...state,
+        dialogToDisplay: payload.index
+      };
+    }
+
     default:
       return state;
   }

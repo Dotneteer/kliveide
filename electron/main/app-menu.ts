@@ -25,7 +25,8 @@ import {
   setTapeFileAction,
   showIdeToolbarAction,
   showIdeStatusBarAction,
-  closeFolderAction
+  closeFolderAction,
+  displayDialogAction
 } from "../../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../../common/state/MachineControllerState";
@@ -41,7 +42,9 @@ import {
 } from "../../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder } from "./projects";
+import { NEW_PROJECT_DIALOG } from "../../common/messaging/dialog-ids";
 
+const NEW_PROJECT = "new_project"
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
@@ -123,6 +126,14 @@ export function setupMenu (
   template.push({
     label: "File",
     submenu: [
+      {
+        id: NEW_PROJECT,
+        label: "New project...",
+        click: () => {
+          mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
+        }
+      },
+      { type: "separator"},
       {
         id: OPEN_FOLDER,
         label: "Open folder...",

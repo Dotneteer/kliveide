@@ -13,7 +13,7 @@ import {
   setAudioSampleRateAction,
   setToolsAction,
   ideLoadedAction,
-  openFolderAction
+  displayDialogAction
 } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
@@ -58,6 +58,8 @@ import { DisassemblyCommand } from "./commands/DisAssemblyCommand";
 import { NewProjectCommand } from "./commands/NewProjectCommand";
 import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import { CloseFolderCommand } from "./commands/CloseFolderCommand";
+import { NewProjectDialog } from "./dialogs/NewProjectDialog";
+import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -76,6 +78,7 @@ const IdeApp = () => {
   const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
   const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
   const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
+  const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
 
   const activityOrder = useSelector(s => s.ideViewOptions.primaryBarOnRight)
     ? 3
@@ -140,7 +143,7 @@ const IdeApp = () => {
   }, [appServices, store, messenger]);
 
   return (
-    <div id="appMain" className={styles.app}>
+    <div id='appMain' className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
@@ -164,6 +167,15 @@ const IdeApp = () => {
         />
       </div>
       {showStatusBar && <IdeStatusBar />}
+
+      {dialogId === NEW_PROJECT_DIALOG && (
+        <NewProjectDialog
+          onCreate={async () => {}}
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -179,7 +191,7 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
     } as NotReadyResponse);
     return;
   }
-  
+
   const response = await processMainToIdeMessages(
     msg,
     storeCached,

@@ -1,0 +1,1 @@
+export const NEW_PROJECT_DIALOG = 1;

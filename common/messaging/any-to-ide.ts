@@ -33,3 +33,8 @@ export interface IdeShowBasicRequest extends MessageBase {
   type: "IdeShowBasic";
   show: boolean;
 }
+
+export interface IdeShowDialogRequest extends MessageBase {
+  type: "IdeShowDialog";
+  dialogId?: number;
+}

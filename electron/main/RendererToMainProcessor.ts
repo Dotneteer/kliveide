@@ -10,12 +10,14 @@ import { app, BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse,
-  MainCreateKliveProjectResponse
+  MainCreateKliveProjectResponse,
+  MainShowOpenFolderDialogResponse
 } from "../../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 import { createKliveProject, openFolder, openFolderByPath } from "./projects";
+import { appSettings, saveAppSettings } from "./settings";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -123,6 +125,17 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
+    case "MainShowOpenFolderDialog":
+      const selectedFolder = await displayOpenFolderDialog(
+        window,
+        message.title,
+        message.settingsId
+      );
+      return {
+        type: "MainShowOpenFolderDialogResponse",
+        folder: selectedFolder
+      } as MainShowOpenFolderDialogResponse;
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -203,4 +216,36 @@ async function getDirectoryContent (
       return entry;
     }
   }
+}
+
+/**
+ * Sets the tape file to use with the machine
+ * @param browserWindow Host browser window
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function displayOpenFolderDialog (
+  browserWindow: BrowserWindow,
+  title?: string,
+  settingsId?: string
+): Promise<string> {
+  const defaultPath =
+    appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: title ?? "Open Folder",
+    defaultPath,
+    properties: ["openDirectory"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  // --- Read the file
+  const selectedFolder = dialogResult.filePaths[0];
+
+  // --- Save the folder into settings
+  if (settingsId) {
+    appSettings.folders ??= {};
+    appSettings.folders[settingsId] = selectedFolder;
+    saveAppSettings();
+  }
+
+  return selectedFolder;
 }

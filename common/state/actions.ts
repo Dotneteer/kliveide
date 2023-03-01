@@ -257,3 +257,9 @@ export const openFolderAction: ActionCreator = (file: string, flag: boolean) => 
 export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER",
 });
+
+export const displayDialogAction: ActionCreator = (index?: number) => ({
+  type: "DISPLAY_DIALOG",
+  payload: { index }
+});
+

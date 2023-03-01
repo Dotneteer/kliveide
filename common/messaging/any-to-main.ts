@@ -31,7 +31,7 @@ export interface MainDisplayMessageBoxRequest extends MessageBase {
 /**
  * The client wants to get the contents of a directory
  */
-export interface MainGetDirectoryContent extends MessageBase {
+export interface MainGetDirectoryContentRequest extends MessageBase {
   type: "MainGetDirectoryContent";
   directory: string;
 }
@@ -39,7 +39,7 @@ export interface MainGetDirectoryContent extends MessageBase {
 /**
  * The client wants to create a new Klive project
  */
-export interface MainOpenFolder extends MessageBase {
+export interface MainOpenFolderRequest extends MessageBase {
   type: "MainOpenFolder";
   folder?: string;
 }
@@ -47,7 +47,7 @@ export interface MainOpenFolder extends MessageBase {
 /**
  * The client wants to create a new Klive project
  */
-export interface MainCreateKliveProject extends MessageBase {
+export interface MainCreateKliveProjectRequest extends MessageBase {
   type: "MainCreateKliveProject";
   machineId: string;
   projectName: string;
@@ -57,7 +57,7 @@ export interface MainCreateKliveProject extends MessageBase {
 /**
  * The client wants to delete a file entry
  */
-export interface MainDeleteFileEntry extends MessageBase {
+export interface MainDeleteFileEntryRequest extends MessageBase {
   type: "MainDeleteFileEntry";
   isFolder: boolean;
   name: string;
@@ -66,7 +66,7 @@ export interface MainDeleteFileEntry extends MessageBase {
 /**
  * The client wants to delete a file entry
  */
-export interface MainAddNewFileEntry extends MessageBase {
+export interface MainAddNewFileEntryRequest extends MessageBase {
   type: "MainAddNewFileEntry";
   isFolder?: boolean;
   folder?: string;
@@ -76,10 +76,19 @@ export interface MainAddNewFileEntry extends MessageBase {
 /**
  * The client wants to delete a file entry
  */
-export interface MainRenameFileEntry extends MessageBase {
+export interface MainRenameFileEntryRequest extends MessageBase {
   type: "MainRenameFileEntry";
   oldName: string;
   newName: string;
+}
+
+/**
+ * The client wants to display the open folder dialog
+ */
+export interface MainShowOpenFolderDialogRequest extends MessageBase {
+  type: "MainShowOpenFolderDialog";
+  title?: string;
+  settingsId?: string;
 }
 
 /**
@@ -114,6 +123,15 @@ export interface MainCreateKliveProjectResponse extends MessageBase {
   path?: string;
   errorMessage?: string;
 }
+
+/**
+ * The client wants to display the open folder dialog
+ */
+export interface MainShowOpenFolderDialogResponse extends MessageBase {
+  type: "MainShowOpenFolderDialogResponse";
+  folder?: string;
+}
+
 
 export function textContentsResponse (contents: string): TextContentsResponse {
   return {

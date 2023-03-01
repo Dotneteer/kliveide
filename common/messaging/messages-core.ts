@@ -22,14 +22,16 @@ import {
   MainDisplayMessageBoxRequest,
   BinaryContentsResponse,
   TextContentsResponse,
-  MainGetDirectoryContent,
+  MainGetDirectoryContentRequest,
   MainGetDirectoryContentResponse,
-  MainCreateKliveProject,
+  MainCreateKliveProjectRequest,
   MainCreateKliveProjectResponse,
-  MainOpenFolder,
-  MainAddNewFileEntry,
-  MainDeleteFileEntry,
-  MainRenameFileEntry
+  MainOpenFolderRequest,
+  MainAddNewFileEntryRequest,
+  MainDeleteFileEntryRequest,
+  MainRenameFileEntryRequest,
+  MainShowOpenFolderDialogRequest,
+  MainShowOpenFolderDialogResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -54,6 +56,7 @@ import {
 import {
   IdeDisplayOutputRequest,
   IdeShowBasicRequest,
+  IdeShowDialogRequest,
   IdeShowDisassemblyRequest,
   IdeShowMemoryRequest
 } from "./any-to-ide";
@@ -135,16 +138,18 @@ export type RequestMessage =
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
-  | MainGetDirectoryContent
-  | MainOpenFolder
-  | MainCreateKliveProject
-  | MainAddNewFileEntry
-  | MainDeleteFileEntry
-  | MainRenameFileEntry
+  | MainGetDirectoryContentRequest
+  | MainOpenFolderRequest
+  | MainCreateKliveProjectRequest
+  | MainAddNewFileEntryRequest
+  | MainDeleteFileEntryRequest
+  | MainRenameFileEntryRequest
+  | MainShowOpenFolderDialogRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
-  | IdeShowBasicRequest;
+  | IdeShowBasicRequest
+  | IdeShowDialogRequest;
 
 /**
  * All Response messages
@@ -158,6 +163,7 @@ export type ResponseMessage =
   | BinaryContentsResponse
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
+  | MainShowOpenFolderDialogResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse

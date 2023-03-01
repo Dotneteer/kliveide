@@ -15,21 +15,32 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-scrollbar": "transparent",
   "--bgcolor-scrollbar-thumb": "#808080",
   "--bgcolor-attached-shadow": "#bbbbbb",
-  "--bgcolor-button-disabled": "#606060",
-  "--color-button-disabled": "#aaaaaa",
+  "--bgcolor-button-disabled": "#808080",
+  "--color-button-disabled": "#cccccc",
   "--bgcolor-button": "#006daf",
   "--color-button": "#dddddd",
   "--bgcolor-button-pointed": "#0070c1",
   "--color-button-pointed": "#ffffff",
   "--color-button-focused": "#00a0ff",
+  "--color-text-hilite": "#00a0ff",
+  "--bgcolor-input": "#d8d8d8",
+  "--color-input": "#414141",
 
   // --- Drowpdown
-  "--bg-color-dropdown-input": "#a0a0a0",
+  "--bg-color-dropdown-input": "#c0c0c0",
   "--color-dropdown-input": "#000000",
-  "--bg-color-dropdown-menu": "#a0a0a0",
+  "--bg-color-dropdown-menu": "#c0c0c0",
   "--color-dropdown-menu": "#000000",
-  "--bg-color-dropdown-menu-pointed": "#909090",
+  "--bg-color-dropdown-menu-pointed": "#a0a0a0",
   "--bg-color-dropdown-menu-selected": "#007acc",
+
+  // --- Context menu
+  "--bgcolor-context-menu": "#d8d8d8",
+  "--color-context-item": "#414141",
+  "--color-context-item-disabled": "#a0a0a0",
+  "--bgcolor-context-item-pointed": "#007acc",
+  "--color-context-item-pointed": "#ffffff",
+  "--color-context-separator": "#606060",
 
   // --- Modal 
   "--bgcolor-backdrop": "#ffffff80",

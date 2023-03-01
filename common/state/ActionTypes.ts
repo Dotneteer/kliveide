@@ -59,4 +59,6 @@ export interface ActionTypes {
 
   OPEN_FOLDER: null;
   CLOSE_FOLDER: null;
+
+  DISPLAY_DIALOG: null;
 }

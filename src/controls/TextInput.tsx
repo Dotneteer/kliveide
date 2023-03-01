@@ -1,5 +1,6 @@
 import classnames from "@/utils/classnames";
 import { useEffect, useRef, useState } from "react";
+import { IconButton } from "./IconButton";
 import styles from "./TextInput.module.scss";
 
 type Props = {
@@ -7,8 +8,11 @@ type Props = {
   isValid?: boolean;
   maxLength?: number;
   focusOnInit?: boolean;
+  buttonIcon?: string;
+  buttonTitle?: string;
   keyPressed?: (e: React.KeyboardEvent) => void;
-  valueChanged?: (newValue: string) => (boolean | undefined);
+  valueChanged?: (newValue: string) => boolean | undefined;
+  buttonClicked?: (value: string) => Promise<string>;
 };
 
 export const TextInput = ({
@@ -16,12 +20,15 @@ export const TextInput = ({
   isValid,
   maxLength,
   focusOnInit,
+  buttonIcon,
+  buttonTitle,
   keyPressed,
-  valueChanged
+  valueChanged,
+  buttonClicked
 }: Props) => {
   const [inputValue, setInputValue] = useState(value);
 
-  // --- Ensure the button gets the focus if requested
+  // --- Ensure the input gets the focus if requested
   const ref = useRef<HTMLInputElement>(null);
   const focusSet = useRef(false);
   useEffect(() => {
@@ -34,19 +41,40 @@ export const TextInput = ({
   }, [ref.current]);
 
   return (
-    <input
-      ref={ref}
-      className={classnames(styles.input, {[styles.invalid]: !isValid})}
-      value={inputValue}
-      maxLength={maxLength}
-      spellCheck={false}
-      onKeyDown={e => keyPressed?.(e)}
-      onChange={e => {
-        const newValue = e.target.value;
-        if (!valueChanged?.(newValue)) {
-            setInputValue(e.target.value);
-        }
-      }}
-    />
+    <div className={styles.inputContainer}>
+      <div className={styles.fullWidth}>
+        <input
+          ref={ref}
+          className={classnames(styles.input, { [styles.invalid]: !isValid })}
+          value={inputValue}
+          maxLength={maxLength}
+          spellCheck={false}
+          onKeyDown={e => keyPressed?.(e)}
+          onChange={e => {
+            const newValue = e.target.value;
+            if (!valueChanged?.(newValue)) {
+              setInputValue(e.target.value);
+            }
+          }}
+        />
+      </div>
+      {buttonIcon && (
+        <div className={styles.iconWrapper}>
+          <IconButton
+            iconName={buttonIcon}
+            iconSize={24}
+            title={buttonTitle}
+            fill='--color-command-icon'
+            clicked={async () => {
+              const newValue = await buttonClicked?.(inputValue);
+              if (newValue) {
+                setInputValue(newValue);
+                ref.current.focus();
+              }
+            }}
+          />
+        </div>
+      )}
+    </div>
   );
 };
