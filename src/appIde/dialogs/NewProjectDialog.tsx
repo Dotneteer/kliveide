@@ -4,7 +4,7 @@ import { TextInput } from "@/controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@/controls/Dropdown";
 import { useRendererContext } from "@/core/RendererProvider";
-import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
+import { MainCreateKliveProjectResponse, MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -59,14 +59,32 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       initialFocus='none'
       onPrimaryClicked={async () => {
         // --- Create the project
-        console.log(machineId, projectName, projectFolder);
         const response = await messenger.sendMessage({
           type: "MainCreateKliveProject",
           machineId,
           projectName,
           projectFolder
+        }) as MainCreateKliveProjectResponse;
+        if (response.errorMessage) {
+          // --- Display the error
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "New Klive Project Error",
+            message: response.errorMessage
+          });
+
+          // --- Keep the dialog open
+          return true;
+        }
+
+        // --- Open the newly created project
+        await messenger.sendMessage({
+          type: "MainOpenFolder",
+          folder: response.path
         });
-        console.log(response);
+
+        // --- Dialog can be closed
         return false;
       }}
       onClose={() => {
