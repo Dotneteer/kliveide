@@ -13,7 +13,7 @@ import {
   setAudioSampleRateAction,
   setToolsAction,
   ideLoadedAction,
-  displayDialogAction
+  displayDialogAction,
 } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
@@ -60,6 +60,7 @@ import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import { CloseFolderCommand } from "./commands/CloseFolderCommand";
 import { NewProjectDialog } from "./dialogs/NewProjectDialog";
 import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
+import { BackDrop } from "@/controls/BackDrop";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -73,6 +74,7 @@ const IdeApp = () => {
   const { store, messenger } = useRendererContext();
 
   // --- Visual state
+  const dimmed = useSelector(s => s.dimMenu ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
   const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
@@ -167,6 +169,8 @@ const IdeApp = () => {
         />
       </div>
       {showStatusBar && <IdeStatusBar />}
+
+      <BackDrop visible={dimmed} />
 
       {dialogId === NEW_PROJECT_DIALOG && (
         <NewProjectDialog

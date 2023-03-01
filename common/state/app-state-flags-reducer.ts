@@ -27,6 +27,8 @@ export function appStateFlagsReducer (
       return { ...state, emuFocused: payload.flag };
     case "IDE_FOCUSED":
       return { ...state, ideFocused: payload.flag };
+    case "DIM_MENU":
+      return { ...state, dimMenu: payload.flag };
     default:
       return state;
   }

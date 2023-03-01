@@ -1,5 +1,5 @@
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
-import { closeFolderAction, openFolderAction } from "../../common/state/actions";
+import { closeFolderAction, dimMenuAction, openFolderAction } from "../../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
 import * as path from "path";
@@ -70,15 +70,20 @@ export async function openFolder (
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
-  const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Project Folder",
-    defaultPath,
-    properties: ["openDirectory"]
-  });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+  mainStore.dispatch(dimMenuAction(true));
+  try {
+    const dialogResult = await dialog.showOpenDialog(browserWindow, {
+      title: "Select Project Folder",
+      defaultPath,
+      properties: ["openDirectory"]
+    });
+    if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+    openFolderByPath(dialogResult.filePaths[0]);
+  } finally {
+    mainStore.dispatch(dimMenuAction(false));
+  }
 
   // --- Get the folder name
-  openFolderByPath(dialogResult.filePaths[0]);
 }
 
 /**

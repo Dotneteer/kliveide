@@ -12,6 +12,7 @@ export type AppState = {
   isWindows?: boolean;
   emuFocused?: boolean;
   ideFocused?: boolean;
+  dimMenu?: boolean;
   theme?: string;
   ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;

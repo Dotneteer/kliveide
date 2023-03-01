@@ -34,6 +34,7 @@ export const IconButton = ({
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [keyDown, setKeyDown] = useState(null);
+  const isActive = enable;
 
   useEffect(() => {
     setKeyDown(false);
@@ -42,20 +43,20 @@ export const IconButton = ({
     <div
       ref={ref}
       className={classnames(styles.iconButton, {
-        [styles.enabled]: enable,
+        [styles.enabled]: isActive,
         [styles.noPadding]: noPadding
       })}
       style={{ width: buttonWidth, height: buttonHeight }}
       onMouseDown={() => setKeyDown(true)}
       onMouseLeave={() => setKeyDown(false)}
       onClick={() => {
-        if (enable) clicked?.();
+        if (isActive) clicked?.();
         setKeyDown(false);
       }}
     >
       <div
         className={classnames(styles.iconWrapper, {
-          [styles.keyDown]: keyDown && enable,
+          [styles.keyDown]: keyDown && isActive,
           [styles.selected]: selected
         })}
       >
@@ -69,7 +70,7 @@ export const IconButton = ({
         </TooltipFactory>
         <Icon
           iconName={iconName}
-          fill={enable ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}
+          fill={isActive ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}
           width={size}
           height={size}
         />
