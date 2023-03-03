@@ -6,7 +6,7 @@ import {
 } from "../../common/messaging/messages-core";
 import * as path from "path";
 import * as fs from "fs";
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse,
@@ -18,6 +18,8 @@ import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 import { createKliveProject, openFolder, openFolderByPath } from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
+import { mainStore } from "./main-store";
+import { dimMenuAction } from "../../common/state/actions";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -52,11 +54,16 @@ export async function processRendererToMainMessages (
     case "MainDisplayMessageBox":
       // --- A client wants to display an error message.
       // --- We intentionally do not wait for confirmation.
-      dialog.showMessageBox(window, {
-        type: message.messageType ?? "none",
-        title: message.title,
-        message: message.message
-      });
+      mainStore.dispatch(dimMenuAction(true));
+      try {
+        await dialog.showMessageBox(window, {
+          type: message.messageType ?? "none",
+          title: message.title,
+          message: message.message
+        });
+      } finally {
+        mainStore.dispatch(dimMenuAction(false));
+      }
       break;
 
     case "MainGetDirectoryContent":

@@ -1,4 +1,6 @@
+import { useRendererContext } from "@/core/RendererProvider";
 import classnames from "@/utils/classnames";
+import { dimMenuAction } from "@state/actions";
 import {
   MouseEventHandler,
   ReactNode,
@@ -41,7 +43,7 @@ export type ModalProps = {
   cancelLabel?: string;
   cancelEnabled?: boolean;
   cancelVisible?: boolean;
-  initialFocus?: "none" | "primary" | "secondary" | "cancel"
+  initialFocus?: "none" | "primary" | "secondary" | "cancel";
   onApiLoaded?: (api: ModalApi) => void;
   onClose: (result?: any) => any;
   onPrimaryClicked?: (result?: any) => Promise<boolean>;
@@ -75,16 +77,23 @@ export const Modal = ({
   onCancelClicked
 }: ModalProps) => {
   const root = document.getElementById("appMain") || document.body;
+  const { store, messageSource } = useRendererContext();
   const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
   const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
   const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
   const [dialogResult, setDialogResult] = useState<any>();
 
+  const doClose = () => {
+    store.dispatch(dimMenuAction(false), messageSource);
+    onClose?.();
+  };
+
   const handleKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.code === "Escape") {
-      onClose?.();
+      doClose();
     }
   };
+
   const [closeStarted, setCloseStarted] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -93,21 +102,21 @@ export const Modal = ({
   const primaryClickHandler = async (result?: any) => {
     const close = await onPrimaryClicked?.(result ?? dialogResult);
     if (!close) {
-      onClose();
+      doClose();
     }
-  }
+  };
   const secondaryClickHandler = async (result?: any) => {
     const close = await onSecondaryClicked?.(result ?? dialogResult);
     if (!close) {
-      onClose();
+      doClose();
     }
-  }
+  };
   const cancelClickHandler = async (result?: any) => {
     const close = await onCancelClicked?.(result);
     if (!close) {
-      onClose();
+      doClose();
     }
-  }
+  };
 
   useEffect(() => {
     onApiLoaded?.({
@@ -115,12 +124,16 @@ export const Modal = ({
       enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
       enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
       setDialogResult: (result?: any) => setDialogResult(result),
-      triggerPrimary: (result?: any) => primaryClickHandler(result), 
-      triggerSecondary: (result?: any) => primaryClickHandler(result), 
-      triggerCancel: (result?: any) => primaryClickHandler(result), 
+      triggerPrimary: (result?: any) => primaryClickHandler(result),
+      triggerSecondary: (result?: any) => primaryClickHandler(result),
+      triggerCancel: (result?: any) => primaryClickHandler(result),
       triggerClose: (result?: any) => onClose(result)
     });
   }, [modalRef.current]);
+
+  useEffect(() => {
+    store.dispatch(dimMenuAction(isOpen), messageSource);
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -140,7 +153,7 @@ export const Modal = ({
       return;
     }
     if (closeStarted) {
-      onClose();
+      doClose();
     }
     setCloseStarted(false);
   };
@@ -191,9 +204,14 @@ export const Modal = ({
                 <button
                   type='button'
                   className={styles.closeButton}
-                  onClick={onClose}
+                  onClick={doClose}
                 >
-                  <Icon iconName='close' height={16} width={16} fill="--color-command-icon" />
+                  <Icon
+                    iconName='close'
+                    height={16}
+                    width={16}
+                    fill='--color-command-icon'
+                  />
                 </button>
               </div>
 
@@ -213,7 +231,9 @@ export const Modal = ({
                   <Button
                     text={secondaryLabel}
                     visible={secondaryVisible}
-                    focusOnInit={secondaryEnabled && initialFocus === "secondary"}
+                    focusOnInit={
+                      secondaryEnabled && initialFocus === "secondary"
+                    }
                     disabled={!button2Enabled}
                     spaceLeft={8}
                     clicked={async () => await secondaryClickHandler()}
@@ -222,7 +242,9 @@ export const Modal = ({
                     text={cancelLabel}
                     visible={cancelVisible}
                     disabled={!cancelButtonEnabled}
-                    focusOnInit={cancelButtonEnabled && initialFocus === "cancel"}
+                    focusOnInit={
+                      cancelButtonEnabled && initialFocus === "cancel"
+                    }
                     clicked={async () => await cancelClickHandler()}
                   />
                 </footer>

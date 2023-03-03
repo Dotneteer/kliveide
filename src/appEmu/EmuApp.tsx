@@ -17,6 +17,7 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
+import { BackDrop } from "@/controls/BackDrop";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -32,6 +33,7 @@ const EmuApp = () => {
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
+  const dimmed = useSelector(s => s.dimMenu ?? false);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -55,10 +57,11 @@ const EmuApp = () => {
   }, [appServices, store, messenger]);
 
   return (
-    <div id="appMain" className={styles.app}>
+    <div id='appMain' className={styles.app}>
       {showToolbar && <Toolbar />}
       <EmulatorArea />
       {showStatusBar && <EmuStatusBar />}
+      <BackDrop visible={dimmed} />
     </div>
   );
 };

@@ -23,6 +23,11 @@ export const ideSynchedAction: ActionCreator = () => ({
   type: "IDE_STATE_SYNCHED"
 });
 
+export const dimMenuAction: ActionCreator = (flag: boolean) => ({
+  type: "DIM_MENU",
+  payload: { flag }
+});
+
 export const isWindowsAction: ActionCreator = (flag: boolean) => ({
   type: "IS_WINDOWS",
   payload: { flag }

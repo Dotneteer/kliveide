@@ -63,6 +63,9 @@ const ExplorerPanel = () => {
     selectedContextNode?.level === 1;
   const selectedNodeIsRoot = !selectedContextNode?.parentNode;
 
+  // --- Is the screen dimmed?
+  const dimmed = useSelector(s => s.dimMenu);
+
   // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
@@ -396,7 +399,7 @@ const ExplorerPanel = () => {
       <div className={styles.noFolder}>You have not yet opened a folder.</div>
       <Button
         text='Open Folder'
-        disabled={false}
+        disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
         clicked={async () => {

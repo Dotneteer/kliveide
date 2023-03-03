@@ -44,7 +44,8 @@ import { appSettings, saveAppSettings } from "./settings";
 import { openFolder } from "./projects";
 import { NEW_PROJECT_DIALOG } from "../../common/messaging/dialog-ids";
 
-const NEW_PROJECT = "new_project"
+const SYSTEM_MENU_ID = "system_menu";
+const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
@@ -106,6 +107,7 @@ export function setupMenu (
   if (__DARWIN__) {
     template.push({
       label: app.name,
+      id: SYSTEM_MENU_ID,
       submenu: [
         { role: "about" },
         { type: "separator" },
@@ -133,7 +135,7 @@ export function setupMenu (
           mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }
       },
-      { type: "separator"},
+      { type: "separator" },
       {
         id: OPEN_FOLDER,
         label: "Open folder...",
@@ -141,7 +143,7 @@ export function setupMenu (
           await openFolder(ideWindow);
         }
       },
-      { type: "separator"},
+      { type: "separator" },
       {
         id: CLOSE_FOLDER,
         label: "Close Folder",
@@ -149,9 +151,9 @@ export function setupMenu (
         click: () => {
           mainStore.dispatch(closeFolderAction());
         }
-      },
+      }
     ]
-  })
+  });
 
   /**
    * Edit menu on MacOS
@@ -556,6 +558,10 @@ export function setupMenu (
     ]
   });
 
+  // --- If we show dialogs, the all menu item should be disabled
+  if (appState?.dimMenu) {
+    disableAllMenuItems(template);
+  }
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
@@ -633,4 +639,41 @@ async function logEmuEvent (text: string, color?: OutputColor): Promise<void> {
     color,
     writeLine: true
   });
+}
+
+// --- Disable all menu items (except the system menu)
+function disableAllMenuItems (
+  items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[]
+): void {
+  visitMenu(items, item => {
+    if (item.id === SYSTEM_MENU_ID) return false;
+    item.enabled = false;
+    return true;
+  });
+}
+
+// --- Visitor for each menu item in the current application menu
+function visitMenu (
+  items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[],
+  visitor: (
+    item: Electron.MenuItemConstructorOptions | Electron.MenuItem
+  ) => boolean
+): void {
+  items.forEach(i => visitMenuItem(i));
+
+  function visitMenuItem (
+    item: Electron.MenuItemConstructorOptions | Electron.MenuItem
+  ): boolean {
+    const visitResult = visitor(item);
+    if (visitResult) {
+      if (item.submenu) {
+        if (Array.isArray(item.submenu)) {
+          item.submenu.forEach(i => visitMenuItem(i));
+        } else {
+          item.submenu.items.forEach(i => visitMenuItem(i));
+        }
+      }
+    }
+    return visitResult;
+  }
 }
