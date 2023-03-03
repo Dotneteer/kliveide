@@ -57,13 +57,16 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       primaryLabel='Create'
       primaryEnabled={folderIsValid && projectIsValid}
       initialFocus='none'
-      onPrimaryClicked={async () => {
+      onPrimaryClicked={async (result) => {
+        const name = result ? result[0] : projectName;
+        const folder = result ? result[1] : projectFolder;
+
         // --- Create the project
         const response = await messenger.sendMessage({
           type: "MainCreateKliveProject",
           machineId,
-          projectName,
-          projectFolder
+          projectName: name,
+          projectFolder: folder
         }) as MainCreateKliveProjectResponse;
         if (response.errorMessage) {
           // --- Display the error
@@ -129,6 +132,15 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         value={projectName}
         isValid={projectIsValid}
         focusOnInit={true}
+        keyPressed={e => {
+          if (e.code === "Enter") {
+            if (folderIsValid && projectIsValid) {
+              e.preventDefault();
+              e.stopPropagation();
+              modalApi.current.triggerPrimary([projectName, projectFolder]);
+            }
+          }
+        }}
         valueChanged={val => {
           setProjectName(val);
           return false;
