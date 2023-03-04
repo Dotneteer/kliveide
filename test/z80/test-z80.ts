@@ -1,4 +1,6 @@
-import { FlagsSetMask, IZ80Cpu, OpCodePrefix } from "../../src/emu/abstractions/IZ80Cpu";
+import { FlagsSetMask } from "../../src/emu/abstractions/FlagSetMask";
+import { IZ80Cpu } from "../../src/emu/abstractions/IZ80Cpu";
+import { OpCodePrefix } from "../../src/emu/abstractions/OpCodePrefix";
 import { ILiteEvent, LiteEvent } from "../../src/emu/utils/lite-event";
 import { Z80Cpu } from "../../src/emu/z80/Z80Cpu";
 

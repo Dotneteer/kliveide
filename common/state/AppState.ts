@@ -1,6 +1,6 @@
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
-import { DocumentState } from "@common/abstractions/DocumentState";
-import { ToolState } from "@common/abstractions/ToolState";
+import { MachineControllerState } from "../abstractions/MachineControllerState";
+import { DocumentState } from "../abstractions/DocumentState";
+import { ToolState } from "../abstractions/ToolState";
 
 /**
  * Represents the state of the entire application
