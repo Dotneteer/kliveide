@@ -1,14 +1,12 @@
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
-import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
+import { EmuGetMemoryResponse } from "@common/messaging/main-to-emu";
+import { COMMAND_RESULT_EDITOR } from "@common/state/common-ids";
+import { CommandResultData } from "../abstractions/CommandResultData";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
 import {
-  CommandResultData,
-  InteractiveCommandContext,
-  InteractiveCommandResult
-} from "../abstractions";
-import {
+  toHexa4,
   writeSuccessMessage,
-  commandSuccess,
-  toHexa4
+  commandSuccess
 } from "../services/interactive-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import {

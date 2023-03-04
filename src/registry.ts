@@ -1,36 +1,23 @@
-import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
-import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
-import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
-import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
-import {
-  DocumentRendererInfo,
-  MachineInfo,
-} from "./appIde/abstractions";
-import {
-  outputPanelHeaderRenderer,
-  outputPanelRenderer
-} from "./appIde/ToolArea/OutputPanel";
-import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
-import {
-  commandPanelHeaderRenderer,
-  commandPanelRenderer
-} from "./appIde/ToolArea/CommandPanel";
-import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
-import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import {
-  BASIC_EDITOR,
-  DISASSEMBLY_EDITOR,
-  MEMORY_EDITOR,
-  COMMAND_RESULT_EDITOR
-} from "@state/common-ids";
-import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
-import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
-import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
-import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
+import { DISASSEMBLY_EDITOR, MEMORY_EDITOR, BASIC_EDITOR, COMMAND_RESULT_EDITOR } from "@common/state/common-ids";
+import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
+import { DocumentRendererInfo } from "./appIde/abstractions/DocumentRendererInfo";
+import { OutputPaneInfo } from "./appIde/abstractions/OutputPaneInfo";
 import { SideBarPanelInfo } from "./appIde/abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./appIde/abstractions/ToolRendererInfo";
-import { OutputPaneInfo } from "./appIde/abstractions/OutputPaneInfo";
+import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
+import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
+import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
+import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
+import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
+import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
+import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
+import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
+import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
+import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
+import { commandPanelRenderer, commandPanelHeaderRenderer } from "./appIde/ToolArea/CommandPanel";
+import { outputPanelRenderer, outputPanelHeaderRenderer } from "./appIde/ToolArea/OutputPanel";
+import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";

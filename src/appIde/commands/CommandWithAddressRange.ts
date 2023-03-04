@@ -1,9 +1,9 @@
-import { ValidationMessage } from "../abstractions";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  getNumericTokenValue,
   InteractiveCommandBase,
-  validationError
+  validationError,
+  getNumericTokenValue
 } from "../services/interactive-commands";
 
 /**

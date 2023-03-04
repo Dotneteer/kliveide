@@ -1,23 +1,19 @@
-import styles from "@styles/app.module.scss";
-import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
-import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
-import { Toolbar } from "../controls/Toolbar";
-import { useEffect, useRef } from "react";
-import { setAudioSampleRateAction, emuLoadedAction } from "@state/actions";
-import { ipcRenderer } from "electron";
-import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
-import {
-  useDispatch,
-  useRendererContext,
-  useSelector
-} from "../core/RendererProvider";
-import { processMainToEmuMessages } from "./MainToEmuProcessor";
-import { AppServices } from "@/appIde/abstractions";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
+import { AppServices } from "@/abstractions/AppServices";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { BackDrop } from "@/controls/BackDrop";
+import { Toolbar } from "@/controls/Toolbar";
+import { useDispatch, useRendererContext, useSelector } from "@/core/RendererProvider";
+import { RequestMessage, NotReadyResponse } from "@common/messaging/messages-core";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { emuLoadedAction, setAudioSampleRateAction } from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import styles from "@styles/app.module.scss";
+import { ipcRenderer } from "electron";
+import { useRef, useEffect } from "react";
+import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
+import { processMainToEmuMessages } from "./MainToEmuProcessor";
+import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;

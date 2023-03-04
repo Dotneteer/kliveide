@@ -20,7 +20,6 @@ import { TooltipFactory } from "@/controls/Tooltip";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
-const FLAG_WIDTH = 16;
 
 type SysVarData = {
   sysVar: SysVar;

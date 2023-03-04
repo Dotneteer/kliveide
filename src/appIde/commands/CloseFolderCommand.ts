@@ -1,12 +1,10 @@
-import { closeFolderAction } from "@state/actions";
+import { closeFolderAction } from "@common/state/actions";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
 import {
-  InteractiveCommandContext,
-  InteractiveCommandResult,
-} from "../abstractions";
-import {
+  commandError,
   writeSuccessMessage,
-  commandSuccess,
-  commandError
+  commandSuccess
 } from "../services/interactive-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 

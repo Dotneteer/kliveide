@@ -1,28 +1,23 @@
 import { AddressInput } from "@/controls/AddressInput";
 import { SmallIconButton } from "@/controls/IconButton";
 import { LabeledSwitch } from "@/controls/LabeledSwitch";
-import {
-  Label,
-  LabelSeparator,
-  Secondary,
-  Value
-} from "@/controls/Labels";
+import { LabelSeparator, Label, Secondary, Value } from "@/controls/Labels";
 import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import {
+  useSelector,
   useDispatch,
-  useRendererContext,
-  useSelector
+  useRendererContext
 } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { useUncommittedState } from "@/core/useUncommittedState";
-import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
+import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
 import classnames from "@/utils/classnames";
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
-import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@common/abstractions/MachineControllerState";
-import { useEffect, useRef, useState } from "react";
+import { EmuGetMemoryResponse } from "@common/messaging/main-to-emu";
+import { setIdeStatusMessageAction } from "@common/state/actions";
+import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa4 } from "../services/interactive-commands";
@@ -277,10 +272,13 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
         <ValueLabel text={`${toHexa4(firstAddr)} - ${toHexa4(lastAddr)}`} />
         <LabelSeparator width={4} />
         <ToolbarSeparator small={true} />
-        <AddressInput label="Go To:" onAddressSent={async (address) => {
-          topAddress.current = address;
-          setScrollVersion(scrollVersion + 1);
-        }}/>
+        <AddressInput
+          label='Go To:'
+          onAddressSent={async address => {
+            topAddress.current = address;
+            setScrollVersion(scrollVersion + 1);
+          }}
+        />
       </div>
       <div className={styles.disassemblyWrapper}>
         <VirtualizedListView

@@ -1,4 +1,4 @@
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
 
 /**
  * This class represents the information about an emulated key press

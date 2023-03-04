@@ -1,4 +1,4 @@
-import { AppServices } from "@/appIde/abstractions";
+import { AppServices } from "@/abstractions/AppServices";
 import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@/emu/abstractions/RenderingPhase";
 import { REWIND_REQUESTED, TAPE_DATA } from "@/emu/machines/machine-props";

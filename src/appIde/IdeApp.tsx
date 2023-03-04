@@ -1,63 +1,67 @@
-import styles from "@styles/app.module.scss";
-import { ActivityBar } from "./ActivityBar/ActivityBar";
-import { DocumentArea } from "./DocumentArea/DocumentArea";
-import { SiteBar } from "./SideBar/SideBar";
-import { SplitPanel } from "../controls/SplitPanel";
-import { ToolArea } from "./ToolArea/ToolArea";
-import { Toolbar } from "../controls/Toolbar";
-import { useEffect, useRef } from "react";
-import {
-  activateToolAction,
-  closeAllDocumentsAction,
-  selectActivityAction,
-  setAudioSampleRateAction,
-  setToolsAction,
-  ideLoadedAction,
-  displayDialogAction
-} from "@state/actions";
-import { ipcRenderer } from "electron";
-import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
+import { AppServices } from "@/abstractions/AppServices";
+import { BackDrop } from "@/controls/BackDrop";
+import { SplitPanel } from "@/controls/SplitPanel";
+import { Toolbar } from "@/controls/Toolbar";
 import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "../core/RendererProvider";
-import { activityRegistry, toolPanelRegistry } from "../registry";
-import { useAppServices } from "./services/AppServicesProvider";
-import { AppServices, IInteractiveCommandService } from "./abstractions";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { Store } from "@state/redux-light";
-import { AppState } from "@state/AppState";
-import { processMainToIdeMessages } from "./MainToIdeProcessor";
-import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
-import { ClearScreenCommand } from "./commands/ClearScreenCommand";
+} from "@/core/RendererProvider";
+import { activityRegistry, toolPanelRegistry } from "@/registry";
+import { ToolInfo } from "@common/abstractions/ToolInfo";
+import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 import {
-  PauseMachineCommand,
-  RestartMachineCommand,
-  StartDebugMachineCommand,
-  StartMachineCommand,
-  StepIntoMachineCommand,
-  StepOutMachineCommand,
-  StepOverMachineCommand,
-  StopMachineCommand
-} from "./commands/MachineCommands";
+  RequestMessage,
+  NotReadyResponse
+} from "@common/messaging/messages-core";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 import {
-  EnableBreakpointCommand,
+  ideLoadedAction,
+  setAudioSampleRateAction,
+  selectActivityAction,
+  setToolsAction,
+  activateToolAction,
+  closeAllDocumentsAction,
+  displayDialogAction
+} from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import styles from "@styles/app.module.scss";
+import { ipcRenderer } from "electron";
+import { useRef, useEffect } from "react";
+import { IInteractiveCommandService } from "./abstractions/IInteractiveCommandService";
+import { ActivityBar } from "./ActivityBar/ActivityBar";
+import {
   EraseAllBreakpointsCommand,
   ListBreakpointsCommand,
+  SetBreakpointCommand,
   RemoveBreakpointCommand,
-  SetBreakpointCommand
+  EnableBreakpointCommand
 } from "./commands/BreakpointCommands";
 import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
-import { NumCommand } from "./commands/NumCommand";
-import { DisassemblyCommand } from "./commands/DisAssemblyCommand";
-import { NewProjectCommand } from "./commands/NewProjectCommand";
-import { OpenFolderCommand } from "./commands/OpenFolderCommand";
+import { ClearScreenCommand } from "./commands/ClearScreenCommand";
 import { CloseFolderCommand } from "./commands/CloseFolderCommand";
+import { DisassemblyCommand } from "./commands/DisassemblyCommand";
+import {
+  StartMachineCommand,
+  PauseMachineCommand,
+  StopMachineCommand,
+  RestartMachineCommand,
+  StartDebugMachineCommand,
+  StepIntoMachineCommand,
+  StepOverMachineCommand,
+  StepOutMachineCommand
+} from "./commands/MachineCommands";
+import { NewProjectCommand } from "./commands/NewProjectCommand";
+import { NumCommand } from "./commands/NumCommand";
+import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import { NewProjectDialog } from "./dialogs/NewProjectDialog";
-import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
-import { BackDrop } from "@/controls/BackDrop";
-import { ToolInfo } from "@common/abstractions/ToolInfo";
+import { DocumentArea } from "./DocumentArea/DocumentArea";
+import { processMainToIdeMessages } from "./MainToIdeProcessor";
+import { useAppServices } from "./services/AppServicesProvider";
+import { SiteBar } from "./SideBar/SideBar";
+import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
+import { ToolArea } from "./ToolArea/ToolArea";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;

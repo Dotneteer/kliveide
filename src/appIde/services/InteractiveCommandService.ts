@@ -1,17 +1,15 @@
-import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
-import { OutputPaneBuffer } from "@/appIde/ToolArea/OutputPaneBuffer";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
-import {
-  AppServices,
-  IInteractiveCommandService,
-  InteractiveCommandContext,
-  InteractiveCommandInfo,
-  InteractiveCommandResult,
-  ValidationMessage,
-  ValidationMessageType
-} from "../abstractions";
+import { AppServices } from "@/abstractions/AppServices";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { IInteractiveCommandService } from "../abstractions/IInteractiveCommandService";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandInfo } from "../abstractions/InteractiveCommandInfo";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessageType } from "../abstractions/ValidationMessageType";
+import { IOutputBuffer } from "../ToolArea/abstractions";
+import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand, Token } from "./command-parser";
 import { InteractiveCommandBase } from "./interactive-commands";
 

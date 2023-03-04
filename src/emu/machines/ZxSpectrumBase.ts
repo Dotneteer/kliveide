@@ -1,4 +1,4 @@
-import { EmulatedKeyStroke } from "../abstractions/EmulatedKeyStroke";
+import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
 import { IBeeperDevice } from "../abstractions/IBeeperDevice";
 import { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
 import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";

@@ -1,27 +1,16 @@
-import {
-  Label,
-  LabelSeparator,
-  Secondary,
-  Value
-} from "@/controls/Labels";
+import { LabelSeparator, Label, Secondary, Value } from "@/controls/Labels";
+import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
-import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
-import {
-  EmuGetCpuStateResponse,
-  EmuListBreakpointsResponse
-} from "@messaging/main-to-emu";
-import { useEffect, useRef, useState } from "react";
+import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { EmuListBreakpointsResponse, EmuGetCpuStateResponse } from "@common/messaging/main-to-emu";
+import { useState, useRef, useEffect } from "react";
+import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { toHexa4 } from "../services/interactive-commands";
 import { useStateRefresh } from "../useStateRefresh";
+import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
-import {
-  MemorySection,
-  MemorySectionType
-} from "../z80-disassembler/disassembly-helper";
 import styles from "./BreakpointsPanel.module.scss";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
-import { VirtualizedListView } from "@/controls/VirtualizedListView";
-import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();

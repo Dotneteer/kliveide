@@ -1,4 +1,4 @@
-import { PanelRenderer } from "../abstractions";
+import { PanelRenderer } from "./PanelRenderer";
 
 /**
  * Describes a particular side bar panel

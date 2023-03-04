@@ -1,7 +1,7 @@
-import { ILiteEvent, LiteEvent } from "@/emu/utils/lite-event";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
-import { IProjectService } from "../abstractions";
+import { LiteEvent, ILiteEvent } from "@/emu/utils/lite-event";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { IProjectService } from "../abstractions/IProjectService";
 
 class ProjectService implements IProjectService {
   private _oldState: AppState;
@@ -10,7 +10,7 @@ class ProjectService implements IProjectService {
 
   constructor (store: Store<AppState>) {
     store.subscribe(() => {
-      const newState = store.getState();  
+      const newState = store.getState();
       const newFolderPath = newState?.project?.folderPath;
       const oldFolderPath = this._oldState?.project?.folderPath;
       this._oldState = newState;

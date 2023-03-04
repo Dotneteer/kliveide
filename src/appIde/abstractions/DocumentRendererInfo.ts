@@ -1,17 +1,26 @@
-import { ToolInfo } from "@common/abstractions/ToolInfo";
 import { PanelRenderer } from "./PanelRenderer";
 
 /**
  * Represents the information about a tool and its renderer
  */
-export type ToolRendererInfo = ToolInfo & {
+export type DocumentRendererInfo = {
+  /**
+   * The ID of the document renderer
+   */
+  id: string;
+
   /**
    * Renderer function to display the tool
    */
   renderer: PanelRenderer;
 
   /**
-   * Renderer function to display the tool's header
+   * The accompanying icon
    */
-  headerRenderer?: PanelRenderer;
+  icon?: string;
+
+  /**
+   * The icon's fill color
+   */
+  iconFill?: string;
 };

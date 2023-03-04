@@ -1,13 +1,13 @@
 import { SmallIconButton } from "@/controls/IconButton";
-import { Label, LabelSeparator } from "@/controls/Labels";
+import { LabelSeparator, Label } from "@/controls/Labels";
 import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
 import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { useDispatch } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
-import { setIdeStatusMessageAction } from "@state/actions";
-import { useEffect, useRef, useState } from "react";
-import { CommandResultData } from "../abstractions";
+import { setIdeStatusMessageAction } from "@common/state/actions";
+import { useRef, useState, useEffect } from "react";
+import { CommandResultData } from "../abstractions/CommandResultData";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { OutputLine } from "../ToolArea/OutputPanel";
