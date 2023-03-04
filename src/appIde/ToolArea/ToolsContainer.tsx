@@ -1,22 +1,18 @@
-import { ToolInfo } from "@/appIde/abstractions";
 import { toolPanelRegistry } from "@/registry";
+import { ToolInfo } from "@common/abstractions/ToolInfo";
 import { createElement } from "react";
 import styles from "./ToolsContainer.module.scss";
 
 type Props = {
-    tool?: ToolInfo
-}
+  tool?: ToolInfo;
+};
 
-export const ToolsContainer = ({
-    tool
-}: Props) => {
-    const panelRenderer = toolPanelRegistry.find(p => p.id === tool?.id);
-    const panelElement = panelRenderer?.renderer
-        ? createElement(panelRenderer.renderer, tool)
-        : null
-    return tool
-        ? <div className={styles.toolsContainer}>
-            {panelElement}
-        </div>
-        : null;
-}
+export const ToolsContainer = ({ tool }: Props) => {
+  const panelRenderer = toolPanelRegistry.find(p => p.id === tool?.id);
+  const panelElement = panelRenderer?.renderer
+    ? createElement(panelRenderer.renderer, tool)
+    : null;
+  return tool ? (
+    <div className={styles.toolsContainer}>{panelElement}</div>
+  ) : null;
+};

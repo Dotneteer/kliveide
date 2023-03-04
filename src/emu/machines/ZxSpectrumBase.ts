@@ -3,10 +3,11 @@ import { IBeeperDevice } from "../abstractions/IBeeperDevice";
 import { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
 import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
 import { IScreenDevice } from "../abstractions/IScreenDevice";
-import { ITapeDevice, TapeMode } from "../abstractions/ITapeDevice";
+import { ITapeDevice } from "../abstractions/ITapeDevice";
 import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
 import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
 import { SysVar } from "../abstractions/SysVar";
+import { TapeMode } from "../abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
 

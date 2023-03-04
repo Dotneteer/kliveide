@@ -1,5 +1,5 @@
-import { Activity } from "@/core/abstractions";
 import { ForwardedRef, forwardRef } from "react";
+import { Activity } from "../abstractions/Activity";
 import styles from "./SideBarHeader.module.scss";
 
 type Props = {

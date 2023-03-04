@@ -13,7 +13,7 @@ import {
   setAudioSampleRateAction,
   setToolsAction,
   ideLoadedAction,
-  displayDialogAction,
+  displayDialogAction
 } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { NotReadyResponse, RequestMessage } from "@messaging/messages-core";
@@ -24,11 +24,7 @@ import {
 } from "../core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "../registry";
 import { useAppServices } from "./services/AppServicesProvider";
-import {
-  AppServices,
-  IInteractiveCommandService,
-  ToolInfo
-} from "./abstractions";
+import { AppServices, IInteractiveCommandService } from "./abstractions";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Store } from "@state/redux-light";
 import { AppState } from "@state/AppState";
@@ -61,6 +57,7 @@ import { CloseFolderCommand } from "./commands/CloseFolderCommand";
 import { NewProjectDialog } from "./dialogs/NewProjectDialog";
 import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import { BackDrop } from "@/controls/BackDrop";
+import { ToolInfo } from "@common/abstractions/ToolInfo";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;

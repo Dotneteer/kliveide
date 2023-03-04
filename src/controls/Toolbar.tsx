@@ -1,4 +1,4 @@
-import { MachineControllerState } from "@state/MachineControllerState";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import {
   useDispatch,
   useRendererContext,

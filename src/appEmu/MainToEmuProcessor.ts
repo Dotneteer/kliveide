@@ -1,25 +1,24 @@
+import { AppServices } from "@/appIde/abstractions";
+import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@/emu/abstractions/RenderingPhase";
+import { REWIND_REQUESTED, TAPE_DATA } from "@/emu/machines/machine-props";
+import { TapReader } from "@/emu/machines/tape/TapReader";
+import { TzxReader } from "@/emu/machines/tape/TzxReader";
+import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
+import { EmuSetTapeFileRequest } from "@common/messaging/main-to-emu";
 import {
+  RequestMessage,
+  ResponseMessage,
+  flagResponse,
   defaultResponse,
   ErrorResponse,
-  errorResponse,
-  flagResponse,
-  RequestMessage,
-  ResponseMessage
-} from "@messaging/messages-core";
-import { BinaryReader } from "@utils/BinaryReader";
-import { REWIND_REQUESTED, TAPE_DATA } from "../emu/machines/machine-props";
-import { TapeDataBlock } from "../emu/machines/tape/abstractions";
-import { TapReader } from "../emu/machines/tape/TapReader";
-import { TzxReader } from "../emu/machines/tape/TzxFileFormatLoader";
-import { AppServices } from "../appIde/abstractions";
-import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
-import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
-import { RenderingPhase } from "@/emu/abstractions/IScreenDevice";
-import { stat } from "original-fs";
-import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
+  errorResponse
+} from "@common/messaging/messages-core";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { BinaryReader } from "@common/utils/BinaryReader";
 
 const borderColors = [
   "Black",
@@ -86,7 +85,6 @@ export async function processMainToEmuMessages (
         case "rewind":
           controller.machine.setMachineProperty(REWIND_REQUESTED, true);
           break;
-        
       }
       break;
     }
@@ -242,7 +240,8 @@ export async function processMainToEmuMessages (
         ir: m.ir,
         wz: m.wz,
         memBreakpoints: controller.debugSupport.execBreakpoints,
-        osInitialized: (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
+        osInitialized:
+          (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
       };
     }
 
@@ -253,7 +252,7 @@ export async function processMainToEmuMessages (
       return {
         type: "EmuGetSysVarsResponse",
         sysVars: (m as ZxSpectrumBase).sysVars
-      }
+      };
   }
   return defaultResponse();
 

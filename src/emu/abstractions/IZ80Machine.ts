@@ -1,7 +1,8 @@
-import { ExecutionContext, FrameTerminationMode } from "./ExecutionContext";
+import { ExecutionContext } from "./ExecutionContext";
 import { IZ80Cpu } from "./IZ80Cpu";
 import { ILiteEvent } from "../utils/lite-event";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { FrameTerminationMode } from "./FrameTerminationMode";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware

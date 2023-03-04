@@ -8,14 +8,12 @@ import { setMachineTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
-  IMachineService,
   MachineInfo,
-  MachineInstanceEventHandler,
-  MachineTypeEventHandler
 } from "../appIde/abstractions";
 import { FileProvider } from "../core/FileProvider";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { MessageSource } from "@messaging/messages-core";
+import { IMachineService, MachineInstanceEventHandler, MachineTypeEventHandler } from "./abstrations/IMachineService";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();

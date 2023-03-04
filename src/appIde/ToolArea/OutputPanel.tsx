@@ -1,5 +1,4 @@
 import { useDispatch, useSelector, useStore } from "@/core/RendererProvider";
-import { ToolState } from "@/appIde/abstractions";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import {
   activateOutputPaneAction,
@@ -13,6 +12,7 @@ import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
+import { ToolState } from "@common/abstractions/ToolState";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();

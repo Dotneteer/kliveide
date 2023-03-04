@@ -1,6 +1,6 @@
-import { DocumentState } from "@/appIde/abstractions";
 import { documentPanelRegistry } from "@/registry";
 import { createElement } from "react";
+import { DocumentState } from "../../../common/abstractions/DocumentState";
 import styles from "./DocumentsContainer.module.scss";
 
 /**

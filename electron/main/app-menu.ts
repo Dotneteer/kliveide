@@ -29,7 +29,7 @@ import {
   displayDialogAction
 } from "../../common/state/actions";
 import { setMachineType } from "./machines";
-import { MachineControllerState } from "../../common/state/MachineControllerState";
+import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { TapeDataBlock } from "@/emu/machines/tape/abstractions";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";

@@ -19,7 +19,7 @@ import {
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
 import styles from "./BreakpointsPanel.module.scss";
-import { MachineControllerState } from "@state/MachineControllerState";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 

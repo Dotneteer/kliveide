@@ -1,4 +1,4 @@
-import { DocumentState } from "../abstractions";
+import { DocumentState } from "../../../common/abstractions/DocumentState";
 
 const CodeEditorPanel = (props: DocumentState) => {
   return <div>CodeEditor {props.name}</div>;

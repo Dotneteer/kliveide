@@ -21,7 +21,7 @@ import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
 import classnames from "@/utils/classnames";
 import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@state/actions";
-import { MachineControllerState } from "@state/MachineControllerState";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";

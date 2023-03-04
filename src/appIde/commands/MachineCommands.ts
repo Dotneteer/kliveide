@@ -3,7 +3,7 @@ import {
   EmuGetCpuStateResponse,
   MachineCommand
 } from "@messaging/main-to-emu";
-import { MachineControllerState } from "@state/MachineControllerState";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import {
   InteractiveCommandContext,
   InteractiveCommandResult

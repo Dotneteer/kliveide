@@ -1,10 +1,8 @@
-import { incBreakpointsVersionAction } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
-import {
-  BreakpointInfo,
-  IDebugSupport
-} from "../abstractions/ExecutionContext";
+import { incBreakpointsVersionAction } from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { BreakpointInfo } from "../abstractions/BreakpointInfo";
+import { IDebugSupport } from "../abstractions/IDebugSupport";
 
 /**
  * This class implement support functions for debugging

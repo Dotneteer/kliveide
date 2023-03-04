@@ -1,7 +1,8 @@
 import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
 import { OutputPaneBuffer } from "@/appIde/ToolArea/OutputPaneBuffer";
 import { outputPaneRegistry } from "@/registry";
-import { IOutputPaneService, OutputPaneInfo } from "../abstractions";
+import { IOutputPaneService } from "../abstractions";
+import { OutputPaneInfo } from "../abstractions/OutputPaneInfo";
 
 /**
  * This class implements the output pane services

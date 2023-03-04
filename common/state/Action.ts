@@ -1,7 +1,8 @@
-import { MachineControllerState } from "@state/MachineControllerState";
-import { DocumentState, ToolState } from "@/appIde/abstractions";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
+import { DocumentState } from "@common/abstractions/DocumentState";
+import { ToolState } from "@common/abstractions/ToolState";
 
 /**
  * Available action types you can use with state manangement

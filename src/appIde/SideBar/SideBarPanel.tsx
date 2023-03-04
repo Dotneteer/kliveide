@@ -1,12 +1,12 @@
 import styles from "./SideBarPanel.module.scss";
 import { createElement, useEffect, useRef, useState } from "react";
-import { SideBarPanelInfo } from "@/core/abstractions";
 import { useDispatch } from "@/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
 import { Icon } from "../../controls/Icon";
 import classnames from "@/utils/classnames";
 import { ScrollViewer } from "@/controls/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
+import { SideBarPanelInfo } from "../abstractions/SideBarPanelInfo";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;

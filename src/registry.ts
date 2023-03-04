@@ -1,11 +1,3 @@
-import {
-  Activity,
-  ACTIVITY_DEBUG_ID,
-  ACTIVITY_FILE_ID,
-  ACTIVITY_MACHINE_INFO_ID,
-  ACTIVITY_TEST_ID,
-  SideBarPanelInfo
-} from "./core/abstractions";
 import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
 import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
 import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
@@ -13,8 +5,6 @@ import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPane
 import {
   DocumentRendererInfo,
   MachineInfo,
-  OutputPaneInfo,
-  ToolRendererInfo
 } from "./appIde/abstractions";
 import {
   outputPanelHeaderRenderer,
@@ -37,6 +27,15 @@ import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
 import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
+import { Activity } from "./appIde/abstractions/Activity";
+import { SideBarPanelInfo } from "./appIde/abstractions/SideBarPanelInfo";
+import { ToolRendererInfo } from "./appIde/abstractions/ToolRendererInfo";
+import { OutputPaneInfo } from "./appIde/abstractions/OutputPaneInfo";
+
+const ACTIVITY_FILE_ID = "file-view";
+const ACTIVITY_DEBUG_ID = "debug-view";
+const ACTIVITY_MACHINE_INFO_ID = "log-view";
+const ACTIVITY_TEST_ID = "test-view";
 
 // --- Set up activities
 export const activityRegistry: Activity[] = [

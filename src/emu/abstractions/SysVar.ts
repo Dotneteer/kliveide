@@ -2,7 +2,7 @@
 export type SysVar = {
   // --- System variable address
   address: number;
-  name: string,
+  name: string;
   type: SysVarType;
   length?: number;
   description?: string;

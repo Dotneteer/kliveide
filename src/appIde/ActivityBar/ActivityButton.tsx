@@ -1,10 +1,10 @@
-import { Activity } from "@/core/abstractions";
 import { useTheme } from "@/theming/ThemeProvider";
 import classnames from "@/utils/classnames";
 import { noop } from "@/utils/stablerefs";
 import { useRef, useState } from "react";
 import { Icon } from "../../controls/Icon";
 import { TooltipFactory } from "../../controls/Tooltip";
+import { Activity } from "../abstractions/Activity";
 import styles from "./ActivityButton.module.scss";
 
 /**
