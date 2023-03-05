@@ -371,7 +371,7 @@ const ExplorerPanel = () => {
                 )}
                 {!node.data.isFolder && (
                   <Icon
-                    iconName='file-code'
+                    iconName='@file-project'
                     fill='--fill-explorer-icon'
                     width={16}
                     height={16}

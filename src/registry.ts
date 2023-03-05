@@ -1,4 +1,10 @@
-import { DISASSEMBLY_EDITOR, MEMORY_EDITOR, BASIC_EDITOR, COMMAND_RESULT_EDITOR } from "@common/state/common-ids";
+import {
+  DISASSEMBLY_EDITOR,
+  MEMORY_EDITOR,
+  BASIC_EDITOR,
+  COMMAND_RESULT_EDITOR,
+  CODE_EDITOR
+} from "@common/state/common-ids";
 import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
 import { DocumentRendererInfo } from "./appIde/abstractions/DocumentRendererInfo";
@@ -15,8 +21,14 @@ import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
 import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
 import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
 import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
-import { commandPanelRenderer, commandPanelHeaderRenderer } from "./appIde/ToolArea/CommandPanel";
-import { outputPanelRenderer, outputPanelHeaderRenderer } from "./appIde/ToolArea/OutputPanel";
+import {
+  commandPanelRenderer,
+  commandPanelHeaderRenderer
+} from "./appIde/ToolArea/CommandPanel";
+import {
+  outputPanelRenderer,
+  outputPanelHeaderRenderer
+} from "./appIde/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
@@ -85,7 +97,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     noScrollViewer: false,
     renderer: sysVarsPanelRenderer
   }
-
 ];
 
 // --- Set up tool panels
@@ -119,7 +130,7 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
 // --- Set up document panel renderers
 export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
-    id: "CodeEditor",
+    id: CODE_EDITOR,
     renderer: createCodeEditorPanel
   },
   {

@@ -25,7 +25,7 @@ export type ThemeProperties = {
   "--color-text-hilite"?: string;
   "--bgcolor-input"?: string;
   "--color-input"?: string;
- 
+
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;
   "--color-dropdown-input"?: string;
@@ -42,7 +42,7 @@ export type ThemeProperties = {
   "--color-context-item-pointed"?: string;
   "--color-context-separator"?: string;
 
-  // --- Modal 
+  // --- Modal
   "--bgcolor-backdrop"?: string;
   "--bgcolor-modal"?: string;
   "--color-modal"?: string;
@@ -182,7 +182,7 @@ export type ThemeProperties = {
   "--color-explorer-selected"?: string;
   "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
-}
+};
 
 /**
  * Describes a theme with its properties
@@ -190,7 +190,27 @@ export type ThemeProperties = {
 export type ThemeInfo = {
   tone: ThemeTone;
   properties: ThemeProperties;
-}
+};
+
+/**
+ * Represents information about an image in the registry.
+ */
+export type ImageInfo = {
+  /**
+   * The name (alias) of the icon.
+   */
+  name: string;
+
+  /**
+   * Image type
+   */
+  type: "png";
+
+  /**
+   * Base64 image data
+   */
+  data: string;
+};
 
 /**
  * Each theme can have a light or a dark tone.
@@ -226,10 +246,17 @@ export type ThemeManager = {
   readonly getIcon: (key: string) => IconInfo | undefined;
 
   /**
+   * Gets the information about the specified image
+   * @param key Icon ID
+   * @returns Icon information
+   */
+  readonly getImage: (key: string) => ImageInfo | undefined;
+
+  /**
    * The HTML element that works as the root of the theme's scope.
    */
   readonly root: HTMLElement;
-}
+};
 
 /**
  * Represents information about an icon in the registry.

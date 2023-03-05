@@ -1,4 +1,4 @@
-import { DocumentInfo } from "@common/abstractions/DocumentInfo";
+import { DocumentInfo } from "./DocumentInfo";
 
 export type DocumentState = DocumentInfo & {
   /**

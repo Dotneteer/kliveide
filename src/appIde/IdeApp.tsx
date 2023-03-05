@@ -25,6 +25,7 @@ import {
   displayDialogAction
 } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
+import { CODE_EDITOR } from "@common/state/common-ids";
 import { Store } from "@common/state/redux-light";
 import styles from "@styles/app.module.scss";
 import { ipcRenderer } from "electron";
@@ -136,7 +137,7 @@ const IdeApp = () => {
         {
           id: `doc-${i}`,
           name: `Document #${i}`,
-          type: "CodeEditor",
+          type: CODE_EDITOR,
           isReadOnly: i === 2
         },
         undefined,

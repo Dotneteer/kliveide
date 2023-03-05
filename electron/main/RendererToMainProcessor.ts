@@ -16,7 +16,7 @@ import {
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
-import { createKliveProject, openFolder, openFolderByPath } from "./projects";
+import { createKliveProject, openFolder, openFolderByPath, resolvePublicFilePath } from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import { dimMenuAction } from "../../common/state/actions";
@@ -165,17 +165,6 @@ export async function processRendererToMainMessages (
       return sendFromMainToEmu(message);
   }
   return defaultResponse();
-}
-
-/**
- * Resolves the specified path using the public folder as relative root
- * @param toResolve Path to resolve
- * @returns Resolved path
- */
-function resolvePublicFilePath (toResolve: string): string {
-  return path.isAbsolute(toResolve)
-    ? toResolve
-    : path.join(process.env.PUBLIC, toResolve);
 }
 
 /**
