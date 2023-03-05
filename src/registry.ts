@@ -8,6 +8,7 @@ import {
 import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
 import { DocumentRendererInfo } from "./appIde/abstractions/DocumentRendererInfo";
+import { FileTypeEditor } from "./appIde/abstractions/FileTypePattern";
 import { OutputPaneInfo } from "./appIde/abstractions/OutputPaneInfo";
 import { SideBarPanelInfo } from "./appIde/abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./appIde/abstractions/ToolRendererInfo";
@@ -167,3 +168,35 @@ export const machineRegistry: MachineInfo[] = [
     factory: () => new ZxSpectrum48Machine()
   }
 ];
+
+// --- The registry of ile types
+export const fileTypeRegistry: FileTypeEditor[] = [
+  {
+    matchType: "full",
+    pattern:"klive.project",
+    editor: CODE_EDITOR,
+    subType: "json",
+    icon: "@file-project"
+  },
+  {
+    matchType: "ends",
+    pattern:".kz80.asm",
+    editor: CODE_EDITOR,
+    subType: "",
+    icon: "@file-kz80-asm"
+  },
+  {
+    matchType: "ends",
+    pattern:".zxb.asm",
+    editor: CODE_EDITOR,
+    subType: "",
+    icon: "@file-zxb-asm"
+  },
+  {
+    matchType: "ends",
+    pattern:".zxbas",
+    editor: CODE_EDITOR,
+    subType: "",
+    icon: "@file-zxbas"
+  },
+]

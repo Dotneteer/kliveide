@@ -25,6 +25,12 @@ export interface IDocumentService {
   openDocument(document: DocumentInfo, data?: any, temporary?: boolean): void;
 
   /**
+   * Tests if the specified document is open
+   * @param document
+   */
+  isOpen(id: string): boolean;
+
+  /**
    * Sets the specified document as the active one
    * @param id The ID of the active document
    */
@@ -218,6 +224,16 @@ class DocumentService implements IDocumentService {
       ),
       "ide"
     );
+  }
+
+  /**
+   * Tests if the specified document is open
+   * @param document
+   */
+  isOpen (id: string): boolean {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    return !!docs.find(doc => doc.id === id);
   }
 
   /**

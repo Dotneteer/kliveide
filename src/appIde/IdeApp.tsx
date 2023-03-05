@@ -132,18 +132,6 @@ const IdeApp = () => {
 
     // --- Temporary: open a few document panels
     dispatch(closeAllDocumentsAction());
-    for (let i = 0; i < 5; i++) {
-      appServices.documentService.openDocument(
-        {
-          id: `doc-${i}`,
-          name: `Document #${i}`,
-          type: CODE_EDITOR,
-          isReadOnly: i === 2
-        },
-        undefined,
-        i >= 3
-      );
-    }
   }, [appServices, store, messenger]);
 
   return (

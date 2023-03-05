@@ -34,7 +34,7 @@ let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   const { messenger } = useRendererContext();
-  const { projectService } = useAppServices();
+  const { projectService, documentService } = useAppServices();
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
@@ -349,6 +349,43 @@ const ExplorerPanel = () => {
                   node.isExpanded = !node.isExpanded;
                   tree.buildIndex();
                   setVisibleNodes(tree.getVisibleNodes());
+
+                  if (!node.data.isFolder) {
+                    if (documentService.isOpen(node.data.fullPath)) {
+                      documentService.setActiveDocument(node.data.fullPath);
+                    } else {
+                      documentService.openDocument(
+                        {
+                          id: node.data.fullPath,
+                          name: node.data.name,
+                          type: node.data.editor,
+                          language: node.data.subType,
+                          iconName: node.data.icon
+                        },
+                        undefined,
+                        true
+                      );
+                    }
+                  }
+                }}
+                onDoubleClick={() => {
+                  if (node.data.isFolder) return;
+                  if (documentService.isOpen(node.data.fullPath)) {
+                    documentService.setActiveDocument(node.data.fullPath);
+                    documentService.setPermanent(node.data.fullPath);
+                  } else {
+                    documentService.openDocument(
+                      {
+                        id: node.data.fullPath,
+                        name: node.data.name,
+                        type: node.data.editor,
+                        language: node.data.subType,
+                        iconName: node.data.icon
+                      },
+                      undefined,
+                      false
+                    );
+                  }
                 }}
               >
                 <div
@@ -371,7 +408,7 @@ const ExplorerPanel = () => {
                 )}
                 {!node.data.isFolder && (
                   <Icon
-                    iconName='@file-project'
+                    iconName={node.data.icon ?? "file-code"}
                     fill='--fill-explorer-icon'
                     width={16}
                     height={16}

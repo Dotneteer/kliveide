@@ -21,7 +21,7 @@ export const DocumentArea = () => {
   }, [openDocs, activeDocIndex]);
 
   const data = activeDoc?.id ? documentService.getDocumentData(activeDoc?.id) : null;
-  return activeDoc ? (
+  return  (
     <div className={styles.documentArea}>
       <DocumentsHeader />
       {activeDocIndex >= 0 && (
@@ -31,5 +31,5 @@ export const DocumentArea = () => {
         />
       )}
     </div>
-  ) : null;
+  );
 };
