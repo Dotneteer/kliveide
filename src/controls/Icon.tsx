@@ -41,6 +41,20 @@ export const Icon = ({
       flexShrink: 0,
       flexGrow: 0
     };
+
+    if (iconName?.startsWith("@")) {
+      const imageInfo = theme.getImage(
+        iconName.substring(1) + (theme.theme.tone === "light" ? "-light" : "")
+      );
+      return (
+        <img
+          className={xclass}
+          src={`data:image/${imageInfo.type};base64,${imageInfo.data}`}
+          style={{ ...styleValue, ...style }}
+        />
+      );
+    }
+
     return (
       <svg
         className={xclass}

@@ -1,18 +1,16 @@
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import {
   createMachineCommand,
   EmuGetCpuStateResponse,
   MachineCommand
-} from "@messaging/main-to-emu";
-import { MachineControllerState } from "@state/MachineControllerState";
+} from "@common/messaging/main-to-emu";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
 import {
-  InteractiveCommandContext,
-  InteractiveCommandResult
-} from "../abstractions";
-import {
-  commandError,
+  writeSuccessMessage,
   commandSuccess,
-  toHexa4,
-  writeSuccessMessage
+  commandError,
+  toHexa4
 } from "../services/interactive-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 

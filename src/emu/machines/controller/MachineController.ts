@@ -1,23 +1,22 @@
+import { IMachineController } from "@/appEmu/abstrations/IMachineController";
 import { IOutputBuffer, OutputColor } from "@/appIde/ToolArea/abstractions";
-import {
-  DebugStepMode,
-  ExecutionContext,
-  FrameTerminationMode,
-  IDebugSupport
-} from "@/emu/abstractions/ExecutionContext";
+import { DebugStepMode } from "@/emu/abstractions/DebugStepMode";
+import { ExecutionContext } from "@/emu/abstractions/ExecutionContext";
 import { FrameStats } from "@/emu/abstractions/FrameStats";
+import { FrameTerminationMode } from "@/emu/abstractions/FrameTerminationMode";
+import { IDebugSupport } from "@/emu/abstractions/IDebugSupport";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { LiteEvent } from "@/emu/utils/lite-event";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { MachineControllerState } from "../../../../common/state/MachineControllerState";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
  */
-export class MachineController {
+export class MachineController implements IMachineController {
   private _cancelRequested: boolean;
   private _machineTask: Promise<void>;
   private _machineState: MachineControllerState;

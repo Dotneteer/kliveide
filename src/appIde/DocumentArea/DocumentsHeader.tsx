@@ -3,7 +3,7 @@ import { TabButton } from "@/controls/TabButton";
 import { useSelector } from "@/core/RendererProvider";
 import { documentPanelRegistry } from "@/registry";
 import { useEffect, useRef, useState } from "react";
-import { DocumentState } from "../abstractions";
+import { DocumentState } from "../../../common/abstractions/DocumentState";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";

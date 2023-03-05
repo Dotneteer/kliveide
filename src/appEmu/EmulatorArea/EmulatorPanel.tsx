@@ -1,16 +1,16 @@
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@/core/useMachineController";
-import { spectrumKeyMappings } from "@/emu/abstractions/keymappings";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
 import { useSelector, useStore } from "@/core/RendererProvider";
 import { useResizeObserver } from "@/core/useResizeObserver";
-import { MachineControllerState } from "@state/MachineControllerState";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer } from "./AudioRenderer";
 import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@/emu/machines/machine-props";
 import { MachineController } from "@/emu/machines/controller/MachineController";
+import { spectrumKeyMappings } from "./key-mappings";
 
 export const EmulatorPanel = () => {
   // --- Access state information

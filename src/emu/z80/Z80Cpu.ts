@@ -1,5 +1,6 @@
-import { FrameTerminationMode } from "../abstractions/ExecutionContext";
-import { FlagsSetMask, IZ80Cpu, OpCodePrefix } from "../abstractions/IZ80Cpu";
+import { FlagsSetMask } from "../abstractions/FlagSetMask";
+import { IZ80Cpu } from "../abstractions/IZ80Cpu";
+import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 
 /**
  * This class implements the emulation of the Z80 CPU

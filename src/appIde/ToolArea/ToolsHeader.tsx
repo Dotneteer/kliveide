@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "@/core/RendererProvider";
-import { ToolState } from "@/appIde/abstractions";
 import { toolPanelRegistry } from "@/registry";
+import { ToolState } from "@common/abstractions/ToolState";
 import {
   incToolCommandSeqNoAction,
   showToolPanelsAction,

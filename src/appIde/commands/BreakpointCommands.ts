@@ -1,22 +1,19 @@
-import { EmuListBreakpointsResponse } from "@messaging/main-to-emu";
-import { FlagResponse } from "@messaging/messages-core";
-import {
-  InteractiveCommandContext,
-  InteractiveCommandResult,
-  ValidationMessage
-} from "../abstractions";
+import { EmuListBreakpointsResponse } from "@common/messaging/main-to-emu";
+import { FlagResponse } from "@common/messaging/messages-core";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  commandError,
+  writeMessage,
   commandSuccess,
   toHexa4,
+  writeSuccessMessage,
   validationError,
-  writeMessage,
-  writeSuccessMessage
+  commandError
 } from "../services/interactive-commands";
 import { CommandWithAddressBase } from "./CommandWithAddressBase";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
-import { CommandWithSingleIntegerBase } from "./CommandWithSingleIntegerBase";
 
 export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-ea";
@@ -65,11 +62,7 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
           "bright-magenta",
           false
         );
-        writeMessage(
-          context.output,
-          bp.disabled ? " <disabled>" : "",
-          "cyan"
-        );
+        writeMessage(context.output, bp.disabled ? " <disabled>" : "", "cyan");
       });
       writeMessage(
         context.output,
@@ -156,7 +149,7 @@ export class EnableBreakpointCommand extends CommandWithAddressBase {
 
     this.enable = true;
     if (_args.length > 2) {
-      return validationError("This command expects up to 2 arguments")
+      return validationError("This command expects up to 2 arguments");
     } else if (_args.length === 2) {
       // --- The second argument can be only "-d"
       if (_args[1].text !== "-d") {
@@ -178,11 +171,15 @@ export class EnableBreakpointCommand extends CommandWithAddressBase {
     if (response.flag) {
       writeSuccessMessage(
         context.output,
-        `Breakpoint at address $${toHexa4(this.address)} ${this.enable ? "enabled" :  "disabled"}`
+        `Breakpoint at address $${toHexa4(this.address)} ${
+          this.enable ? "enabled" : "disabled"
+        }`
       );
     } else {
       return commandError(
-        `Breakpoint at address $${toHexa4(this.address)} does not exist, so it cannot be enabled or disabled`
+        `Breakpoint at address $${toHexa4(
+          this.address
+        )} does not exist, so it cannot be enabled or disabled`
       );
     }
     return commandSuccess;

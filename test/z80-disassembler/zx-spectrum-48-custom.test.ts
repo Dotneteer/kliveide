@@ -1,4 +1,4 @@
-import { ZxSpectrum48CustomDisassembler } from "@/appIde/z80-disassembler/zx-spectrum-48-disassembler";
+import { ZxSpectrum48CustomDisassembler } from "../../src/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z80Tester } from "./z80-tester";
 
 describe("Disassembler - ZX Spectrum-specific", function () {

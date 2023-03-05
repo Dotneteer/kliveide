@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "expect";
-import createAppStore from "../common/state/store";
 import { Action } from "../common/state/Action";
-import { emuLoadedAction, showEmuToolbarAction } from "@state/actions";
+import { emuLoadedAction, showEmuToolbarAction } from "../common/state/actions";
+import createAppStore from "../common/state/store";
 
 describe("AppState management", () => {
     it("Initial AppState after createAppStore", ()=> {

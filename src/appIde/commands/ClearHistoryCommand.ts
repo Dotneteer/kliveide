@@ -1,10 +1,8 @@
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
 import {
-  InteractiveCommandContext,
-  InteractiveCommandResult
-} from "../abstractions";
-import {
-  commandSuccess,
-  writeSuccessMessage
+  writeSuccessMessage,
+  commandSuccess
 } from "../services/interactive-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 

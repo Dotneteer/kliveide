@@ -1,11 +1,11 @@
+import { AppServices } from "@/abstractions/AppServices";
+import { createMachineService } from "@/appEmu/MachineService";
 import { useRendererContext } from "@/core/RendererProvider";
-import React, { useContext, useEffect, useRef } from "react";
-import { AppServices } from "../abstractions";
+import { createUiService } from "@/core/UiServices";
+import { useContext, useRef, useEffect, createContext } from "react";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./InteractiveCommandService";
-import { createMachineService } from "../../appEmu/MachineService";
 import { createOutputPaneService } from "./OuputPaneService";
-import { createUiService } from "@/core/UiServices";
 import { createProjectService } from "./ProjectService";
 
 // =====================================================================================================================
@@ -13,7 +13,7 @@ import { createProjectService } from "./ProjectService";
  * This object provides the React context of IDE services, which we pass the root component, and thus all
  * nested apps and components may use it.
  */
-const AppServicesContext = React.createContext<AppServices>(undefined);
+const AppServicesContext = createContext<AppServices>(undefined);
 
 // =====================================================================================================================
 /**
@@ -28,7 +28,10 @@ type Props = {
 };
 export function AppServicesProvider ({ children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
-  const interactiveCommandsService = createInteractiveCommandsService(store, messenger);
+  const interactiveCommandsService = createInteractiveCommandsService(
+    store,
+    messenger
+  );
   const servicesRef = useRef<AppServices>({
     uiService: createUiService(),
     documentService: createDocumentService(store),

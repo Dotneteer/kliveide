@@ -1,16 +1,14 @@
-import { MainCreateKliveProjectResponse } from "@messaging/any-to-main";
-import {
-  InteractiveCommandContext,
-  InteractiveCommandResult,
-  ValidationMessage
-} from "../abstractions";
+import { MainCreateKliveProjectResponse } from "@common/messaging/any-to-main";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  writeSuccessMessage,
-  commandSuccess,
   InteractiveCommandBase,
   validationError,
-  commandError
+  commandError,
+  writeSuccessMessage,
+  commandSuccess
 } from "../services/interactive-commands";
 
 export class NewProjectCommand extends InteractiveCommandBase {

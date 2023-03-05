@@ -1,10 +1,8 @@
-import {
-  InteractiveCommandInfo,
-  InteractiveCommandContext,
-  InteractiveCommandResult,
-  ValidationMessageType,
-  ValidationMessage
-} from "../abstractions";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandInfo } from "../abstractions/InteractiveCommandInfo";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
 import { Token, TokenType } from "./command-parser";
 
@@ -67,7 +65,7 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
       return {
         success: false,
         finalMessage: `Error caught: ${err.toString()}`
-      }
+      };
     }
   }
 
@@ -244,7 +242,7 @@ export function getNumericTokenValue(token: Token): {
  * Converts a token to a 16-bit address value
  * @param token Token to convert
  * @param name Optional argument name
- * @returns 
+ * @returns
  */
 export function getAddressValue(
   token: Token,

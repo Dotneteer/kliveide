@@ -1,4 +1,6 @@
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@/core/tree-node";
+import { fileTypeRegistry } from "@/registry";
+import { FileTypeEditor } from "../abstractions/FileTypePattern";
 
 /**
  * This interface represents a project node for transferring data
@@ -24,6 +26,16 @@ export type ProjectNode = {
    * The optional icon for the project node
    */
   icon?: string;
+
+  /**
+   * Node editor
+   */
+  editor?: string;
+
+  /**
+   * Node subtype
+   */
+  subType?: string;
 
   /**
    * Is the project node read-only?
@@ -85,6 +97,14 @@ export function buildProjectTree (
   return new TreeView<ProjectNode>(toTreeNode(root), false);
 
   function toTreeNode (node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
+    // --- Get the file type information
+    const fileTypeEntry = getFileTypeEntry(node.name);
+    if (fileTypeEntry) {
+      node.icon = fileTypeEntry.icon;
+      node.editor = fileTypeEntry.editor;
+      node.subType = fileTypeEntry.subType;
+    }
+    
     // --- Create the initial node
     const rootNode: ITreeNode<ProjectNode> = new TreeNode<ProjectNode>(node);
 
@@ -116,4 +136,40 @@ export function compareProjectNode (a: ProjectNode, b: ProjectNode): number {
   const compType = a.isFolder ? (b.isFolder ? 0 : -1) : b.isFolder ? 1 : 0;
   if (compType) return compType;
   return a.name < b.name ? -1 : a.name > b.name ? 0 : 1;
+}
+
+/**
+ * Gets the file type entry for the specified filename
+ * @param filename Filename to get the file type entry for
+ */
+export function getFileTypeEntry(filename: string): FileTypeEditor | null {
+  const nodeFile = getNodeFile(filename);
+  for (const typeEntry of fileTypeRegistry) {
+    let match = false;
+    switch (typeEntry.matchType) {
+      case "full":
+        match = filename === typeEntry.pattern;
+        break;
+      case "starts":
+        match = filename.startsWith(typeEntry.pattern);
+        break;
+      case "ends":
+        match = filename.endsWith(typeEntry.pattern);
+        break;
+      case "contains":
+        match = filename.indexOf(typeEntry.pattern) >= 0;
+        break;
+    }
+    if (match) return typeEntry;
+  }
+  return null;
+}
+
+/**
+ * Gets the icon for the specified filename
+ * @param filename Filename to get the file type entry for
+ */
+export function getFileTypeIcon(filename: string): string | null {
+  const typeEnty = getFileTypeEntry(filename);
+  return typeEnty ? typeEnty.icon : null;
 }

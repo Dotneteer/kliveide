@@ -1,5 +1,5 @@
-import { TapeMode } from "@/emu/abstractions/ITapeDevice";
 import { SysVar, SysVarType } from "@/emu/abstractions/SysVar";
+import { TapeMode } from "@/emu/abstractions/TapeMode";
 import { BeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../KeyboardDevice";

@@ -1,9 +1,9 @@
-import { DocumentState } from "../abstractions";
+import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 
-const CodeEditorPanel = (props: DocumentState) => {
-  return <div>CodeEditor {props.name}</div>;
+const CodeEditorPanel = ({ document }: DocumentProps) => {
+  return <div style={{color: "white"}}>CodeEditor {document.name} {document.iconFill}</div>;
 };
 
-export const createCodeEditorPanel = (props: DocumentState) => {
-  return <CodeEditorPanel name={props.name} id={""} type={""} />
+export const createCodeEditorPanel = ({ document }: DocumentProps) => {
+  return <CodeEditorPanel document={document} />
 };

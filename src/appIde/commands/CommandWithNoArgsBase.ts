@@ -1,4 +1,5 @@
-import { ValidationMessage, ValidationMessageType } from "../abstractions";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { Token } from "../services/command-parser";
 import { InteractiveCommandBase } from "../services/interactive-commands";
 

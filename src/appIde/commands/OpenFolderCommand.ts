@@ -1,15 +1,13 @@
-import {
-  InteractiveCommandContext,
-  InteractiveCommandResult,
-  ValidationMessage
-} from "../abstractions";
+import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
+import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  writeSuccessMessage,
-  commandSuccess,
   InteractiveCommandBase,
   validationError,
-  commandError
+  commandError,
+  writeSuccessMessage,
+  commandSuccess
 } from "../services/interactive-commands";
 
 export class OpenFolderCommand extends InteractiveCommandBase {
@@ -40,7 +38,7 @@ export class OpenFolderCommand extends InteractiveCommandBase {
       folder: this.projectFolder
     });
     if (result.type === "ErrorResponse") {
-        return commandError(result.message);
+      return commandError(result.message);
     }
     writeSuccessMessage(
       context.output,

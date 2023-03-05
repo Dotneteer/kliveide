@@ -1,6 +1,6 @@
 import { useSelector } from "@/core/RendererProvider";
 import { useEffect, useState } from "react";
-import { DocumentState } from "../abstractions";
+import { DocumentState } from "../../../common/abstractions/DocumentState";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentArea.module.scss";
 import { DocumentsContainer } from "./DocumentsContainer";
@@ -21,7 +21,7 @@ export const DocumentArea = () => {
   }, [openDocs, activeDocIndex]);
 
   const data = activeDoc?.id ? documentService.getDocumentData(activeDoc?.id) : null;
-  return activeDoc ? (
+  return  (
     <div className={styles.documentArea}>
       <DocumentsHeader />
       {activeDocIndex >= 0 && (
@@ -31,5 +31,5 @@ export const DocumentArea = () => {
         />
       )}
     </div>
-  ) : null;
+  );
 };

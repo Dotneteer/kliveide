@@ -1,21 +1,21 @@
+import { MachineInfo } from "@/abstractions/MachineInfo";
+import { FileProvider } from "@/core/FileProvider";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
 import { DebugSupport } from "@/emu/machines/DebugSupport";
-import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@/emu/machines/machine-props";
+import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@/emu/machines/machine-props";
 import { LiteEvent } from "@/emu/utils/lite-event";
 import { machineRegistry } from "@/registry";
-import { setMachineTypeAction } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store, Unsubscribe } from "@state/redux-light";
+import { MessageSource } from "@common/messaging/messages-core";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { setMachineTypeAction } from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { Store, Unsubscribe } from "@common/state/redux-light";
 import {
   IMachineService,
-  MachineInfo,
-  MachineInstanceEventHandler,
-  MachineTypeEventHandler
-} from "../appIde/abstractions";
-import { FileProvider } from "../core/FileProvider";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { MessageSource } from "@messaging/messages-core";
+  MachineTypeEventHandler,
+  MachineInstanceEventHandler
+} from "./abstrations/IMachineService";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -59,7 +59,11 @@ class MachineService implements IMachineService {
 
     // --- Initialize the new machine
     const machine = machineInfo.factory();
-    this._controller = new MachineController(this.store, this.messenger, machine);
+    this._controller = new MachineController(
+      this.store,
+      this.messenger,
+      machine
+    );
     this._controller.debugSupport = new DebugSupport(this.store);
     this._newInitializing.fire(machine);
 
