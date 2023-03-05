@@ -1,15 +1,17 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
 import { TabButton } from "@/controls/TabButton";
 import { useSelector } from "@/core/RendererProvider";
+import { ITreeNode } from "@/core/tree-node";
 import { documentPanelRegistry } from "@/registry";
 import { useEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 
 export const DocumentsHeader = () => {
-  const { documentService } = useAppServices();
+  const { documentService, projectService } = useAppServices();
   const ref = useRef<HTMLDivElement>();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
@@ -56,6 +58,59 @@ export const DocumentsHeader = () => {
       );
     }
   }, [activeDocIndex, headerVersion, docsToDisplay]);
+
+  // --- Respond to project service notifications
+  useEffect(() => {
+    // --- Remove open explorer document when the folder is closed
+    const projectClosed = () => {
+      documentService.closeAllExplorerDocuments();
+    }
+
+    // --- Open the newly added document
+    const itemAdded = (node: ITreeNode<ProjectNode>) => {
+      documentService.openDocument(
+        {
+          id: node.data.fullPath,
+          name: node.data.name,
+          type: node.data.editor,
+          language: node.data.subType,
+          iconName: node.data.icon,
+          node
+        },
+        undefined,
+        false
+      );
+    };
+
+    // --- Refresh the renamed item's document
+    const itemRenamed = ({ oldName, node }) => {
+      documentService.renameDocument(
+        oldName,
+        node.data.fullPath,
+        node.data.name,
+        node.data.icon
+      );
+    };
+    const itemDeleted = (node: ITreeNode<ProjectNode>) => {
+      console.log(`Item ${node.data.fullPath} deleted`);
+    };
+
+    if (projectService) {
+      projectService.projectClosed.on(projectClosed);
+      projectService.itemAdded.on(itemAdded);
+      projectService.itemRenamed.on(itemRenamed);
+      projectService.itemDeleted.on(itemDeleted);
+    }
+
+    () => {
+      if (projectService) {
+        projectService.projectClosed.off(projectClosed);
+        projectService.itemAdded.off(itemAdded);
+        projectService.itemRenamed.off(itemRenamed);
+        projectService.itemDeleted.off(itemDeleted);
+      }
+    };
+  }, [projectService]);
 
   return (docsToDisplay?.length ?? 0) > 0 ? (
     <div ref={ref} className={styles.documentsHeader}>

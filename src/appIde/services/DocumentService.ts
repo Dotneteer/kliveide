@@ -55,6 +55,19 @@ export interface IDocumentService {
   setPermanent(id: string): void;
 
   /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   * @param newName New document name
+   */
+  renameDocument(
+    oldId: string,
+    newId: string,
+    newName: string,
+    newIcon?: string
+  ): void;
+
+  /**
    * Closes the specified document
    * @param id
    */
@@ -64,6 +77,11 @@ export interface IDocumentService {
    * Closes all open documents
    */
   closeAllDocuments(): void;
+
+  /**
+   * Closes all open explorer documents
+   */
+  closeAllExplorerDocuments(): void;
 
   /**
    * Moves the active tab to left
@@ -156,6 +174,44 @@ class DocumentService implements IDocumentService {
         ),
         "ide"
       );
+    }
+  }
+
+  /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   * @param newName New document name
+   */
+  renameDocument (
+    oldId: string,
+    newId: string,
+    newName: string,
+    newIcon?: string
+  ): void {
+    const state = this.store.getState();
+    const dispatch = this.store.dispatch;
+    const docs = state?.ideView?.openDocuments ?? [];
+    const existingIndex = docs.findIndex(d => d.id === oldId);
+    if (existingIndex < 0) return;
+
+    // --- Ok, document exists, change it
+    const oldActive = this.getActiveDocumentId();
+    const existingDoc = docs[existingIndex];
+    dispatch(
+      changeDocumentAction(
+        {
+          ...existingDoc,
+          id: newId ?? oldId,
+          name: newName,
+          iconName: newIcon
+        } as DocumentState,
+        existingIndex
+      ),
+      "ide"
+    );
+    if (oldActive === oldId && newId) {
+      this.setActiveDocument(newId);
     }
   }
 
@@ -273,6 +329,20 @@ class DocumentService implements IDocumentService {
       }
     }
     this.documentData.clear();
+  }
+
+  /**
+   * Closes all open explorer documents
+   */
+  closeAllExplorerDocuments (): void {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    for (const doc of docs) {
+      if (doc.node) {
+        // --- This is an explorer document, close it
+        this.closeDocument(doc.id);
+      }
+    }
   }
 
   /**
