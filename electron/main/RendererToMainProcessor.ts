@@ -149,6 +149,14 @@ export async function processRendererToMainMessages (
         path: app.getAppPath()
       }
 
+    case "MainSaveTextFile":
+      try {
+        fs.writeFileSync(message.path, message.data);
+        break;
+      } catch (err) {
+        return errorResponse(err.toString());
+      }
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator

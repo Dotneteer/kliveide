@@ -138,6 +138,8 @@ export interface IDocumentService {
    * @param id
    */
   getDocumentData(id: string): any;
+
+  
 }
 
 /**

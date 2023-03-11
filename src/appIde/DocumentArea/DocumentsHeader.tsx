@@ -149,6 +149,7 @@ export const DocumentsHeader = () => {
               isReadOnly={d.isReadOnly}
               iconName={d.iconName}
               iconFill={d.iconFill}
+              language={d.language}
               tabDisplayed={el => {
                 tabDims.current[idx] = el;
               }}

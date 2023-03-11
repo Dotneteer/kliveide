@@ -108,6 +108,15 @@ export interface MainGetAppFolderRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get the app folder
+ */
+export interface MainSaveTextFileRequest extends MessageBase {
+  type: "MainSaveTextFile";
+  path: string;
+  data: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {

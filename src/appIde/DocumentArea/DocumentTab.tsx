@@ -67,6 +67,8 @@ export const DocumentTab = ({
                 type,
                 isReadOnly,
                 isTemporary: false,
+                iconName,
+                iconFill,
                 language,
                 path,
                 stateValue
