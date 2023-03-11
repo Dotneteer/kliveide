@@ -5,7 +5,8 @@ import { useDispatch } from "@/core/RendererProvider";
 import {
   activateDocumentAction,
   changeDocumentAction,
-  closeDocumentAction
+  closeDocumentAction,
+  incDocumentActivationVersionAction
 } from "@state/actions";
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -54,6 +55,7 @@ export const DocumentTab = ({
       onClick={() => {
         tabClicked?.();
         dispatch(activateDocumentAction(id));
+        dispatch(incDocumentActivationVersionAction())
       }}
       onDoubleClick={() => {
         if (isTemporary) {
@@ -73,6 +75,7 @@ export const DocumentTab = ({
             )
           );
         }
+        dispatch(incDocumentActivationVersionAction())
       }}
     >
       <Icon iconName={iconName} width={16} height={16} fill={iconFill} />

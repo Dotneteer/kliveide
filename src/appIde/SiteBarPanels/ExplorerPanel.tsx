@@ -31,6 +31,7 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import { CodeDocumentState } from "../services/DocumentService";
+import { incDocumentActivationVersionAction } from "@common/state/actions";
 
 const PROJECT_FILE_NAME = "klive.project";
 
@@ -39,7 +40,7 @@ let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   // --- Services used in this component
-  const { messenger } = useRendererContext();
+  const { messenger, store } = useRendererContext();
   const { projectService, documentService } = useAppServices();
 
   // --- The state representing the project tree
@@ -343,6 +344,7 @@ const ExplorerPanel = () => {
           if (documentService.isOpen(node.data.fullPath)) {
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
+            store.dispatch(incDocumentActivationVersionAction());
           } else {
             getAndOpenDocument(node, false);
           }

@@ -150,6 +150,10 @@ export const changeDocumentAction: ActionCreator = (
   payload: { document, index }
 });
 
+export const incDocumentActivationVersionAction: ActionCreator = () => ({
+  type: "INC_DOC_ACTIVATION_VERSION"
+});
+
 export const activateDocumentAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_DOC",
   payload: { id }

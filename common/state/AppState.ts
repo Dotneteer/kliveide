@@ -50,6 +50,7 @@ export type IdeView = {
   sideBarPanels?: Record<string, SideBarPanelState>;
   openDocuments?: DocumentState[];
   activeDocumentIndex?: number;
+  documentActivationVersion?: number;
   tools?: ToolState[];
   activeTool?: string;
   activeOutputPane?: string;

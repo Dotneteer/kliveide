@@ -69,7 +69,13 @@ export function ideViewReducer (
         openDocuments: changedDocs
       };
 
-    case "ACTIVATE_DOC":
+    case "INC_DOC_ACTIVATION_VERSION":
+        return {
+          ...state,
+          documentActivationVersion: (state.documentActivationVersion ?? 0) + 1
+        };
+  
+      case "ACTIVATE_DOC":
       const index = state.openDocuments.findIndex(d => d.id === payload.id);
       return index >= 0
         ? {
