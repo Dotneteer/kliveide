@@ -13,6 +13,7 @@ import { DocumentTab } from "./DocumentTab";
 export const DocumentsHeader = () => {
   const { documentService, projectService } = useAppServices();
   const ref = useRef<HTMLDivElement>();
+  const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
@@ -61,6 +62,8 @@ export const DocumentsHeader = () => {
 
   // --- Respond to project service notifications
   useEffect(() => {
+    if (handlersInitialized.current) return;
+
     // --- Remove open explorer document when the folder is closed
     const projectClosed = () => {
       documentService.closeAllExplorerDocuments();
@@ -68,6 +71,10 @@ export const DocumentsHeader = () => {
 
     // --- Open the newly added document
     const itemAdded = (node: ITreeNode<ProjectNode>) => {
+      console.log("added", node);
+      if (node.data.isFolder) return;
+
+      // --- Open the newly added file
       documentService.openDocument(
         {
           id: node.data.fullPath,
@@ -91,19 +98,29 @@ export const DocumentsHeader = () => {
         node.data.icon
       );
     };
+
+    // --- Close the deleted documents
     const itemDeleted = (node: ITreeNode<ProjectNode>) => {
-      console.log(`Item ${node.data.fullPath} deleted`);
+      node.forEachDescendant(des => {
+        documentService.closeDocument(des.data.fullPath);
+      });
+      documentService.closeDocument(node.data.fullPath);
     };
 
+    // --- Set up project event handlers
     if (projectService) {
+      handlersInitialized.current = true;
       projectService.projectClosed.on(projectClosed);
       projectService.itemAdded.on(itemAdded);
       projectService.itemRenamed.on(itemRenamed);
       projectService.itemDeleted.on(itemDeleted);
     }
 
+    // --- Remove project event handlers
     () => {
+      handlersInitialized.current = false;
       if (projectService) {
+        handlersInitialized.current = true;
         projectService.projectClosed.off(projectClosed);
         projectService.itemAdded.off(itemAdded);
         projectService.itemRenamed.off(itemRenamed);

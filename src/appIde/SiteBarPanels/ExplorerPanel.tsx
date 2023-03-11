@@ -247,6 +247,9 @@ const ExplorerPanel = () => {
         item => item.data.name
       )}
       onAdd={async (newName: string) => {
+        // --- Expand the context node
+        selectedContextNode.isExpanded = true;
+        
         // --- Add the item
         const response = await messenger.sendMessage({
           type: "MainAddNewFileEntry",
