@@ -6,6 +6,7 @@ import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
   compareProjectNode,
+  getFileTypeEntry,
   getNodeDir,
   ProjectNode
 } from "../project/project-node";
@@ -33,12 +34,17 @@ const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
+  // --- Services used in this component
   const { messenger } = useRendererContext();
   const { projectService, documentService } = useAppServices();
+
+  // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
   const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
     []
   );
+
+  // --- Visibility of dialogs
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
@@ -77,10 +83,322 @@ const ExplorerPanel = () => {
   // --- API to manage dialogs
   const modalApi = useRef<ModalApi>();
 
+  // --- This function refreshes the Explorer tree
   const refreshTree = () => {
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
     vlApi.current.refresh();
+  };
+
+  // --- Let's use this context menu when clicking a project tree node
+  const contextMenu = (
+    <ContextMenu
+      refElement={contextRef.current}
+      isVisible={contextVisible}
+      offsetX={contextX}
+      offsetY={contextY}
+      onClickAway={() => {
+        setContextVisible(false);
+      }}
+    >
+      {selectedContextNodeIsFolder && (
+        <>
+          <ContextMenuItem
+            text='New file...'
+            clicked={() => {
+              setNewItemIsFolder(false);
+              setIsNewItemDialogOpen(true);
+            }}
+          />
+          <ContextMenuItem
+            text='New folder...'
+            clicked={() => {
+              setNewItemIsFolder(true);
+              setIsNewItemDialogOpen(true);
+            }}
+          />
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            text='Expand all'
+            clicked={() => {
+              selectedContextNode.expandAll();
+              refreshTree();
+            }}
+          />
+          <ContextMenuItem
+            text='Collapse all'
+            clicked={() => {
+              selectedContextNode.collapseAll();
+              refreshTree();
+            }}
+          />
+          <ContextMenuSeparator />
+        </>
+      )}
+      <ContextMenuItem
+        text='Rename...'
+        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
+        clicked={() => setIsRenameDialogOpen(true)}
+      />
+      <ContextMenuItem
+        text='Delete'
+        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
+        clicked={() => setIsDeleteDialogOpen(true)}
+      />
+    </ContextMenu>
+  );
+
+  // --- Rename dialog box to display
+  const renameDialog = isRenameDialogOpen && (
+    <RenameDialog
+      isFolder={selectedContextNodeIsFolder}
+      oldPath={selectedContextNode?.data?.name}
+      onRename={async (newName: string) => {
+        // --- Start renaming the item
+        const newFullName = `${getNodeDir(
+          selectedContextNode.data.fullPath
+        )}/${newName}`;
+        const response = await messenger.sendMessage({
+          type: "MainRenameFileEntry",
+          oldName: selectedContextNode.data.fullPath,
+          newName: newFullName
+        });
+
+        // --- Check for successful operation
+        if (response.type === "ErrorResponse") {
+          // --- Display an error message
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "Rename Error",
+            message: response.message
+          });
+        } else {
+          // --- Succesfully renamed
+          const oldId = selectedContextNode.data.fullPath;
+          const fileTypeEntry = getFileTypeEntry(newFullName);
+          selectedContextNode.data.icon = fileTypeEntry?.icon;
+
+          // TODO: Manage editor type change
+          // --- Change the properties of the renamed node
+          selectedContextNode.data.fullPath = newFullName;
+          selectedContextNode.data.name = newName;
+          selectedContextNode.parentNode.sortChildren((a, b) =>
+            compareProjectNode(a.data, b.data)
+          );
+
+          // --- Refresh the tree and notify other objects listening to a rename
+          refreshTree();
+          projectService.signItemRenamed(oldId, selectedContextNode);
+
+          // --- Make sure the selected node is displayed
+          const newIndex = tree.findIndex(selectedContextNode);
+          if (newIndex >= 0) {
+            setSelected(newIndex);
+          }
+        }
+      }}
+      onClose={() => {
+        setIsRenameDialogOpen(false);
+      }}
+    />
+  );
+
+  // --- Delete dialog box to display
+  const deleteDialog = isDeleteDialogOpen && (
+    <DeleteDialog
+      isFolder={selectedContextNodeIsFolder}
+      entry={selectedContextNode.data.fullPath}
+      onDelete={async () => {
+        // --- Delete the item
+        const response = await messenger.sendMessage({
+          type: "MainDeleteFileEntry",
+          isFolder: selectedContextNodeIsFolder,
+          name: selectedContextNode.data.fullPath
+        });
+
+        if (response.type === "ErrorResponse") {
+          // --- Delete failed
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "Delete Error",
+            message: response.message
+          });
+        } else {
+          // --- Succesfully deleted
+          selectedContextNode.parentNode.removeChild(selectedContextNode);
+          refreshTree();
+          projectService.signItemDeleted(selectedContextNode);
+        }
+      }}
+      onClose={() => {
+        setIsDeleteDialogOpen(false);
+      }}
+    />
+  );
+
+  // --- New item dialog to display
+  const newItemDialog = isNewItemDialogOpen && (
+    <NewItemDialog
+      isFolder={newItemIsFolder}
+      path={selectedContextNode?.data?.name}
+      itemNames={(selectedContextNode.children ?? []).map(
+        item => item.data.name
+      )}
+      onAdd={async (newName: string) => {
+        // --- Expand the context node
+        selectedContextNode.isExpanded = true;
+        
+        // --- Add the item
+        const response = await messenger.sendMessage({
+          type: "MainAddNewFileEntry",
+          isFolder: newItemIsFolder,
+          folder: selectedContextNode.data.fullPath,
+          name: newName
+        });
+
+        if (response.type === "ErrorResponse") {
+          // --- Delete failed
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "Add new item error",
+            message: response.message
+          });
+        } else {
+          // --- Succesfully added
+          const fileTypeEntry = getFileTypeEntry(newName);
+          const newNode = new TreeNode<ProjectNode>({
+            isFolder: newItemIsFolder,
+            name: newName,
+            fullPath: `${selectedContextNode.data.fullPath}/${newName}`
+          });
+          if (fileTypeEntry) {
+            newNode.data.icon = fileTypeEntry.icon;
+            newNode.data.editor = fileTypeEntry.editor;
+            newNode.data.subType = fileTypeEntry.subType;
+          }
+          selectedContextNode.insertAndSort(newNode, (a, b) =>
+            compareProjectNode(a.data, b.data)
+          );
+          refreshTree();
+          projectService.signItemAdded(newNode);
+          const newIndex = tree.findIndex(newNode);
+          if (newIndex >= 0) {
+            setSelected(newIndex);
+          }
+        }
+      }}
+      onClose={() => {
+        setIsNewItemDialogOpen(false);
+      }}
+    />
+  );
+
+  // --- This function represents a project item component
+  const projectItemRenderer = (idx: number) => {
+    const node = tree.getViewNodeByIndex(idx);
+    const isSelected = idx === selected;
+    const isRoot = tree.rootNode === node;
+    return (
+      <div
+        className={classnames(styles.item, {
+          [styles.selected]: isSelected,
+          [styles.focused]: isFocused
+        })}
+        tabIndex={idx}
+        onContextMenu={(e: MouseEvent) => {
+          setSelectedContextNode(node);
+          setContextVisible(true);
+          setContextX(e.nativeEvent.screenX);
+          setContextY(
+            e.nativeEvent.screenY - contextRef.current.offsetHeight - 20
+          );
+        }}
+        onMouseDown={e => {
+          if (e.button === 0) {
+            setSelected(idx);
+          }
+        }}
+        onClick={() => {
+          node.isExpanded = !node.isExpanded;
+          tree.buildIndex();
+          setVisibleNodes(tree.getVisibleNodes());
+
+          if (!node.data.isFolder) {
+            if (documentService.isOpen(node.data.fullPath)) {
+              documentService.setActiveDocument(node.data.fullPath);
+            } else {
+              documentService.openDocument(
+                {
+                  id: node.data.fullPath,
+                  name: node.data.name,
+                  type: node.data.editor,
+                  language: node.data.subType,
+                  iconName: node.data.icon,
+                  node
+                },
+                undefined,
+                true
+              );
+            }
+          }
+        }}
+        onDoubleClick={() => {
+          if (node.data.isFolder) return;
+          if (documentService.isOpen(node.data.fullPath)) {
+            documentService.setActiveDocument(node.data.fullPath);
+            documentService.setPermanent(node.data.fullPath);
+          } else {
+            documentService.openDocument(
+              {
+                id: node.data.fullPath,
+                name: node.data.name,
+                type: node.data.editor,
+                language: node.data.subType,
+                iconName: node.data.icon,
+                node
+              },
+              undefined,
+              false
+            );
+          }
+        }}
+      >
+        <div
+          className={styles.indent}
+          style={{ width: (node.level + 1) * 16 }}
+        ></div>
+        {node.data.isFolder && (
+          <Icon
+            iconName={node.isExpanded ? "chevron-down" : "chevron-right"}
+            width={16}
+            height={16}
+            fill={isSelected ? "--color-chevron-selected" : "--color-chevron"}
+          />
+        )}
+        {!node.data.isFolder && (
+          <Icon
+            iconName={node.data.icon ?? "file-code"}
+            fill='--fill-explorer-icon'
+            width={16}
+            height={16}
+          />
+        )}
+        {isRoot && isKliveProject && (
+          <Icon
+            iconName='home'
+            fill='--console-ansi-bright-magenta'
+            width={16}
+            height={16}
+          />
+        )}
+        <LabelSeparator width={8} />
+        <span className={styles.name}>{node.data.name}</span>
+        <div className={styles.indent} style={{ width: 8 }}></div>
+      </div>
+    );
   };
 
   // --- Remove the last explorer tree from the cache when closing the folder
@@ -139,180 +457,10 @@ const ExplorerPanel = () => {
         onBlur={() => setIsFocused(false)}
         onClick={() => {}}
       >
-        <ContextMenu
-          refElement={contextRef.current}
-          isVisible={contextVisible}
-          offsetX={contextX}
-          offsetY={contextY}
-          onClickAway={() => {
-            setContextVisible(false);
-          }}
-        >
-          {selectedContextNodeIsFolder && (
-            <>
-              <ContextMenuItem
-                text='New file...'
-                clicked={() => {
-                  setNewItemIsFolder(false);
-                  setIsNewItemDialogOpen(true);
-                }}
-              />
-              <ContextMenuItem
-                text='New folder...'
-                clicked={() => {
-                  setNewItemIsFolder(true);
-                  setIsNewItemDialogOpen(true);
-                }}
-              />
-              <ContextMenuSeparator />
-              <ContextMenuItem
-                text='Expand all'
-                clicked={() => {
-                  selectedContextNode.expandAll();
-                  refreshTree();
-                }}
-              />
-              <ContextMenuItem
-                text='Collapse all'
-                clicked={() => {
-                  selectedContextNode.collapseAll();
-                  refreshTree();
-                }}
-              />
-              <ContextMenuSeparator />
-            </>
-          )}
-          <ContextMenuItem
-            text='Rename...'
-            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
-            clicked={() => setIsRenameDialogOpen(true)}
-          />
-          <ContextMenuItem
-            text='Delete'
-            disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
-            clicked={() => setIsDeleteDialogOpen(true)}
-          />
-        </ContextMenu>
-
-        {isRenameDialogOpen && (
-          <RenameDialog
-            isFolder={selectedContextNodeIsFolder}
-            oldPath={selectedContextNode?.data?.name}
-            onRename={async (newName: string) => {
-              // --- Start renaming the item
-              const newFullName = `${getNodeDir(
-                selectedContextNode.data.fullPath
-              )}/${newName}`;
-              const response = await messenger.sendMessage({
-                type: "MainRenameFileEntry",
-                oldName: selectedContextNode.data.fullPath,
-                newName: newFullName
-              });
-              if (response.type === "ErrorResponse") {
-                await messenger.sendMessage({
-                  type: "MainDisplayMessageBox",
-                  messageType: "error",
-                  title: "Rename Error",
-                  message: response.message
-                });
-              } else {
-                // --- Succesfully renamed
-                selectedContextNode.data.fullPath = newFullName;
-                selectedContextNode.data.name = newName;
-                selectedContextNode.parentNode.sortChildren((a, b) =>
-                  compareProjectNode(a.data, b.data)
-                );
-                refreshTree();
-                const newIndex = tree.findIndex(selectedContextNode);
-                if (newIndex >= 0) {
-                  setSelected(newIndex);
-                }
-              }
-            }}
-            onClose={() => {
-              setIsRenameDialogOpen(false);
-            }}
-          />
-        )}
-
-        {isDeleteDialogOpen && (
-          <DeleteDialog
-            isFolder={selectedContextNodeIsFolder}
-            entry={selectedContextNode.data.fullPath}
-            onDelete={async () => {
-              // --- Delete the item
-              const response = await messenger.sendMessage({
-                type: "MainDeleteFileEntry",
-                isFolder: selectedContextNodeIsFolder,
-                name: selectedContextNode.data.fullPath
-              });
-
-              if (response.type === "ErrorResponse") {
-                // --- Delete failed
-                await messenger.sendMessage({
-                  type: "MainDisplayMessageBox",
-                  messageType: "error",
-                  title: "Delete Error",
-                  message: response.message
-                });
-              } else {
-                // --- Succesfully deleted
-                selectedContextNode.parentNode.removeChild(selectedContextNode);
-                refreshTree();
-              }
-            }}
-            onClose={() => {
-              setIsDeleteDialogOpen(false);
-            }}
-          />
-        )}
-
-        {isNewItemDialogOpen && (
-          <NewItemDialog
-            isFolder={newItemIsFolder}
-            path={selectedContextNode?.data?.name}
-            itemNames={(selectedContextNode.children ?? []).map(
-              item => item.data.name
-            )}
-            onAdd={async (newName: string) => {
-              // --- Add the item
-              const response = await messenger.sendMessage({
-                type: "MainAddNewFileEntry",
-                isFolder: newItemIsFolder,
-                folder: selectedContextNode.data.fullPath,
-                name: newName
-              });
-
-              if (response.type === "ErrorResponse") {
-                // --- Delete failed
-                await messenger.sendMessage({
-                  type: "MainDisplayMessageBox",
-                  messageType: "error",
-                  title: "Add new item error",
-                  message: response.message
-                });
-              } else {
-                // --- Succesfully deleted
-                const newNode = new TreeNode({
-                  isFolder: newItemIsFolder,
-                  name: newName,
-                  fullPath: `${selectedContextNode.data.fullPath}/${newName}`
-                });
-                selectedContextNode.insertAndSort(newNode, (a, b) =>
-                  compareProjectNode(a.data, b.data)
-                );
-                refreshTree();
-                const newIndex = tree.findIndex(newNode);
-                if (newIndex >= 0) {
-                  setSelected(newIndex);
-                }
-              }
-            }}
-            onClose={() => {
-              setIsNewItemDialogOpen(false);
-            }}
-          />
-        )}
+        {contextMenu}
+        {renameDialog}
+        {deleteDialog}
+        {newItemDialog}
 
         <VirtualizedListView
           items={visibleNodes}
@@ -321,113 +469,7 @@ const ExplorerPanel = () => {
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
           getItemKey={index => tree.getViewNodeByIndex(index).data.fullPath}
-          itemRenderer={idx => {
-            const node = tree.getViewNodeByIndex(idx);
-            const isSelected = idx === selected;
-            const isRoot = tree.rootNode === node;
-            return (
-              <div
-                className={classnames(styles.item, {
-                  [styles.selected]: isSelected,
-                  [styles.focused]: isFocused
-                })}
-                tabIndex={idx}
-                onContextMenu={(e: MouseEvent) => {
-                  setSelectedContextNode(node);
-                  setContextVisible(true);
-                  setContextX(e.nativeEvent.screenX);
-                  setContextY(
-                    e.nativeEvent.screenY - contextRef.current.offsetHeight - 20
-                  );
-                }}
-                onMouseDown={e => {
-                  if (e.button === 0) {
-                    setSelected(idx);
-                  }
-                }}
-                onClick={() => {
-                  node.isExpanded = !node.isExpanded;
-                  tree.buildIndex();
-                  setVisibleNodes(tree.getVisibleNodes());
-
-                  if (!node.data.isFolder) {
-                    if (documentService.isOpen(node.data.fullPath)) {
-                      documentService.setActiveDocument(node.data.fullPath);
-                    } else {
-                      documentService.openDocument(
-                        {
-                          id: node.data.fullPath,
-                          name: node.data.name,
-                          type: node.data.editor,
-                          language: node.data.subType,
-                          iconName: node.data.icon
-                        },
-                        undefined,
-                        true
-                      );
-                    }
-                  }
-                }}
-                onDoubleClick={() => {
-                  if (node.data.isFolder) return;
-                  if (documentService.isOpen(node.data.fullPath)) {
-                    documentService.setActiveDocument(node.data.fullPath);
-                    documentService.setPermanent(node.data.fullPath);
-                  } else {
-                    documentService.openDocument(
-                      {
-                        id: node.data.fullPath,
-                        name: node.data.name,
-                        type: node.data.editor,
-                        language: node.data.subType,
-                        iconName: node.data.icon
-                      },
-                      undefined,
-                      false
-                    );
-                  }
-                }}
-              >
-                <div
-                  className={styles.indent}
-                  style={{ width: (node.level + 1) * 16 }}
-                ></div>
-                {node.data.isFolder && (
-                  <Icon
-                    iconName={
-                      node.isExpanded ? "chevron-down" : "chevron-right"
-                    }
-                    width={16}
-                    height={16}
-                    fill={
-                      isSelected
-                        ? "--color-chevron-selected"
-                        : "--color-chevron"
-                    }
-                  />
-                )}
-                {!node.data.isFolder && (
-                  <Icon
-                    iconName={node.data.icon ?? "file-code"}
-                    fill='--fill-explorer-icon'
-                    width={16}
-                    height={16}
-                  />
-                )}
-                {isRoot && isKliveProject && (
-                  <Icon
-                    iconName='home'
-                    fill='--console-ansi-bright-magenta'
-                    width={16}
-                    height={16}
-                  />
-                )}
-                <LabelSeparator width={8} />
-                <span className={styles.name}>{node.data.name}</span>
-                <div className={styles.indent} style={{ width: 8 }}></div>
-              </div>
-            );
-          }}
+          itemRenderer={idx => projectItemRenderer(idx)}
         />
       </div>
     ) : null

@@ -76,7 +76,6 @@ function ThemeProvider ({ children, themeId = DEFAULT_THEME }: Props) {
 
   const themeValue = useMemo(() => {
     const activeThemeInfo = availableThemes[selectedTheme];
-    console.log("tone:", activeThemeInfo.tone)
     const mainFont =
       activeThemeInfo.properties[
         isWindows ? "--shell-windows-font-family" : "--shell-font-family"
