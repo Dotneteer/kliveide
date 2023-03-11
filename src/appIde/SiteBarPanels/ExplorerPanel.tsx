@@ -1,7 +1,10 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
-import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
+import {
+  MainGetDirectoryContentResponse,
+  TextContentsResponse
+} from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
@@ -27,6 +30,7 @@ import {
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
+import { CodeDocumentState } from "../services/DocumentService";
 
 const PROJECT_FILE_NAME = "klive.project";
 
@@ -249,7 +253,7 @@ const ExplorerPanel = () => {
       onAdd={async (newName: string) => {
         // --- Expand the context node
         selectedContextNode.isExpanded = true;
-        
+
         // --- Add the item
         const response = await messenger.sendMessage({
           type: "MainAddNewFileEntry",
@@ -330,18 +334,7 @@ const ExplorerPanel = () => {
             if (documentService.isOpen(node.data.fullPath)) {
               documentService.setActiveDocument(node.data.fullPath);
             } else {
-              documentService.openDocument(
-                {
-                  id: node.data.fullPath,
-                  name: node.data.name,
-                  type: node.data.editor,
-                  language: node.data.subType,
-                  iconName: node.data.icon,
-                  node
-                },
-                undefined,
-                true
-              );
+              getAndOpenDocument(node, true);
             }
           }
         }}
@@ -351,18 +344,7 @@ const ExplorerPanel = () => {
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
           } else {
-            documentService.openDocument(
-              {
-                id: node.data.fullPath,
-                name: node.data.name,
-                type: node.data.editor,
-                language: node.data.subType,
-                iconName: node.data.icon,
-                node
-              },
-              undefined,
-              false
-            );
+            getAndOpenDocument(node, false);
           }
         }}
       >
@@ -398,6 +380,37 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
       </div>
+    );
+  };
+
+  // --- Obtain document data and open the document
+  const getAndOpenDocument = async (
+    node: ITreeNode<ProjectNode>,
+    isTemporary: boolean = true
+  ): Promise<void> => {
+    const docPath = node.data.fullPath;
+    const response = (await messenger.sendMessage({
+      type: "MainReadTextFile",
+      path: docPath
+    })) as TextContentsResponse;
+
+    const data: CodeDocumentState = documentService.isOpen(docPath)
+      ? documentService.getDocumentData(docPath)
+      : {
+          value: response.contents
+        };
+
+    documentService.openDocument(
+      {
+        id: node.data.fullPath,
+        name: node.data.name,
+        type: node.data.editor,
+        language: node.data.subType,
+        iconName: node.data.icon,
+        node
+      },
+      data,
+      isTemporary
     );
   };
 

@@ -24,6 +24,7 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
+    "@monaco-editor/react": "^4.4.6",
     "@tanstack/react-virtual": "^3.0.0-beta.32",
     "@types/mocha": "^10.0.0",
     "@types/react": "^18.0.25",
@@ -35,17 +36,20 @@
     "eslint": "^8.31.0",
     "expect": "^29.3.1",
     "mocha": "^10.1.0",
+    "monaco-editor": "^0.36.1",
     "prettier": "^2.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-popper": "^2.3.0",
+    "react-virtualized-auto-sizer": "^1.0.7",
     "sass": "^1.56.1",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.0",
     "typescript": "^4.8.4",
     "vite": "^3.2.3",
     "vite-electron-plugin": "^0.5.1",
-    "vite-plugin-electron-renderer": "^0.10.4"
+    "vite-plugin-electron-renderer": "^0.10.4",
+    "vite-plugin-monaco-editor": "^1.1.0"
   },
   "debug": {
     "env": {

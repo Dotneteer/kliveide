@@ -71,7 +71,6 @@ export const DocumentsHeader = () => {
 
     // --- Open the newly added document
     const itemAdded = (node: ITreeNode<ProjectNode>) => {
-      console.log("added", node);
       if (node.data.isFolder) return;
 
       // --- Open the newly added file

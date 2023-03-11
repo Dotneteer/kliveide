@@ -1,9 +1,6 @@
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { MonacoEditor } from "./MonacoEditor";
 
-const CodeEditorPanel = ({ document }: DocumentProps) => {
-  return <div style={{color: "white"}}>CodeEditor {document.name} {document.iconFill}</div>;
-};
-
-export const createCodeEditorPanel = ({ document }: DocumentProps) => {
-  return <CodeEditorPanel document={document} />
+export const createCodeEditorPanel = ({ document, data }: DocumentProps) => {
+  return <MonacoEditor path={document.id} value={data.value} viewState={data.viewState} />;
 };

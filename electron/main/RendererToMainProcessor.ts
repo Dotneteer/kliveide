@@ -143,6 +143,12 @@ export async function processRendererToMainMessages (
         folder: selectedFolder
       } as MainShowOpenFolderDialogResponse;
 
+    case "MainGetAppFolder":
+      return {
+        type: "MainGetAppFolderResponse",
+        path: app.getAppPath()
+      }
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
