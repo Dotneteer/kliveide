@@ -11,6 +11,15 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { DocumentInfo } from "../../../common/abstractions/DocumentInfo";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+
+/**
+ * Represents the view state of a code document
+ */
+export type CodeDocumentState = {
+  value: string;
+  viewState?: monacoEditor.editor.ICodeEditorViewState;
+}
 
 /**
  * This interface defines the functions managing documents within the IDE
@@ -118,10 +127,19 @@ export interface IDocumentService {
   saveActiveDocumentState(state: any): void;
 
   /**
+   * Sets the document data
+   * @param id Document ID
+   * @param data New data to set
+   */
+  setDocumentData(id: string, data: any): void;
+
+  /**
    * Gets the data of the document associated with the specified ID
    * @param id
    */
   getDocumentData(id: string): any;
+
+  
 }
 
 /**
@@ -400,6 +418,15 @@ class DocumentService implements IDocumentService {
    */
   saveActiveDocumentState (viewState: any): void {
     this.saveDocumentState(this.getActiveDocumentId(), viewState);
+  }
+
+  /**
+   * Sets the document data
+   * @param id Document ID
+   * @param data New data to set
+   */
+  setDocumentData (id: string, data: any): void {
+    this.documentData.set(id, data);
   }
 
   /**

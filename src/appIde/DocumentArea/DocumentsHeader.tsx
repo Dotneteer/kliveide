@@ -71,7 +71,6 @@ export const DocumentsHeader = () => {
 
     // --- Open the newly added document
     const itemAdded = (node: ITreeNode<ProjectNode>) => {
-      console.log("added", node);
       if (node.data.isFolder) return;
 
       // --- Open the newly added file
@@ -150,6 +149,7 @@ export const DocumentsHeader = () => {
               isReadOnly={d.isReadOnly}
               iconName={d.iconName}
               iconFill={d.iconFill}
+              language={d.language}
               tabDisplayed={el => {
                 tabDims.current[idx] = el;
               }}

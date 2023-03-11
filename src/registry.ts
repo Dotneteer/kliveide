@@ -7,6 +7,7 @@ import {
 } from "@common/state/common-ids";
 import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
+import { MonacoAwareCustomLanguageInfo } from "./appIde/abstractions/CustomLanguageInfo";
 import { DocumentRendererInfo } from "./appIde/abstractions/DocumentRendererInfo";
 import { FileTypeEditor } from "./appIde/abstractions/FileTypePattern";
 import { OutputPaneInfo } from "./appIde/abstractions/OutputPaneInfo";
@@ -17,6 +18,9 @@ import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
 import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
+import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvider";
+import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
+import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
 import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
 import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
 import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
@@ -182,21 +186,28 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     matchType: "ends",
     pattern:".kz80.asm",
     editor: CODE_EDITOR,
-    subType: "",
+    subType: "kz80-asm",
     icon: "@file-kz80-asm"
   },
   {
     matchType: "ends",
     pattern:".zxb.asm",
     editor: CODE_EDITOR,
-    subType: "",
+    subType: "zxbasm",
     icon: "@file-zxb-asm"
   },
   {
     matchType: "ends",
     pattern:".zxbas",
     editor: CODE_EDITOR,
-    subType: "",
+    subType: "zxbas",
     icon: "@file-zxbas"
   },
+]
+
+// --- Supported custom languages
+export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
+  asmKz80LanguageProvider,
+  asmZxbLanguageProvider,
+  zxBasLanguageProvider
 ]

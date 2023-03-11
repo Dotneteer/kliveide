@@ -92,6 +92,31 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get the app folder
+ */
+export interface MainShowOpenFolderDialogRequest extends MessageBase {
+  type: "MainShowOpenFolderDialog";
+  title?: string;
+  settingsId?: string;
+}
+
+/**
+ * The client wants to get the app folder
+ */
+export interface MainGetAppFolderRequest extends MessageBase {
+  type: "MainGetAppFolder";
+}
+
+/**
+ * The client wants to get the app folder
+ */
+export interface MainSaveTextFileRequest extends MessageBase {
+  type: "MainSaveTextFile";
+  path: string;
+  data: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -132,6 +157,13 @@ export interface MainShowOpenFolderDialogResponse extends MessageBase {
   folder?: string;
 }
 
+/**
+ * The client wants to get the app folder
+ */
+export interface MainGetAppFolderResponse extends MessageBase {
+  type: "MainGetAppFolderResponse";
+  path: string;
+}
 
 export function textContentsResponse (contents: string): TextContentsResponse {
   return {
