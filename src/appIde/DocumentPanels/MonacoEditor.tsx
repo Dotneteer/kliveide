@@ -92,7 +92,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
   );
   const previousContent = useRef<string>();
   const unsavedChangeCounter = useRef(0);
-  const appPath = useSelector(s => s.appPath);
   const editorFontSize = useSelector(
     s => s.ideViewOptions?.editorFontSize ?? 12
   );
@@ -123,55 +122,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     editor.current;
   }, [editorFontSize]);
 
-  const ensureLanguage = (monaco: typeof monacoEditor, language: string) => {
-    if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
-      // --- Do we support that custom language?
-      const languageInfo = customLanguagesRegistry.find(l => l.id === language);
-      if (languageInfo) {
-        // --- Yes, register the new language
-        monaco.languages.register({ id: languageInfo.id });
-
-        // --- Register a tokens provider for the language
-        monaco.languages.setMonarchTokensProvider(
-          languageInfo.id,
-          languageInfo.languageDef
-        );
-
-        // --- Set the editing configuration for the language
-        monaco.languages.setLanguageConfiguration(
-          languageInfo.id,
-          languageInfo.options
-        );
-
-        // --- Define light theme for the language
-        if (languageInfo.lightTheme) {
-          monaco.editor.defineTheme(`${languageInfo.id}-light`, {
-            base: "vs",
-            inherit: true,
-            rules: languageInfo.lightTheme.rules,
-            encodedTokensColors: languageInfo.lightTheme.encodedTokensColors,
-            colors: languageInfo.lightTheme.colors
-          });
-        }
-        // --- Define dark theme for the language
-        if (languageInfo.darkTheme) {
-          monaco.editor.defineTheme(`${languageInfo.id}-dark`, {
-            base: "vs-dark",
-            inherit: true,
-            rules: languageInfo.darkTheme.rules,
-            encodedTokensColors: languageInfo.darkTheme.encodedTokensColors,
-            colors: languageInfo.darkTheme.colors
-          });
-        }
-        if (languageInfo.depensOn) {
-          for (const dependOn of languageInfo.depensOn) {
-            ensureLanguage(monaco, dependOn);
-          }
-        }
-      }
-    }
-  };
-
   // --- Initializes the editor when mounted
   const onMount = (
     ed: monacoEditor.editor.IStandaloneCodeEditor,
@@ -179,9 +129,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
   ): void => {
     editor.current = ed;
     monaco.current = mon;
-
-    console.log("theme", mon)
-
     if (viewState) {
       ed.restoreViewState(viewState);
     }
@@ -215,10 +162,7 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     documentService.setDocumentData(document.id, data);
   };
 
-  /**
-   * Saves the document to its file
-   * @param documentText Document text to save
-   */
+  // Saves the document to its file
   const saveDocumentToFile = async (documentText: string): Promise<void> => {
     const result = await messenger.sendMessage({
       type: "MainSaveTextFile",
@@ -243,6 +187,7 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     }
     unsavedChangeCounter.current--;
   };
+  
   return monacoInitialized ? (
     <AutoSizer>
       {({ width, height }) => (
