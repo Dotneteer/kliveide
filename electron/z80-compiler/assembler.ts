@@ -4271,10 +4271,6 @@ export class Z80Assembler extends ExpressionEvaluator {
         type = "ModuleEndStatement";
         displayName = ".module";
         break;
-      case "ModuleStatement":
-        type = "ModuleEndStatement";
-        displayName = ".module";
-        break;
       case "ProcStatement":
         type = "ProcEndStatement";
         displayName = ".proc";

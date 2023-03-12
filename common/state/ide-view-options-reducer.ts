@@ -25,6 +25,8 @@ export function ideViewOptionsReducer (
       return { ...state, maximizeTools: payload?.flag };
     case "SHOW_FRAME_INFO":
       return { ...state, showFrameInfo: payload?.flag };
+    case "SET_IDE_FONT_SIZE":
+      return { ...state, editorFontSize: payload?.numValue };
     default:
       return state;
   }

@@ -6,6 +6,7 @@ import { ToolState } from "../abstractions/ToolState";
  * Represents the state of the entire application
  */
 export type AppState = {
+  appPath?: string;
   emuLoaded?: boolean;
   emuStateSynched?: boolean;
   ideLoaded?: boolean;
@@ -34,6 +35,7 @@ export type IdeViewOptions = {
   maximizeTools?: boolean;
   showFrameInfo?: boolean;
   showSidebar?: boolean;
+  editorFontSize?: number;
 };
 
 /**
@@ -104,7 +106,8 @@ export const initialAppState: AppState = {
     toolPanelsOnTop: false,
     maximizeTools: false,
     showFrameInfo: true,
-    showSidebar: true
+    showSidebar: true,
+    editorFontSize: 16,
   },
   ideView: {
     sideBarPanels: {},

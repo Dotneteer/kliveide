@@ -32,8 +32,6 @@ import {
   MainRenameFileEntryRequest,
   MainShowOpenFolderDialogRequest,
   MainShowOpenFolderDialogResponse,
-  MainGetAppFolderRequest,
-  MainGetAppFolderResponse,
   MainSaveTextFileRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
@@ -148,7 +146,6 @@ export type RequestMessage =
   | MainDeleteFileEntryRequest
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest
-  | MainGetAppFolderRequest
   | MainSaveTextFileRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
@@ -169,7 +166,6 @@ export type ResponseMessage =
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
   | MainShowOpenFolderDialogResponse
-  | MainGetAppFolderResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse
