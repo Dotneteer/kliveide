@@ -28,7 +28,7 @@ import { AppState } from "@common/state/AppState";
 import { CODE_EDITOR } from "@common/state/common-ids";
 import { Store } from "@common/state/redux-light";
 import styles from "@styles/app.module.scss";
-import { ipcRenderer } from "electron";
+import { app, ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { IInteractiveCommandService } from "./abstractions/IInteractiveCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
@@ -58,6 +58,7 @@ import { NumCommand } from "./commands/NumCommand";
 import { OpenFolderCommand } from "./commands/OpenFolderCommand";
 import { NewProjectDialog } from "./dialogs/NewProjectDialog";
 import { DocumentArea } from "./DocumentArea/DocumentArea";
+import { initializeMonaco } from "./DocumentPanels/MonacoEditor";
 import { processMainToIdeMessages } from "./MainToIdeProcessor";
 import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
@@ -76,6 +77,7 @@ const IdeApp = () => {
   const { store, messenger } = useRendererContext();
 
   // --- Visual state
+  const appPath = useSelector(s => s.appPath);
   const dimmed = useSelector(s => s.dimMenu ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
@@ -129,10 +131,14 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
-
-    // --- Temporary: open a few document panels
     dispatch(closeAllDocumentsAction());
   }, [appServices, store, messenger]);
+
+  useEffect(() => {
+    if (appPath) {
+      initializeMonaco(appPath);
+    }
+  }, [appPath]);
 
   return (
     <div id='appMain' className={styles.app}>

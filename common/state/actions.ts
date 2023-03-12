@@ -4,6 +4,11 @@ import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
+export const setAppPathAction: ActionCreator = (file: string) => ({
+  type: "SET_APP_PATH",
+  payload: { file }
+});
+
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"
 });
@@ -238,7 +243,10 @@ export const activateOutputPaneAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: boolean) => ({
+export const setIdeStatusMessageAction: ActionCreator = (
+  text: string,
+  flag?: boolean
+) => ({
   type: "SET_IDE_STATUS_MESSAGE",
   payload: { text, flag }
 });
@@ -259,13 +267,16 @@ export const moveDocumentRightAction: ActionCreator = () => ({
   type: "DOC_MOVE_RIGHT"
 });
 
-export const openFolderAction: ActionCreator = (file: string, flag: boolean) => ({
+export const openFolderAction: ActionCreator = (
+  file: string,
+  flag: boolean
+) => ({
   type: "OPEN_FOLDER",
   payload: { file, flag }
 });
 
 export const closeFolderAction: ActionCreator = () => ({
-  type: "CLOSE_FOLDER",
+  type: "CLOSE_FOLDER"
 });
 
 export const displayDialogAction: ActionCreator = (index?: number) => ({
@@ -273,3 +284,7 @@ export const displayDialogAction: ActionCreator = (index?: number) => ({
   payload: { index }
 });
 
+export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
+  type: "SET_IDE_FONT_SIZE",
+  payload: { numValue }
+});

@@ -9,6 +9,8 @@ export function appStateFlagsReducer (
   { type, payload }: Action
 ): AppState {
   switch (type) {
+    case "SET_APP_PATH":
+      return { ...state, appPath: payload.file };
     case "UNLOAD_WINDOWS":
       return { ...state, emuLoaded: false, ideLoaded: false };
     case "EMU_LOADED":

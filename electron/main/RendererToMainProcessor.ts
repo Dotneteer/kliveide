@@ -143,12 +143,6 @@ export async function processRendererToMainMessages (
         folder: selectedFolder
       } as MainShowOpenFolderDialogResponse;
 
-    case "MainGetAppFolder":
-      return {
-        type: "MainGetAppFolderResponse",
-        path: app.getAppPath()
-      }
-
     case "MainSaveTextFile":
       try {
         fs.writeFileSync(message.path, message.data);

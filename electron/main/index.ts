@@ -27,6 +27,7 @@ import {
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
+  setAppPathAction,
   unloadWindowsAction
 } from "../../common/state/actions";
 import { Unsubscribe } from "@state/redux-light";
@@ -41,10 +42,7 @@ import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
-import {
-  createWindowStateManager,
-  IWindowStateManager
-} from "./WindowStateManager";
+import { createWindowStateManager } from "./WindowStateManager";
 import { fileChangeWatcher } from "./file-watcher";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
@@ -203,6 +201,9 @@ async function createAppWindows () {
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
+
+      // --- Sign the application path
+      mainStore.dispatch(setAppPathAction(app.getAppPath()));
     }
 
     // --- Adjust menu items whenever the app state changes

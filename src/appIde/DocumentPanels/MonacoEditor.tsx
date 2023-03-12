@@ -4,18 +4,75 @@ import AutoSizer from "@/lib/react-virtualized-auto-sizer";
 import { useTheme } from "@/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
-import { MainGetAppFolderResponse } from "@common/messaging/any-to-main";
 import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentState } from "@common/abstractions/DocumentState";
 import { customLanguagesRegistry } from "@/registry";
-import { MonacoAwareCustomLanguageInfo } from "../abstractions/CustomLanguageInfo";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
 
-// --- Take care of initializing the editor only once
-let initialized = false;
+let monacoInitialized = false;
+
+export async function initializeMonaco (appPath: string) {
+  loader.config({
+    paths: {
+      vs: `${appPath}/node_modules/monaco-editor/min/vs`
+    }
+  });
+  const monaco = await loader.init();
+  customLanguagesRegistry.forEach(entry => ensureLanguage(monaco, entry.id));
+  monacoInitialized = true;
+
+  function ensureLanguage (monaco: typeof monacoEditor, language: string) {
+    if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
+      // --- Do we support that custom language?
+      const languageInfo = customLanguagesRegistry.find(l => l.id === language);
+      if (languageInfo) {
+        // --- Yes, register the new language
+        monaco.languages.register({ id: languageInfo.id });
+
+        // --- Register a tokens provider for the language
+        monaco.languages.setMonarchTokensProvider(
+          languageInfo.id,
+          languageInfo.languageDef
+        );
+
+        // --- Set the editing configuration for the language
+        monaco.languages.setLanguageConfiguration(
+          languageInfo.id,
+          languageInfo.options
+        );
+
+        // --- Define light theme for the language
+        if (languageInfo.lightTheme) {
+          monaco.editor.defineTheme(`${languageInfo.id}-light`, {
+            base: "vs",
+            inherit: true,
+            rules: languageInfo.lightTheme.rules,
+            encodedTokensColors: languageInfo.lightTheme.encodedTokensColors,
+            colors: languageInfo.lightTheme.colors
+          });
+        }
+        // --- Define dark theme for the language
+        if (languageInfo.darkTheme) {
+          monaco.editor.defineTheme(`${languageInfo.id}-dark`, {
+            base: "vs-dark",
+            inherit: true,
+            rules: languageInfo.darkTheme.rules,
+            encodedTokensColors: languageInfo.darkTheme.encodedTokensColors,
+            colors: languageInfo.darkTheme.colors
+          });
+        }
+        if (languageInfo.depensOn) {
+          for (const dependOn of languageInfo.depensOn) {
+            ensureLanguage(monaco, dependOn);
+          }
+        }
+      }
+    }
+  }
+}
 
 type EditorProps = {
   document: DocumentState;
@@ -30,30 +87,15 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);
-  const languageInfo = useRef<MonacoAwareCustomLanguageInfo>(null);
   const docActivationVersion = useSelector(
     s => s.ideView?.documentActivationVersion
   );
   const previousContent = useRef<string>();
   const unsavedChangeCounter = useRef(0);
-
-  // --- Initialize the monaco editor when used first
-  useEffect(() => {
-    if (initialized) return;
-    (async () => {
-      initialized = true;
-      const response = (await messenger.sendMessage({
-        type: "MainGetAppFolder"
-      })) as MainGetAppFolderResponse;
-      const monacoFolder = `${response.path}/node_modules/monaco-editor/min/vs`;
-      loader.config({
-        paths: {
-          vs: monacoFolder
-        }
-      });
-      await loader.init();
-    })();
-  });
+  const appPath = useSelector(s => s.appPath);
+  const editorFontSize = useSelector(
+    s => s.ideViewOptions?.editorFontSize ?? 12
+  );
 
   // --- Set the editor focus, whenever the activation version changes
   useEffect(() => {
@@ -74,9 +116,13 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
       themeName = `${languageInfo.id}-${theme.tone}`;
     }
     setVsTheme(themeName);
-  }, [theme])
+  }, [theme, document.language]);
 
-  // --- Ensures that the document language is initializes
+  // --- Respond to editor font size changes
+  useEffect(() => {
+    editor.current;
+  }, [editorFontSize]);
+
   const ensureLanguage = (monaco: typeof monacoEditor, language: string) => {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
       // --- Do we support that custom language?
@@ -126,11 +172,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     }
   };
 
-  // --- Initializes languages before mounting the editor
-  const beforeMount = (monaco: typeof monacoEditor) => {
-    ensureLanguage(monaco, document.language);
-  };
-
   // --- Initializes the editor when mounted
   const onMount = (
     ed: monacoEditor.editor.IStandaloneCodeEditor,
@@ -138,6 +179,9 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
   ): void => {
     editor.current = ed;
     monaco.current = mon;
+
+    console.log("theme", mon)
+
     if (viewState) {
       ed.restoreViewState(viewState);
     }
@@ -157,6 +201,7 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
 
     // --- Dispose event handlers
     editor.current.onDidDispose(() => {
+      console.log("disposing")
       disposables.forEach(d => d.dispose());
     });
   };
@@ -198,13 +243,12 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     }
     unsavedChangeCounter.current--;
   };
-
-  return (
+  return monacoInitialized ? (
     <AutoSizer>
       {({ width, height }) => (
         <Editor
           options={{
-            fontSize: 14
+            fontSize: editorFontSize
           }}
           loading=''
           width={width}
@@ -213,11 +257,10 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
           language={document.language}
           theme={vsTheme}
           value={value}
-          beforeMount={beforeMount}
           onMount={onMount}
           onChange={onValueChanged}
         />
       )}
     </AutoSizer>
-  );
+  ) : null;
 };

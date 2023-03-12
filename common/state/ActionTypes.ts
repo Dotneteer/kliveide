@@ -2,6 +2,7 @@
  * Available action types
  */
 export interface ActionTypes {
+  SET_APP_PATH: null;
   UNLOAD_WINDOWS: null;
   EMU_LOADED: null;
   EMU_STATE_SYNCHED: null,
@@ -20,6 +21,7 @@ export interface ActionTypes {
   SHOW_TOOL_PANELS: null;
   SHOW_KEYBOARD: null;
   SHOW_FRAME_INFO: null;
+  SET_IDE_FONT_SIZE: null;
 
   SHOW_SIDE_BAR: null;
   PRIMARY_BAR_ON_RIGHT: null;

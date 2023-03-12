@@ -103,13 +103,6 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
 /**
  * The client wants to get the app folder
  */
-export interface MainGetAppFolderRequest extends MessageBase {
-  type: "MainGetAppFolder";
-}
-
-/**
- * The client wants to get the app folder
- */
 export interface MainSaveTextFileRequest extends MessageBase {
   type: "MainSaveTextFile";
   path: string;
@@ -155,14 +148,6 @@ export interface MainCreateKliveProjectResponse extends MessageBase {
 export interface MainShowOpenFolderDialogResponse extends MessageBase {
   type: "MainShowOpenFolderDialogResponse";
   folder?: string;
-}
-
-/**
- * The client wants to get the app folder
- */
-export interface MainGetAppFolderResponse extends MessageBase {
-  type: "MainGetAppFolderResponse";
-  path: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {
