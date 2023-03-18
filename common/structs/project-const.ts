@@ -7,6 +7,7 @@ export const LAST_PROJECT_FOLDER = "lastProjectFolder";
 export const TEMPLATES = "project-templates";
 
 export type KliveProjectStructure = {
+  kliveVersion: string;
   machineType?: string;
   viewOptions?: ViewOptions;
   clockMultiplier?: number;

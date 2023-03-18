@@ -358,7 +358,6 @@ ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
 
 // --- This channel processes ide requests and sends the results back
 ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
-  console.log("IdeToMain", msg);
   let response = await forwardActions(msg);
   if (response === null) {
     response = await processRendererToMainMessages(msg, ideWindow);

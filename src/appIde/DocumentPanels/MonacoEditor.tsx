@@ -193,7 +193,8 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
       {({ width, height }) => (
         <Editor
           options={{
-            fontSize: editorFontSize
+            fontSize: editorFontSize,
+            readOnly: document.isReadOnly
           }}
           loading=''
           width={width}

@@ -181,6 +181,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: PROJECT_FILE,
     editor: CODE_EDITOR,
     subType: "json",
+    isReadOnly: true,
     icon: "@file-project"
   },
   {

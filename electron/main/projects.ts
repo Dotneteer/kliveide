@@ -1,7 +1,18 @@
 import {
   closeFolderAction,
   dimMenuAction,
-  openFolderAction
+  maximizeToolsAction,
+  openFolderAction,
+  primaryBarOnRightAction,
+  setIdeFontSizeAction,
+  showEmuStatusBarAction,
+  showEmuToolbarAction,
+  showIdeStatusBarAction,
+  showIdeToolbarAction,
+  showKeyboardAction,
+  showSideBarAction,
+  showToolPanelsAction,
+  toolPanelsOnTopAction,
 } from "../../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
@@ -88,8 +99,6 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
   } finally {
     mainStore.dispatch(dimMenuAction(false));
   }
-
-  // --- Get the folder name
 }
 
 /**
@@ -104,14 +113,34 @@ export function openFolderByPath (projectFolder: string): string | null {
     return `Folder ${projectFolder} does not exists.`;
   }
   const projectFile = path.join(projectFolder, PROJECT_FILE);
+  let isValidProject = false;
   if (fs.existsSync(projectFile)) {
-    // TODO: Check, if project file is valid
-    mainStore.dispatch(closeFolderAction());
-    mainStore.dispatch(openFolderAction(projectFolder, true));
-  } else {
-    mainStore.dispatch(closeFolderAction());
-    mainStore.dispatch(openFolderAction(projectFolder, false));
+    const projectContents = fs.readFileSync(projectFile, "utf8");
+    try {
+      const projectStruct = JSON.parse(projectContents) as KliveProjectStructure;
+      isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
+
+      // --- Apply settings if the project is valid
+      const disp = mainStore.dispatch;
+      disp(showEmuToolbarAction(projectStruct.viewOptions.showEmuToolbar));
+      disp(showEmuStatusBarAction(projectStruct.viewOptions.showEmuStatusbar));
+      disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
+      disp(showIdeStatusBarAction(projectStruct.viewOptions.showIdeStatusbar));
+      disp(showKeyboardAction(projectStruct.viewOptions.showKeyboard));
+      disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
+      disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
+      disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
+      disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
+      disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
+      disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
+
+    } catch {
+      // --- Intentionally ingored
+    }
   }
+    
+  mainStore.dispatch(closeFolderAction());
+  mainStore.dispatch(openFolderAction(projectFolder, isValidProject));
 
   // --- Save the folder into settings
   appSettings.folders ??= {};
@@ -207,6 +236,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
   })) as EmuListBreakpointsResponse;
 
   return {
+    kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,
     clockMultiplier: state.emulatorState.clockMultiplier,
     soundLevel: state.emulatorState.soundLevel,

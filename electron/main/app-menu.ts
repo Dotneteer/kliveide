@@ -151,8 +151,9 @@ export function setupMenu (
         id: CLOSE_FOLDER,
         label: "Close Folder",
         enabled: !!folderOpen,
-        click: () => {
+        click: async () => {
           mainStore.dispatch(closeFolderAction());
+          await saveKliveProject();
         }
       }
     ]
@@ -564,6 +565,7 @@ export function setupMenu (
         checked: appState.ideViewOptions?.editorFontSize === f.value,
         click: async () => {
           mainStore.dispatch(setIdeFontSizeAction(f.value));
+          await saveKliveProject();
         }
       };
     }

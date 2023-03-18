@@ -108,6 +108,7 @@ export function buildProjectTree (
       node.icon = fileTypeEntry.icon;
       node.editor = fileTypeEntry.editor;
       node.subType = fileTypeEntry.subType;
+      node.isReadOnly = fileTypeEntry.isReadOnly
     }
 
     // --- Get the language information

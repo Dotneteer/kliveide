@@ -1,5 +1,9 @@
 import styles from "./ExplorerPanel.module.scss";
-import { useDispatch, useRendererContext, useSelector } from "@/core/RendererProvider";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
 import {
   MainGetDirectoryContentResponse,
@@ -35,6 +39,7 @@ import {
   setBuildRootAction
 } from "@common/state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
+import { SpaceFiller } from "@/controls/SpaceFiller";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -411,6 +416,17 @@ const ExplorerPanel = () => {
         <LabelSeparator width={8} />
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
+        <SpaceFiller />
+        {!node.data.isFolder && buildRoots.indexOf(node.data.fullPath) >= 0 && (
+          <div className={styles.rootBuilder}>
+            <Icon
+              iconName='combine'
+              fill='--console-ansi-bright-green'
+              width={16}
+              height={16}
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -439,6 +455,7 @@ const ExplorerPanel = () => {
         type: node.data.editor,
         language: node.data.subType,
         iconName: node.data.icon,
+        isReadOnly: node.data.isReadOnly,
         node
       },
       data,

@@ -11,6 +11,7 @@ import {
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { TooltipFactory } from "@/controls/Tooltip";
 
 export type Props = DocumentState & {
   index: number;
@@ -38,6 +39,7 @@ export const DocumentTab = ({
   tabClicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
+  const readOnlyRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const [pointed, setPointed] = useState(false);
 
@@ -90,7 +92,7 @@ export const DocumentTab = ({
         {name}
       </span>
       {isReadOnly && (
-        <div className={styles.readOnlyIcon}>
+        <div className={styles.readOnlyIcon} ref={readOnlyRef}>
           <Icon
             iconName='shield'
             width={16}
@@ -101,6 +103,14 @@ export const DocumentTab = ({
                 : "--color-readonly-icon-inactive"
             }
           />
+          <TooltipFactory
+          refElement={readOnlyRef.current}
+          placement='right'
+          offsetX={-16}
+          offsetY={28}
+        >
+          This file is read-only
+        </TooltipFactory>
         </div>
       )}
       <TabButton
