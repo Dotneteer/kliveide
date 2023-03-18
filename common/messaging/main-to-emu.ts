@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "@/emu/abstractions/ExecutionContext";
+import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
 import { SysVar } from "@/emu/abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 

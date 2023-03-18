@@ -1,5 +1,5 @@
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@/core/tree-node";
-import { fileTypeRegistry } from "@/registry";
+import { customLanguagesRegistry, fileTypeRegistry } from "@/registry";
 import { FileTypeEditor } from "../abstractions/FileTypePattern";
 
 /**
@@ -41,6 +41,11 @@ export type ProjectNode = {
    * Is the project node read-only?
    */
   isReadOnly?: boolean;
+
+  /**
+   * Indicates if this node can be a build root
+   */
+  canBeBuildRoot?: boolean;
 
   /**
    * Optional properties
@@ -103,6 +108,15 @@ export function buildProjectTree (
       node.icon = fileTypeEntry.icon;
       node.editor = fileTypeEntry.editor;
       node.subType = fileTypeEntry.subType;
+    }
+
+    // --- Get the language information
+    if (!node.isFolder) {
+      const fileExt = getNodeExtension(node);
+      const langServices = customLanguagesRegistry.filter(reg => reg.extensions.indexOf(fileExt) >= 0);
+      if (langServices.length > 0) {
+        node.canBeBuildRoot = langServices[0].allowBuildRoot;
+      }
     }
     
     // --- Create the initial node

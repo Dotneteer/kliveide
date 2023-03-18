@@ -41,7 +41,7 @@ import {
   MEMORY_PANEL_ID
 } from "../../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
-import { openFolder } from "./projects";
+import { openFolder, saveKliveProject } from "./projects";
 import { NEW_PROJECT_DIALOG } from "../../common/messaging/dialog-ids";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
@@ -229,8 +229,9 @@ export function setupMenu (
       type: "checkbox",
       visible: appState.emuFocused,
       checked: appState.emuViewOptions.showToolbar,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(showEmuToolbarAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -239,8 +240,9 @@ export function setupMenu (
       type: "checkbox",
       visible: appState.ideFocused,
       checked: appState.ideViewOptions.showToolbar,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(showIdeToolbarAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -249,8 +251,9 @@ export function setupMenu (
       type: "checkbox",
       visible: appState.emuFocused,
       checked: appState.emuViewOptions.showStatusBar,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(showEmuStatusBarAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -259,8 +262,9 @@ export function setupMenu (
       type: "checkbox",
       visible: appState.ideFocused,
       checked: appState.ideViewOptions.showStatusBar,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(showIdeStatusBarAction(mi.checked));
+        await saveKliveProject();
       }
     },
     { type: "separator" },
@@ -270,8 +274,9 @@ export function setupMenu (
       type: "checkbox",
       checked: appState.ideViewOptions.showSidebar,
       visible: appState.ideFocused,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(showSideBarAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -280,8 +285,9 @@ export function setupMenu (
       type: "checkbox",
       checked: appState.ideViewOptions.primaryBarOnRight,
       visible: appState.ideFocused,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(primaryBarOnRightAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -290,12 +296,13 @@ export function setupMenu (
       type: "checkbox",
       checked: appState.ideViewOptions.showToolPanels,
       visible: appState.ideFocused,
-      click: mi => {
+      click: async mi => {
         const checked = mi.checked;
         mainStore.dispatch(showToolPanelsAction(checked));
         if (checked) {
           mainStore.dispatch(maximizeToolsAction(false));
         }
+        await saveKliveProject();
       }
     },
     {
@@ -304,8 +311,9 @@ export function setupMenu (
       type: "checkbox",
       checked: appState.ideViewOptions.toolPanelsOnTop,
       visible: appState.ideFocused,
-      click: mi => {
+      click: async mi => {
         mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
+        await saveKliveProject();
       }
     },
     {
@@ -314,12 +322,13 @@ export function setupMenu (
       type: "checkbox",
       checked: appState.ideViewOptions.maximizeTools,
       visible: appState.ideFocused,
-      click: mi => {
+      click: async mi => {
         const checked = mi.checked;
         if (checked) {
           mainStore.dispatch(showToolPanelsAction(true));
         }
         mainStore.dispatch(maximizeToolsAction(checked));
+        await saveKliveProject();
       }
     },
     { type: "separator" },
@@ -334,8 +343,9 @@ export function setupMenu (
           label: "Light",
           type: "checkbox",
           checked: appState.theme === "light",
-          click: () => {
+          click: async () => {
             mainStore.dispatch(setThemeAction("light"));
+            await saveKliveProject();
           }
         },
         {
@@ -343,8 +353,9 @@ export function setupMenu (
           label: "Dark",
           type: "checkbox",
           checked: appState.theme === "dark",
-          click: () => {
+          click: async () => {
             mainStore.dispatch(setThemeAction("dark"));
+            await saveKliveProject();
           }
         }
       ]
@@ -368,6 +379,7 @@ export function setupMenu (
         click: async () => {
           mainStore.dispatch(setClockMultiplierAction(v));
           logEmuEvent(`Clock multiplier set to ${v}`);
+          await saveKliveProject();
         }
       };
     }
@@ -390,6 +402,7 @@ export function setupMenu (
         click: async () => {
           mainStore.dispatch(setSoundLevelAction(v.value));
           logEmuEvent(`Sound level set to ${v.label} (${v.value})`);
+          await saveKliveProject();
         }
       };
     }
@@ -418,6 +431,7 @@ export function setupMenu (
             checked: appState.emulatorState?.machineId === "sp48",
             click: async () => {
               await setMachineType("sp48");
+              await saveKliveProject();
             }
           }
         ]
@@ -506,6 +520,7 @@ export function setupMenu (
         label: "Select Tape File...",
         click: async () => {
           await setTapeFile(emuWindow);
+          await saveKliveProject();
         }
       }
     ]

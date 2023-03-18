@@ -78,6 +78,7 @@ export type EmulatorState = {
 export type IdeProject = {
   folderPath?: string;
   isKliveProject?: boolean;
+  buildRoots?: string[];
 }
 
 /**

@@ -8,12 +8,15 @@ import * as fs from "fs";
 import * as path from "path";
 import { mainStore } from "./main-store";
 import { appSettings, saveAppSettings } from "./settings";
-
-const KLIVE_PROJET_ROOT = "KliveProjects";
-const CODE_FOLDER = "code";
-const PROJECT_FILE = "klive.project";
-const LAST_PROJECT_FOLDER = "lastProjectFolder";
-const TEMPLATES = "project-templates";
+import {
+  TEMPLATES,
+  PROJECT_FILE,
+  LAST_PROJECT_FOLDER,
+  KLIVE_PROJET_ROOT,
+  KliveProjectStructure
+} from "../../common/structs/project-const";
+import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
+import { EmuListBreakpointsResponse } from "../../common/messaging/main-to-emu";
 
 type ProjectCreationResult = {
   path?: string;
@@ -33,7 +36,7 @@ export function createKliveProject (
 ): ProjectCreationResult {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder =resolvePublicFilePath(TEMPLATES);
+  const templateFolder = resolvePublicFilePath(TEMPLATES);
 
   try {
     // --- Check if the folder exists
@@ -48,10 +51,6 @@ export function createKliveProject (
 
     // --- Copy templates
     copyFolderSync(templateFolder, fullProjectFolder, false);
-
-    // // --- Create subfolders
-    // const codeFolder = path.join(fullProjectFolder, CODE_FOLDER);
-    // fs.mkdirSync(codeFolder, { recursive: true });
 
     // --- Create project files
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
@@ -150,7 +149,7 @@ export function copyFileSync (source: string, target: string) {
  * @param source Source folder
  * @param target Target folder
  */
-export function copyFolderSync(
+export function copyFolderSync (
   source: string,
   target: string,
   copyRoot = true
@@ -198,4 +197,59 @@ export function getKliveProjectFolder (projectFolder: string): string {
       ? projectFolder
       : path.join(app.getPath("home"), KLIVE_PROJET_ROOT, projectFolder)
     : path.join(app.getPath("home"), KLIVE_PROJET_ROOT);
+}
+
+// --- Get the current klive project structure to save
+export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
+  const state = mainStore.getState();
+  const bpResponse = (await sendFromMainToEmu({
+    type: "EmuListBreakpoints"
+  })) as EmuListBreakpointsResponse;
+
+  return {
+    machineType: state.emulatorState.machineId,
+    clockMultiplier: state.emulatorState.clockMultiplier,
+    soundLevel: state.emulatorState.soundLevel,
+    soundMuted: state.emulatorState.soundMuted,
+    savedSoundLevel: state.emulatorState.savedSoundLevel,
+    tapeFile: state.emulatorState.tapeFile,
+    fastLoad: state.emulatorState.fastLoad,
+    machineSpecific: {},
+    ide: {},
+    viewOptions: {
+      theme: state.theme,
+      editorFontSize: state.ideViewOptions?.editorFontSize,
+      maximizeTools: state.ideViewOptions?.maximizeTools,
+      primaryBarOnRight: state.ideViewOptions?.primaryBarOnRight,
+      showEmuStatusbar: state.emuViewOptions.showStatusBar,
+      showEmuToolbar: state.emuViewOptions.showToolbar,
+      showKeyboard: state.emuViewOptions.showKeyboard,
+      showFrameInfo: state.ideViewOptions.showFrameInfo,
+      showIdeStatusbar: state.ideViewOptions.showStatusBar,
+      showIdeToolbar: state.ideViewOptions.showToolbar,
+      showSidebar: state.ideViewOptions.showSidebar,
+      showToolPanels: state.ideViewOptions.showToolPanels,
+      toolPanelsOnTop: state.ideViewOptions.toolPanelsOnTop
+    },
+    debugger: {
+      breakpoints: bpResponse.breakpoints
+    },
+    builder: {
+      roots: state.project?.buildRoots ?? []
+    }
+  }
+}
+
+// --- Saves the current Klive project
+export async function saveKliveProject(): Promise<void> {
+  const projectState = mainStore.getState().project;
+  if (!projectState.folderPath) return;
+
+  try {
+    const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
+    const project = await getKliveProjectStructure();
+    fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+  } catch {
+    // --- Intentionally ignored
+  }
 }

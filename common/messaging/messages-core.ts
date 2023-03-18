@@ -32,7 +32,8 @@ import {
   MainRenameFileEntryRequest,
   MainShowOpenFolderDialogRequest,
   MainShowOpenFolderDialogResponse,
-  MainSaveTextFileRequest
+  MainSaveTextFileRequest,
+  MainSaveProjectRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -147,6 +148,7 @@ export type RequestMessage =
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest
   | MainSaveTextFileRequest
+  | MainSaveProjectRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

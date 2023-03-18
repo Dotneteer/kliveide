@@ -23,6 +23,12 @@ export function projectReducer (
         isKliveProject: false
       };
 
+    case "SET_BUILD_ROOT":
+      return {
+        ...state,
+        buildRoots: payload.flag ? [payload.file] : []
+      };
+
     default:
       return state;
   }
