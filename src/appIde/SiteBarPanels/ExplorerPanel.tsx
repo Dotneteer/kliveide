@@ -40,6 +40,7 @@ import {
 } from "@common/state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@/controls/SpaceFiller";
+import { EMPTY_ARRAY } from "@/utils/stablerefs";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -68,7 +69,7 @@ const ExplorerPanel = () => {
   // --- Information about a project (Is any project open? Is it a Klive project?)
   const folderPath = useSelector(s => s.project?.folderPath);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
-  const buildRoots = useSelector(s => s.project?.buildRoots ?? []);
+  const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
 
   // --- State and helpers for the selected node's context menu
   const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
@@ -452,6 +453,7 @@ const ExplorerPanel = () => {
       {
         id: node.data.fullPath,
         name: node.data.name,
+        path: node.data.fullPath,
         type: node.data.editor,
         language: node.data.subType,
         iconName: node.data.icon,

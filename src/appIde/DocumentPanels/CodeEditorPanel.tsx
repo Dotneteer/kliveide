@@ -5,8 +5,8 @@ export const createCodeEditorPanel = ({ document, data }: DocumentProps) => {
   return (
     <MonacoEditor
       document={document}
-      value={data.value}
-      viewState={data.viewState}
+      value={data?.value}
+      viewState={data?.viewState}
     />
   );
 };

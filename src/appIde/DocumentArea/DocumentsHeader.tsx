@@ -1,8 +1,12 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
 import { TabButton } from "@/controls/TabButton";
-import { useSelector } from "@/core/RendererProvider";
+import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { ITreeNode } from "@/core/tree-node";
 import { documentPanelRegistry } from "@/registry";
+import {
+  changeDocumentAction,
+  incDocumentActivationVersionAction
+} from "@common/state/actions";
 import { useEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
 import { ProjectNode } from "../project/project-node";
@@ -11,6 +15,7 @@ import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 
 export const DocumentsHeader = () => {
+  const dispatch = useDispatch();
   const { documentService, projectService } = useAppServices();
   const ref = useRef<HTMLDivElement>();
   const handlersInitialized = useRef(false);
@@ -67,7 +72,7 @@ export const DocumentsHeader = () => {
     // --- Remove open explorer document when the folder is closed
     const projectClosed = () => {
       documentService.closeAllExplorerDocuments();
-    }
+    };
 
     // --- Open the newly added document
     const itemAdded = (node: ITreeNode<ProjectNode>) => {
@@ -137,25 +142,58 @@ export const DocumentsHeader = () => {
         apiLoaded={api => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>
-          {(docsToDisplay ?? []).map((d, idx) => (
-            <DocumentTab
-              key={d.id}
-              index={idx}
-              id={d.id}
-              name={d.name}
-              type={d.type}
-              isActive={idx === activeDocIndex}
-              isTemporary={d.isTemporary}
-              isReadOnly={d.isReadOnly}
-              iconName={d.iconName}
-              iconFill={d.iconFill}
-              language={d.language}
-              tabDisplayed={el => {
-                tabDims.current[idx] = el;
-              }}
-              tabClicked={() => setHeaderVersion(headerVersion + 1)}
-            />
-          ))}
+          {(docsToDisplay ?? []).map((d, idx) => {
+            // --- Take care of unique names
+            console.log("docs", docsToDisplay.slice(0));
+            const docName = docsToDisplay.find(
+              doc => doc.name === d.name && doc.id !== d.id
+            )
+              ? d.path
+              : d.name;
+            console.log("docName", docName);
+            return (
+              <DocumentTab
+                key={d.id}
+                index={idx}
+                id={d.id}
+                name={docName}
+                path={d.path}
+                type={d.type}
+                isActive={idx === activeDocIndex}
+                isTemporary={d.isTemporary}
+                isReadOnly={d.isReadOnly}
+                iconName={d.iconName}
+                iconFill={d.iconFill}
+                language={d.language}
+                tabDisplayed={el => {
+                  tabDims.current[idx] = el;
+                }}
+                tabClicked={() => setHeaderVersion(headerVersion + 1)}
+                tabDoubleClicked={() => {
+                  if (d.isTemporary) {
+                    dispatch(
+                      changeDocumentAction(
+                        {
+                          id: d.id,
+                          name: d.name,
+                          type: d.type,
+                          isReadOnly: d.isReadOnly,
+                          isTemporary: false,
+                          iconName: d.iconName,
+                          iconFill: d.iconFill,
+                          language: d.language,
+                          path: d.path,
+                          stateValue: d.stateValue
+                        },
+                        idx
+                      )
+                    );
+                  }
+                  dispatch(incDocumentActivationVersionAction());
+                }}
+              />
+            );
+          })}
         </div>
         <div className={styles.closingTab} />
       </ScrollViewer>
