@@ -96,7 +96,7 @@ const indexHtml = join(process.env.DIST, "index.html");
 
 // --- Start watching file changes
 const homeDir = path.join(app.getPath("home"), "KliveProjects");
-fileChangeWatcher.startWatching(homeDir);
+//fileChangeWatcher.startWatching(homeDir);
 
 async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation
@@ -134,7 +134,9 @@ async function createAppWindows () {
     webPreferences: {
       preload,
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webSecurity: false,
+      
     }
   });
 
@@ -175,7 +177,8 @@ async function createAppWindows () {
     webPreferences: {
       preload,
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webSecurity: false,
     },
     show:
       ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)

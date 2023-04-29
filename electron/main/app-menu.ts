@@ -138,7 +138,6 @@ export function setupMenu (
           mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }
       },
-      { type: "separator" },
       {
         id: OPEN_FOLDER,
         label: "Open folder...",
@@ -155,7 +154,12 @@ export function setupMenu (
           mainStore.dispatch(closeFolderAction());
           await saveKliveProject();
         }
-      }
+      },
+      ...(__DARWIN__ ? [] : [
+        { type: "separator" },
+        { role: "quit"
+        },
+      ] as MenuItemConstructorOptions[])
     ]
   });
 
