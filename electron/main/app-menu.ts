@@ -138,7 +138,6 @@ export function setupMenu (
           mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }
       },
-      { type: "separator" },
       {
         id: OPEN_FOLDER,
         label: "Open folder...",
@@ -154,7 +153,12 @@ export function setupMenu (
         click: () => {
           mainStore.dispatch(closeFolderAction());
         }
-      }
+      },
+      ...(__DARWIN__ ? [] : [
+        { type: "separator" },
+        { role: "quit"
+        },
+      ] as MenuItemConstructorOptions[])
     ]
   });
 
