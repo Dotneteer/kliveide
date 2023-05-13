@@ -4,7 +4,6 @@ import classnames from "@/utils/classnames";
 import { useDispatch } from "@/core/RendererProvider";
 import {
   activateDocumentAction,
-  changeDocumentAction,
   closeDocumentAction,
   incDocumentActivationVersionAction
 } from "@state/actions";
@@ -64,26 +63,6 @@ export const DocumentTab = ({
       }}
       onDoubleClick={() => {
         tabDoubleClicked?.();
-        // if (isTemporary) {
-        //   dispatch(
-        //     changeDocumentAction(
-        //       {
-        //         id,
-        //         name,
-        //         type,
-        //         isReadOnly,
-        //         isTemporary: false,
-        //         iconName,
-        //         iconFill,
-        //         language,
-        //         path,
-        //         stateValue
-        //       } as DocumentState,
-        //       index
-        //     )
-        //   );
-        // }
-        // dispatch(incDocumentActivationVersionAction());
       }}
     >
       <Icon iconName={iconName} width={16} height={16} fill={iconFill} />

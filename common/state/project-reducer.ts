@@ -29,6 +29,12 @@ export function projectReducer (
         buildRoots: payload.flag ? [payload.file] : []
       };
 
+    case "INC_PROJECT_VERSION":
+      return {
+        ...state,
+        projectVersion: state.projectVersion + 1
+      };
+
     default:
       return state;
   }

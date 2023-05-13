@@ -18,6 +18,8 @@ class ProjectService implements IProjectService {
       const newState = store.getState();
       const newFolderPath = newState?.project?.folderPath;
       const oldFolderPath = this._oldState?.project?.folderPath;
+      const newProjectVersion = newState?.project?.projectVersion;
+      const oldProjectVersion = this._oldState?.project?.projectVersion;
       this._oldState = newState;
       if (oldFolderPath !== newFolderPath) {
         if (newFolderPath) {

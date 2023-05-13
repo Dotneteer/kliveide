@@ -297,3 +297,6 @@ export const setBuildRootAction: ActionCreator = (
   payload: { file, flag }
 });
 
+export const incProjectVersionAction: ActionCreator = () => ({
+  type: "INC_PROJECT_VERSION"
+});

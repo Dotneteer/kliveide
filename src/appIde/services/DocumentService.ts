@@ -12,6 +12,7 @@ import { Store } from "@state/redux-light";
 import { DocumentInfo } from "../../../common/abstractions/DocumentInfo";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+import { PROJECT_FILE } from "@common/structs/project-const";
 
 /**
  * Represents the view state of a code document
@@ -38,6 +39,16 @@ export interface IDocumentService {
    * @param document
    */
   isOpen(id: string): boolean;
+
+  /**
+   * Tests if the project file is open
+   */
+  getOpenProjectFileDocument(): DocumentState;
+
+  /**
+   * Increment the view version of the specified document
+   */
+  incrementViewVersion(id: string): void;
 
   /**
    * Sets the specified document as the active one
@@ -138,8 +149,6 @@ export interface IDocumentService {
    * @param id
    */
   getDocumentData(id: string): any;
-
-  
 }
 
 /**
@@ -308,6 +317,36 @@ class DocumentService implements IDocumentService {
     const state = this.store.getState();
     const docs = state?.ideView?.openDocuments ?? [];
     return !!docs.find(doc => doc.id === id);
+  }
+
+  /**
+   * Gets the project file is open
+   */
+  getOpenProjectFileDocument(): DocumentState | undefined {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    var projectInfo = state?.project;
+    return projectInfo?.isKliveProject
+      ? docs.find(d => d.path === `${projectInfo.folderPath}/${PROJECT_FILE}`)
+      : undefined;
+  }
+
+  /**
+   * Increment the view version of the specified document
+   */
+  incrementViewVersion(id: string): void {
+    const document = this.getDocument(id);
+    if (!document) return;
+
+    this.store.dispatch(
+      changeDocumentAction(
+        {
+          ...document,
+          viewVersion: (document.viewVersion ?? 0) + 1
+        } as DocumentState,
+      ),
+      "ide"
+    );
   }
 
   /**

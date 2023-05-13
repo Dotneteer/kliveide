@@ -79,6 +79,7 @@ export type IdeProject = {
   folderPath?: string;
   isKliveProject?: boolean;
   buildRoots?: string[];
+  projectVersion: number;
 }
 
 /**
@@ -132,5 +133,7 @@ export const initialAppState: AppState = {
     clockMultiplier: 1,
     breakpointsVersion: 0
   },
-  project: {}
+  project: {
+    projectVersion: 0,
+  }
 };
