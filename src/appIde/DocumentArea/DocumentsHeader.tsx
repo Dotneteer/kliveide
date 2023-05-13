@@ -1,6 +1,10 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
-import { TabButton } from "@/controls/TabButton";
-import { useDispatch, useRendererContext, useSelector } from "@/core/RendererProvider";
+import { TabButton, TabButtonSeparator, TabButtonSpace } from "@/controls/TabButton";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@/core/RendererProvider";
 import { ITreeNode } from "@/core/tree-node";
 import { documentPanelRegistry } from "@/registry";
 import {
@@ -14,6 +18,8 @@ import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 import { TextContentsResponse } from "@common/messaging/any-to-main";
+import { EMPTY_ARRAY } from "@/utils/stablerefs";
+import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
 
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
@@ -24,8 +30,11 @@ export const DocumentsHeader = () => {
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const projectVersion = useSelector(s => s.project?.projectVersion);
   const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
+  const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [headerVersion, setHeaderVersion] = useState(0);
+  const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
+
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
 
@@ -44,7 +53,7 @@ export const DocumentsHeader = () => {
       });
       setDocsToDisplay(mappedDocs);
     }
-  }
+  };
 
   // --- Prepare the open documents to display
   useEffect(() => {
@@ -65,16 +74,16 @@ export const DocumentsHeader = () => {
         type: "MainReadTextFile",
         path: projectDoc.path
       });
-      
+
       // --- Refresh the contents of the document
       documentService.setDocumentData(projectDoc.id, {
         value: textResponse.contents,
         viewState
-      })
+      });
 
       // --- Display the newest document version
       documentService.incrementViewVersion(projectDoc.id);
-    })()
+    })();
   }, [projectVersion]);
 
   // --- Respond to active document tab changes: make sure that the activated tab is displayed
@@ -85,6 +94,7 @@ export const DocumentsHeader = () => {
     const parent = tabDim.parentElement;
     if (!parent) return;
 
+    // --- There is an active document
     const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
     const tabRightPos = tabLeftPos + tabDim.offsetWidth;
     const scrollPos = svApi.current.getScrollLeft();
@@ -97,7 +107,13 @@ export const DocumentsHeader = () => {
         tabLeftPos - parent.offsetWidth + tabDim.offsetWidth
       );
     }
-  }, [activeDocIndex, headerVersion, docsToDisplay]);
+
+    // --- Check for build root
+    setSelectedIsBuildRoot(
+      buildRoots.indexOf(docsToDisplay[activeDocIndex]?.node?.data?.fullPath) >=
+        0
+    );
+  }, [activeDocIndex, headerVersion, docsToDisplay, buildRoots]);
 
   // --- Respond to project service notifications
   useEffect(() => {
@@ -232,6 +248,31 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
+        {selectedIsBuildRoot && (
+          <>
+            <TabButtonSeparator />
+            <TabButton
+              iconName='combine'
+              title="Compile code"
+            />
+            <TabButtonSpace />
+            <TabButton
+              iconName='inject'
+              title={"Inject code into\nthe virtual machine"}
+            />
+            <TabButtonSpace />
+            <TabButton
+              iconName='play'
+              title={"Inject code and start\nthe virtual machine"}
+            />
+            <TabButtonSpace />
+            <TabButton
+              iconName='debug'
+              title={"Inject code and start\ndebugging"}
+            />
+          </>
+        )}
+        <TabButtonSeparator />
         <TabButton
           iconName='arrow-small-left'
           title={"Move the active\ntab to left"}

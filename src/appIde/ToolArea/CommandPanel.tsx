@@ -10,7 +10,7 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { TabButton, TabButtonSeparator } from "@/controls/TabButton";
+import { TabButton, TabButtonSpace } from "@/controls/TabButton";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 
 const CommandPanel = () => {
@@ -160,7 +160,7 @@ export const commandPanelHeaderRenderer = () => {
           dispatch(incToolCommandSeqNoAction());
         }}
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='copy'
         title='Copy to clipboard'

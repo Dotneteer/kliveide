@@ -7,7 +7,7 @@ import {
 } from "@state/actions";
 import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Dropdown } from "../../controls/Dropdown";
-import { TabButton, TabButtonSeparator } from "../../controls/TabButton";
+import { TabButton, TabButtonSpace } from "../../controls/TabButton";
 import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
@@ -117,7 +117,7 @@ export const outputPanelHeaderRenderer = () => {
           dispatch(activateOutputPaneAction(option))
         }
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='clear-all'
         title='Clear'
@@ -126,7 +126,7 @@ export const outputPanelHeaderRenderer = () => {
           dispatch(incToolCommandSeqNoAction());
         }}
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='copy'
         title='Copy to clipboard'

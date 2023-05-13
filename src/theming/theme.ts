@@ -151,6 +151,7 @@ export type ThemeProperties = {
   "--bgcolor-tabbutton-down"?: string;
   "--color-readonly-icon-active"?: string;
   "--color-readonly-icon-inactive"?: string;
+  "--color-button-separator"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;

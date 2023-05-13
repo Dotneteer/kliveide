@@ -148,6 +148,7 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-tabbutton-down": "#b0b0b0",
   "--color-readonly-icon-active": "rgb(252, 165, 3)",
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
+  "--color-button-separator": "#a0a0a0",
 
   // --- Tool area
   "--bgcolor-toolarea": "#e8e8e8",

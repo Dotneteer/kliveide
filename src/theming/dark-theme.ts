@@ -151,6 +151,7 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-tabbutton-down": "#505050",
   "--color-readonly-icon-active": "rgb(252, 165, 3)",
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
+  "--color-button-separator": "#606060",
 
   // --- Tool area
   "--bgcolor-toolarea": "#181818",
