@@ -4,13 +4,13 @@ import classnames from "@/utils/classnames";
 import { useDispatch } from "@/core/RendererProvider";
 import {
   activateDocumentAction,
-  changeDocumentAction,
   closeDocumentAction,
   incDocumentActivationVersionAction
 } from "@state/actions";
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { TooltipFactory } from "@/controls/Tooltip";
 
 export type Props = DocumentState & {
   index: number;
@@ -19,6 +19,7 @@ export type Props = DocumentState & {
   isActive?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
+  tabDoubleClicked?: () => void;
 };
 
 export const DocumentTab = ({
@@ -35,9 +36,12 @@ export const DocumentTab = ({
   iconFill = "--color-doc-icon",
   isActive = false,
   tabDisplayed,
-  tabClicked
+  tabClicked,
+  tabDoubleClicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const readOnlyRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const [pointed, setPointed] = useState(false);
 
@@ -55,42 +59,32 @@ export const DocumentTab = ({
       onClick={() => {
         tabClicked?.();
         dispatch(activateDocumentAction(id));
-        dispatch(incDocumentActivationVersionAction())
+        dispatch(incDocumentActivationVersionAction());
       }}
       onDoubleClick={() => {
-        if (isTemporary) {
-          dispatch(
-            changeDocumentAction(
-              {
-                id,
-                name,
-                type,
-                isReadOnly,
-                isTemporary: false,
-                iconName,
-                iconFill,
-                language,
-                path,
-                stateValue
-              } as DocumentState,
-              index
-            )
-          );
-        }
-        dispatch(incDocumentActivationVersionAction())
+        tabDoubleClicked?.();
       }}
     >
       <Icon iconName={iconName} width={16} height={16} fill={iconFill} />
       <span
+        ref={nameRef}
         className={classnames(styles.titleText, {
           [styles.activeTitle]: isActive,
           [styles.temporaryTitle]: isTemporary
         })}
       >
-        {name}
+        <bdi>{name}</bdi>
+        <TooltipFactory
+            refElement={nameRef.current}
+            placement='right'
+            offsetX={-28}
+            offsetY={28}
+          >
+            {path}
+          </TooltipFactory>
       </span>
       {isReadOnly && (
-        <div className={styles.readOnlyIcon}>
+        <div className={styles.readOnlyIcon} ref={readOnlyRef}>
           <Icon
             iconName='shield'
             width={16}
@@ -101,6 +95,14 @@ export const DocumentTab = ({
                 : "--color-readonly-icon-inactive"
             }
           />
+          <TooltipFactory
+            refElement={readOnlyRef.current}
+            placement='right'
+            offsetX={-16}
+            offsetY={28}
+          >
+            This file is read-only
+          </TooltipFactory>
         </div>
       )}
       <TabButton

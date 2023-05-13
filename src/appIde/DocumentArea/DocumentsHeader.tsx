@@ -1,28 +1,36 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
 import { TabButton } from "@/controls/TabButton";
-import { useSelector } from "@/core/RendererProvider";
+import { useDispatch, useRendererContext, useSelector } from "@/core/RendererProvider";
 import { ITreeNode } from "@/core/tree-node";
 import { documentPanelRegistry } from "@/registry";
+import {
+  changeDocumentAction,
+  incDocumentActivationVersionAction
+} from "@common/state/actions";
 import { useEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
+import { TextContentsResponse } from "@common/messaging/any-to-main";
 
 export const DocumentsHeader = () => {
+  const dispatch = useDispatch();
   const { documentService, projectService } = useAppServices();
+  const { messenger } = useRendererContext();
   const ref = useRef<HTMLDivElement>();
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
+  const projectVersion = useSelector(s => s.project?.projectVersion);
   const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [headerVersion, setHeaderVersion] = useState(0);
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
 
-  // --- Prepare the open documents to display
-  useEffect(() => {
+  // --- Initiate refreshing the documents
+  const refreshDocs = () => {
     if (openDocs) {
       const mappedDocs = openDocs.map(d => {
         const cloned: DocumentState = { ...d };
@@ -36,7 +44,38 @@ export const DocumentsHeader = () => {
       });
       setDocsToDisplay(mappedDocs);
     }
+  }
+
+  // --- Prepare the open documents to display
+  useEffect(() => {
+    refreshDocs();
   }, [openDocs]);
+
+  // --- Refresh the changed project document
+  useEffect(() => {
+    // --- Check if the project document is visible
+    const projectDoc = documentService.getOpenProjectFileDocument();
+    if (!projectDoc) return;
+
+    // --- Get the data of the document
+    (async () => {
+      const data = documentService.getDocumentData(projectDoc.id);
+      const viewState = data?.viewState;
+      const textResponse = await messenger.sendMessage<TextContentsResponse>({
+        type: "MainReadTextFile",
+        path: projectDoc.path
+      });
+      
+      // --- Refresh the contents of the document
+      documentService.setDocumentData(projectDoc.id, {
+        value: textResponse.contents,
+        viewState
+      })
+
+      // --- Display the newest document version
+      documentService.incrementViewVersion(projectDoc.id);
+    })()
+  }, [projectVersion]);
 
   // --- Respond to active document tab changes: make sure that the activated tab is displayed
   // --- entirely. If necessary, scroll in the active tab
@@ -67,7 +106,7 @@ export const DocumentsHeader = () => {
     // --- Remove open explorer document when the folder is closed
     const projectClosed = () => {
       documentService.closeAllExplorerDocuments();
-    }
+    };
 
     // --- Open the newly added document
     const itemAdded = (node: ITreeNode<ProjectNode>) => {
@@ -81,7 +120,8 @@ export const DocumentsHeader = () => {
           type: node.data.editor,
           language: node.data.subType,
           iconName: node.data.icon,
-          node
+          node,
+          viewVersion: 0
         },
         undefined,
         false
@@ -137,25 +177,57 @@ export const DocumentsHeader = () => {
         apiLoaded={api => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>
-          {(docsToDisplay ?? []).map((d, idx) => (
-            <DocumentTab
-              key={d.id}
-              index={idx}
-              id={d.id}
-              name={d.name}
-              type={d.type}
-              isActive={idx === activeDocIndex}
-              isTemporary={d.isTemporary}
-              isReadOnly={d.isReadOnly}
-              iconName={d.iconName}
-              iconFill={d.iconFill}
-              language={d.language}
-              tabDisplayed={el => {
-                tabDims.current[idx] = el;
-              }}
-              tabClicked={() => setHeaderVersion(headerVersion + 1)}
-            />
-          ))}
+          {(docsToDisplay ?? []).map((d, idx) => {
+            // --- Take care of unique names
+            const docName = docsToDisplay.find(
+              doc => doc.name === d.name && doc.id !== d.id
+            )
+              ? d.path
+              : d.name;
+            return (
+              <DocumentTab
+                key={d.id}
+                index={idx}
+                id={d.id}
+                name={docName}
+                path={d.path}
+                type={d.type}
+                isActive={idx === activeDocIndex}
+                isTemporary={d.isTemporary}
+                isReadOnly={d.isReadOnly}
+                iconName={d.iconName}
+                iconFill={d.iconFill}
+                language={d.language}
+                viewVersion={d.viewVersion}
+                tabDisplayed={el => {
+                  tabDims.current[idx] = el;
+                }}
+                tabClicked={() => setHeaderVersion(headerVersion + 1)}
+                tabDoubleClicked={() => {
+                  if (d.isTemporary) {
+                    dispatch(
+                      changeDocumentAction(
+                        {
+                          id: d.id,
+                          name: d.name,
+                          type: d.type,
+                          isReadOnly: d.isReadOnly,
+                          isTemporary: false,
+                          iconName: d.iconName,
+                          iconFill: d.iconFill,
+                          language: d.language,
+                          path: d.path,
+                          stateValue: d.stateValue
+                        },
+                        idx
+                      )
+                    );
+                  }
+                  dispatch(incDocumentActivationVersionAction());
+                }}
+              />
+            );
+          })}
         </div>
         <div className={styles.closingTab} />
       </ScrollViewer>

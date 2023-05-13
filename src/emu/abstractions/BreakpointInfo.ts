@@ -18,6 +18,21 @@ export type BreakpointInfo = {
   disabled?: boolean;
 
   /**
+   * File that holds a source code breakpoint
+   */
+  resource?: string;
+
+  /**
+   * Line number within a file
+   */
+  line?: number;
+
+  /**
+   * Indicates that a source-bound breakpoint has been resolved
+   */
+  resolved?: boolean;
+
+  /**
    * Optional mask for I/O addresses
    */
   mask?: number;

@@ -23,6 +23,18 @@ export function projectReducer (
         isKliveProject: false
       };
 
+    case "SET_BUILD_ROOT":
+      return {
+        ...state,
+        buildRoots: payload.flag ? [payload.file] : []
+      };
+
+    case "INC_PROJECT_VERSION":
+      return {
+        ...state,
+        projectVersion: state.projectVersion + 1
+      };
+
     default:
       return state;
   }

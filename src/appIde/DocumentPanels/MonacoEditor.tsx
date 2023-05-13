@@ -132,7 +132,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
     if (viewState) {
       ed.restoreViewState(viewState);
     }
-    ed.focus();
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
@@ -148,7 +147,6 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
 
     // --- Dispose event handlers
     editor.current.onDidDispose(() => {
-      console.log("disposing")
       disposables.forEach(d => d.dispose());
     });
   };
@@ -193,7 +191,8 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
       {({ width, height }) => (
         <Editor
           options={{
-            fontSize: editorFontSize
+            fontSize: editorFontSize,
+            readOnly: document.isReadOnly
           }}
           loading=''
           width={width}

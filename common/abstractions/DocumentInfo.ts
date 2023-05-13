@@ -49,4 +49,9 @@ export type DocumentInfo = {
    * The optional tree node in the explorer
    */
   node?: ITreeNode<ProjectNode>
+
+  /**
+   * The optional view version of the document
+   */
+  viewVersion: number;
 };

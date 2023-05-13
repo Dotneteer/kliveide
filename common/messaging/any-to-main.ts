@@ -110,6 +110,13 @@ export interface MainSaveTextFileRequest extends MessageBase {
 }
 
 /**
+ * The client wants to save the current project
+ */
+export interface MainSaveProjectRequest extends MessageBase {
+  type: "MainSaveProject";
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {

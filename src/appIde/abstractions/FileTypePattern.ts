@@ -9,4 +9,5 @@ export type FileTypePattern = {
 export type FileTypeEditor = FileTypePattern & {
   editor: string;
   subType?: string;
+  isReadOnly?: boolean;
 }

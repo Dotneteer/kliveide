@@ -1,5 +1,9 @@
 import styles from "./ExplorerPanel.module.scss";
-import { useRendererContext, useSelector } from "@/core/RendererProvider";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
 import {
   MainGetDirectoryContentResponse,
@@ -20,7 +24,6 @@ import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { LabelSeparator } from "@/controls/Labels";
 import classnames from "@/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
-import { ModalApi } from "@/controls/Modal";
 import { Button } from "@/controls/Button";
 import {
   ContextMenu,
@@ -31,16 +34,21 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import { CodeDocumentState } from "../services/DocumentService";
-import { incDocumentActivationVersionAction } from "@common/state/actions";
-
-const PROJECT_FILE_NAME = "klive.project";
+import {
+  incDocumentActivationVersionAction,
+  setBuildRootAction
+} from "@common/state/actions";
+import { PROJECT_FILE } from "@common/structs/project-const";
+import { SpaceFiller } from "@/controls/SpaceFiller";
+import { EMPTY_ARRAY } from "@/utils/stablerefs";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   // --- Services used in this component
-  const { messenger, store } = useRendererContext();
+  const { messenger } = useRendererContext();
+  const dispatch = useDispatch();
   const { projectService, documentService } = useAppServices();
 
   // --- The state representing the project tree
@@ -58,6 +66,11 @@ const ExplorerPanel = () => {
   const [selected, setSelected] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
 
+  // --- Information about a project (Is any project open? Is it a Klive project?)
+  const folderPath = useSelector(s => s.project?.folderPath);
+  const isKliveProject = useSelector(s => s.project?.isKliveProject);
+  const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
+
   // --- State and helpers for the selected node's context menu
   const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
   const [contextVisible, setContextVisible] = useState(false);
@@ -70,29 +83,31 @@ const ExplorerPanel = () => {
   const selectedNodeIsProjectFile =
     selectedContextNode &&
     !selectedContextNode?.data.isFolder &&
-    selectedContextNode?.data.name === PROJECT_FILE_NAME &&
+    selectedContextNode?.data.name === PROJECT_FILE &&
     selectedContextNode?.level === 1;
   const selectedNodeIsRoot = !selectedContextNode?.parentNode;
+  const selectedNodeIsBuildRoot = selectedContextNode
+    ? buildRoots.indexOf(selectedContextNode.data.fullPath) >= 0
+    : false;
 
   // --- Is the screen dimmed?
   const dimmed = useSelector(s => s.dimMenu);
 
-  // --- Information about a project (Is any project open? Is it a Klive project?)
-  const folderPath = useSelector(s => s.project?.folderPath);
-  const isKliveProject = useSelector(s => s.project?.isKliveProject);
-
   // --- APIs used to manage the tree view
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
-
-  // --- API to manage dialogs
-  const modalApi = useRef<ModalApi>();
 
   // --- This function refreshes the Explorer tree
   const refreshTree = () => {
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
     vlApi.current.refresh();
+  };
+
+  // --- Saves the current project
+  const saveProject = async () => {
+    await new Promise(r => setTimeout(r, 100));
+    await messenger.sendMessage({ type: "MainSaveProject" });
   };
 
   // --- Let's use this context menu when clicking a project tree node
@@ -150,6 +165,27 @@ const ExplorerPanel = () => {
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => setIsDeleteDialogOpen(true)}
       />
+      {selectedContextNode?.data.canBeBuildRoot && (
+        <>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            text={
+              selectedNodeIsBuildRoot
+                ? "Remove from Build Root"
+                : "Promote to Build Root"
+            }
+            clicked={async () => {
+              dispatch(
+                setBuildRootAction(
+                  selectedContextNode.data.fullPath,
+                  !selectedNodeIsBuildRoot
+                )
+              );
+              await saveProject();
+            }}
+          />
+        </>
+      )}
     </ContextMenu>
   );
 
@@ -344,7 +380,7 @@ const ExplorerPanel = () => {
           if (documentService.isOpen(node.data.fullPath)) {
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
-            store.dispatch(incDocumentActivationVersionAction());
+            dispatch(incDocumentActivationVersionAction());
           } else {
             getAndOpenDocument(node, false);
           }
@@ -381,6 +417,17 @@ const ExplorerPanel = () => {
         <LabelSeparator width={8} />
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
+        <SpaceFiller />
+        {!node.data.isFolder && buildRoots.indexOf(node.data.fullPath) >= 0 && (
+          <div className={styles.rootBuilder}>
+            <Icon
+              iconName='combine'
+              fill='--console-ansi-bright-green'
+              width={16}
+              height={16}
+            />
+          </div>
+        )}
       </div>
     );
   };
@@ -406,9 +453,11 @@ const ExplorerPanel = () => {
       {
         id: node.data.fullPath,
         name: node.data.name,
+        path: node.data.fullPath,
         type: node.data.editor,
         language: node.data.subType,
         iconName: node.data.icon,
+        isReadOnly: node.data.isReadOnly,
         node
       },
       data,

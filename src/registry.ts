@@ -5,6 +5,7 @@ import {
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR
 } from "@common/state/common-ids";
+import { PROJECT_FILE } from "@common/structs/project-const";
 import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./appIde/abstractions/CustomLanguageInfo";
@@ -177,9 +178,10 @@ export const machineRegistry: MachineInfo[] = [
 export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "full",
-    pattern:"klive.project",
+    pattern: PROJECT_FILE,
     editor: CODE_EDITOR,
     subType: "json",
+    isReadOnly: true,
     icon: "@file-project"
   },
   {

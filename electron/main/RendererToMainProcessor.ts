@@ -16,7 +16,7 @@ import {
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
-import { createKliveProject, openFolder, openFolderByPath, resolvePublicFilePath } from "./projects";
+import { createKliveProject, openFolder, openFolderByPath, resolvePublicFilePath, saveKliveProject } from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import { dimMenuAction } from "../../common/state/actions";
@@ -150,6 +150,10 @@ export async function processRendererToMainMessages (
       } catch (err) {
         return errorResponse(err.toString());
       }
+
+    case "MainSaveProject":
+      await saveKliveProject();
+      break;
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

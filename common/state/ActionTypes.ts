@@ -63,6 +63,8 @@ export interface ActionTypes {
 
   OPEN_FOLDER: null;
   CLOSE_FOLDER: null;
+  SET_BUILD_ROOT: null;
+  INC_PROJECT_VERSION: null;
 
   DISPLAY_DIALOG: null;
 }

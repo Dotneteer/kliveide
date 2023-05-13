@@ -288,3 +288,15 @@ export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
   type: "SET_IDE_FONT_SIZE",
   payload: { numValue }
 });
+
+export const setBuildRootAction: ActionCreator = (
+  file: string,
+  flag: boolean
+) => ({
+  type: "SET_BUILD_ROOT",
+  payload: { file, flag }
+});
+
+export const incProjectVersionAction: ActionCreator = () => ({
+  type: "INC_PROJECT_VERSION"
+});

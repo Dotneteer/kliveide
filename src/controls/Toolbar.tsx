@@ -24,6 +24,10 @@ export const Toolbar = () => {
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad ?? false);
 
   const { messenger } = useRendererContext();
+  const saveProject = async () => {
+    await new Promise(r => setTimeout(r, 100));
+    await messenger.sendMessage({ type: "MainSaveProject" });
+  };
 
   return (
     <div className={styles.toolbar}>
@@ -133,7 +137,10 @@ export const Toolbar = () => {
         fill='--color-toolbarbutton'
         selected={showKeyboard}
         title='Show/Hide keyboard'
-        clicked={() => dispatch(showKeyboardAction(!showKeyboard))}
+        clicked={async () => {
+          dispatch(showKeyboardAction(!showKeyboard));
+          await saveProject();
+        }}
       />
       <ToolbarSeparator />
       {!muted && (
@@ -141,7 +148,10 @@ export const Toolbar = () => {
           iconName='mute'
           fill='--color-toolbarbutton'
           title='Mute sound'
-          clicked={() => dispatch(muteSoundAction(true))}
+          clicked={async () => {
+            dispatch(muteSoundAction(true));
+            await saveProject();
+          }}
         />
       )}
       {muted && (
@@ -149,7 +159,10 @@ export const Toolbar = () => {
           iconName='unmute'
           fill='--color-toolbarbutton'
           title='Unmute sound'
-          clicked={() => dispatch(muteSoundAction(false))}
+          clicked={async () => {
+            dispatch(muteSoundAction(false));
+            await saveProject();
+          }}
         />
       )}
       <ToolbarSeparator />
@@ -158,7 +171,10 @@ export const Toolbar = () => {
         fill='--color-toolbarbutton'
         title='Fast LOAD mode'
         selected={fastLoad}
-        clicked={() => dispatch(setFastLoadAction(!fastLoad))}
+        clicked={async () => {
+          dispatch(setFastLoadAction(!fastLoad));
+          await saveProject();
+        }}
       />
       <IconButton
         iconName='reverse-tape'
