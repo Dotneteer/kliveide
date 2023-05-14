@@ -1,9 +1,5 @@
-import {
-  CompilerOptions,
-  CompilerOutput,
-  IZ80CompilerService
-} from "./abstractions";
 
+import { CompilerOptions, CompilerOutput, IZ80CompilerService } from "../../common/abstractions/IZ80CompilerService";
 import { Z80Assembler } from "./assembler";
 import { AssemblerOptions } from "./assembler-in-out";
 

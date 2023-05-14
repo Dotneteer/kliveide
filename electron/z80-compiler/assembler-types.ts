@@ -1,4 +1,3 @@
-import { ExpressionValueType } from "./abstractions";
 import {
   CompareBinPragma,
   Expression,
@@ -8,6 +7,7 @@ import {
   Z80AssemblyLine
 } from "./assembler-tree-nodes";
 import { ErrorCodes } from "./assembler-errors";
+import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
 
 /**
  * Represents the value of an evaluated expression

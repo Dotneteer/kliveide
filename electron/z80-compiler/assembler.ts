@@ -131,7 +131,7 @@ import {
   setRandomSeed
 } from "./expressions";
 import { FixupEntry } from "./fixups";
-import { ExpressionValueType, SpectrumModelType } from "./abstractions";
+import { ExpressionValueType, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 
 /**
  * The file name of a direct text compilation
