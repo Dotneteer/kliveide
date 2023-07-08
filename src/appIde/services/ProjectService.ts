@@ -1,4 +1,4 @@
-import { ITreeNode } from "@/core/tree-node";
+import { ITreeNode, ITreeView } from "@/core/tree-node";
 import { LiteEvent, ILiteEvent } from "@/emu/utils/lite-event";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
@@ -6,6 +6,7 @@ import { IProjectService } from "../abstractions/IProjectService";
 import { ProjectNode } from "../project/project-node";
 
 class ProjectService implements IProjectService {
+  private _tree: ITreeView<ProjectNode>;
   private _oldState: AppState;
   private _projectOpened = new LiteEvent<void>();
   private _projectClosed = new LiteEvent<void>();
@@ -18,8 +19,6 @@ class ProjectService implements IProjectService {
       const newState = store.getState();
       const newFolderPath = newState?.project?.folderPath;
       const oldFolderPath = this._oldState?.project?.folderPath;
-      const newProjectVersion = newState?.project?.projectVersion;
-      const oldProjectVersion = this._oldState?.project?.projectVersion;
       this._oldState = newState;
       if (oldFolderPath !== newFolderPath) {
         if (newFolderPath) {
@@ -29,6 +28,10 @@ class ProjectService implements IProjectService {
         }
       }
     });
+  }
+
+  setProjectTree(tree: ITreeView<ProjectNode>): void {
+    this._tree = tree;
   }
 
   get projectOpened (): ILiteEvent<void> {

@@ -1,5 +1,5 @@
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
@@ -31,8 +31,8 @@ export class OpenFolderCommand extends InteractiveCommandBase {
   }
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const result = await context.messenger.sendMessage({
       type: "MainOpenFolder",
       folder: this.projectFolder

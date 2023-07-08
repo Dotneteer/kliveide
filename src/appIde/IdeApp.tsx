@@ -29,7 +29,7 @@ import { Store } from "@common/state/redux-light";
 import styles from "@styles/app.module.scss";
 import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
-import { IInteractiveCommandService } from "./abstractions/IInteractiveCommandService";
+import { IIdeCommandService } from "./abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import {
   EraseAllBreakpointsCommand,
@@ -206,7 +206,7 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
 // --- Register the interactive commands
 let commandsRegistered = false;
 
-function registerCommands (cmdSrv: IInteractiveCommandService): void {
+function registerCommands (cmdSrv: IIdeCommandService): void {
   if (commandsRegistered) return;
 
   commandsRegistered = true;

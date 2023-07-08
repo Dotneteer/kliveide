@@ -1,8 +1,8 @@
 import { EmuGetMemoryResponse } from "@common/messaging/main-to-emu";
 import { COMMAND_RESULT_EDITOR } from "@common/state/common-ids";
 import { CommandResultData } from "../abstractions/CommandResultData";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import {
   toHexa4,
   writeSuccessMessage,
@@ -15,6 +15,8 @@ import {
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
+import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { Token } from "../services/command-parser";
 
 let disassemblyIndex = 1;
 
@@ -22,16 +24,26 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   readonly id = "dis";
   readonly description =
     "Disassembles the specified memory section. " +
-    "Options: '-c': concise output; '-s': close with semicolon; " +
-    "'-lc': terminate labels with colon";
-  readonly usage = "dis <start> <end> [-c] [-s] [-lc]";
+    "Options: '-c': concise output; '-lc': terminate labels with colon";
+  readonly usage = "dis <start> <end> [-c] [-lc]";
   readonly aliases = [];
 
   protected extraArgCount: number;
 
+  conciseMode = false;
+  useColons = false;
+
+  async validateArgs(
+    args: Token[]
+  ): Promise<ValidationMessage | ValidationMessage[]> {
+    this.conciseMode = args.some(t => t.text === "-c");
+    this.useColons = args.some(t => t.text === "-lc");
+    return [];
+  }
+  
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const fromH = toHexa4(this.startAddress);
     const toH = toHexa4(this.endAddress);
     const buffer = await this.getDisassembly(context);
@@ -44,7 +56,8 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
         name: `Disassembly ($${fromH}-$${toH})`,
         type: COMMAND_RESULT_EDITOR,
         iconName: "disassembly-icon",
-        iconFill: "--console-ansi-bright-green"
+        iconFill: "--console-ansi-bright-green",
+        viewVersion: 0
       },
       {
         title,
@@ -62,11 +75,8 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   }
 
   async getDisassembly (
-    context: InteractiveCommandContext
+    context: IdeCommandContext
   ): Promise<OutputPaneBuffer> {
-    const conciseMode = context.argTokens.some(t => t.text === "-c");
-    const useSemicolons = context.argTokens.some(t => t.text === "-s");
-    const useColons = context.argTokens.some(t => t.text === "-lc");
 
     // --- Get the memory
     const response = (await context.messenger.sendMessage({
@@ -94,20 +104,20 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
 
     const buffer = new OutputPaneBuffer(0x1_0000);
     disassItems.forEach(item => {
-      buffer.resetColor();
-      if (!conciseMode) {
+      buffer.resetStyle();
+      if (!this.conciseMode) {
         buffer.write(`${toHexa4(item.address)} `);
         buffer.write(item.opCodes.padEnd(13, " "));
       }
       buffer.color("green");
       buffer.write(
         (item.hasLabel
-          ? `L${toHexa4(item.address)}${useColons ? ":" : ""}`
+          ? `L${toHexa4(item.address)}${this.useColons ? ":" : ""}`
           : ""
         ).padEnd(12, " ")
       );
       buffer.color("bright-cyan");
-      buffer.writeLine(`${item.instruction}${useSemicolons ? ";" : ""}`);
+      buffer.writeLine(item.instruction);
     });
     return buffer;
   }

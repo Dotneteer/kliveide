@@ -1,8 +1,9 @@
-import { ITreeNode } from "@/core/tree-node";
+import { ITreeNode, ITreeView } from "@/core/tree-node";
 import { ILiteEvent } from "@/emu/utils/lite-event";
 import { ProjectNode } from "../project/project-node";
 
 export type IProjectService = {
+  setProjectTree: (tree: ITreeView<ProjectNode>) => void;
   signItemAdded: (node: ITreeNode<ProjectNode>) => void;
   signItemRenamed: (oldName: string, node: ITreeNode<ProjectNode>) => void;
   signItemDeleted: (node: ITreeNode<ProjectNode>) => void;

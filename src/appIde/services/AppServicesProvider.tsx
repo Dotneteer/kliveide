@@ -4,7 +4,7 @@ import { useRendererContext } from "@/core/RendererProvider";
 import { createUiService } from "@/core/UiServices";
 import { useContext, useRef, useEffect, createContext } from "react";
 import { createDocumentService } from "./DocumentService";
-import { createInteractiveCommandsService } from "./InteractiveCommandService";
+import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
 

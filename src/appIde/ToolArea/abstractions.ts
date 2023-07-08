@@ -57,7 +57,7 @@ export interface IOutputBuffer {
   /**
    * Sets the default color
    */
-  resetColor(): void;
+  resetStyle(): void;
 
   /**
    * Sets the output to the specified color

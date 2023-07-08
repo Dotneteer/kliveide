@@ -493,6 +493,7 @@ const ExplorerPanel = () => {
         // --- Folder tree found in the cache
         setTree(cachedTree);
         setVisibleNodes(cachedTree.getVisibleNodes());
+        projectService.setProjectTree(cachedTree);
         return;
       }
 
@@ -508,6 +509,7 @@ const ExplorerPanel = () => {
       const projectTree = buildProjectTree(dir);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
+      projectService.setProjectTree(projectTree);
       folderCache.set(folderPath, projectTree);
     })();
   }, [folderPath]);

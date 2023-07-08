@@ -1,5 +1,5 @@
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { commandSuccess } from "../services/interactive-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
@@ -9,8 +9,8 @@ export class ClearScreenCommand extends CommandWithNoArgBase {
   readonly usage = "cls";
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     context.output.clear();
     return commandSuccess;
   }

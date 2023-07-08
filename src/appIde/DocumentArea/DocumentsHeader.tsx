@@ -196,7 +196,7 @@ export const DocumentsHeader = () => {
           {(docsToDisplay ?? []).map((d, idx) => {
             // --- Take care of unique names
             const docName = docsToDisplay.find(
-              doc => doc.name === d.name && doc.id !== d.id
+              doc => doc.name === d.name && doc.id !== d.id && doc.path
             )
               ? d.path
               : d.name;

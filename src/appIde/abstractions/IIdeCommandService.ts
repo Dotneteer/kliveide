@@ -1,13 +1,13 @@
 import { IOutputBuffer } from "../ToolArea/abstractions";
-import { InteractiveCommandContext } from "./InteractiveCommandContext";
-import { InteractiveCommandInfo } from "./InteractiveCommandInfo";
-import { InteractiveCommandResult } from "./InteractiveCommandResult";
+import { IdeCommandContext } from "./IdeCommandContext";
+import { IdeCommandInfo } from "./IdeCommandInfo";
+import { IdeCommandResult } from "./IdeCommandResult";
 import { ValidationMessage } from "./ValidationMessage";
 
 /**
  * This interface defines the functions managing the interactive commands within the IDE
  */
-export interface IInteractiveCommandService {
+export interface IIdeCommandService {
   /**
    * Gets the output buffer of the interactive commands
    */
@@ -17,26 +17,26 @@ export interface IInteractiveCommandService {
    * Registers a command
    * @param command Command to register
    */
-  registerCommand(command: InteractiveCommandInfo): void;
+  registerCommand(command: IdeCommandInfo): void;
 
   /**
    * Retrieves all registered commands
    */
-  getRegisteredCommands(): InteractiveCommandInfo[];
+  getRegisteredCommands(): IdeCommandInfo[];
 
   /**
    * Gets the information about the command with the specified ID
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo(id: string): InteractiveCommandInfo | undefined;
+  getCommandInfo(id: string): IdeCommandInfo | undefined;
 
   /**
    * Gets the information about the command with the specified ID or alias
    * @param idOrAlias
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandByIdOrAlias(idOrAlias: string): InteractiveCommandInfo | undefined;
+  getCommandByIdOrAlias(idOrAlias: string): IdeCommandInfo | undefined;
 
   /**
    * Gets the command with the specified index from the command history
@@ -61,7 +61,7 @@ export interface IInteractiveCommandService {
   executeCommand(
     command: string,
     buffer: IOutputBuffer
-  ): Promise<InteractiveCommandResult>;
+  ): Promise<IdeCommandResult>;
 
   /**
    * Displays the specified trace messages
@@ -70,6 +70,6 @@ export interface IInteractiveCommandService {
    */
   displayTraceMessages(
     messages: ValidationMessage[],
-    context: InteractiveCommandContext
+    context: IdeCommandContext
   ): void;
 }

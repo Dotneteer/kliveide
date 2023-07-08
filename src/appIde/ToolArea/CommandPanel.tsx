@@ -124,7 +124,7 @@ const CommandPanel = () => {
     const output = buffer.current;
     setExecuting(true);
     dispatch(setIdeStatusMessageAction("Executing command"));
-    output.resetColor();
+    output.resetStyle();
     output.writeLine(`$ ${command}`);
     setContents(buffer.current.getContents().slice(0));
     const result = await interactiveCommandsService.executeCommand(
@@ -137,7 +137,7 @@ const CommandPanel = () => {
       if (result.finalMessage) {
         output.color("bright-red");
         output.writeLine(result.finalMessage);
-        output.resetColor();
+        output.resetStyle();
       }
       dispatch(setIdeStatusMessageAction("Command executed with error", false));
     }

@@ -43,9 +43,13 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Sets the default color
    */
-  resetColor (): void {
+  resetStyle (): void {
     this._color = undefined;
     this._bgColor = undefined;
+    this._isBold = false;
+    this._isItalic = false;
+    this._isStrikethru = false;
+    this._isUnderline = false;
   }
 
   /**

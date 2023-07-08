@@ -2,10 +2,10 @@ import { AppServices } from "@/abstractions/AppServices";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
-import { IInteractiveCommandService } from "../abstractions/IInteractiveCommandService";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandInfo } from "../abstractions/InteractiveCommandInfo";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IIdeCommandService } from "../abstractions/IIdeCommandService";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandInfo } from "../abstractions/IdeCommandInfo";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { IOutputBuffer } from "../ToolArea/abstractions";
@@ -15,8 +15,8 @@ import { InteractiveCommandBase } from "./interactive-commands";
 
 const MAX_HISTORY = 1024;
 
-class InteractiveCommandService implements IInteractiveCommandService {
-  private readonly _commands: InteractiveCommandInfo[] = [];
+class IdeCommandService implements IIdeCommandService {
+  private readonly _commands: IdeCommandInfo[] = [];
   private readonly _buffer = new OutputPaneBuffer();
   private _history: string[] = [];
   private _appServices: AppServices;
@@ -65,7 +65,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * Registers a command
    * @param command Command to register
    */
-  registerCommand (command: InteractiveCommandInfo): void {
+  registerCommand (command: IdeCommandInfo): void {
     if (this.getCommandInfo(command.id)) {
       throw new Error(
         `Command with ID ${command.id} has already been registered.`
@@ -77,7 +77,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
   /**
    * Retrieves all registered commands
    */
-  getRegisteredCommands (): InteractiveCommandInfo[] {
+  getRegisteredCommands (): IdeCommandInfo[] {
     return this._commands.slice(0);
   }
 
@@ -86,7 +86,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo (id: string): InteractiveCommandInfo | undefined {
+  getCommandInfo (id: string): IdeCommandInfo | undefined {
     return this._commands.find(c => c.id === id);
   }
 
@@ -95,7 +95,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * @param idOrAlias
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandByIdOrAlias (idOrAlias: string): InteractiveCommandInfo | undefined {
+  getCommandByIdOrAlias (idOrAlias: string): IdeCommandInfo | undefined {
     return this._commands.find(
       c =>
         c.id === idOrAlias ||
@@ -110,7 +110,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
   async executeCommand (
     command: string,
     buffer: IOutputBuffer
-  ): Promise<InteractiveCommandResult> {
+  ): Promise<IdeCommandResult> {
     // --- Add command to history
     this._history.push(command);
     if (this._history.length > MAX_HISTORY) {
@@ -137,7 +137,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
     }
 
     // --- Execute the registered command
-    const context: InteractiveCommandContext = {
+    const context: IdeCommandContext = {
       commandtext: command,
       store: this.store,
       argTokens: tokens.slice(1),
@@ -155,7 +155,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    */
   displayTraceMessages (
     messages: ValidationMessage[],
-    context: InteractiveCommandContext
+    context: IdeCommandContext
   ): void {
     for (var trace of messages) {
       context.output.color(
@@ -208,11 +208,11 @@ class HelpCommand extends InteractiveCommandBase {
    * Executes the command within the specified context
    */
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     let count = 0;
     const cmdSrv = context.service.interactiveCommandsService;
-    const selectedCommands: InteractiveCommandInfo[] = this._arg
+    const selectedCommands: IdeCommandInfo[] = this._arg
       ? cmdSrv
           .getRegisteredCommands()
           .filter(
@@ -261,5 +261,5 @@ export function createInteractiveCommandsService (
   store: Store<AppState>,
   messenger: MessengerBase
 ) {
-  return new InteractiveCommandService(store, messenger);
+  return new IdeCommandService(store, messenger);
 }

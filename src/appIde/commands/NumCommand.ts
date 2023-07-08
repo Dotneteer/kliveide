@@ -1,5 +1,5 @@
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess
@@ -18,8 +18,8 @@ export class NumCommand extends CommandWithSingleIntegerBase {
   protected extraArgCount = 0;
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     writeSuccessMessage(
       context.output,
       `Number: ${this.arg}, $${this.arg

@@ -37,7 +37,7 @@ export async function processMainToIdeMessages (
       // --- Display the output message
       const buffer = outputPaneService.getOutputPaneBuffer(message.pane);
       if (!buffer) break;
-      buffer.resetColor();
+      buffer.resetStyle();
       if (message.color !== undefined) buffer.color(message.color);
       if (message.backgroundColor !== undefined)
         buffer.backgroundColor(message.color);

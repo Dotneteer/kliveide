@@ -89,7 +89,16 @@ export const OutputLine = ({ spans }: OutputContentLine) => {
       cursor: s.actionable ? "pointer" : undefined
     };
     return (
-      <span key={idx} style={style}>
+      <span key={idx} 
+        style={style}
+        onClick={() => {
+          if (s.actionable) {
+            console.log("actionable", s.data);
+            if (typeof s.data === "function") {
+              s.data();
+            }
+          }
+        }}>
         {s.text}
       </span>
     );

@@ -1,7 +1,7 @@
 /**
  * Describes the result of a command
  */
-export type InteractiveCommandResult = {
+export type IdeCommandResult = {
   /**
    * Indicates if the command execution was successful
    */

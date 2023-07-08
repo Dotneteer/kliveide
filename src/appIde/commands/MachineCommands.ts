@@ -4,8 +4,8 @@ import {
   EmuGetCpuStateResponse,
   MachineCommand
 } from "@common/messaging/main-to-emu";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess,
@@ -21,8 +21,8 @@ export class StartMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":s"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.None ||
@@ -46,8 +46,8 @@ export class PauseMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":p"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (machineState === MachineControllerState.Running) {
       const cpuState = (await context.messenger.sendMessage({
@@ -71,8 +71,8 @@ export class StopMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":h"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.Running ||
@@ -99,8 +99,8 @@ export class RestartMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":r"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.Running ||
@@ -121,8 +121,8 @@ export class StartDebugMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":d"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.None ||
@@ -146,8 +146,8 @@ export class StepIntoMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     return stepCommand(context, "stepInto", "Step into");
   }
 }
@@ -159,8 +159,8 @@ export class StepOverMachineCommand extends CommandWithNoArgBase {
   readonly aliases = ["."];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     return stepCommand(context, "stepOver", "Step over");
   }
 }
@@ -172,17 +172,17 @@ export class StepOutMachineCommand extends CommandWithNoArgBase {
   readonly aliases = [":o"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     return stepCommand(context, "stepOut", "Step out");
   }
 }
 
 async function stepCommand (
-  context: InteractiveCommandContext,
+  context: IdeCommandContext,
   cmd: MachineCommand,
   cmdName: string
-): Promise<InteractiveCommandResult> {
+): Promise<IdeCommandResult> {
   const machineState = context.store.getState()?.emulatorState?.machineState;
   if (machineState === MachineControllerState.Paused) {
     const cpuState = (await context.messenger.sendMessage({

@@ -1,6 +1,6 @@
 import { MainCompileResponse } from "@common/messaging/any-to-main";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { getFileTypeEntry } from "../project/project-node";
 import {
   writeMessage,
@@ -16,8 +16,8 @@ export class CompileCommand extends CommandWithNoArgBase {
   readonly aliases = ["co"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     // --- Check if we have a build root to compile
     const state = context.store.getState();
     if (!state.project?.isKliveProject) {
@@ -54,9 +54,22 @@ export class CompileCommand extends CommandWithNoArgBase {
     if ((errors?.length ?? 0) > 0) {
       for (let i = 0; i < response.result.errors.length; i++) {
         const err = response.result.errors[i];
-        context.output.backgroundColor("bright-red");
-        context.output.writeLine(err.message);
-        context.output.resetColor();
+        context.output.color("bright-red");
+        context.output.bold(true);
+        context.output.write(`Error ${err.errorCode}: ${err.message}`);
+        context.output.write(" - ");
+        context.output.bold(false);
+        context.output.color("bright-cyan");
+        context.output.underline(true);
+        context.output.writeLine(
+          `${err.fileName} (${err.line}:${err.startColumn})`, 
+          () => {
+            const docSrv = context.service.documentService;
+            console.log("active", docSrv.getActiveDocumentId())
+            console.log("doc", err.fileName);
+          }, 
+        true);
+        context.output.resetStyle();
       }
       return commandError("Compilation failed.");
     }
