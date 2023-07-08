@@ -67,4 +67,8 @@ export interface ActionTypes {
   INC_PROJECT_VERSION: null;
 
   DISPLAY_DIALOG: null;
+
+  RESET_COMPILE: null;
+  START_COMPILE: null;
+  END_COMPILE: null;
 }

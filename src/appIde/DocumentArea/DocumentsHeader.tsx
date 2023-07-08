@@ -110,7 +110,7 @@ export const DocumentsHeader = () => {
 
     // --- Check for build root
     setSelectedIsBuildRoot(
-      buildRoots.indexOf(docsToDisplay[activeDocIndex]?.node?.data?.fullPath) >=
+      buildRoots.indexOf(docsToDisplay[activeDocIndex]?.node?.data?.projectPath) >=
         0
     );
   }, [activeDocIndex, headerVersion, docsToDisplay, buildRoots]);

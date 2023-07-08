@@ -25,10 +25,9 @@ import {
   displayDialogAction
 } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
-import { CODE_EDITOR } from "@common/state/common-ids";
 import { Store } from "@common/state/redux-light";
 import styles from "@styles/app.module.scss";
-import { app, ipcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { IInteractiveCommandService } from "./abstractions/IInteractiveCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
@@ -64,6 +63,7 @@ import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
+import { CompileCommand } from "./commands/CompileCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -232,4 +232,6 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new OpenFolderCommand());
   cmdSrv.registerCommand(new NewProjectCommand());
   cmdSrv.registerCommand(new CloseFolderCommand());
+
+  cmdSrv.registerCommand(new CompileCommand());
 }

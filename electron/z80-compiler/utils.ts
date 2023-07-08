@@ -130,5 +130,5 @@ export function readTextFile (filename: string): string {
   if (sourceText.length < 4) {
     return sourceText;
   }
-  return sourceText.charCodeAt(0) >= 0xbf00 ? sourceText.substr(1) : sourceText;
+  return sourceText.charCodeAt(0) >= 0xbf00 ? sourceText.substring(1) : sourceText;
 }

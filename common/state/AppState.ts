@@ -1,6 +1,7 @@
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { DocumentState } from "../abstractions/DocumentState";
 import { ToolState } from "../abstractions/ToolState";
+import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
 
 /**
  * Represents the state of the entire application
@@ -21,6 +22,7 @@ export type AppState = {
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   project?: IdeProject;
+  compilation?: CompilationState;
 };
 
 /**
@@ -91,6 +93,16 @@ export type SideBarPanelState = {
 };
 
 /**
+ * The current state of compilation
+ */
+export type CompilationState = {
+  inProgress?: boolean;
+  filename?: string;
+  result?: KliveCompilerOutput;
+  failed?: string;
+};
+
+/**
  * The initial application state
  */
 export const initialAppState: AppState = {
@@ -135,5 +147,10 @@ export const initialAppState: AppState = {
   },
   project: {
     projectVersion: 0,
-  }
+  },
+  compilation: {
+    inProgress: false,
+    filename: null,
+    result: null,
+  },
 };

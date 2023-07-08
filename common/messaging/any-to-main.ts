@@ -1,5 +1,7 @@
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 import { MessageBase } from "./messages-core";
+import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
+import { CompilerOptions } from "@common/abstractions/IZ80CompilerService";
 
 /**
  * The client sends a text file read request
@@ -117,6 +119,17 @@ export interface MainSaveProjectRequest extends MessageBase {
 }
 
 /**
+ * The client wants to compile a particular file
+ */
+export interface MainCompileFileRequest extends MessageBase {
+  type: "MainCompileFile";
+  filename: string;
+  language: string;
+  options?: CompilerOptions;
+  params?: any;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -155,6 +168,12 @@ export interface MainCreateKliveProjectResponse extends MessageBase {
 export interface MainShowOpenFolderDialogResponse extends MessageBase {
   type: "MainShowOpenFolderDialogResponse";
   folder?: string;
+}
+
+export interface MainCompileResponse extends MessageBase {
+  type: "MainCompileFileResponse";
+  result: KliveCompilerOutput
+  failed?: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

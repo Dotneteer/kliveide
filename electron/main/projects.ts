@@ -5,6 +5,7 @@ import {
   maximizeToolsAction,
   openFolderAction,
   primaryBarOnRightAction,
+  setBuildRootAction,
   setIdeFontSizeAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
@@ -134,6 +135,7 @@ export function openFolderByPath (projectFolder: string): string | null {
       disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
       disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
+      disp(setBuildRootAction(projectStruct.builder?.roots?.[0], !!projectStruct.builder?.roots?.[0]));
 
     } catch {
       // --- Intentionally ingored

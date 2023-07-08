@@ -87,7 +87,7 @@ const ExplorerPanel = () => {
     selectedContextNode?.level === 1;
   const selectedNodeIsRoot = !selectedContextNode?.parentNode;
   const selectedNodeIsBuildRoot = selectedContextNode
-    ? buildRoots.indexOf(selectedContextNode.data.fullPath) >= 0
+    ? buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0
     : false;
 
   // --- Is the screen dimmed?
@@ -177,7 +177,7 @@ const ExplorerPanel = () => {
             clicked={async () => {
               dispatch(
                 setBuildRootAction(
-                  selectedContextNode.data.fullPath,
+                  selectedContextNode.data.projectPath,
                   !selectedNodeIsBuildRoot
                 )
               );
@@ -418,7 +418,7 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
         <SpaceFiller />
-        {!node.data.isFolder && buildRoots.indexOf(node.data.fullPath) >= 0 && (
+        {!node.data.isFolder && buildRoots.indexOf(node.data.projectPath) >= 0 && (
           <div className={styles.rootBuilder}>
             <Icon
               iconName='combine'
@@ -458,7 +458,8 @@ const ExplorerPanel = () => {
         language: node.data.subType,
         iconName: node.data.icon,
         isReadOnly: node.data.isReadOnly,
-        node
+        node,
+        viewVersion: 0
       },
       data,
       isTemporary
