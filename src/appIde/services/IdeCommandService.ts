@@ -152,7 +152,19 @@ class IdeCommandService implements IIdeCommandService {
       service: this._appServices,
       messenger: this.messenger
     };
-    return await commandInfo.execute(context);
+    const commandResult = await commandInfo.execute(context);
+    if (commandResult.success && commandResult.finalMessage) {
+      buffer.color("bright-green");
+      buffer.writeLine(commandResult.finalMessage);
+      buffer.resetStyle();
+    } else {
+      buffer.color("bright-red");
+      buffer.writeLine(
+        commandResult.finalMessage ?? "Command execution failed."
+      );
+      buffer.resetStyle();
+    }
+    return commandResult;
   }
 
   /**
@@ -193,6 +205,27 @@ class IdeCommandService implements IIdeCommandService {
    */
   getBuffer (): IOutputBuffer {
     return this._buffer;
+  }
+
+  /**
+   * Displays a navigation action to the specified project file
+   * @param context Context to display the messages in
+   * @param file Filename
+   * @param line Optional line number
+   * @param column Optional column number
+   */
+  writeNavigationAction (context: IdeCommandContext, file: string, line?: number, column?: number): void {
+    context.output.write(
+      `${file}${line != undefined ?` (${line}:${column + 1})` : ""}`,
+      async () => {
+        await this.executeCommand(
+          `nav ${file} ${line != undefined ? line : ""} ${
+            column != undefined ? (column + 1).toString() : ""
+          }`
+        );
+      },
+      true
+    );
   }
 }
 

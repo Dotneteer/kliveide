@@ -58,7 +58,8 @@ export async function processMainToIdeMessages (
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
-            type: MEMORY_EDITOR
+            type: MEMORY_EDITOR,
+            viewVersion: 0
           },
           undefined,
           false
@@ -75,7 +76,8 @@ export async function processMainToIdeMessages (
           {
             id: DISASSEMBLY_PANEL_ID,
             name: "Z80 Disassembly",
-            type: DISASSEMBLY_EDITOR
+            type: DISASSEMBLY_EDITOR,
+            viewVersion: 0
           },
           undefined,
           false
@@ -92,7 +94,8 @@ export async function processMainToIdeMessages (
           {
             id: BASIC_PANEL_ID,
             name: "BASIC Listing",
-            type: BASIC_EDITOR
+            type: BASIC_EDITOR,
+            viewVersion: 0
           },
           undefined,
           false

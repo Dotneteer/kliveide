@@ -1,5 +1,9 @@
 import { ScrollViewer, ScrollViewerApi } from "@/controls/ScrollViewer";
-import { TabButton, TabButtonSeparator, TabButtonSpace } from "@/controls/TabButton";
+import {
+  TabButton,
+  TabButtonSeparator,
+  TabButtonSpace
+} from "@/controls/TabButton";
 import {
   useDispatch,
   useRendererContext,
@@ -19,11 +23,15 @@ import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 import { TextContentsResponse } from "@common/messaging/any-to-main";
 import { EMPTY_ARRAY } from "@/utils/stablerefs";
-import { ToolbarSeparator } from "@/controls/ToolbarSeparator";
 
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
-  const { documentService, projectService } = useAppServices();
+  const {
+    documentService,
+    projectService,
+    outputPaneService,
+    ideCommandsService
+  } = useAppServices();
   const { messenger } = useRendererContext();
   const ref = useRef<HTMLDivElement>();
   const handlersInitialized = useRef(false);
@@ -110,8 +118,9 @@ export const DocumentsHeader = () => {
 
     // --- Check for build root
     setSelectedIsBuildRoot(
-      buildRoots.indexOf(docsToDisplay[activeDocIndex]?.node?.data?.projectPath) >=
-        0
+      buildRoots.indexOf(
+        docsToDisplay[activeDocIndex]?.node?.data?.projectPath
+      ) >= 0
     );
   }, [activeDocIndex, headerVersion, docsToDisplay, buildRoots]);
 
@@ -253,7 +262,11 @@ export const DocumentsHeader = () => {
             <TabButtonSeparator />
             <TabButton
               iconName='combine'
-              title="Compile code"
+              title='Compile code'
+              clicked={async () => {
+                const buildPane = outputPaneService.getOutputPaneBuffer("build");
+                const compResult = await ideCommandsService.executeCommand("compile", buildPane);
+              }}
             />
             <TabButtonSpace />
             <TabButton

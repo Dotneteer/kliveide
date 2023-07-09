@@ -157,6 +157,13 @@ export interface IDocumentService {
    * @param id
    */
   getDocumentData(id: string): any;
+
+  /**
+   * Sets the API of the specified document
+   * @param id Document ID
+   * @param api API instance
+   */
+  setDocumentApi(id: string, api: any): void;
 }
 
 /**
@@ -342,7 +349,6 @@ class DocumentService implements IDocumentService {
       await delay(50);
       waitTime += 50;
     }
-    console.log("Not open");
     return null;
   }
 
@@ -399,6 +405,7 @@ class DocumentService implements IDocumentService {
         data.dispose();
       }
       this.documentData.delete(id);
+      console.log("deleting document data", id);
     }
   }
 
@@ -501,6 +508,18 @@ class DocumentService implements IDocumentService {
    */
   getDocumentData (id: string): any {
     return this.documentData.get(id);
+  }
+
+    /**
+   * Sets the API of the specified document
+   * @param id Document ID
+   * @param api API instance
+   */
+  setDocumentApi(id: string, api: any): void {
+    const doc = this.getDocument(id);
+    if (doc) {
+      doc.api = api;
+    }
   }
 }
 

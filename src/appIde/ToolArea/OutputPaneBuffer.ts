@@ -117,7 +117,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
       background: this._bgColor,
       isBold: this._isBold,
       isItalic: this._isItalic,
-      isUnderline: this._isUnderline,
+      isUnderline: this._isUnderline || actionable,
       isStrikeThru: this._isStrikethru,
       actionable,
       data

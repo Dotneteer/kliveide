@@ -134,11 +134,6 @@ const CommandPanel = () => {
     if (result.success) {
       dispatch(setIdeStatusMessageAction("Command executed", true));
     } else {
-      if (result.finalMessage) {
-        output.color("bright-red");
-        output.writeLine(result.finalMessage);
-        output.resetStyle();
-      }
       dispatch(setIdeStatusMessageAction("Command executed with error", false));
     }
     setExecuting(false);

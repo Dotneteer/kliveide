@@ -34,9 +34,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
   /**
    * Executes the command within the specified context
    */
-  async execute(
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Validate the arguments and display potential issues
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
@@ -73,9 +71,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
    * Executes the command after argument validation
    * @param context Command execution context
    */
-  async doExecute(
-    _context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute(_context: IdeCommandContext): Promise<IdeCommandResult> {
     return {
       success: true,
       finalMessage: "This command has been executed successfully."
@@ -137,6 +133,13 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
  * Represents successful command execution
  */
 export const commandSuccess: IdeCommandResult = { success: true };
+
+/**
+ * Represents successful command execution
+ */
+export function commandSuccessWith(msg: string): IdeCommandResult {
+  return { success: true, finalMessage: msg };
+}
 
 /**
  * Creates a message with the specified count as the expected number of arguments.

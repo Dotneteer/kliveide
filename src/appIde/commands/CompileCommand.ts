@@ -3,9 +3,8 @@ import { IdeCommandContext } from "../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { getFileTypeEntry } from "../project/project-node";
 import {
-  writeMessage,
-  commandSuccess,
-  commandError
+  commandError,
+  commandSuccessWith
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
@@ -16,6 +15,10 @@ export class CompileCommand extends CommandWithNoArgBase {
   readonly aliases = ["co"];
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    // --- Shortcuts
+    const out = context.output;
+    const ideCmd = context.service.ideCommandsService;
+
     // --- Check if we have a build root to compile
     const state = context.store.getState();
     if (!state.project?.isKliveProject) {
@@ -31,6 +34,12 @@ export class CompileCommand extends CommandWithNoArgBase {
     const language = getFileTypeEntry(fullPath)?.subType;
 
     // --- Compile the build root
+    out.color("bright-blue");
+    out.write("Start compiling ");
+    ideCmd.writeNavigationAction(context, buildRoot);
+    out.writeLine();
+    out.resetStyle();
+
     const response = await context.messenger.sendMessage<MainCompileResponse>({
       type: "MainCompileFile",
       filename: fullPath,
@@ -52,37 +61,26 @@ export class CompileCommand extends CommandWithNoArgBase {
     if ((errors?.length ?? 0) > 0) {
       for (let i = 0; i < response.result.errors.length; i++) {
         const err = response.result.errors[i];
-        context.output.color("bright-red");
-        context.output.bold(true);
-        context.output.write(`Error ${err.errorCode}: ${err.message}`);
-        context.output.write(" - ");
-        context.output.bold(false);
-        context.output.color("bright-cyan");
-        context.output.underline(true);
-        context.output.writeLine(
-          `${err.fileName} (${err.line}:${err.startColumn})`,
-          async () => {
-            await context.service.ideCommandsService.executeCommand(
-              `nav ${err.fileName} ${err.line != undefined ? err.line : ""} ${
-                err.startColumn != undefined ? (err.startColumn + 1).toString() : ""
-              }`
-            );
-            const docSrv = context.service.documentService;
-          },
-          true
-        );
-        context.output.resetStyle();
+        out.color("bright-red");
+        out.bold(true);
+        out.write(`Error ${err.errorCode}: ${err.message}`);
+        out.write(" - ");
+        out.bold(false);
+        out.color("bright-cyan");
+        ideCmd.writeNavigationAction(context, err.fileName, err.line, err.startColumn)
+        out.writeLine();
+        out.resetStyle();
       }
-      return commandError("Compilation failed.");
+      return commandError(
+        `Compilation failed with ${errors.length} error${
+          errors.length > 1 ? "s" : ""
+        }.`
+      );
     }
 
     // --- Compilation ok.
-    writeMessage(
-      context.output,
-      `Project file ${buildRoot} successfully compiled.`,
-      "green"
+    return commandSuccessWith(
+      `Project file successfully compiled.`
     );
-
-    return commandSuccess;
   }
 }

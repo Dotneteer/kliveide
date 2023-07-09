@@ -67,13 +67,13 @@ export interface IIdeCommandService {
   ): Promise<IdeCommandResult>;
 
   /**
-   * Executes the specified command line 
+   * Executes the specified command line
    * @param command Command to execute
    * @param buffer Optional output buffer
    */
   executeCommand(
     command: string,
-    buffer?: IOutputBuffer,
+    buffer?: IOutputBuffer
   ): Promise<IdeCommandResult>;
 
   /**
@@ -84,5 +84,19 @@ export interface IIdeCommandService {
   displayTraceMessages(
     messages: ValidationMessage[],
     context: IdeCommandContext
+  ): void;
+
+  /**
+   * Displays a navigation action to the specified project file
+   * @param context Context to display the messages in
+   * @param file Filename
+   * @param line Optional line number
+   * @param column Optional column number
+   */
+  writeNavigationAction(
+    context: IdeCommandContext,
+    file: string,
+    line?: number,
+    column?: number
   ): void;
 }

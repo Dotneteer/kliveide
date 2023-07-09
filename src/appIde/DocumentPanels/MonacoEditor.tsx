@@ -172,6 +172,7 @@ export const MonacoEditor = ({ document, value, viewState, apiLoaded }: EditorPr
       value: editor.current.getValue(),
       viewState: editor.current.saveViewState()
     };
+    console.log("Saving state", data)
     documentService.setDocumentData(document.id, data);
   };
 
