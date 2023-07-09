@@ -7,6 +7,7 @@ export const createCodeEditorPanel = ({ document, data }: DocumentProps) => {
       document={document}
       value={data?.value}
       viewState={data?.viewState}
+      apiLoaded={(api) => document.api = api}
     />
   );
 };

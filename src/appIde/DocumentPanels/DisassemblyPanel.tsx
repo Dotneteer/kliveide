@@ -20,7 +20,7 @@ import { setIdeStatusMessageAction } from "@common/state/actions";
 import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
-import { toHexa4 } from "../services/interactive-commands";
+import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
   DisassemblyItem,

@@ -5,7 +5,7 @@ import {
   commandError,
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
 export class CloseFolderCommand extends CommandWithNoArgBase {

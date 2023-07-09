@@ -11,7 +11,7 @@ import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand, Token } from "./command-parser";
-import { InteractiveCommandBase } from "./interactive-commands";
+import { IdeCommandBase } from "./ide-commands";
 
 const MAX_HISTORY = 1024;
 
@@ -107,16 +107,23 @@ class IdeCommandService implements IIdeCommandService {
    * Executes the specified command line
    * @param command Command to execute
    */
-  async executeCommand (
+  async executeInteractiveCommand (
     command: string,
-    buffer: IOutputBuffer
+    buffer?: IOutputBuffer,
+    useHistory = true
   ): Promise<IdeCommandResult> {
+    // --- Create a buffer if that does not exists
+    buffer ??= new OutputPaneBuffer();
+
     // --- Add command to history
-    this._history.push(command);
-    if (this._history.length > MAX_HISTORY) {
-      this._history = this._history.slice(1);
+    if (useHistory) {
+      this._history.push(command);
+      if (this._history.length > MAX_HISTORY) {
+        this._history = this._history.slice(1);
+      }
     }
 
+    // --- Command must be syntactically valid
     const tokens = parseCommand(command);
     if (tokens.length === 0) {
       // --- No token, no command to execute
@@ -149,6 +156,18 @@ class IdeCommandService implements IIdeCommandService {
   }
 
   /**
+   * Executes the specified command line
+   * @param command Command to execute
+   * @param buffer Optional output buffer
+   */
+  executeCommand (
+    command: string,
+    buffer?: IOutputBuffer
+  ): Promise<IdeCommandResult> {
+    return this.executeInteractiveCommand(command, buffer, false);
+  }
+
+  /**
    * Displays the specified trace messages
    * @param messages Trace messages to display
    * @param context Context to display the messages in
@@ -177,7 +196,7 @@ class IdeCommandService implements IIdeCommandService {
   }
 }
 
-class HelpCommand extends InteractiveCommandBase {
+class HelpCommand extends IdeCommandBase {
   private _arg: string | null = null;
 
   readonly id = "help";
@@ -207,11 +226,9 @@ class HelpCommand extends InteractiveCommandBase {
   /**
    * Executes the command within the specified context
    */
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     let count = 0;
-    const cmdSrv = context.service.interactiveCommandsService;
+    const cmdSrv = context.service.ideCommandsService;
     const selectedCommands: IdeCommandInfo[] = this._arg
       ? cmdSrv
           .getRegisteredCommands()

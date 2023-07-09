@@ -37,7 +37,7 @@ export function AppServicesProvider ({ children }: Props) {
     documentService: createDocumentService(store),
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
-    interactiveCommandsService,
+    ideCommandsService: interactiveCommandsService,
     projectService: createProjectService(store)
   });
 

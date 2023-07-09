@@ -3,7 +3,7 @@ import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
 export class ClearHistoryCommand extends CommandWithNoArgBase {
@@ -14,7 +14,7 @@ export class ClearHistoryCommand extends CommandWithNoArgBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
-    context.service.interactiveCommandsService.clearHistory();
+    context.service.ideCommandsService.clearHistory();
     writeSuccessMessage(
       context.output,
       "Interactive command prompt history cleared."

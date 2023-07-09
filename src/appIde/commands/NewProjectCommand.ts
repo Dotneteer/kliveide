@@ -4,14 +4,14 @@ import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  InteractiveCommandBase,
+  IdeCommandBase,
   validationError,
   commandError,
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 
-export class NewProjectCommand extends InteractiveCommandBase {
+export class NewProjectCommand extends IdeCommandBase {
   readonly id = "newp";
   readonly description = "Creates a new Klive project.";
   readonly usage = "newp <machine ID> <project name> [<project folder>]";

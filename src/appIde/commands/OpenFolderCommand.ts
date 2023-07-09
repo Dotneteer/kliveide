@@ -3,14 +3,14 @@ import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  InteractiveCommandBase,
+  IdeCommandBase,
   validationError,
   commandError,
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 
-export class OpenFolderCommand extends InteractiveCommandBase {
+export class OpenFolderCommand extends IdeCommandBase {
   readonly id = "open";
   readonly description = "Opens a folder in the IDE";
   readonly usage = "open <project folder>";

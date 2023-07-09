@@ -11,7 +11,7 @@ import {
   commandSuccess,
   commandError,
   toHexa4
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
 export class StartMachineCommand extends CommandWithNoArgBase {

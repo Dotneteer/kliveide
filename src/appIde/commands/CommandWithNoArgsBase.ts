@@ -1,12 +1,12 @@
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { Token } from "../services/command-parser";
-import { InteractiveCommandBase } from "../services/interactive-commands";
+import { IdeCommandBase } from "../services/ide-commands";
 
 /**
  * Common base class for commands with no args
  */
-export abstract class CommandWithNoArgBase extends InteractiveCommandBase {
+export abstract class CommandWithNoArgBase extends IdeCommandBase {
   async validateArgs (
     _args: Token[]
   ): Promise<ValidationMessage | ValidationMessage[]> {

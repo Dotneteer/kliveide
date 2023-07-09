@@ -1,16 +1,16 @@
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  InteractiveCommandBase,
+  IdeCommandBase,
   expectArgs,
   getNumericTokenValue,
   validationError
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 
 /**
  * Common base class for commands with a single address
  */
-export abstract class CommandWithSingleIntegerBase extends InteractiveCommandBase {
+export abstract class CommandWithSingleIntegerBase extends IdeCommandBase {
   /**
    * The integer argument
    */

@@ -34,6 +34,10 @@ class ProjectService implements IProjectService {
     this._tree = tree;
   }
 
+  getProjectTree (): ITreeView<ProjectNode> | undefined {
+    return this._tree;
+  }
+
   get projectOpened (): ILiteEvent<void> {
     return this._projectOpened;
   }
@@ -64,6 +68,21 @@ class ProjectService implements IProjectService {
 
   get itemDeleted(): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemDeleted;
+  }
+
+  getNodeForFile(file: string): ITreeNode<ProjectNode> {
+    return this._tree ? findFileNode(this._tree.rootNode, file) : undefined;
+
+    function findFileNode(node: ITreeNode<ProjectNode>, name: string): ITreeNode<ProjectNode> | undefined {
+      if (node.data.fullPath === file || node.data.projectPath === file) return node;
+      if (node.childCount > 0) {
+        for (const child of node.children) {
+          const found = findFileNode(child, name);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    }
   }
 }
 

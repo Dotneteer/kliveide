@@ -11,7 +11,7 @@ import {
   writeSuccessMessage,
   validationError,
   commandError
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithAddressBase } from "./CommandWithAddressBase";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
@@ -42,7 +42,7 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
 
 export class ListBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-list";
-  readonly description = "Erase all breakpoints";
+  readonly description = "Lists all breakpoints";
   readonly usage = "bp-list";
   readonly aliases = ["bpl"];
 
@@ -78,8 +78,8 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
 
 export class SetBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-set";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-set";
+  readonly description = "Sets a breakpoint at the specified address";
+  readonly usage = "bp-set <address>";
   readonly aliases = ["bp"];
 
   protected readonly extraArgCount = undefined;
@@ -103,8 +103,8 @@ export class SetBreakpointCommand extends CommandWithAddressBase {
 
 export class RemoveBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-del";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-del";
+  readonly description = "Removes the breakpoint from the specified address";
+  readonly usage = "bp-del <address>";
   readonly aliases = ["bd"];
 
   protected readonly extraArgCount = undefined;
@@ -133,8 +133,8 @@ export class RemoveBreakpointCommand extends CommandWithAddressBase {
 
 export class EnableBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-en";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-en";
+  readonly description = "Enables/disables a breakpoint";
+  readonly usage = "bp-en <address> [-d]";
   readonly aliases = ["be"];
 
   enable: boolean;

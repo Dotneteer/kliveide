@@ -16,7 +16,7 @@ import { MachineControllerState } from "@common/abstractions/MachineControllerSt
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
-import { toHexa2 } from "../services/interactive-commands";
+import { toHexa2 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
   BasicLine,

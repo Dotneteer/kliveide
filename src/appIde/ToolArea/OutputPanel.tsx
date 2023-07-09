@@ -93,7 +93,6 @@ export const OutputLine = ({ spans }: OutputContentLine) => {
         style={style}
         onClick={() => {
           if (s.actionable) {
-            console.log("actionable", s.data);
             if (typeof s.data === "function") {
               s.data();
             }

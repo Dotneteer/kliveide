@@ -13,6 +13,7 @@ import { DocumentInfo } from "../../../common/abstractions/DocumentInfo";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import { PROJECT_FILE } from "@common/structs/project-const";
+import { delay } from "@/utils/timing";
 
 /**
  * Represents the view state of a code document
@@ -41,6 +42,13 @@ export interface IDocumentService {
   isOpen(id: string): boolean;
 
   /**
+   * Wait while the document gets open in the IDE
+   * @param id Document ID
+   * @param timeout Timeout of waiting for the open state
+   */
+  waitOpen(id: string, waitForApi?: boolean, timeout?: number): Promise<DocumentState | null>;
+
+  /**
    * Tests if the project file is open
    */
   getOpenProjectFileDocument(): DocumentState;
@@ -66,7 +74,7 @@ export interface IDocumentService {
    * @param id Document ID
    * @returns The document with the specified ID, if exists; othwerwise, null
    */
-  getDocument(id: string): DocumentInfo;
+  getDocument(id: string): DocumentState;
 
   /**
    * Sets the specified document permanent
@@ -319,6 +327,25 @@ class DocumentService implements IDocumentService {
     return !!docs.find(doc => doc.id === id);
   }
 
+    /**
+   * Wait while the document gets open in the IDE
+   * @param id Document ID
+   * @param timeout Timeout of waiting for the open state
+   */
+  async waitOpen(id: string, waitForApi = false, timeout = 5000): Promise<DocumentState | null> {
+    let waitTime = 0;
+    while (waitTime < timeout) {
+      if (this.isOpen(id)) {
+        const doc = this.getDocument(id);
+        if (!waitForApi || doc.api) return doc;
+      }
+      await delay(50);
+      waitTime += 50;
+    }
+    console.log("Not open");
+    return null;
+  }
+
   /**
    * Gets the project file is open
    */
@@ -354,7 +381,7 @@ class DocumentService implements IDocumentService {
    * @param id Document ID
    * @returns The document with the specified ID, if exists; othwerwise, null
    */
-  getDocument (id: string): DocumentInfo {
+  getDocument (id: string): DocumentState {
     const state = this.store.getState();
     const docs = state?.ideView?.openDocuments ?? [];
     return docs.find(d => d.id === id);

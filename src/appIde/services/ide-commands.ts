@@ -7,10 +7,10 @@ import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
 import { Token, TokenType } from "./command-parser";
 
 /**
- * IInteractiveCommandService is responsible for keeping a registry of
+ * IdeCommandService is responsible for keeping a registry of
  * commands that can be executed in the Interactive window pane.
  */
-export abstract class InteractiveCommandBase implements IdeCommandInfo {
+export abstract class IdeCommandBase implements IdeCommandInfo {
   /**
    * The unique identifier of the command
    */
@@ -46,7 +46,7 @@ export abstract class InteractiveCommandBase implements IdeCommandInfo {
     if (hasError) {
       validationMessages.push(...this.usageMessage());
     }
-    context.service.interactiveCommandsService.displayTraceMessages(
+    context.service.ideCommandsService.displayTraceMessages(
       validationMessages,
       context
     );

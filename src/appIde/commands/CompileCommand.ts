@@ -6,7 +6,7 @@ import {
   writeMessage,
   commandSuccess,
   commandError
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
 export class CompileCommand extends CommandWithNoArgBase {
@@ -15,9 +15,7 @@ export class CompileCommand extends CommandWithNoArgBase {
   readonly usage = "compile";
   readonly aliases = ["co"];
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check if we have a build root to compile
     const state = context.store.getState();
     if (!state.project?.isKliveProject) {
@@ -62,13 +60,17 @@ export class CompileCommand extends CommandWithNoArgBase {
         context.output.color("bright-cyan");
         context.output.underline(true);
         context.output.writeLine(
-          `${err.fileName} (${err.line}:${err.startColumn})`, 
-          () => {
+          `${err.fileName} (${err.line}:${err.startColumn})`,
+          async () => {
+            await context.service.ideCommandsService.executeCommand(
+              `nav ${err.fileName} ${err.line != undefined ? err.line : ""} ${
+                err.startColumn != undefined ? (err.startColumn + 1).toString() : ""
+              }`
+            );
             const docSrv = context.service.documentService;
-            console.log("active", docSrv.getActiveDocumentId())
-            console.log("doc", err.fileName);
-          }, 
-        true);
+          },
+          true
+        );
         context.output.resetStyle();
       }
       return commandError("Compilation failed.");

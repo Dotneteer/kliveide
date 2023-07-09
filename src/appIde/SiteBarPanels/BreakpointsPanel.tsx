@@ -6,11 +6,12 @@ import { MachineControllerState } from "@common/abstractions/MachineControllerSt
 import { EmuListBreakpointsResponse, EmuGetCpuStateResponse } from "@common/messaging/main-to-emu";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
-import { toHexa4 } from "../services/interactive-commands";
+import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
+import { useAppServices } from "../services/AppServicesProvider";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();

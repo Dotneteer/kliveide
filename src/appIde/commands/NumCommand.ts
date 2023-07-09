@@ -3,7 +3,7 @@ import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithSingleIntegerBase } from "./CommandWithSingleIntegerBase";
 
 export class NumCommand extends CommandWithSingleIntegerBase {

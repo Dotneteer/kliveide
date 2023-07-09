@@ -13,6 +13,6 @@ export type AppServices = {
   documentService: IDocumentService;
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;
-  interactiveCommandsService: IIdeCommandService;
+  ideCommandsService: IIdeCommandService;
   projectService: IProjectService;
 };

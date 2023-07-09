@@ -64,6 +64,7 @@ import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
 import { CompileCommand } from "./commands/CompileCommand";
+import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -109,7 +110,7 @@ const IdeApp = () => {
     // --- Run the app initialiation sequence
     mounted.current = true;
     // --- Register the services to be used with the IDE
-    registerCommands(appServices.interactiveCommandsService);
+    registerCommands(appServices.ideCommandsService);
 
     // --- Sign that the UI is ready
     dispatch(ideLoadedAction());
@@ -220,6 +221,8 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepIntoMachineCommand());
   cmdSrv.registerCommand(new StepOverMachineCommand());
   cmdSrv.registerCommand(new StepOutMachineCommand());
+
+  cmdSrv.registerCommand(new NavigateToDocumentCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

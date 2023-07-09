@@ -51,6 +51,11 @@ export type DocumentInfo = {
   node?: ITreeNode<ProjectNode>
 
   /**
+   * The optional API of the document
+   */
+  api?: any;
+
+  /**
    * The optional view version of the document
    */
   viewVersion: number;

@@ -74,13 +74,18 @@ export async function initializeMonaco (appPath: string) {
   }
 }
 
+export interface EditorApi {
+  setPosition(lineNo: number, column: number): void;
+}
+
 type EditorProps = {
   document: DocumentState;
   value: string;
   viewState?: monacoEditor.editor.ICodeEditorViewState;
+  apiLoaded?: (api: EditorApi) => void;
 };
 
-export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
+export const MonacoEditor = ({ document, value, viewState, apiLoaded }: EditorProps) => {
   const { theme } = useTheme();
   const { messenger } = useRendererContext();
   const { documentService } = useAppServices();
@@ -144,6 +149,16 @@ export const MonacoEditor = ({ document, value, viewState }: EditorProps) => {
       ed.onDidFocusEditorText(saveDocumentState),
       ed.onDidFocusEditorWidget(saveDocumentState)
     );
+
+    // --- Create the API
+    const editorApi: EditorApi = {
+      setPosition: (lineNumber: number, column: number) => {
+        ed.revealPositionInCenter({ lineNumber, column });
+        ed.setPosition({ lineNumber, column });
+        window.requestAnimationFrame(() => ed.focus());
+      },
+    }
+    apiLoaded?.(editorApi);
 
     // --- Dispose event handlers
     editor.current.onDidDispose(() => {

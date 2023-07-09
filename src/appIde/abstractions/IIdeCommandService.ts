@@ -55,12 +55,25 @@ export interface IIdeCommandService {
   clearHistory(): void;
 
   /**
-   * Executes the specified command line
+   * Executes the specified command line interactively
    * @param command Command to execute
+   * @param buffer Optional output buffer
+   * @param useHistory Add the command to the history
+   */
+  executeInteractiveCommand(
+    command: string,
+    buffer?: IOutputBuffer,
+    useHistory?: boolean
+  ): Promise<IdeCommandResult>;
+
+  /**
+   * Executes the specified command line 
+   * @param command Command to execute
+   * @param buffer Optional output buffer
    */
   executeCommand(
     command: string,
-    buffer: IOutputBuffer
+    buffer?: IOutputBuffer,
   ): Promise<IdeCommandResult>;
 
   /**
