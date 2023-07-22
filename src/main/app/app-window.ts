@@ -153,6 +153,7 @@ export abstract class AppWindow {
       windowOptions.frame = true;
     } else if (__WIN32__) {
       windowOptions.frame = true;
+      windowOptions.icon = path.join(__dirname, "icons/spectnet-logo.ico");
     } else if (__LINUX__) {
       windowOptions.icon = path.join(__dirname, "icons/spectnet-logo.png");
     }
