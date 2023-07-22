@@ -6,6 +6,7 @@ import {
   COLORIZATION_BUFFER,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
+  TAPE_SAVE_BUFFER,
 } from "@modules/vm-zx-spectrum/wa-memory-map";
 import {
   MachineCreationOptions,
@@ -314,11 +315,12 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     s.tapeStartTactH = mh.readUint32(161);
     s.tapeFastLoad = mh.readBool(165);
     s.tapeSavePhase = mh.readByte(166);
+    s.tapeSaveDataLen = mh.readUint32(167);
 
     // --- Engine state
-    s.ulaIssue = mh.readByte(167);
-    s.contentionAccumulated = mh.readUint32(168);
-    s.lastExecutionContentionValue = mh.readUint32(172);
+    s.ulaIssue = mh.readByte(171);
+    s.contentionAccumulated = mh.readUint32(172);
+    s.lastExecutionContentionValue = mh.readUint32(176);
 
     // --- Screen rendering tact
     mh = new MemoryHelper(this.api, RENDERING_TACT_TABLE);
@@ -329,6 +331,17 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
     // --- Done.
     return s;
+  }
+
+  /**
+   * Gets saved tape contents buffer
+   */
+  getSavedTapeContents(): Uint8Array {
+    // --- Obtain ZX Spectrum specific state
+    this.api.getMachineState();
+    let mh = new MemoryHelper(this.api, VM_STATE_BUFFER);
+    return new Uint8Array(this.api.memory.buffer,
+      TAPE_SAVE_BUFFER, mh.readUint32(167));
   }
 
   /**
@@ -781,6 +794,7 @@ export interface SpectrumMachineStateBase extends MachineState, Z80CpuState {
   tapeStartTactH: number;
   tapeFastLoad: boolean;
   tapeSavePhase: number;
+  tapeSaveDataLen: number;
 
   // --- Engine state
   ulaIssue: number;

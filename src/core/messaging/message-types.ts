@@ -154,6 +154,13 @@ export interface ExecuteMachineCommandRequest extends MessageBase {
 }
 
 /**
+ * The main process sends this message to Emu to get saved tape data
+ */
+export interface GetSavedTapeContentsRequest extends MessageBase {
+  type: "GetSavedTapeContents";
+}
+
+/**
  * The main process sends its entire state to the IDE window
  */
 export interface SyncMainStateRequest extends MessageBase {
@@ -399,7 +406,8 @@ type MainToEmuRequests =
   | StepOverVmRequest
   | StepOutVmRequest
   | RunCodeRequest
-  | ExecuteMachineCommandRequest;
+  | ExecuteMachineCommandRequest
+  | GetSavedTapeContentsRequest;
 
 /**
  * Requests from Emu to Main
@@ -464,6 +472,14 @@ export interface CreateMachineResponse extends MessageBase {
 export interface ExecuteMachineCommandResponse extends MessageBase {
   type: "ExecuteMachineCommandResponse";
   result: unknown;
+}
+
+/**
+ * Response for GetSavedTapeContentsRequest
+ */
+export interface GetSavedTapeContentsResponse extends MessageBase {
+  type: "GetSavedTapeContentsResponse";
+  data?: Uint8Array;
 }
 
 /**
@@ -601,6 +617,7 @@ export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
   | ExecuteMachineCommandResponse
+  | GetSavedTapeContentsResponse
   | EmuOpenFileDialogResponse
   | GetCpuStateResponse
   | GetMachineStateResponse

@@ -226,7 +226,7 @@ void checkTapeHooks() {
   }
 
   // --- Tape Error?
-  if (pc == 0x0008) {
+  if (pc == 0x0008 | (getCurrentTactAsI64() - tapeLastMicBitTact) > TOO_LONG_PAUSE) {
     tapeMode = TM_PASSIVE;
   }
 }
@@ -482,7 +482,8 @@ void processMicBit(u32 micBit) {
   }
 
   // --- MIC bit changed, process it
-  local u64 length = getCurrentTactAsI64() - tapeLastMicBitTact;
+  local u64 bitTact = getCurrentTactAsI64();
+  local u64 length = bitTact - tapeLastMicBitTact;
 
   // --- Initialize pulse
   local u32 pulse = PL_NONE;
@@ -508,6 +509,7 @@ void processMicBit(u32 micBit) {
 
   // --- Now, we have a categorized pulse
   tapeLastMicBit = micBit;
+  tapeLastMicBitTact = bitTact;
 
   // --- Let's process the pulse according to the current SAVE phase and pulse width
   nextPhase = SP_ERROR;
@@ -550,9 +552,9 @@ void processMicBit(u32 micBit) {
     }
   } else if ((pulse == PL_BIT_0) | (pulse == PL_BIT_1)) {
     if (!tapePrevDataPulse) {
-    // --- We are waiting for the second half of the bit pulse
-    tapePrevDataPulse = pulse;
-    nextPhase = SP_DATA;
+      // --- We are waiting for the second half of the bit pulse
+      tapePrevDataPulse = pulse;
+      nextPhase = SP_DATA;
     } else if (tapePrevDataPulse == pulse) {
       // --- We received a full valid bit pulse
       tapePrevDataPulse = 0;
