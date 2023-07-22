@@ -159,6 +159,12 @@ export interface IDocumentService {
   getDocumentData(id: string): any;
 
   /**
+   * Gets the associated API of the specified document
+   * @param id Document ID
+   */
+  getDocumentApi(id: string): any;
+
+  /**
    * Sets the API of the specified document
    * @param id Document ID
    * @param api API instance
@@ -171,6 +177,7 @@ export interface IDocumentService {
  */
 class DocumentService implements IDocumentService {
   private documentData = new Map<string, any>();
+  private documentApi = new Map<string, any>();
 
   /**
    * Initializes the service instance to use the specified store
@@ -344,7 +351,8 @@ class DocumentService implements IDocumentService {
     while (waitTime < timeout) {
       if (this.isOpen(id)) {
         const doc = this.getDocument(id);
-        if (!waitForApi || doc.api) return doc;
+        const api = this.getDocumentApi(id);
+        if (!waitForApi || api) return doc;
       }
       await delay(50);
       waitTime += 50;
@@ -510,7 +518,16 @@ class DocumentService implements IDocumentService {
     return this.documentData.get(id);
   }
 
-    /**
+  /**
+   * Gets the associated API of the specified document
+   * @param id Document ID
+   */
+  getDocumentApi(id: string): any {
+    return this.documentApi.get(id);
+  }
+
+
+  /**
    * Sets the API of the specified document
    * @param id Document ID
    * @param api API instance
@@ -518,7 +535,11 @@ class DocumentService implements IDocumentService {
   setDocumentApi(id: string, api: any): void {
     const doc = this.getDocument(id);
     if (doc) {
-      doc.api = api;
+      if (api) {
+        this.documentApi.set(id, api);
+      } else {
+        this.documentApi.delete(id);
+      }
     }
   }
 }

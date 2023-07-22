@@ -11,6 +11,8 @@ import {
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import { TextContentsResponse } from "@common/messaging/any-to-main";
+import { incDocumentActivationVersionAction } from "@common/state/actions";
+import { delay } from "@/utils/timing";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
   readonly id = "nav";
@@ -34,18 +36,18 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     }
     this.filename = args[0].text;
     if (args.length > 1) {
-        const { value, messages } = getNumericTokenValue(args[1]);
-        if (value === null) {
-          return messages;
-        }
-        this.lineNo = value;
+      const { value, messages } = getNumericTokenValue(args[1]);
+      if (value === null) {
+        return messages;
+      }
+      this.lineNo = value;
     }
     if (args.length > 2) {
-        const { value, messages } = getNumericTokenValue(args[2]);
-        if (value === null) {
-          return messages;
-        }
-        this.columnNo = value;
+      const { value, messages } = getNumericTokenValue(args[2]);
+      if (value === null) {
+        return messages;
+      }
+      this.columnNo = value;
     }
     return [];
   }
@@ -58,7 +60,9 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     }
 
     // --- Get the project node
-    const projNode = context.service.projectService.getNodeForFile(this.filename);
+    const projNode = context.service.projectService.getNodeForFile(
+      this.filename
+    );
     if (!projNode) {
       return commandError(`File '${this.filename}' not found in the project.`);
     }
@@ -76,10 +80,10 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
         type: "MainReadTextFile",
         path: nodeData.fullPath
       })) as TextContentsResponse;
-  
+
       const docContent = {
         value: response.contents
-      }
+      };
       docService.openDocument(
         {
           id: nodeData.fullPath,
@@ -97,20 +101,30 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       );
     }
 
-    // --- Navigate to the file position
-    if (this.lineNo != undefined) {
-      let openDoc = await docService.waitOpen(projNode.data.fullPath, true)
-      if (openDoc) {
-        const apiEndpoint = openDoc.api?.setPosition;
-        if (typeof apiEndpoint === "function") {
-          apiEndpoint(this.lineNo, this.columnNo ?? 0);
+    // --- The document should be opn
+    const openDoc = await docService.waitOpen(projNode.data.fullPath, true);
+    if (openDoc) {
+      // --- Navigate to the specified position (if requested)
+      if (this.lineNo != undefined) {
+        const api = docService.getDocumentApi(openDoc.id);
+        if (api) {
+          const apiEndpoint = api?.setPosition;
+          if (typeof apiEndpoint === "function") {
+            apiEndpoint(this.lineNo, this.columnNo ?? 0);
+          }
         }
       }
+      context.store.dispatch(incDocumentActivationVersionAction());
     }
 
+    // --- Done.
     writeSuccessMessage(
       context.output,
-      `Navigate to ${this.filename}${(this.lineNo != undefined || this.columnNo != undefined ? ` (${this.lineNo}:${this.columnNo})` : "")} `
+      `Navigate to ${this.filename}${
+        this.lineNo != undefined || this.columnNo != undefined
+          ? ` (${this.lineNo}:${this.columnNo})`
+          : ""
+      } `
     );
     return commandSuccess;
   }

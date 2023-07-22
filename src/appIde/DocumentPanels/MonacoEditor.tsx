@@ -2,12 +2,13 @@ import Editor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import AutoSizer from "@/lib/react-virtualized-auto-sizer";
 import { useTheme } from "@/theming/ThemeProvider";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentState } from "@common/abstractions/DocumentState";
 import { customLanguagesRegistry } from "@/registry";
+import { delay } from "@/utils/timing";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -102,8 +103,11 @@ export const MonacoEditor = ({ document, value, viewState, apiLoaded }: EditorPr
   );
 
   // --- Set the editor focus, whenever the activation version changes
-  useEffect(() => {
-    editor.current?.focus();
+  useLayoutEffect(() => {
+    (async () => {
+      await delay(50);
+      editor.current?.focus();
+    })()
   }, [docActivationVersion]);
 
   // --- Respond to theme changes
@@ -172,7 +176,6 @@ export const MonacoEditor = ({ document, value, viewState, apiLoaded }: EditorPr
       value: editor.current.getValue(),
       viewState: editor.current.saveViewState()
     };
-    console.log("Saving state", data)
     documentService.setDocumentData(document.id, data);
   };
 
