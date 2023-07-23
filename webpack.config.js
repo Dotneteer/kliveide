@@ -99,6 +99,12 @@ mainConfig.plugins = [
         },
       },
       {
+        from: "./assets/*.ico",
+        to() {
+          return "icons/[name][ext]";
+        },
+      },
+      {
         from: "./build/*.wasm",
         to() {
           return "wasm/[name][ext]";
