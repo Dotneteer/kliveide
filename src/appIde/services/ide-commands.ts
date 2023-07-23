@@ -32,10 +32,17 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
   readonly aliases?: string[] = [];
 
   /**
+   * Override this method to reset command parameters
+   */
+  prepareCommand(): void {
+  }
+
+  /**
    * Executes the command within the specified context
    */
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Validate the arguments and display potential issues
+    this.prepareCommand();
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
     const hasError = validationMessages.some(

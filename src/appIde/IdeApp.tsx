@@ -65,6 +65,7 @@ import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
 import { CompileCommand } from "./commands/CompileCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
+import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -157,7 +158,7 @@ const IdeApp = () => {
               primaryLocation={docPanelsPos}
               primaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
               primaryVisible={showToolPanels}
-              minSize={60}
+              minSize={160}
               secondaryPanel={<DocumentArea />}
               secondaryVisible={!maximizeToolPanels}
               initialPrimarySize='33%'
@@ -223,6 +224,8 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepOutMachineCommand());
 
   cmdSrv.registerCommand(new NavigateToDocumentCommand());
+
+  cmdSrv.registerCommand(new SelectOutputPaneCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

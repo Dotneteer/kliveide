@@ -265,7 +265,8 @@ export const DocumentsHeader = () => {
               title='Compile code'
               clicked={async () => {
                 const buildPane = outputPaneService.getOutputPaneBuffer("build");
-                const compResult = await ideCommandsService.executeCommand("compile", buildPane);
+                await ideCommandsService.executeCommand("compile", buildPane);
+                await ideCommandsService.executeCommand("outp build");
               }}
             />
             <TabButtonSpace />

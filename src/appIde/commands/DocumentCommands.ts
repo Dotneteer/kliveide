@@ -12,7 +12,6 @@ import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import { TextContentsResponse } from "@common/messaging/any-to-main";
 import { incDocumentActivationVersionAction } from "@common/state/actions";
-import { delay } from "@/utils/timing";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
   readonly id = "nav";
@@ -22,6 +21,10 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
   private filename: string | undefined;
   private lineNo?: number;
   private columnNo?: number;
+
+  prepareCommand(): void {
+    this.lineNo = this.columnNo = undefined;
+  }
 
   /**
    * Validates the input arguments
@@ -54,6 +57,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check if a project node exists
+    console.log(context.commandtext);
     const projState = context.store.getState()?.project;
     if (!projState?.folderPath) {
       return commandError("No project is open.");
@@ -106,6 +110,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     if (openDoc) {
       // --- Navigate to the specified position (if requested)
       if (this.lineNo != undefined) {
+        console.log("positioning");
         const api = docService.getDocumentApi(openDoc.id);
         if (api) {
           const apiEndpoint = api?.setPosition;

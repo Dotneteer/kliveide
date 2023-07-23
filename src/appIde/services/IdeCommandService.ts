@@ -137,9 +137,13 @@ class IdeCommandService implements IIdeCommandService {
     const commandId = tokens[0].text;
     const commandInfo = this.getCommandByIdOrAlias(tokens[0].text);
     if (!commandInfo) {
+      const finalMessage = `Unknown command '${commandId}'.`;
+      buffer.color("bright-red");
+      buffer.writeLine(finalMessage);
+      buffer.resetStyle();
       return {
         success: false,
-        finalMessage: `Unknown command '${commandId}'.`
+        finalMessage
       };
     }
 
@@ -153,10 +157,12 @@ class IdeCommandService implements IIdeCommandService {
       messenger: this.messenger
     };
     const commandResult = await commandInfo.execute(context);
-    if (commandResult.success && commandResult.finalMessage) {
-      buffer.color("bright-green");
-      buffer.writeLine(commandResult.finalMessage);
-      buffer.resetStyle();
+    if (commandResult.success) {
+      if (commandResult.finalMessage) {
+        buffer.color("bright-green");
+        buffer.writeLine(commandResult.finalMessage);
+        buffer.resetStyle();        
+      }
     } else {
       buffer.color("bright-red");
       buffer.writeLine(
