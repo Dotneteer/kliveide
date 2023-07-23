@@ -1,4 +1,4 @@
-import { SpectrumModelType } from "./abstractions";
+import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { ErrorCodes } from "./assembler-errors";
 import {
   IAssemblerErrorInfo,

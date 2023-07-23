@@ -11,6 +11,7 @@ import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
 import { DocumentState } from "../../../common/abstractions/DocumentState";
 import { TooltipFactory } from "@/controls/Tooltip";
+import { useAppServices } from "../services/AppServicesProvider";
 
 export type Props = DocumentState & {
   index: number;
@@ -23,15 +24,11 @@ export type Props = DocumentState & {
 };
 
 export const DocumentTab = ({
-  index,
   id,
   name,
-  type,
   isTemporary,
   isReadOnly = false,
-  stateValue,
   path,
-  language,
   iconName = "file-code",
   iconFill = "--color-doc-icon",
   isActive = false,
@@ -39,6 +36,7 @@ export const DocumentTab = ({
   tabClicked,
   tabDoubleClicked
 }: Props) => {
+  const {documentService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const readOnlyRef = useRef<HTMLDivElement>(null);
@@ -75,13 +73,13 @@ export const DocumentTab = ({
       >
         <bdi>{name}</bdi>
         <TooltipFactory
-            refElement={nameRef.current}
-            placement='right'
-            offsetX={-28}
-            offsetY={28}
-          >
-            {path}
-          </TooltipFactory>
+          refElement={nameRef.current}
+          placement='right'
+          offsetX={-28}
+          offsetY={28}
+        >
+          {path}
+        </TooltipFactory>
       </span>
       {isReadOnly && (
         <div className={styles.readOnlyIcon} ref={readOnlyRef}>
@@ -113,7 +111,10 @@ export const DocumentTab = ({
             ? "--color-tabbutton-fill-active"
             : "--color-tabbutton-fill-inactive"
         }
-        clicked={() => dispatch(closeDocumentAction(id))}
+        clicked={() => {
+          dispatch(closeDocumentAction(id));
+          documentService.closeDocument(id);
+        }}
       />
     </div>
   );

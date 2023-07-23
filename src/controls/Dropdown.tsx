@@ -35,6 +35,10 @@ export const Dropdown = ({
     };
   });
 
+  useEffect(() => {
+    setSelectedValue(options.find(o => o.value === value));
+  }, [value])
+
   const handleInputClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(!showMenu);

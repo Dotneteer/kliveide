@@ -1,11 +1,11 @@
-import { InteractiveCommandContext } from "./InteractiveCommandContext";
-import { InteractiveCommandResult } from "./InteractiveCommandResult";
+import { IdeCommandContext } from "./IdeCommandContext";
+import { IdeCommandResult } from "./IdeCommandResult";
 import { ValidationMessage } from "./ValidationMessage";
 
 /**
  * This class represents information about commands
  */
-export type InteractiveCommandInfo = {
+export type IdeCommandInfo = {
   /**
    * The unique identifier of the command
    */
@@ -30,8 +30,8 @@ export type InteractiveCommandInfo = {
    * Executes the command within the specified context
    */
   execute: (
-    context: InteractiveCommandContext
-  ) => Promise<InteractiveCommandResult>;
+    context: IdeCommandContext
+  ) => Promise<IdeCommandResult>;
 
   /**
    * Retrieves the usage message

@@ -78,13 +78,14 @@ export const VirtualizedList = ({
       const api: VirtualizedListApi = {
         scrollToIndex: (index: number, options: ScrollToOptions) =>
           virtualizer.scrollToIndex(index, options),
-        scrollToOffset: (offset: number, options: ScrollOptions) =>
+        scrollToOffset: (offset: number, options: ScrollToOptions) =>
           virtualizer.scrollToOffset(offset, options),
         scrollToTop: () => virtualizer.scrollToIndex(0),
         scrollToEnd: () => {
-          if (items?.length > 0) {
+          const virtItems = virtualizer.getVirtualItems();
+          if (virtItems?.length > 0) {
             virtualizer.scrollToIndex(
-              (items?.length > 0 ? items.length - 1 : 0) ?? 0,
+              (virtItems?.length > 0 ? virtItems.length - 1 : 0) ?? 0,
               {
                 align: "end",
                 behavior: "auto"

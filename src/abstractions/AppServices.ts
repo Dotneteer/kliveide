@@ -1,5 +1,5 @@
 import { IMachineService } from "@/appEmu/abstrations/IMachineService";
-import { IInteractiveCommandService } from "@/appIde/abstractions/IInteractiveCommandService";
+import { IIdeCommandService } from "@/appIde/abstractions/IIdeCommandService";
 import { IOutputPaneService } from "@/appIde/abstractions/IOutputPaneService";
 import { IProjectService } from "@/appIde/abstractions/IProjectService";
 import { IDocumentService } from "@/appIde/services/DocumentService";
@@ -13,6 +13,6 @@ export type AppServices = {
   documentService: IDocumentService;
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;
-  interactiveCommandsService: IInteractiveCommandService;
+  ideCommandsService: IIdeCommandService;
   projectService: IProjectService;
 };

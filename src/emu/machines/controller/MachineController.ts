@@ -1,4 +1,6 @@
 import { IMachineController } from "@/appEmu/abstrations/IMachineController";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
+import { toHexa4 } from "@/appIde/services/ide-commands";
 import { IOutputBuffer, OutputColor } from "@/appIde/ToolArea/abstractions";
 import { DebugStepMode } from "@/emu/abstractions/DebugStepMode";
 import { ExecutionContext } from "@/emu/abstractions/ExecutionContext";
@@ -189,10 +191,6 @@ export class MachineController implements IMachineController {
       "cyan"
     );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepInto);
-    await this.finishExecutionLoop(
-      MachineControllerState.Pausing,
-      MachineControllerState.Paused
-    );
   }
 
   /**
@@ -205,10 +203,6 @@ export class MachineController implements IMachineController {
       "cyan"
     );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOver);
-    await this.finishExecutionLoop(
-      MachineControllerState.Pausing,
-      MachineControllerState.Paused
-    );
   }
 
   /**
@@ -221,10 +215,63 @@ export class MachineController implements IMachineController {
       "cyan"
     );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
-    await this.finishExecutionLoop(
-      MachineControllerState.Pausing,
-      MachineControllerState.Paused
+  }
+
+  /**
+   * Runs the specified code in the virtual machine
+   * @param codeToInject Code to inject into the amchine
+   * @param debug Run in debug mode?
+   */
+  async runCode (codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+    // --- Stop the machine
+    await this.stop();
+
+    // --- Start the machine and wait while it reaches the execution point
+    const execInfo = this.machine.getMainExecPoint(codeToInject.model);
+    await this.sendOutput("Initialize the machine", "blue");
+    this.run(
+      FrameTerminationMode.UntilExecutionPoint,
+      debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
+      execInfo.romIndex,
+      execInfo.entryPoint
     );
+
+    await this._machineTask;
+    await this.sendOutput(
+      `Main execution cycle point reached (ROM${execInfo.romIndex}/$${toHexa4(
+        execInfo.entryPoint
+      )})`,
+      "blue"
+    );
+
+    // --- Inject the code ans set up the machine to run the code
+    const startPoint = this.machine.injectCodeToRun(codeToInject);
+    await this.sendOutput(
+      `Code injected and ready to start at $${toHexa4(startPoint)}})`,
+      "blue"
+    );
+
+    // --- Set the continuation point
+    const m = this.machine;
+    m.pc = startPoint;
+
+    // --- Handle subroutine calls
+    if (codeToInject.subroutine) {
+      const spValue = m.sp;
+      m.doWriteMemory(spValue - 1, execInfo.entryPoint >> 8);
+      m.doWriteMemory(spValue - 2, execInfo.entryPoint & 0xff);
+      m.sp = spValue - 2;
+      await this.sendOutput(
+        `Code will start as a subroutine to return to $${toHexa4(execInfo.entryPoint)}`,
+        "blue"
+      );
+      }
+
+    if (debug) {
+      await this.startDebug();
+    } else {
+      await this.start();
+    }
   }
 
   /**
@@ -270,6 +317,7 @@ export class MachineController implements IMachineController {
         // --- Use the latest clock multiplier
         this.machine.targetClockMultiplier =
           this.store.getState()?.emulatorState?.clockMultiplier ?? 1;
+
         // --- Run the machine frame and measure execution time
         const frameStartTime = performance.now();
         const termination = this.machine.executeMachineFrame();
@@ -280,7 +328,6 @@ export class MachineController implements IMachineController {
         if (frameCompleted) {
           this.frameStats.frameCount++;
           // --- Handle emulated keystrokes
-
           this.machine.emulateKeystroke();
         }
 
@@ -306,6 +353,7 @@ export class MachineController implements IMachineController {
           this.context.canceled = true;
           return;
         }
+        console.log("Term", termination);
         if (termination !== FrameTerminationMode.Normal) {
           this.state = MachineControllerState.Paused;
           this._machineTask = undefined;

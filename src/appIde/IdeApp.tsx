@@ -25,12 +25,11 @@ import {
   displayDialogAction
 } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
-import { CODE_EDITOR } from "@common/state/common-ids";
 import { Store } from "@common/state/redux-light";
 import styles from "@styles/app.module.scss";
-import { app, ipcRenderer } from "electron";
+import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
-import { IInteractiveCommandService } from "./abstractions/IInteractiveCommandService";
+import { IIdeCommandService } from "./abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import {
   EraseAllBreakpointsCommand,
@@ -64,6 +63,9 @@ import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
+import { CompileCommand, DebugCodeCommand, InjectCodeCommand, RunCodeCommand } from "./commands/CompilerCommand";
+import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
+import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -109,7 +111,7 @@ const IdeApp = () => {
     // --- Run the app initialiation sequence
     mounted.current = true;
     // --- Register the services to be used with the IDE
-    registerCommands(appServices.interactiveCommandsService);
+    registerCommands(appServices.ideCommandsService);
 
     // --- Sign that the UI is ready
     dispatch(ideLoadedAction());
@@ -156,7 +158,7 @@ const IdeApp = () => {
               primaryLocation={docPanelsPos}
               primaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
               primaryVisible={showToolPanels}
-              minSize={60}
+              minSize={160}
               secondaryPanel={<DocumentArea />}
               secondaryVisible={!maximizeToolPanels}
               initialPrimarySize='33%'
@@ -206,7 +208,7 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
 // --- Register the interactive commands
 let commandsRegistered = false;
 
-function registerCommands (cmdSrv: IInteractiveCommandService): void {
+function registerCommands (cmdSrv: IIdeCommandService): void {
   if (commandsRegistered) return;
 
   commandsRegistered = true;
@@ -221,6 +223,10 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new StepOverMachineCommand());
   cmdSrv.registerCommand(new StepOutMachineCommand());
 
+  cmdSrv.registerCommand(new NavigateToDocumentCommand());
+
+  cmdSrv.registerCommand(new SelectOutputPaneCommand());
+
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());
   cmdSrv.registerCommand(new SetBreakpointCommand());
@@ -232,4 +238,9 @@ function registerCommands (cmdSrv: IInteractiveCommandService): void {
   cmdSrv.registerCommand(new OpenFolderCommand());
   cmdSrv.registerCommand(new NewProjectCommand());
   cmdSrv.registerCommand(new CloseFolderCommand());
+
+  cmdSrv.registerCommand(new CompileCommand());
+  cmdSrv.registerCommand(new InjectCodeCommand());
+  cmdSrv.registerCommand(new RunCodeCommand());
+  cmdSrv.registerCommand(new DebugCodeCommand());
 }

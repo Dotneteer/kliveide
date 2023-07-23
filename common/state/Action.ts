@@ -3,6 +3,7 @@ import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
 import { DocumentState } from "@common/abstractions/DocumentState";
 import { ToolState } from "@common/abstractions/ToolState";
+import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
 
 /**
  * Available action types you can use with state manangement
@@ -37,6 +38,8 @@ export type Payload = {
   numValue: number;
   file: string;
   text: string;
+  compileResult: KliveCompilerOutput;
+  failed: string
 };
 
 /**

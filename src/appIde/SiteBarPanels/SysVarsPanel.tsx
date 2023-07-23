@@ -11,7 +11,7 @@ import {
   EmuGetSysVarsResponse
 } from "@messaging/main-to-emu";
 import { useEffect, useRef, useState } from "react";
-import { toHexa2, toHexa4 } from "../services/interactive-commands";
+import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";

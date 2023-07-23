@@ -5,14 +5,21 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  CSSProperties,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from "react";
 import { Dropdown } from "../../controls/Dropdown";
-import { TabButton, TabButtonSeparator } from "../../controls/TabButton";
+import { TabButton, TabButtonSpace } from "../../controls/TabButton";
 import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { ToolState } from "@common/abstractions/ToolState";
+import { delay } from "@/utils/timing";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
@@ -48,7 +55,10 @@ const OutputPanel = () => {
   }, [buffer.current]);
 
   useLayoutEffect(() => {
+    (async () => {
+      await delay(20);
       api.current?.scrollToEnd();
+    })();
   }, [contents]);
 
   return (
@@ -89,7 +99,17 @@ export const OutputLine = ({ spans }: OutputContentLine) => {
       cursor: s.actionable ? "pointer" : undefined
     };
     return (
-      <span key={idx} style={style}>
+      <span
+        key={idx}
+        style={style}
+        onClick={() => {
+          if (s.actionable) {
+            if (typeof s.data === "function") {
+              s.data();
+            }
+          }
+        }}
+      >
         {s.text}
       </span>
     );
@@ -117,7 +137,7 @@ export const outputPanelHeaderRenderer = () => {
           dispatch(activateOutputPaneAction(option))
         }
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='clear-all'
         title='Clear'
@@ -126,7 +146,7 @@ export const outputPanelHeaderRenderer = () => {
           dispatch(incToolCommandSeqNoAction());
         }}
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='copy'
         title='Copy to clipboard'

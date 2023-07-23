@@ -44,7 +44,7 @@
 }
 
 .sizeable {
-  cursor: ns-resize;
+  cursor: row-resize;
 
   &.pointed:hover {
     background: var(--bgcolor-splitter);

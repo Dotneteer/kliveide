@@ -2,21 +2,21 @@ import { AppServices } from "@/abstractions/AppServices";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
-import { IInteractiveCommandService } from "../abstractions/IInteractiveCommandService";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandInfo } from "../abstractions/InteractiveCommandInfo";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IIdeCommandService } from "../abstractions/IIdeCommandService";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandInfo } from "../abstractions/IdeCommandInfo";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand, Token } from "./command-parser";
-import { InteractiveCommandBase } from "./interactive-commands";
+import { IdeCommandBase } from "./ide-commands";
 
 const MAX_HISTORY = 1024;
 
-class InteractiveCommandService implements IInteractiveCommandService {
-  private readonly _commands: InteractiveCommandInfo[] = [];
+class IdeCommandService implements IIdeCommandService {
+  private readonly _commands: IdeCommandInfo[] = [];
   private readonly _buffer = new OutputPaneBuffer();
   private _history: string[] = [];
   private _appServices: AppServices;
@@ -65,7 +65,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * Registers a command
    * @param command Command to register
    */
-  registerCommand (command: InteractiveCommandInfo): void {
+  registerCommand (command: IdeCommandInfo): void {
     if (this.getCommandInfo(command.id)) {
       throw new Error(
         `Command with ID ${command.id} has already been registered.`
@@ -77,7 +77,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
   /**
    * Retrieves all registered commands
    */
-  getRegisteredCommands (): InteractiveCommandInfo[] {
+  getRegisteredCommands (): IdeCommandInfo[] {
     return this._commands.slice(0);
   }
 
@@ -86,7 +86,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo (id: string): InteractiveCommandInfo | undefined {
+  getCommandInfo (id: string): IdeCommandInfo | undefined {
     return this._commands.find(c => c.id === id);
   }
 
@@ -95,7 +95,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * @param idOrAlias
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandByIdOrAlias (idOrAlias: string): InteractiveCommandInfo | undefined {
+  getCommandByIdOrAlias (idOrAlias: string): IdeCommandInfo | undefined {
     return this._commands.find(
       c =>
         c.id === idOrAlias ||
@@ -107,16 +107,23 @@ class InteractiveCommandService implements IInteractiveCommandService {
    * Executes the specified command line
    * @param command Command to execute
    */
-  async executeCommand (
+  async executeInteractiveCommand (
     command: string,
-    buffer: IOutputBuffer
-  ): Promise<InteractiveCommandResult> {
+    buffer?: IOutputBuffer,
+    useHistory = true
+  ): Promise<IdeCommandResult> {
+    // --- Create a buffer if that does not exists
+    buffer ??= new OutputPaneBuffer();
+
     // --- Add command to history
-    this._history.push(command);
-    if (this._history.length > MAX_HISTORY) {
-      this._history = this._history.slice(1);
+    if (useHistory) {
+      this._history.push(command);
+      if (this._history.length > MAX_HISTORY) {
+        this._history = this._history.slice(1);
+      }
     }
 
+    // --- Command must be syntactically valid
     const tokens = parseCommand(command);
     if (tokens.length === 0) {
       // --- No token, no command to execute
@@ -130,14 +137,18 @@ class InteractiveCommandService implements IInteractiveCommandService {
     const commandId = tokens[0].text;
     const commandInfo = this.getCommandByIdOrAlias(tokens[0].text);
     if (!commandInfo) {
+      const finalMessage = `Unknown command '${commandId}'.`;
+      buffer.color("bright-red");
+      buffer.writeLine(finalMessage);
+      buffer.resetStyle();
       return {
         success: false,
-        finalMessage: `Unknown command '${commandId}'.`
+        finalMessage
       };
     }
 
     // --- Execute the registered command
-    const context: InteractiveCommandContext = {
+    const context: IdeCommandContext = {
       commandtext: command,
       store: this.store,
       argTokens: tokens.slice(1),
@@ -145,7 +156,33 @@ class InteractiveCommandService implements IInteractiveCommandService {
       service: this._appServices,
       messenger: this.messenger
     };
-    return await commandInfo.execute(context);
+    const commandResult = await commandInfo.execute(context);
+    if (commandResult.success) {
+      if (commandResult.finalMessage) {
+        buffer.color("bright-green");
+        buffer.writeLine(commandResult.finalMessage);
+        buffer.resetStyle();        
+      }
+    } else {
+      buffer.color("bright-red");
+      buffer.writeLine(
+        commandResult.finalMessage ?? "Command execution failed."
+      );
+      buffer.resetStyle();
+    }
+    return commandResult;
+  }
+
+  /**
+   * Executes the specified command line
+   * @param command Command to execute
+   * @param buffer Optional output buffer
+   */
+  executeCommand (
+    command: string,
+    buffer?: IOutputBuffer
+  ): Promise<IdeCommandResult> {
+    return this.executeInteractiveCommand(command, buffer, false);
   }
 
   /**
@@ -155,7 +192,7 @@ class InteractiveCommandService implements IInteractiveCommandService {
    */
   displayTraceMessages (
     messages: ValidationMessage[],
-    context: InteractiveCommandContext
+    context: IdeCommandContext
   ): void {
     for (var trace of messages) {
       context.output.color(
@@ -175,9 +212,30 @@ class InteractiveCommandService implements IInteractiveCommandService {
   getBuffer (): IOutputBuffer {
     return this._buffer;
   }
+
+  /**
+   * Displays a navigation action to the specified project file
+   * @param context Context to display the messages in
+   * @param file Filename
+   * @param line Optional line number
+   * @param column Optional column number
+   */
+  writeNavigationAction (context: IdeCommandContext, file: string, line?: number, column?: number): void {
+    context.output.write(
+      `${file}${line != undefined ?` (${line}:${column + 1})` : ""}`,
+      async () => {
+        await this.executeCommand(
+          `nav ${file} ${line != undefined ? line : ""} ${
+            column != undefined ? (column + 1).toString() : ""
+          }`
+        );
+      },
+      true
+    );
+  }
 }
 
-class HelpCommand extends InteractiveCommandBase {
+class HelpCommand extends IdeCommandBase {
   private _arg: string | null = null;
 
   readonly id = "help";
@@ -207,12 +265,10 @@ class HelpCommand extends InteractiveCommandBase {
   /**
    * Executes the command within the specified context
    */
-  async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     let count = 0;
-    const cmdSrv = context.service.interactiveCommandsService;
-    const selectedCommands: InteractiveCommandInfo[] = this._arg
+    const cmdSrv = context.service.ideCommandsService;
+    const selectedCommands: IdeCommandInfo[] = this._arg
       ? cmdSrv
           .getRegisteredCommands()
           .filter(
@@ -261,5 +317,5 @@ export function createInteractiveCommandsService (
   store: Store<AppState>,
   messenger: MessengerBase
 ) {
-  return new InteractiveCommandService(store, messenger);
+  return new IdeCommandService(store, messenger);
 }

@@ -7,7 +7,7 @@ import {
   ParserErrorMessage
 } from "./assembler-errors";
 import { InputStream } from "./input-stream";
-import { TokenStream } from "./token-stream";
+import { Token, TokenStream } from "./token-stream";
 
 import {
   AdcInstruction,
@@ -131,7 +131,7 @@ import {
   setRandomSeed
 } from "./expressions";
 import { FixupEntry } from "./fixups";
-import { ExpressionValueType, SpectrumModelType } from "./abstractions";
+import { ExpressionValueType, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 
 /**
  * The file name of a direct text compilation
@@ -4409,7 +4409,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (op.operand1.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
+      this.reportAssemblyError("Z0604", op.operand1.expr);
       return;
     }
     if (op.operand2.operandType === OperandType.Expression) {
@@ -5103,6 +5103,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processLdInst (op: LdInstruction): void {
+    let issueWithOp1 = true;
     switch (op.operand1.operandType) {
       case OperandType.Reg8: {
         const destReg = op.operand1.register;
@@ -5360,7 +5361,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       }
     }
-    this.reportAssemblyError("Z0604", op);
+    this.reportAssemblyError(
+      "Z0604", 
+      op, 
+      toPosition(issueWithOp1 ? op.operand1.startToken : op.operand2.startToken));
   }
 
   /**
@@ -6001,6 +6005,16 @@ export class Z80Assembler extends ExpressionEvaluator {
       localScope = localScope.ownerScope;
     }
     return !localScope.isErrorReported(code);
+  }
+}
+
+function toPosition(token: Token): NodePosition {
+  return {
+    line: token.location.line,
+    startPosition: token.location.startPos,
+    endPosition: token.location.endPos,
+    startColumn: token.location.startColumn,
+    endColumn: token.location.endColumn
   }
 }
 

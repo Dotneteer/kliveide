@@ -5,10 +5,7 @@ import {
   useSelector
 } from "@/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
-import {
-  MainGetDirectoryContentResponse,
-  TextContentsResponse
-} from "@messaging/any-to-main";
+import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
@@ -33,7 +30,6 @@ import {
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
-import { CodeDocumentState } from "../services/DocumentService";
 import {
   incDocumentActivationVersionAction,
   setBuildRootAction
@@ -49,7 +45,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { messenger } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, documentService } = useAppServices();
+  const { projectService, documentService, ideCommandsService } =
+    useAppServices();
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
@@ -87,7 +84,7 @@ const ExplorerPanel = () => {
     selectedContextNode?.level === 1;
   const selectedNodeIsRoot = !selectedContextNode?.parentNode;
   const selectedNodeIsBuildRoot = selectedContextNode
-    ? buildRoots.indexOf(selectedContextNode.data.fullPath) >= 0
+    ? buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0
     : false;
 
   // --- Is the screen dimmed?
@@ -177,7 +174,7 @@ const ExplorerPanel = () => {
             clicked={async () => {
               dispatch(
                 setBuildRootAction(
-                  selectedContextNode.data.fullPath,
+                  selectedContextNode.data.projectPath,
                   !selectedNodeIsBuildRoot
                 )
               );
@@ -368,21 +365,19 @@ const ExplorerPanel = () => {
           setVisibleNodes(tree.getVisibleNodes());
 
           if (!node.data.isFolder) {
-            if (documentService.isOpen(node.data.fullPath)) {
-              documentService.setActiveDocument(node.data.fullPath);
-            } else {
-              getAndOpenDocument(node, true);
-            }
+            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
         onDoubleClick={() => {
           if (node.data.isFolder) return;
           if (documentService.isOpen(node.data.fullPath)) {
+            console.log("set")
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
             dispatch(incDocumentActivationVersionAction());
           } else {
-            getAndOpenDocument(node, false);
+            console.log("nav")
+            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
       >
@@ -418,50 +413,18 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
         <SpaceFiller />
-        {!node.data.isFolder && buildRoots.indexOf(node.data.fullPath) >= 0 && (
-          <div className={styles.rootBuilder}>
-            <Icon
-              iconName='combine'
-              fill='--console-ansi-bright-green'
-              width={16}
-              height={16}
-            />
-          </div>
-        )}
+        {!node.data.isFolder &&
+          buildRoots.indexOf(node.data.projectPath) >= 0 && (
+            <div className={styles.rootBuilder}>
+              <Icon
+                iconName='combine'
+                fill='--console-ansi-bright-green'
+                width={16}
+                height={16}
+              />
+            </div>
+          )}
       </div>
-    );
-  };
-
-  // --- Obtain document data and open the document
-  const getAndOpenDocument = async (
-    node: ITreeNode<ProjectNode>,
-    isTemporary: boolean = true
-  ): Promise<void> => {
-    const docPath = node.data.fullPath;
-    const response = (await messenger.sendMessage({
-      type: "MainReadTextFile",
-      path: docPath
-    })) as TextContentsResponse;
-
-    const data: CodeDocumentState = documentService.isOpen(docPath)
-      ? documentService.getDocumentData(docPath)
-      : {
-          value: response.contents
-        };
-
-    documentService.openDocument(
-      {
-        id: node.data.fullPath,
-        name: node.data.name,
-        path: node.data.fullPath,
-        type: node.data.editor,
-        language: node.data.subType,
-        iconName: node.data.icon,
-        isReadOnly: node.data.isReadOnly,
-        node
-      },
-      data,
-      isTemporary
     );
   };
 
@@ -492,6 +455,7 @@ const ExplorerPanel = () => {
         // --- Folder tree found in the cache
         setTree(cachedTree);
         setVisibleNodes(cachedTree.getVisibleNodes());
+        projectService.setProjectTree(cachedTree);
         return;
       }
 
@@ -507,6 +471,7 @@ const ExplorerPanel = () => {
       const projectTree = buildProjectTree(dir);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
+      projectService.setProjectTree(projectTree);
       folderCache.set(folderPath, projectTree);
     })();
   }, [folderPath]);

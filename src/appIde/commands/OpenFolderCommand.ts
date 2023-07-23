@@ -1,16 +1,16 @@
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
-  InteractiveCommandBase,
+  IdeCommandBase,
   validationError,
   commandError,
   writeSuccessMessage,
   commandSuccess
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 
-export class OpenFolderCommand extends InteractiveCommandBase {
+export class OpenFolderCommand extends IdeCommandBase {
   readonly id = "open";
   readonly description = "Opens a folder in the IDE";
   readonly usage = "open <project folder>";
@@ -31,8 +31,8 @@ export class OpenFolderCommand extends InteractiveCommandBase {
   }
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const result = await context.messenger.sendMessage({
       type: "MainOpenFolder",
       folder: this.projectFolder

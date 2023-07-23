@@ -1,16 +1,16 @@
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandInfo } from "../abstractions/InteractiveCommandInfo";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandInfo } from "../abstractions/IdeCommandInfo";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../abstractions/ValidationMessageType";
 import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
 import { Token, TokenType } from "./command-parser";
 
 /**
- * IInteractiveCommandService is responsible for keeping a registry of
+ * IdeCommandService is responsible for keeping a registry of
  * commands that can be executed in the Interactive window pane.
  */
-export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
+export abstract class IdeCommandBase implements IdeCommandInfo {
   /**
    * The unique identifier of the command
    */
@@ -32,12 +32,17 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
   readonly aliases?: string[] = [];
 
   /**
+   * Override this method to reset command parameters
+   */
+  prepareCommand(): void {
+  }
+
+  /**
    * Executes the command within the specified context
    */
-  async execute(
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Validate the arguments and display potential issues
+    this.prepareCommand();
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
     const hasError = validationMessages.some(
@@ -46,7 +51,7 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
     if (hasError) {
       validationMessages.push(...this.usageMessage());
     }
-    context.service.interactiveCommandsService.displayTraceMessages(
+    context.service.ideCommandsService.displayTraceMessages(
       validationMessages,
       context
     );
@@ -73,9 +78,7 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
    * Executes the command after argument validation
    * @param context Command execution context
    */
-  async doExecute(
-    _context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+  async doExecute(_context: IdeCommandContext): Promise<IdeCommandResult> {
     return {
       success: true,
       finalMessage: "This command has been executed successfully."
@@ -136,7 +139,14 @@ export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
 /**
  * Represents successful command execution
  */
-export const commandSuccess: InteractiveCommandResult = { success: true };
+export const commandSuccess: IdeCommandResult = { success: true };
+
+/**
+ * Represents successful command execution
+ */
+export function commandSuccessWith(msg: string): IdeCommandResult {
+  return { success: true, finalMessage: msg };
+}
 
 /**
  * Creates a message with the specified count as the expected number of arguments.
@@ -164,7 +174,7 @@ export function validationError(message: string): ValidationMessage {
  * Represents a command execution error
  * @param message Error message
  */
-export function commandError(message: string): InteractiveCommandResult {
+export function commandError(message: string): IdeCommandResult {
   return {
     success: false,
     finalMessage: message
@@ -183,14 +193,14 @@ export function writeMessage(
   if (color) {
     output.color(color);
   } else {
-    output.resetColor();
+    output.resetStyle();
   }
   if (closeLine) {
     output.writeLine(text);
   } else {
     output.write(text);
   }
-  output.resetColor();
+  output.resetStyle();
 }
 
 /**

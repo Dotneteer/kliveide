@@ -43,9 +43,13 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Sets the default color
    */
-  resetColor (): void {
+  resetStyle (): void {
     this._color = undefined;
     this._bgColor = undefined;
+    this._isBold = false;
+    this._isItalic = false;
+    this._isStrikethru = false;
+    this._isUnderline = false;
   }
 
   /**
@@ -113,7 +117,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
       background: this._bgColor,
       isBold: this._isBold,
       isItalic: this._isItalic,
-      isUnderline: this._isUnderline,
+      isUnderline: this._isUnderline || actionable,
       isStrikeThru: this._isStrikethru,
       actionable,
       data

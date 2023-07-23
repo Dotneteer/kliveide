@@ -2,8 +2,8 @@ import "mocha";
 import { expect } from "expect";
 
 import { testCodeEmit } from "./test-helpers";
-import { ExpressionValueType } from "../../electron/z80-compiler/abstractions";
 import { Z80Assembler } from "../../electron/z80-compiler/assembler";
+import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
 
 describe("Assembler - fixups", async () => {
   it("equ: fixup", async () => {

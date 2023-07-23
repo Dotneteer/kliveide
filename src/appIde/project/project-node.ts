@@ -23,6 +23,11 @@ export type ProjectNode = {
   fullPath?: string;
 
   /**
+   * Gets the project root relative path of this node
+   */
+  projectPath?: string;
+
+  /**
    * The optional icon for the project node
    */
   icon?: string;

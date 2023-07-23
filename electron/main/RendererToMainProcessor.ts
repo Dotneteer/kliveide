@@ -6,7 +6,7 @@ import {
 } from "../../common/messaging/messages-core";
 import * as path from "path";
 import * as fs from "fs";
-import { app, BrowserWindow, dialog, } from "electron";
+import { app, BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse,
@@ -16,10 +16,22 @@ import {
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
-import { createKliveProject, openFolder, openFolderByPath, resolvePublicFilePath, saveKliveProject } from "./projects";
+import {
+  createKliveProject,
+  openFolder,
+  openFolderByPath,
+  resolvePublicFilePath,
+  saveKliveProject
+} from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
-import { dimMenuAction } from "../../common/state/actions";
+import { dimMenuAction, endCompileAction, startCompileAction } from "../../common/state/actions";
+import {
+  getCompiler,
+  IKliveCompiler,
+  KliveCompilerOutput,
+  SimpleAssemblerOutput
+} from "../compiler-integration/compiler-registry";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -30,6 +42,7 @@ export async function processRendererToMainMessages (
   message: RequestMessage,
   window: BrowserWindow
 ): Promise<ResponseMessage> {
+  const dispatch = mainStore.dispatch;
   switch (message.type) {
     case "MainReadTextFile":
       // --- A client want to read the contents of a text file
@@ -54,7 +67,7 @@ export async function processRendererToMainMessages (
     case "MainDisplayMessageBox":
       // --- A client wants to display an error message.
       // --- We intentionally do not wait for confirmation.
-      mainStore.dispatch(dimMenuAction(true));
+      dispatch(dimMenuAction(true));
       try {
         await dialog.showMessageBox(window, {
           type: message.messageType ?? "none",
@@ -62,7 +75,7 @@ export async function processRendererToMainMessages (
           message: message.message
         });
       } finally {
-        mainStore.dispatch(dimMenuAction(false));
+        dispatch(dimMenuAction(false));
       }
       break;
 
@@ -155,6 +168,29 @@ export async function processRendererToMainMessages (
       await saveKliveProject();
       break;
 
+    case "MainCompileFile":
+      const compiler = getCompiler(message.language);
+      try {
+        dispatch(startCompileAction(message.filename));
+        console.log("Compiling", message.filename);
+        const result = (await compiler.compileFile(
+          message.filename
+        )) as KliveCompilerOutput;
+        dispatch(endCompileAction(result));
+        return {
+          type: "MainCompileFileResponse",
+          result,
+          failed: (result as SimpleAssemblerOutput).failed
+        }
+      } catch (err) {
+        return {
+          type: "MainCompileFileResponse",
+          result: {errors: []},
+          failed: err.toString()
+        }
+      }
+      break;
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -174,6 +210,8 @@ export async function processRendererToMainMessages (
     case "EmuEnableBreakpoint":
     case "EmuGetMemory":
     case "EmuGetSysVars":
+    case "EmuInjectCode":
+    case "EmuRunCode":  
       return sendFromMainToEmu(message);
   }
   return defaultResponse();
@@ -196,10 +234,11 @@ async function getDirectoryContent (
     folderSegments.length > 0
       ? folderSegments[folderSegments.length - 1]
       : root;
-  return getFileEntryInfo(root, lastFolder);
+  return getFileEntryInfo(root, "", lastFolder);
 
   function getFileEntryInfo (
     entryPath: string,
+    projectRelative: string,
     name: string
   ): ProjectNodeWithChildren {
     // --- Store the root node information
@@ -208,6 +247,7 @@ async function getDirectoryContent (
       isFolder: false,
       name,
       fullPath: entryPath,
+      projectPath: projectRelative,
       children: []
     };
     if (fileEntryInfo.isFile()) {
@@ -219,7 +259,7 @@ async function getDirectoryContent (
       const names = fs.readdirSync(entryPath);
       for (const name of names) {
         if (fileEntryCount++ > 10240) break;
-        entry.children.push(getFileEntryInfo(path.join(entryPath, name), name));
+        entry.children.push(getFileEntryInfo(path.join(entryPath, name), path.join(projectRelative, name), name));
       }
       return entry;
     }

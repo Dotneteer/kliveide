@@ -1177,7 +1177,7 @@ export class Z80AsmParser {
    */
   private parseOperand(): Operand | null {
     const { start, traits } = this.getParsePoint();
-
+    const startToken = this.tokens.peek();
     // --- Check registers
     if (traits.reg) {
       // --- We have a register operand
@@ -1200,7 +1200,8 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType,
-        register
+        register,
+        startToken
       };
     }
 
@@ -1215,7 +1216,8 @@ export class Z80AsmParser {
         this.expectToken(TokenType.RPar, "Z0005");
         return <Operand>{
           type: "Operand",
-          operandType: OperandType.NoneArg
+          operandType: OperandType.NoneArg,
+          startToken
         };
       }
       let register: string | undefined;
@@ -1242,7 +1244,8 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType,
-        register
+        register,
+        startToken
       };
     }
 
@@ -1257,7 +1260,8 @@ export class Z80AsmParser {
         this.expectToken(TokenType.RPar, "Z0005");
         return <Operand>{
           type: "Operand",
-          operandType: OperandType.NoneArg
+          operandType: OperandType.NoneArg,
+          startToken
         };
       }
       let register: string | undefined;
@@ -1284,7 +1288,8 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType,
-        register
+        register,
+        startToken
       };
     }
 
@@ -1293,7 +1298,8 @@ export class Z80AsmParser {
       this.tokens.get();
       return <Operand>{
         type: "Operand",
-        operandType: OperandType.NoneArg
+        operandType: OperandType.NoneArg,
+        startToken,
       };
     }
 
@@ -1308,7 +1314,8 @@ export class Z80AsmParser {
         this.expectToken(TokenType.RPar, "Z0005");
         return <Operand>{
           type: "Operand",
-          operandType: OperandType.CPort
+          operandType: OperandType.CPort,
+          startToken
         };
       }
       if (traits.reg16) {
@@ -1319,7 +1326,8 @@ export class Z80AsmParser {
         return <Operand>{
           type: "Operand",
           operandType: OperandType.RegIndirect,
-          register: ahead.text.toLowerCase()
+          register: ahead.text.toLowerCase(),
+          startToken
         };
       }
       if (traits.reg16Idx) {
@@ -1344,7 +1352,8 @@ export class Z80AsmParser {
           operandType: OperandType.IndexedIndirect,
           register,
           offsetSign,
-          expr
+          expr,
+          startToken
         };
       }
       if (traits.expressionStart) {
@@ -1355,7 +1364,8 @@ export class Z80AsmParser {
         return <Operand>{
           type: "Operand",
           operandType: OperandType.MemIndirect,
-          expr
+          expr,
+          startToken
         };
       }
     }
@@ -1366,7 +1376,8 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType: OperandType.Condition,
-        register: start.text
+        register: start.text,
+        startToken
       };
     }
 
@@ -1376,7 +1387,8 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType: OperandType.Expression,
-        expr: this.getExpression()
+        expr: this.getExpression(),
+        startToken
       };
     }
 

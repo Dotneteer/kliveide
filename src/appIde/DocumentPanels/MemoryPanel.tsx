@@ -20,7 +20,7 @@ import { MachineControllerState } from "@common/abstractions/MachineControllerSt
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
-import { toHexa2, toHexa4 } from "../services/interactive-commands";
+import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { ZxSpectrumChars } from "./char-codes";
 import styles from "./MemoryPanel.module.scss";

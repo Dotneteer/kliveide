@@ -1,7 +1,7 @@
 import { EmuListBreakpointsResponse } from "@common/messaging/main-to-emu";
 import { FlagResponse } from "@common/messaging/messages-core";
-import { InteractiveCommandContext } from "../abstractions/InteractiveCommandContext";
-import { InteractiveCommandResult } from "../abstractions/InteractiveCommandResult";
+import { IdeCommandContext } from "../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
@@ -11,7 +11,7 @@ import {
   writeSuccessMessage,
   validationError,
   commandError
-} from "../services/interactive-commands";
+} from "../services/ide-commands";
 import { CommandWithAddressBase } from "./CommandWithAddressBase";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
@@ -22,8 +22,8 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly aliases = ["eab"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const bps = (await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
     })) as EmuListBreakpointsResponse;
@@ -42,13 +42,13 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
 
 export class ListBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-list";
-  readonly description = "Erase all breakpoints";
+  readonly description = "Lists all breakpoints";
   readonly usage = "bp-list";
   readonly aliases = ["bpl"];
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const bps = (await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
     })) as EmuListBreakpointsResponse;
@@ -78,15 +78,15 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
 
 export class SetBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-set";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-set";
+  readonly description = "Sets a breakpoint at the specified address";
+  readonly usage = "bp-set <address>";
   readonly aliases = ["bp"];
 
   protected readonly extraArgCount = undefined;
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuSetBreakpoint",
       bp: this.address
@@ -103,15 +103,15 @@ export class SetBreakpointCommand extends CommandWithAddressBase {
 
 export class RemoveBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-del";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-del";
+  readonly description = "Removes the breakpoint from the specified address";
+  readonly usage = "bp-del <address>";
   readonly aliases = ["bd"];
 
   protected readonly extraArgCount = undefined;
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
       bp: this.address
@@ -133,8 +133,8 @@ export class RemoveBreakpointCommand extends CommandWithAddressBase {
 
 export class EnableBreakpointCommand extends CommandWithAddressBase {
   readonly id = "bp-en";
-  readonly description = "Erase all breakpoints";
-  readonly usage = "bp-en";
+  readonly description = "Enables/disables a breakpoint";
+  readonly usage = "bp-en <address> [-d]";
   readonly aliases = ["be"];
 
   enable: boolean;
@@ -161,8 +161,8 @@ export class EnableBreakpointCommand extends CommandWithAddressBase {
   }
 
   async doExecute (
-    context: InteractiveCommandContext
-  ): Promise<InteractiveCommandResult> {
+    context: IdeCommandContext
+  ): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
       address: this.address,

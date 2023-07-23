@@ -73,9 +73,12 @@ export function TabButton ({
           />
         )}
       </div>
-      {useSpace && <TabButtonSeparator />}
+      {useSpace && <TabButtonSpace />}
     </>
   );
 }
 
-export const TabButtonSeparator = () => <div style={{ paddingRight: 8 }} />;
+
+export const TabButtonSpace = () => <div style={{ paddingRight: 8 }} />;
+
+export const TabButtonSeparator = () => <div className={styles.separator}></div>

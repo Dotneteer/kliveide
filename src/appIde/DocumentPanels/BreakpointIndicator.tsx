@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { Icon } from "@/controls/Icon";
 import { TooltipFactory } from "@/controls/Tooltip";
 import { useRendererContext } from "@/core/RendererProvider";
-import { toHexa4 } from "../services/interactive-commands";
+import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
+import { useAppServices } from "../services/AppServicesProvider";
 
 type Props = {
   address: number;
@@ -19,6 +20,7 @@ export const BreakpointIndicator = ({
   current
 }: Props) => {
   const { messenger } = useRendererContext();
+  const { ideCommandsService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
   const [pointed, setPointed] = useState(false);
 
@@ -50,20 +52,14 @@ export const BreakpointIndicator = ({
 
   // --- Handle addong/removing a breakpoint
   const handleLeftClick = async () => {
-    await messenger.sendMessage({
-      type: hasBreakpoint ? "EmuRemoveBreakpoint" : "EmuSetBreakpoint",
-      bp: address
-    });
+    await ideCommandsService.executeCommand(
+      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`);
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
     if (hasBreakpoint) {
-      await messenger.sendMessage({
-        type: "EmuEnableBreakpoint",
-        address: address,
-        enable: disabled
-      });
+      await ideCommandsService.executeCommand(`bp-en ${address} ${disabled ? "" : "-d"}`)
     }
   };
 

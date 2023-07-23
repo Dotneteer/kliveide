@@ -8,7 +8,7 @@ import { IOutputBuffer } from "../ToolArea/abstractions";
 /**
  * Describes the execution context of a command
  */
-export type InteractiveCommandContext = {
+export type IdeCommandContext = {
   /**
    * The text of the interactive command
    */

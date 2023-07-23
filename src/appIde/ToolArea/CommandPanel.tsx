@@ -10,14 +10,14 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
-import { TabButton, TabButtonSeparator } from "@/controls/TabButton";
+import { TabButton, TabButtonSpace } from "@/controls/TabButton";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 
 const CommandPanel = () => {
   const dispatch = useDispatch();
-  const { interactiveCommandsService } = useAppServices();
+  const { ideCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
-  const buffer = useRef<IOutputBuffer>(interactiveCommandsService.getBuffer());
+  const buffer = useRef<IOutputBuffer>(ideCommandsService.getBuffer());
   const [contents, setContents] = useState<OutputContentLine[]>(
     buffer.current.getContents()
   );
@@ -102,7 +102,7 @@ const CommandPanel = () => {
         e.preventDefault();
         e.stopPropagation();
         const historyLength =
-          interactiveCommandsService.getCommandHistoryLength();
+          ideCommandsService.getCommandHistoryLength();
         if (historyLength > 0) {
           historyIndex.current += e.key === "ArrowUp" ? 1 : -1;
           if (historyIndex.current === -1) {
@@ -110,7 +110,7 @@ const CommandPanel = () => {
           } else {
             historyIndex.current =
               (historyIndex.current + historyLength) % historyLength;
-            input.value = interactiveCommandsService.getCommandFromHistory(
+            input.value = ideCommandsService.getCommandFromHistory(
               historyIndex.current
             );
           }
@@ -124,21 +124,16 @@ const CommandPanel = () => {
     const output = buffer.current;
     setExecuting(true);
     dispatch(setIdeStatusMessageAction("Executing command"));
-    output.resetColor();
+    output.resetStyle();
     output.writeLine(`$ ${command}`);
     setContents(buffer.current.getContents().slice(0));
-    const result = await interactiveCommandsService.executeCommand(
+    const result = await ideCommandsService.executeInteractiveCommand(
       command,
       output
     );
     if (result.success) {
       dispatch(setIdeStatusMessageAction("Command executed", true));
     } else {
-      if (result.finalMessage) {
-        output.color("bright-red");
-        output.writeLine(result.finalMessage);
-        output.resetColor();
-      }
       dispatch(setIdeStatusMessageAction("Command executed with error", false));
     }
     setExecuting(false);
@@ -149,7 +144,7 @@ export const commandPanelRenderer = () => <CommandPanel />;
 
 export const commandPanelHeaderRenderer = () => {
   const dispatch = useDispatch();
-  const { interactiveCommandsService } = useAppServices();
+  const { ideCommandsService: interactiveCommandsService } = useAppServices();
   return (
     <>
       <TabButton
@@ -160,7 +155,7 @@ export const commandPanelHeaderRenderer = () => {
           dispatch(incToolCommandSeqNoAction());
         }}
       />
-      <TabButtonSeparator />
+      <TabButtonSpace />
       <TabButton
         iconName='copy'
         title='Copy to clipboard'

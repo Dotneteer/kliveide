@@ -33,7 +33,9 @@ import {
   MainShowOpenFolderDialogRequest,
   MainShowOpenFolderDialogResponse,
   MainSaveTextFileRequest,
-  MainSaveProjectRequest
+  MainSaveProjectRequest,
+  MainCompileFileRequest,
+  MainCompileResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -53,7 +55,9 @@ import {
   EmuGetMemoryRequest,
   EmuGetMemoryResponse,
   EmuGetSysVarsRequest,
-  EmuGetSysVarsResponse
+  EmuGetSysVarsResponse,
+  EmuInjectCodeRequest,
+  EmuRunCodeRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -137,6 +141,8 @@ export type RequestMessage =
   | EmuEnableBreakpointRequest
   | EmuGetMemoryRequest
   | EmuGetSysVarsRequest
+  | EmuInjectCodeRequest
+  | EmuRunCodeRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -149,6 +155,7 @@ export type RequestMessage =
   | MainShowOpenFolderDialogRequest
   | MainSaveTextFileRequest
   | MainSaveProjectRequest
+  | MainCompileFileRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -168,6 +175,7 @@ export type ResponseMessage =
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
   | MainShowOpenFolderDialogResponse
+  | MainCompileResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse

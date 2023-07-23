@@ -1,7 +1,6 @@
 import "mocha";
 import * as path from "path";
 import { expect } from "expect";
-import { SpectrumModelType } from "../../electron/z80-compiler/abstractions";
 import { Z80Assembler } from "../../electron/z80-compiler/assembler";
 import { ErrorCodes } from "../../electron/z80-compiler/assembler-errors";
 import {
@@ -9,6 +8,7 @@ import {
   AssemblerOutput
 } from "../../electron/z80-compiler/assembler-in-out";
 import { SymbolValueMap } from "../../electron/z80-compiler/assembler-types";
+import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 
 export async function testExpression (
   source: string,

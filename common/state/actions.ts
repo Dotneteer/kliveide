@@ -3,6 +3,7 @@ import { ToolState } from "../abstractions/ToolState";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
+import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
 
 export const setAppPathAction: ActionCreator = (file: string) => ({
   type: "SET_APP_PATH",
@@ -299,4 +300,21 @@ export const setBuildRootAction: ActionCreator = (
 
 export const incProjectVersionAction: ActionCreator = () => ({
   type: "INC_PROJECT_VERSION"
+});
+
+export const resetCompileAction: ActionCreator = () => ({
+  type: "RESET_COMPILE",
+});
+
+export const startCompileAction: ActionCreator = (file: string) => ({
+  type: "START_COMPILE",
+  payload: { file },
+});
+
+export const endCompileAction: ActionCreator = (
+  compileResult: KliveCompilerOutput,
+  failed?: string
+) => ({
+  type: "END_COMPILE",
+  payload: { compileResult, failed },
 });
