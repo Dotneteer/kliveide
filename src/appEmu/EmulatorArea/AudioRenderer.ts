@@ -46,12 +46,6 @@ export class AudioRenderer {
     }
   }
 
-  pause(): void {
-    if (!this._ctx || this._isSuspended) return;
-    this._ctx.suspend();
-    this._isSuspended = true;
-  }
-
   /**
    * Stores the samples to render
    * @param samples Next batch of samples to store

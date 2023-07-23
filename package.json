@@ -18,7 +18,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "build:check": "tsc && vite build"
+    "build:check": "tsc && vite build",
+    "build:mac": "npm run build && electron-builder build --mac --x64"
+
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
