@@ -158,7 +158,10 @@ export async function processRendererToMainMessages (
 
     case "MainSaveTextFile":
       try {
-        fs.writeFileSync(message.path, message.data);
+        const filename = path.isAbsolute(message.path) 
+          ? message.path
+          : path.join(app.getPath("home"), message.path);
+        fs.writeFileSync(filename, message.data);
         break;
       } catch (err) {
         return errorResponse(err.toString());

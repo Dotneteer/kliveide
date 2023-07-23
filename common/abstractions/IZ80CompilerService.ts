@@ -385,6 +385,11 @@ export type BinarySegment = {
    * Emitted Z80 binary code
    */
   readonly emittedCode: number[];
+
+  /**
+   * Intel hex start address of this segment
+   */
+  readonly xorgValue?: number;
 };
 
 /**
