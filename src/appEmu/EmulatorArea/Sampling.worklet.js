@@ -1,5 +1,5 @@
 const FRAMES_BUFFERED = 400;
-const FRAMES_DELAYED = 8;
+const FRAMES_DELAYED = 1;
 
 let waveBuffer;
 let writeIndex = 0;

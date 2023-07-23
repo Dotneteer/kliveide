@@ -153,7 +153,7 @@ export const EmulatorPanel = () => {
 
       case MachineControllerState.Paused:
         overlay = "Paused";
-        beeperRenderer?.current?.pause();
+        beeperRenderer?.current?.closeAudio();
         break;
 
       case MachineControllerState.Stopped:
