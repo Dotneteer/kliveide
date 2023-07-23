@@ -10,6 +10,8 @@ import { SysVar } from "../abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
+import { MainExecPointInfo } from "../abstractions/IZ80Machine";
 
 /**
  * The common core functionality for all ZX Spectrum machines
@@ -473,6 +475,47 @@ export abstract class ZxSpectrumBase
    */
   getCursorMode (): number {
     return this.doReadMemory(0x5c41);
+  }
+
+  /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  abstract getMainExecPoint (model: string): MainExecPointInfo;
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  injectCodeToRun (codeToInject: CodeToInject): number {
+    // --- Clear the screen unless otherwise requested
+    if (!codeToInject.options.noCls) {
+      for (let addr = 0x4000; addr < 0x5800; addr++) {
+        this.writeMemory(addr, 0);
+      }
+      for (let addr = 0x5800; addr < 0x5b00; addr++) {
+        this.writeMemory(addr, 0x38);
+      }
+    }
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // TODO: Implement this
+      } else {
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
+
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+    }
+
+    // --- Use this start point
+    return codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
   }
 
   /**

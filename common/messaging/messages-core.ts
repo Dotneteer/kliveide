@@ -55,7 +55,9 @@ import {
   EmuGetMemoryRequest,
   EmuGetMemoryResponse,
   EmuGetSysVarsRequest,
-  EmuGetSysVarsResponse
+  EmuGetSysVarsResponse,
+  EmuInjectCodeRequest,
+  EmuRunCodeRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -139,6 +141,8 @@ export type RequestMessage =
   | EmuEnableBreakpointRequest
   | EmuGetMemoryRequest
   | EmuGetSysVarsRequest
+  | EmuInjectCodeRequest
+  | EmuRunCodeRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest

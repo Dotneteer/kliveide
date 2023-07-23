@@ -57,7 +57,6 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check if a project node exists
-    console.log(context.commandtext);
     const projState = context.store.getState()?.project;
     if (!projState?.folderPath) {
       return commandError("No project is open.");

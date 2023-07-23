@@ -12,6 +12,12 @@ import {
 import { TapeDevice } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrumFloatingBusDevice";
+import { MainExecPointInfo } from "@/emu/abstractions/IZ80Machine";
+
+/**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+export const SP48_MAIN_ENTRY = 0x12ac;
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -265,6 +271,17 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     for (let i = 0; i < data.length; i++) {
       this._memory[i] = data[i];
     }
+  }
+
+  /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  getMainExecPoint (model: string): MainExecPointInfo {
+    return {
+      romIndex: 0,
+      entryPoint: SP48_MAIN_ENTRY
+    };
   }
 
   /**
@@ -808,7 +825,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
           "mem-5 (byte 1)",
           "mem-5 (byte 2)",
           "mem-5 (byte 3)",
-          "mem-5 (byte 4)",
+          "mem-5 (byte 4)"
         ]
       },
       {
@@ -858,7 +875,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
           "'P'",
           "End marker"
         ]
-      },
+      }
     ];
   }
 }

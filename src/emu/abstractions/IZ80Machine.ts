@@ -3,6 +3,7 @@ import { IZ80Cpu } from "./IZ80Cpu";
 import { ILiteEvent } from "../utils/lite-event";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { FrameTerminationMode } from "./FrameTerminationMode";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
@@ -119,4 +120,24 @@ export interface IZ80Machine extends IZ80Cpu {
    * Gets the length of the key emulation queue
    */
   getKeyQueueLength(): number;
+
+  /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  getMainExecPoint(model: string): MainExecPointInfo;
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number;
+}
+
+/**
+ * Describes the main execution cycle point of the machine
+ */
+export type MainExecPointInfo = {
+  romIndex?: number;
+  entryPoint: number;
 }

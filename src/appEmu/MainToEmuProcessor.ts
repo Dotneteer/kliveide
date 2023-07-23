@@ -245,7 +245,7 @@ export async function processMainToEmuMessages (
       };
     }
 
-    case "EmuGetSysVars":
+    case "EmuGetSysVars": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const m = controller.machine;
@@ -253,6 +253,17 @@ export async function processMainToEmuMessages (
         type: "EmuGetSysVarsResponse",
         sysVars: (m as ZxSpectrumBase).sysVars
       };
+    }
+
+    case "EmuInjectCode":
+      break;
+
+    case "EmuRunCode": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      await controller.runCode(message.codeToInject, message.debug);
+      break;
+    }
   }
   return defaultResponse();
 

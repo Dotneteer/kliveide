@@ -63,7 +63,7 @@ import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
-import { CompileCommand } from "./commands/CompileCommand";
+import { CompileCommand, DebugCodeCommand, InjectCodeCommand, RunCodeCommand } from "./commands/CompilerCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 
@@ -240,4 +240,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new CloseFolderCommand());
 
   cmdSrv.registerCommand(new CompileCommand());
+  cmdSrv.registerCommand(new InjectCodeCommand());
+  cmdSrv.registerCommand(new RunCodeCommand());
+  cmdSrv.registerCommand(new DebugCodeCommand());
 }

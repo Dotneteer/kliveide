@@ -2,13 +2,14 @@ import { IFileProvider } from "@/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { IZ80Machine } from "../abstractions/IZ80Machine";
+import { IZ80Machine, MainExecPointInfo } from "../abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
 import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -206,9 +207,21 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   ): void;
 
   /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  abstract getMainExecPoint(model: string): MainExecPointInfo;
+
+  /**
    * Gets the length of the key emulation queue
    */
   abstract getKeyQueueLength(): number;
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  abstract injectCodeToRun(codeToInject: CodeToInject): number;
 
   /**
    * Executes the machine loop using the current execution context.
@@ -258,6 +271,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
+
+      // --- Do the machine reached the termination point?
+      if (this.testTerminationPoint()) {
+        // --- The machine reached the termination point
+        return (this.executionContext.lastTerminationReason =
+          FrameTerminationMode.UntilExecutionPoint);
+      }
 
       this._frameCompleted = this.tacts >= this._nextFrameStartTact;
     } while (!this._frameCompleted);

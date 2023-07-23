@@ -264,7 +264,8 @@ export const DocumentsHeader = () => {
               iconName='combine'
               title='Compile code'
               clicked={async () => {
-                const buildPane = outputPaneService.getOutputPaneBuffer("build");
+                const buildPane =
+                  outputPaneService.getOutputPaneBuffer("build");
                 await ideCommandsService.executeCommand("compile", buildPane);
                 await ideCommandsService.executeCommand("outp build");
               }}
@@ -273,16 +274,34 @@ export const DocumentsHeader = () => {
             <TabButton
               iconName='inject'
               title={"Inject code into\nthe virtual machine"}
+              clicked={async () => {
+                const buildPane =
+                  outputPaneService.getOutputPaneBuffer("build");
+                await ideCommandsService.executeCommand("inject", buildPane);
+                await ideCommandsService.executeCommand("outp build");
+              }}
             />
             <TabButtonSpace />
             <TabButton
               iconName='play'
               title={"Inject code and start\nthe virtual machine"}
+              clicked={async () => {
+                const buildPane =
+                  outputPaneService.getOutputPaneBuffer("build");
+                await ideCommandsService.executeCommand("run", buildPane);
+                await ideCommandsService.executeCommand("outp build");
+              }}
             />
             <TabButtonSpace />
             <TabButton
               iconName='debug'
               title={"Inject code and start\ndebugging"}
+              clicked={async () => {
+                const buildPane =
+                  outputPaneService.getOutputPaneBuffer("build");
+                await ideCommandsService.executeCommand("debug", buildPane);
+                await ideCommandsService.executeCommand("outp build");
+              }}
             />
           </>
         )}

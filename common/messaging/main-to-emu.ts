@@ -1,6 +1,7 @@
 import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
 import { SysVar } from "@/emu/abstractions/SysVar";
 import { MessageBase } from "./messages-core";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -167,6 +168,20 @@ export interface EmuGetMemoryResponse extends MessageBase {
 export interface EmuGetSysVarsResponse extends MessageBase {
   type: "EmuGetSysVarsResponse";
   sysVars: SysVar[];
+}
+
+/**
+ * The Ide asks Emu to inject the specified code
+ */
+export interface EmuInjectCodeRequest extends MessageBase {
+  type: "EmuInjectCode";
+  codeToInject: CodeToInject;
+}
+
+export interface EmuRunCodeRequest extends MessageBase {
+  type: "EmuRunCode";
+  codeToInject: CodeToInject;
+  debug: boolean;
 }
 
 

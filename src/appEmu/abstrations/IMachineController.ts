@@ -1,4 +1,5 @@
 import { IOutputBuffer } from "@/appIde/ToolArea/abstractions";
+import { CodeToInject } from "@/appIde/abstractions/code-related";
 import { FrameStats } from "@/emu/abstractions/FrameStats";
 import { IDebugSupport } from "@/emu/abstractions/IDebugSupport";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
@@ -110,4 +111,11 @@ export interface IMachineController {
    * Starts the machine in step-out mode.
    */
   stepOut(): Promise<void>;
+
+  /**
+   * Runs the specified code in the virtual machine
+   * @param codeToInject Code to inject into the amchine
+   * @param debug Run in debug mode?
+   */
+  runCode (codeToInject: CodeToInject, debug?: boolean): Promise<void>;
 }

@@ -55,7 +55,6 @@ export const Dropdown = ({
   const isSelected = (option: OptionProps) =>
     !selectedValue ? false : selectedValue.value === option.value;
 
-  console.log(getDisplay(), value)  
   return (
     <div className={styles.dropdownContainer}>
       <div className={styles.dropdownInput} onClick={handleInputClick}>
