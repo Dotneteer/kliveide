@@ -12,7 +12,7 @@ export class MemoryHelper {
    * @param ptr Memory pointer this helper works with
    */
   constructor(public wasmApi: WasmCpuApi, public ptr: number) {
-    this._memory = new Uint8Array(wasmApi.memory.buffer, 0);
+    this._memory = new Uint8Array(wasmApi.memory.buffer, ptr);
   }
 
   /**
@@ -20,7 +20,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   readByte(offs: number): number {
-    offs += this.ptr;
     return this._memory[offs];
   }
 
@@ -30,7 +29,6 @@ export class MemoryHelper {
    * @param length #of bytes to read
    */
   readBytes(offs: number, length: number): number[] {
-    offs += this.ptr;
     const result: number[] = [];
     for (let i = 0; i < length; i++) {
       result[i] = this._memory[offs + i];
@@ -44,7 +42,6 @@ export class MemoryHelper {
    * @param length #of bytes to read
    */
   readWords(offs: number, length: number): number[] {
-    offs += this.ptr;
     const result: number[] = [];
     for (let i = 0; i < length; i++) {
       result[i] =
@@ -58,7 +55,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   writeByte(offs: number, value: number): void {
-    offs += this.ptr;
     this._memory[offs] = value & 0xff;
   }
 
@@ -67,7 +63,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   readBool(offs: number): boolean {
-    offs += this.ptr;
     return this._memory[offs] !== 0;
   }
 
@@ -76,7 +71,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   writeBool(offs: number, value: boolean): void {
-    offs += this.ptr;
     this._memory[offs] = value ? 1 : 0;
   }
 
@@ -85,7 +79,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   readUint16(offs: number): number {
-    offs += this.ptr;
     return this._memory[offs] + (this._memory[offs + 1] << 8);
   }
 
@@ -94,7 +87,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   writeUint16(offs: number, value: number): void {
-    offs += this.ptr;
     this._memory[offs] = value & 0xff;
     this._memory[offs + 1] = (value >> 8) & 0xff;
   }
@@ -104,7 +96,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   readUint32(offs: number): number {
-    offs += this.ptr;
     return (
       this._memory[offs] +
       (this._memory[offs + 1] << 8) +
@@ -118,7 +109,6 @@ export class MemoryHelper {
    * @param offs Offset value
    */
   writeUint32(offs: number, value: number): void {
-    offs += this.ptr;
     this._memory[offs] = value & 0xff;
     this._memory[offs + 1] = (value >> 8) & 0xff;
     this._memory[offs + 2] = (value >> 16) & 0xff;
