@@ -2,7 +2,6 @@
 // ZX Spectrum 48K machine implementation
 // ============================================================================
 import void trace "imports" "trace" (u32);
-import void saveModeLeft "imports" "saveModeLeft" (u32);
 
 // --- Sign that ZX Spectrum models have contended memory
 #define MEM_CONTENDED

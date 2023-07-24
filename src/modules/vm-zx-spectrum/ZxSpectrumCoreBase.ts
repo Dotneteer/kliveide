@@ -177,15 +177,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   }
 
   /**
-   * Optional import properties for the WebAssembly engine
-   */
-  readonly waImportProps: Record<string, any> = {
-    saveModeLeft: (length: number) => {
-      this.storeSavedDataInState(length);
-    },
-  };
-
-  /**
    * Creates the CPU instance
    */
   configureMachine(): void {
@@ -494,19 +485,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     }
     const mh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
     mh.writeByte(def.location, 0x01);
-  }
-
-  /**
-   * Extracts saved data
-   * @param length Data length
-   */
-  storeSavedDataInState(length: number): void {
-    // if (!vmEngine) {
-    //   return;
-    // }
-    // const mh = new MemoryHelper(vmEngine.z80Machine.api, TAPE_SAVE_BUFFER);
-    // const savedData = new Uint8Array(mh.readBytes(0, length));
-    // rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
   }
 
   // ==========================================================================

@@ -8,7 +8,7 @@
 // Pilot pulse length
 const u64 PILOT_PULSE = 2168;
 
-// Pilot pulses in the header blcok
+// Pilot pulses in the header bloсk
 const u64 HEADER_PILOT_COUNT = 8063;
 
 // Pilot pulses in the data block
@@ -207,7 +207,7 @@ void checkTapeHooks() {
       // --- Turn on SAVE mode
       tapeMode = TM_SAVE;
       tapeLastMicBitTact = getCurrentTactAsI64();
-      tapeLastMicBit = 0x08;
+      tapeLastMicBit = 0x07;
       tapeSavePhase = SP_NONE;
       tapePilotPulseCount = 0;
       tapeDataBlockCount = 0;
@@ -223,19 +223,11 @@ void checkTapeHooks() {
       tapeMode = TM_PASSIVE;
       return;
     }
-
-    // --- Tape Error?
-    if (pc == 0x0008) {
-      tapeMode = TM_PASSIVE;
-    }
-    return;
   }
 
-  // --- SAVE Mode. Error or too long pause?
-  if (pc == 0x0008 | (getCurrentTactAsI64() - tapeLastMicBitTact) > TOO_LONG_PAUSE) {
-    // --- Leave the SAVE mode
+  // --- Tape Error?
+  if (pc == 0x0008) {
     tapeMode = TM_PASSIVE;
-    saveModeLeft(tapeSaveDataLen);
   }
 }
 
