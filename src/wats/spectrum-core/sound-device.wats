@@ -130,7 +130,7 @@ void initSound(*psgState psgPtr) {
   psgNextClockTact = PSG_CLOCK_STEP;
 }
 
-// Initializes the PSG envelop tables
+// Initializes the PSG envelope tables
 void initEnvelopeTables() {
   // Reset the sample pointer
   local *u8 samplePtr = &psgEnvelopes;
@@ -178,7 +178,7 @@ void initEnvelopeTables() {
         }
       }
 
-      // --- Store the envelop sample and move to the next position
+      // --- Store the envelope sample and move to the next position
       (*samplePtr) = vol;
       samplePtr += 1;
       pos += 1;
@@ -189,7 +189,7 @@ void initEnvelopeTables() {
   }
 }
 
-// Reads the value of the selected PSG reginster
+// Reads the value of the selected PSG register
 u8 readPsgRegisterValue(*psgState psgPtr) {
   return (*psgPtr).regs[psgRegisterIndex & 0x0f];
 }

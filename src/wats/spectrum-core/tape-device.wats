@@ -207,7 +207,7 @@ void checkTapeHooks() {
       // --- Turn on SAVE mode
       tapeMode = TM_SAVE;
       tapeLastMicBitTact = getCurrentTactAsI64();
-      tapeLastMicBit = 0x07;
+      tapeLastMicBit = 0xFF;
       tapeSavePhase = SP_NONE;
       tapePilotPulseCount = 0;
       tapeDataBlockCount = 0;
@@ -508,8 +508,8 @@ void processMicBit(u32 micBit) {
   }
 
   // --- Now, we have a categorized pulse
-  tapeLastMicBit = micBit;
   tapeLastMicBitTact = bitTact;
+  tapeLastMicBit = micBit;
 
   // --- Let's process the pulse according to the current SAVE phase and pulse width
   nextPhase = SP_ERROR;
