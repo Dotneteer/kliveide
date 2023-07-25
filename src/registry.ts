@@ -3,7 +3,8 @@ import {
   MEMORY_EDITOR,
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
-  CODE_EDITOR
+  CODE_EDITOR,
+  TAP_EDITOR
 } from "@common/state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { MachineInfo } from "./abstractions/MachineInfo";
@@ -36,6 +37,7 @@ import {
   outputPanelHeaderRenderer
 } from "./appIde/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "./emu/machines/zxSpectrum48/ZxSpectrum48Machine";
+import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -162,7 +164,14 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createCommandResultPanel,
     icon: "code",
     iconFill: "--console-ansi-bright-magenta"
-  }
+  },
+  {
+    id: TAP_EDITOR,
+    renderer: createTapViewerPanel,
+    icon: "@file-tap-tzx",
+    iconFill: "--console-ansi-bright-cyan",
+    openPermanent: true
+  },
 ];
 
 // --- Set up machine type registry
@@ -204,6 +213,12 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "zxbas",
     icon: "@file-zxbas"
+  },
+  {
+    matchType: "ends",
+    pattern:".tzx",
+    editor: TAP_EDITOR,
+    icon: "@file-tap-tzx"
   },
 ]
 

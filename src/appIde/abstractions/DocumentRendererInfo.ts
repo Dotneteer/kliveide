@@ -23,4 +23,9 @@ export type DocumentRendererInfo = {
    * The icon's fill color
    */
   iconFill?: string;
+
+  /**
+   * Open the editor in permanent mode
+   */
+  openPermanent?: boolean;
 };
