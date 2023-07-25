@@ -10,6 +10,7 @@ export interface MainReadTextFileRequest extends MessageBase {
   type: "MainReadTextFile";
   path: string;
   encoding?: string;
+  resolveIn?: string;
 }
 
 /**
@@ -18,6 +19,7 @@ export interface MainReadTextFileRequest extends MessageBase {
 export interface MainReadBinaryFileRequest extends MessageBase {
   type: "MainReadBinaryFile";
   path: string;
+  resolveIn?: string;
 }
 
 /**

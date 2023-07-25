@@ -20,15 +20,19 @@ import {
   createKliveProject,
   openFolder,
   openFolderByPath,
+  resolveHomeFilePath,
   resolvePublicFilePath,
   saveKliveProject
 } from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
-import { dimMenuAction, endCompileAction, startCompileAction } from "../../common/state/actions";
+import {
+  dimMenuAction,
+  endCompileAction,
+  startCompileAction
+} from "../../common/state/actions";
 import {
   getCompiler,
-  IKliveCompiler,
   KliveCompilerOutput,
   SimpleAssemblerOutput
 } from "../compiler-integration/compiler-registry";
@@ -47,7 +51,16 @@ export async function processRendererToMainMessages (
     case "MainReadTextFile":
       // --- A client want to read the contents of a text file
       try {
-        const contents = fs.readFileSync(resolvePublicFilePath(message.path), {
+        let fullPath = message.path;
+        switch (message.resolveIn) {
+          case "home":
+            fullPath = resolveHomeFilePath(message.path);
+            break;
+          default:
+            fullPath = resolvePublicFilePath(message.path);
+            break;
+        }
+        const contents = fs.readFileSync(fullPath, {
           encoding: (message.encoding ?? "utf8") as BufferEncoding
         });
         return textContentsResponse(contents);
@@ -58,7 +71,16 @@ export async function processRendererToMainMessages (
     case "MainReadBinaryFile":
       // --- A client want to read the contents of a binary file
       try {
-        const contents = fs.readFileSync(resolvePublicFilePath(message.path));
+        let fullPath = message.path;
+        switch (message.resolveIn) {
+          case "home":
+            fullPath = resolveHomeFilePath(message.path);
+            break;
+          default:
+            fullPath = resolvePublicFilePath(message.path);
+            break;
+        }
+        const contents = fs.readFileSync(fullPath);
         return binaryContentsResponse(contents);
       } catch (err) {
         return errorResponse(err.toString());
@@ -158,10 +180,7 @@ export async function processRendererToMainMessages (
 
     case "MainSaveTextFile":
       try {
-        const filename = path.isAbsolute(message.path) 
-          ? message.path
-          : path.join(app.getPath("home"), message.path);
-        fs.writeFileSync(filename, message.data);
+        fs.writeFileSync(resolveHomeFilePath(message.path), message.data);
         break;
       } catch (err) {
         return errorResponse(err.toString());
@@ -184,13 +203,13 @@ export async function processRendererToMainMessages (
           type: "MainCompileFileResponse",
           result,
           failed: (result as SimpleAssemblerOutput).failed
-        }
+        };
       } catch (err) {
         return {
           type: "MainCompileFileResponse",
-          result: {errors: []},
+          result: { errors: [] },
           failed: err.toString()
-        }
+        };
       }
       break;
 
@@ -214,7 +233,7 @@ export async function processRendererToMainMessages (
     case "EmuGetMemory":
     case "EmuGetSysVars":
     case "EmuInjectCode":
-    case "EmuRunCode":  
+    case "EmuRunCode":
       return sendFromMainToEmu(message);
   }
   return defaultResponse();
@@ -262,7 +281,13 @@ async function getDirectoryContent (
       const names = fs.readdirSync(entryPath);
       for (const name of names) {
         if (fileEntryCount++ > 10240) break;
-        entry.children.push(getFileEntryInfo(path.join(entryPath, name), path.join(projectRelative, name), name));
+        entry.children.push(
+          getFileEntryInfo(
+            path.join(entryPath, name),
+            path.join(projectRelative, name),
+            name
+          )
+        );
       }
       return entry;
     }
