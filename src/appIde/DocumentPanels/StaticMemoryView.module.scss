@@ -1,0 +1,36 @@
+@import "@styles/core.scss";
+
+.memoryView {
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-family: var(--monospace-font);
+}
+
+.memoryWrapper {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: fit-content;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+
+  &.twoSections {
+    flex-direction: row;
+  }
+
+  &.even {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}

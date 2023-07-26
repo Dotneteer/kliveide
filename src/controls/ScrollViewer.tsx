@@ -293,6 +293,7 @@ export const ScrollViewer = ({
     } else {
       ref.current.scrollTop += e.deltaY / 4;
     }
+    e.stopPropagation();
   };
 
   return (

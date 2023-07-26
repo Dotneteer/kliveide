@@ -1,7 +1,6 @@
 @import "@styles/core.scss";
 
 .tapViewerPanel {
-  @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
   user-select: none;
@@ -43,7 +42,6 @@
 }
 
 .tapViewerWrapper {
-  @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
   user-select: none;
@@ -65,10 +63,11 @@
   border: 1px solid transparent;
   outline: none;
   padding: 0 4px;
+  color: var(--color-label)
 }
 
 .headerText {
-  color: var(--color-panel-header);
+  color: var(--color-label);
   font-weight: 600;
   padding-left: 4px;
   width: 100%;
@@ -77,5 +76,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
+}
+
+.dataSection {
+  display: flex;
+  flex-direction: column;
+  padding-left: 8px;
 }

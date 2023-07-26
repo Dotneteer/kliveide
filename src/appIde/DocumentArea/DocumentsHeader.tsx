@@ -66,7 +66,6 @@ export const DocumentsHeader = () => {
   // --- Prepare the open documents to display
   useEffect(() => {
     refreshDocs();
-    console.log("open docs changed", openDocs);
   }, [openDocs]);
 
   // --- Refresh the changed project document
