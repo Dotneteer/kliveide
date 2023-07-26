@@ -262,7 +262,8 @@ export void resetMachine() {
   tapeEof = false;
   tapeBufferPtr = &tapeDataBuffer;
   tapeFastLoad = false;
-  
+  tapeSaveDataLen = 0;
+
   // --- Reset debugging state
   stepOutStackDepth = 0;
 }

@@ -260,10 +260,23 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     // --- We use this writer to save file info into
     const writer = new BinaryWriter();
     new TzxHeader().writeTo(writer);
-    // --- The first 19 bytes is the header
-    new TzxStandardSpeedDataBlock(data.slice(0, 19)).writeTo(writer);
-    // --- Other bytes are the data block
-    new TzxStandardSpeedDataBlock(data.slice(19)).writeTo(writer);
+    for (let ofs = 0; ofs < data.length;) {
+      // 21 = 19 + 2, 19 - header size, 2 - block type and checksum
+      const dataLen = 21 + data[ofs+12] + 256 * data[ofs+13];
+      if (ofs + dataLen > data.length) {
+        const blockName = Buffer.from(data.slice(ofs+2, ofs+12).buffer).toString()
+          .trimRight();
+        console.log(`${blockName} block seems to be corrupted.`)
+        break;
+      }
+
+      // --- The first 19 bytes is the header
+      new TzxStandardSpeedDataBlock(data.slice(ofs, ofs+19)).writeTo(writer);
+      // --- Other bytes are the data block
+      new TzxStandardSpeedDataBlock(data.slice(ofs+19, ofs+dataLen)).writeTo(writer);
+
+      ofs += dataLen;
+    }
 
     const tapeFile = result.filePath;
     fs.writeFileSync(tapeFile, writer.buffer);
