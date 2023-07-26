@@ -413,7 +413,6 @@ class DocumentService implements IDocumentService {
         data.dispose();
       }
       this.documentData.delete(id);
-      console.log("deleting document data", id);
     }
   }
 

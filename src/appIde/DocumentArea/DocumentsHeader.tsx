@@ -30,7 +30,7 @@ export const DocumentsHeader = () => {
     documentService,
     projectService,
     outputPaneService,
-    ideCommandsService
+    ideCommandsService    
   } = useAppServices();
   const { messenger } = useRendererContext();
   const ref = useRef<HTMLDivElement>();
@@ -66,6 +66,7 @@ export const DocumentsHeader = () => {
   // --- Prepare the open documents to display
   useEffect(() => {
     refreshDocs();
+    console.log("open docs changed", openDocs);
   }, [openDocs]);
 
   // --- Refresh the changed project document
@@ -230,6 +231,18 @@ export const DocumentsHeader = () => {
                 tabClicked={() => setHeaderVersion(headerVersion + 1)}
                 tabDoubleClicked={() => {
                   if (d.isTemporary) {
+                    console.log("dispatching double click", {
+                      id: d.id,
+                      name: d.name,
+                      type: d.type,
+                      isReadOnly: d.isReadOnly,
+                      isTemporary: false,
+                      iconName: d.iconName,
+                      iconFill: d.iconFill,
+                      language: d.language,
+                      path: d.path,
+                      stateValue: d.stateValue
+                    }, idx);
                     dispatch(
                       changeDocumentAction(
                         {

@@ -316,6 +316,7 @@ const ExplorerPanel = () => {
             newNode.data.icon = fileTypeEntry.icon;
             newNode.data.editor = fileTypeEntry.editor;
             newNode.data.subType = fileTypeEntry.subType;
+            newNode.data.isBinary = fileTypeEntry.isBinary;
           }
           selectedContextNode.insertAndSort(newNode, (a, b) =>
             compareProjectNode(a.data, b.data)

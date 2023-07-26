@@ -48,6 +48,11 @@ export type ProjectNode = {
   isReadOnly?: boolean;
 
   /**
+   * Is the node's file a binary file?
+   */
+  isBinary?: boolean;
+
+  /**
    * Indicates if this node can be a build root
    */
   canBeBuildRoot?: boolean;
@@ -56,6 +61,11 @@ export type ProjectNode = {
    * Optional properties
    */
   props?: Record<string, any>;
+
+  /**
+   * This project node should be open as permanent
+   */
+  openPermanent?: boolean;
 };
 
 /**
@@ -113,7 +123,9 @@ export function buildProjectTree (
       node.icon = fileTypeEntry.icon;
       node.editor = fileTypeEntry.editor;
       node.subType = fileTypeEntry.subType;
-      node.isReadOnly = fileTypeEntry.isReadOnly
+      node.isReadOnly = fileTypeEntry.isReadOnly;
+      node.isBinary = fileTypeEntry.isBinary;
+      node.openPermanent = fileTypeEntry.openPermanent;
     }
 
     // --- Get the language information

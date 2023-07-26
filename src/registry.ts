@@ -169,9 +169,8 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: TAP_EDITOR,
     renderer: createTapViewerPanel,
     icon: "@file-tap-tzx",
-    iconFill: "--console-ansi-bright-cyan",
-    openPermanent: true
-  },
+    iconFill: "--console-ansi-bright-cyan"
+  }
 ];
 
 // --- Set up machine type registry
@@ -195,36 +194,46 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
-    pattern:".kz80.asm",
+    pattern: ".kz80.asm",
     editor: CODE_EDITOR,
     subType: "kz80-asm",
     icon: "@file-kz80-asm"
   },
   {
     matchType: "ends",
-    pattern:".zxb.asm",
+    pattern: ".zxb.asm",
     editor: CODE_EDITOR,
     subType: "zxbasm",
     icon: "@file-zxb-asm"
   },
   {
     matchType: "ends",
-    pattern:".zxbas",
+    pattern: ".zxbas",
     editor: CODE_EDITOR,
     subType: "zxbas",
     icon: "@file-zxbas"
   },
   {
     matchType: "ends",
-    pattern:".tzx",
+    pattern: ".tzx",
     editor: TAP_EDITOR,
-    icon: "@file-tap-tzx"
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    openPermanent: true
   },
-]
+  {
+    matchType: "ends",
+    pattern: ".tap",
+    editor: TAP_EDITOR,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    openPermanent: true,
+  }
+];
 
 // --- Supported custom languages
 export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   asmKz80LanguageProvider,
   asmZxbLanguageProvider,
   zxBasLanguageProvider
-]
+];

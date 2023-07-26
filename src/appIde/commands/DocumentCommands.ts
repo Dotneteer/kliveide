@@ -10,7 +10,7 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
-import { TextContentsResponse } from "@common/messaging/any-to-main";
+import { BinaryContentsResponse, TextContentsResponse } from "@common/messaging/any-to-main";
 import { incDocumentActivationVersionAction } from "@common/state/actions";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
@@ -79,14 +79,21 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       docService.setActiveDocument(doc.id);
     } else {
       // --- Load the document
-      const response = (await context.messenger.sendMessage({
-        type: "MainReadTextFile",
-        path: nodeData.fullPath
-      })) as TextContentsResponse;
+      const docContent: any = {};
+      if (nodeData.isBinary) {
+        const response = (await context.messenger.sendMessage({
+          type: "MainReadBinaryFile",
+          path: nodeData.fullPath
+        })) as BinaryContentsResponse;
+        docContent.value = response.contents;
+      } else {
+        const response = (await context.messenger.sendMessage({
+          type: "MainReadTextFile",
+          path: nodeData.fullPath
+        })) as TextContentsResponse;
+        docContent.value = response.contents;
+      }
 
-      const docContent = {
-        value: response.contents
-      };
       docService.openDocument(
         {
           id: nodeData.fullPath,
@@ -100,16 +107,15 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
           viewVersion: 0
         },
         docContent,
-        true
+        !nodeData.openPermanent
       );
     }
 
-    // --- The document should be opn
+    // --- The document should be open
     const openDoc = await docService.waitOpen(projNode.data.fullPath, true);
     if (openDoc) {
       // --- Navigate to the specified position (if requested)
       if (this.lineNo != undefined) {
-        console.log("positioning");
         const api = docService.getDocumentApi(openDoc.id);
         if (api) {
           const apiEndpoint = api?.setPosition;

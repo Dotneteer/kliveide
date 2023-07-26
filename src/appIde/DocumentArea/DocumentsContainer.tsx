@@ -20,7 +20,6 @@ export const DocumentsContainer = ({ document, data }: DocumentProps) => {
   if (docRenderer) {
     document.iconName ||= docRenderer.icon;
     document.iconFill ||= docRenderer.iconFill
-    document.isTemporary = !docRenderer.openPermanent
   }
 
   return document ? (
