@@ -105,12 +105,21 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
 }
 
 /**
- * The client wants to get the app folder
+ * The client wants to save a text file
  */
 export interface MainSaveTextFileRequest extends MessageBase {
   type: "MainSaveTextFile";
   path: string;
   data: string;
+}
+
+/**
+ * The client wants to save a text file
+ */
+export interface MainSaveBinaryFileRequest extends MessageBase {
+  type: "MainSaveBinaryFile";
+  path: string;
+  data: Uint8Array;
 }
 
 /**

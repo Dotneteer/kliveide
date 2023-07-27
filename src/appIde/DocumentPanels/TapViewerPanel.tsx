@@ -1,4 +1,4 @@
-import { Label, LabelSeparator } from "@/controls/Labels";
+import { Label, LabelSeparator, Secondary } from "@/controls/Labels";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
 import { readTapeFile } from "@/utils/tape-utils";
@@ -13,6 +13,8 @@ import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { changeDocumentAction } from "@common/state/actions";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@/controls/ScrollViewer";
+import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
+import { TzxTextDescriptionBlock } from "@/emu/machines/tape/TzxTextDescriptionBlock";
 
 const TapViewerPanel = ({ document, data }: DocumentProps) => {
   const dispatch = useDispatch();
@@ -27,8 +29,7 @@ const TapViewerPanel = ({ document, data }: DocumentProps) => {
     setDocState(documentService.getDocumentState(document.id));
   }, [openDocs]);
 
-  useEffect(() => {
-  }, [docState]);
+  useEffect(() => {}, [docState]);
 
   if (!fileInfo.data) {
     return (
@@ -61,13 +62,22 @@ const TapViewerPanel = ({ document, data }: DocumentProps) => {
         </div>
         <div className={styles.tapViewerWrapper}>
           {fileInfo.data.map((ds, idx) => {
-            const title =
-              fileInfo.type.toLowerCase() === "tap"
-                ? `#${idx}: Data section (${(ds as TapeDataBlock).data.length})`
-                : `#${idx}: ${
-                    tzxSections[(ds as TzxBlockBase).blockId] ??
-                    "(unknown section)"
-                  }`;
+            let title: string;
+            if (fileInfo.type.toLowerCase() === "tap") {
+              const data = (ds as TapeDataBlock).data;
+              if (isHeaderBlock(data)) {
+                title = "Header block";
+              } else if (isDataBlock(data)) {
+                title = `Data block (length: ${data.length})`;
+              } else {
+                title = "Unknown block";
+              }
+              title = `#${idx}: ${title}`;
+            } else {
+              title = `#${idx}: ${
+                tzxSections[(ds as TzxBlockBase).blockId] ?? "(unknown section)"
+              }`;
+            }
             return (
               <DataSection
                 key={`${document.id}${idx}`}
@@ -151,10 +161,12 @@ type TapSectionProps = {
   index: number;
 };
 
-const TapSection = ({ block, index }: TapSectionProps) => {
+const TapSection = ({ block }: TapSectionProps) => {
+  const data = block.data;
   return (
     <div className={styles.dataSection}>
-      <StaticMemoryView memory={block.data} />
+      {isHeaderBlock(data) && <HeaderBlock data={data} />}
+      <StaticMemoryView memory={data} />
     </div>
   );
 };
@@ -165,7 +177,25 @@ type TzxSectionProps = {
 };
 
 const TzxSection = ({ block, index }: TzxSectionProps) => {
-  return <p>TZX Section #{index}</p>;
+  let section: ReactNode;
+  switch (block.blockId) {
+    case 0x10:
+      section = (
+        <TzxStandarSpeedBlockUi block={block as TzxStandardSpeedBlock} />
+      );
+      break;
+
+    case 0x30:
+      section = (
+        <TzxTextDescriptionBlockUi block={block as TzxTextDescriptionBlock} />
+      );
+      break;
+
+    default:
+      section = <TzxNotImplementedBlockUi block={block} />;
+      break;
+  }
+  return <div className={styles.dataSection}>{section}</div>;
 };
 
 type LabelProps = {
@@ -176,9 +206,108 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
+type BlockProps = {
+  data: Uint8Array;
+};
+
+const HeaderBlock = ({ data }: BlockProps) => {
+  let blockType = "unknown";
+  let par1Name = "Start Address";
+  let par2Name = "Parameter 2";
+  switch (data[1]) {
+    case 0:
+      blockType = "Program";
+      par1Name = "Autostart";
+      par2Name = "Variable offset";
+      break;
+    case 1:
+      blockType = "Number array";
+      break;
+    case 2:
+      blockType = "Character array";
+      break;
+    case 3:
+      blockType = "Code";
+      par1Name = "Start address";
+      break;
+  }
+  let name = "";
+  for (let i = 1; i <= 10; i++) {
+    name += String.fromCharCode(data[i]);
+  }
+  const length = data[12] + (data[13] << 8);
+  const par1Value = data[14] + (data[15] << 8);
+  const par2Value = data[16] + (data[17] << 8);
+
+  return (
+    <div className={styles.blockHeader}>
+      <Secondary
+        text={`'${name}' - ${blockType.toUpperCase()} (${length} bytes) `}
+      />
+      <Secondary
+        text={`${par1Name}: ${par1Value}, ${par2Name}: ${par2Value}`}
+      />
+    </div>
+  );
+};
+
+type TzxStandarSpeedBlockProps = {
+  block: TzxStandardSpeedBlock;
+};
+
+const TzxStandarSpeedBlockUi = ({ block }: TzxStandarSpeedBlockProps) => {
+  const data = block.data;
+  return (
+    <div className={styles.dataSection}>
+      {isHeaderBlock(data) && <HeaderBlock data={data} />}
+      <div className={styles.blockHeader}>
+        <Secondary text={`Pause after: ${block.pauseAfter}`} />
+      </div>
+      <StaticMemoryView memory={data} />
+    </div>
+  );
+};
+
+type TzxTextDescriptionBlockProps = {
+  block: TzxTextDescriptionBlock;
+};
+
+const TzxTextDescriptionBlockUi = ({ block }: TzxTextDescriptionBlockProps) => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text={block.descriptionText} />
+      </div>
+      <StaticMemoryView memory={block.description} />
+    </div>
+  );
+};
+
+type TzxNotImplementedBlockProps = {
+  block: TzxBlockBase;
+};
+
+const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text='(block display not implemented yet)' />
+      </div>
+    </div>
+  );
+};
+
 export const createTapViewerPanel = ({ document, data }: DocumentProps) => (
   <TapViewerPanel key={document.id} document={document} data={data} />
 );
+
+function isHeaderBlock (data: Uint8Array): boolean {
+  return data.length === 19 && data[0] === 0x00;
+}
+
+function isDataBlock (data: Uint8Array): boolean {
+  return data.length > 0 && data[0] === 0xff;
+}
 
 const tzxSections = {
   [0x10]: "Standard speed data block",

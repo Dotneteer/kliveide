@@ -35,6 +35,9 @@ import { TapReader } from "@/emu/machines/tape/TapReader";
 import { TzxReader } from "@/emu/machines/tape/TzxReader";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { SpectrumTapeHeader } from "@/emu/machines/tape/SpectrumTapeHeader";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { TzxHeader } from "@/emu/machines/tape/TzxHeader";
+import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
 
 export class CompileCommand extends CommandWithNoArgBase {
   readonly id = "compile";
@@ -403,7 +406,7 @@ export class ExportCodeCommand extends IdeCommandBase {
           const startAddr = segment.startAddress;
           const endAddr = segment.startAddress + segment.emittedCode.length - 1;
 
-          const codeSegment = new Uint8Array[endAddr - startAddr + 3]();
+          const codeSegment = new Uint8Array(endAddr - startAddr + 3);
           for (let i = 0; i < segment.emittedCode.length; i++) {
             codeSegment[i + 1] = segment[i];
           }
@@ -415,8 +418,8 @@ export class ExportCodeCommand extends IdeCommandBase {
           // --- Create the single header
           const header = new SpectrumTapeHeader();
           (header.type = 3), // --- Code block
-            (header.name = `${segmentIdx}_${name}`),
-            (header.dataLength = (codeSegment.Length - 2) & 0xffff),
+            (header.name = `${segmentIdx}_${exporter.name}`),
+            (header.dataLength = (codeSegment.length - 2) & 0xffff),
             (header.parameter1 = startAddr),
             (header.parameter2 = 0x8000);
 
@@ -433,7 +436,7 @@ export class ExportCodeCommand extends IdeCommandBase {
         const startAddr = (0xc000 + bankSegment.bankOffset) & 0xffff;
         const endAddr = startAddr + bankSegment.emittedCode.length - 1;
 
-        const codeSegment = new Uint8Array[endAddr - startAddr + 3]();
+        const codeSegment = new Uint8Array(endAddr - startAddr + 3);
         for (let i = 0; i < segments.length; i++) {
           codeSegment[i + 1] = bankSegment[i];
         }
@@ -446,7 +449,7 @@ export class ExportCodeCommand extends IdeCommandBase {
         const header = new SpectrumTapeHeader();
         (header.type = 3), // --- Code block
           (header.name = `bank${bankSegment.bank}.code`),
-          (header.dataLength = (codeSegment.Length - 2) & 0xffff),
+          (header.dataLength = (codeSegment.length - 2) & 0xffff),
           (header.parameter1 = startAddr),
           (header.parameter2 = 0x8000);
 
@@ -942,7 +945,51 @@ export class ExportCodeCommand extends IdeCommandBase {
     async function saveDataBlocks (
       blocks: Uint8Array[]
     ): Promise<IdeCommandResult> {
-      // TODO
+      const writer = new BinaryWriter()
+      try
+      {
+          // --- Save data blocks
+          if (exporter.format === "tzx") {
+            const header = new TzxHeader();
+            header.writeTo(writer);
+            for (const block of blocksToSave) {
+              const tzxBlock = new TzxStandardSpeedBlock();
+              tzxBlock.data = block;
+              tzxBlock.dataLength = block.length & 0xffff;
+              tzxBlock.writeTo(writer);
+            }
+          } else {
+            for (const block of blocksToSave) {
+              writer.writeUint16(block.length & 0xffff);
+              writer.writeBytes(block);
+            }
+          }
+
+                // --- Save the data to a file
+      if (exporter.filename) {
+        const response = await context.messenger.sendMessage({
+          type: "MainSaveBinaryFile",
+          path: exporter.filename,
+          data: writer.buffer
+        });
+        if (response.type === "ErrorResponse") {
+          return commandError(response.message);
+        }
+      }
+
+          return commandSuccess;
+      }
+      catch (err) {
+        return commandError(err.toString())
+      }
+
+
+
+
+
+
+
+
       return commandSuccess;
     }
   }

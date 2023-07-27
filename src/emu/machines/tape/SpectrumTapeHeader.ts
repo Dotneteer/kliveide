@@ -16,7 +16,7 @@ export class SpectrumTapeHeader {
   }
 
   constructor (public readonly header?: Uint8Array) {
-    this._headerBytes = new Uint8Array[HEADER_LEN]();
+    this._headerBytes = new Uint8Array(HEADER_LEN);
     for (let i = 0; i < HEADER_LEN; i++) this._headerBytes[i] = 0x00;
     this.calcChecksum();
   }

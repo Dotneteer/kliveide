@@ -35,7 +35,8 @@ import {
   MainSaveTextFileRequest,
   MainSaveProjectRequest,
   MainCompileFileRequest,
-  MainCompileResponse
+  MainCompileResponse,
+  MainSaveBinaryFileRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -154,6 +155,7 @@ export type RequestMessage =
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest
   | MainSaveTextFileRequest
+  | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
   | MainCompileFileRequest
   | IdeDisplayOutputRequest

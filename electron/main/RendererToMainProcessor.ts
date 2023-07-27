@@ -186,6 +186,14 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
+    case "MainSaveBinaryFile":
+      try {
+        fs.writeFileSync(resolveHomeFilePath(message.path), message.data);
+        break;
+      } catch (err) {
+        return errorResponse(err.toString());
+      }
+
     case "MainSaveProject":
       await saveKliveProject();
       break;

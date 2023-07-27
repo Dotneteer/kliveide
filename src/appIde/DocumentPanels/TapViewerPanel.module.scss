@@ -23,16 +23,6 @@
   font-weight: bold;
 }
 
-.headerLabel {
-  padding-left: 8px;
-  padding-right: 8px;
-  font-family: var(--main-font-family);
-  font-size: 1em;
-  color: var(--color-command-icon);
-  flex-shrink: 0;
-  flex-grow: 0;
-}
-
 .valueLabel {
   padding: 8px 2px 8px 8px;
   font-size: 1em;
@@ -51,6 +41,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding-bottom: 8px;
 }
 
 .sectionHeader {
@@ -63,11 +54,12 @@
   border: 1px solid transparent;
   outline: none;
   padding: 0 4px;
+  background: var(--bgcolor-disass-even-row);
   color: var(--color-label)
 }
 
 .headerText {
-  color: var(--color-label);
+  color: var(--color-value);
   font-weight: 600;
   padding-left: 4px;
   width: 100%;
@@ -83,3 +75,13 @@
   flex-direction: column;
   padding-left: 8px;
 }
+
+.blockHeader {
+  display: flex;
+  flex-direction: column;
+  justify-items: start;
+  padding: 4px 8px 8px 8px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
