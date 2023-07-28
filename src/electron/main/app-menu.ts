@@ -34,7 +34,7 @@ import { MachineControllerState } from "../../common/abstractions/MachineControl
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "@/appIde/ToolArea/abstractions";
+import { OutputColor } from "@/renderer/appIde/ToolArea/abstractions";
 import {
   BASIC_PANEL_ID,
   DISASSEMBLY_PANEL_ID,

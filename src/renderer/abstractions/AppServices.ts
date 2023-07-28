@@ -1,9 +1,9 @@
-import { IMachineService } from "@/appEmu/abstrations/IMachineService";
-import { IIdeCommandService } from "@/appIde/abstractions/IIdeCommandService";
-import { IOutputPaneService } from "@/appIde/abstractions/IOutputPaneService";
-import { IProjectService } from "@/appIde/abstractions/IProjectService";
-import { IDocumentService } from "@/appIde/services/DocumentService";
-import { IUiService } from "@/core/UiServices";
+import { IMachineService } from "@/renderer/appEmu/abstrations/IMachineService";
+import { IIdeCommandService } from "@/renderer/appIde/abstractions/IIdeCommandService";
+import { IOutputPaneService } from "@/renderer/appIde/abstractions/IOutputPaneService";
+import { IProjectService } from "@/renderer/appIde/abstractions/IProjectService";
+import { IDocumentService } from "@/renderer/appIde/services/DocumentService";
+import { IUiService } from "@/renderer/core/UiServices";
 
 /**
  * This type defines the services the IDE provides

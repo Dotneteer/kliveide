@@ -1,7 +1,7 @@
 import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
 import { SysVar } from "@/emu/abstractions/SysVar";
 import { MessageBase } from "./messages-core";
-import { CodeToInject } from "@/appIde/abstractions/code-related";
+import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type

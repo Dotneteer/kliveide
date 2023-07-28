@@ -1,5 +1,5 @@
-import { ProjectNode } from "@/appIde/project/project-node";
-import { ITreeNode } from "@/core/tree-node";
+import { ProjectNode } from "@/renderer/appIde/project/project-node";
+import { ITreeNode } from "@/renderer/core/tree-node";
 
 /**
  * This type describes a document that can have a designer (code editor) associated with it

@@ -3,7 +3,7 @@ import { IZ80Cpu } from "./IZ80Cpu";
 import { ILiteEvent } from "../utils/lite-event";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { FrameTerminationMode } from "./FrameTerminationMode";
-import { CodeToInject } from "@/appIde/abstractions/code-related";
+import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware

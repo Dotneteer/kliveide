@@ -1,7 +1,7 @@
-import { IMachineController } from "@/appEmu/abstrations/IMachineController";
-import { CodeToInject } from "@/appIde/abstractions/code-related";
-import { toHexa4 } from "@/appIde/services/ide-commands";
-import { IOutputBuffer, OutputColor } from "@/appIde/ToolArea/abstractions";
+import { IMachineController } from "@/renderer/appEmu/abstrations/IMachineController";
+import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
+import { toHexa4 } from "@/renderer/appIde/services/ide-commands";
+import { IOutputBuffer, OutputColor } from "@/renderer/appIde/ToolArea/abstractions";
 import { DebugStepMode } from "@/emu/abstractions/DebugStepMode";
 import { ExecutionContext } from "@/emu/abstractions/ExecutionContext";
 import { FrameStats } from "@/emu/abstractions/FrameStats";
