@@ -72,6 +72,7 @@ export async function processRendererToMainMessages (
       // --- A client want to read the contents of a binary file
       try {
         let fullPath = message.path;
+        console.log("resolveIn", message.resolveIn, process.env.PUBLIC, process.env.DIST);
         switch (message.resolveIn) {
           case "home":
             fullPath = resolveHomeFilePath(message.path);
@@ -80,6 +81,7 @@ export async function processRendererToMainMessages (
             fullPath = resolvePublicFilePath(message.path);
             break;
         }
+        console.log("binary", fullPath);
         const contents = fs.readFileSync(fullPath);
         return binaryContentsResponse(contents);
       } catch (err) {

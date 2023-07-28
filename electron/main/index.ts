@@ -54,10 +54,10 @@ const IDE_QP = "?ide"; // IDE discriminator
 
 // --- Let's prepare the environment variables
 process.env.DIST_ELECTRON = join(__dirname, "../..");
-process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
+process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
 process.env.PUBLIC = app.isPackaged
   ? process.env.DIST
-  : join(process.env.DIST_ELECTRON, "../public");
+  : join(process.env.DIST_ELECTRON, "public");
 
 // --- Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();

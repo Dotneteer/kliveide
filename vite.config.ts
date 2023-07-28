@@ -1,9 +1,8 @@
-import { rmSync } from "fs";
-import path from "path";
+import { rmSync } from "node:fs";
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import electron from "vite-electron-plugin";
-import { customStart, loadViteEnv } from "vite-electron-plugin/plugin";
+import electron from "vite-plugin-electron";
 import renderer from "vite-plugin-electron-renderer";
 import pkg from "./package.json";
 import monacoEditorPlugin from "vite-plugin-monaco-editor";
@@ -11,62 +10,79 @@ import monacoEditorPlugin from "vite-plugin-monaco-editor";
 rmSync(path.join(__dirname, "dist-electron"), { recursive: true, force: true });
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  resolve: {
-    alias: {
-      "@": path.join(__dirname, "src"),
-      "@styles": path.join(__dirname, "src/assets/styles"),
-      "@common": path.join(__dirname, "common"),
-      "@messaging": path.join(__dirname, "common/messaging"),
-      "@state": path.join(__dirname, "common/state"),
-      "@utils": path.join(__dirname, "common/utils")
-    }
-  },
-  plugins: [
-    react(),
-    monacoEditorPlugin({}),
-    electron({
-      include: ["electron", "preload", "common"],
-      transformOptions: {
-        sourcemap: !!process.env.VSCODE_DEBUG
-      },
-      plugins: [
-        ...(process.env.VSCODE_DEBUG
-          ? [
-              // Will start Electron via VSCode Debug
-              customStart(
-                debounce(() =>
-                  console.log(
-                    /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App"
-                  )
-                )
-              )
-            ]
-          : []),
-        // Allow use `import.meta.env.VITE_SOME_KEY` in Electron-Main
-        loadViteEnv()
-      ]
-    }),
-    renderer({
-      nodeIntegration: true
-    })
-  ],
-  server: process.env.VSCODE_DEBUG
-    ? (() => {
-        const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
-        return {
-          host: url.hostname,
-          port: +url.port
-        };
-      })()
-    : undefined,
-  clearScreen: false
-});
+export default defineConfig(({ command }) => {
+  rmSync("dist-electron", { recursive: true, force: true });
 
-function debounce<Fn extends (...args: any[]) => void>(fn: Fn, delay = 299) {
-  let t: NodeJS.Timeout;
-  return ((...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
-  }) as Fn;
-}
+  const isServe = command === 'serve'
+  const isBuild = command === 'build'
+  const sourcemap = isServe || !!process.env.VSCODE_DEBUG
+
+  return {
+    resolve: {
+      alias: {
+        "@": path.join(__dirname, "src"),
+        "@styles": path.join(__dirname, "src/assets/styles"),
+        "@common": path.join(__dirname, "common"),
+        "@messaging": path.join(__dirname, "common/messaging"),
+        "@state": path.join(__dirname, "common/state"),
+        "@utils": path.join(__dirname, "common/utils")
+      }
+    },
+    plugins: [
+      react(),
+      monacoEditorPlugin({}),
+      electron([
+        {
+          // Main-Process entry file of the Electron App.
+          entry: 'electron/main/index.ts',
+          onstart(options) {
+            if (process.env.VSCODE_DEBUG) {
+              console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
+            } else {
+              options.startup()
+            }
+          },
+          vite: {
+            build: {
+              sourcemap,
+              minify: isBuild,
+              outDir: 'dist-electron/main',
+              rollupOptions: {
+                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+              },
+            },
+          },
+        },
+        {
+          entry: 'electron/preload/index.ts',
+          onstart(options) {
+            // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete, 
+            // instead of restarting the entire Electron App.
+            options.reload()
+          },
+          vite: {
+            build: {
+              sourcemap: sourcemap ? 'inline' : undefined, // #332
+              minify: isBuild,
+              outDir: 'dist-electron/preload',
+              rollupOptions: {
+                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+              },
+            },
+          },
+        }
+      ]),
+      renderer()
+    ],
+    server: process.env.VSCODE_DEBUG
+      ? (() => {
+          const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
+          return {
+            host: url.hostname,
+            port: +url.port
+          };
+        })()
+      : undefined,
+    clearScreen: false
+  };
+});
