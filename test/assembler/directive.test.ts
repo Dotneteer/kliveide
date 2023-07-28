@@ -1,9 +1,9 @@
 import "mocha";
 import { expect } from "expect";
-import { Z80Assembler } from "../../electron/z80-compiler/assembler";
-import { AssemblerOptions } from "../../electron/z80-compiler/assembler-in-out";
-import { ExpressionValue } from "../../electron/z80-compiler/expressions";
-import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
+import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
+import { AssemblerOptions } from "../../src/electron/z80-compiler/assembler-in-out";
+import { ExpressionValue } from "../../src/electron/z80-compiler/expressions";
+import { SpectrumModelType } from "../../src/common/abstractions/IZ80CompilerService";
 
 describe("Assembler - directives", async () => {
   it("No preproc does not change line", async () => {

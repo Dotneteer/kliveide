@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "../../electron/z80-compiler/assembler";
+import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
 
 describe("Assembler - macro definition", async () => {
   it("fails with no label", async () => {

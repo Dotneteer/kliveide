@@ -6,8 +6,8 @@ import {
   codeRaisesErrorWithOptions,
   testCodeEmitWithOptions
 } from "./test-helpers";
-import { Z80Assembler } from "../../electron/z80-compiler/assembler";
-import { AssemblerOptions } from "../../electron/z80-compiler/assembler-in-out";
+import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
+import { AssemblerOptions } from "../../src/electron/z80-compiler/assembler-in-out";
 
 describe("Assembler - struct definition", () => {
   it("fails with no label", async () => {
