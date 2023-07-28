@@ -1,4 +1,4 @@
-import { Action } from "@state/Action";
+import { Action } from "@/common/state/Action";
 import { MessageBase } from "./messages-core";
 
 /**

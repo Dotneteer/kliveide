@@ -2,7 +2,7 @@ import {
   AssemblerErrorInfo,
   BinarySegment,
   CompilerOutput
-} from "@common/abstractions/IZ80CompilerService";
+} from "@/common/abstractions/IZ80CompilerService";
 
 /**
  * Stores the compilers

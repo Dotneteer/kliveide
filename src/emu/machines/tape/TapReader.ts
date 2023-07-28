@@ -1,5 +1,5 @@
-import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
+import { BinaryReader } from "@/common/utils/BinaryReader";
 
 /**
  * This class reads a TAP file

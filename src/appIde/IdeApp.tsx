@@ -8,13 +8,13 @@ import {
   useSelector
 } from "@/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@/registry";
-import { ToolInfo } from "@common/abstractions/ToolInfo";
-import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import { ToolInfo } from "@/common/abstractions/ToolInfo";
+import { NEW_PROJECT_DIALOG } from "@/common/messaging/dialog-ids";
 import {
   RequestMessage,
   NotReadyResponse
-} from "@common/messaging/messages-core";
-import { MessengerBase } from "@common/messaging/MessengerBase";
+} from "@/common/messaging/messages-core";
+import { MessengerBase } from "@/common/messaging/MessengerBase";
 import {
   ideLoadedAction,
   setAudioSampleRateAction,
@@ -23,9 +23,9 @@ import {
   activateToolAction,
   closeAllDocumentsAction,
   displayDialogAction
-} from "@common/state/actions";
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
+} from "@/common/state/actions";
+import { AppState } from "@/common/state/AppState";
+import { Store } from "@/common/state/redux-light";
 import styles from "@styles/app.module.scss";
 import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";

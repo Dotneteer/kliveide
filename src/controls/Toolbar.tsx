@@ -1,4 +1,4 @@
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import {
   useDispatch,
   useRendererContext,
@@ -8,11 +8,11 @@ import {
   muteSoundAction,
   setFastLoadAction,
   showKeyboardAction
-} from "@state/actions";
+} from "@/common/state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
-import { createMachineCommand } from "@messaging/main-to-emu";
+import { createMachineCommand } from "@/common/messaging/main-to-emu";
 
 export const Toolbar = () => {
   const dispatch = useDispatch();

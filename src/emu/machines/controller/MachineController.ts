@@ -9,11 +9,11 @@ import { FrameTerminationMode } from "@/emu/abstractions/FrameTerminationMode";
 import { IDebugSupport } from "@/emu/abstractions/IDebugSupport";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { LiteEvent } from "@/emu/utils/lite-event";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineStateAction } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MessengerBase } from "@/common/messaging/MessengerBase";
+import { setMachineStateAction } from "@/common/state/actions";
+import { AppState } from "@/common/state/AppState";
+import { Store } from "@/common/state/redux-light";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

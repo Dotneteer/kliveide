@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "@/core/RendererProvider";
 import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
-} from "@state/actions";
+} from "@/common/state/actions";
 import { TabButton, TabButtonSpace } from "@/controls/TabButton";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 

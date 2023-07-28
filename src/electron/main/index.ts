@@ -30,7 +30,7 @@ import {
   setAppPathAction,
   unloadWindowsAction
 } from "../../common/state/actions";
-import { Unsubscribe } from "@state/redux-light";
+import { Unsubscribe } from "@/common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";

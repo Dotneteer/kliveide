@@ -1,6 +1,6 @@
-import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { BinaryReader } from "@common/utils/BinaryReader";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
+import { BinaryReader } from "@/common/utils/BinaryReader";
+import { BinaryWriter } from "@/common/utils/BinaryWriter";
 import { TzxBlockBase } from "./TzxBlockBase";
 
 /**

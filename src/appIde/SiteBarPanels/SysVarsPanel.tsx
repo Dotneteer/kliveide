@@ -9,7 +9,7 @@ import { useRendererContext, useSelector } from "@/core/RendererProvider";
 import {
   EmuGetMemoryResponse,
   EmuGetSysVarsResponse
-} from "@messaging/main-to-emu";
+} from "@/common/messaging/main-to-emu";
 import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";

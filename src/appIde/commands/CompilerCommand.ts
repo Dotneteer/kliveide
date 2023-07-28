@@ -1,7 +1,7 @@
 import {
   BinaryContentsResponse,
   MainCompileResponse
-} from "@common/messaging/any-to-main";
+} from "@/common/messaging/any-to-main";
 import { IdeCommandContext } from "../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../abstractions/IdeCommandResult";
 import { getFileTypeEntry } from "../project/project-node";
@@ -20,22 +20,22 @@ import {
   InjectableOutput,
   KliveCompilerOutput,
   isInjectableCompilerOutput
-} from "../../../electron/compiler-integration/compiler-registry";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+} from "../../electron/compiler-integration/compiler-registry";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { CodeInjectionType, CodeToInject } from "../abstractions/code-related";
 import {
   BinarySegment,
   CompilerOutput,
   SpectrumModelType
-} from "@common/abstractions/IZ80CompilerService";
+} from "@/common/abstractions/IZ80CompilerService";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { BinaryReader } from "@/common/utils/BinaryReader";
 import { TapReader } from "@/emu/machines/tape/TapReader";
 import { TzxReader } from "@/emu/machines/tape/TzxReader";
-import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
 import { SpectrumTapeHeader } from "@/emu/machines/tape/SpectrumTapeHeader";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { BinaryWriter } from "@/common/utils/BinaryWriter";
 import { TzxHeader } from "@/emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
 

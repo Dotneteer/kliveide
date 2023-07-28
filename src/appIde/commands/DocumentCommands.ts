@@ -10,8 +10,8 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
-import { BinaryContentsResponse, TextContentsResponse } from "@common/messaging/any-to-main";
-import { incDocumentActivationVersionAction } from "@common/state/actions";
+import { BinaryContentsResponse, TextContentsResponse } from "@/common/messaging/any-to-main";
+import { incDocumentActivationVersionAction } from "@/common/state/actions";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
   readonly id = "nav";

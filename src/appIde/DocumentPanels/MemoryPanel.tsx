@@ -12,9 +12,9 @@ import {
 import { useInitializeAsync } from "@/core/useInitializeAsync";
 import { useUncommittedState } from "@/core/useUncommittedState";
 import classnames from "@/utils/classnames";
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
-import { setIdeStatusMessageAction } from "@state/actions";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
+import { setIdeStatusMessageAction } from "@/common/state/actions";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";

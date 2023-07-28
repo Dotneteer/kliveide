@@ -6,10 +6,10 @@ import {
   activateDocumentAction,
   closeDocumentAction,
   incDocumentActivationVersionAction
-} from "@state/actions";
+} from "@/common/state/actions";
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { DocumentState } from "../../common/abstractions/DocumentState";
 import { TooltipFactory } from "@/controls/Tooltip";
 import { useAppServices } from "../services/AppServicesProvider";
 

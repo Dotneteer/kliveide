@@ -4,7 +4,7 @@ import { TextInput } from "@/controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@/controls/Dropdown";
 import { useRendererContext } from "@/core/RendererProvider";
-import { MainCreateKliveProjectResponse, MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
+import { MainCreateKliveProjectResponse, MainShowOpenFolderDialogResponse } from "@/common/messaging/any-to-main";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;

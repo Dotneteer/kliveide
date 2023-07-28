@@ -1,11 +1,11 @@
 import { useDispatch, useSelector } from "@/core/RendererProvider";
 import { toolPanelRegistry } from "@/registry";
-import { ToolState } from "@common/abstractions/ToolState";
+import { ToolState } from "@/common/abstractions/ToolState";
 import {
   incToolCommandSeqNoAction,
   showToolPanelsAction,
   toolPanelsOnTopAction
-} from "@state/actions";
+} from "@/common/state/actions";
 import { createElement } from "react";
 import { SpaceFiller } from "../../controls/SpaceFiller";
 import { TabButton } from "../../controls/TabButton";

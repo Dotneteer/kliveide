@@ -6,10 +6,10 @@ import "@styles/index.css";
 import ThemeProvider from "./theming/ThemeProvider";
 import { AppServicesProvider } from "./appIde/services/AppServicesProvider";
 import EmuApp from "./appEmu/EmuApp";
-import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
-import { IdeToMainMessenger } from "@messaging/IdeToMainMessenger";
-import createAppStore from "@state/store";
-import { MessageSource } from "@messaging/messages-core";
+import { EmuToMainMessenger } from "@/common/messaging/EmuToMainMessenger";
+import { IdeToMainMessenger } from "@/common/messaging/IdeToMainMessenger";
+import createAppStore from "@/common/state/store";
+import { MessageSource } from "@/common/messaging/messages-core";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search === "?emu";

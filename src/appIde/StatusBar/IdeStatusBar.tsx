@@ -1,5 +1,5 @@
 import { useSelector } from "@/core/RendererProvider";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { ReactNode, useEffect, useState } from "react";
 import { Icon } from "../../controls/Icon";
 import { SpaceFiller } from "../../controls/SpaceFiller";

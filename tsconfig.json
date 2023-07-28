@@ -7,8 +7,8 @@
 		"paths": {
 			"@/*": ["src/*"],
       "@styles/*": ["src/assets/styles/*"],
-      "@messaging/*": ["common/messaging/*"],
-      "@state/*": ["common/state/*"]
+      "@messaging/*": ["src/common/messaging/*"],
+      "@state/*": ["src/common/state/*"]
 		},
     "allowJs": false,
     "skipLibCheck": true,

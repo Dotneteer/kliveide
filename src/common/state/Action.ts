@@ -1,8 +1,8 @@
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
-import { DocumentState } from "@common/abstractions/DocumentState";
-import { ToolState } from "@common/abstractions/ToolState";
+import { DocumentState } from "@/common/abstractions/DocumentState";
+import { ToolState } from "@/common/abstractions/ToolState";
 import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
 
 /**

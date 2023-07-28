@@ -1,7 +1,7 @@
 import { ProjectNodeWithChildren } from "@/appIde/project/project-node";
 import { MessageBase } from "./messages-core";
 import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
-import { CompilerOptions } from "@common/abstractions/IZ80CompilerService";
+import { CompilerOptions } from "@/common/abstractions/IZ80CompilerService";
 
 /**
  * The client sends a text file read request

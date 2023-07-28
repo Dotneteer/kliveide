@@ -1,6 +1,6 @@
 import { useRendererContext } from "@/core/RendererProvider";
 import classnames from "@/utils/classnames";
-import { dimMenuAction } from "@state/actions";
+import { dimMenuAction } from "@/common/state/actions";
 import {
   MouseEventHandler,
   ReactNode,

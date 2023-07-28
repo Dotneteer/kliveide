@@ -22,10 +22,10 @@ export default defineConfig(({ command }) => {
       alias: {
         "@": path.join(__dirname, "src"),
         "@styles": path.join(__dirname, "src/assets/styles"),
-        "@common": path.join(__dirname, "common"),
-        "@messaging": path.join(__dirname, "common/messaging"),
-        "@state": path.join(__dirname, "common/state"),
-        "@utils": path.join(__dirname, "common/utils")
+        "@common": path.join(__dirname, "src/common"),
+        "@messaging": path.join(__dirname, "src/common/messaging"),
+        "@state": path.join(__dirname, "src/common/state"),
+        "@utils": path.join(__dirname, "src/common/utils")
       }
     },
     plugins: [
@@ -34,7 +34,7 @@ export default defineConfig(({ command }) => {
       electron([
         {
           // Main-Process entry file of the Electron App.
-          entry: 'electron/main/index.ts',
+          entry: 'src/electron/main/index.ts',
           onstart(options) {
             if (process.env.VSCODE_DEBUG) {
               console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
@@ -54,7 +54,7 @@ export default defineConfig(({ command }) => {
           },
         },
         {
-          entry: 'electron/preload/index.ts',
+          entry: 'src/electron/preload/index.ts',
           onstart(options) {
             // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete, 
             // instead of restarting the entire Electron App.

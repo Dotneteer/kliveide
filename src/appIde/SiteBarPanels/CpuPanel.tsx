@@ -6,7 +6,7 @@ import {
   Value
 } from "@/controls/Labels";
 import { useRendererContext } from "@/core/RendererProvider";
-import { EmuGetCpuStateResponse } from "@messaging/main-to-emu";
+import { EmuGetCpuStateResponse } from "@/common/messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";

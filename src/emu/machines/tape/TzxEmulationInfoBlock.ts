@@ -1,4 +1,4 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { BinaryReader } from "@/common/utils/BinaryReader";
 import { TzxDeprecatedBlockBase } from "./TzxDeprecatedBlockBase";
 
 /**

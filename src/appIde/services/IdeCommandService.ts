@@ -1,7 +1,7 @@
 import { AppServices } from "@/abstractions/AppServices";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
+import { MessengerBase } from "@/common/messaging/MessengerBase";
+import { AppState } from "@/common/state/AppState";
+import { Store } from "@/common/state/redux-light";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { IdeCommandContext } from "../abstractions/IdeCommandContext";
 import { IdeCommandInfo } from "../abstractions/IdeCommandInfo";

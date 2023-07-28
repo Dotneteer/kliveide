@@ -14,14 +14,14 @@ import { documentPanelRegistry } from "@/registry";
 import {
   changeDocumentAction,
   incDocumentActivationVersionAction
-} from "@common/state/actions";
+} from "@/common/state/actions";
 import { useEffect, useRef, useState } from "react";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { DocumentState } from "../../common/abstractions/DocumentState";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
-import { TextContentsResponse } from "@common/messaging/any-to-main";
+import { TextContentsResponse } from "@/common/messaging/any-to-main";
 import { EMPTY_ARRAY } from "@/utils/stablerefs";
 
 export const DocumentsHeader = () => {

@@ -1,4 +1,4 @@
-import { ToolInfo } from "@common/abstractions/ToolInfo";
+import { ToolInfo } from "@/common/abstractions/ToolInfo";
 import { PanelRenderer } from "./PanelRenderer";
 
 /**

@@ -2,8 +2,8 @@ import { IFileProvider } from "@/core/IFileProvider";
 import {
   BinaryContentsResponse,
   TextContentsResponse
-} from "@messaging/any-to-main";
-import { MessengerBase } from "@messaging/MessengerBase";
+} from "@/common/messaging/any-to-main";
+import { MessengerBase } from "@/common/messaging/MessengerBase";
 
 /**
  * This class implements a file provider to read and write files throught the main process

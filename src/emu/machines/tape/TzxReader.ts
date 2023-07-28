@@ -1,4 +1,4 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { BinaryReader } from "@/common/utils/BinaryReader";
 import { TzxArchiveInfoBlock } from "./TzxArchiveInfoBlock";
 import { TzxBlockBase } from "./TzxBlockBase";
 import { TzxC64RomTypeBlock } from "./TzxC64RomTypeBlock";

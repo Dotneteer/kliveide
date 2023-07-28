@@ -1,5 +1,5 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { BinaryReader } from "@/common/utils/BinaryReader";
+import { BinaryWriter } from "@/common/utils/BinaryWriter";
 import { TzxBlockBase } from "./TzxBlockBase";
 
 // --- TZX signature header

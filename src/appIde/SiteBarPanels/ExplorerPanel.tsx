@@ -5,7 +5,7 @@ import {
   useSelector
 } from "@/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@/core/tree-node";
-import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
+import { MainGetDirectoryContentResponse } from "@/common/messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
@@ -33,8 +33,8 @@ import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
   incDocumentActivationVersionAction,
   setBuildRootAction
-} from "@common/state/actions";
-import { PROJECT_FILE } from "@common/structs/project-const";
+} from "@/common/state/actions";
+import { PROJECT_FILE } from "@/common/structs/project-const";
 import { SpaceFiller } from "@/controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@/utils/stablerefs";
 

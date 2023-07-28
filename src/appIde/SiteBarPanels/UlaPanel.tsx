@@ -7,7 +7,7 @@ import {
 import { useRendererContext } from "@/core/RendererProvider";
 import {
   EmuGetUlaStateResponse
-} from "@messaging/main-to-emu";
+} from "@/common/messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";

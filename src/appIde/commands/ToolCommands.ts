@@ -10,7 +10,7 @@ import {
 import { ValidationMessage } from "../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import { outputPaneRegistry } from "@/registry";
-import { activateOutputPaneAction, activateToolAction } from "@common/state/actions";
+import { activateOutputPaneAction, activateToolAction } from "@/common/state/actions";
 
 export class SelectOutputPaneCommand extends IdeCommandBase {
   readonly id = "outp";

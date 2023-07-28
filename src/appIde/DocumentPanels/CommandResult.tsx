@@ -5,7 +5,7 @@ import { VirtualizedListApi } from "@/controls/VirtualizedList";
 import { VirtualizedListView } from "@/controls/VirtualizedListView";
 import { useDispatch } from "@/core/RendererProvider";
 import { useInitializeAsync } from "@/core/useInitializeAsync";
-import { setIdeStatusMessageAction } from "@common/state/actions";
+import { setIdeStatusMessageAction } from "@/common/state/actions";
 import { useRef, useState, useEffect } from "react";
 import { CommandResultData } from "../abstractions/CommandResultData";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";

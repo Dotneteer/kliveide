@@ -3,7 +3,7 @@ import { useMachineController } from "@/core/useMachineController";
 import { SpectrumKeyCode } from "@/emu/abstractions/SpectrumKeyCode";
 import { useSelector, useStore } from "@/core/RendererProvider";
 import { useResizeObserver } from "@/core/useResizeObserver";
-import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer } from "./AudioRenderer";
