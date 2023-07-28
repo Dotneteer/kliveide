@@ -10,7 +10,7 @@
     "paths": {
 			"@/*": ["./src/*"],
       "@common/*": ["./src/common/*"],
-      "@styles/*": ["./src/assets/styles/*"],
+      "@styles/*": ["./src/renderer/assets/styles/*"],
       "@messaging/*": ["./scr/common/messaging/*"],
       "@state/*": ["./src/common/state/*"],
       "@utils/*": ["./src/common/utils/*"],

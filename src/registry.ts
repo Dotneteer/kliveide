@@ -7,7 +7,7 @@ import {
   TAP_EDITOR
 } from "@/common/state/common-ids";
 import { PROJECT_FILE } from "@/common/structs/project-const";
-import { MachineInfo } from "./abstractions/MachineInfo";
+import { MachineInfo } from "./renderer/abstractions/MachineInfo";
 import { Activity } from "./appIde/abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./appIde/abstractions/CustomLanguageInfo";
 import { DocumentRendererInfo } from "./appIde/abstractions/DocumentRendererInfo";

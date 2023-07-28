@@ -16,7 +16,7 @@
 		"paths": {
 			"@/*": ["src/*"],
       "@common/*": ["common/*"],
-      "@styles/*": ["src/assets/styles/*"],
+      "@styles/*": ["src/renderer/assets/styles/*"],
       "@messaging/*": ["common/messaging/*"],
       "@state/*": ["common/state/*"]
 		},

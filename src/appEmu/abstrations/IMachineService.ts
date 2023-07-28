@@ -1,4 +1,4 @@
-import { MachineInfo } from "@/abstractions/MachineInfo";
+import { MachineInfo } from "@/renderer/abstractions/MachineInfo";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { Unsubscribe } from "@/common/state/redux-light";
 import { IMachineController } from "./IMachineController";

@@ -1,4 +1,4 @@
-import { AppServices } from "@/abstractions/AppServices";
+import { AppServices } from "@/renderer/abstractions/AppServices";
 import { createMachineService } from "@/appEmu/MachineService";
 import { useRendererContext } from "@/core/RendererProvider";
 import { createUiService } from "@/core/UiServices";

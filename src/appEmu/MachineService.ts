@@ -1,4 +1,4 @@
-import { MachineInfo } from "@/abstractions/MachineInfo";
+import { MachineInfo } from "@/renderer/abstractions/MachineInfo";
 import { FileProvider } from "@/core/FileProvider";
 import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";

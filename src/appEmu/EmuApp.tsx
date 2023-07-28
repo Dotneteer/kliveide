@@ -1,4 +1,4 @@
-import { AppServices } from "@/abstractions/AppServices";
+import { AppServices } from "@/renderer/abstractions/AppServices";
 import { useAppServices } from "@/appIde/services/AppServicesProvider";
 import { BackDrop } from "@/controls/BackDrop";
 import { Toolbar } from "@/controls/Toolbar";

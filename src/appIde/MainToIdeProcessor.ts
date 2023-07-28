@@ -1,4 +1,4 @@
-import { AppServices } from "@/abstractions/AppServices";
+import { AppServices } from "@/renderer/abstractions/AppServices";
 import {
   RequestMessage,
   ResponseMessage,

@@ -1,4 +1,4 @@
-import { AppServices } from "@/abstractions/AppServices";
+import { AppServices } from "@/renderer/abstractions/AppServices";
 import { MessengerBase } from "@/common/messaging/MessengerBase";
 import { AppState } from "@/common/state/AppState";
 import { Store } from "@/common/state/redux-light";
