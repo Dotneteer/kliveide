@@ -1,9 +1,9 @@
-import { ToolState } from "@renderer/abstractions/ToolState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 
 export const setAppPathAction: ActionCreator = (file: string) => ({
   type: "SET_APP_PATH",
@@ -174,7 +174,7 @@ export const closeAllDocumentsAction: ActionCreator = () => ({
   type: "CLOSE_ALL_DOCS"
 });
 
-export const setToolsAction: ActionCreator = (tools: ToolState[]) => ({
+export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   type: "SET_TOOLS",
   payload: { tools }
 });
@@ -187,7 +187,7 @@ export const changeToolVisibilityAction: ActionCreator = (
   payload: { id, flag }
 });
 
-export const changeToolStateAction: ActionCreator = (tool: ToolState) => ({
+export const changeToolStateAction: ActionCreator = (tool: ToolInfo) => ({
   type: "CHANGE_TOOL_STATE",
   payload: { tool }
 });

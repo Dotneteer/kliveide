@@ -1,6 +1,5 @@
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { toolPanelRegistry } from "@renderer/registry";
-import { ToolState } from "@renderer/abstractions/ToolState";
 import {
   incToolCommandSeqNoAction,
   showToolPanelsAction,
@@ -11,9 +10,10 @@ import { SpaceFiller } from "@controls/SpaceFiller";
 import { TabButton } from "@controls/TabButton";
 import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 
 type Props = {
-  tool: ToolState;
+  tool: ToolInfo;
   topPosition: boolean;
 };
 

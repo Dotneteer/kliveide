@@ -18,13 +18,13 @@ import { VirtualizedListApi } from "@controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
-import { ToolState } from "@renderer/abstractions/ToolState";
 import { delay } from "@renderer/utils/timing";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
   const store = useStore();
-  const tool = useRef<ToolState>();
+  const tool = useRef<ToolInfo>();
   const activePane = useSelector(s => s.ideView?.activeOutputPane);
   const buffer = useRef<IOutputBuffer>();
   const [contents, setContents] = useState<OutputContentLine[]>();
@@ -33,7 +33,7 @@ const OutputPanel = () => {
   useEffect(() => {
     tool.current = store
       .getState()
-      .ideView?.tools.find(t => t.id === "output") as ToolState;
+      .ideView?.tools.find(t => t.id === "output") as ToolInfo;
     if (api.current) {
       api.current.refresh();
       api.current.scrollToOffset(tool.current?.stateValue?.[activePane] ?? 0);

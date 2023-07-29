@@ -1,7 +1,7 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { ToolState } from "@renderer/abstractions/ToolState";
 import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 
 /**
  * Represents the state of the entire application
@@ -55,7 +55,7 @@ export type IdeView = {
   openDocuments?: DocumentInfo[];
   activeDocumentIndex?: number;
   documentActivationVersion?: number;
-  tools?: ToolState[];
+  tools?: ToolInfo[];
   activeTool?: string;
   activeOutputPane?: string;
   statusMessage?: string;

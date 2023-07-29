@@ -16,4 +16,9 @@ export type ToolInfo = {
    * Is the tool visible?
    */
   visible?: boolean;
+
+  /**
+   * Other tool state
+   */
+  stateValue?: any;
 };
