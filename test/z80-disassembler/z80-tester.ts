@@ -1,11 +1,11 @@
 import { expect } from "expect";
-import { ICustomDisassembler } from "../../src/appIde/z80-disassembler/custom-disassembly";
+import { ICustomDisassembler } from "@appIde/z80-disassembler/custom-disassembly";
 import {
   intToX2,
   MemoryMap,
   MemorySection
-} from "../../src/appIde/z80-disassembler/disassembly-helper";
-import { Z80Disassembler } from "../../src/appIde/z80-disassembler/z80-disassembler";
+} from "@appIde/z80-disassembler/disassembly-helper";
+import { Z80Disassembler } from "@appIde/z80-disassembler/z80-disassembler";
 
 /**
  * Helper class for Z80 Disassembler testing

@@ -10,7 +10,6 @@ import {
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
-import { DocumentState } from "@abstractions/DocumentState";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { delay } from "@/renderer/utils/timing";
@@ -46,12 +45,12 @@ export interface IDocumentService {
    * @param id Document ID
    * @param timeout Timeout of waiting for the open state
    */
-  waitOpen(id: string, waitForApi?: boolean, timeout?: number): Promise<DocumentState | null>;
+  waitOpen(id: string, waitForApi?: boolean, timeout?: number): Promise<DocumentInfo | null>;
 
   /**
    * Tests if the project file is open
    */
-  getOpenProjectFileDocument(): DocumentState;
+  getOpenProjectFileDocument(): DocumentInfo;
 
   /**
    * Increment the view version of the specified document
@@ -74,7 +73,7 @@ export interface IDocumentService {
    * @param id Document ID
    * @returns The document with the specified ID, if exists; othwerwise, null
    */
-  getDocument(id: string): DocumentState;
+  getDocument(id: string): DocumentInfo;
 
   /**
    * Sets the specified document permanent
@@ -218,7 +217,7 @@ class DocumentService implements IDocumentService {
           {
             ...existingDoc,
             isTemporary: false
-          } as DocumentState,
+          } as DocumentInfo,
           existingIndex
         ),
         "ide"
@@ -254,7 +253,7 @@ class DocumentService implements IDocumentService {
           id: newId ?? oldId,
           name: newName,
           iconName: newIcon
-        } as DocumentState,
+        } as DocumentInfo,
         existingIndex
       ),
       "ide"
@@ -306,7 +305,7 @@ class DocumentService implements IDocumentService {
             {
               ...document,
               isTemporary: true
-            } as DocumentState,
+            } as DocumentInfo,
             existingTempIndex
           ),
           "ide"
@@ -324,7 +323,7 @@ class DocumentService implements IDocumentService {
         {
           ...document,
           isTemporary: temporary
-        } as DocumentState,
+        } as DocumentInfo,
         docs.length
       ),
       "ide"
@@ -346,7 +345,7 @@ class DocumentService implements IDocumentService {
    * @param id Document ID
    * @param timeout Timeout of waiting for the open state
    */
-  async waitOpen(id: string, waitForApi = false, timeout = 5000): Promise<DocumentState | null> {
+  async waitOpen(id: string, waitForApi = false, timeout = 5000): Promise<DocumentInfo | null> {
     let waitTime = 0;
     while (waitTime < timeout) {
       if (this.isOpen(id)) {
@@ -363,7 +362,7 @@ class DocumentService implements IDocumentService {
   /**
    * Gets the project file is open
    */
-  getOpenProjectFileDocument(): DocumentState | undefined {
+  getOpenProjectFileDocument(): DocumentInfo | undefined {
     const state = this.store.getState();
     const docs = state?.ideView?.openDocuments ?? [];
     var projectInfo = state?.project;
@@ -384,7 +383,7 @@ class DocumentService implements IDocumentService {
         {
           ...document,
           viewVersion: (document.viewVersion ?? 0) + 1
-        } as DocumentState,
+        } as DocumentInfo,
       ),
       "ide"
     );
@@ -395,7 +394,7 @@ class DocumentService implements IDocumentService {
    * @param id Document ID
    * @returns The document with the specified ID, if exists; othwerwise, null
    */
-  getDocument (id: string): DocumentState {
+  getDocument (id: string): DocumentInfo {
     const state = this.store.getState();
     const docs = state?.ideView?.openDocuments ?? [];
     return docs.find(d => d.id === id);

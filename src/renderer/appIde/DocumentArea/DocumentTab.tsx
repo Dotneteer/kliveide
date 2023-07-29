@@ -9,11 +9,11 @@ import {
 } from "@/common/state/actions";
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
-import { DocumentState } from "@abstractions/DocumentState";
 import { TooltipFactory } from "@/renderer/controls/Tooltip";
 import { useAppServices } from "../services/AppServicesProvider";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
-export type Props = DocumentState & {
+export type Props = DocumentInfo & {
   index: number;
   iconName?: string;
   iconFill?: string;

@@ -1,7 +1,7 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { DocumentState } from "@abstractions/DocumentState";
-import { ToolState } from "@/renderer/abstractions/ToolState";
-import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
+import { ToolState } from "@renderer/abstractions/ToolState";
+import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 /**
  * Represents the state of the entire application
@@ -52,7 +52,7 @@ export type EmuViewOptions = {
 export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
-  openDocuments?: DocumentState[];
+  openDocuments?: DocumentInfo[];
   activeDocumentIndex?: number;
   documentActivationVersion?: number;
   tools?: ToolState[];

@@ -16,13 +16,13 @@ import {
   incDocumentActivationVersionAction
 } from "@/common/state/actions";
 import { useEffect, useRef, useState } from "react";
-import { DocumentState } from "@abstractions/DocumentState";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
 import { TextContentsResponse } from "@/common/messaging/any-to-main";
 import { EMPTY_ARRAY } from "@/renderer/utils/stablerefs";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
@@ -37,7 +37,7 @@ export const DocumentsHeader = () => {
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const projectVersion = useSelector(s => s.project?.projectVersion);
-  const [docsToDisplay, setDocsToDisplay] = useState<DocumentState[]>(null);
+  const [docsToDisplay, setDocsToDisplay] = useState<DocumentInfo[]>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [headerVersion, setHeaderVersion] = useState(0);
@@ -50,7 +50,7 @@ export const DocumentsHeader = () => {
   const refreshDocs = () => {
     if (openDocs) {
       const mappedDocs = openDocs.map(d => {
-        const cloned: DocumentState = { ...d };
+        const cloned: DocumentInfo = { ...d };
         const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
 
         if (docRenderer) {

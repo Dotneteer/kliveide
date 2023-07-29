@@ -1,5 +1,5 @@
-import { ProjectNode } from "@/renderer/appIde/project/project-node";
-import { ITreeNode } from "@/renderer/core/tree-node";
+import { ProjectNode } from "@appIde/project/project-node";
+import { ITreeNode } from "@renderer/core/tree-node";
 
 /**
  * This type describes a document that can have a designer (code editor) associated with it
@@ -54,4 +54,14 @@ export type DocumentInfo = {
    * The optional view version of the document
    */
   viewVersion: number;
+
+  /**
+   * Signs if the document is opened as temporary (the same slot can be used for another document)
+   */
+  isTemporary?: boolean;
+
+  /**
+   * Document state depending on the document type
+   */
+  stateValue?: any;
 };

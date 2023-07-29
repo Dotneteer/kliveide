@@ -6,11 +6,11 @@ import { IScreenDevice } from "../abstractions/IScreenDevice";
 import { ITapeDevice } from "../abstractions/ITapeDevice";
 import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
 import { SpectrumKeyCode } from "../../renderer/abstractions/SpectrumKeyCode";
-import { SysVar } from "../../common/abstractions/SysVar";
+import { SysVar } from "@abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
-import { CodeToInject } from "@/common/abstractions/code-related";
+import { CodeToInject } from "@abstractions/CodeToInject";
 import { MainExecPointInfo } from "../../renderer/abstractions/IZ80Machine";
 
 /**

@@ -1,5 +1,5 @@
 import { IOutputBuffer } from "@/renderer/appIde/ToolArea/abstractions";
-import { CodeToInject } from "@/common/abstractions/code-related";
+import { CodeToInject } from "@abstractions/CodeToInject";
 import { FrameStats } from "@/renderer/abstractions/FrameStats";
 import { IDebugSupport } from "@/renderer/abstractions/IDebugSupport";
 import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";

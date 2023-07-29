@@ -1,9 +1,9 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
-import { DocumentState } from "@abstractions/DocumentState";
-import { ToolState } from "@/renderer/abstractions/ToolState";
-import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
+import { ToolState } from "@renderer/abstractions/ToolState";
+import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 /**
  * Available action types you can use with state manangement
@@ -30,7 +30,7 @@ export type Payload = {
   nextId: string;
   nextSize: number;
   panelsState: Record<string, SideBarPanelState>;
-  document: DocumentState;
+  document: DocumentInfo;
   index: number;
   tool: ToolState;
   tools: ToolState[];

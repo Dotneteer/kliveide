@@ -6,8 +6,8 @@ import {
   testCodeEmit,
   testCodeEmitWithOptions
 } from "./test-helpers";
-import { AssemblerOptions } from "../../src/electron/z80-compiler/assembler-in-out";
-import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
+import { AssemblerOptions } from "@electron/z80-compiler/assembler-in-out";
+import { Z80Assembler } from "@electron/z80-compiler/assembler";
 
 describe("Assembler - macro parameter emit", async () => {
   it("fails in global scope", async () => {

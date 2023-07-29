@@ -3,7 +3,7 @@ import {
   CommandTokenStream,
   CommandInputStream,
   TokenType
-} from "../../src/appIde/services/command-parser";
+} from "@appIde/services/command-parser";
 
 export function testToken (
   tokenStr: string,

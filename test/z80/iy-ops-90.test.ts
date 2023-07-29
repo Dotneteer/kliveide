@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
 import { RunMode, Z80TestMachine } from "./test-z80";
-import { FlagsSetMask } from "../../src/emu/abstractions/FlagSetMask";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 describe("Z80 standard ops 90-9f", () => {
   it("0x90: SUB A,B #1", () => {

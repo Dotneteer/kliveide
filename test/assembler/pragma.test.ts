@@ -6,7 +6,7 @@ import {
   codeRaisesError,
   testFlexibleCodeEmit
 } from "./test-helpers";
-import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
+import { Z80Assembler } from "@electron/z80-compiler/assembler";
 
 describe("Assembler - pragmas", async () => {
   it("org - existing segment", async () => {

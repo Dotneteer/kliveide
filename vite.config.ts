@@ -26,7 +26,11 @@ export default defineConfig(({ command }) => {
         "@abstractions": path.join(__dirname, "src/common/abstractions"),
         "@messaging": path.join(__dirname, "src/common/messaging"),
         "@state": path.join(__dirname, "src/common/state"),
-        "@utils": path.join(__dirname, "src/common/utils")
+        "@utils": path.join(__dirname, "src/common/utils"),
+        "@renderer": path.join(__dirname, "src/renderer"),
+        "@emu": path.join(__dirname, "src/emu"),
+        "@appIde": path.join(__dirname, "src/renderer/appIde"),
+        "@electron": path.join(__dirname, "src/electron"),
       }
     },
     plugins: [

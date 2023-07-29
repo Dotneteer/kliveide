@@ -2,8 +2,8 @@ import {
   Channel,
   RequestMessage,
   ResponseMessage
-} from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
+} from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
 import { ipcRenderer, IpcRendererEvent } from "electron";
 /**
  * Implements a messenger that send messages from the Emu to the Main process

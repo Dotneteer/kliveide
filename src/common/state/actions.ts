@@ -1,9 +1,9 @@
-import { DocumentState } from "@abstractions/DocumentState";
-import { ToolState } from "@/renderer/abstractions/ToolState";
+import { ToolState } from "@renderer/abstractions/ToolState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
-import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
+import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 export const setAppPathAction: ActionCreator = (file: string) => ({
   type: "SET_APP_PATH",
@@ -141,7 +141,7 @@ export const setSideBarPanelSizeAction: ActionCreator = (
 });
 
 export const createDocumentAction: ActionCreator = (
-  document: DocumentState,
+  document: DocumentInfo,
   index: number
 ) => ({
   type: "CREATE_DOC",
@@ -149,7 +149,7 @@ export const createDocumentAction: ActionCreator = (
 });
 
 export const changeDocumentAction: ActionCreator = (
-  document: DocumentState,
+  document: DocumentInfo,
   index: number
 ) => ({
   type: "CHANGE_DOC",

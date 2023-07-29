@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
 import { RunMode, Z80TestMachine } from "./test-z80";
-import { FlagsSetMask } from "../../src/emu/abstractions/FlagSetMask";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 describe("Z80 IX bit ops 10-1f", () => {
   it("0x10: RL (IX+d),B", () => {

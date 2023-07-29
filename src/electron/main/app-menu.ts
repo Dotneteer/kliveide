@@ -43,7 +43,7 @@ import {
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import { NEW_PROJECT_DIALOG } from "../../common/messaging/dialog-ids";
-import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
+import { TapeDataBlock } from "../../common/structs/TapeDataBlock";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";

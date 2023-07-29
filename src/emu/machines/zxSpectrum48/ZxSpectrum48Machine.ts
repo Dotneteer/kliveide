@@ -1,4 +1,4 @@
-import { SysVar, SysVarType } from "@/common/abstractions/SysVar";
+import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@/emu/abstractions/TapeMode";
 import { BeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";

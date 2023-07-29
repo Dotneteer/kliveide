@@ -26,10 +26,10 @@ import {
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
   KLIVE_PROJET_ROOT,
-  KliveProjectStructure
 } from "../../common/structs/project-const";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../../common/messaging/main-to-emu";
+import { KliveProjectStructure } from "../../common/abstractions/KliveProjectStructure";
 
 type ProjectCreationResult = {
   path?: string;

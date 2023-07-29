@@ -1,4 +1,4 @@
-import { TokenType } from "../../src/appIde/services/command-parser";
+import { TokenType } from "@appIde/services/command-parser";
 import { testToken } from "./token-stream-helper";
 
 describe("Command parser - tokens", () => {

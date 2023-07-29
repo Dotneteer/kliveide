@@ -6,9 +6,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
 import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
-import { DocumentState } from "@abstractions/DocumentState";
 import { customLanguagesRegistry } from "@/renderer/registry";
 import { delay } from "@/renderer/utils/timing";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -80,7 +80,7 @@ export interface EditorApi {
 }
 
 type EditorProps = {
-  document: DocumentState;
+  document: DocumentInfo;
   value: string;
   viewState?: monacoEditor.editor.ICodeEditorViewState;
   apiLoaded?: (api: EditorApi) => void;

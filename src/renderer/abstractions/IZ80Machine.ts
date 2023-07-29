@@ -3,7 +3,7 @@ import { IZ80Cpu } from "../../emu/abstractions/IZ80Cpu";
 import { ILiteEvent } from "../../emu/utils/lite-event";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { FrameTerminationMode } from "../../emu/abstractions/FrameTerminationMode";
-import { CodeToInject } from "@/common/abstractions/code-related";
+import { CodeToInject } from "@abstractions/CodeToInject";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware

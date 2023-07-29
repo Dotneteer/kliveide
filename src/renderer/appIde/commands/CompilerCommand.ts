@@ -22,7 +22,7 @@ import {
   isInjectableCompilerOutput
 } from "../../../electron/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { CodeInjectionType, CodeToInject } from "../../../common/abstractions/code-related";
+import { CodeToInject } from "@abstractions/CodeToInject";
 import {
   BinarySegment,
   CompilerOutput,
@@ -38,6 +38,8 @@ import { SpectrumTapeHeader } from "@/emu/machines/tape/SpectrumTapeHeader";
 import { BinaryWriter } from "@/common/utils/BinaryWriter";
 import { TzxHeader } from "@/emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
+
+type CodeInjectionType = "inject" | "run" | "debug";
 
 export class CompileCommand extends CommandWithNoArgBase {
   readonly id = "compile";

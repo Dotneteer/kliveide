@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "expect";
-import { Z80Assembler } from "../../src/electron/z80-compiler/assembler";
-import { AssemblerOptions } from "../../src/electron/z80-compiler/assembler-in-out";
-import { SymbolValueMap } from "../../src/electron/z80-compiler/assembler-types";
+import { Z80Assembler } from "@electron/z80-compiler/assembler";
+import { AssemblerOptions } from "@electron/z80-compiler/assembler-in-out";
+import { SymbolValueMap } from "@electron/z80-compiler/assembler-types";
 
 describe("Assembler - literals", async () => {
   const decimalLiterals = [

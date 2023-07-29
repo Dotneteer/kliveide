@@ -1,11 +1,3 @@
-export interface CodeToInject {
-  model: string;
-  entryAddress?: number;
-  subroutine?: boolean;
-  segments: InjectedSegment[];
-  options: { [key: string]: boolean };
-}
-
 /**
  * A single segment of the code compilation
  */
@@ -30,5 +22,3 @@ export class InjectedSegment {
    */
   emittedCode: number[] = [];
 }
-
-export type CodeInjectionType = "inject" | "run" | "debug";

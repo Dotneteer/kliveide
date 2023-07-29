@@ -1,4 +1,4 @@
-import { ZxSpectrum48CustomDisassembler } from "../../src/appIde/z80-disassembler/zx-spectrum-48-disassembler";
+import { ZxSpectrum48CustomDisassembler } from "@appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z80Tester } from "./z80-tester";
 
 describe("Disassembler - ZX Spectrum-specific", function () {
@@ -39,7 +39,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
   it("RST $28 section works as expected", async () => {
     // --- Arrange
     const opCodes = [
-      0xef, 0x02, 0xe1, 0x34, 0xf1, 0x38, 0xaa, 0x3b, 0x29, 0x38, 0x00,
+      0xef, 0x02, 0xe1, 0x34, 0xf1, 0x38, 0xaa, 0x3b, 0x29, 0x38, 0x00
     ];
     const expected = [
       "rst $28",
@@ -48,7 +48,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
       ".defb $34",
       ".defb $f1, $38, $aa, $3b, $29",
       ".defb $38",
-      "nop",
+      "nop"
     ];
     const expComment = [
       "(invoke calculator)",
@@ -57,7 +57,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
       "(stk-data)",
       "(1.442695)",
       "(end-calc)",
-      undefined,
+      undefined
     ];
 
     // --- Act
