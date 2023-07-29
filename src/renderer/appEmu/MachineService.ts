@@ -1,6 +1,6 @@
 import { MachineInfo } from "@/renderer/abstractions/MachineInfo";
 import { FileProvider } from "@/renderer/core/FileProvider";
-import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
+import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
 import { MachineController } from "@/emu/machines/controller/MachineController";
 import { DebugSupport } from "@/emu/machines/DebugSupport";
 import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@/emu/machines/machine-props";

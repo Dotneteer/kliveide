@@ -9,7 +9,7 @@ import {
 } from "@/common/state/actions";
 import { TabButton } from "../../controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { DocumentState } from "@abstractions/DocumentState";
 import { TooltipFactory } from "@/renderer/controls/Tooltip";
 import { useAppServices } from "../services/AppServicesProvider";
 

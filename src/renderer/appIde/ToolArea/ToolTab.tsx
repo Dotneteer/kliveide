@@ -3,7 +3,7 @@ import classnames from "@/renderer/utils/classnames";
 import { useDispatch } from "@/renderer/core/RendererProvider";
 import { useState } from "react";
 import { activateToolAction } from "@/common/state/actions";
-import { ToolInfo } from "@/common/abstractions/ToolInfo";
+import { ToolInfo } from "@/renderer/abstractions/ToolInfo";
 
 export type Props = ToolInfo & {
   isActive?: boolean;

@@ -1,5 +1,5 @@
-import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
-import { SysVar } from "@/emu/abstractions/SysVar";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { SysVar } from "@/common/abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
 

@@ -16,7 +16,7 @@ import {
   incDocumentActivationVersionAction
 } from "@/common/state/actions";
 import { useEffect, useRef, useState } from "react";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { DocumentState } from "@abstractions/DocumentState";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";

@@ -12,7 +12,7 @@ import {
 } from "@/renderer/core/RendererProvider";
 import { useInitializeAsync } from "@/renderer/core/useInitializeAsync";
 import { useUncommittedState } from "@/renderer/core/useUncommittedState";
-import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import classnames from "@/renderer/utils/classnames";
 import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
 import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";

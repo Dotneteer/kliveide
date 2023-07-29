@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 export const KLIVE_PROJET_ROOT = "KliveProjects";
 export const CODE_FOLDER = "code";

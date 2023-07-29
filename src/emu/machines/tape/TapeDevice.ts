@@ -1,6 +1,6 @@
 import { FlagsSetMask } from "@/emu/abstractions/FlagSetMask";
 import { ITapeDevice } from "@/emu/abstractions/ITapeDevice";
-import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
 import { MicPulseType } from "@/emu/abstractions/MicPulseTypes";
 import { PlayPhase } from "@/emu/abstractions/PlayPhase";
 import { SavePhase } from "@/emu/abstractions/SavePhase";

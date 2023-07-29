@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "./BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.

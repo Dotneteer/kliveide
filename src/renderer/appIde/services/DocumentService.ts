@@ -6,13 +6,13 @@ import {
   createDocumentAction,
   moveDocumentLeftAction,
   moveDocumentRightAction
-} from "@/common/state/actions";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
-import { DocumentInfo } from "../../../common/abstractions/DocumentInfo";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+} from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
+import { DocumentInfo } from "@abstractions/DocumentInfo";
+import { DocumentState } from "@abstractions/DocumentState";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import { PROJECT_FILE } from "@/common/structs/project-const";
+import { PROJECT_FILE } from "@common/structs/project-const";
 import { delay } from "@/renderer/utils/timing";
 
 /**

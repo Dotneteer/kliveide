@@ -1,4 +1,4 @@
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
   createMachineCommand,
   EmuGetCpuStateResponse,

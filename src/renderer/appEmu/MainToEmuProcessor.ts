@@ -1,6 +1,6 @@
 import { AppServices } from "@/renderer/abstractions/AppServices";
-import { IZxSpectrumMachine } from "@/emu/abstractions/IZxSpectrumMachine";
-import { RenderingPhase } from "@/emu/abstractions/RenderingPhase";
+import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@/renderer/abstractions/RenderingPhase";
 import { REWIND_REQUESTED, TAPE_DATA } from "@/emu/machines/machine-props";
 import { TapReader } from "@/emu/machines/tape/TapReader";
 import { TzxReader } from "@/emu/machines/tape/TzxReader";

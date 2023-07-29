@@ -14,7 +14,7 @@ import { useUncommittedState } from "@/renderer/core/useUncommittedState";
 import classnames from "@/renderer/utils/classnames";
 import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@/common/state/actions";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";

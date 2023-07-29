@@ -1,10 +1,11 @@
 import { MachineController } from "@/emu/machines/controller/MachineController";
 import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { IMachineController } from "../appEmu/abstrations/IMachineController";
 
 export const useMachineController = (
-  controllerChanged?: (controller: MachineController) => void,
+  controllerChanged?: (controller: IMachineController) => void,
   machineStateChanged?: (states: {
     oldState: MachineControllerState;
     newState: MachineControllerState;
@@ -12,7 +13,7 @@ export const useMachineController = (
   frameCompleted?: (completed: boolean) => void
 ) => {
   const { machineService, outputPaneService } = useAppServices();
-  const [controller, setController] = useState<MachineController>();
+  const [controller, setController] = useState<IMachineController>();
   const mounted = useRef(false);
 
   // --- Manage controller setup

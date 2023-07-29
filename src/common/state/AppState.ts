@@ -1,6 +1,6 @@
-import { MachineControllerState } from "../abstractions/MachineControllerState";
-import { DocumentState } from "../abstractions/DocumentState";
-import { ToolState } from "../abstractions/ToolState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { DocumentState } from "@abstractions/DocumentState";
+import { ToolState } from "@/renderer/abstractions/ToolState";
 import { KliveCompilerOutput } from "../../electron/compiler-integration/compiler-registry";
 
 /**

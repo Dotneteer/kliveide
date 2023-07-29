@@ -1,10 +1,10 @@
 import { IOutputBuffer } from "@/renderer/appIde/ToolArea/abstractions";
 import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
-import { FrameStats } from "@/emu/abstractions/FrameStats";
-import { IDebugSupport } from "@/emu/abstractions/IDebugSupport";
-import { IZ80Machine } from "@/emu/abstractions/IZ80Machine";
+import { FrameStats } from "@/renderer/abstractions/FrameStats";
+import { IDebugSupport } from "@/renderer/abstractions/IDebugSupport";
+import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
 import { ILiteEvent } from "@/emu/utils/lite-event";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@/common/messaging/MessengerBase";
 import { AppState } from "@/common/state/AppState";
 import { Store } from "@/common/state/redux-light";

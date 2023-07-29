@@ -18,7 +18,7 @@ import { VirtualizedListApi } from "../../controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
-import { ToolState } from "@/common/abstractions/ToolState";
+import { ToolState } from "@/renderer/abstractions/ToolState";
 import { delay } from "@/renderer/utils/timing";
 
 const OutputPanel = () => {

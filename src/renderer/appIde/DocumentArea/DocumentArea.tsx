@@ -1,6 +1,6 @@
 import { useSelector } from "@/renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
-import { DocumentState } from "../../../common/abstractions/DocumentState";
+import { DocumentState } from "@abstractions/DocumentState";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentArea.module.scss";
 import { DocumentsContainer } from "./DocumentsContainer";

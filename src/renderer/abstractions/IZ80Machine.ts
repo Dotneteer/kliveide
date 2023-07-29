@@ -1,8 +1,8 @@
-import { ExecutionContext } from "./ExecutionContext";
-import { IZ80Cpu } from "./IZ80Cpu";
-import { ILiteEvent } from "../utils/lite-event";
+import { ExecutionContext } from "../../emu/abstractions/ExecutionContext";
+import { IZ80Cpu } from "../../emu/abstractions/IZ80Cpu";
+import { ILiteEvent } from "../../emu/utils/lite-event";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
-import { FrameTerminationMode } from "./FrameTerminationMode";
+import { FrameTerminationMode } from "../../emu/abstractions/FrameTerminationMode";
 import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
 
 /**

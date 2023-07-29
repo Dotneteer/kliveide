@@ -8,7 +8,7 @@ import {
   useSelector
 } from "@/renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@/renderer/registry";
-import { ToolInfo } from "@/common/abstractions/ToolInfo";
+import { ToolInfo } from "@/renderer/abstractions/ToolInfo";
 import { NEW_PROJECT_DIALOG } from "@/common/messaging/dialog-ids";
 import {
   RequestMessage,

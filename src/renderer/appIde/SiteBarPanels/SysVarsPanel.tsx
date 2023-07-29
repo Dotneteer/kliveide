@@ -15,7 +15,7 @@ import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
-import { SysVar, SysVarType } from "@/emu/abstractions/SysVar";
+import { SysVar, SysVarType } from "@/common/abstractions/SysVar";
 import { TooltipFactory } from "@/renderer/controls/Tooltip";
 
 const VAR_WIDTH = 64;

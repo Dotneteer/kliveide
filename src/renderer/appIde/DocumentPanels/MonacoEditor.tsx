@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
 import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
-import { DocumentState } from "@/common/abstractions/DocumentState";
+import { DocumentState } from "@abstractions/DocumentState";
 import { customLanguagesRegistry } from "@/renderer/registry";
 import { delay } from "@/renderer/utils/timing";
 

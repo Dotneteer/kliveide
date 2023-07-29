@@ -23,6 +23,7 @@ export default defineConfig(({ command }) => {
         "@": path.join(__dirname, "src"),
         "@styles": path.join(__dirname, "src/renderer/assets/styles"),
         "@common": path.join(__dirname, "src/common"),
+        "@abstractions": path.join(__dirname, "src/common/abstractions"),
         "@messaging": path.join(__dirname, "src/common/messaging"),
         "@state": path.join(__dirname, "src/common/state"),
         "@utils": path.join(__dirname, "src/common/utils")

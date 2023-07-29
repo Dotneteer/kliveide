@@ -9,6 +9,7 @@
     "jsx": "react-jsx",
     "paths": {
 			"@/*": ["./src/*"],
+      "@abstractions/*": ["./src/common/abstractions/*"],
       "@common/*": ["./src/common/*"],
       "@styles/*": ["./src/renderer/assets/styles/*"],
       "@messaging/*": ["./scr/common/messaging/*"],

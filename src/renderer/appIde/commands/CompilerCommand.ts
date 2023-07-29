@@ -21,7 +21,7 @@ import {
   KliveCompilerOutput,
   isInjectableCompilerOutput
 } from "../../../electron/compiler-integration/compiler-registry";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CodeInjectionType, CodeToInject } from "../abstractions/code-related";
 import {
   BinarySegment,

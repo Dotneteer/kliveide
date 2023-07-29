@@ -12,7 +12,7 @@ import { useInitializeAsync } from "@/renderer/core/useInitializeAsync";
 import { useUncommittedState } from "@/renderer/core/useUncommittedState";
 import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@/common/state/actions";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";

@@ -1,5 +1,5 @@
 import { IBeeperDevice } from "../abstractions/IBeeperDevice";
-import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
 import { AudioDeviceBase } from "./AudioDeviceBase";
 
 // --- This class implements the ZX Spectrum beeper device.

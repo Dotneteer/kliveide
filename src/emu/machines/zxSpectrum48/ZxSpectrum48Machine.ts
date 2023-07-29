@@ -1,4 +1,4 @@
-import { SysVar, SysVarType } from "@/emu/abstractions/SysVar";
+import { SysVar, SysVarType } from "@/common/abstractions/SysVar";
 import { TapeMode } from "@/emu/abstractions/TapeMode";
 import { BeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
@@ -12,7 +12,7 @@ import {
 import { TapeDevice } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrumFloatingBusDevice";
-import { MainExecPointInfo } from "@/emu/abstractions/IZ80Machine";
+import { MainExecPointInfo } from "@/renderer/abstractions/IZ80Machine";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

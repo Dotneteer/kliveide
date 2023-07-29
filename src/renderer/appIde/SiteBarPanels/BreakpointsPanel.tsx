@@ -1,8 +1,8 @@
 import { LabelSeparator, Label, Secondary, Value } from "@/renderer/controls/Labels";
 import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
 import { useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
-import { BreakpointInfo } from "@/emu/abstractions/BreakpointInfo";
-import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { EmuListBreakpointsResponse, EmuGetCpuStateResponse } from "@/common/messaging/main-to-emu";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";

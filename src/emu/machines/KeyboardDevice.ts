@@ -1,6 +1,6 @@
 import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
-import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
+import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
+import { SpectrumKeyCode } from "../../renderer/abstractions/SpectrumKeyCode";
 
 /**
  * This class implements the ZX Spectrum keyboard device.
