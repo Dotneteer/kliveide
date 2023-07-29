@@ -4,8 +4,8 @@ import {
   EmuGetCpuStateResponse,
   MachineCommand
 } from "@/common/messaging/main-to-emu";
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess,

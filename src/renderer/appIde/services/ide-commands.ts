@@ -1,8 +1,8 @@
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandInfo } from "../abstractions/IdeCommandInfo";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
-import { ValidationMessage } from "../abstractions/ValidationMessage";
-import { ValidationMessageType } from "../abstractions/ValidationMessageType";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandInfo } from "../../abstractions/IdeCommandInfo";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
+import { ValidationMessage } from "../../abstractions/ValidationMessage";
+import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
 import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
 import { Token, TokenType } from "./command-parser";
 

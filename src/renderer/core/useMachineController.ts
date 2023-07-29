@@ -2,7 +2,7 @@ import { MachineController } from "@/emu/machines/controller/MachineController";
 import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { IMachineController } from "../appEmu/abstrations/IMachineController";
+import { IMachineController } from "../abstractions/IMachineController";
 
 export const useMachineController = (
   controllerChanged?: (controller: IMachineController) => void,

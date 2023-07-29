@@ -1,6 +1,6 @@
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@/renderer/core/tree-node";
 import { customLanguagesRegistry, fileTypeRegistry } from "@/renderer/registry";
-import { FileTypeEditor } from "../abstractions/FileTypePattern";
+import { FileTypeEditor } from "../../abstractions/FileTypePattern";
 
 /**
  * This interface represents a project node for transferring data

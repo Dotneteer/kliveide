@@ -1,4 +1,4 @@
-import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
   IdeCommandBase,

@@ -5,7 +5,7 @@
  * the Monaco Editor (as that cannot be loaded into the main process)
  *
  */
-export type CustomLanguageInfo = {
+type CustomLanguageInfo = {
   id: string;
   extensions: string[];
   icon?: string;

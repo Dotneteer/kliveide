@@ -1,6 +1,6 @@
 import { closeFolderAction } from "@/common/state/actions";
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   commandError,
   writeSuccessMessage,

@@ -2,8 +2,8 @@ import {
   BinaryContentsResponse,
   MainCompileResponse
 } from "@/common/messaging/any-to-main";
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { getFileTypeEntry } from "../project/project-node";
 import {
   IdeCommandBase,
@@ -22,13 +22,13 @@ import {
   isInjectableCompilerOutput
 } from "../../../electron/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { CodeInjectionType, CodeToInject } from "../abstractions/code-related";
+import { CodeInjectionType, CodeToInject } from "../../../common/abstractions/code-related";
 import {
   BinarySegment,
   CompilerOutput,
   SpectrumModelType
 } from "@/common/abstractions/IZ80CompilerService";
-import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import { BinaryReader } from "@/common/utils/BinaryReader";
 import { TapReader } from "@/emu/machines/tape/TapReader";

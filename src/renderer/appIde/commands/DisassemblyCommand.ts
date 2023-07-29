@@ -1,8 +1,8 @@
 import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
 import { COMMAND_RESULT_EDITOR } from "@/common/state/common-ids";
-import { CommandResultData } from "../abstractions/CommandResultData";
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { CommandResultData } from "../../abstractions/CommandResultData";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   toHexa4,
   writeSuccessMessage,
@@ -15,7 +15,7 @@ import {
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
-import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 
 let disassemblyIndex = 1;

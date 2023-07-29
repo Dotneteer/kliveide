@@ -11,7 +11,7 @@ import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@/emu/machines/machine-props";
 import { MachineController } from "@/emu/machines/controller/MachineController";
 import { spectrumKeyMappings } from "./key-mappings";
-import { IMachineController } from "../abstrations/IMachineController";
+import { IMachineController } from "../../abstractions/IMachineController";
 
 export const EmulatorPanel = () => {
   // --- Access state information

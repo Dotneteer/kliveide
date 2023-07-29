@@ -1,4 +1,4 @@
-import { MonacoAwareCustomLanguageInfo } from "../abstractions/CustomLanguageInfo";
+import { MonacoAwareCustomLanguageInfo } from "../../abstractions/CustomLanguageInfo";
 
 /**
  * Language provider for the .asm.z80 extension

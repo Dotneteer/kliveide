@@ -1,5 +1,5 @@
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   IdeCommandBase,
   commandError,
@@ -8,7 +8,7 @@ import {
   validationError,
   writeSuccessMessage
 } from "../services/ide-commands";
-import { ValidationMessage } from "../abstractions/ValidationMessage";
+import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import { BinaryContentsResponse, TextContentsResponse } from "@/common/messaging/any-to-main";
 import { incDocumentActivationVersionAction } from "@/common/state/actions";

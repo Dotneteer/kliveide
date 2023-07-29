@@ -15,7 +15,7 @@ import {
   IMachineService,
   MachineTypeEventHandler,
   MachineInstanceEventHandler
-} from "./abstrations/IMachineService";
+} from "../abstractions/IMachineService";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();

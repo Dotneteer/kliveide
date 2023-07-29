@@ -4,7 +4,7 @@ import { noop } from "@/renderer/utils/stablerefs";
 import { useRef, useState } from "react";
 import { Icon } from "../../controls/Icon";
 import { TooltipFactory } from "../../controls/Tooltip";
-import { Activity } from "../abstractions/Activity";
+import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityButton.module.scss";
 
 /**

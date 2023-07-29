@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "../ToolArea/abstractions";
+import { IOutputBuffer } from "../appIde/ToolArea/abstractions";
 import { OutputPaneInfo } from "./OutputPaneInfo";
 
 /**

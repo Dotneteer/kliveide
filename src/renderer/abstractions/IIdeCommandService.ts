@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "../ToolArea/abstractions";
+import { IOutputBuffer } from "../appIde/ToolArea/abstractions";
 import { IdeCommandContext } from "./IdeCommandContext";
 import { IdeCommandInfo } from "./IdeCommandInfo";
 import { IdeCommandResult } from "./IdeCommandResult";

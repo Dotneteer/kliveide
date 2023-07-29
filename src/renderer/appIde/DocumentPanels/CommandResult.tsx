@@ -7,7 +7,7 @@ import { useDispatch } from "@/renderer/core/RendererProvider";
 import { useInitializeAsync } from "@/renderer/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@/common/state/actions";
 import { useRef, useState, useEffect } from "react";
-import { CommandResultData } from "../abstractions/CommandResultData";
+import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { OutputLine } from "../ToolArea/OutputPanel";

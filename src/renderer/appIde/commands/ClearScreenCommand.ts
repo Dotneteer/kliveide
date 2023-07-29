@@ -1,5 +1,5 @@
-import { IdeCommandContext } from "../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../abstractions/IdeCommandResult";
+import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
+import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { commandSuccess } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 

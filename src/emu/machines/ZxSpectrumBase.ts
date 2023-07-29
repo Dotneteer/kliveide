@@ -10,7 +10,7 @@ import { SysVar } from "../../common/abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
-import { CodeToInject } from "@/renderer/appIde/abstractions/code-related";
+import { CodeToInject } from "@/common/abstractions/code-related";
 import { MainExecPointInfo } from "../../renderer/abstractions/IZ80Machine";
 
 /**
