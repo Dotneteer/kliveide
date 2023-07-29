@@ -89,12 +89,26 @@ export function getNodeDir (node: ProjectNode | string): string {
 /**
  * Gets the filename of the specified project node
  * @param node Project node
- * @returns Extension part of the project node
+ * @returns Filename + extension part of the project node
  */
 export function getNodeFile (node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
   const segments = fullPath.split("/");
   return segments.length > 0 ? segments[segments.length - 1] : "";
+}
+
+/**
+ * Gets the extension of the specified project node
+ * @param node Project node
+ * @returns Extension part of the project node
+ */
+export function getNodeName (node: ProjectNode | string): string {
+  const filename = getNodeFile(node);
+  if (!filename) {
+    return "";
+  }
+  const fileParts = filename.split(".");
+  return fileParts.length > 0 ? fileParts[0] : "";
 }
 
 /**

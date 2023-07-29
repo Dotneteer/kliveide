@@ -255,9 +255,13 @@ export async function processMainToEmuMessages (
       };
     }
 
-    case "EmuInjectCode":
+    case "EmuInjectCode": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      controller.machine.injectCodeToRun(message.codeToInject);
       break;
-
+    }
+    
     case "EmuRunCode": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();

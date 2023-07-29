@@ -46,7 +46,7 @@ export class SpectrumTapeHeader {
     }
 
     for (var i = NAME_OFFS; i < NAME_OFFS + NAME_LEN; i++) {
-      this._headerBytes[i] = value.at[i - NAME_OFFS] & 0xff;
+      this._headerBytes[i] = value.charCodeAt(i - NAME_OFFS) & 0xff;
     }
     this.calcChecksum();
   }

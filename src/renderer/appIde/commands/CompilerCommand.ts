@@ -4,7 +4,7 @@ import {
 } from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { getFileTypeEntry } from "../project/project-node";
+import { getFileTypeEntry, getNodeName as getNodeFileName } from "../project/project-node";
 import {
   IdeCommandBase,
   commandError,
@@ -129,6 +129,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       return validationError("This command expects at least 2 arguments");
     }
     this.filename = args[0].text;
+    this.name = getNodeFileName(this.filename);
     // --- Obtain additional arguments
     let argPos = 1;
     while (argPos < args.length) {
@@ -158,7 +159,7 @@ export class ExportCodeCommand extends IdeCommandBase {
           break;
         case "-p":
           this.pause = true;
-          break;  
+          break;
         case "-as":
           this.autoStart = true;
           break;
@@ -295,7 +296,7 @@ export class ExportCodeCommand extends IdeCommandBase {
 
     blocksToSave.push(...codeBlocks);
     await saveDataBlocks(blocksToSave);
-    return commandSuccess;
+    return commandSuccessWith("Code successfully exported.");
 
     // --- Reads tape data from the specified contents
     function readTapeData (contents: Uint8Array): TapeDataBlock[] | null {
@@ -410,7 +411,7 @@ export class ExportCodeCommand extends IdeCommandBase {
 
           const codeSegment = new Uint8Array(endAddr - startAddr + 3);
           for (let i = 0; i < segment.emittedCode.length; i++) {
-            codeSegment[i + 1] = segment[i];
+            codeSegment[i + 1] = segment.emittedCode[i];
           }
 
           // --- The first byte of the code segment is 0xFF (Data block)
@@ -449,11 +450,11 @@ export class ExportCodeCommand extends IdeCommandBase {
 
         // --- Create the single header
         const header = new SpectrumTapeHeader();
-        (header.type = 3), // --- Code block
-          (header.name = `bank${bankSegment.bank}.code`),
-          (header.dataLength = (codeSegment.length - 2) & 0xffff),
-          (header.parameter1 = startAddr),
-          (header.parameter2 = 0x8000);
+        header.type = 3; // --- Code block
+        header.name = `bank${bankSegment.bank}.code`;
+        header.dataLength = (codeSegment.length - 2) & 0xffff;
+        header.parameter1 = startAddr;
+        header.parameter2 = 0x8000;
 
         // --- Create the two tape blocks (header + data)
         result.push(header.headerBytes);
@@ -947,50 +948,41 @@ export class ExportCodeCommand extends IdeCommandBase {
     async function saveDataBlocks (
       blocks: Uint8Array[]
     ): Promise<IdeCommandResult> {
-      const writer = new BinaryWriter()
-      try
-      {
-          // --- Save data blocks
-          if (exporter.format === "tzx") {
-            const header = new TzxHeader();
-            header.writeTo(writer);
-            for (const block of blocksToSave) {
-              const tzxBlock = new TzxStandardSpeedBlock();
-              tzxBlock.data = block;
-              tzxBlock.dataLength = block.length & 0xffff;
-              tzxBlock.writeTo(writer);
-            }
-          } else {
-            for (const block of blocksToSave) {
-              writer.writeUint16(block.length & 0xffff);
-              writer.writeBytes(block);
-            }
+      const writer = new BinaryWriter();
+      try {
+        // --- Save data blocks
+        if (exporter.format === "tzx") {
+          const header = new TzxHeader();
+          header.writeTo(writer);
+          for (const block of blocksToSave) {
+            const tzxBlock = new TzxStandardSpeedBlock();
+            tzxBlock.data = block;
+            tzxBlock.dataLength = block.length & 0xffff;
+            tzxBlock.writeTo(writer);
           }
-
-                // --- Save the data to a file
-      if (exporter.filename) {
-        const response = await context.messenger.sendMessage({
-          type: "MainSaveBinaryFile",
-          path: exporter.filename,
-          data: writer.buffer
-        });
-        if (response.type === "ErrorResponse") {
-          return commandError(response.message);
+        } else {
+          for (const block of blocksToSave) {
+            writer.writeUint16(block.length & 0xffff);
+            writer.writeBytes(block);
+          }
         }
+
+        // --- Save the data to a file
+        if (exporter.filename) {
+          const response = await context.messenger.sendMessage({
+            type: "MainSaveBinaryFile",
+            path: exporter.filename,
+            data: writer.buffer
+          });
+          if (response.type === "ErrorResponse") {
+            return commandError(response.message);
+          }
+        }
+
+        return commandSuccess;
+      } catch (err) {
+        return commandError(err.toString());
       }
-
-          return commandSuccess;
-      }
-      catch (err) {
-        return commandError(err.toString())
-      }
-
-
-
-
-
-
-
 
       return commandSuccess;
     }
