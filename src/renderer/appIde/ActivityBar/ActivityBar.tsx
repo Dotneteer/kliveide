@@ -1,5 +1,5 @@
-import { useDispatch, useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
-import { selectActivityAction, showSideBarAction } from "@/common/state/actions";
+import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { selectActivityAction, showSideBarAction } from "@state/actions";
 import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";

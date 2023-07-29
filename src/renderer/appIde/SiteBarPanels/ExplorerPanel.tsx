@@ -3,9 +3,9 @@ import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "@/renderer/core/RendererProvider";
-import { ITreeNode, ITreeView, TreeNode } from "@/renderer/core/tree-node";
-import { MainGetDirectoryContentResponse } from "@/common/messaging/any-to-main";
+} from "@renderer/core/RendererProvider";
+import { ITreeNode, ITreeView, TreeNode } from "@renderer/core/tree-node";
+import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
@@ -14,29 +14,29 @@ import {
   getNodeDir,
   ProjectNode
 } from "../project/project-node";
-import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
-import { Icon } from "@/renderer/controls/Icon";
-import { ScrollViewerApi } from "@/renderer/controls/ScrollViewer";
-import { VirtualizedListApi } from "@/renderer/controls/VirtualizedList";
-import { LabelSeparator } from "@/renderer/controls/Labels";
-import classnames from "@/renderer/utils/classnames";
+import { VirtualizedListView } from "@controls/VirtualizedListView";
+import { Icon } from "@controls/Icon";
+import { ScrollViewerApi } from "@controls/ScrollViewer";
+import { VirtualizedListApi } from "@controls/VirtualizedList";
+import { LabelSeparator } from "@controls/Labels";
+import classnames from "@renderer/utils/classnames";
 import { useAppServices } from "../services/AppServicesProvider";
-import { Button } from "@/renderer/controls/Button";
+import { Button } from "@controls/Button";
 import {
   ContextMenu,
   ContextMenuItem,
   ContextMenuSeparator
-} from "@/renderer/controls/ContextMenu";
+} from "@controls/ContextMenu";
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
   incDocumentActivationVersionAction,
   setBuildRootAction
-} from "@/common/state/actions";
-import { PROJECT_FILE } from "@/common/structs/project-const";
-import { SpaceFiller } from "@/renderer/controls/SpaceFiller";
-import { EMPTY_ARRAY } from "@/renderer/utils/stablerefs";
+} from "@state/actions";
+import { PROJECT_FILE } from "@common/structs/project-const";
+import { SpaceFiller } from "@controls/SpaceFiller";
+import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";

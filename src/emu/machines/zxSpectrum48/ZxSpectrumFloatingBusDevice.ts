@@ -1,6 +1,6 @@
-import { IFloatingBusDevice } from "@/emu/abstractions/IFloatingBusDevice";
-import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
-import { RenderingPhase } from "@/renderer/abstractions/RenderingPhase";
+import { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 
 /**
  * This class implements the ZX Spectrum 48 floating bus device.

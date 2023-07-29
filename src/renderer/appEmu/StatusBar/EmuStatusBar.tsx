@@ -1,10 +1,10 @@
-import { useMachineController } from "@/renderer/core/useMachineController";
-import { useSelector } from "@/renderer/core/RendererProvider";
-import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
+import { useMachineController } from "@renderer/core/useMachineController";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Icon } from "../../controls/Icon";
-import { SpaceFiller } from "../../controls/SpaceFiller";
-import { FrameStats } from "@/renderer/abstractions/FrameStats";
+import { Icon } from "@controls/Icon";
+import { SpaceFiller } from "@controls/SpaceFiller";
+import { FrameStats } from "@renderer/abstractions/FrameStats";
 import classnames from "../../utils/classnames";
 import styles from "./EmuStatusBar.module.scss";
 

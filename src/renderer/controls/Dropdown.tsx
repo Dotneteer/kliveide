@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "./Dropdown.module.scss";
 import { Icon } from "./Icon";
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 
 type OptionProps = {
   label: string;

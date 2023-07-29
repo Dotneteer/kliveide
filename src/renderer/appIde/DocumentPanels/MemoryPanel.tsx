@@ -1,19 +1,19 @@
-import { AddressInput } from "@/renderer/controls/AddressInput";
-import { SmallIconButton } from "@/renderer/controls/IconButton";
-import { LabeledSwitch } from "@/renderer/controls/LabeledSwitch";
-import { ToolbarSeparator } from "@/renderer/controls/ToolbarSeparator";
-import { VirtualizedListApi } from "@/renderer/controls/VirtualizedList";
-import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
+import { AddressInput } from "@controls/AddressInput";
+import { SmallIconButton } from "@controls/IconButton";
+import { LabeledSwitch } from "@controls/LabeledSwitch";
+import { ToolbarSeparator } from "@controls/ToolbarSeparator";
+import { VirtualizedListApi } from "@controls/VirtualizedList";
+import { VirtualizedListView } from "@controls/VirtualizedListView";
 import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "@/renderer/core/RendererProvider";
-import { useInitializeAsync } from "@/renderer/core/useInitializeAsync";
-import { useUncommittedState } from "@/renderer/core/useUncommittedState";
-import classnames from "@/renderer/utils/classnames";
-import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
-import { setIdeStatusMessageAction } from "@/common/state/actions";
+} from "@renderer/core/RendererProvider";
+import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
+import { useUncommittedState } from "@renderer/core/useUncommittedState";
+import classnames from "@renderer/utils/classnames";
+import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
+import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";

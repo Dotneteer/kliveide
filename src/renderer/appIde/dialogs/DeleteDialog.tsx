@@ -1,5 +1,5 @@
 import styles from "./DeleteDialog.module.scss";
-import { ModalApi, Modal } from "@/renderer/controls/Modal";
+import { ModalApi, Modal } from "@controls/Modal";
 import { useRef } from "react";
 
 type Props = {

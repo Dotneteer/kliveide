@@ -1,4 +1,4 @@
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import { useEffect, useRef } from "react";
 import styles from "./Button.module.scss";
 

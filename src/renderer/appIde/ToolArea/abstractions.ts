@@ -1,4 +1,4 @@
-import { ILiteEvent } from "@/emu/utils/lite-event";
+import { ILiteEvent } from "@emu/utils/lite-event";
 
 /**
  * Available output colors

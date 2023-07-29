@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import styles from "./TabButton.module.scss";
 import { TooltipFactory } from "./Tooltip";
 

@@ -1,4 +1,4 @@
-import { useResizeObserver } from "@/renderer/core/useResizeObserver";
+import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { CSSProperties, DOMAttributes } from "react";
 
 /**

@@ -1,10 +1,10 @@
-import { IFileProvider } from "@/renderer/core/IFileProvider";
+import { IFileProvider } from "@renderer/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { IZ80Machine, MainExecPointInfo } from "@/renderer/abstractions/IZ80Machine";
+import { IZ80Machine, MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
-import { SpectrumKeyCode } from "../../renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";

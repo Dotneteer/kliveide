@@ -2,12 +2,12 @@ import styles from "./SideBar.module.scss";
 import { ReactNode, useEffect, useRef } from "react";
 import { SideBarHeader } from "./SideBarHeader";
 import { SideBarPanel } from "./SideBarPanel";
-import { useDispatch, useSelector } from "@/renderer/core/RendererProvider";
-import { activityRegistry, sideBarPanelRegistry } from "@/renderer/registry";
-import { SideBarPanelState } from "@/common/state/AppState";
-import { setSideBarPanelSizeAction, setSideBarPanelsStateAction } from "@/common/state/actions";
-import { useResizeObserver } from "@/renderer/core/useResizeObserver";
-import { noop } from "@/renderer/utils/stablerefs";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { activityRegistry, sideBarPanelRegistry } from "@renderer/registry";
+import { SideBarPanelState } from "@state/AppState";
+import { setSideBarPanelSizeAction, setSideBarPanelsStateAction } from "@state/actions";
+import { useResizeObserver } from "@renderer/core/useResizeObserver";
+import { noop } from "@renderer/utils/stablerefs";
 
 // --- Minimum size of panels in pixels
 const MIN_PANEL_SIZE = 60;

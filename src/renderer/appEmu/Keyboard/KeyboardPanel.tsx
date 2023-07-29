@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Sp48Keyboard } from "./Sp48Keyboard";
-import { useResizeObserver } from "@/renderer/core/useResizeObserver";
+import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
 
 /**

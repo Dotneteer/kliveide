@@ -1,10 +1,13 @@
 import styles from "./NewProjectDialog.module.scss";
-import { ModalApi, Modal } from "@/renderer/controls/Modal";
-import { TextInput } from "@/renderer/controls/TextInput";
+import { ModalApi, Modal } from "@controls/Modal";
+import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
-import { Dropdown } from "@/renderer/controls/Dropdown";
-import { useRendererContext } from "@/renderer/core/RendererProvider";
-import { MainCreateKliveProjectResponse, MainShowOpenFolderDialogResponse } from "@/common/messaging/any-to-main";
+import { Dropdown } from "@controls/Dropdown";
+import { useRendererContext } from "@renderer/core/RendererProvider";
+import {
+  MainCreateKliveProjectResponse,
+  MainShowOpenFolderDialogResponse
+} from "@messaging/any-to-main";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -40,12 +43,14 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const [projectIsValid, setProjectIsValid] = useState(true);
 
   useEffect(() => {
-    const fValid = projectFolder.trim() === "" || VALID_FOLDERNAME.test(projectFolder)
-    const nValid = projectName.trim() !== "" && VALID_FILENAME.test(projectName)
+    const fValid =
+      projectFolder.trim() === "" || VALID_FOLDERNAME.test(projectFolder);
+    const nValid =
+      projectName.trim() !== "" && VALID_FILENAME.test(projectName);
     setFolderIsValid(fValid);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
-  }, [projectFolder, projectName])
+  }, [projectFolder, projectName]);
 
   return (
     <Modal
@@ -57,17 +62,17 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       primaryLabel='Create'
       primaryEnabled={folderIsValid && projectIsValid}
       initialFocus='none'
-      onPrimaryClicked={async (result) => {
+      onPrimaryClicked={async result => {
         const name = result ? result[0] : projectName;
         const folder = result ? result[1] : projectFolder;
 
         // --- Create the project
-        const response = await messenger.sendMessage({
+        const response = (await messenger.sendMessage({
           type: "MainCreateKliveProject",
           machineId,
           projectName: name,
           projectFolder: folder
-        }) as MainCreateKliveProjectResponse;
+        })) as MainCreateKliveProjectResponse;
         if (response.errorMessage) {
           // --- Display the error
           await messenger.sendMessage({

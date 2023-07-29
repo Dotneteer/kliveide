@@ -1,5 +1,5 @@
-import { TooltipFactory } from "@/renderer/controls/Tooltip";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { TooltipFactory } from "@renderer/controls/Tooltip";
+import { useEffect, useRef, useState } from "react";
 import styles from "./ExecutionStateOverlay.module.scss";
 
 type Props = {

@@ -1,5 +1,5 @@
-import { EmuGetMemoryResponse } from "@/common/messaging/main-to-emu";
-import { COMMAND_RESULT_EDITOR } from "@/common/state/common-ids";
+import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
+import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
 import { CommandResultData } from "../../abstractions/CommandResultData";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";

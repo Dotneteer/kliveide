@@ -1,11 +1,11 @@
-import { AppServices } from "@/renderer/abstractions/AppServices";
-import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
-import { RenderingPhase } from "@/renderer/abstractions/RenderingPhase";
-import { REWIND_REQUESTED, TAPE_DATA } from "@/emu/machines/machine-props";
-import { TapReader } from "@/emu/machines/tape/TapReader";
-import { TzxReader } from "@/emu/machines/tape/TzxReader";
-import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
-import { EmuSetTapeFileRequest } from "@/common/messaging/main-to-emu";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
+import { REWIND_REQUESTED, TAPE_DATA } from "@emu/machines/machine-props";
+import { TapReader } from "@emu/machines/tape/TapReader";
+import { TzxReader } from "@emu/machines/tape/TzxReader";
+import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
+import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
 import {
   RequestMessage,
   ResponseMessage,
@@ -13,12 +13,12 @@ import {
   defaultResponse,
   ErrorResponse,
   errorResponse
-} from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
-import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
-import { BinaryReader } from "@/common/utils/BinaryReader";
+} from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { BinaryReader } from "@common/utils/BinaryReader";
 
 const borderColors = [
   "Black",

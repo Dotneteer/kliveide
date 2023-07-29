@@ -1,9 +1,9 @@
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import { DumpSection } from "./DumpSection";
 import styles from "./StaticMemoryView.module.scss";
-import { LabeledSwitch } from "@/renderer/controls/LabeledSwitch";
+import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { useEffect, useState } from "react";
-import { Label } from "@/renderer/controls/Labels";
+import { Label } from "@controls/Labels";
 
 type MemoryViewProps = {
   memory: Uint8Array;

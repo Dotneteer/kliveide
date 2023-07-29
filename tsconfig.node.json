@@ -8,7 +8,6 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "paths": {
-			"@/*": ["./src/*"],
       "@abstractions/*": ["./src/common/abstractions/*"],
       "@common/*": ["./src/common/*"],
       "@styles/*": ["./src/renderer/assets/styles/*"],
@@ -19,6 +18,7 @@
       "@emu/*": ["./src/emu/*"],
       "@appIde/*": ["./src/renderer/appIde/*"],
       "@electron/*": ["./src/electron/*"],
+      "@controls/*": ["./src/renderer/controls/*"],
 		},
   },
   "include": [

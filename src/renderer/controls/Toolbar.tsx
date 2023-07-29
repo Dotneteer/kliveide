@@ -3,16 +3,16 @@ import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "@/renderer/core/RendererProvider";
+} from "@renderer/core/RendererProvider";
 import {
   muteSoundAction,
   setFastLoadAction,
   showKeyboardAction
-} from "@/common/state/actions";
+} from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
-import { createMachineCommand } from "@/common/messaging/main-to-emu";
+import { createMachineCommand } from "@messaging/main-to-emu";
 
 export const Toolbar = () => {
   const dispatch = useDispatch();

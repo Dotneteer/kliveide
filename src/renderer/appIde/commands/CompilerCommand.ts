@@ -1,7 +1,7 @@
 import {
   BinaryContentsResponse,
   MainCompileResponse
-} from "@/common/messaging/any-to-main";
+} from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { getFileTypeEntry } from "../project/project-node";
@@ -27,17 +27,17 @@ import {
   BinarySegment,
   CompilerOutput,
   SpectrumModelType
-} from "@/common/abstractions/IZ80CompilerService";
+} from "@abstractions/IZ80CompilerService";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
-import { BinaryReader } from "@/common/utils/BinaryReader";
-import { TapReader } from "@/emu/machines/tape/TapReader";
-import { TzxReader } from "@/emu/machines/tape/TzxReader";
-import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
-import { SpectrumTapeHeader } from "@/emu/machines/tape/SpectrumTapeHeader";
-import { BinaryWriter } from "@/common/utils/BinaryWriter";
-import { TzxHeader } from "@/emu/machines/tape/TzxHeader";
-import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
+import { BinaryReader } from "@utils/BinaryReader";
+import { TapReader } from "@emu/machines/tape/TapReader";
+import { TzxReader } from "@emu/machines/tape/TzxReader";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { SpectrumTapeHeader } from "@emu/machines/tape/SpectrumTapeHeader";
+import { BinaryWriter } from "@utils/BinaryWriter";
+import { TzxHeader } from "@emu/machines/tape/TzxHeader";
+import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 

@@ -1,10 +1,10 @@
-import { useDispatch, useSelector, useStore } from "@/renderer/core/RendererProvider";
-import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
+import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import { useAppServices } from "@appIde/services/AppServicesProvider";
 import {
   activateOutputPaneAction,
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
-} from "@/common/state/actions";
+} from "@state/actions";
 import {
   CSSProperties,
   useEffect,
@@ -12,14 +12,14 @@ import {
   useRef,
   useState
 } from "react";
-import { Dropdown } from "../../controls/Dropdown";
-import { TabButton, TabButtonSpace } from "../../controls/TabButton";
-import { VirtualizedListApi } from "../../controls/VirtualizedList";
+import { Dropdown } from "@controls/Dropdown";
+import { TabButton, TabButtonSpace } from "@controls/TabButton";
+import { VirtualizedListApi } from "@controls/VirtualizedList";
 import { IOutputBuffer, OutputContentLine } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
-import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
-import { ToolState } from "@/renderer/abstractions/ToolState";
-import { delay } from "@/renderer/utils/timing";
+import { VirtualizedListView } from "@controls/VirtualizedListView";
+import { ToolState } from "@renderer/abstractions/ToolState";
+import { delay } from "@renderer/utils/timing";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();

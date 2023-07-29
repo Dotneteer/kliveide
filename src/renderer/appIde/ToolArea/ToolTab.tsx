@@ -1,9 +1,9 @@
 import styles from "./ToolTab.module.scss";
-import classnames from "@/renderer/utils/classnames";
-import { useDispatch } from "@/renderer/core/RendererProvider";
+import classnames from "@renderer/utils/classnames";
+import { useDispatch } from "@renderer/core/RendererProvider";
 import { useState } from "react";
-import { activateToolAction } from "@/common/state/actions";
-import { ToolInfo } from "@/renderer/abstractions/ToolInfo";
+import { activateToolAction } from "@state/actions";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 
 export type Props = ToolInfo & {
   isActive?: boolean;

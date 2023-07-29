@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory } from "./Tooltip";
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import styles from "./IconButton.module.scss";
 
 type Props = {

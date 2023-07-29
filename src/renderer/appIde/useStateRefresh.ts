@@ -1,4 +1,4 @@
-import { useSelector } from "@/renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef } from "react";
 

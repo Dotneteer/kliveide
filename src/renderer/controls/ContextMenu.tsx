@@ -1,4 +1,4 @@
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import { ReactNode, useState } from "react";
 import { usePopper } from "react-popper";
 import { ClickAwayListener } from "./ClickAwayListener";

@@ -1,14 +1,14 @@
-import { useDispatch, useSelector } from "@/renderer/core/RendererProvider";
-import { toolPanelRegistry } from "@/renderer/registry";
-import { ToolState } from "@/renderer/abstractions/ToolState";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { toolPanelRegistry } from "@renderer/registry";
+import { ToolState } from "@renderer/abstractions/ToolState";
 import {
   incToolCommandSeqNoAction,
   showToolPanelsAction,
   toolPanelsOnTopAction
-} from "@/common/state/actions";
+} from "@state/actions";
 import { createElement } from "react";
-import { SpaceFiller } from "../../controls/SpaceFiller";
-import { TabButton } from "../../controls/TabButton";
+import { SpaceFiller } from "@controls/SpaceFiller";
+import { TabButton } from "@controls/TabButton";
 import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 

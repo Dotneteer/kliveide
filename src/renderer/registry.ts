@@ -5,8 +5,8 @@ import {
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
   TAP_EDITOR
-} from "@/common/state/common-ids";
-import { PROJECT_FILE } from "@/common/structs/project-const";
+} from "@state/common-ids";
+import { PROJECT_FILE } from "@common/structs/project-const";
 import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./abstractions/CustomLanguageInfo";

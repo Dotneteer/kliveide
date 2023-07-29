@@ -1,9 +1,9 @@
-import { AppServices } from "@/renderer/abstractions/AppServices";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
-import { Token } from "../appIde/services/command-parser";
-import { IOutputBuffer } from "../appIde/ToolArea/abstractions";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
+import { Token } from "@appIde/services/command-parser";
+import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 
 /**
  * Describes the execution context of a command

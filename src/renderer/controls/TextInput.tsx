@@ -1,4 +1,4 @@
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import { useEffect, useRef, useState } from "react";
 import { IconButton } from "./IconButton";
 import styles from "./TextInput.module.scss";

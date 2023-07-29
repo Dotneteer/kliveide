@@ -1,27 +1,27 @@
-import { ScrollViewer, ScrollViewerApi } from "@/renderer/controls/ScrollViewer";
+import { ScrollViewer, ScrollViewerApi } from "@controls/ScrollViewer";
 import {
   TabButton,
   TabButtonSeparator,
   TabButtonSpace
-} from "@/renderer/controls/TabButton";
+} from "@controls/TabButton";
 import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "@/renderer/core/RendererProvider";
-import { ITreeNode } from "@/renderer/core/tree-node";
-import { documentPanelRegistry } from "@/renderer/registry";
+} from "@renderer/core/RendererProvider";
+import { ITreeNode } from "@renderer/core/tree-node";
+import { documentPanelRegistry } from "@renderer/registry";
 import {
   changeDocumentAction,
   incDocumentActivationVersionAction
-} from "@/common/state/actions";
+} from "@state/actions";
 import { useEffect, useRef, useState } from "react";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { DocumentTab } from "./DocumentTab";
-import { TextContentsResponse } from "@/common/messaging/any-to-main";
-import { EMPTY_ARRAY } from "@/renderer/utils/stablerefs";
+import { TextContentsResponse } from "@messaging/any-to-main";
+import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 export const DocumentsHeader = () => {

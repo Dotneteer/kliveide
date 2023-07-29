@@ -1,8 +1,8 @@
 import { Sp48ButtonClickArgs, Sp48Key as Key } from "./Sp48Key";
 import { Column, Row } from "./panels";
 import { CSSProperties } from "react";
-import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
-import { ZxSpectrumBase } from "@/emu/machines/ZxSpectrumBase";
+import { useAppServices } from "@appIde/services/AppServicesProvider";
+import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);

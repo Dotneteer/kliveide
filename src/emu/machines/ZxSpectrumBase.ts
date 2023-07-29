@@ -4,14 +4,14 @@ import { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
 import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
 import { IScreenDevice } from "../abstractions/IScreenDevice";
 import { ITapeDevice } from "../abstractions/ITapeDevice";
-import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "../../renderer/abstractions/SpectrumKeyCode";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { SysVar } from "@abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
 import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { CodeToInject } from "@abstractions/CodeToInject";
-import { MainExecPointInfo } from "../../renderer/abstractions/IZ80Machine";
+import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
 
 /**
  * The common core functionality for all ZX Spectrum machines

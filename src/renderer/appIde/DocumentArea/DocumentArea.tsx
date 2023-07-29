@@ -1,4 +1,4 @@
-import { useSelector } from "@/renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import styles from "./DocumentArea.module.scss";

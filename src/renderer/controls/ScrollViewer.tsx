@@ -1,8 +1,8 @@
-import { useResizeObserver } from "@/renderer/core/useResizeObserver";
+import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import React, { ReactNode, useEffect, useRef, useState } from "react";
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import styles from "./ScrollViewer.module.scss";
-import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
+import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { AttachedShadow } from "./AttachedShadow";
 
 export type ScrollViewerApi = {

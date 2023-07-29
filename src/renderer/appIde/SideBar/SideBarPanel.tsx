@@ -1,10 +1,10 @@
 import styles from "./SideBarPanel.module.scss";
 import { createElement, useEffect, useRef, useState } from "react";
-import { useDispatch } from "@/renderer/core/RendererProvider";
-import { setSideBarPanelExpandedAction } from "@/common/state/actions";
-import { Icon } from "../../controls/Icon";
-import classnames from "@/renderer/utils/classnames";
-import { ScrollViewer } from "@/renderer/controls/ScrollViewer";
+import { useDispatch } from "@renderer/core/RendererProvider";
+import { setSideBarPanelExpandedAction } from "@state/actions";
+import { Icon } from "@controls/Icon";
+import classnames from "@renderer/utils/classnames";
+import { ScrollViewer } from "@controls/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { SideBarPanelInfo } from "../../abstractions/SideBarPanelInfo";
 

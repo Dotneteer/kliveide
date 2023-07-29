@@ -20,7 +20,6 @@ export default defineConfig(({ command }) => {
   return {
     resolve: {
       alias: {
-        "@": path.join(__dirname, "src"),
         "@styles": path.join(__dirname, "src/renderer/assets/styles"),
         "@common": path.join(__dirname, "src/common"),
         "@abstractions": path.join(__dirname, "src/common/abstractions"),
@@ -31,6 +30,7 @@ export default defineConfig(({ command }) => {
         "@emu": path.join(__dirname, "src/emu"),
         "@appIde": path.join(__dirname, "src/renderer/appIde"),
         "@electron": path.join(__dirname, "src/electron"),
+        "@controls": path.join(__dirname, "src/renderer/controls"),
       }
     },
     plugins: [

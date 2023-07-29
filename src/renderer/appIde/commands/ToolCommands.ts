@@ -9,8 +9,8 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
-import { outputPaneRegistry } from "@/renderer/registry";
-import { activateOutputPaneAction, activateToolAction } from "@/common/state/actions";
+import { outputPaneRegistry } from "@renderer/registry";
+import { activateOutputPaneAction, activateToolAction } from "@state/actions";
 
 export class SelectOutputPaneCommand extends IdeCommandBase {
   readonly id = "outp";

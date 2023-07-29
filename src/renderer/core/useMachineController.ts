@@ -1,5 +1,4 @@
-import { MachineController } from "@/emu/machines/controller/MachineController";
-import { useAppServices } from "@/renderer/appIde/services/AppServicesProvider";
+import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { IMachineController } from "../abstractions/IMachineController";

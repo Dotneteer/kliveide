@@ -15,7 +15,7 @@ import {
 } from "../../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { ProjectNodeWithChildren } from "@/renderer/appIde/project/project-node";
+import { ProjectNodeWithChildren } from "../../renderer/appIde/project/project-node";
 import {
   createKliveProject,
   openFolder,

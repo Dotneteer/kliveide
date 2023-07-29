@@ -1,8 +1,8 @@
-import { MessageSource } from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { Action } from "@/common/state/Action";
-import { AppState } from "@/common/state/AppState";
-import { Dispatch, Store } from "@/common/state/redux-light";
+import { MessageSource } from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { Action } from "@state/Action";
+import { AppState } from "@state/AppState";
+import { Dispatch, Store } from "@state/redux-light";
 import {
   createContext,
   ReactNode,

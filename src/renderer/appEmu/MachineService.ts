@@ -1,16 +1,16 @@
-import { MachineInfo } from "@/renderer/abstractions/MachineInfo";
-import { FileProvider } from "@/renderer/core/FileProvider";
-import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
-import { MachineController } from "@/emu/machines/controller/MachineController";
-import { DebugSupport } from "@/emu/machines/DebugSupport";
-import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@/emu/machines/machine-props";
-import { LiteEvent } from "@/emu/utils/lite-event";
-import { machineRegistry } from "@/renderer/registry";
-import { MessageSource } from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { setMachineTypeAction } from "@/common/state/actions";
-import { AppState } from "@/common/state/AppState";
-import { Store, Unsubscribe } from "@/common/state/redux-light";
+import { MachineInfo } from "@renderer/abstractions/MachineInfo";
+import { FileProvider } from "@renderer/core/FileProvider";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { MachineController } from "@emu/machines/MachineController";
+import { DebugSupport } from "@emu/machines/DebugSupport";
+import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { machineRegistry } from "@renderer/registry";
+import { MessageSource } from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { setMachineTypeAction } from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store, Unsubscribe } from "@state/redux-light";
 import {
   IMachineService,
   MachineTypeEventHandler,

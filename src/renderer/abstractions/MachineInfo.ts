@@ -1,4 +1,4 @@
-import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
  * This type stores information about a particular emulated machine

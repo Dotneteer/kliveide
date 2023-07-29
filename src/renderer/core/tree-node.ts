@@ -1,4 +1,4 @@
-import { ILiteEvent, LiteEvent } from "@/emu/utils/lite-event";
+import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
 
 /**
  * This interface represents a node in a hierarchical tree.

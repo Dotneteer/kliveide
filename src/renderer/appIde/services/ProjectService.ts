@@ -1,7 +1,7 @@
-import { ITreeNode, ITreeView } from "@/renderer/core/tree-node";
-import { LiteEvent, ILiteEvent } from "@/emu/utils/lite-event";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
+import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
+import { LiteEvent, ILiteEvent } from "@emu/utils/lite-event";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
 import { ProjectNode } from "../project/project-node";
 

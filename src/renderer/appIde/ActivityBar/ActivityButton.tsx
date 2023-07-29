@@ -1,6 +1,6 @@
-import { useTheme } from "@/renderer/theming/ThemeProvider";
-import classnames from "@/renderer/utils/classnames";
-import { noop } from "@/renderer/utils/stablerefs";
+import { useTheme } from "@renderer/theming/ThemeProvider";
+import classnames from "@renderer/utils/classnames";
+import { noop } from "@renderer/utils/stablerefs";
 import { useRef, useState } from "react";
 import { Icon } from "../../controls/Icon";
 import { TooltipFactory } from "../../controls/Tooltip";

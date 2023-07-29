@@ -1,13 +1,13 @@
 import Editor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import AutoSizer from "@/lib/react-virtualized-auto-sizer";
-import { useTheme } from "@/renderer/theming/ThemeProvider";
+import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
+import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
-import { customLanguagesRegistry } from "@/renderer/registry";
-import { delay } from "@/renderer/utils/timing";
+import { customLanguagesRegistry } from "@renderer/registry";
+import { delay } from "@renderer/utils/timing";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 
 // --- Wait 1000 ms before saving the document being edited

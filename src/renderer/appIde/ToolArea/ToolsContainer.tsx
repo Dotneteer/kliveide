@@ -1,5 +1,5 @@
-import { toolPanelRegistry } from "@/renderer/registry";
-import { ToolInfo } from "@/renderer/abstractions/ToolInfo";
+import { toolPanelRegistry } from "@renderer/registry";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { createElement } from "react";
 import styles from "./ToolsContainer.module.scss";
 

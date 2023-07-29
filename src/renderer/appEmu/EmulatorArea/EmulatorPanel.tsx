@@ -1,15 +1,15 @@
 import styles from "./EmulatorPanel.module.scss";
-import { useMachineController } from "@/renderer/core/useMachineController";
-import { SpectrumKeyCode } from "@/renderer/abstractions/SpectrumKeyCode";
-import { useSelector, useStore } from "@/renderer/core/RendererProvider";
-import { useResizeObserver } from "@/renderer/core/useResizeObserver";
+import { useMachineController } from "@renderer/core/useMachineController";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { useSelector, useStore } from "@renderer/core/RendererProvider";
+import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer } from "./AudioRenderer";
-import { IZxSpectrumMachine } from "@/renderer/abstractions/IZxSpectrumMachine";
-import { FAST_LOAD } from "@/emu/machines/machine-props";
-import { MachineController } from "@/emu/machines/controller/MachineController";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { FAST_LOAD } from "@emu/machines/machine-props";
+import { MachineController } from "@emu/machines/MachineController";
 import { spectrumKeyMappings } from "./key-mappings";
 import { IMachineController } from "../../abstractions/IMachineController";
 
@@ -296,10 +296,10 @@ export const EmulatorPanel = () => {
       machine?.setKeyStatus(SpectrumKeyCode[mapping], isDown);
     } else {
       if (mapping.length > 0) {
-        machine?.setKeyStatus(SpectrumKeyCode[mapping[0]], isDown);
+        machine?.setKeyStatus(SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode, isDown);
       }
       if (mapping.length > 1) {
-        machine?.setKeyStatus(SpectrumKeyCode[mapping[1]], isDown);
+        machine?.setKeyStatus(SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode, isDown);
       }
     }
   }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePopper } from "react-popper";
 import styles from "./Tooltip.module.scss";
-import { useTheme } from "@/renderer/theming/ThemeProvider";
+import { useTheme } from "@renderer/theming/ThemeProvider";
 
 // =====================================================================================================================
 // Tooltip React component definition

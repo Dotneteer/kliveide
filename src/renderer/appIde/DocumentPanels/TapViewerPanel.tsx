@@ -1,20 +1,20 @@
-import { Label, LabelSeparator, Secondary } from "@/renderer/controls/Labels";
+import { Label, LabelSeparator, Secondary } from "@controls/Labels";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
-import { readTapeFile } from "@/renderer/utils/tape-utils";
-import { ToolbarSeparator } from "@/renderer/controls/ToolbarSeparator";
-import classnames from "@/renderer/utils/classnames";
-import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
-import { TzxBlockBase } from "@/emu/machines/tape/TzxBlockBase";
+import { readTapeFile } from "@renderer/utils/tape-utils";
+import { ToolbarSeparator } from "@controls/ToolbarSeparator";
+import classnames from "@renderer/utils/classnames";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
-import { Icon } from "@/renderer/controls/Icon";
+import { Icon } from "@controls/Icon";
 import { useAppServices } from "../services/AppServicesProvider";
-import { useDispatch, useSelector } from "@/renderer/core/RendererProvider";
-import { changeDocumentAction } from "@/common/state/actions";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { changeDocumentAction } from "@state/actions";
 import { StaticMemoryView } from "./StaticMemoryView";
-import { ScrollViewer } from "@/renderer/controls/ScrollViewer";
-import { TzxStandardSpeedBlock } from "@/emu/machines/tape/TzxStandardSpeedBlock";
-import { TzxTextDescriptionBlock } from "@/emu/machines/tape/TzxTextDescriptionBlock";
+import { ScrollViewer } from "@controls/ScrollViewer";
+import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
+import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
 
 const TapViewerPanel = ({ document, data }: DocumentProps) => {
   const dispatch = useDispatch();

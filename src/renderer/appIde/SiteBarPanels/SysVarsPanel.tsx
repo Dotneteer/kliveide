@@ -4,19 +4,19 @@ import {
   LabelSeparator,
   Secondary,
   Value
-} from "@/renderer/controls/Labels";
-import { useRendererContext, useSelector } from "@/renderer/core/RendererProvider";
+} from "@controls/Labels";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import {
   EmuGetMemoryResponse,
   EmuGetSysVarsResponse
-} from "@/common/messaging/main-to-emu";
+} from "@messaging/main-to-emu";
 import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
-import { VirtualizedListView } from "@/renderer/controls/VirtualizedListView";
+import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVar, SysVarType } from "@abstractions/SysVar";
-import { TooltipFactory } from "@/renderer/controls/Tooltip";
+import { TooltipFactory } from "@controls/Tooltip";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;

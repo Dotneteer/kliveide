@@ -1,8 +1,8 @@
-import { TapReader } from "@/emu/machines/tape/TapReader";
-import { TzxBlockBase } from "@/emu/machines/tape/TzxBlockBase";
-import { TzxReader } from "@/emu/machines/tape/TzxReader";
-import { TapeDataBlock } from "@/common/structs/TapeDataBlock";
-import { BinaryReader } from "@/common/utils/BinaryReader";
+import { TapReader } from "@emu/machines/tape/TapReader";
+import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
+import { TzxReader } from "@emu/machines/tape/TzxReader";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { BinaryReader } from "@common/utils/BinaryReader";
 
 // --- Reads tape data from the specified contents
 export function readTapeFile (contents: Uint8Array): {

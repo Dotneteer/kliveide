@@ -1,13 +1,13 @@
-import { IOutputBuffer } from "@/renderer/appIde/ToolArea/abstractions";
+import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import { CodeToInject } from "@abstractions/CodeToInject";
-import { FrameStats } from "@/renderer/abstractions/FrameStats";
-import { IDebugSupport } from "@/renderer/abstractions/IDebugSupport";
-import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
-import { ILiteEvent } from "@/emu/utils/lite-event";
+import { FrameStats } from "@renderer/abstractions/FrameStats";
+import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { ILiteEvent } from "@emu/utils/lite-event";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

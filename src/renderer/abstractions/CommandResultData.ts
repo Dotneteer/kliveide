@@ -1,4 +1,4 @@
-import { OutputContentLine } from "../appIde/ToolArea/abstractions";
+import { OutputContentLine } from "@appIde/ToolArea/abstractions";
 
 /**
  * Represents the data passed to a command result documents

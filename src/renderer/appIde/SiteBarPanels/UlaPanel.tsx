@@ -3,11 +3,11 @@ import {
   Label,
   Separator,
   Value
-} from "@/renderer/controls/Labels";
-import { useRendererContext } from "@/renderer/core/RendererProvider";
+} from "@controls/Labels";
+import { useRendererContext } from "@renderer/core/RendererProvider";
 import {
   EmuGetUlaStateResponse
-} from "@/common/messaging/main-to-emu";
+} from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";

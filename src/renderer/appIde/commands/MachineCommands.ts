@@ -3,7 +3,7 @@ import {
   createMachineCommand,
   EmuGetCpuStateResponse,
   MachineCommand
-} from "@/common/messaging/main-to-emu";
+} from "@messaging/main-to-emu";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {

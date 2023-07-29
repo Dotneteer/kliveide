@@ -4,9 +4,9 @@ import {
   LabelSeparator,
   Separator,
   Value
-} from "@/renderer/controls/Labels";
-import { useRendererContext } from "@/renderer/core/RendererProvider";
-import { EmuGetCpuStateResponse } from "@/common/messaging/main-to-emu";
+} from "@controls/Labels";
+import { useRendererContext } from "@renderer/core/RendererProvider";
+import { EmuGetCpuStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";

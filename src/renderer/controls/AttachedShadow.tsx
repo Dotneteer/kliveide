@@ -1,5 +1,5 @@
 import styles from "./AttachedShadow.module.scss";
-import classnames from "@/renderer/utils/classnames";
+import classnames from "@renderer/utils/classnames";
 import { useEffect, useRef, useState } from "react";
 
 type Props = {

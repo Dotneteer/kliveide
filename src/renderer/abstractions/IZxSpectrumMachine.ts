@@ -1,9 +1,9 @@
-import { IBeeperDevice } from "../../emu/abstractions/IBeeperDevice";
-import { IFloatingBusDevice } from "../../emu/abstractions/IFloatingBusDevice";
-import { IKeyboardDevice } from "../../emu/abstractions/IKeyboardDevice";
-import { IScreenDevice } from "../../emu/abstractions/IScreenDevice";
-import { ITapeDevice } from "../../emu/abstractions/ITapeDevice";
-import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
+import { IBeeperDevice } from "@emu/abstractions/IBeeperDevice";
+import { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import { IKeyboardDevice } from "@emu/abstractions/IKeyboardDevice";
+import { IScreenDevice } from "@emu/abstractions/IScreenDevice";
+import { ITapeDevice } from "@emu/abstractions/ITapeDevice";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { SysVar } from "@abstractions/SysVar";
 
 /**

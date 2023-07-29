@@ -1,11 +1,11 @@
-import { AppServices } from "@/renderer/abstractions/AppServices";
+import { AppServices } from "@renderer/abstractions/AppServices";
 import {
   RequestMessage,
   ResponseMessage,
   defaultResponse
-} from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
-import { AppState } from "@/common/state/AppState";
+} from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { AppState } from "@state/AppState";
 import {
   MEMORY_PANEL_ID,
   MEMORY_EDITOR,
@@ -13,8 +13,8 @@ import {
   DISASSEMBLY_EDITOR,
   BASIC_PANEL_ID,
   BASIC_EDITOR
-} from "@/common/state/common-ids";
-import { Store } from "@/common/state/redux-light";
+} from "@state/common-ids";
+import { Store } from "@state/redux-light";
 
 /**
  * Process the messages coming from the emulator to the main process

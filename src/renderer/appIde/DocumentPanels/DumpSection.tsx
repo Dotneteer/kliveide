@@ -1,6 +1,6 @@
-import { LabelSeparator, Label } from "@/renderer/controls/Labels";
-import { TooltipFactory } from "@/renderer/controls/Tooltip";
-import classnames from "@/renderer/utils/classnames";
+import { LabelSeparator, Label } from "@controls/Labels";
+import { TooltipFactory } from "@controls/Tooltip";
+import classnames from "@renderer/utils/classnames";
 import { useRef } from "react";
 import { toHexa4, toHexa2 } from "../services/ide-commands";
 import { ZxSpectrumChars } from "./char-codes";

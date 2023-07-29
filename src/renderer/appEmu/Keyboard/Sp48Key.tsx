@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTheme } from "@/renderer/theming/ThemeProvider";
+import { useTheme } from "@renderer/theming/ThemeProvider";
 
 const NORMAL_WIDTH = 100;
 

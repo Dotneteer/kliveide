@@ -1,4 +1,4 @@
-import { useTheme } from "@/renderer/theming/ThemeProvider";
+import { useTheme } from "@renderer/theming/ThemeProvider";
 import { CSSProperties } from "react";
 
 type Props = {

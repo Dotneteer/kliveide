@@ -12,7 +12,7 @@ import { Store } from "@state/redux-light";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import { PROJECT_FILE } from "@common/structs/project-const";
-import { delay } from "@/renderer/utils/timing";
+import { delay } from "@renderer/utils/timing";
 
 /**
  * Represents the view state of a code document

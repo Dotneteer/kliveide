@@ -1,6 +1,6 @@
-import { SplitPanel } from "../../controls/SplitPanel";
+import { SplitPanel } from "@controls/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
-import { useSelector } from "@/renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { KeyboardPanel } from "../Keyboard/KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
 

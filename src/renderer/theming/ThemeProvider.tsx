@@ -1,5 +1,5 @@
-import { useSelector } from "@/renderer/core/RendererProvider";
-import { EMPTY_OBJECT } from "@/renderer/utils/stablerefs";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import classnames from "../utils/classnames";
 import { darkTheme } from "./dark-theme";

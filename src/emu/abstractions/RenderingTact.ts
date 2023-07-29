@@ -1,4 +1,4 @@
-import { RenderingPhase } from "../../renderer/abstractions/RenderingPhase";
+import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 
 /**
  * This structure defines information related to a particular tact of the ULA screen rendering frame.

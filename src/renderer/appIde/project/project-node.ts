@@ -1,5 +1,5 @@
-import { ITreeNode, ITreeView, TreeNode, TreeView } from "@/renderer/core/tree-node";
-import { customLanguagesRegistry, fileTypeRegistry } from "@/renderer/registry";
+import { ITreeNode, ITreeView, TreeNode, TreeView } from "@renderer/core/tree-node";
+import { customLanguagesRegistry, fileTypeRegistry } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
 
 /**

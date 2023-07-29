@@ -1,4 +1,4 @@
-import { KeyMapping } from "@/renderer/abstractions/KeyMapping";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 /**
  * US keyboard mappings

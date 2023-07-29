@@ -1,7 +1,7 @@
-import { AppServices } from "@/renderer/abstractions/AppServices";
-import { createMachineService } from "@/renderer/appEmu/MachineService";
-import { useRendererContext } from "@/renderer/core/RendererProvider";
-import { createUiService } from "@/renderer/core/UiServices";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { createMachineService } from "@renderer/appEmu/MachineService";
+import { useRendererContext } from "@renderer/core/RendererProvider";
+import { createUiService } from "@renderer/core/UiServices";
 import { useContext, useRef, useEffect, createContext } from "react";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./IdeCommandService";

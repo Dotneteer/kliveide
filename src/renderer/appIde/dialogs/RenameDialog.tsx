@@ -1,6 +1,6 @@
 import styles from "./RenameDialog.module.scss";
-import { ModalApi, Modal } from "@/renderer/controls/Modal";
-import { TextInput } from "@/renderer/controls/TextInput";
+import { ModalApi, Modal } from "@controls/Modal";
+import { TextInput } from "@controls/TextInput";
 import { useRef, useState } from "react";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;

@@ -1,4 +1,4 @@
-import { documentPanelRegistry } from "@/renderer/registry";
+import { documentPanelRegistry } from "@renderer/registry";
 import { createElement } from "react";
 import styles from "./DocumentsContainer.module.scss";
 import { DocumentInfo } from "@abstractions/DocumentInfo";

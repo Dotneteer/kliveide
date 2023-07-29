@@ -1,5 +1,5 @@
-import { MachineInfo } from "@/renderer/abstractions/MachineInfo";
-import { IZ80Machine } from "@/renderer/abstractions/IZ80Machine";
+import { MachineInfo } from "@renderer/abstractions/MachineInfo";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { Unsubscribe } from "@state/redux-light";
 import { IMachineController } from "./IMachineController";
 

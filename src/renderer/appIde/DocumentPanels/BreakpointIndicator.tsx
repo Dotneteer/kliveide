@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import { Icon } from "@/renderer/controls/Icon";
-import { TooltipFactory } from "@/renderer/controls/Tooltip";
-import { useRendererContext } from "@/renderer/core/RendererProvider";
+import { Icon } from "@controls/Icon";
+import { TooltipFactory } from "@controls/Tooltip";
+import { useRendererContext } from "@renderer/core/RendererProvider";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";

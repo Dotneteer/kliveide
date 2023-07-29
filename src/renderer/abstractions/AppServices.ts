@@ -1,9 +1,9 @@
-import { IMachineService } from "@/renderer/abstractions/IMachineService";
-import { IIdeCommandService } from "@/renderer/abstractions/IIdeCommandService";
-import { IOutputPaneService } from "@/renderer/abstractions/IOutputPaneService";
-import { IProjectService } from "@/renderer/abstractions/IProjectService";
-import { IDocumentService } from "@/renderer/appIde/services/DocumentService";
-import { IUiService } from "@/renderer/core/UiServices";
+import { IMachineService } from "./IMachineService";
+import { IIdeCommandService } from "./IIdeCommandService";
+import { IOutputPaneService } from "./IOutputPaneService";
+import { IProjectService } from "./IProjectService";
+import { IDocumentService } from "@appIde/services/DocumentService";
+import { IUiService } from "@renderer/core/UiServices";
 
 /**
  * This type defines the services the IDE provides

@@ -1,15 +1,15 @@
 import styles from "./DocumentTab.module.scss";
 import { Icon } from "../../controls/Icon";
-import classnames from "@/renderer/utils/classnames";
-import { useDispatch } from "@/renderer/core/RendererProvider";
+import classnames from "@renderer/utils/classnames";
+import { useDispatch } from "@renderer/core/RendererProvider";
 import {
   activateDocumentAction,
   closeDocumentAction,
   incDocumentActivationVersionAction
-} from "@/common/state/actions";
-import { TabButton } from "../../controls/TabButton";
+} from "@state/actions";
+import { TabButton } from "@controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
-import { TooltipFactory } from "@/renderer/controls/Tooltip";
+import { TooltipFactory } from "@controls/Tooltip";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 

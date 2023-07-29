@@ -1,20 +1,20 @@
-import { AppServices } from "@/renderer/abstractions/AppServices";
-import { BackDrop } from "@/renderer/controls/BackDrop";
-import { SplitPanel } from "@/renderer/controls/SplitPanel";
-import { Toolbar } from "@/renderer/controls/Toolbar";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { BackDrop } from "@controls/BackDrop";
+import { SplitPanel } from "@controls/SplitPanel";
+import { Toolbar } from "@controls/Toolbar";
 import {
   useDispatch,
   useRendererContext,
   useSelector
-} from "@/renderer/core/RendererProvider";
-import { activityRegistry, toolPanelRegistry } from "@/renderer/registry";
-import { ToolInfo } from "@/renderer/abstractions/ToolInfo";
-import { NEW_PROJECT_DIALOG } from "@/common/messaging/dialog-ids";
+} from "@renderer/core/RendererProvider";
+import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
+import { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import {
   RequestMessage,
   NotReadyResponse
-} from "@/common/messaging/messages-core";
-import { MessengerBase } from "@/common/messaging/MessengerBase";
+} from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
 import {
   ideLoadedAction,
   setAudioSampleRateAction,
@@ -23,9 +23,9 @@ import {
   activateToolAction,
   closeAllDocumentsAction,
   displayDialogAction
-} from "@/common/state/actions";
-import { AppState } from "@/common/state/AppState";
-import { Store } from "@/common/state/redux-light";
+} from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store } from "@state/redux-light";
 import styles from "@styles/app.module.scss";
 import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
