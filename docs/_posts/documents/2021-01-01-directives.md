@@ -43,7 +43,7 @@ works in concert with __#ELSE__ and __#ENDIF__:
 ```
 
 Here, __Block #1__ does not generate output, since the condition is false. __Block #2__ emits
-a `nop`, as the condition is true. The fals condition value in __Block #3__ moves code
+a `nop`, as the condition is true. The false condition value in __Block #3__ moves code
 parsing to the `#else` branch, so it emits a `ld b,c` instruction.
 
 ## The #IFDEF and #IFNDEF Directives
@@ -110,7 +110,7 @@ According to this definition, the first block emits a `ld, a,b` instruction, the
 You can use this directive to load and process a source file from within another source file.
 
 __#INCLUDE__ accepts a string that names a file with its extension. The file name may contain either
-an absolute or a relative path. When a relative path is provided, its strating point is always
+an absolute or a relative path. When a relative path is provided, its starting point is always
 the source file that holds the __#INCLUDE__ directive.
 
 Assume that this code is in the `C:\Work` folder:
@@ -121,5 +121,5 @@ Assume that this code is in the `C:\Work` folder:
 #include "/Common/scroll.z80asm"
 ```
 
-The compiler will check the ```C:\Work``` folder for the first two include filem and
+The compiler will check the ```C:\Work``` folder for the first two include files and
 ```C:\Work\Commmon``` for the third one.

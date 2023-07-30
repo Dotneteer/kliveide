@@ -42,7 +42,7 @@ djNZ MyLabel
 ```
 
 In symbolic names (labels, identifiers, etc.), you can mix lowercase and uppercase letters. Nonetheless, the compiler applies
-case-insensitive comparison when mathcing symbolic names. So, these statement pairs are totally equivalent with
+case-insensitive comparison when matching symbolic names. So, these statement pairs are totally equivalent with
 each other:
 ```
 jp MainEx
@@ -70,7 +70,7 @@ Wait:   ld b,8     ; Set the counter
 Wait1:  djnz Wait1 // wait while the counter reaches zero
 ```
 
-Block comments can be put anywhere within an instruction line betwen `/*` and `*/` tokens, until they do not break other tokens. Nonetheless, block comments cannot span multiple lines, they must start and end within the same source code line. All of the block comments in this code snippet are correct:
+Block comments can be put anywhere within an instruction line between `/*` and `*/` tokens, until they do not break other tokens. Nonetheless, block comments cannot span multiple lines, they must start and end within the same source code line. All of the block comments in this code snippet are correct:
 
 ```
 SetAttr:
@@ -202,7 +202,7 @@ respectively), such as in these samples:
 
 ZX Spectrum has a character set with special control characters such as AT, INK, PAPER, and so on.
 
-The __SpectNetIde__ assembler allows you to define them with special escape sequences:
+The __SpectNetIDE__ assembler allows you to define them with special escape sequences:
 
 Escape | Code | Character
 -------|------|----------

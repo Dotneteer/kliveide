@@ -60,7 +60,7 @@ Klive allows you a few things with the virtual retro computer that you cannot do
 
 > *Note*: As a reference, my computer has an AMD Ryzen 7 2700 CPU with 3.2GHz and 16GB RAM. This configuration allows running ZX Spectrum with the 24 clock multiplier.
 
-Though the clock multiplier function increases the CPU speed, it does not affect other hardware components. For example, when you run ZX Spectrum 48 with an increased CPU clock, the ULA still uses 14 Mhz as its clock frequency.
+Though the clock multiplier function increases the CPU speed, it does not affect other hardware components. For example, when you run ZX Spectrum 48 with an increased CPU clock, the ULA still uses 14 MHz as its clock frequency.
 
 > *Note*: When the status bar is on, it displays the emulated clock frequency using the base frequency and the selected multiplier.
 
@@ -72,7 +72,7 @@ You can use the virtual keyboard to emulate keystrokes and keypresses. When you 
 
 To press a key, move the mouse over one of the virtual keys, and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key.
 
-To press a key, move the mouse over one of the virtual keys, and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key. As the following figures show, a single key provides multiple options according to the area ok the button you point with the mouse. You can use both the left and right mouse buttons. However, when using the right mouse button, the key behaves as if you pressed the **SYMBOL SHIFT** button simultaneously.
+To press a key, move the mouse over one of the virtual keys, and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key. As the following figures show, a single key provides multiple options according to the area of the button you point with the mouse. You can use both the left and right mouse buttons. However, when using the right mouse button, the key behaves as if you pressed the **SYMBOL SHIFT** button simultaneously.
 
 ![Z80 code]({{ site.baseurl }}/assets/images/tutorials/main-key.png)
 ![Z80 code]({{ site.baseurl }}/assets/images/tutorials/sym-key.png)
