@@ -32,7 +32,7 @@ export default defineConfig(({ command }) => {
         "@renderer": path.join(__dirname, "src/renderer"),
         "@emu": path.join(__dirname, "src/emu"),
         "@appIde": path.join(__dirname, "src/renderer/appIde"),
-        "@electron": path.join(__dirname, "src/electron"),
+        "@main": path.join(__dirname, "src/main"),
         "@controls": path.join(__dirname, "src/renderer/controls"),
       }
     },
@@ -42,7 +42,7 @@ export default defineConfig(({ command }) => {
       electron([
         {
           // Main-Process entry file of the Electron App.
-          entry: 'src/electron/main/index.ts',
+          entry: 'src/main/index.ts',
           onstart(options) {
             if (process.env.VSCODE_DEBUG) {
               console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
@@ -62,7 +62,7 @@ export default defineConfig(({ command }) => {
           },
         },
         {
-          entry: 'src/electron/preload/index.ts',
+          entry: 'src/preload/index.ts',
           onstart(options) {
             // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete, 
             // instead of restarting the entire Electron App.

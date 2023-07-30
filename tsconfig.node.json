@@ -17,7 +17,7 @@
       "@renderer/*": ["./src/renderer/*"],
       "@emu/*": ["./src/emu/*"],
       "@appIde/*": ["./src/renderer/appIde/*"],
-      "@electron/*": ["./src/electron/*"],
+      "@main/*": ["./src/main/*"],
       "@controls/*": ["./src/renderer/controls/*"],
 		},
   },

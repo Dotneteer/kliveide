@@ -8,7 +8,7 @@ import {
 } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-import { __DARWIN__ } from "../electron-utils";
+import { __DARWIN__ } from "../electron/electron-utils";
 import { mainStore } from "./main-store";
 import {
   showEmuStatusBarAction,
@@ -28,22 +28,22 @@ import {
   closeFolderAction,
   displayDialogAction,
   setIdeFontSizeAction
-} from "../../common/state/actions";
+} from "../common/state/actions";
 import { setMachineType } from "./machines";
-import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
-import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "../../renderer/appIde/ToolArea/abstractions";
+import { MachineControllerState } from "../common/abstractions/MachineControllerState";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
+import { createMachineCommand } from "../common/messaging/main-to-emu";
+import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
 import {
   BASIC_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
-} from "../../common/state/common-ids";
+} from "../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
-import { NEW_PROJECT_DIALOG } from "../../common/messaging/dialog-ids";
-import { TapeDataBlock } from "../../common/structs/TapeDataBlock";
+import { NEW_PROJECT_DIALOG } from "../common/messaging/dialog-ids";
+import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";

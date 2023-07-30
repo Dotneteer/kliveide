@@ -1,6 +1,6 @@
 import "mocha";
-import { SymbolValueMap } from "@electron/z80-compiler/assembler-types";
-import { ExpressionValue } from "@electron/z80-compiler/expressions";
+import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
+import { ExpressionValue } from "@main/z80-compiler/expressions";
 import { expressionFails, testExpression } from "./test-helpers";
 
 describe("Assembler - expressions", async () => {

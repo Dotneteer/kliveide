@@ -2,8 +2,8 @@ import "mocha";
 import { expect } from "expect";
 
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "@electron/z80-compiler/assembler";
-import { AssemblerOptions } from "@electron/z80-compiler/assembler-in-out";
+import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
 
 describe("Assembler - .repeat", async () => {
   it("ent - fails in repeat", async () => {

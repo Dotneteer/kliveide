@@ -3,7 +3,7 @@ import {
   errorResponse,
   RequestMessage,
   ResponseMessage
-} from "../../common/messaging/messages-core";
+} from "../common/messaging/messages-core";
 import * as path from "path";
 import * as fs from "fs";
 import { app, BrowserWindow, dialog } from "electron";
@@ -12,10 +12,10 @@ import {
   binaryContentsResponse,
   MainCreateKliveProjectResponse,
   MainShowOpenFolderDialogResponse
-} from "../../common/messaging/any-to-main";
-import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { ProjectNodeWithChildren } from "../../renderer/appIde/project/project-node";
+} from "../common/messaging/any-to-main";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import { ProjectNodeWithChildren } from "../renderer/appIde/project/project-node";
 import {
   createKliveProject,
   openFolder,
@@ -30,12 +30,12 @@ import {
   dimMenuAction,
   endCompileAction,
   startCompileAction
-} from "../../common/state/actions";
+} from "../common/state/actions";
 import {
   getCompiler,
   KliveCompilerOutput,
   SimpleAssemblerOutput
-} from "../compiler-integration/compiler-registry";
+} from "./compiler-integration/compiler-registry";
 
 /**
  * Process the messages coming from the emulator to the main process

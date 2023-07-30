@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
+import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 

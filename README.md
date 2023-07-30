@@ -1,82 +1,50 @@
-# electron-vite-react
+# Klive IDE
 
-[![awesome-vite](https://awesome.re/mentioned-badge.svg)](https://github.com/vitejs/awesome-vite)
-![GitHub stars](https://img.shields.io/github/stars/caoxiemeihao/vite-react-electron?color=fa6470)
-![GitHub issues](https://img.shields.io/github/issues/caoxiemeihao/vite-react-electron?color=d8b22d)
-![GitHub license](https://img.shields.io/github/license/caoxiemeihao/vite-react-electron)
-[![Required Node.JS >= 14.18.0 || >=16.0.0](https://img.shields.io/static/v1?label=node&message=14.18.0%20||%20%3E=16.0.0&logo=node.js&color=3f893e)](https://nodejs.org/about/releases)
+## Source code structure
 
-English | [简体中文](README.zh-CN.md)
+This figure shows the source code structure of the project (essential files and folders only):
 
-## 👀 Overview
-
-📦 Ready out of the box  
-🎯 Based on the official [template-react-ts](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts), project structure will be familiar to you  
-🌱 Easily extendable and customizable  
-💪 Supports Node.js API in the renderer process  
-🔩 Supports C/C++ native addons  
-🐞 Debugger configuration included  
-🖥 Easy to implement multiple windows  
-
-## 🛫 Quick start
-
-```sh
-npm create electron-vite
+```
+|-- _docs: temporary files for documentation
+|-- .vscode: VS Code setting
+|-- dist: distribution files for the Electron renderer process (not committed to repo)
+|-- node_modules: node files (not commited to repo)
+|-- dist-electron: distribution files for the Electron renderer process (not committed to repo)
+|-- public: public resources used by the main and renderer processes
+|-- release: released build files (not committed to repo)
+|-- src: the root folder of all source code files
+    |-- common: common code available in the main and renderer processes
+    |-- electron: resources and other files (no code files) related to Electron Build
+    |-- emu: Th ZX Spectrum Emulator core
+    |-- lib: source code of external libraries used within the project
+    |-- main: the source code of the Electron main process
+    |-- renderer: the source code of the Electron renderer process
+    |-- main.tsx: the entry point of the EMU and IDE renderer processes
+|-- test: the root folder for all test files
+|-- index.htlm: the start file for both renderer (EMU and IDE) processes
+|-- package.json: the package file of the project
+|-- tsconfig.json: the renderer processes' TypeScript configuration
+|-- tsconfig.node.json: the main process's TypeScript configuration
+|-- vite.config.js
 ```
 
-![electron-vite-react.gif](https://github.com/electron-vite/electron-vite-react/blob/main/public/electron-vite-react.gif?raw=true)
+## Electron processes
 
-## 🐞 Debug
+Klive IDE utilizes three processes following the Electron architecture:
+- The **main** process (used in Node.js) accesses machine resources, such as files directly. This process displays the main menu and initiates menu command execution by sending messages to the EMU and IDE processes. This process holds the Z80 Assembler that compiles the Klive IDE code to binary content.
+- The **EMU** renderer process displays a window with the ZX Spectrum Emulator and related UI. This process runs the emulator entirely. During machine setup, it communicates with the main process to obtain the necessary resources (e.g., ROM files).
+- The **IDE** renderer process displays a window with the development environment UI. This process communicates with the main process to get resources and the emulator process to obtain machine information to show in the IDE.
 
-![electron-vite-react-debug.gif](https://github.com/electron-vite/electron-vite-react/blob/main/public/electron-vite-react-debug.gif?raw=true)
+Though Klive has two renderer processes, they share the same source code. When the renderer processes start, they check their URL's for the `?emu` and `?ide` query parameters to decide whether they display the EMU or the IDE UI.
 
-## 📂 Directory structure
+This check is in the `src/main.tsx` file. The UI creates an `EmuApp` or an `IdeApp` React component according to the query parameter.
 
-Familiar React application structure, just with `electron` folder on the top :wink:  
-*Files in this folder will be separated from your React application and built into `dist/electron`*  
+## State management
 
-```tree
-├── electron                  Electron-related code
-│   ├── main                  Main-process source code
-│   ├── preload               Preload-scripts source code
-│   └── resources             Resources for the production build
-│       ├── icon.icns             Icon for the application on macOS
-│       ├── icon.ico              Icon for the application
-│       ├── installerIcon.ico     Icon for the application installer
-│       ├── uninstallerIcon.ico   Icon for the application uninstaller
-|       └── iconset               
-|           └── 256x256.png       Icon for the application on Linux
-│
-├── release                   Generated after production build, contains executables
-│   └── {version}
-│       ├── {os}-unpacked     Contains unpacked application executable
-│       └── Setup.{ext}       Installer for the application
-│
-├── public                    Static assets
-└── src                       Renderer source code, your React application
-```
+Klive IDE uses the redux-style state management. Each process contains an up-to-date store with the actual application state. Each process (main, EMU, and IDE) may initiate state changes through reducer actions. Whenever a store's state changes due to an action, the action is forwarded to the other processes so that those can update their state.
 
-## 🚨 Be aware
+The `src/common/state` folder contains all files for state management. State changes are conveyed through the Electron IPC mechanism with a message type of `ForwardAction`. Each process has its infrastructure to send messages and process incoming message requests.
 
-This template integrates Node.js API to the renderer process by default. If you want to follow **Electron Security Concerns** you might want to disable this feature. You will have to expose needed API by yourself.  
+The following figure depicts this communication; it displays the message channel names (arrows) and the messaging class names (boxes):
 
-To get started, remove the option as shown below. This will [modify the Vite configuration and disable this feature](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#config-presets-opinionated).
-
-```diff
-# vite.config.ts
-
-export default {
-  plugins: [
--   // Use Node.js API in the Renderer-process
--   renderer({
--     nodeIntegration: true,
--   }),
-  ],
-}
-```
-
-## ❔ FAQ
-
-- [dependencies vs devDependencies](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#dependencies-vs-devdependencies)
-- [Using C/C++ native addons in renderer](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#load-nodejs-cc-native-modules)
-- [Node.js ESM packages](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#nodejs-esm-packages) (e.g. `execa` `node-fetch`)
+![Messaging](_docs/messaging.svg)
