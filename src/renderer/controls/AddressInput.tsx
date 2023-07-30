@@ -12,6 +12,7 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
   const spanRef= useRef<HTMLSpanElement>(null);
   const [radix, setRadix] = useState(16);
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    console.log(e);
     if (
       !(
         (e.key >= "0" && e.key <= "9") ||
@@ -20,13 +21,14 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
         e.code === "Delete" ||
         e.code === "ArrowLeft" ||
         e.code === "ArrowRight" ||
-        e.code === "Enter"
+        e.code === "Enter" ||
+        e.code === "NumpadEnter"
       )
     ) {
       e.preventDefault();
     }
 
-    if (e.code === "Enter" && inputRef.current.value?.trim()) {
+    if ((e.code === "Enter" || e.code == "NumpadEnter") && inputRef.current.value?.trim()) {
       setTimeout(async () => {
         const address = parseInt(inputRef.current.value.trim(), radix);
         if (!isNaN(address)) {

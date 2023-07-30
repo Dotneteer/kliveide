@@ -190,7 +190,7 @@ export class ExportCodeCommand extends IdeCommandBase {
           if (value === null) {
             return validationError("Numeric value expected for '-addr'");
           }
-          this.border = value & 0xffff;
+          this.address = value & 0xffff;
           break;
         }
         case "-scr": {
