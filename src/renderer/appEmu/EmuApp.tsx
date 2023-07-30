@@ -47,9 +47,18 @@ const EmuApp = () => {
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
-    const sampleRate = audioCtx.sampleRate;
-    audioCtx.close();
-    dispatch(setAudioSampleRateAction(sampleRate));
+    try { 
+      var ctx = new AudioContext();
+      const sampleRate = audioCtx.sampleRate;
+      dispatch(setAudioSampleRateAction(sampleRate));
+    }
+    finally {
+      // The specification doesn't go into a lot of detail about things like how many
+      // audio contexts a user agent should support, or minimum or maximum latency
+      // requirements (if any), so these details can vary from browser to browser.
+      // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
+      ctx?.close().catch(console.error);
+    }
   }, [appServices, store, messenger]);
 
   return (
