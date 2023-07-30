@@ -18,6 +18,9 @@ export default defineConfig(({ command }) => {
   const sourcemap = isServe || !!process.env.VSCODE_DEBUG
 
   return {
+    build: {
+      target: "esnext"
+    },
     resolve: {
       alias: {
         "@styles": path.join(__dirname, "src/renderer/assets/styles"),
