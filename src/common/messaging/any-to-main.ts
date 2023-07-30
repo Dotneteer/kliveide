@@ -1,6 +1,6 @@
 import { ProjectNodeWithChildren } from "@appIde/project/project-node";
 import { MessageBase } from "./messages-core";
-import { KliveCompilerOutput } from "@electron/compiler-integration/compiler-registry";
+import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/IZ80CompilerService";
 
 /**

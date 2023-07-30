@@ -1,5 +1,5 @@
 import "mocha";
-import { AssemblerOptions } from "@electron/z80-compiler/assembler-in-out";
+import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
 import {
   codeRaisesErrorWithOptions,
   testCodeEmit,

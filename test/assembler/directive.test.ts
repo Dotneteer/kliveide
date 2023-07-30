@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "expect";
-import { Z80Assembler } from "@electron/z80-compiler/assembler";
-import { AssemblerOptions } from "@electron/z80-compiler/assembler-in-out";
-import { ExpressionValue } from "@electron/z80-compiler/expressions";
+import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
+import { ExpressionValue } from "@main/z80-compiler/expressions";
 import { SpectrumModelType } from "@abstractions/IZ80CompilerService";
 
 describe("Assembler - directives", async () => {

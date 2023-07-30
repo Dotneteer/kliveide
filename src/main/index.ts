@@ -22,30 +22,30 @@ import {
   defaultResponse,
   RequestMessage,
   ResponseMessage
-} from "../../common/messaging/messages-core";
+} from "../common/messaging/messages-core";
 import {
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
   setAppPathAction,
   unloadWindowsAction
-} from "../../common/state/actions";
+} from "../common/state/actions";
 import { Unsubscribe } from "@/common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";
 import { setupMenu } from "./app-menu";
-import { __WIN32__ } from "../electron-utils";
+import { __WIN32__ } from "../electron/electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
-import { registerMainToEmuMessenger } from "../../common/messaging/MainToEmuMessenger";
-import { registerMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
+import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
+import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { fileChangeWatcher } from "./file-watcher";
-import { registerCompiler } from "../compiler-integration/compiler-registry";
-import { Z80Compiler } from "../z80-compiler/Z80Compiler";
+import { registerCompiler } from "./compiler-integration/compiler-registry";
+import { Z80Compiler } from "../electron/z80-compiler/Z80Compiler";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display

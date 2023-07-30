@@ -15,7 +15,7 @@ import {
   showSideBarAction,
   showToolPanelsAction,
   toolPanelsOnTopAction,
-} from "../../common/state/actions";
+} from "../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
 import * as path from "path";
@@ -26,10 +26,10 @@ import {
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
   KLIVE_PROJET_ROOT,
-} from "../../common/structs/project-const";
-import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
-import { EmuListBreakpointsResponse } from "../../common/messaging/main-to-emu";
-import { KliveProjectStructure } from "../../common/abstractions/KliveProjectStructure";
+} from "../common/structs/project-const";
+import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
+import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
+import { KliveProjectStructure } from "../common/abstractions/KliveProjectStructure";
 
 type ProjectCreationResult = {
   path?: string;

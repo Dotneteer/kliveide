@@ -20,7 +20,7 @@ import {
   InjectableOutput,
   KliveCompilerOutput,
   isInjectableCompilerOutput
-} from "../../../electron/compiler-integration/compiler-registry";
+} from "../../../main/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import {
