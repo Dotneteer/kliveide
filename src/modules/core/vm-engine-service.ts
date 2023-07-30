@@ -283,7 +283,7 @@ class VmEngineService implements IVmEngineService {
     if (this._vmEngine) {
       return this._vmEngine;
     }
-    throw new Error("The is now virtual machine engine set");
+    throw new Error("There is no virtual machine engine set");
   }
 
   /**

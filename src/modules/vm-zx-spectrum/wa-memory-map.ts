@@ -23,7 +23,7 @@ export const COLORIZATION_BUFFER = 0x012e_a9e8;
 export const BEEPER_SAMPLE_BUFFER = 0x013d_ae38;
 
 // --- AY PSG chip samples
-export const PSG_SAMPLE_BUFFER = 0x0100_210b;
+export const PSG_SAMPLE_BUFFER = 0x0100_210f;
 
 // --- Tape LOAD buffer
 export const TAPE_DATA_BUFFER = 0x0138_ae30;

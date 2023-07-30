@@ -789,45 +789,6 @@ export function processStateChange(fullState: AppState): void {
 
   // --- Take care that custom machine menus are updated
   emuWindow.machineContextProvider?.updateMenuStatus(fullState);
-
-  // // --- The engine has just saved a ZX Spectrum file
-  // if (emuState?.savedData && emuState.savedData.length > 0) {
-  //   const data = emuState.savedData;
-  //   const ideConfig = mainProcessStore.getState().ideConfiguration;
-  //   if (!ideConfig) {
-  //     return;
-  //   }
-
-  //   // --- Create filename
-  //   const tapeFilePath = path.join(
-  //     ideConfig.projectFolder,
-  //     ideConfig.saveFolder
-  //   );
-  //   const nameBytes = data.slice(2, 12);
-  //   let name = "";
-  //   for (let i = 0; i < 10; i++) {
-  //     name += String.fromCharCode(nameBytes[i]);
-  //   }
-  //   const tapeFileName = path.join(tapeFilePath, `${name.trimRight()}.tzx`);
-
-  //   // --- We use this writer to save file info into
-  //   const writer = new BinaryWriter();
-  //   new TzxHeader().writeTo(writer);
-
-  //   // --- The first 19 bytes is the header
-  //   new TzxStandardSpeedDataBlock(data.slice(0, 19)).writeTo(writer);
-
-  //   // --- Other bytes are the data block
-  //   new TzxStandardSpeedDataBlock(data.slice(19)).writeTo(writer);
-
-  //   // --- Now, save the file
-  //   fs.writeFileSync(tapeFileName, writer.buffer);
-
-  //   // --- Sign that the file has been saved
-  //   mainProcessStore.dispatch(
-  //     emulatorSetSavedDataAction(new Uint8Array(0))()
-  //   );
-  // }
 }
 
 // ============================================================================

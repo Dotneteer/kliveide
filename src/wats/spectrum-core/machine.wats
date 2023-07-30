@@ -89,6 +89,7 @@ type spMachineState = struct {
   u64 tapeStartTact,
   bool tapeFastLoad,
   u8 tapeSavePhase,
+  u32 tapeSaveDataLen,
 
   // --- Engine state
   u8 ulaIssue,
@@ -200,6 +201,7 @@ export void getMachineState() {
   spectrumMachineStateBuffer.tapeStartTact = tapeStartTact;
   spectrumMachineStateBuffer.tapeFastLoad = tapeFastLoad;
   spectrumMachineStateBuffer.tapeSavePhase = tapeSavePhase;
+  spectrumMachineStateBuffer.tapeSaveDataLen = tapeSaveDataLen;
 
   // --- Engine state
   spectrumMachineStateBuffer.ulaIssue = ulaIssue;
@@ -260,7 +262,8 @@ export void resetMachine() {
   tapeEof = false;
   tapeBufferPtr = &tapeDataBuffer;
   tapeFastLoad = false;
-  
+  tapeSaveDataLen = 0;
+
   // --- Reset debugging state
   stepOutStackDepth = 0;
 }

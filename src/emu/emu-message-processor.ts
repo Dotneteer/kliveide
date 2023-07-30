@@ -5,10 +5,12 @@ import {
   CreateMachineResponse,
   DefaultResponse,
   ExecuteMachineCommandResponse,
+  GetSavedTapeContentsResponse,
   RequestMessage,
   ResponseMessage,
 } from "@core/messaging/message-types";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
+import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase"
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -91,6 +93,21 @@ async function processEmulatorMessages(
         };
       }
       return <DefaultResponse>{ type: "Ack" };
+
+    case "GetSavedTapeContents": {
+      if (vmEngineService.hasEngine) {
+        var sp = vmEngineService.getEngine() as ZxSpectrumCoreBase;
+        if (sp) {
+          return <GetSavedTapeContentsResponse>{
+            type: "GetSavedTapeContentsResponse",
+            data: sp.getSavedTapeContents(),
+          };
+        }
+      }
+      return <GetSavedTapeContentsResponse>{
+        type: "GetSavedTapeContentsResponse"
+      };
+    }
 
     default:
       return <DefaultResponse>{ type: "Ack" };

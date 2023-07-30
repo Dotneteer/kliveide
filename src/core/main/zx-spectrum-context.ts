@@ -24,9 +24,18 @@ import {
   menuIdFromMachineId,
 } from "../../main/utils/electron-utils";
 
+import { BinaryWriter } from "@core/utils/BinaryWriter";
+import { sendFromMainToEmu } from "@core/messaging/message-sending";
+import { GetSavedTapeContentsResponse } from "@core/messaging/message-types";
+import {
+  TzxHeader,
+  TzxStandardSpeedDataBlock,
+} from "@modules/vm-zx-spectrum/tzx-file";
+
 // --- Menu identifier contants
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
+const SAVE_TAPE_FILE = "sp_save_tape_file";
 const DISK_MENU = "sp3e_disk_menu";
 const CREATE_VIRTUAL_DISK = "sp3e_create_virtual_disk";
 const FLOPPY_MENU = "sp3e_floppies";
@@ -96,6 +105,13 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
           emuWindow.saveKliveProject();
         },
       },
+      {
+        id: SAVE_TAPE_FILE,
+        label: "Export SAVEd tape data",
+        click: async () => {
+          await this.exportSavedTapeData();
+        },
+      },
     ];
   }
 
@@ -108,6 +124,13 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     if (toggleFastLoad) {
       toggleFastLoad.checked = !!state.spectrumSpecific?.fastLoad;
       emuWindow.saveKliveProject();
+    }
+    const exportSavedTapeMenu = menu.getMenuItemById(SAVE_TAPE_FILE);
+    if (exportSavedTapeMenu) {
+      exportSavedTapeMenu.visible =
+        state.emulatorPanel?.extraFeatures?.includes("Tape") &&
+        (state.emulatorPanel?.executionState === 1 ||
+          state.emulatorPanel?.executionState === 3);
     }
   }
 
@@ -201,7 +224,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
             type: "info",
           });
         } else {
-          throw new Error("Could not process the contenst of tape file.");
+          throw new Error("Could not process the contents of tape file.");
         }
       } catch (err) {
         // --- This error is intentionally ignored
@@ -215,6 +238,54 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         });
       }
     }
+  }
+
+  private async exportSavedTapeData() : Promise<void> {
+    const window = emuWindow.window;
+    const result = await dialog.showSaveDialog(window, {
+      title: "Save tape file",
+      defaultPath: "new_tape.tzx",
+      filters: [
+        { name: "Tape file", extensions: ["tzx"] },
+      ],
+    });
+
+    if (result.canceled) return;
+
+    const response = (await sendFromMainToEmu({
+      type: "GetSavedTapeContents"
+    })) as GetSavedTapeContentsResponse;
+    const data = response.data ?? new Uint8Array();
+
+    // --- We use this writer to save file info into
+    const writer = new BinaryWriter();
+    new TzxHeader().writeTo(writer);
+    for (let ofs = 0; ofs < data.length;) {
+      // 21 = 19 + 2, 19 - header size, 2 - block type and checksum
+      const dataLen = 21 + data[ofs+12] + 256 * data[ofs+13];
+      if (ofs + dataLen > data.length) {
+        const blockName = Buffer.from(data.slice(ofs+2, ofs+12).buffer).toString()
+          .trimRight();
+        console.log(`${blockName} block seems to be corrupted.`)
+        break;
+      }
+
+      // --- The first 19 bytes is the header
+      new TzxStandardSpeedDataBlock(data.slice(ofs, ofs+19)).writeTo(writer);
+      // --- Other bytes are the data block
+      new TzxStandardSpeedDataBlock(data.slice(ofs+19, ofs+dataLen)).writeTo(writer);
+
+      ofs += dataLen;
+    }
+
+    const tapeFile = result.filePath;
+    fs.writeFileSync(tapeFile, writer.buffer);
+
+    await dialog.showMessageBox(window, {
+      title: `Saved Tape data exported`,
+      message: `Tape file ${tapeFile} successfully saved.`,
+      type: "info",
+    });
   }
 }
 

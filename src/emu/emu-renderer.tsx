@@ -59,7 +59,17 @@ class SampleRateGetter
 {
   readonly id = AUDIO_SAMPLE_RATE_GETTER_ID;
   getAudioSampleRate() {
-    return new AudioContext().sampleRate;
+    try { 
+      var ctx = new AudioContext();
+      return ctx.sampleRate;
+    }
+    finally {
+      // The specification doesn't go into a lot of detail about things like how many
+      // audio contexts a user agent should support, or minimum or maximum latency
+      // requirements (if any), so these details can vary from browser to browser.
+      // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
+      ctx?.close().catch(console.error);
+    }
   }
 }
 
