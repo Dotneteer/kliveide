@@ -30,7 +30,7 @@ import {
   setAppPathAction,
   unloadWindowsAction
 } from "../common/state/actions";
-import { Unsubscribe } from "@/common/state/redux-light";
+import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain } from "electron";
 import { release } from "os";
 import { join } from "path";
@@ -43,9 +43,8 @@ import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMesseng
 import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
-import { fileChangeWatcher } from "./file-watcher";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
-import { Z80Compiler } from "../electron/z80-compiler/Z80Compiler";
+import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display

@@ -23,7 +23,7 @@
       "@renderer/*": ["../src/renderer/*"],
       "@emu/*": ["../src/emu/*"],
       "@appIde/*": ["../src/renderer/appIde/*"],
-      "@main/*": ["../src/electron/*"],
+      "@main/*": ["../src/main/*"],
 		},
   },
   "include": ["../**/*", "/common/state", "/common/abstractions"],

@@ -1,7 +1,7 @@
 import { AssemblerErrorInfo, CompilerOptions } from "@/common/abstractions/IZ80CompilerService";
-import { KliveCompilerOutput, isAssemblerError } from "../../main/compiler-integration/compiler-registry";
+import { KliveCompilerOutput, isAssemblerError } from "../compiler-integration/compiler-registry";
 import { Z80CompilerService } from "./z80-compiler-service";
-import { CompilerBase } from "../../main/compiler-integration/CompilerBase";
+import { CompilerBase } from "../compiler-integration/CompilerBase";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
