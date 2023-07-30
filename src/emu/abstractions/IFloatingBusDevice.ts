@@ -1,5 +1,5 @@
 import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "./IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's floating bus device.

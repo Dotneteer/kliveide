@@ -6,9 +6,9 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
 		"paths": {
 			"@/*": ["src/*"],
-      "@styles/*": ["src/assets/styles/*"],
-      "@messaging/*": ["common/messaging/*"],
-      "@state/*": ["common/state/*"]
+      "@styles/*": ["src/renderer/assets/styles/*"],
+      "@messaging/*": ["src/common/messaging/*"],
+      "@state/*": ["src/common/state/*"]
 		},
     "allowJs": false,
     "skipLibCheck": true,

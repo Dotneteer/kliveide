@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
 import { RunMode, Z80TestMachine } from "./test-z80";
-import { FlagsSetMask } from "../../src/emu/abstractions/FlagSetMask";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 describe("Z80 IY bit ops 30-3f", () => {
   it("0x30: SLL (IY+d),B", () => {

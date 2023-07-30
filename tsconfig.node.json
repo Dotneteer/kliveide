@@ -8,18 +8,23 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "paths": {
-			"@/*": ["./src/*"],
-      "@common/*": ["./common/*"],
-      "@styles/*": ["./src/assets/styles/*"],
-      "@messaging/*": ["./common/messaging/*"],
-      "@state/*": ["./common/state/*"],
-      "@utils/*": ["./common/utils/*"],
+      "@abstractions/*": ["./src/common/abstractions/*"],
+      "@common/*": ["./src/common/*"],
+      "@styles/*": ["./src/renderer/assets/styles/*"],
+      "@messaging/*": ["./src/common/messaging/*"],
+      "@state/*": ["./src/common/state/*"],
+      "@utils/*": ["./src/common/utils/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@appIde/*": ["./src/renderer/appIde/*"],
+      "@electron/*": ["./src/electron/*"],
+      "@controls/*": ["./src/renderer/controls/*"],
 		},
   },
   "include": [
     "package.json", 
-    "electron", 
+    "src/electron", 
     "src/**/*",
-    "common/**/*"
+    "src/common/**/*"
   ]
 }

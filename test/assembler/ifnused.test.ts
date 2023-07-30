@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "../../electron/z80-compiler/assembler";
+import { Z80Assembler } from "@electron/z80-compiler/assembler";
 
 describe("Assembler - .ifnused", async () => {
   it("ifnused - simple", async () => {

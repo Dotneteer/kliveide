@@ -1,6 +1,6 @@
 import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "./IZxSpectrumMachine";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's keyboard device.

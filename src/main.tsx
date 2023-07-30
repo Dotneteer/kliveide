@@ -1,15 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import IdeApp from "./appIde/IdeApp";
-import RendererProvider from "./core/RendererProvider";
+import IdeApp from "./renderer/appIde/IdeApp";
+import RendererProvider from "./renderer/core/RendererProvider";
 import "@styles/index.css";
-import ThemeProvider from "./theming/ThemeProvider";
-import { AppServicesProvider } from "./appIde/services/AppServicesProvider";
-import EmuApp from "./appEmu/EmuApp";
-import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
-import { IdeToMainMessenger } from "@messaging/IdeToMainMessenger";
-import createAppStore from "@state/store";
-import { MessageSource } from "@messaging/messages-core";
+import ThemeProvider from "./renderer/theming/ThemeProvider";
+import { AppServicesProvider } from "./renderer/appIde/services/AppServicesProvider";
+import EmuApp from "./renderer/appEmu/EmuApp";
+import { EmuToMainMessenger } from "./common/messaging/EmuToMainMessenger";
+import { IdeToMainMessenger } from "./common/messaging/IdeToMainMessenger";
+import createAppStore from "./common/state/store";
+import { MessageSource } from "./common/messaging/messages-core";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search === "?emu";

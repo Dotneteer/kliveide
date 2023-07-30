@@ -1,6 +1,6 @@
 import { IScreenDevice } from "../abstractions/IScreenDevice";
-import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
-import { RenderingPhase } from "../abstractions/RenderingPhase";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { RenderingTact } from "../abstractions/RenderingTact";
 import { ScreenConfiguration } from "../abstractions/ScreenConfiguration";
 

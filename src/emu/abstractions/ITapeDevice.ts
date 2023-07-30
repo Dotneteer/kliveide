@@ -1,5 +1,5 @@
 import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "./IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { TapeMode } from "./TapeMode";
 
 /**

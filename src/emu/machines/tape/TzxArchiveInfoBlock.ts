@@ -1,5 +1,5 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { BinaryReader } from "@utils/BinaryReader";
+import { BinaryWriter } from "@utils/BinaryWriter";
 import { Tzx3ByteBlockBase } from "./Tzx3ByteBlockBase";
 import { TzxText } from "./TzxText";
 

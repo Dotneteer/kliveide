@@ -1,5 +1,5 @@
 import { IAudioDevice } from "../abstractions/IAudioDevice";
-import { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 // --- The gate value for audio sample collection
 const GATE = 100_000;

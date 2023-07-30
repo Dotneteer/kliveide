@@ -14,7 +14,7 @@
   ],
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
-  "main": "dist-electron/electron/main/index.js",
+  "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
@@ -52,6 +52,7 @@
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-monaco-editor": "^1.1.0"
   },
+  "dependencies": {},
   "debug": {
     "env": {
       "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777"

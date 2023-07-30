@@ -1,15 +1,15 @@
-import { IFileProvider } from "@/core/IFileProvider";
+import { IFileProvider } from "@renderer/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { IZ80Machine, MainExecPointInfo } from "../abstractions/IZ80Machine";
+import { IZ80Machine, MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
-import { SpectrumKeyCode } from "../abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
-import { CodeToInject } from "@/appIde/abstractions/code-related";
+import { CodeToInject } from "@abstractions/CodeToInject";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.

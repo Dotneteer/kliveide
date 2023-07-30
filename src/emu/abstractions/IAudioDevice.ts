@@ -1,5 +1,5 @@
 import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "./IZxSpectrumMachine";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 /**
  * This interface represents anaudio device that creates sound samples according to a particular sample rate.

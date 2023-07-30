@@ -1,6 +1,6 @@
 import { DebugStepMode } from "./DebugStepMode";
 import { FrameTerminationMode } from "./FrameTerminationMode";
-import { IDebugSupport } from "./IDebugSupport";
+import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 /**
  * This type defines the execution context in which an emulated machine can run its execution loop.

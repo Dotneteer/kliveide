@@ -1,5 +1,5 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { BinaryReader } from "@utils/BinaryReader";
+import { BinaryWriter } from "@utils/BinaryWriter";
 
 /**
  * This blocks contains information about the hardware that the programs on this tape use.
