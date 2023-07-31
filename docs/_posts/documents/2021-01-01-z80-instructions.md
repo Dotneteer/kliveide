@@ -78,7 +78,7 @@ adc a,(hl)
 sbc a,e
 ```
 
-Hovewer, the five other standard ALU operations between `A` and other operands (`SUB`, `AND`, `XOR`, 
+However, the five other standard ALU operations between `A` and other operands (`SUB`, `AND`, `XOR`, 
 `OR`, and `CP`) omit `A` from their notation:
 
 ```

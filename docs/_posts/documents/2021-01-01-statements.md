@@ -260,9 +260,9 @@ This code translates to this:
 .db #23
 ```
 
-You can observe that each loop has its spearate `$cnt` value.
+You can observe that each loop has its separate `$cnt` value.
 
-> The `$ctn` value has several syntax versions that the compiler accepts: `$CNT`, 
+> The `$cnt` value has several syntax versions that the compiler accepts: `$CNT`, 
 > `.cnt`, and `.CNT`.
 
 ## The PROC..ENDP Block
@@ -313,7 +313,7 @@ MyEnd
 Outer    (#8018): nop
 ```
 
-You can nest `PROC` bloks just as `LOOP` blocks. Each `PROC` block has its private scope.
+You can nest `PROC` blocks just as `LOOP` blocks. Each `PROC` block has its private scope.
 When the compiler sees a `PROC` block, it works just as if you wrote `.loop 1`.
 
 > NOTE: `PROC` is different than a loop. You cannot use the `$cnt` value. Similarly, the `break` 
@@ -356,7 +356,7 @@ The `.repeat` block uses the same approach to handle its local scope, symbols, l
 variables as the `.loop` block. The block also provides the `$cnt` loop counter that starts 
 from 1 and increments in every loop cycle. 
 
-This sample demontrates the `.repeat` block in action:
+This sample demonstrates the `.repeat` block in action:
 
 ```
 .org #8000
@@ -443,7 +443,7 @@ The compiler translates the code to this:
 
 ## The FOR..NEXT Loop
 
-Tou can use the traditional `.for`..`.next` loop to create a loop:
+You can use the traditional `.for`..`.next` loop to create a loop:
 
 ```
 .for myVar = 2 .to 5
@@ -546,7 +546,7 @@ Nonetheless, you can solve this issue with applying the `int()` function:
 ```
 
 > You can still use the `$cnt` value in for loops. Just like with other loop, it indicates the count of
-> cycles strating from one and incremented by one in each iteration.
+> cycles starting from one and incremented by one in each iteration.
 
 ## Maximum Loop Count
 

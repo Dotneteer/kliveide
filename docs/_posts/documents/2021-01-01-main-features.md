@@ -13,7 +13,7 @@ The original goal of the __Klive__ assembler was to have a simple tool that allo
 Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started
 using it, I've been receiving feature requests to add some useful capability to the Assembler.
 
-Here is a list of important features the __Klive__ suports:
+Here is a list of important features the __Klive__ supports:
 
 * __Full Z80 instruction set__, including the initially undocumented Z80 registers and instructions
 (such as the 8-bit halves of `ix` and `iy`, namely `ixl`, `ixh`, `iyl`, `iyh`).
@@ -24,13 +24,13 @@ declare a loop. All of the `.defb`, `DEFB`, `.db`, `DB` (and a few other) tokens
 byte data. The `.endw` and `WEND` tokens can close a WHILE-loop.
 * __Z80 Preprocessor__. With preprocessor directives, you can carry out conditional compilation and include
 other source files. You can inject symbols for debug time and run time compilations separately. *In __Klive__
-you can use powerful macros, too, notheless, they are not preprocessor constructs (see below)*.
+you can use powerful macros, too, nonetheless, they are not preprocessor constructs (see below)*.
 * __Fast compilation__. Of course, it depends on the code, but the compiler can emit code for about 8.000 
 source code lines per second.
 * __Rich expressions__. The compiler can handle most arithmetic and logic operators we have in C, C++, C#
 Java, and JavaScript. You can use integer, float, and string expressions. The language support more than 40
 functions that you can use in the expressions (e.g: `Amp * sin($cnt * Pi() / 16))`)
-* __Rich literal formats__. Decimal, float, hexadecimal, binary, and string literals are at your displosal.
+* __Rich literal formats__. Decimal, float, hexadecimal, binary, and string literals are at your disposal.
 You can use multiple variants for hexadecimal numbers (`$12ae`, #12AE, 0x12AE, 12AEh), and binary numbers
 (0b00111100, %00111100, %0011_1100). In strings, you can use ZX Spectrum specific escape codes, for example,
 `\i` for INK, `\P` for the pound sign, and many others.

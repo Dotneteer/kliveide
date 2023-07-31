@@ -39,7 +39,7 @@ This code is entirely correct. Note, the `ld b,32` instruction belongs to the `M
 
 As you will learn later, you can define symbols with the `.EQU` or `.VAR` pragmas. While `.EQU` allows you to assign a constant value to a symbol &mdash; and so it cannot change its value after the declaration, `.VAR` let's you re-assign the initial value.
 
-__Klive__ supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a _statements_ create their own nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outers scopes until it manages to find the label declaration.
+__Klive__ supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a _statements_ create their own nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outer scopes until it manages to find the label declaration.
 This mechanism means that you can declare labels within a nested scope so that those hide labels and symbols in outer scopes.
 You can learn more about this topic in the __Statements__ section.
 

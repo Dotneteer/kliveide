@@ -27,7 +27,7 @@ which is defined somewhere later in the code. When the assembler detects such a 
 a note of it &mdash; it creates a *fixup* entry.
 
 1. The assembler goes through all fixup entries and resolves symbols that were not defined in
-the previous phase. Of course, it might find unknows symbols. If this happens, the assembler reports
+the previous phase. Of course, it might find unknown symbols. If this happens, the assembler reports
 an error.
 
 > Several pragmas and statements intend to evaluate an expression in phase 3. If they find an
