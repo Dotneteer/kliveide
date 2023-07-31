@@ -174,7 +174,7 @@ by a comma. Of course, parameters can be expressions, and they may invoke other 
 Here are a few samples:
 
 ```
-lenght("Hello" + " world")
+length("Hello" + " world")
 max(value1, value2)
 sin(pi()/2)
 sqrt(pear + 3.0)
