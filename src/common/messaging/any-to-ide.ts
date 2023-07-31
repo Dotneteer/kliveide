@@ -38,3 +38,14 @@ export interface IdeShowDialogRequest extends MessageBase {
   type: "IdeShowDialog";
   dialogId?: number;
 }
+
+export interface IdeExecuteCommandRequest extends MessageBase {
+  type: "IdeExecuteCommand";
+  commandText: string;
+}
+
+export interface IdeExecuteCommandResponse extends MessageBase {
+  type: "IdeExecuteCommandResponse";
+  success: boolean;
+  finalMessage?: string;
+}

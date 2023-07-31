@@ -65,7 +65,9 @@ import {
   IdeShowBasicRequest,
   IdeShowDialogRequest,
   IdeShowDisassemblyRequest,
-  IdeShowMemoryRequest
+  IdeShowMemoryRequest,
+  IdeExecuteCommandRequest,
+  IdeExecuteCommandResponse
 } from "./any-to-ide";
 
 /**
@@ -162,7 +164,8 @@ export type RequestMessage =
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
   | IdeShowBasicRequest
-  | IdeShowDialogRequest;
+  | IdeShowDialogRequest
+  | IdeExecuteCommandRequest
 
 /**
  * All Response messages
@@ -182,7 +185,8 @@ export type ResponseMessage =
   | EmuGetUlaStateResponse
   | EmuListBreakpointsResponse
   | EmuGetMemoryResponse
-  | EmuGetSysVarsResponse;
+  | EmuGetSysVarsResponse
+  | IdeExecuteCommandResponse;
 
 /**
  * All messages

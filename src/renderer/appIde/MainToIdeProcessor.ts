@@ -25,7 +25,7 @@ export async function processMainToIdeMessages (
   message: RequestMessage,
   store: Store<AppState>,
   ideToMain: MessengerBase,
-  { outputPaneService, documentService }: AppServices
+  { outputPaneService, documentService, ideCommandsService }: AppServices
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "ForwardAction":
@@ -104,6 +104,16 @@ export async function processMainToIdeMessages (
         documentService.closeDocument(BASIC_PANEL_ID);
       }
       break;
+    }
+
+    case "IdeExecuteCommand": {
+      const pane = outputPaneService.getOutputPaneBuffer("build");
+      const response = await ideCommandsService.executeCommand(message.commandText, pane);
+      return {
+        type: "IdeExecuteCommandResponse",
+        success: response.success,
+        finalMessage: response.finalMessage
+      }
     }
   }
   return defaultResponse();
