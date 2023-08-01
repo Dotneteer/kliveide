@@ -9,7 +9,7 @@ import {
 } from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
+import { EXPORT_CODE_DIALOG, NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import {
   RequestMessage,
   NotReadyResponse
@@ -66,6 +66,7 @@ import { ToolArea } from "./ToolArea/ToolArea";
 import { CompileCommand, DebugCodeCommand, ExportCodeCommand, InjectCodeCommand, RunCodeCommand } from "./commands/CompilerCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import { SelectOutputPaneCommand } from "./commands/ToolCommands";
+import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -173,6 +174,14 @@ const IdeApp = () => {
       {dialogId === NEW_PROJECT_DIALOG && (
         <NewProjectDialog
           onCreate={async () => {}}
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === EXPORT_CODE_DIALOG && (
+        <ExportCodeDialog
+          onExport={async () => {}}
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}

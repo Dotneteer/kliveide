@@ -27,7 +27,8 @@ import {
   showIdeStatusBarAction,
   closeFolderAction,
   displayDialogAction,
-  setIdeFontSizeAction
+  setIdeFontSizeAction,
+  dimMenuAction
 } from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -42,8 +43,12 @@ import {
 } from "../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
-import { NEW_PROJECT_DIALOG } from "../common/messaging/dialog-ids";
+import {
+  EXPORT_CODE_DIALOG,
+  NEW_PROJECT_DIALOG
+} from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
+import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -63,6 +68,11 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
+const COMPILE_CODE = "compile_code";
+const INJECT_CODE = "inject_code";
+const RUN_CODE = "run_code";
+const DEBUG_CODE = "debug_code";
+const EXPORT_CODE = "export_code";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
 
@@ -103,6 +113,8 @@ export function setupMenu (
   const execState = appState?.emulatorState?.machineState;
   const openDocs = appState?.ideView?.openDocuments;
   const folderOpen = appState?.project?.folderPath;
+  const kliveProject = appState?.project?.isKliveProject;
+  const buildRoot = appState?.project?.buildRoots?.[0];
 
   /**
    * Application system menu on MacOS
@@ -135,6 +147,7 @@ export function setupMenu (
         id: NEW_PROJECT,
         label: "New project...",
         click: () => {
+          ensureIdeWindow();
           mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }
       },
@@ -142,6 +155,7 @@ export function setupMenu (
         id: OPEN_FOLDER,
         label: "Open folder...",
         click: async () => {
+          ensureIdeWindow();
           await openFolder(ideWindow);
         }
       },
@@ -151,15 +165,17 @@ export function setupMenu (
         label: "Close Folder",
         enabled: !!folderOpen,
         click: async () => {
+          ensureIdeWindow();
           mainStore.dispatch(closeFolderAction());
           await saveKliveProject();
         }
       },
-      ...(__DARWIN__ ? [] : [
-        { type: "separator" },
-        { role: "quit"
-        },
-      ] as MenuItemConstructorOptions[])
+      ...(__DARWIN__
+        ? []
+        : ([
+            { type: "separator" },
+            { role: "quit" }
+          ] as MenuItemConstructorOptions[]))
     ]
   });
 
@@ -218,13 +234,7 @@ export function setupMenu (
       label: "Show IDE",
       visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
       click: () => {
-        ideWindow.show();
-        if (appSettings?.windowStates?.ideWindow?.isMaximized) {
-          ideWindow.maximize();
-        }
-        appSettings.windowStates ??= {};
-        appSettings.windowStates.showIdeOnStartup = true;
-        saveAppSettings();
+        ensureIdeWindow();
       }
     },
     { type: "separator" },
@@ -531,6 +541,65 @@ export function setupMenu (
     ]
   });
 
+  // --- Prepare the Project Menu
+  if (kliveProject) {
+    /**
+     * Project menu
+     */
+    template.push({
+      label: "Project",
+      submenu: [
+        {
+          id: COMPILE_CODE,
+          label: "Compile code",
+          enabled: !!buildRoot,
+          click: async () => {
+            await executeIdeCommand(ideWindow, "outp build", undefined, true);
+            await executeIdeCommand(ideWindow, "compile", "Compile Code");
+          }
+        },
+        {
+          id: INJECT_CODE,
+          label: "Inject code",
+          enabled: !!buildRoot && execState === MachineControllerState.Paused,
+          click: async () => {
+            await executeIdeCommand(ideWindow, "outp build", undefined, true);
+            await executeIdeCommand(ideWindow, "inject", "Inject Code", true);
+          }
+        },
+        { type: "separator" },
+        {
+          id: RUN_CODE,
+          label: "Run",
+          enabled: !!buildRoot,
+          click: async () => {
+            await executeIdeCommand(ideWindow, "outp build", undefined, true);
+            await executeIdeCommand(ideWindow, "run", "Run Code", true);
+          }
+        },
+        {
+          id: DEBUG_CODE,
+          label: "Debug",
+          enabled: !!buildRoot,
+          click: async () => {
+            await executeIdeCommand(ideWindow, "outp build", undefined, true);
+            await executeIdeCommand(ideWindow, "debug", "Debug Code", true);
+          }
+        },
+        { type: "separator" },
+        {
+          id: EXPORT_CODE,
+          label: "Export code...",
+          enabled: !!buildRoot,
+          click: () => {
+            mainStore.dispatch(displayDialogAction(EXPORT_CODE_DIALOG));
+          }
+        }
+      ]
+    });
+  }
+
+  // --- Prepare the IDE menu
   const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
   const disassemblyDisplayed = !!openDocs.find(
     d => d.id === DISASSEMBLY_PANEL_ID
@@ -632,6 +701,16 @@ export function setupMenu (
   }
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+
+  function ensureIdeWindow () {
+    ideWindow.show();
+    if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+      ideWindow.maximize();
+    }
+    appSettings.windowStates ??= {};
+    appSettings.windowStates.showIdeOnStartup = true;
+    saveAppSettings();
+  }
 }
 
 /**
@@ -743,5 +822,52 @@ function visitMenu (
       }
     }
     return visitResult;
+  }
+}
+
+async function executeIdeCommand (
+  window: BrowserWindow,
+  commandText: string,
+  title?: string,
+  ignoreSuccess = false
+): Promise<void> {
+  const response = await sendFromMainToIde<IdeExecuteCommandResponse>({
+    type: "IdeExecuteCommand",
+    commandText
+  });
+  if (response.success) {
+    if (!ignoreSuccess) {
+      await showMessage(
+        window,
+        "info",
+        title ?? "Command execution",
+        response.finalMessage ?? "Command successfully executed."
+      );
+    }
+  } else {
+    await showMessage(
+      window,
+      "error",
+      title,
+      response.finalMessage ?? "Error executing command."
+    );
+  }
+}
+
+async function showMessage (
+  window: BrowserWindow,
+  type: string,
+  title: string,
+  message: string
+): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true));
+  try {
+    await dialog.showMessageBox(window, {
+      type: (type ?? "none") as any,
+      title,
+      message
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false));
   }
 }
