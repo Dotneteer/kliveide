@@ -140,7 +140,6 @@ async function createAppWindows () {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
-      
     }
   });
 

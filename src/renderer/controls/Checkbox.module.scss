@@ -1,0 +1,57 @@
+.resetAppearance {
+  /* Add if not using autoprefixer */
+  -webkit-appearance: none;
+  appearance: none;
+  /* Not removed via appearance */
+  margin: 0;
+}
+
+.checkbox {
+  display: grid;
+  place-content: center;
+  background-color: var(--bgcolor-input);
+  color: currentColor;
+  min-width: 1.2em;
+  min-height: 1.2em;
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid white;
+  border-radius: 0.2em;
+  cursor: pointer;
+
+  &:hover {
+    border-color: red;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: gray;
+  }
+
+  &::before {
+    content: "";
+    width: 0.7em;
+    height: 0.7em;
+    transform: scale(0);
+    transition: 0.1s transform ease-out;
+    box-shadow: inset 1em 1em white;
+    transform-origin: center;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  &:checked {
+    border-color: white;
+    background-color: var(--bgcolor-input)
+  }
+
+  &:checked:disabled {
+    background-color: var(--bgcolor-input);
+    border-color: transparent;
+  }
+  &:checked::before {
+    transform: scale(1);
+  }
+
+  &:focus {
+    border-color: var(--color-button-focused);
+  }
+}

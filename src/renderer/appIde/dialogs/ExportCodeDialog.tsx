@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
+import { Checkbox } from "@renderer/controls/Checkbox";
 
 const EXPORT_CODE_FOLDER_ID = "expotCodeFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -205,6 +206,9 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
             return false;
           }}
         />
+      </div>
+      <div className={styles.inputRow}>
+        <Checkbox initialValue={true} />
       </div>
     </Modal>
   );

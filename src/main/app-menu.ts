@@ -43,7 +43,10 @@ import {
 } from "../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
-import { EXPORT_CODE_DIALOG, NEW_PROJECT_DIALOG } from "../common/messaging/dialog-ids";
+import {
+  EXPORT_CODE_DIALOG,
+  NEW_PROJECT_DIALOG
+} from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
 
@@ -144,6 +147,7 @@ export function setupMenu (
         id: NEW_PROJECT,
         label: "New project...",
         click: () => {
+          ensureIdeWindow();
           mainStore.dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }
       },
@@ -151,6 +155,7 @@ export function setupMenu (
         id: OPEN_FOLDER,
         label: "Open folder...",
         click: async () => {
+          ensureIdeWindow();
           await openFolder(ideWindow);
         }
       },
@@ -160,6 +165,7 @@ export function setupMenu (
         label: "Close Folder",
         enabled: !!folderOpen,
         click: async () => {
+          ensureIdeWindow();
           mainStore.dispatch(closeFolderAction());
           await saveKliveProject();
         }
@@ -228,13 +234,7 @@ export function setupMenu (
       label: "Show IDE",
       visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
       click: () => {
-        ideWindow.show();
-        if (appSettings?.windowStates?.ideWindow?.isMaximized) {
-          ideWindow.maximize();
-        }
-        appSettings.windowStates ??= {};
-        appSettings.windowStates.showIdeOnStartup = true;
-        saveAppSettings();
+        ensureIdeWindow();
       }
     },
     { type: "separator" },
@@ -594,7 +594,7 @@ export function setupMenu (
           click: () => {
             mainStore.dispatch(displayDialogAction(EXPORT_CODE_DIALOG));
           }
-          }
+        }
       ]
     });
   }
@@ -701,6 +701,16 @@ export function setupMenu (
   }
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+
+  function ensureIdeWindow () {
+    ideWindow.show();
+    if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+      ideWindow.maximize();
+    }
+    appSettings.windowStates ??= {};
+    appSettings.windowStates.showIdeOnStartup = true;
+    saveAppSettings();
+  }
 }
 
 /**
