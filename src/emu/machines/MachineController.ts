@@ -1,4 +1,4 @@
-import { IMachineController } from "@renderer/abstractions/IMachineController";
+import { FrameCompletedArgs, IMachineController } from "@renderer/abstractions/IMachineController";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { toHexa4 } from "@appIde/services/ide-commands";
 import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
@@ -14,6 +14,8 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
+import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
+import { TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -105,7 +107,7 @@ export class MachineController implements IMachineController {
    * This event fires whenever an execution loop has been completed. The event parameter flag indicates if the
    * frame has been completed entirely (normal termination mode)
    */
-  frameCompleted = new LiteEvent<boolean>();
+  frameCompleted = new LiteEvent<FrameCompletedArgs>();
 
   /**
    * Start the machine in normal mode.
@@ -323,7 +325,18 @@ export class MachineController implements IMachineController {
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
         const frameCompleted = termination === FrameTerminationMode.Normal;
-        this.frameCompleted?.fire(frameCompleted);
+        let savedInfo: SavedFileInfo | null = null;
+        if (frameCompleted) {
+          // --- Check for file to save
+          savedInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as (SavedFileInfo | null);
+          if (savedInfo) {
+            this.machine.setMachineProperty(SAVED_TO_TAPE);
+          }
+        }
+        this.frameCompleted?.fire({
+          fullFrame: frameCompleted,
+          savedFileInfo: savedInfo 
+        });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {
           this.frameStats.frameCount++;
@@ -353,7 +366,6 @@ export class MachineController implements IMachineController {
           this.context.canceled = true;
           return;
         }
-        console.log("Term", termination);
         if (termination !== FrameTerminationMode.Normal) {
           this.state = MachineControllerState.Paused;
           this._machineTask = undefined;

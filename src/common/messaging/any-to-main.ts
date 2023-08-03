@@ -120,6 +120,7 @@ export interface MainSaveTextFileRequest extends MessageBase {
   type: "MainSaveTextFile";
   path: string;
   data: string;
+  resolveIn?: string;
 }
 
 /**
@@ -129,6 +130,7 @@ export interface MainSaveBinaryFileRequest extends MessageBase {
   type: "MainSaveBinaryFile";
   path: string;
   data: Uint8Array;
+  resolveIn?: string;
 }
 
 /**

@@ -1,7 +1,11 @@
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
 import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
-import { useSelector, useStore } from "@renderer/core/RendererProvider";
+import {
+  useRendererContext,
+  useSelector,
+  useStore
+} from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
@@ -11,11 +15,17 @@ import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
 import { spectrumKeyMappings } from "./key-mappings";
-import { IMachineController } from "../../abstractions/IMachineController";
+import {
+  FrameCompletedArgs,
+  IMachineController
+} from "../../abstractions/IMachineController";
 
 export const EmulatorPanel = () => {
   // --- Access state information
   const store = useStore();
+
+  // --- Use application services
+  const { messenger } = useRendererContext();
 
   // --- Element references
   const hostElement = useRef<HTMLDivElement>();
@@ -170,15 +180,24 @@ export const EmulatorPanel = () => {
   }
 
   // --- Handles machine frame completion events
-  function machineFrameCompleted (completed: boolean): void {
+  function machineFrameCompleted (args: FrameCompletedArgs): void {
     displayScreenData();
-    if (completed && beeperRenderer.current) {
+    if (args.fullFrame && beeperRenderer.current) {
       const zxSpectrum = controller.machine as IZxSpectrumMachine;
       if (zxSpectrum?.beeperDevice) {
         const samples = zxSpectrum.beeperDevice.getAudioSamples();
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
       }
+    }
+    if (args.savedFileInfo) {
+      (async () => {
+        await messenger.sendMessage({
+          type: "MainSaveBinaryFile",
+          path: args.savedFileInfo.name,
+          data: args.savedFileInfo.contents
+        });
+      })();
     }
   }
 
@@ -296,10 +315,16 @@ export const EmulatorPanel = () => {
       machine?.setKeyStatus(SpectrumKeyCode[mapping], isDown);
     } else {
       if (mapping.length > 0) {
-        machine?.setKeyStatus(SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode, isDown);
+        machine?.setKeyStatus(
+          SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode,
+          isDown
+        );
       }
       if (mapping.length > 1) {
-        machine?.setKeyStatus(SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode, isDown);
+        machine?.setKeyStatus(
+          SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode,
+          isDown
+        );
       }
     }
   }

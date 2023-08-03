@@ -16,9 +16,13 @@ import {
 } from "../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import { ProjectNodeWithChildren } from "../renderer/appIde/project/project-node";
+import {
+  getNodeDir,
+  ProjectNodeWithChildren
+} from "../renderer/appIde/project/project-node";
 import {
   createKliveProject,
+  getKliveProjectFolder,
   openFolder,
   openFolderByPath,
   resolveHomeFilePath,
@@ -52,15 +56,7 @@ export async function processRendererToMainMessages (
     case "MainReadTextFile":
       // --- A client want to read the contents of a text file
       try {
-        let fullPath = message.path;
-        switch (message.resolveIn) {
-          case "home":
-            fullPath = resolveHomeFilePath(message.path);
-            break;
-          default:
-            fullPath = resolvePublicFilePath(message.path);
-            break;
-        }
+        const fullPath = resolveMessagePath(message.path, message.resolveIn);
         const contents = fs.readFileSync(fullPath, {
           encoding: (message.encoding ?? "utf8") as BufferEncoding
         });
@@ -72,22 +68,7 @@ export async function processRendererToMainMessages (
     case "MainReadBinaryFile":
       // --- A client want to read the contents of a binary file
       try {
-        let fullPath = message.path;
-        console.log(
-          "resolveIn",
-          message.resolveIn,
-          process.env.PUBLIC,
-          process.env.DIST
-        );
-        switch (message.resolveIn) {
-          case "home":
-            fullPath = resolveHomeFilePath(message.path);
-            break;
-          default:
-            fullPath = resolvePublicFilePath(message.path);
-            break;
-        }
-        console.log("binary", fullPath);
+        const fullPath = resolveMessagePath(message.path, message.resolveIn);
         const contents = fs.readFileSync(fullPath);
         return binaryContentsResponse(contents);
       } catch (err) {
@@ -200,24 +181,32 @@ export async function processRendererToMainMessages (
 
     case "MainSaveTextFile":
       try {
-        const path = resolveHomeFilePath(message.path);
-        fs.writeFileSync(path, message.data, { flag: "w" });
+        const filePath = resolveMessagePath(message.path, message.resolveIn);
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, message.data, { flag: "w" });
         return {
           type: "MainSaveFileResponse",
-          path
-        }
+          path: filePath
+        };
       } catch (err) {
         return errorResponse(err.toString());
       }
 
     case "MainSaveBinaryFile":
       try {
-        const path = resolveHomeFilePath(message.path);
-        fs.writeFileSync(path, message.data, { flag: "w" });
+        const filePath = resolveMessagePath(message.path, message.resolveIn);
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, message.data, { flag: "w" });
         return {
           type: "MainSaveFileResponse",
-          path
-        }
+          path: filePath
+        };
       } catch (err) {
         return errorResponse(err.toString());
       }
@@ -230,7 +219,6 @@ export async function processRendererToMainMessages (
       const compiler = getCompiler(message.language);
       try {
         dispatch(startCompileAction(message.filename));
-        console.log("Compiling", message.filename);
         const result = (await compiler.compileFile(
           message.filename
         )) as KliveCompilerOutput;
@@ -378,8 +366,8 @@ async function displayOpenFileDialog (
     defaultPath,
     properties: ["openFile"],
     filters: [
-      { name: 'Tape files', extensions: ['tap', 'tzx'] },
-      { name: 'All Files', extensions: ['*'] }
+      { name: "Tape files", extensions: ["tap", "tzx"] },
+      { name: "All Files", extensions: ["*"] }
     ]
   });
   if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
@@ -395,4 +383,29 @@ async function displayOpenFileDialog (
   }
 
   return selectedFile;
+}
+
+function resolveMessagePath (path: string, resolveIn?: string): string {
+  let fullPath = path;
+  const segments = resolveIn?.split(":");
+  if (!segments || segments.length === 0) {
+    fullPath = resolvePublicFilePath(path);
+  } else {
+    switch (segments[0]) {
+      case "home":
+        if (segments.length > 1) {
+          fullPath = resolveHomeFilePath(`${segments[1]}/${path}`);
+        } else {
+          fullPath = resolveHomeFilePath(path);
+        }
+        break;
+      case "project":
+        fullPath = `${getKliveProjectFolder(segments[1])}/${path}}`;
+        break;
+      default:
+        fullPath = resolvePublicFilePath(path);
+        break;
+    }
+  }
+  return fullPath;
 }
