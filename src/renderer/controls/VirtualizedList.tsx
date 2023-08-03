@@ -76,22 +76,17 @@ export const VirtualizedList = ({
 
     if (virtualizer && columnVirtualizer) {
       const api: VirtualizedListApi = {
+        // TODO: please, check whether scroll options match underlying API;
+        // It seems that scrollToOffset doesn't have 'behavior' option,
+        // but it rather has 'smooth' one.
+        // For reference: https://tanstack.com/virtual/v3/docs/api/virtualizer#scrolltooffset
         scrollToIndex: (index: number, options: ScrollToOptions) =>
           virtualizer.scrollToIndex(index, options),
         scrollToOffset: (offset: number, options: ScrollToOptions) =>
           virtualizer.scrollToOffset(offset, options),
-        scrollToTop: () => virtualizer.scrollToIndex(0),
+        scrollToTop: () => virtualizer.scrollToOffset(0),
         scrollToEnd: () => {
-          const virtItems = virtualizer.getVirtualItems();
-          if (virtItems?.length > 0) {
-            virtualizer.scrollToIndex(
-              (virtItems?.length > 0 ? virtItems.length - 1 : 0) ?? 0,
-              {
-                align: "end",
-                behavior: "auto"
-              }
-            );
-          }
+          virtualizer.scrollToOffset(scrollerRef.current?.scrollHeight ?? 0);
         },
         refresh: () => setCount(count + 1),
         getScrollHeight: () => scrollerRef.current?.scrollHeight ?? 1,
