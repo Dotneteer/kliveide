@@ -6,6 +6,7 @@ import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
 import { Checkbox } from "@renderer/controls/Checkbox";
+import { DialogLabel } from "@renderer/controls/DialogLabel";
 
 const EXPORT_CODE_FOLDER_ID = "expotCodeFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -82,6 +83,8 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const [borderId, setBorderId] = useState("none");
   const [screenFileName, setScreenFileName] = useState("");
   const [screenFileIsValid, setScreenFileIsValid] = useState(true);
+  const [startAddress, setStartAddress] = useState(32768);
+  const [startAddressIsValid, setStartAddressIsValid] = useState(true);
 
   useEffect(() => {
     const fValid =
@@ -111,7 +114,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         onClose();
       }}
     >
-      <div>Export format:</div>
+      <DialogLabel text="Export format:" />
       <div className={styles.dropdownWrapper}>
         <Dropdown
           placeholder='Select...'
@@ -120,7 +123,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           onSelectionChanged={option => setFormatId(option)}
         />
       </div>
-      <div>Export folder:</div>
+      <DialogLabel text="Export folder:" />
       <div className={styles.inputRow}>
         <TextInput
           value={exportFolder}
@@ -144,7 +147,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           }}
         />
       </div>
-      <div>Export file name: *</div>
+      <DialogLabel text="Export file name:" />
       <TextInput
         value={exportName}
         isValid={exportIsValid}
@@ -163,7 +166,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           return false;
         }}
       />
-      <div>Program name:</div>
+      <DialogLabel text="Program name:" />
       <TextInput
         value={programName}
         maxLength={10}
@@ -174,7 +177,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           return false;
         }}
       />
-      <div>Startup border:</div>
+      <DialogLabel text="Startup border:" />
       <div className={styles.dropdownWrapper}>
         <Dropdown
           placeholder='Select...'
@@ -183,7 +186,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           onSelectionChanged={option => setBorderId(option)}
         />
       </div>
-      <div>Screen file:</div>
+      <DialogLabel text="Screen file:" />
       <div className={styles.inputRow}>
         <TextInput
           value={screenFileName}
@@ -208,8 +211,25 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         />
       </div>
       <div className={styles.inputRow}>
-        <Checkbox initialValue={true} />
+        <Checkbox initialValue={true} right={true} label="Use a single code block" />
       </div>
+      <div className={styles.inputRow}>
+        <Checkbox initialValue={true} right={true} label="Add CLEAR" />
+      </div>
+      <div className={styles.inputRow}>
+        <Checkbox initialValue={true} right={true} label="Add PAUSE 0" />
+      </div>
+      <DialogLabel text="Code start address:" />
+      <TextInput
+        value={startAddress.toString()}
+        maxLength={10}
+        isValid={true}
+        focusOnInit={true}
+        valueChanged={val => {
+          setStartAddress(parseInt(val, 10));
+          return false;
+        }}
+      />
     </Modal>
   );
 };

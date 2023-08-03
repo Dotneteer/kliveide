@@ -34,6 +34,12 @@ export const darkTheme: ThemeProperties = {
   "--bg-color-dropdown-menu-pointed": "#606060",
   "--bg-color-dropdown-menu-selected": "#007acc",
 
+  // --- Checkbox
+  "--bgcolor-checkbox": "#282828",
+  "--color-checkbox": "#00a0ff",
+  "--color-checkbox-border-normal": "#d8d8d8",
+  "--color-checkbox-border-focused": "#00a0ff",
+
   // --- Context menu
   "--bgcolor-context-menu": "#282828",
   "--color-context-item": "#cccccc",

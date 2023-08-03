@@ -8,6 +8,7 @@ import {
   MainCreateKliveProjectResponse,
   MainShowOpenFolderDialogResponse
 } from "@messaging/any-to-main";
+import { DialogLabel } from "@renderer/controls/DialogLabel";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -99,7 +100,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         onClose();
       }}
     >
-      <div>Machine type: *</div>
+      <DialogLabel text="Machine type: *" />
       <div className={styles.dropdownWrapper}>
         <Dropdown
           placeholder='Select...'
@@ -108,7 +109,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           onSelectionChanged={option => setMachineId(option)}
         />
       </div>
-      <div>Project folder:</div>
+      <DialogLabel text="Project folder:" />
       <div className={styles.inputRow}>
         <TextInput
           value={projectFolder}
@@ -132,7 +133,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           }}
         />
       </div>
-      <div>Project name: *</div>
+      <DialogLabel text="Project name:" />
       <TextInput
         value={projectName}
         isValid={projectIsValid}
