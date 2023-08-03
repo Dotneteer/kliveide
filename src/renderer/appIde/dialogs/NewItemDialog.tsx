@@ -1,6 +1,7 @@
 import styles from "./NewItemDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
+import { DialogRow } from "@renderer/controls/DialogRow";
 import { useRef, useState } from "react";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -46,27 +47,29 @@ export const NewItemDialog = ({
         onClose();
       }}
     >
-      <div>
-        {`Name of the new ${subject} to create in `}
-        <span className={styles.hilite}>{path}</span>:
-      </div>
-      <TextInput
-        value={""}
-        isValid={isValid}
-        focusOnInit={true}
-        keyPressed={e => {
-          if (e.code === "Enter") {
-            if (validate(newItem)) {
-              modalApi.current.triggerPrimary(newItem);
+      <DialogRow rows={true}>
+        <div>
+          {`Name of the new ${subject} to create in `}
+          <span className={styles.hilite}>{path}</span>:
+        </div>
+        <TextInput
+          value={""}
+          isValid={isValid}
+          focusOnInit={true}
+          keyPressed={e => {
+            if (e.code === "Enter") {
+              if (validate(newItem)) {
+                modalApi.current.triggerPrimary(newItem);
+              }
             }
-          }
-        }}
-        valueChanged={val => {
-          setNewItem(val);
-          modalApi.current.enablePrimaryButton(validate(val));
-          return false;
-        }}
-      />
+          }}
+          valueChanged={val => {
+            setNewItem(val);
+            modalApi.current.enablePrimaryButton(validate(val));
+            return false;
+          }}
+        />
+      </DialogRow>
     </Modal>
   );
 };

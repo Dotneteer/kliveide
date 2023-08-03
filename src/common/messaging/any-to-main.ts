@@ -41,7 +41,7 @@ export interface MainGetDirectoryContentRequest extends MessageBase {
 }
 
 /**
- * The client wants to create a new Klive project
+ * The client wants to open a particular folder
  */
 export interface MainOpenFolderRequest extends MessageBase {
   type: "MainOpenFolder";
@@ -100,6 +100,15 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
  */
 export interface MainShowOpenFolderDialogRequest extends MessageBase {
   type: "MainShowOpenFolderDialog";
+  title?: string;
+  settingsId?: string;
+}
+
+/**
+ * The client wants to get the app folder
+ */
+export interface MainShowOpenFileDialogRequest extends MessageBase {
+  type: "MainShowOpenFileDialog";
   title?: string;
   settingsId?: string;
 }
@@ -181,10 +190,26 @@ export interface MainShowOpenFolderDialogResponse extends MessageBase {
   folder?: string;
 }
 
+/**
+ * The client wants to display the open folder dialog
+ */
+export interface MainShowOpenFileDialogResponse extends MessageBase {
+  type: "MainShowOpenFileDialogResponse";
+  file?: string;
+}
+
 export interface MainCompileResponse extends MessageBase {
   type: "MainCompileFileResponse";
   result: KliveCompilerOutput;
   failed?: string;
+}
+
+/**
+ * The client wants to save a text file
+ */
+export interface MainSaveFileResponse extends MessageBase {
+  type: "MainSaveFileResponse";
+  path: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

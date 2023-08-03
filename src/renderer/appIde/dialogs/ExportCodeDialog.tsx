@@ -4,12 +4,19 @@ import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
+import {
+  MainShowOpenFileDialogResponse,
+  MainShowOpenFolderDialogResponse
+} from "@messaging/any-to-main";
 import { Checkbox } from "@renderer/controls/Checkbox";
+import { DialogRow } from "@renderer/controls/DialogRow";
+import { getNodeExtension, getNodeName } from "../project/project-node";
+import { useAppServices } from "../services/AppServicesProvider";
 
-const EXPORT_CODE_FOLDER_ID = "expotCodeFolder";
+const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
 const VALID_FOLDERNAME = /^[^>:"|?*]+$/;
+const VALID_INTEGER = /^\d+$/;
 
 const formatIds = [
   {
@@ -72,6 +79,7 @@ type Props = {
 
 export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const { messenger } = useRendererContext();
+  const { outputPaneService, ideCommandsService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
   const [exportFolder, setExportFolder] = useState("");
@@ -80,17 +88,31 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const [exportIsValid, setExportIsValid] = useState(true);
   const [programName, setProgramName] = useState("");
   const [borderId, setBorderId] = useState("none");
-  const [screenFileName, setScreenFileName] = useState("");
+  const [screenFilename, setScreenFilename] = useState("");
   const [screenFileIsValid, setScreenFileIsValid] = useState(true);
+  const [startAddress, setStartAddress] = useState("");
+  const [startAddressIsValid, setStartAddressIsValid] = useState(true);
+  const [startBlock, setStartBlock] = useState(true);
+  const [addPause, setAddPause] = useState(false);
+  const [addClear, setAddClear] = useState(true);
+  const [singleBlock, setSingleBlock] = useState(false);
 
   useEffect(() => {
     const fValid =
       exportFolder.trim() === "" || VALID_FOLDERNAME.test(exportFolder);
-    const nValid = exportName.trim() !== "" && VALID_FILENAME.test(exportName);
     setFolderIsValid(fValid);
+    const nValid = exportName.trim() !== "" && VALID_FILENAME.test(exportName);
     setExportIsValid(nValid);
-    modalApi.current.enablePrimaryButton(fValid && nValid);
-  }, [exportFolder, exportName]);
+    const addressValid =
+      startAddress.trim() === "" || VALID_INTEGER.test(startAddress);
+    setStartAddressIsValid(addressValid);
+    const srcValid =
+      screenFilename.trim() === "" || VALID_FOLDERNAME.test(screenFilename);
+    setScreenFileIsValid(srcValid);
+    modalApi.current.enablePrimaryButton(
+      fValid && nValid && addressValid && srcValid
+    );
+  }, [exportFolder, exportName, startAddress, screenFilename]);
 
   return (
     <Modal
@@ -103,29 +125,49 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
       primaryLabel='Export'
       primaryEnabled={true}
       initialFocus='none'
-      onPrimaryClicked={async result => {
+      onPrimaryClicked={async () => {
         // --- Dialog can be closed
-        return false;
+        let filename = exportName;
+        let exportExt = getNodeExtension(exportName);
+        if (!exportExt || exportExt === ".") {
+          filename += `.${formatId}`;
+        }
+        const fullFilename = exportFolder
+          ? `${exportFolder}/${filename}`
+          : filename;
+        const name = programName ? programName : getNodeName(exportName);
+        const command = `expc ${fullFilename} -n ${name} -f ${formatId}${
+          startBlock ? " -as" : ""
+        }${addPause ? " -p" : ""}${
+          borderId !== "none" ? ` -b ${borderId}` : ""
+        }${singleBlock ? " -sb" : ""}${
+          startAddress ? ` -addr ${startAddress}` : ""
+        }${addClear ? " -c" : ""}${
+          screenFilename ? ` -scr "${screenFilename}"` : ""
+        }`;
+        console.log(command);
+        const buildPane = outputPaneService.getOutputPaneBuffer("build");
+        const result = await ideCommandsService.executeCommand(command, buildPane);
+        return !result.success;
       }}
       onClose={() => {
         onClose();
       }}
     >
-      <div>Export format:</div>
-      <div className={styles.dropdownWrapper}>
-        <Dropdown
-          placeholder='Select...'
-          options={formatIds}
-          value={"tzx"}
-          onSelectionChanged={option => setFormatId(option)}
-        />
-      </div>
-      <div>Export folder:</div>
-      <div className={styles.inputRow}>
+      <DialogRow label='Export format:'>
+        <div className={styles.dropdownWrapper}>
+          <Dropdown
+            placeholder='Select...'
+            options={formatIds}
+            value={"tzx"}
+            onSelectionChanged={option => setFormatId(option)}
+          />
+        </div>
+      </DialogRow>
+      <DialogRow label='Export folder:'>
         <TextInput
           value={exportFolder}
           isValid={folderIsValid}
-          focusOnInit={true}
           buttonIcon='folder'
           buttonTitle='Select the root project folder'
           buttonClicked={async () => {
@@ -143,73 +185,103 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
             return false;
           }}
         />
-      </div>
-      <div>Export file name: *</div>
-      <TextInput
-        value={exportName}
-        isValid={exportIsValid}
-        focusOnInit={true}
-        keyPressed={e => {
-          if (e.code === "Enter") {
-            if (folderIsValid && exportIsValid) {
-              e.preventDefault();
-              e.stopPropagation();
-              modalApi.current.triggerPrimary([exportName, exportFolder]);
-            }
-          }
-        }}
-        valueChanged={val => {
-          setExportName(val);
-          return false;
-        }}
-      />
-      <div>Program name:</div>
-      <TextInput
-        value={programName}
-        maxLength={10}
-        isValid={true}
-        focusOnInit={true}
-        valueChanged={val => {
-          setProgramName(val);
-          return false;
-        }}
-      />
-      <div>Startup border:</div>
-      <div className={styles.dropdownWrapper}>
-        <Dropdown
-          placeholder='Select...'
-          options={borderIds}
-          value={"none"}
-          onSelectionChanged={option => setBorderId(option)}
-        />
-      </div>
-      <div>Screen file:</div>
-      <div className={styles.inputRow}>
+      </DialogRow>
+      <DialogRow label='Export file name: *'>
         <TextInput
-          value={screenFileName}
-          isValid={screenFileIsValid}
+          value={exportName}
+          isValid={exportIsValid}
           focusOnInit={true}
+          valueChanged={val => {
+            setExportName(val);
+            return false;
+          }}
+        />
+      </DialogRow>
+      <DialogRow label='Program name:'>
+        <TextInput
+          value={programName}
+          width={100}
+          maxLength={10}
+          isValid={true}
+          valueChanged={val => {
+            setProgramName(val);
+            return false;
+          }}
+        />
+      </DialogRow>
+      <DialogRow label='Startup border:'>
+        <div className={styles.dropdownWrapper}>
+          <Dropdown
+            placeholder='Select...'
+            options={borderIds}
+            value={"none"}
+            onSelectionChanged={option => setBorderId(option)}
+          />
+        </div>
+      </DialogRow>
+      <DialogRow label='Screen file:'>
+        <TextInput
+          value={screenFilename}
+          isValid={screenFileIsValid}
           buttonIcon='file-code'
           buttonTitle='Select the screen file'
           buttonClicked={async () => {
             const response = (await messenger.sendMessage({
-              type: "MainShowOpenFolderDialog",
+              type: "MainShowOpenFileDialog",
               settingsId: EXPORT_CODE_FOLDER_ID
-            })) as MainShowOpenFolderDialogResponse;
-            if (response.folder) {
-              setScreenFileName(response.folder);
+            })) as MainShowOpenFileDialogResponse;
+            if (response.file) {
+              setScreenFilename(response.file);
             }
-            return response.folder;
+            return response.file;
           }}
           valueChanged={val => {
-            setScreenFileName(val);
+            setScreenFilename(val);
             return false;
           }}
         />
-      </div>
-      <div className={styles.inputRow}>
-        <Checkbox initialValue={true} />
-      </div>
+      </DialogRow>
+      <DialogRow rows={true}>
+        <Checkbox
+          initialValue={startBlock}
+          right={true}
+          label='Create startup block'
+          onChange={v => setStartBlock(v)}
+        />
+        <Checkbox
+          initialValue={addClear}
+          right={true}
+          label='Add CLEAR'
+          onChange={v => setAddClear(v)}
+          enabled={startBlock}
+        />
+        <Checkbox
+          initialValue={addPause}
+          right={true}
+          label='Add PAUSE 0'
+          onChange={v => setAddPause(v)}
+          enabled={startBlock}
+        />
+        <Checkbox
+          initialValue={singleBlock}
+          right={true}
+          label='Use a single code block'
+          onChange={v => setSingleBlock(v)}
+          enabled={startBlock}
+        />
+      </DialogRow>
+      <DialogRow label='Code start address:'>
+        <TextInput
+          value={startAddress.toString()}
+          maxLength={5}
+          width={60}
+          isValid={startAddressIsValid}
+          valueChanged={val => {
+            setStartAddress(val);
+            return false;
+          }}
+        />
+      </DialogRow>
     </Modal>
   );
 };

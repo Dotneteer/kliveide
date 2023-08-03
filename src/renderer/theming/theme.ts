@@ -34,6 +34,12 @@ export type ThemeProperties = {
   "--bg-color-dropdown-menu-pointed"?: string;
   "--bg-color-dropdown-menu-selected"?: string;
 
+  // --- checkbox
+  "--bgcolor-checkbox"?: string;
+  "--color-checkbox"?: string;
+  "--color-checkbox-border-normal"?: string;
+  "--color-checkbox-border-focused"?: string;
+
   // --- Context menu
   "--bgcolor-context-menu"?: string;
   "--color-context-item"?: string;

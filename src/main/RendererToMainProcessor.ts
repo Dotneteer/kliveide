@@ -11,7 +11,8 @@ import {
   textContentsResponse,
   binaryContentsResponse,
   MainCreateKliveProjectResponse,
-  MainShowOpenFolderDialogResponse
+  MainShowOpenFolderDialogResponse,
+  MainShowOpenFileDialogResponse
 } from "../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
@@ -72,7 +73,12 @@ export async function processRendererToMainMessages (
       // --- A client want to read the contents of a binary file
       try {
         let fullPath = message.path;
-        console.log("resolveIn", message.resolveIn, process.env.PUBLIC, process.env.DIST);
+        console.log(
+          "resolveIn",
+          message.resolveIn,
+          process.env.PUBLIC,
+          process.env.DIST
+        );
         switch (message.resolveIn) {
           case "home":
             fullPath = resolveHomeFilePath(message.path);
@@ -169,7 +175,7 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
-    case "MainShowOpenFolderDialog":
+    case "MainShowOpenFolderDialog": {
       const selectedFolder = await displayOpenFolderDialog(
         window,
         message.title,
@@ -179,19 +185,39 @@ export async function processRendererToMainMessages (
         type: "MainShowOpenFolderDialogResponse",
         folder: selectedFolder
       } as MainShowOpenFolderDialogResponse;
+    }
+
+    case "MainShowOpenFileDialog":
+      const selectedFile = await displayOpenFileDialog(
+        window,
+        message.title,
+        message.settingsId
+      );
+      return {
+        type: "MainShowOpenFileDialogResponse",
+        file: selectedFile
+      } as MainShowOpenFileDialogResponse;
 
     case "MainSaveTextFile":
       try {
-        fs.writeFileSync(resolveHomeFilePath(message.path), message.data);
-        break;
+        const path = resolveHomeFilePath(message.path);
+        fs.writeFileSync(path, message.data, { flag: "w" });
+        return {
+          type: "MainSaveFileResponse",
+          path
+        }
       } catch (err) {
         return errorResponse(err.toString());
       }
 
     case "MainSaveBinaryFile":
       try {
-        fs.writeFileSync(resolveHomeFilePath(message.path), message.data);
-        break;
+        const path = resolveHomeFilePath(message.path);
+        fs.writeFileSync(path, message.data, { flag: "w" });
+        return {
+          type: "MainSaveFileResponse",
+          path
+        }
       } catch (err) {
         return errorResponse(err.toString());
       }
@@ -221,7 +247,6 @@ export async function processRendererToMainMessages (
           failed: err.toString()
         };
       }
-      break;
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
@@ -334,4 +359,40 @@ async function displayOpenFolderDialog (
   }
 
   return selectedFolder;
+}
+
+/**
+ * Sets the tape file to use with the machine
+ * @param browserWindow Host browser window
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function displayOpenFileDialog (
+  browserWindow: BrowserWindow,
+  title?: string,
+  settingsId?: string
+): Promise<string> {
+  const defaultPath =
+    appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: title ?? "Open File",
+    defaultPath,
+    properties: ["openFile"],
+    filters: [
+      { name: 'Tape files', extensions: ['tap', 'tzx'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  // --- Read the file
+  const selectedFile = dialogResult.filePaths[0];
+
+  // --- Save the folder into settings
+  if (settingsId) {
+    appSettings.folders ??= {};
+    appSettings.folders[settingsId] = selectedFile;
+    saveAppSettings();
+  }
+
+  return selectedFile;
 }

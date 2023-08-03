@@ -6,6 +6,7 @@ import styles from "./TextInput.module.scss";
 type Props = {
   value?: string;
   isValid?: boolean;
+  width?: number | string;
   maxLength?: number;
   focusOnInit?: boolean;
   buttonIcon?: string;
@@ -18,6 +19,7 @@ type Props = {
 export const TextInput = ({
   value,
   isValid,
+  width,
   maxLength,
   focusOnInit,
   buttonIcon,
@@ -46,6 +48,7 @@ export const TextInput = ({
         <input
           ref={ref}
           className={classnames(styles.input, { [styles.invalid]: !isValid })}
+          style={{width}}
           value={inputValue}
           maxLength={maxLength}
           spellCheck={false}

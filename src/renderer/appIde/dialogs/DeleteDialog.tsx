@@ -1,5 +1,6 @@
 import styles from "./DeleteDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
+import { DialogRow } from "@renderer/controls/DialogRow";
 import { useRef } from "react";
 
 type Props = {
@@ -9,12 +10,7 @@ type Props = {
   onDelete: () => Promise<void>;
 };
 
-export const DeleteDialog = ({
-  isFolder,
-  entry,
-  onClose,
-  onDelete
-}: Props) => {
+export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
   const modalApi = useRef<ModalApi>(null);
 
   return (
@@ -35,10 +31,12 @@ export const DeleteDialog = ({
         onClose();
       }}
     >
-      <div>
-        Are you sure you want to delete{" "}
-        <span className={styles.hilite}>{entry}</span>?
-      </div>
+      <DialogRow>
+        <div>
+          Are you sure you want to delete{" "}
+          <span className={styles.hilite}>{entry}</span>?
+        </div>
+      </DialogRow>
     </Modal>
   );
 };
