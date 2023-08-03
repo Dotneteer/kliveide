@@ -40,12 +40,17 @@
     background-color: var(--bgcolor-checkbox);
   }
 
-  &:checked:disabled {
-    background-color: var(--bgcolor-checkbox);
-    border-color: var(--color-checkbox-border-normal);
-  }
   &:checked::before {
     transform: scale(1);
+  }
+
+  &:checked:disabled {
+    background-color: var(--bgcolor-checkbox);
+    border-color: gray;
+
+    &::before {
+      box-shadow: inset 1em 1em grey;
+    }
   }
 
   &:focus {
@@ -58,10 +63,12 @@
   flex-direction: row;
   justify-items: center;
   font-size: 0.9em;
-  margin: 4px 0;
+  margin: 2px 0 6px 0;
 }
 
 label {
+  cursor: pointer;
+
   &.left {
     margin-right: 8px;
   }
@@ -69,4 +76,10 @@ label {
   &.right {
     margin-left: 8px;
   }
+
+  &.disabled {
+    color: grey;
+    cursor: not-allowed;
+  }
 }
+

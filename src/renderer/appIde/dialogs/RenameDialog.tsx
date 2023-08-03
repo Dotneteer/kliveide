@@ -1,6 +1,7 @@
 import styles from "./RenameDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
+import { DialogRow } from "@renderer/controls/DialogRow";
 import { useRef, useState } from "react";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -42,26 +43,28 @@ export const RenameDialog = ({
         onClose();
       }}
     >
-      <div>
-        Rename <span className={styles.hilite}>{oldPath}</span> to:
-      </div>
-      <TextInput
-        value={oldPath}
-        isValid={isValid}
-        focusOnInit={true}
-        keyPressed={e => {
-          if (e.code === "Enter") {
-            if (validate(newPath)) {
-              modalApi.current.triggerPrimary(newPath);
+      <DialogRow rows={true}>
+        <div>
+          Rename <span className={styles.hilite}>{oldPath}</span> to:
+        </div>
+        <TextInput
+          value={oldPath}
+          isValid={isValid}
+          focusOnInit={true}
+          keyPressed={e => {
+            if (e.code === "Enter") {
+              if (validate(newPath)) {
+                modalApi.current.triggerPrimary(newPath);
+              }
             }
-          }
-        }}
-        valueChanged={val => {
-          setNewPath(val);
-          modalApi.current.enablePrimaryButton(validate(val));
-          return false;
-        }}
-      />
+          }}
+          valueChanged={val => {
+            setNewPath(val);
+            modalApi.current.enablePrimaryButton(validate(val));
+            return false;
+          }}
+        />
+      </DialogRow>
     </Modal>
   );
 };

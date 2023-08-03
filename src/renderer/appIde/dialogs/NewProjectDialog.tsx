@@ -8,7 +8,7 @@ import {
   MainCreateKliveProjectResponse,
   MainShowOpenFolderDialogResponse
 } from "@messaging/any-to-main";
-import { DialogLabel } from "@renderer/controls/DialogLabel";
+import { DialogRow } from "@renderer/controls/DialogRow";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -100,17 +100,17 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         onClose();
       }}
     >
-      <DialogLabel text="Machine type: *" />
-      <div className={styles.dropdownWrapper}>
-        <Dropdown
-          placeholder='Select...'
-          options={machineIds}
-          value={"sp48"}
-          onSelectionChanged={option => setMachineId(option)}
-        />
-      </div>
-      <DialogLabel text="Project folder:" />
-      <div className={styles.inputRow}>
+      <DialogRow label='Machine type: *'>
+        <div className={styles.dropdownWrapper}>
+          <Dropdown
+            placeholder='Select...'
+            options={machineIds}
+            value={"sp48"}
+            onSelectionChanged={option => setMachineId(option)}
+          />
+        </div>
+      </DialogRow>
+      <DialogRow label='Project folder:'>
         <TextInput
           value={projectFolder}
           isValid={folderIsValid}
@@ -132,26 +132,27 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
             return false;
           }}
         />
-      </div>
-      <DialogLabel text="Project name:" />
-      <TextInput
-        value={projectName}
-        isValid={projectIsValid}
-        focusOnInit={true}
-        keyPressed={e => {
-          if (e.code === "Enter") {
-            if (folderIsValid && projectIsValid) {
-              e.preventDefault();
-              e.stopPropagation();
-              modalApi.current.triggerPrimary([projectName, projectFolder]);
+      </DialogRow>
+      <DialogRow label='Project name:'>
+        <TextInput
+          value={projectName}
+          isValid={projectIsValid}
+          focusOnInit={true}
+          keyPressed={e => {
+            if (e.code === "Enter") {
+              if (folderIsValid && projectIsValid) {
+                e.preventDefault();
+                e.stopPropagation();
+                modalApi.current.triggerPrimary([projectName, projectFolder]);
+              }
             }
-          }
-        }}
-        valueChanged={val => {
-          setProjectName(val);
-          return false;
-        }}
-      />
+          }}
+          valueChanged={val => {
+            setProjectName(val);
+            return false;
+          }}
+        />
+      </DialogRow>
     </Modal>
   );
 };

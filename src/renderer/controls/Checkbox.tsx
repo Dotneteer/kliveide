@@ -26,19 +26,37 @@ export const Checkbox = ({
     [onChange]
   );
 
+  const labelCtrl = (
+    <label
+      className={classnames({
+        [styles.left]: !right,
+        [styles.right]: right,
+        [styles.disabled]: !enabled
+      })}
+      onClick={() => {
+        if (enabled) {
+          setvalue(!value)
+          onChange?.(!value);
+        };
+      }}
+    >
+      {label}
+    </label>
+  );
+
   return (
     <div className={styles.checkboxWrapper}>
-    {!right && <label className={styles.left}>{label}</label>}
-    <input
-      type='checkbox'
-      checked={value}
-      disabled={!enabled}
-      onClick={() => setvalue(!value)}
-      onChange={onInputChange}
-      className={classnames(styles.resetAppearance, styles.checkbox)}
-      aria-checked={value}
-    />
-    {right && <label className={styles.right}>{label}</label>}
+      {!right && labelCtrl}
+      <input
+        type='checkbox'
+        checked={value}
+        disabled={!enabled}
+        onClick={() => setvalue(!value)}
+        onChange={onInputChange}
+        className={classnames(styles.resetAppearance, styles.checkbox)}
+        aria-checked={value}
+      />
+      {right && labelCtrl}
     </div>
   );
 };
