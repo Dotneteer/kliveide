@@ -36,7 +36,10 @@ import {
   MainSaveProjectRequest,
   MainCompileFileRequest,
   MainCompileResponse,
-  MainSaveBinaryFileRequest
+  MainSaveBinaryFileRequest,
+  MainShowOpenFileDialogResponse,
+  MainShowOpenFileDialogRequest,
+  MainSaveFileResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -156,6 +159,7 @@ export type RequestMessage =
   | MainDeleteFileEntryRequest
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest
+  | MainShowOpenFileDialogRequest
   | MainSaveTextFileRequest
   | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
@@ -180,6 +184,8 @@ export type ResponseMessage =
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
   | MainShowOpenFolderDialogResponse
+  | MainShowOpenFileDialogResponse
+  | MainSaveFileResponse
   | MainCompileResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse

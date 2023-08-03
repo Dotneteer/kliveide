@@ -4,14 +4,14 @@ import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import { MainShowOpenFolderDialogResponse } from "@messaging/any-to-main";
+import {
+  MainShowOpenFileDialogResponse,
+  MainShowOpenFolderDialogResponse
+} from "@messaging/any-to-main";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import {
-  getNodeExtension,
-  getNodeFile,
-  getNodeName
-} from "../project/project-node";
+import { getNodeExtension, getNodeName } from "../project/project-node";
+import { useAppServices } from "../services/AppServicesProvider";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
@@ -79,6 +79,7 @@ type Props = {
 
 export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const { messenger } = useRendererContext();
+  const { outputPaneService, ideCommandsService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
   const [exportFolder, setExportFolder] = useState("");
@@ -142,10 +143,12 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         }${singleBlock ? " -sb" : ""}${
           startAddress ? ` -addr ${startAddress}` : ""
         }${addClear ? " -c" : ""}${
-          screenFilename ? ` -scr ${screenFilename}` : ""
+          screenFilename ? ` -scr "${screenFilename}"` : ""
         }`;
         console.log(command);
-        return false;
+        const buildPane = outputPaneService.getOutputPaneBuffer("build");
+        const result = await ideCommandsService.executeCommand(command, buildPane);
+        return !result.success;
       }}
       onClose={() => {
         onClose();
@@ -224,13 +227,13 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           buttonTitle='Select the screen file'
           buttonClicked={async () => {
             const response = (await messenger.sendMessage({
-              type: "MainShowOpenFolderDialog",
+              type: "MainShowOpenFileDialog",
               settingsId: EXPORT_CODE_FOLDER_ID
-            })) as MainShowOpenFolderDialogResponse;
-            if (response.folder) {
-              setScreenFilename(response.folder);
+            })) as MainShowOpenFileDialogResponse;
+            if (response.file) {
+              setScreenFilename(response.file);
             }
-            return response.folder;
+            return response.file;
           }}
           valueChanged={val => {
             setScreenFilename(val);

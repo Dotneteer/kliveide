@@ -1,10 +1,14 @@
 import {
   BinaryContentsResponse,
-  MainCompileResponse
+  MainCompileResponse,
+  MainSaveFileResponse
 } from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { getFileTypeEntry, getNodeName as getNodeFileName } from "../project/project-node";
+import {
+  getFileTypeEntry,
+  getNodeName as getNodeFileName
+} from "../project/project-node";
 import {
   IdeCommandBase,
   commandError,
@@ -295,8 +299,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     blocksToSave.push(...codeBlocks);
-    await saveDataBlocks(blocksToSave);
-    return commandSuccessWith("Code successfully exported.");
+    return await saveDataBlocks(blocksToSave);
 
     // --- Reads tape data from the specified contents
     function readTapeData (contents: Uint8Array): TapeDataBlock[] | null {
@@ -977,14 +980,17 @@ export class ExportCodeCommand extends IdeCommandBase {
           if (response.type === "ErrorResponse") {
             return commandError(response.message);
           }
+          return commandSuccessWith(
+            `Code successfully exported to '${
+              (response as MainSaveFileResponse).path
+            }'`
+          );
         }
 
         return commandSuccess;
       } catch (err) {
         return commandError(err.toString());
       }
-
-      return commandSuccess;
     }
   }
 }
