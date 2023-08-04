@@ -515,8 +515,12 @@ export class ExportCodeCommand extends IdeCommandBase {
         if (response.type === "ErrorResponse") {
           return commandError(response.message);
         }
+        return commandSuccessWith(
+          `Code successfully exported to '${
+            (response as MainSaveFileResponse).path
+          }'`)
       }
-      return commandSuccessWith("Intel HEX file successfully exported.");
+      return commandError("Filename not specified");
 
       // --- Write out a single data record
       function writeDataRecord (
