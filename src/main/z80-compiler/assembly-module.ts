@@ -255,7 +255,10 @@ export class AssemblyModule implements ISymbolScope {
 
     // --- Iterate through segments
     for (let i = 0; i < symbolSegments.length; i++) {
-      var segment = symbolSegments[i];
+      let segment = symbolSegments[i];
+      if (!this.caseSensitive) {
+        segment = segment?.toLowerCase();
+      }
 
       // --- Do not search for module-local variables
       if (segment.startsWith("@") && i > 0) {
