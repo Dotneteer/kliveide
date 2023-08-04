@@ -17,4 +17,35 @@ describe("Assembler - struct invocation regression", () => {
       SnakeHead: Point2d()
     `, 0x21, 0x06, 0x80, 0x21, 0x07, 0x80, 0x00, 0x00);
   });
+
+  it("Struct regression issue (ID casing) #2", async () => {
+    await testCodeEmit(`
+      Point2d:
+      .struct
+        X: .db 0
+        Y: .db 0
+      .ends
+
+      ld hl,ThisShouldNotFail
+
+      SnakeHead: Point2d()
+      ThisShouldNotFail: .db #55
+    `, 0x21, 0x05, 0x80, 0x00, 0x00, 0x55);
+  });
+
+  it("Struct regression issue (ID casing) #2a", async () => {
+    await testCodeEmit(`
+      Point2d:
+      .struct
+        X: .db 0
+        Y: .db 0
+      .ends
+
+      ld hl,ThisShouldNotFail
+
+      SnakeHead: Point2d()
+        -> .dw 0xBEEF
+      ThisShouldNotFail: .db #55
+    `, 0x21, 0x05, 0x80, 0xEF, 0xBE, 0x55);
+  });
 });

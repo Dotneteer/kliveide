@@ -1087,6 +1087,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this._overflowLabelLine = null;
         }
       }
+      const isFieldAssignment = asmLine.type === "FieldAssignment";
       // --- Check if there's a label to create
       if (currentLabel) {
         // --- There's a label, we clear the previous hanging label
@@ -1097,7 +1098,11 @@ export class Z80Assembler extends ExpressionEvaluator {
           !(
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
-            (isByteEmittingPragma(asmLine) && this._currentStructInvocation)
+            (
+              isFieldAssignment && 
+              isByteEmittingPragma(asmLine) &&
+              this._currentStructInvocation
+            )
           )
         ) {
           if (
@@ -1136,7 +1141,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
 
       // --- Handle field assignment statement
-      const isFieldAssignment = asmLine.type === "FieldAssignment";
       if (isFieldAssignment) {
         asmLine = (asmLine as unknown as FieldAssignment)
           .assignment as unknown as Z80AssemblyLine;
