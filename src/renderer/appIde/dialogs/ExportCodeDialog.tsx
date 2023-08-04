@@ -148,6 +148,21 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         console.log(command);
         const buildPane = outputPaneService.getOutputPaneBuffer("build");
         const result = await ideCommandsService.executeCommand(command, buildPane);
+        if (result.success) {
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "info",
+            title: "Exporting code",
+            message: result.finalMessage ?? "Code successfully exported."
+          });
+        } else {
+          await messenger.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "Exporting code",
+            message: result.finalMessage ?? "Code export failed."
+          });
+        }
         return !result.success;
       }}
       onClose={() => {

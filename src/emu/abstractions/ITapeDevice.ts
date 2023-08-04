@@ -32,3 +32,8 @@ export interface ITapeDevice extends IGenericDevice<IZxSpectrumMachine> {
    */
   processMicBit(micBit: boolean): void;
 }
+
+export type SavedFileInfo = {
+  name: string;
+  contents: Uint8Array;
+}

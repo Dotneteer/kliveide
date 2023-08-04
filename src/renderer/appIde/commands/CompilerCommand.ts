@@ -43,6 +43,8 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 
+const EXPORT_FILE_FOLDER = "KliveExports";
+
 type CodeInjectionType = "inject" | "run" | "debug";
 
 export class CompileCommand extends CommandWithNoArgBase {
@@ -256,7 +258,6 @@ export class ExportCodeCommand extends IdeCommandBase {
       const scrFileResponse = await context.messenger.sendMessage({
         type: "MainReadBinaryFile",
         path: this.screenFile,
-        resolveIn: "home"
       });
       if (scrFileResponse.type === "ErrorResponse") {
         return commandError(scrFileResponse.message);
@@ -508,13 +509,18 @@ export class ExportCodeCommand extends IdeCommandBase {
         const response = await context.messenger.sendMessage({
           type: "MainSaveTextFile",
           path: filename,
-          data: hexOut
+          data: hexOut,
+          resolveIn: `home:${EXPORT_FILE_FOLDER}`
         });
         if (response.type === "ErrorResponse") {
           return commandError(response.message);
         }
+        return commandSuccessWith(
+          `Code successfully exported to '${
+            (response as MainSaveFileResponse).path
+          }'`)
       }
-      return commandSuccessWith("Intel HEX file successfully exported.");
+      return commandError("Filename not specified");
 
       // --- Write out a single data record
       function writeDataRecord (
@@ -975,7 +981,8 @@ export class ExportCodeCommand extends IdeCommandBase {
           const response = await context.messenger.sendMessage({
             type: "MainSaveBinaryFile",
             path: exporter.filename,
-            data: writer.buffer
+            data: writer.buffer,
+            resolveIn: `home:${EXPORT_FILE_FOLDER}`
           });
           if (response.type === "ErrorResponse") {
             return commandError(response.message);

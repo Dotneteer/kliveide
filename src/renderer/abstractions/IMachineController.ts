@@ -8,6 +8,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
+import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -70,7 +71,7 @@ export interface IMachineController {
    * This event fires whenever an execution loop has been completed. The event parameter flag indicates if the
    * frame has been completed entirely (normal termination mode)
    */
-  frameCompleted: ILiteEvent<boolean>;
+  frameCompleted: ILiteEvent<FrameCompletedArgs>;
 
   /**
    * Start the machine in normal mode.
@@ -118,4 +119,9 @@ export interface IMachineController {
    * @param debug Run in debug mode?
    */
   runCode (codeToInject: CodeToInject, debug?: boolean): Promise<void>;
+}
+
+export type FrameCompletedArgs = {
+  fullFrame: boolean;
+  savedFileInfo: SavedFileInfo | null;
 }

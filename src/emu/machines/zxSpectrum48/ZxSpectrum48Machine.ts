@@ -7,9 +7,10 @@ import {
   AUDIO_SAMPLE_RATE,
   KBTYPE_48,
   REWIND_REQUESTED,
-  TAPE_MODE
+  TAPE_MODE,
+  TAPE_SAVER
 } from "../machine-props";
-import { TapeDevice } from "../tape/TapeDevice";
+import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrumFloatingBusDevice";
 import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
@@ -109,6 +110,10 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
 
     // --- Set default property values
     this.setMachineProperty(TAPE_MODE, TapeMode.Passive);
+    this.setMachineProperty(
+      TAPE_SAVER,
+      new TapeSaver(this.tapeDevice as TapeDevice)
+    );
     this.setMachineProperty(REWIND_REQUESTED);
     this.setMachineProperty(KBTYPE_48, true);
 

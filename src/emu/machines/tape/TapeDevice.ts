@@ -5,11 +5,27 @@ import { MicPulseType } from "@emu/abstractions/MicPulseTypes";
 import { PlayPhase } from "@emu/abstractions/PlayPhase";
 import { SavePhase } from "@emu/abstractions/SavePhase";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { BIT_0_PL, BIT_1_PL, PILOT_PL, SYNC_1_PL, SYNC_2_PL, TERM_SYNC } from "@common/structs/tape-const";
+import {
+  BIT_0_PL,
+  BIT_1_PL,
+  PILOT_PL,
+  SYNC_1_PL,
+  SYNC_2_PL,
+  TERM_SYNC
+} from "@common/structs/tape-const";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
-import { TAPE_MODE, FAST_LOAD, TAPE_SAVER, TAPE_DATA, REWIND_REQUESTED } from "../machine-props";
+import {
+  TAPE_MODE,
+  FAST_LOAD,
+  TAPE_SAVER,
+  TAPE_DATA,
+  REWIND_REQUESTED,
+  TAPE_SAVED
+} from "../machine-props";
 import { ITapeSaver } from "./ITapeSaver";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { TzxHeader } from "./TzxHeader";
 
 // --- Pilot pulses in the header blcok
 const HEADER_PILOT_COUNT = 8063;
@@ -117,7 +133,7 @@ export class TapeDevice implements ITapeDevice {
   private _dataLength: number;
 
   // --- Buffer collecting the date saved
-  private _dataBuffer = new Uint8Array();
+  private _dataBuffer: number[] = [];
 
   // --- Number of data blocks beign saved
   private _dataBlockCount: number;
@@ -433,7 +449,7 @@ export class TapeDevice implements ITapeDevice {
           this._bitOffset = 0;
           this._dataByte = 0;
           this._dataLength = 0;
-          this._dataBuffer = new Uint8Array();
+          this._dataBuffer = [];
         }
         break;
       case SavePhase.Data:
@@ -466,7 +482,7 @@ export class TapeDevice implements ITapeDevice {
 
           // --- Create and save the data block
           const dataBlock: TzxStandardSpeedBlock = new TzxStandardSpeedBlock();
-          dataBlock.data = this._dataBuffer;
+          dataBlock.data = new Uint8Array(this._dataBuffer);
           dataBlock.dataLength = this._dataLength;
 
           // --- If this is the first data block, extract the name from the header
@@ -639,6 +655,44 @@ export class TapeDevice implements ITapeDevice {
           device.machine.setMachineProperty(REWIND_REQUESTED);
         }
         break;
+    }
+  }
+}
+
+export class TapeSaver implements ITapeSaver {
+  private _name: string;
+  private _headerBlock: TzxStandardSpeedBlock;
+
+  constructor (private readonly tapeDevice: TapeDevice) {}
+
+  /**
+   * This method sets the name of the file according to the Spectrum SAVE HEADER information
+   * @param name Name to set
+   */
+  setName (name: string): void {
+    this._name = name;
+  }
+
+  /**
+   * Appends the TZX block to the tape file
+   * @param block Tape block to save
+   */
+  saveTapeBlock (block: TzxStandardSpeedBlock): void {
+    if (block.dataLength === 0x13 && block?.data[0] === 0x00) {
+      this._headerBlock = block;
+    } else if (block.data?.[0] === 0xff) {
+      const writer = new BinaryWriter();
+      // --- Save data blocks
+      const header = new TzxHeader();
+      header.writeTo(writer);
+      this._headerBlock.writeTo(writer);
+      block.writeTo(writer);
+
+      // --- Store the last saved file
+      this.tapeDevice.machine.setMachineProperty(TAPE_SAVED ,{
+        name: `${this._name}.tzx`,
+        contents: writer.buffer
+      });
     }
   }
 }
