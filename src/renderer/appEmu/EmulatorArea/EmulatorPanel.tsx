@@ -10,7 +10,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
-import { AudioRenderer } from "./AudioRenderer";
+import { AudioRenderer, getBeeperContext } from "./AudioRenderer";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
@@ -130,7 +130,7 @@ export const EmulatorPanel = () => {
   );
 
   // --- Handles machine controller changes
-  function machineControllerChanged (ctrl: MachineController): void {
+  async function machineControllerChanged (ctrl: MachineController): Promise<void> {
     // --- Let's store a reference to the controller
     controllerRef.current = controller;
     if (!controller) return;
@@ -146,30 +146,30 @@ export const EmulatorPanel = () => {
         (controller.machine.tactsInFrame * audioSampleRate) /
         controller.machine.baseClockFrequency /
         controller.machine.clockMultiplier;
-      beeperRenderer.current = new AudioRenderer(samplesPerFrame);
+      beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerFrame));
     }
   }
 
   // --- Handles machine state changes
-  function machineStateChanged (stateInfo: {
+  async function machineStateChanged (stateInfo: {
     oldState: MachineControllerState;
     newState: MachineControllerState;
-  }): void {
+  }): Promise<void> {
     let overlay = "";
     switch (stateInfo.newState) {
       case MachineControllerState.Running:
         overlay = controller?.isDebugging ? "Debug mode" : "";
-        beeperRenderer?.current?.play();
+        await beeperRenderer?.current?.play();
         break;
 
       case MachineControllerState.Paused:
         overlay = "Paused";
-        beeperRenderer?.current?.closeAudio();
+        await beeperRenderer?.current?.suspend();
         break;
 
       case MachineControllerState.Stopped:
         overlay = "Stopped";
-        beeperRenderer?.current?.closeAudio();
+        await beeperRenderer?.current?.suspend();
         break;
 
       default:
@@ -180,16 +180,27 @@ export const EmulatorPanel = () => {
   }
 
   // --- Handles machine frame completion events
-  function machineFrameCompleted (args: FrameCompletedArgs): void {
+  async function machineFrameCompleted (args: FrameCompletedArgs): Promise<void> {
+    // --- Update the screen
     displayScreenData();
+
+    // --- Stop sound rendering when fast load has been invoked
+    if (args.fastLoadInvoked && beeperRenderer.current) {
+      await beeperRenderer.current.suspend();
+    }
+
+    // --- Do we need to render sound samples?
     if (args.fullFrame && beeperRenderer.current) {
       const zxSpectrum = controller.machine as IZxSpectrumMachine;
       if (zxSpectrum?.beeperDevice) {
         const samples = zxSpectrum.beeperDevice.getAudioSamples();
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
+        await beeperRenderer.current.play();
       }
     }
+
+    // --- There's a saved file, store it
     if (args.savedFileInfo) {
       (async () => {
         await messenger.sendMessage({
