@@ -124,4 +124,5 @@ export interface IMachineController {
 export type FrameCompletedArgs = {
   fullFrame: boolean;
   savedFileInfo: SavedFileInfo | null;
+  fastLoadInvoked: boolean;
 }

@@ -108,4 +108,9 @@ export interface IZxSpectrumMachine extends IZ80Machine {
    * Gets the structure describing system variables
    */
   get sysVars(): SysVar[];
+
+  /**
+   * Signs if fast load has been invoked during the last frame
+   */
+  fastLoadInvoked: boolean;
 }

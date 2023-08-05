@@ -544,6 +544,8 @@ export class TapeDevice implements ITapeDevice {
       return;
     }
 
+    // --- No it's time to fast load
+    this.machine.fastLoadInvoked = true;
     const block = this._blocks[this._currentBlockIndex];
     let dataIndex = 0;
     let machine = this.machine;

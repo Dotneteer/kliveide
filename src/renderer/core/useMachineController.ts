@@ -4,12 +4,12 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { FrameCompletedArgs, IMachineController } from "../abstractions/IMachineController";
 
 export const useMachineController = (
-  controllerChanged?: (controller: IMachineController) => void,
+  controllerChanged?: (controller: IMachineController) => Promise<void>,
   machineStateChanged?: (states: {
     oldState: MachineControllerState;
     newState: MachineControllerState;
-  }) => void,
-  frameCompleted?: (args: FrameCompletedArgs) => void
+  }) => Promise<void>,
+  frameCompleted?: (args: FrameCompletedArgs) => Promise<void>
 ) => {
   const { machineService, outputPaneService } = useAppServices();
   const [controller, setController] = useState<IMachineController>();

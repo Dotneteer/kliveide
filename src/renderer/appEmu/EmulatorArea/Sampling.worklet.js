@@ -4,8 +4,6 @@ const FRAMES_DELAYED = 1;
 let waveBuffer;
 let writeIndex = 0;
 let readIndex = 0;
-let writeCount = 0;
-let readCount = 0;
 
 class SamplingGenerator extends AudioWorkletProcessor {
   constructor() {
@@ -30,9 +28,9 @@ class SamplingGenerator extends AudioWorkletProcessor {
     );
     writeIndex = 0;
     readIndex = 0;
+
     for (let i = 0; i < FRAMES_DELAYED * samplesPerFrame; i++) {
       waveBuffer[writeIndex++] = 0.0;
-      writeCount++;
     }
   }
 
@@ -43,7 +41,6 @@ class SamplingGenerator extends AudioWorkletProcessor {
   storeSamples(samples) {
     for (const sample of samples) {
       waveBuffer[writeIndex++] = sample;
-      writeCount++;
       if (writeIndex >= waveBuffer.length) {
         writeIndex = 0;
       }
@@ -56,16 +53,12 @@ class SamplingGenerator extends AudioWorkletProcessor {
     for (let channel = 0; channel < output.length; ++channel) {
       const outputChannel = output[channel];
       for (let i = 0; i < outputChannel.length; ++i) {
-        // This loop can branch out based on AudioParam array length, but
-        // here we took a simple approach for the demonstration purpose.
         outputChannel[i] = waveBuffer[readIndex++];
-        readCount++;
         if (readIndex >= waveBuffer.length) {
           readIndex = 0;
         }
       }
     }
-    this.port.postMessage({diff: writeCount - readCount});
     return true;
   }
 }

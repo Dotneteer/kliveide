@@ -16,6 +16,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
+import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -144,9 +145,9 @@ export class MachineController implements IMachineController {
     );
   }
 
-  /// <summary>
-  /// Stop the running or paused machine.
-  /// </summary>
+  /**
+   * Stop the running or paused machine.
+   */
   async stop (): Promise<void> {
     // --- Stop the machine
     this.isDebugging = false;
@@ -335,7 +336,8 @@ export class MachineController implements IMachineController {
         }
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
-          savedFileInfo: savedInfo 
+          savedFileInfo: savedInfo ,
+          fastLoadInvoked: (this.machine as IZxSpectrumMachine).fastLoadInvoked ?? false
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {
