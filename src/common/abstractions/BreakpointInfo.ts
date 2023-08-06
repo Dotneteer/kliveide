@@ -65,6 +65,7 @@ export type BreakpointInfo = {
 
 export type BreakpointAddressInfo = {
   address?: number;
+  partition?: number;
   resource?: string;
   line?: number;
 };

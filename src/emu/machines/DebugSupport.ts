@@ -3,6 +3,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import { getBreakpointKey } from "@common/utils/breakpoints";
 
 /**
  * This class implement support functions for debugging
@@ -45,7 +46,7 @@ export class DebugSupport implements IDebugSupport {
    * @param partition Breakpoint partition
    */
   getExecBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._execBps.get(getBreakpointKey({address, partition}));
+    return this._execBps.get(getBreakpointKey({ address, partition }));
   }
 
   /**
@@ -61,7 +62,7 @@ export class DebugSupport implements IDebugSupport {
    * @param partition Breakpoint partition
    */
   getMemoryBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._memoryBps.get(getBreakpointKey({address, partition}));
+    return this._memoryBps.get(getBreakpointKey({ address, partition }));
   }
 
   /**
@@ -108,12 +109,21 @@ export class DebugSupport implements IDebugSupport {
    */
   addExecBreakpoint (breakpoint: BreakpointInfo): boolean {
     const bpKey = getBreakpointKey(breakpoint);
+    console.log(bpKey);
     const oldBp = this._execBps.get(bpKey);
-    this._execBps.set(bpKey, {
-      address: breakpoint.address,
-      partition: breakpoint.partition,
-      exec: true
-    });
+    try {
+      this._execBps.set(bpKey, {
+        address: breakpoint.address,
+        partition: breakpoint.partition,
+        resource: breakpoint.resource,
+        line: breakpoint.line,
+        exec: true
+      });
+      console.log(this._execBps)
+    } catch (err) {
+      console.log("err in addExecBreakpoint", err.toString())
+    }
+
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return !oldBp;
   }
@@ -124,7 +134,7 @@ export class DebugSupport implements IDebugSupport {
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
   removeExecBreakpoint (address: number): boolean {
-    const bpKey = getBreakpointKey({address});
+    const bpKey = getBreakpointKey({ address });
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -137,24 +147,11 @@ export class DebugSupport implements IDebugSupport {
    * @param enabled Is the breakpoint enabled?
    */
   enableExecBreakpoint (address: number, enabled: boolean): boolean {
-    const bpKey = getBreakpointKey({address});
+    const bpKey = getBreakpointKey({ address });
     const oldBp = this._execBps.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return true;
   }
-}
-
-function getBreakpointKey (bp: BreakpointInfo): string {
-  if (bp.address !== undefined) {
-    // --- Breakpoint defined with address
-    return bp.partition !== undefined
-      ? `${bp.partition.toString(16)}:${bp.address.toString(16).padStart(4, "0")}`
-      : `${bp.address.toString(16).padStart(4, "0")}`;
-  }
-  if (bp.resource && bp.line !== undefined) {
-    return `[${bp.resource}]:${bp.line}`;
-  }
-  throw new Error("Breakpoint info does not have key information.");
 }

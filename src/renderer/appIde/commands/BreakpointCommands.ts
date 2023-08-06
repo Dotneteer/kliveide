@@ -15,7 +15,7 @@ import {
   getNumericTokenValue
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
-import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { getBreakpointKey } from "@common/utils/breakpoints";
 
 export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-ea";
@@ -51,12 +51,18 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
       type: "EmuListBreakpoints"
     })) as EmuListBreakpointsResponse;
     if (bps.breakpoints.length) {
-      let ordered = bps.breakpoints.sort((a, b) => b.address - a.address);
+      let ordered = bps.breakpoints;
       ordered.forEach((bp, idx) => {
+        let addrKey = getBreakpointKey(bp);
+        if (addrKey.startsWith("[")) {
+          `${addrKey} `
+        } else {
+          `$${toHexa4(bp.address)} ${`(${bp.address})`.padEnd(8, " ")}`
+        }
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
         writeMessage(
           context.output,
-          `$${toHexa4(bp.address)} ${`(${bp.address})`.padEnd(8, " ")}`,
+          addrKey,
           "bright-magenta",
           false
         );
@@ -79,6 +85,10 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
   protected resource?: string;
   protected line?: number;
 
+  prepareCommand(): void {
+    this.address = this.resource = this.line = undefined;
+  }
+  
   async validateArgs (
     context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
@@ -120,7 +130,9 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuSetBreakpoint",
-      address: this.address
+      address: this.address,
+      resource: this.resource,
+      line: this.line
     }));
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
@@ -128,9 +140,14 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     if (response.type !== "FlagResponse") {
       return commandError(`Invalid response type: '${response.type}'`);
     }
+    const addrKey = getBreakpointKey({
+      address: this.address,
+      resource: this.resource,
+      line: this.line
+    })
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address $${toHexa4(this.address)} ${
+      `Breakpoint at address $${addrKey} ${
         response.flag ? "set" : "updated"
       }`
     );

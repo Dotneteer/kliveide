@@ -164,7 +164,28 @@ export async function processMainToEmuMessages (
         .map(bp => ({
           ...bp
         }))
-        .sort((a, b) => a.address - b.address);
+        .sort((a, b) => {
+          if (a.address !== undefined) {
+            if (b.address != undefined) {
+              return a.address - b.address
+            } else {
+              return -1;
+            }
+          }
+          if (b.address != undefined) {
+            if (a.address != undefined) {
+              return a.address - b.address
+            } else {
+              return 1;
+            }
+          }
+          if (a.resource > b.resource) {
+            return -1
+          } else if (a.resource < b.resource) {
+            return 1;
+          }
+          return (a.line ?? 0) - (b.line ?? 0)
+        });
       const segments: number[][] = [];
       for (let i = 0; i < execBreakpoints.length; i++) {
         const addr = execBreakpoints[i].address;
@@ -192,7 +213,10 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.addExecBreakpoint({
-        address: message.address as number,
+        address: message.address,
+        partition: message.partition,
+        resource: message.resource,
+        line: message.line,
         exec: true
       });
       return flagResponse(status);
