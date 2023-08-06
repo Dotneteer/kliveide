@@ -140,14 +140,15 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     if (response.type !== "FlagResponse") {
       return commandError(`Invalid response type: '${response.type}'`);
     }
-    const addrKey = getBreakpointKey({
+    let addrKey = getBreakpointKey({
       address: this.address,
       resource: this.resource,
       line: this.line
-    })
+    });
+    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address $${addrKey} ${
+      `Breakpoint at address ${addrKey} ${
         response.flag ? "set" : "updated"
       }`
     );
@@ -164,12 +165,26 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
-      address: this.address
-    })) as FlagResponse;
+      address: this.address,
+      resource: this.resource,
+      line: this.line
+    }));
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
+    }
+    if (response.type !== "FlagResponse") {
+      return commandError(`Invalid response type: '${response.type}'`);
+    }
+    let addrKey = getBreakpointKey({
+      address: this.address,
+      resource: this.resource,
+      line: this.line
+    });
+    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
     if (response.flag) {
       writeSuccessMessage(
         context.output,
-        `Breakpoint at address $${toHexa4(this.address)} removed`
+        `Breakpoint at address ${addrKey} removed`
       );
     } else {
       writeSuccessMessage(
@@ -213,12 +228,26 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
     const response = (await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
       address: this.address,
+      resource: this.resource,
+      line: this.line,
       enable: this.enable
-    })) as FlagResponse;
+    }));
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
+    }
+    if (response.type !== "FlagResponse") {
+      return commandError(`Invalid response type: '${response.type}'`);
+    }
+    let addrKey = getBreakpointKey({
+      address: this.address,
+      resource: this.resource,
+      line: this.line
+    });
+    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
     if (response.flag) {
       writeSuccessMessage(
         context.output,
-        `Breakpoint at address $${toHexa4(this.address)} ${
+        `Breakpoint at address ${addrKey} ${
           this.enable ? "enabled" : "disabled"
         }`
       );

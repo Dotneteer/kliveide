@@ -1,7 +1,7 @@
 import { incBreakpointsVersionAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 
@@ -133,8 +133,8 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
-  removeExecBreakpoint (address: number): boolean {
-    const bpKey = getBreakpointKey({ address });
+  removeExecBreakpoint (bp: BreakpointAddressInfo): boolean {
+    const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -146,8 +146,8 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @param enabled Is the breakpoint enabled?
    */
-  enableExecBreakpoint (address: number, enabled: boolean): boolean {
-    const bpKey = getBreakpointKey({ address });
+  enableExecBreakpoint (bp: BreakpointAddressInfo, enabled: boolean): boolean {
+    const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;

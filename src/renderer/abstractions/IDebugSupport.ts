@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -79,7 +79,7 @@ export interface IDebugSupport {
    * @param address Breakpoint address
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
-  removeExecBreakpoint(address: number): boolean;
+  removeExecBreakpoint(breakpoint: BreakpointAddressInfo): boolean;
 
   /**
    * Enables or disables the specified breakpoint
@@ -87,5 +87,5 @@ export interface IDebugSupport {
    * @param enabled Is the breakpoint enabled?
    * @returns True, if the breakpoint exists, and it has been updated; otherwise, false
    */
-  enableExecBreakpoint(address: number, enabled: boolean): boolean;
+  enableExecBreakpoint(breakpoint: BreakpointAddressInfo, enabled: boolean): boolean;
 }

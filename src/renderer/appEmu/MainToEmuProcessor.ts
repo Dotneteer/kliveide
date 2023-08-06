@@ -167,24 +167,24 @@ export async function processMainToEmuMessages (
         .sort((a, b) => {
           if (a.address !== undefined) {
             if (b.address != undefined) {
-              return a.address - b.address
+              return a.address - b.address;
             } else {
               return -1;
             }
           }
           if (b.address != undefined) {
             if (a.address != undefined) {
-              return a.address - b.address
+              return a.address - b.address;
             } else {
               return 1;
             }
           }
           if (a.resource > b.resource) {
-            return -1
+            return -1;
           } else if (a.resource < b.resource) {
             return 1;
           }
-          return (a.line ?? 0) - (b.line ?? 0)
+          return (a.line ?? 0) - (b.line ?? 0);
         });
       const segments: number[][] = [];
       for (let i = 0; i < execBreakpoints.length; i++) {
@@ -225,7 +225,12 @@ export async function processMainToEmuMessages (
     case "EmuRemoveBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.removeExecBreakpoint(message.address as number);
+      const status = controller.debugSupport.removeExecBreakpoint({
+        address: message.address,
+        partition: message.partition,
+        resource: message.resource,
+        line: message.line
+      });
       return flagResponse(status);
     }
 
@@ -233,7 +238,12 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.enableExecBreakpoint(
-        message.address as number,
+        {
+          address: message.address,
+          partition: message.partition,
+          resource: message.resource,
+          line: message.line
+        },
         message.enable
       );
       return flagResponse(status);
@@ -285,7 +295,7 @@ export async function processMainToEmuMessages (
       controller.machine.injectCodeToRun(message.codeToInject);
       break;
     }
-    
+
     case "EmuRunCode": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
