@@ -27,6 +27,7 @@ import {
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
 import { ZxSpectrumChars } from "./char-codes";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 
 type BasicViewState = {
   topIndex?: number;
@@ -280,15 +281,23 @@ const BasicPanel = ({ document }: DocumentProps) => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
-      const response = (await messenger.sendMessage({
+      const response = await messenger.sendMessage({
         type: "EmuGetMemory"
-      })) as EmuGetMemoryResponse;
-      memory.current = response.memory;
-      showListing.current = response.osInitialized;
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetMemory request failed: ${response.message}`
+        );
+      } else if (response.type !== "EmuGetMemoryResponse") {
+        reportUnexpectedMessageType(response.type);
+      } else {
+        memory.current = response.memory;
+        showListing.current = response.osInitialized;
 
-      // --- Calculate tooltips for pointed addresses
-      if (toRefresh) {
-        createListing();
+        // --- Calculate tooltips for pointed addresses
+        if (toRefresh) {
+          createListing();
+        }
       }
     } finally {
       refreshInProgress.current = false;
@@ -408,9 +417,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
         </div>
       )}
       {showListing.current && basicLines && !basicLines.length && (
-        <div className={styles.center}>
-          BASIC program area is empty
-        </div>
+        <div className={styles.center}>BASIC program area is empty</div>
       )}
       {showListing.current && basicLines && basicLines.length > 0 && (
         <div className={styles.listWrapper}>

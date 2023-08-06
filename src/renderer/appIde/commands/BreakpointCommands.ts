@@ -16,6 +16,10 @@ import {
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-ea";
@@ -24,18 +28,34 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly aliases = ["eab"];
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const bps = (await context.messenger.sendMessage({
+    const bps = await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
-    })) as EmuListBreakpointsResponse;
-    (await context.messenger.sendMessage({
-      type: "EmuEraseAllBreakpoints"
-    })) as EmuListBreakpointsResponse;
-    const bpCount = bps.breakpoints.length;
-    writeMessage(
-      context.output,
-      `${bpCount} breakpoint${bpCount > 1 ? "s" : ""} removed.`,
-      "green"
-    );
+    });
+    if (bps.type === "ErrorResponse") {
+      return commandError(`EmuListBreakpoints call failed: ${bps.message}`);
+    } else if (bps.type !== "EmuListBreakpointsResponse") {
+      return commandError(`Unexpected message response type: '${bps.type}'`);
+    } else {
+      const eraseResp = await context.messenger.sendMessage({
+        type: "EmuEraseAllBreakpoints"
+      });
+      if (eraseResp.type === "ErrorResponse") {
+        return commandError(
+          `EmuEraseAllBreakpoints call failed: ${eraseResp.message}`
+        );
+      }
+      if (eraseResp.type !== "EmuListBreakpointsResponse") {
+        return commandError(
+          `Unexpected message response type: '${eraseResp.type}'`
+        );
+      }
+      const bpCount = bps.breakpoints.length;
+      writeMessage(
+        context.output,
+        `${bpCount} breakpoint${bpCount > 1 ? "s" : ""} removed.`,
+        "green"
+      );
+    }
     return commandSuccess;
   }
 }
@@ -47,25 +67,26 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
   readonly aliases = ["bpl"];
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const bps = (await context.messenger.sendMessage({
+    const bps = await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
-    })) as EmuListBreakpointsResponse;
+    });
+    if (bps.type === "ErrorResponse") {
+      return commandError(`EmuListBreakpoints call failed: ${bps.message}`);
+    }
+    if (bps.type !== "EmuListBreakpointsResponse") {
+      return commandError(`Unexpected message response type: '${bps.type}'`);
+    }
     if (bps.breakpoints.length) {
       let ordered = bps.breakpoints;
       ordered.forEach((bp, idx) => {
         let addrKey = getBreakpointKey(bp);
         if (addrKey.startsWith("[")) {
-          `${addrKey} `
+          `${addrKey} `;
         } else {
-          `$${toHexa4(bp.address)} ${`(${bp.address})`.padEnd(8, " ")}`
+          `$${toHexa4(bp.address)} ${`(${bp.address})`.padEnd(8, " ")}`;
         }
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
-        writeMessage(
-          context.output,
-          addrKey,
-          "bright-magenta",
-          false
-        );
+        writeMessage(context.output, addrKey, "bright-magenta", false);
         writeMessage(context.output, bp.disabled ? " <disabled>" : "", "cyan");
       });
       writeMessage(
@@ -85,10 +106,10 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
   protected resource?: string;
   protected line?: number;
 
-  prepareCommand(): void {
+  prepareCommand (): void {
     this.address = this.resource = this.line = undefined;
   }
-  
+
   async validateArgs (
     context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
@@ -99,7 +120,8 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
     const token = context.argTokens[0];
     const addrArg = token.text.trim();
     if (addrArg.startsWith("[")) {
-      const addrInfo = context.service.projectService.getBreakpointAddressInfo(addrArg);
+      const addrInfo =
+        context.service.projectService.getBreakpointAddressInfo(addrArg);
       if (!addrInfo) {
         return validationError(`Invalid breakpoint address ${addrArg}`);
       }
@@ -113,7 +135,9 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
         return messages;
       }
       if (value < 0 || value > 0x1_0000) {
-        return  validationError(`Argument value must be between ${0} and ${0x1_0000}`);
+        return validationError(
+          `Argument value must be between ${0} and ${0x1_0000}`
+        );
       }
       this.address = value;
     }
@@ -128,12 +152,12 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly aliases = ["bp"];
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = (await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "EmuSetBreakpoint",
       address: this.address,
       resource: this.resource,
       line: this.line
-    }));
+    });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
     }
@@ -145,12 +169,12 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
+    if (!addrKey.startsWith("[")) {
+      addrKey = "$" + addrKey;
+    }
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address ${addrKey} ${
-        response.flag ? "set" : "updated"
-      }`
+      `Breakpoint at address ${addrKey} ${response.flag ? "set" : "updated"}`
     );
     return commandSuccess;
   }
@@ -163,12 +187,12 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   readonly aliases = ["bd"];
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = (await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
       address: this.address,
       resource: this.resource,
       line: this.line
-    }));
+    });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
     }
@@ -180,7 +204,9 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
+    if (!addrKey.startsWith("[")) {
+      addrKey = "$" + addrKey;
+    }
     if (response.flag) {
       writeSuccessMessage(
         context.output,
@@ -225,13 +251,13 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   }
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = (await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
       address: this.address,
       resource: this.resource,
       line: this.line,
       enable: this.enable
-    }));
+    });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
     }
@@ -243,7 +269,9 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) { addrKey = "$" + addrKey}
+    if (!addrKey.startsWith("[")) {
+      addrKey = "$" + addrKey;
+    }
     if (response.flag) {
       writeSuccessMessage(
         context.output,

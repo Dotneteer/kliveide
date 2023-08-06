@@ -46,18 +46,24 @@ export class NewProjectCommand extends IdeCommandBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
-    const result = (await context.messenger.sendMessage({
+    const response = (await context.messenger.sendMessage({
       type: "MainCreateKliveProject",
       machineId: this.machineId,
       projectName: this.projectName,
       projectFolder: this.projectFolder
-    })) as MainCreateKliveProjectResponse;
-    if (result.errorMessage) {
-      return commandError(result.errorMessage);
+    }))
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
+    }
+    if (response.type !== "MainCreateKliveProjectResponse") {
+      return commandError(`Unexpected response type: ${response.type}`);
+    }
+    if (response.errorMessage) {
+      return commandError(response.errorMessage);
     }
     writeSuccessMessage(
       context.output,
-      `Klive project successfully created in ${result.path}`
+      `Klive project successfully created in ${response.path}`
     );
     return commandSuccess;
   }

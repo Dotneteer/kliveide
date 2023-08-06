@@ -22,6 +22,10 @@ import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -34,52 +38,71 @@ const BreakpointsPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
-    const bpResponse = (await messenger.sendMessage({
+    const bpResponse = await messenger.sendMessage({
       type: "EmuListBreakpoints"
-    })) as EmuListBreakpointsResponse;
-    const cpuResponse = (await messenger.sendMessage({
-      type: "EmuGetCpuState"
-    })) as EmuGetCpuStateResponse;
-    pcValue.current = cpuResponse.pc;
-
-    // --- Any memory information received?
-    if (!bpResponse.memorySegments) return;
-
-    // --- Copy memory segment samples
-    const mem = new Uint8Array(0x1_0000);
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const memSegment = bpResponse.memorySegments[i];
-      if (!memSegment) continue;
-
-      const addr = bpResponse.breakpoints[i].address;
-      for (let j = 0; j < memSegment.length; j++) {
-        mem[(addr + j) & 0xffff] = memSegment[j];
-      }
-    }
-
-    // --- Disassemble memory data
-    disassLines.current = [];
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const bpInfo = bpResponse.breakpoints[i];
-      const addr = getBreakpointKey(bpInfo);
-      if (bpInfo.address !== undefined) {
-        const bpAddr = bpInfo.address;
-        const disass = new Z80Disassembler(
-          [new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)],
-          mem,
-          {
-            noLabelPrefix: false
-          }
+    });
+    if (bpResponse.type === "ErrorResponse") {
+      reportMessagingError(
+        `EmuListBreakpoints call failed: ${bpResponse.message}`
+      );
+    } else if (bpResponse.type !== "EmuListBreakpointsResponse") {
+      reportUnexpectedMessageType(bpResponse.type);
+    } else {
+      const cpuResponse = await messenger.sendMessage({
+        type: "EmuGetCpuState"
+      });
+      if (cpuResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetCpuState call failed: ${cpuResponse.message}`
         );
-        const output = await disass.disassemble(bpAddr, bpAddr);
-        disassLines.current[i] = output.outputItems?.[0]?.instruction ?? "???";
+      } else if (cpuResponse.type !== "EmuGetCpuStateResponse") {
+        reportUnexpectedMessageType(cpuResponse.type);
       } else {
-        disassLines.current[i] = "";
+        pcValue.current = cpuResponse.pc;
+
+        // --- Any memory information received?
+        if (!bpResponse.memorySegments) return;
+
+        // --- Copy memory segment samples
+        const mem = new Uint8Array(0x1_0000);
+        for (let i = 0; i < bpResponse.breakpoints.length; i++) {
+          const memSegment = bpResponse.memorySegments[i];
+          if (!memSegment) continue;
+
+          const addr = bpResponse.breakpoints[i].address;
+          for (let j = 0; j < memSegment.length; j++) {
+            mem[(addr + j) & 0xffff] = memSegment[j];
+          }
+        }
+
+        // --- Disassemble memory data
+        disassLines.current = [];
+        for (let i = 0; i < bpResponse.breakpoints.length; i++) {
+          const bpInfo = bpResponse.breakpoints[i];
+          const addr = getBreakpointKey(bpInfo);
+          if (bpInfo.address !== undefined) {
+            const bpAddr = bpInfo.address;
+            const disass = new Z80Disassembler(
+              [
+                new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)
+              ],
+              mem,
+              {
+                noLabelPrefix: false
+              }
+            );
+            const output = await disass.disassemble(bpAddr, bpAddr);
+            disassLines.current[i] =
+              output.outputItems?.[0]?.instruction ?? "???";
+          } else {
+            disassLines.current[i] = "";
+          }
+        }
+
+        // --- Store the breakpoint info
+        setBps(bpResponse.breakpoints);
       }
     }
-
-    // --- Store the breakpoint info
-    setBps(bpResponse.breakpoints);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -124,7 +147,9 @@ const BreakpointsPanel = () => {
                 />
                 <LabelSeparator width={4} />
                 <Label text={addrKey} width={40} />
-                {addr !== undefined && <Secondary text={`(${addr})`} width={64} />}
+                {addr !== undefined && (
+                  <Secondary text={`(${addr})`} width={64} />
+                )}
                 <Value text={disassLines.current[idx] ?? "???"} width='auto' />
               </div>
             );

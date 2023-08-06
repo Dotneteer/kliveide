@@ -13,6 +13,7 @@ import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
 import { createMachineCommand } from "@messaging/main-to-emu";
+import { reportMessagingError } from "@renderer/reportError";
 
 export const Toolbar = () => {
   const dispatch = useDispatch();
@@ -26,7 +27,10 @@ export const Toolbar = () => {
   const { messenger } = useRendererContext();
   const saveProject = async () => {
     await new Promise(r => setTimeout(r, 100));
-    await messenger.sendMessage({ type: "MainSaveProject" });
+    const response = await messenger.sendMessage({ type: "MainSaveProject" });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`MainSaveProject call failed: ${response.message}`);
+    }
   };
 
   return (
@@ -41,18 +45,30 @@ export const Toolbar = () => {
           state === MachineControllerState.Paused ||
           state === MachineControllerState.Stopped
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("start"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("start")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Starting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <IconButton
         iconName='pause'
         fill='--color-toolbarbutton-blue'
         title='Pause'
         enable={state === MachineControllerState.Running}
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("pause"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("pause")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(`Pausing machine failed: ${response.message}`);
+          }
+        }}
       />
       <IconButton
         iconName='stop'
@@ -63,9 +79,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Pausing ||
           state === MachineControllerState.Paused
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("stop"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("stop")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Stopping machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <IconButton
         iconName='restart'
@@ -76,9 +99,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Pausing ||
           state === MachineControllerState.Paused
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("restart"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("restart")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Restarting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <ToolbarSeparator />
       <IconButton
@@ -91,9 +121,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Paused ||
           state === MachineControllerState.Stopped
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("debug"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("debug")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Starting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <IconButton
         iconName='step-into'
@@ -103,9 +140,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Pausing ||
           state === MachineControllerState.Paused
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("stepInto"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("stepInto")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Starting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <IconButton
         iconName='step-over'
@@ -115,9 +159,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Pausing ||
           state === MachineControllerState.Paused
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("stepOver"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("stepOver")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Starting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <IconButton
         iconName='step-out'
@@ -127,9 +178,16 @@ export const Toolbar = () => {
           state === MachineControllerState.Pausing ||
           state === MachineControllerState.Paused
         }
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("stepOut"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("stepOut")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Starting machine failed: ${response.message}`
+            );
+          }
+        }}
       />
       <ToolbarSeparator />
       <IconButton
@@ -180,9 +238,14 @@ export const Toolbar = () => {
         iconName='reverse-tape'
         fill='--color-toolbarbutton'
         title='Rewind the tape'
-        clicked={async () =>
-          await messenger.sendMessage(createMachineCommand("rewind"))
-        }
+        clicked={async () => {
+          const response = await messenger.sendMessage(
+            createMachineCommand("rewind")
+          );
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(`Rewinding tape failed: ${response.message}`);
+          }
+        }}
       />
     </div>
   );

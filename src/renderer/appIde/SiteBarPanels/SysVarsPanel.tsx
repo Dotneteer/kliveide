@@ -5,7 +5,10 @@ import {
   Secondary,
   Value
 } from "@controls/Labels";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import {
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
 import {
   EmuGetMemoryResponse,
   EmuGetSysVarsResponse
@@ -17,6 +20,10 @@ import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory } from "@controls/Tooltip";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
@@ -36,42 +43,58 @@ const SysVarsPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
     // --- Get breakpoint information
-    const sysVarsResponse = (await messenger.sendMessage({
+    const sysVarsResponse = await messenger.sendMessage({
       type: "EmuGetSysVars"
-    })) as EmuGetSysVarsResponse;
-    const memResponse = (await messenger.sendMessage({
-      type: "EmuGetMemory"
-    })) as EmuGetMemoryResponse;
-    const memory = memResponse.memory;
-    const vars = sysVarsResponse.sysVars.map(sv => {
-      const addr = sv.address;
-      let value: number;
-      let valueList: Uint8Array;
-      let length = 1;
-      switch (sv.type) {
-        case SysVarType.Byte:
-        case SysVarType.Flags:
-          value = memory[addr];
-          break;
-        case SysVarType.Word:
-          value = memory[addr] + (memory[addr + 1] << 8);
-          length = 2;
-          break;
-        case SysVarType.Array:
-          valueList = new Uint8Array(sv.length ?? 0);
-          length = valueList.length;
-          for (let i = 0; i < (sv.length ?? 0); i++) {
-            valueList[i] = memory[addr + i];
-          }
-      }
-      return {
-        sysVar: sv,
-        value,
-        valueList,
-        length
-      } as SysVarData;
     });
-    setSysVars(vars);
+    if (sysVarsResponse.type === "ErrorResponse") {
+      reportMessagingError(
+        `EmuGetSysVars call failed: ${sysVarsResponse.message}`
+      );
+    } else if (sysVarsResponse.type !== "EmuGetSysVarsResponse") {
+      reportUnexpectedMessageType(sysVarsResponse.type);
+    } else {
+      const memResponse = await messenger.sendMessage({
+        type: "EmuGetMemory"
+      });
+      if (memResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetMemoty call failed: ${memResponse.message}`
+        );
+      } else if (memResponse.type !== "EmuGetMemoryResponse") {
+        reportUnexpectedMessageType(memResponse.type);
+      } else {
+        const memory = memResponse.memory;
+        const vars = sysVarsResponse.sysVars.map(sv => {
+          const addr = sv.address;
+          let value: number;
+          let valueList: Uint8Array;
+          let length = 1;
+          switch (sv.type) {
+            case SysVarType.Byte:
+            case SysVarType.Flags:
+              value = memory[addr];
+              break;
+            case SysVarType.Word:
+              value = memory[addr] + (memory[addr + 1] << 8);
+              length = 2;
+              break;
+            case SysVarType.Array:
+              valueList = new Uint8Array(sv.length ?? 0);
+              length = valueList.length;
+              for (let i = 0; i < (sv.length ?? 0); i++) {
+                valueList[i] = memory[addr + i];
+              }
+          }
+          return {
+            sysVar: sv,
+            value,
+            valueList,
+            length
+          } as SysVarData;
+        });
+        setSysVars(vars);
+      }
+    }
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -129,7 +152,10 @@ const SysVarsPanel = () => {
                     <FullDumpSection sysVarData={item} />
                   )}
                   {type === SysVarType.Flags && (
-                    <FlagRow value={value} flagDescriptions={sysVar.flagDecriptions} />
+                    <FlagRow
+                      value={value}
+                      flagDescriptions={sysVar.flagDecriptions}
+                    />
                   )}
                 </div>
               </div>
@@ -214,21 +240,45 @@ const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
 type FlagProps = {
   flagDescriptions: string[];
   value: number;
-}
+};
 
-const FlagRow = ({value, flagDescriptions}:FlagProps) => {
+const FlagRow = ({ value, flagDescriptions }: FlagProps) => {
   return (
     <div className={styles.dumpSection}>
-      <Flag value={value & 0x80} tooltip={`Bit 7: ${flagDescriptions?.[7] ?? ""}`} />
-      <Flag value={value & 0x40} tooltip={`Bit 6: ${flagDescriptions?.[6] ?? ""}`} />
-      <Flag value={value & 0x20} tooltip={`Bit 5: ${flagDescriptions?.[5] ?? ""}`} />
-      <Flag value={value & 0x10} tooltip={`Bit 4: ${flagDescriptions?.[4] ?? ""}`} />
-      <Flag value={value & 0x08} tooltip={`Bit 3: ${flagDescriptions?.[3] ?? ""}`} />
-      <Flag value={value & 0x04} tooltip={`Bit 2: ${flagDescriptions?.[2] ?? ""}`} />
-      <Flag value={value & 0x02} tooltip={`Bit 1: ${flagDescriptions?.[1] ?? ""}`} />
-      <Flag value={value & 0x01} tooltip={`Bit 0: ${flagDescriptions?.[0] ?? ""}`} />
+      <Flag
+        value={value & 0x80}
+        tooltip={`Bit 7: ${flagDescriptions?.[7] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x40}
+        tooltip={`Bit 6: ${flagDescriptions?.[6] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x20}
+        tooltip={`Bit 5: ${flagDescriptions?.[5] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x10}
+        tooltip={`Bit 4: ${flagDescriptions?.[4] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x08}
+        tooltip={`Bit 3: ${flagDescriptions?.[3] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x04}
+        tooltip={`Bit 2: ${flagDescriptions?.[2] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x02}
+        tooltip={`Bit 1: ${flagDescriptions?.[1] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x01}
+        tooltip={`Bit 0: ${flagDescriptions?.[0] ?? ""}`}
+      />
     </div>
-  )
-}
+  );
+};
 
 export const sysVarsPanelRenderer = () => <SysVarsPanel />;

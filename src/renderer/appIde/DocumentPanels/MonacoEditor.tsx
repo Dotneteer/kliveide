@@ -9,6 +9,7 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import { delay } from "@renderer/utils/timing";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
+import { reportMessagingError } from "@renderer/reportError";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -181,15 +182,17 @@ export const MonacoEditor = ({ document, value, viewState, apiLoaded }: EditorPr
 
   // Saves the document to its file
   const saveDocumentToFile = async (documentText: string): Promise<void> => {
-    const result = await messenger.sendMessage({
+    const response = await messenger.sendMessage({
       type: "MainSaveTextFile",
       path: document.id,
       data: documentText
     });
-    if (result.type === "ErrorResponse") {
-      console.error("Error");
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(
+        `Errors saving code file '${document.id}': ${response.message}`
+      );
     }
-  };
+};
 
   // --- Handle document changes
   const onValueChanged = async (val: any) => {

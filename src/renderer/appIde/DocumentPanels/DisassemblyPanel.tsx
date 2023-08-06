@@ -30,6 +30,10 @@ import {
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import styles from "./DisassemblyPanel.module.scss";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -84,65 +88,73 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
     // --- Obtain the memory contents
     isRefreshing.current = true;
     try {
-      const response = (await messenger.sendMessage({
+      const response = await messenger.sendMessage({
         type: "EmuGetMemory"
-      })) as EmuGetMemoryResponse;
-      const memory = response.memory;
-      setPausedPc(response.pc);
-      breakpoints.current = response.memBreakpoints;
-
-      // --- Specify memory sections to disassemble
-      const memSections: MemorySection[] = [];
-
-      if (usePc.current) {
-        // --- Disassemble only one KB from the current PC value
-        memSections.push(
-          new MemorySection(
-            response.pc,
-            (response.pc + 1024) & 0xffff,
-            MemorySectionType.Disassemble
-          )
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetMemory request failed: ${response.message}`
         );
+      } else if (response.type !== "EmuGetMemoryResponse") {
+        reportUnexpectedMessageType(response.type);
       } else {
-        // --- Use the memory segments according to the "ram" and "screen" flags
-        memSections.push(
-          new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
-        );
-        if (ram) {
-          if (screen) {
+        const memory = response.memory;
+        setPausedPc(response.pc);
+        breakpoints.current = response.memBreakpoints;
+
+        // --- Specify memory sections to disassemble
+        const memSections: MemorySection[] = [];
+
+        if (usePc.current) {
+          // --- Disassemble only one KB from the current PC value
+          memSections.push(
+            new MemorySection(
+              response.pc,
+              (response.pc + 1024) & 0xffff,
+              MemorySectionType.Disassemble
+            )
+          );
+        } else {
+          // --- Use the memory segments according to the "ram" and "screen" flags
+          memSections.push(
+            new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
+          );
+          if (ram) {
+            if (screen) {
+              memSections.push(
+                new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
+              );
+            } else {
+              memSections.push(
+                new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+              );
+            }
+          } else if (screen) {
             memSections.push(
-              new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
-            );
-          } else {
-            memSections.push(
-              new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+              new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
             );
           }
-        } else if (screen) {
-          memSections.push(
-            new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
-          );
         }
-      }
 
-      // --- Disassemble the specified memory segments
-      const disassembler = new Z80Disassembler(memSections, memory, {
-        noLabelPrefix: false
-      });
-      const output = await disassembler.disassemble(0x0000, 0xffff);
-      const items = output.outputItems;
-      cachedItems.current = items;
+        // --- Disassemble the specified memory segments
+        const disassembler = new Z80Disassembler(memSections, memory, {
+          noLabelPrefix: false
+        });
+        const output = await disassembler.disassemble(0x0000, 0xffff);
+        const items = output.outputItems;
+        cachedItems.current = items;
 
-      // --- Display the current address range
-      if (items.length > 0) {
-        setFirstAddr(items[0].address);
-        setLastAddr(items[items.length - 1].address);
-      }
+        // --- Display the current address range
+        if (items.length > 0) {
+          setFirstAddr(items[0].address);
+          setLastAddr(items[items.length - 1].address);
+        }
 
-      // --- Scroll to the top when following PC
-      if (usePc.current) {
-        topAddress.current = items[0].address;
-        setScrollVersion(scrollVersion + 1);
+        // --- Scroll to the top when following PC
+        if (usePc.current) {
+          topAddress.current = items[0].address;
+          setScrollVersion(scrollVersion + 1);
+        }
       }
     } finally {
       isRefreshing.current = false;

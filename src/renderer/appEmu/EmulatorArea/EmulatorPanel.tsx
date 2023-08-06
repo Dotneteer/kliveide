@@ -19,6 +19,7 @@ import {
   FrameCompletedArgs,
   IMachineController
 } from "../../abstractions/IMachineController";
+import { reportMessagingError } from "@renderer/reportError";
 
 export const EmulatorPanel = () => {
   // --- Access state information
@@ -130,7 +131,9 @@ export const EmulatorPanel = () => {
   );
 
   // --- Handles machine controller changes
-  async function machineControllerChanged (ctrl: MachineController): Promise<void> {
+  async function machineControllerChanged (
+    ctrl: MachineController
+  ): Promise<void> {
     // --- Let's store a reference to the controller
     controllerRef.current = controller;
     if (!controller) return;
@@ -146,7 +149,9 @@ export const EmulatorPanel = () => {
         (controller.machine.tactsInFrame * audioSampleRate) /
         controller.machine.baseClockFrequency /
         controller.machine.clockMultiplier;
-      beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerFrame));
+      beeperRenderer.current = new AudioRenderer(
+        await getBeeperContext(samplesPerFrame)
+      );
     }
   }
 
@@ -180,7 +185,9 @@ export const EmulatorPanel = () => {
   }
 
   // --- Handles machine frame completion events
-  async function machineFrameCompleted (args: FrameCompletedArgs): Promise<void> {
+  async function machineFrameCompleted (
+    args: FrameCompletedArgs
+  ): Promise<void> {
     // --- Update the screen
     displayScreenData();
 
@@ -203,11 +210,16 @@ export const EmulatorPanel = () => {
     // --- There's a saved file, store it
     if (args.savedFileInfo) {
       (async () => {
-        await messenger.sendMessage({
+        const response = await messenger.sendMessage({
           type: "MainSaveBinaryFile",
           path: args.savedFileInfo.name,
           data: args.savedFileInfo.contents
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `File saved with the SAVE ZX Spectrum command failed: ${response.message}.`
+          );
+        }
       })();
     }
   }

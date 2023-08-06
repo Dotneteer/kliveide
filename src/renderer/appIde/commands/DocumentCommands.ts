@@ -9,8 +9,6 @@ import {
   writeSuccessMessage
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
-import { BinaryContentsResponse, TextContentsResponse } from "@messaging/any-to-main";
 import { incDocumentActivationVersionAction } from "@state/actions";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
@@ -22,7 +20,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
   private lineNo?: number;
   private columnNo?: number;
 
-  prepareCommand(): void {
+  prepareCommand (): void {
     this.lineNo = this.columnNo = undefined;
   }
 
@@ -82,16 +80,28 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       // --- Load the document
       const docContent: any = {};
       if (nodeData.isBinary) {
-        const response = (await context.messenger.sendMessage({
+        const response = await context.messenger.sendMessage({
           type: "MainReadBinaryFile",
           path: nodeData.fullPath
-        })) as BinaryContentsResponse;
+        });
+        if (response.type === "ErrorResponse") {
+          return commandError(response.message);
+        }
+        if (response.type !== "BinaryContents") {
+          return commandError(`Unexpected response type: ${response.type}`);
+        }
         docContent.value = response.contents;
       } else {
-        const response = (await context.messenger.sendMessage({
+        const response = await context.messenger.sendMessage({
           type: "MainReadTextFile",
           path: nodeData.fullPath
-        })) as TextContentsResponse;
+        });
+        if (response.type === "ErrorResponse") {
+          return commandError(response.message);
+        }
+        if (response.type !== "TextContents") {
+          return commandError(`Unexpected response type: ${response.type}`);
+        }
         docContent.value = response.contents;
       }
 

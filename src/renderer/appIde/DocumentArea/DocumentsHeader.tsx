@@ -23,6 +23,10 @@ import { DocumentTab } from "./DocumentTab";
 import { TextContentsResponse } from "@messaging/any-to-main";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
@@ -30,7 +34,7 @@ export const DocumentsHeader = () => {
     documentService,
     projectService,
     outputPaneService,
-    ideCommandsService    
+    ideCommandsService
   } = useAppServices();
   const { messenger } = useRendererContext();
   const ref = useRef<HTMLDivElement>();
@@ -78,19 +82,26 @@ export const DocumentsHeader = () => {
     (async () => {
       const data = documentService.getDocumentData(projectDoc.id);
       const viewState = data?.viewState;
-      const textResponse = await messenger.sendMessage<TextContentsResponse>({
+      const textResponse = await messenger.sendMessage({
         type: "MainReadTextFile",
         path: projectDoc.path
       });
+      if (textResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `Error displaying message dialog: ${textResponse.message}`
+        );
+      } else if (textResponse.type !== "TextContents") {
+        reportUnexpectedMessageType(textResponse.type);
+      } else {
+        // --- Refresh the contents of the document
+        documentService.setDocumentData(projectDoc.id, {
+          value: textResponse.contents,
+          viewState
+        });
 
-      // --- Refresh the contents of the document
-      documentService.setDocumentData(projectDoc.id, {
-        value: textResponse.contents,
-        viewState
-      });
-
-      // --- Display the newest document version
-      documentService.incrementViewVersion(projectDoc.id);
+        // --- Display the newest document version
+        documentService.incrementViewVersion(projectDoc.id);
+      }
     })();
   }, [projectVersion]);
 
@@ -230,18 +241,22 @@ export const DocumentsHeader = () => {
                 tabClicked={() => setHeaderVersion(headerVersion + 1)}
                 tabDoubleClicked={() => {
                   if (d.isTemporary) {
-                    console.log("dispatching double click", {
-                      id: d.id,
-                      name: d.name,
-                      type: d.type,
-                      isReadOnly: d.isReadOnly,
-                      isTemporary: false,
-                      iconName: d.iconName,
-                      iconFill: d.iconFill,
-                      language: d.language,
-                      path: d.path,
-                      stateValue: d.stateValue
-                    }, idx);
+                    console.log(
+                      "dispatching double click",
+                      {
+                        id: d.id,
+                        name: d.name,
+                        type: d.type,
+                        isReadOnly: d.isReadOnly,
+                        isTemporary: false,
+                        iconName: d.iconName,
+                        iconFill: d.iconFill,
+                        language: d.language,
+                        path: d.path,
+                        stateValue: d.stateValue
+                      },
+                      idx
+                    );
                     dispatch(
                       changeDocumentAction(
                         {

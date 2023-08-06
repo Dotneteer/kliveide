@@ -34,12 +34,12 @@ export class OpenFolderCommand extends IdeCommandBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
-    const result = await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "MainOpenFolder",
       folder: this.projectFolder
     });
-    if (result.type === "ErrorResponse") {
-      return commandError(result.message);
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
     }
     writeSuccessMessage(
       context.output,

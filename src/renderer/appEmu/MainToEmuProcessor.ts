@@ -19,6 +19,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
+import { reportMessagingError } from "@renderer/reportError";
 
 const borderColors = [
   "Black",
@@ -322,12 +323,15 @@ export async function processMainToEmuMessages (
       const tapReader = new TapReader(reader);
       result = tapReader.readContent();
       if (result) {
-        await emuToMain.sendMessage({
+        const response = await emuToMain.sendMessage({
           type: "MainDisplayMessageBox",
           messageType: "error",
           title: "Tape file error",
           message: `Error while processing tape file ${message.file} (${result})`
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(`Error displaying message dialog: ${response.message}`);
+        }
         return;
       } else {
         dataBlocks = tapReader.dataBlocks;
@@ -343,11 +347,14 @@ export async function processMainToEmuMessages (
     controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
 
     // --- Done.
-    await emuToMain.sendMessage({
+    const response = await emuToMain.sendMessage({
       type: "MainDisplayMessageBox",
       messageType: "info",
       title: "Tape file set",
       message: `Tape file ${message.file} successfully set.`
     });
-  }
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`Error displaying message dialog: ${response.message}`);
+    }
+}
 }

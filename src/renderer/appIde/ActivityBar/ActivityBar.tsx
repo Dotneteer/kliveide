@@ -3,6 +3,7 @@ import { selectActivityAction, showSideBarAction } from "@state/actions";
 import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";
+import { reportMessagingError } from "@renderer/reportError";
 
 type Props = {
   activities: Activity[];
@@ -17,7 +18,10 @@ export const ActivityBar = ({ order, activities }: Props) => {
 
   const saveProject = async () => {
     await new Promise(r => setTimeout(r, 100));
-    await messenger.sendMessage({ type: "MainSaveProject" });
+    const response = await messenger.sendMessage({ type: "MainSaveProject" });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`Error saving main project: ${response.message}`);
+    }
   };
 
   return (
