@@ -22,8 +22,9 @@ export class NewProjectCommand extends IdeCommandBase {
   private projectFolder: string;
 
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length !== 2 && args.length !== 3) {
       return validationError("This command must use 2 or 3 arguments");
     }

@@ -45,7 +45,7 @@ export class DebugSupport implements IDebugSupport {
    * @param partition Breakpoint partition
    */
   getExecBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._execBps.get(getBpKey(address, partition));
+    return this._execBps.get(getBreakpointKey({address, partition}));
   }
 
   /**
@@ -61,7 +61,7 @@ export class DebugSupport implements IDebugSupport {
    * @param partition Breakpoint partition
    */
   getMemoryBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._memoryBps.get(getBpKey(address, partition));
+    return this._memoryBps.get(getBreakpointKey({address, partition}));
   }
 
   /**
@@ -107,7 +107,7 @@ export class DebugSupport implements IDebugSupport {
    * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
    */
   addExecBreakpoint (breakpoint: BreakpointInfo): boolean {
-    const bpKey = getBpKey(breakpoint.address, breakpoint.partition);
+    const bpKey = getBreakpointKey(breakpoint);
     const oldBp = this._execBps.get(bpKey);
     this._execBps.set(bpKey, {
       address: breakpoint.address,
@@ -124,7 +124,7 @@ export class DebugSupport implements IDebugSupport {
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
   removeExecBreakpoint (address: number): boolean {
-    const bpKey = getBpKey(address);
+    const bpKey = getBreakpointKey({address});
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -137,7 +137,7 @@ export class DebugSupport implements IDebugSupport {
    * @param enabled Is the breakpoint enabled?
    */
   enableExecBreakpoint (address: number, enabled: boolean): boolean {
-    const bpKey = getBpKey(address);
+    const bpKey = getBreakpointKey({address});
     const oldBp = this._execBps.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
@@ -146,11 +146,15 @@ export class DebugSupport implements IDebugSupport {
   }
 }
 
-/**
- * Gets the storage key for the specified address and partition
- */
-function getBpKey (address: number, partition?: number): string {
-  return partition !== undefined
-    ? `${partition.toString(16)}:${address.toString(16).padStart(4, "0")}`
-    : `${address.toString(16).padStart(4, "0")}`;
+function getBreakpointKey (bp: BreakpointInfo): string {
+  if (bp.address !== undefined) {
+    // --- Breakpoint defined with address
+    return bp.partition !== undefined
+      ? `${bp.partition.toString(16)}:${bp.address.toString(16).padStart(4, "0")}`
+      : `${bp.address.toString(16).padStart(4, "0")}`;
+  }
+  if (bp.resource && bp.line !== undefined) {
+    return `[${bp.resource}]:${bp.line}`;
+  }
+  throw new Error("Breakpoint info does not have key information.");
 }

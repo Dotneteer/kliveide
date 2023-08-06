@@ -1,3 +1,4 @@
+import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
 import { Token } from "../services/command-parser";
@@ -8,9 +9,9 @@ import { IdeCommandBase } from "../services/ide-commands";
  */
 export abstract class CommandWithNoArgBase extends IdeCommandBase {
   async validateArgs (
-    _args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
-    return _args.length !== 0 ? expectNoArgs() : [];
+    return context.argTokens.length !== 0 ? expectNoArgs() : [];
   }
 }
 

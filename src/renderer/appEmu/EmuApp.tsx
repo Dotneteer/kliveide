@@ -2,8 +2,12 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { BackDrop } from "@controls/BackDrop";
 import { Toolbar } from "@controls/Toolbar";
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { RequestMessage, NotReadyResponse } from "@messaging/messages-core";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
+import { RequestMessage, NotReadyResponse, errorResponse, ResponseMessage } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
@@ -47,12 +51,11 @@ const EmuApp = () => {
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
-    try { 
+    try {
       var ctx = new AudioContext();
       const sampleRate = audioCtx.sampleRate;
       dispatch(setAudioSampleRateAction(sampleRate));
-    }
-    finally {
+    } finally {
       // The specification doesn't go into a lot of detail about things like how many
       // audio contexts a user agent should support, or minimum or maximum latency
       // requirements (if any), so these details can vary from browser to browser.
@@ -83,12 +86,20 @@ ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
     return;
   }
 
-  const response = await processMainToEmuMessages(
-    msg,
-    storeCached,
-    messengerCached,
-    appServicesCached
-  );
+  let response: ResponseMessage;
+  try {
+    response = await processMainToEmuMessages(
+      msg,
+      storeCached,
+      messengerCached,
+      appServicesCached
+    );
+  } catch (err) {
+    // --- In case of errors (rejected promises), retrieve an error response
+    response = errorResponse(err.toString());
+  }
+
+  // --- Set the correlation ID to let the caller identify the response
   response.correlationId = msg.correlationId;
   response.sourceId = "emu";
   ipcRenderer.send("MainToEmuResponse", response);

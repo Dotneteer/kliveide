@@ -19,8 +19,9 @@ export class OpenFolderCommand extends IdeCommandBase {
   private projectFolder: string;
 
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length !== 1) {
       return validationError("This command expects a path as its argument");
     }

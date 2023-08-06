@@ -129,8 +129,9 @@ export class ExportCodeCommand extends IdeCommandBase {
    * @returns A list of issues
    */
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length < 1) {
       return validationError("This command expects at least 2 arguments");
     }

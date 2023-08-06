@@ -1,3 +1,4 @@
+import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
@@ -27,12 +28,12 @@ export abstract class CommandWithSingleIntegerBase extends IdeCommandBase {
   protected abstract readonly maxValue: number;
 
   async validateArgs (
-    _args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
-    if (_args.length !== 1) {
+    if (context.argTokens.length !== 1) {
       return expectArgs(1);
     }
-    const { value, messages } = getNumericTokenValue(_args[0]);
+    const { value, messages } = getNumericTokenValue(context.argTokens[0]);
     if (value === null) {
       return messages;
     }

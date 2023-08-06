@@ -34,10 +34,10 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   useColons = false;
 
   async validateArgs(
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
-    this.conciseMode = args.some(t => t.text === "-c");
-    this.useColons = args.some(t => t.text === "-lc");
+    this.conciseMode = context.argTokens.some(t => t.text === "-c");
+    this.useColons = context.argTokens.some(t => t.text === "-lc");
     return [];
   }
   

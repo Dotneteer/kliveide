@@ -62,12 +62,12 @@ export interface EmuEraseAllBreakpointsRequest extends MessageBase {
 
 export interface EmuSetBreakpointRequest extends MessageBase {
   type: "EmuSetBreakpoint";
-  bp: number;
+  address: number | string;
 }
 
 export interface EmuRemoveBreakpointRequest extends MessageBase {
   type: "EmuRemoveBreakpoint";
-  bp: number;
+  address: number | string;
 }
 
 export interface EmuListBreakpointsRequest extends MessageBase {
@@ -76,7 +76,7 @@ export interface EmuListBreakpointsRequest extends MessageBase {
 
 export interface EmuEnableBreakpointRequest extends MessageBase {
   type: "EmuEnableBreakpoint";
-  address: number;
+  address: number | string;
   enable: boolean;
 }
 

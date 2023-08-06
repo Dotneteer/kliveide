@@ -19,7 +19,6 @@ export const BreakpointIndicator = ({
   disabled,
   current
 }: Props) => {
-  const { messenger } = useRendererContext();
   const { ideCommandsService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
   const [pointed, setPointed] = useState(false);

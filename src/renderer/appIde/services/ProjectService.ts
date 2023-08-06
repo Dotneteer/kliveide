@@ -4,15 +4,19 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
 import { ProjectNode } from "../project/project-node";
+import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
   private _oldState: AppState;
   private _projectOpened = new LiteEvent<void>();
   private _projectClosed = new LiteEvent<void>();
-  private _itemAdded = new LiteEvent<ITreeNode<ProjectNode>>;
-  private _itemRenamed = new LiteEvent<{oldName: string, node: ITreeNode<ProjectNode>}>;
-  private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>;
+  private _itemAdded = new LiteEvent<ITreeNode<ProjectNode>>();
+  private _itemRenamed = new LiteEvent<{
+    oldName: string;
+    node: ITreeNode<ProjectNode>;
+  }>();
+  private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>();
 
   constructor (store: Store<AppState>) {
     store.subscribe(() => {
@@ -30,7 +34,7 @@ class ProjectService implements IProjectService {
     });
   }
 
-  setProjectTree(tree: ITreeView<ProjectNode>): void {
+  setProjectTree (tree: ITreeView<ProjectNode>): void {
     this._tree = tree;
   }
 
@@ -46,35 +50,42 @@ class ProjectService implements IProjectService {
     return this._projectClosed;
   }
 
-  signItemAdded(node: ITreeNode<ProjectNode>): void {
+  signItemAdded (node: ITreeNode<ProjectNode>): void {
     this._itemAdded.fire(node);
   }
 
-  signItemRenamed(oldName: string, node: ITreeNode<ProjectNode>): void {
-    this._itemRenamed.fire({oldName, node});
+  signItemRenamed (oldName: string, node: ITreeNode<ProjectNode>): void {
+    this._itemRenamed.fire({ oldName, node });
   }
 
-  signItemDeleted(node: ITreeNode<ProjectNode>): void {
+  signItemDeleted (node: ITreeNode<ProjectNode>): void {
     this._itemDeleted.fire(node);
   }
 
-  get itemAdded(): ILiteEvent<ITreeNode<ProjectNode>> {
+  get itemAdded (): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemAdded;
   }
 
-  get itemRenamed(): ILiteEvent<{oldName: string, node: ITreeNode<ProjectNode>}> {
+  get itemRenamed (): ILiteEvent<{
+    oldName: string;
+    node: ITreeNode<ProjectNode>;
+  }> {
     return this._itemRenamed;
   }
 
-  get itemDeleted(): ILiteEvent<ITreeNode<ProjectNode>> {
+  get itemDeleted (): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemDeleted;
   }
 
-  getNodeForFile(file: string): ITreeNode<ProjectNode> {
+  getNodeForFile (file: string): ITreeNode<ProjectNode> {
     return this._tree ? findFileNode(this._tree.rootNode, file) : undefined;
 
-    function findFileNode(node: ITreeNode<ProjectNode>, name: string): ITreeNode<ProjectNode> | undefined {
-      if (node.data.fullPath === file || node.data.projectPath === file) return node;
+    function findFileNode (
+      node: ITreeNode<ProjectNode>,
+      name: string
+    ): ITreeNode<ProjectNode> | undefined {
+      if (node.data.fullPath === file || node.data.projectPath === file)
+        return node;
       if (node.childCount > 0) {
         for (const child of node.children) {
           const found = findFileNode(child, name);
@@ -83,6 +94,40 @@ class ProjectService implements IProjectService {
       }
       return undefined;
     }
+  }
+
+  getBreakpointAddressInfo (
+    addr: string | number
+  ): BreakpointAddressInfo | undefined {
+    if (typeof addr === "number") {
+      return {
+        address: addr & 0xffff
+      };
+    }
+
+    addr = addr.trim();
+    if (!addr.startsWith("[")) return;
+
+    const parts = addr.split(":");
+    if (parts.length < 2) return;
+
+    let resource = "";
+    let line = 0;
+
+    const last = parts[parts.length - 1];
+    if (!/^\d+$/.test(last)) return;
+    line = parseInt(last, 10);
+
+    if (!parts[parts.length - 2].endsWith("]")) return;
+    resource = parts.slice(0, -1).join(":").slice(1, -1);
+    // --- File name must be in the project
+    const node = this.getNodeForFile(resource);
+    return node
+      ? {
+          resource,
+          line
+        }
+      : undefined;
   }
 }
 

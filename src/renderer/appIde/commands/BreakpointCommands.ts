@@ -10,10 +10,12 @@ import {
   toHexa4,
   writeSuccessMessage,
   validationError,
-  commandError
+  commandError,
+  IdeCommandBase,
+  getNumericTokenValue
 } from "../services/ide-commands";
-import { CommandWithAddressBase } from "./CommandWithAddressBase";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
+import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
 export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-ea";
@@ -21,9 +23,7 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly usage = "bp-ea";
   readonly aliases = ["eab"];
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const bps = (await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
     })) as EmuListBreakpointsResponse;
@@ -46,9 +46,7 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
   readonly usage = "bp-list";
   readonly aliases = ["bpl"];
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const bps = (await context.messenger.sendMessage({
       type: "EmuListBreakpoints"
     })) as EmuListBreakpointsResponse;
@@ -76,21 +74,60 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
   }
 }
 
-export class SetBreakpointCommand extends CommandWithAddressBase {
+abstract class BreakpointWithAddressCommand extends IdeCommandBase {
+  protected address?: number;
+  protected resource?: string;
+  protected line?: number;
+
+  async validateArgs (
+    context: IdeCommandContext
+  ): Promise<ValidationMessage | ValidationMessage[]> {
+    if (context.argTokens.length < 1) {
+      return validationError("This command expects at least one argument");
+    }
+
+    const token = context.argTokens[0];
+    const addrArg = token.text.trim();
+    if (addrArg.startsWith("[")) {
+      const addrInfo = context.service.projectService.getBreakpointAddressInfo(addrArg);
+      if (!addrInfo) {
+        return validationError(`Invalid breakpoint address ${addrArg}`);
+      }
+
+      this.resource = addrInfo.resource;
+      this.line = addrInfo.line;
+    } else {
+      // --- Address resource
+      const { value, messages } = getNumericTokenValue(token);
+      if (value === null) {
+        return messages;
+      }
+      if (value < 0 || value > 0x1_0000) {
+        return  validationError(`Argument value must be between ${0} and ${0x1_0000}`);
+      }
+      this.address = value;
+    }
+    return [];
+  }
+}
+
+export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
   readonly usage = "bp-set <address>";
   readonly aliases = ["bp"];
 
-  protected readonly extraArgCount = undefined;
-
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuSetBreakpoint",
-      bp: this.address
-    })) as FlagResponse;
+      address: this.address
+    }));
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
+    }
+    if (response.type !== "FlagResponse") {
+      return commandError(`Invalid response type: '${response.type}'`);
+    }
     writeSuccessMessage(
       context.output,
       `Breakpoint at address $${toHexa4(this.address)} ${
@@ -101,20 +138,16 @@ export class SetBreakpointCommand extends CommandWithAddressBase {
   }
 }
 
-export class RemoveBreakpointCommand extends CommandWithAddressBase {
+export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-del";
   readonly description = "Removes the breakpoint from the specified address";
   readonly usage = "bp-del <address>";
   readonly aliases = ["bd"];
 
-  protected readonly extraArgCount = undefined;
-
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
-      bp: this.address
+      address: this.address
     })) as FlagResponse;
     if (response.flag) {
       writeSuccessMessage(
@@ -131,7 +164,7 @@ export class RemoveBreakpointCommand extends CommandWithAddressBase {
   }
 }
 
-export class EnableBreakpointCommand extends CommandWithAddressBase {
+export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-en";
   readonly description = "Enables/disables a breakpoint";
   readonly usage = "bp-en <address> [-d]";
@@ -139,30 +172,27 @@ export class EnableBreakpointCommand extends CommandWithAddressBase {
 
   enable: boolean;
 
-  protected readonly extraArgCount = undefined;
-
   async validateArgs (
-    _args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
-    const result = await super.validateArgs(_args);
+    const result = await super.validateArgs(context);
     if (!Array.isArray(result) || result.length > 0) return result;
 
     this.enable = true;
-    if (_args.length > 2) {
+    const args = context.argTokens;
+    if (args.length > 2) {
       return validationError("This command expects up to 2 arguments");
-    } else if (_args.length === 2) {
+    } else if (args.length === 2) {
       // --- The second argument can be only "-d"
-      if (_args[1].text !== "-d") {
-        return validationError(`Invalid argument value: ${_args[1].text}`);
+      if (args[1].text !== "-d") {
+        return validationError(`Invalid argument value: ${args[1].text}`);
       }
       this.enable = false;
     }
     return [];
   }
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = (await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
       address: this.address,

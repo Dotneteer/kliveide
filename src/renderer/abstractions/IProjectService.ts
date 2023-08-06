@@ -1,6 +1,7 @@
 import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
 import { ILiteEvent } from "@emu/utils/lite-event";
 import { ProjectNode } from "../appIde/project/project-node";
+import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
 export type IProjectService = {
   setProjectTree: (tree: ITreeView<ProjectNode>) => void;
@@ -14,4 +15,5 @@ export type IProjectService = {
   readonly itemRenamed: ILiteEvent<{oldName: string, node: ITreeNode<ProjectNode>}>;
   readonly itemDeleted: ILiteEvent<ITreeNode<ProjectNode>>;
   getNodeForFile(file: string): ITreeNode<ProjectNode> | undefined;
+  getBreakpointAddressInfo(addr: string | number): BreakpointAddressInfo;
 };

@@ -1,6 +1,6 @@
 // ====================================================================================================================
-// This file defines the MessengerBase class, which is responsible for providing correlated async message sending 
-// between two processes. Each message contains a correlation identifier, and the message response contains the same 
+// This file defines the MessengerBase class, which is responsible for providing correlated async message sending
+// between two processes. Each message contains a correlation identifier, and the message response contains the same
 // identifier. Thus the messenger class can match the returned answers with the corresponding request.
 // ====================================================================================================================
 
@@ -42,7 +42,7 @@ export abstract class MessengerBase {
     }
 
     // --- Create a promise and store the resolver function with the message ID.
-    const promise = new Promise<TResp>(resolve => {
+    const promise = new Promise<TResp>((resolve, reject) => {
       this._messageResolvers.set(
         message.correlationId ?? 0,
         resolve as (
@@ -59,7 +59,7 @@ export abstract class MessengerBase {
   /**
    * Processes the response that arrives back on the response channel.
    * @param response Response to process
-   * 
+   *
    * Do not forget ti call this method in a listener method to process the responses
    */
   protected processResponse (response: ResponseMessage): void {

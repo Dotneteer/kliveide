@@ -257,7 +257,7 @@ export async function processRendererToMainMessages (
     case "EmuGetSysVars":
     case "EmuInjectCode":
     case "EmuRunCode":
-      return sendFromMainToEmu(message);
+      return await sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

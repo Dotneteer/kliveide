@@ -20,6 +20,7 @@
 import * as path from "path";
 import {
   defaultResponse,
+  errorResponse,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
@@ -71,7 +72,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 // --- Register available compilers
-registerCompiler(new Z80Compiler())
+registerCompiler(new Z80Compiler());
 
 loadAppSettings();
 
@@ -139,7 +140,7 @@ async function createAppWindows () {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false,
+      webSecurity: false
     }
   });
 
@@ -181,7 +182,7 @@ async function createAppWindows () {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false,
+      webSecurity: false
     },
     show:
       ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
@@ -353,7 +354,11 @@ app.on("activate", () => {
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
   let response = await forwardActions(msg);
   if (response === null) {
-    response = await processRendererToMainMessages(msg, emuWindow);
+    try {
+      response = await processRendererToMainMessages(msg, emuWindow);
+    } catch (err) {
+      response = errorResponse(err.toString);
+    }
   }
   response.correlationId = msg.correlationId;
   response.sourceId = "main";
@@ -366,7 +371,11 @@ ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
 ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
   let response = await forwardActions(msg);
   if (response === null) {
-    response = await processRendererToMainMessages(msg, ideWindow);
+    try {
+      response = await processRendererToMainMessages(msg, ideWindow);
+    } catch (err) {
+      response = errorResponse(err.toString);
+    }
   }
   response.correlationId = msg.correlationId;
   response.sourceId = "main";

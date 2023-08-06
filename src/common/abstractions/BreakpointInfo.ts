@@ -5,7 +5,7 @@ export type BreakpointInfo = {
   /**
    * Breakpoint address
    */
-  address: number;
+  address?: number;
 
   /**
    * Optional partition (reserved for future use)
@@ -62,3 +62,10 @@ export type BreakpointInfo = {
    */
   ioWrite?: boolean;
 };
+
+export type BreakpointAddressInfo = {
+  address?: number;
+  resource?: string;
+  line?: number;
+};
+
