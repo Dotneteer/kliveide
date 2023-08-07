@@ -1099,8 +1099,8 @@ export class Z80Assembler extends ExpressionEvaluator {
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
             (
-              isFieldAssignment && 
-              isByteEmittingPragma(asmLine) &&
+              (isFieldAssignment || 
+              isByteEmittingPragma(asmLine)) &&
               this._currentStructInvocation
             )
           )
