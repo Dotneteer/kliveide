@@ -1707,7 +1707,7 @@ describe("Assembler - struct invocation", async () => {
     );
   });
 
-  it("field invocation does not redefine labels", async () => {
+  it("field invocation does not redefine labels #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Object2D: .struct
@@ -1722,6 +1722,33 @@ describe("Assembler - struct invocation", async () => {
     Apple: Object2D()
       X -> .defw 100
       Y -> .defw 100
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("field invocation does not redefine labels #2", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    Object2D: .struct
+      X: .defw 0
+      Y: .defw 0
+      DX: .defb 1
+      DY: .defb 1
+    .ends
+
+    Object2d()
+
+    Apple: Object2D()
+      X -> .defw 100
+      Y -> .defw 100
+
+    Pear: Object2D()
+      X -> .defw 100
+      Y -> .defw 100
+
     `;
 
     const output = await compiler.compile(source);
