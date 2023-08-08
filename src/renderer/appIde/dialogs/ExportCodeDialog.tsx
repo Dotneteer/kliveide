@@ -14,8 +14,6 @@ import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
-const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
-const VALID_FOLDERNAME = /^[^>:"|?*]+$/;
 const VALID_INTEGER = /^\d+$/;
 
 const formatIds = [
@@ -79,7 +77,11 @@ type Props = {
 
 export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const { messenger } = useRendererContext();
-  const { outputPaneService, ideCommandsService } = useAppServices();
+  const {
+    outputPaneService,
+    ideCommandsService,
+    validationService
+  } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
   const [exportFolder, setExportFolder] = useState("");
@@ -98,19 +100,17 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const [singleBlock, setSingleBlock] = useState(false);
 
   useEffect(() => {
-    const fValid =
-      exportFolder.trim() === "" || VALID_FOLDERNAME.test(exportFolder);
+    const fValid = validationService.isValidPath(exportFolder);
     setFolderIsValid(fValid);
-    const nValid = exportName.trim() !== "" && VALID_FILENAME.test(exportName);
+    const nValid = validationService.isValidFilename(exportName);
     setExportIsValid(nValid);
     const addressValid =
       startAddress.trim() === "" || VALID_INTEGER.test(startAddress);
     setStartAddressIsValid(addressValid);
-    const srcValid =
-      screenFilename.trim() === "" || VALID_FOLDERNAME.test(screenFilename);
-    setScreenFileIsValid(srcValid);
+    const scrValid = validationService.isValidPath(screenFilename);
+    setScreenFileIsValid(scrValid);
     modalApi.current.enablePrimaryButton(
-      fValid && nValid && addressValid && srcValid
+      fValid && nValid && addressValid && scrValid
     );
   }, [exportFolder, exportName, startAddress, screenFilename]);
 
