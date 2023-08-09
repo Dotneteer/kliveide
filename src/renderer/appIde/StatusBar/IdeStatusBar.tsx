@@ -10,6 +10,7 @@ export const IdeStatusBar = () => {
   const execState = useSelector(s => s.emulatorState?.machineState);
   const statusMessage = useSelector(s => s.ideView?.statusMessage);
   const statusSuccess = useSelector(s => s.ideView?.statusSuccess);
+  const compilation = useSelector(s => s.compilation);
   const [machineState, setMachineState] = useState("");
 
   // --- Reflect machine execution state changes
@@ -35,6 +36,11 @@ export const IdeStatusBar = () => {
         break;
     }
   }, [execState]);
+
+  useEffect(() => {
+    console.log("compilation state changed");
+  }, [compilation])
+
   return (
     <div className={styles.ideStatusBar}>
       <div className={styles.sectionWrapper}>
@@ -47,6 +53,16 @@ export const IdeStatusBar = () => {
           />
           <LabelSeparator />
           <Label text={machineState} />
+        </Section>
+        <Section>
+          <Icon
+            iconName='circle-large-filled'
+            width={16}
+            height={16}
+            fill='--color-statusbar-icon'
+            xclass={styles.infiniteRotate}
+          />
+          <LabelSeparator />
         </Section>
         {statusMessage && (
           <Section>

@@ -5,6 +5,7 @@ import {
   maximizeToolsAction,
   openFolderAction,
   primaryBarOnRightAction,
+  resetCompileAction,
   setBuildRootAction,
   setIdeFontSizeAction,
   showEmuStatusBarAction,
@@ -98,6 +99,7 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
     });
     if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
     openFolderByPath(dialogResult.filePaths[0]);
+    mainStore.dispatch(resetCompileAction())
   } finally {
     mainStore.dispatch(dimMenuAction(false));
   }

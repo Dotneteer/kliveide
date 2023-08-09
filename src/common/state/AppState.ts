@@ -1,7 +1,8 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import { DebuggableOutput } from "@abstractions/IZ80CompilerService";
+import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 
 /**
  * Represents the state of the entire application
@@ -22,7 +23,7 @@ export type AppState = {
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   project?: IdeProject;
-  compilation?: CompilationState;
+  compilation?: CompilationState
 };
 
 /**
@@ -150,7 +151,5 @@ export const initialAppState: AppState = {
   },
   compilation: {
     inProgress: false,
-    filename: null,
-    result: null,
-  },
+  }
 };
