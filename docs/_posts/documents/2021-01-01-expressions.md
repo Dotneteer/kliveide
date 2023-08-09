@@ -174,7 +174,7 @@ by a comma. Of course, parameters can be expressions, and they may invoke other 
 Here are a few samples:
 
 ```
-lenght("Hello" + " world")
+length("Hello" + " world")
 max(value1, value2)
 sin(pi()/2)
 sqrt(pear + 3.0)
@@ -191,7 +191,7 @@ Signature | Value | Description
 `atan(float)` | `float` | The angle whose tangent is the specified number.
 `atan2(float, float)` | `float` | The angle whose tangent is the quotient of two specified numbers.
 `attr(integer, integer, boolean, boolean)` | `integer` | Retrieves the color attribute byte value defined by `ink` (first argument, 0 to 7), `paper` (second argument, 0 to 7), `bright` (third argument, 0 - non-zero), and `flash` (fourth argument, 0 - non-zero). The `bright` and `flash` values are optional.
-`attraddr(integer, integer)` | `integer` | Returns the memory address of the byte specified screen attribute in the given line (first argument, from top to bottom, 0-192) and column (second argument, from left to right, 0-255).`ceiling(float)`
+`attraddr(integer, integer)` | `integer` | Returns the memory address of the byte specified screen attribute in the given line (first argument, from top to bottom, 0-192) and column (second argument, from left to right, 0-255).
 `bright(boolean)` | `integer` | Retrieves the bright flag defined by the attribute (0 - non-zero). Can be ORed to create color attribute value.
 `ceiling(float`) | `float` | The smallest integral value that is greater than or equal to the specified number.
 `cos(float)` | `float` | The cosine of the specified angle.
