@@ -15,4 +15,5 @@ export type AppServices = {
   outputPaneService: IOutputPaneService;
   ideCommandsService: IIdeCommandService;
   projectService: IProjectService;
+  validationService: IValidationService;
 };
