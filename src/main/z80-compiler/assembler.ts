@@ -1099,7 +1099,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
             (
-              (isFieldAssignment || 
+              (isFieldAssignment &&
               isByteEmittingPragma(asmLine)) &&
               this._currentStructInvocation
             )
@@ -1112,11 +1112,13 @@ export class Z80Assembler extends ExpressionEvaluator {
             // --- Check if temporary scope should be fixed and disposed
             await this.fixupTemporaryScope();
           }
-          await this.addSymbol(
-            currentLabel,
-            asmLine,
-            new ExpressionValue(this.getCurrentAddress())
-          );
+          if (!isFieldAssignment) {
+            await this.addSymbol(
+              currentLabel,
+              asmLine,
+              new ExpressionValue(this.getCurrentAddress())
+            );
+          }
         }
       }
 
