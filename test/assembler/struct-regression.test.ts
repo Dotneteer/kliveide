@@ -1,6 +1,8 @@
 import "mocha";
+import { expect } from "expect";
 
 import { testCodeEmit } from "./test-helpers";
+import { Z80Assembler } from "@main/z80-compiler/assembler";
 
 describe("Assembler - struct invocation regression", () => {
   it("Struct regression issue (ID casing) #1", async () => {
@@ -47,5 +49,33 @@ describe("Assembler - struct invocation regression", () => {
         -> .dw 0xBEEF
       ThisShouldNotFail: .db #55
     `, 0x21, 0x05, 0x80, 0xEF, 0xBE, 0x55);
+  });
+
+  it("Struct regression issue (No scope labels override)", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    Object2D: .struct
+      X: .defw 0
+      Y: .defw 0
+      DX: .defb 1
+      DY: .defb 1
+    .ends
+
+    DY: Object2d()
+
+    Apple: Object2D()
+      X -> .defw 100
+      Y -> .defw 100
+
+    Pear:
+    Object2D()
+      X -> .defw 100
+      DY -> .defb 100 ; this should not clash with scope's DY
+
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
   });
 });
