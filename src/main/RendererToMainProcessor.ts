@@ -109,7 +109,7 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainCreateKliveProject":
-      const createFolderResponse = createKliveProject(
+      const createFolderResponse = await createKliveProject(
         message.machineId,
         message.projectName,
         message.projectFolder

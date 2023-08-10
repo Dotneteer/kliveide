@@ -31,6 +31,7 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
+  displayDialogAction,
   incDocumentActivationVersionAction,
   setBuildRootAction
 } from "@state/actions";
@@ -41,6 +42,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -552,6 +554,16 @@ const ExplorerPanel = () => {
           if (response.type === "ErrorResponse") {
             reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
           }
+        }}
+      />
+      <div className={styles.noFolder}>or</div>
+      <Button
+        text='Create a Klive Project'
+        disabled={dimmed}
+        spaceLeft={16}
+        spaceRight={16}
+        clicked={async () => {
+          dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }}
       />
     </>
