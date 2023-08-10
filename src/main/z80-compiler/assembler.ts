@@ -1833,7 +1833,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     let currentAddr = this.getCurrentAssemblyAddress();
     if (skipAddr.value < currentAddr) {
-      this.reportAssemblyError("Z0313", pragma, null, skipAddr, currentAddr);
+      this.reportAssemblyError("Z0313", pragma, null, skipAddr.value, currentAddr);
       return;
     }
     var fillByte = 0xff;
