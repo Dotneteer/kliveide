@@ -189,6 +189,12 @@ export type ThemeProperties = {
   "--color-explorer-selected"?: string;
   "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
+
+  // --- Debugging
+  "--color-debug-bp": string;
+  "--color-debug-active-bp": string;
+  "--bgcolor-debug-active-bp": string;
+  "--color-debug-unreachable-bp": string;
 };
 
 /**

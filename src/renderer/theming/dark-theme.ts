@@ -48,7 +48,7 @@ export const darkTheme: ThemeProperties = {
   "--color-context-item-pointed": "#ffffff",
   "--color-context-separator": "#606060",
 
-  // --- Modal 
+  // --- Modal
   "--bgcolor-backdrop": "#00000080",
   "--bgcolor-modal": "#202020",
   "--color-modal": "#cccccc",
@@ -189,4 +189,10 @@ export const darkTheme: ThemeProperties = {
   "--color-explorer-selected": "#ffffff",
   "--color-explorer-focused-selected": "#ffffff",
   "--border-explorer-focused": "#0076c9",
+
+  // --- Debugging
+  "--color-debug-bp": "#e51400",
+  "--color-debug-active-bp": "yellow",
+  "--bgcolor-debug-active-bp": "#ffff0032",
+  "--color-debug-unreachable-bp": "#606060"
 };

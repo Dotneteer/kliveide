@@ -1,0 +1,28 @@
+.breakpointMargin {
+  background: var(--color-debug-bp);
+  clip-path: circle(25%);
+  cursor: pointer;
+}
+
+.hoverBreakpointMargin {
+  background: var(--color-debug-bp);
+  clip-path: circle(35%);
+  cursor: pointer;
+}
+
+.activeBreakpointMargin {
+  background: var(--color-debug-active-bp);
+  clip-path: polygon(25% 25%, 50% 25%, 75% 50%, 50% 75%, 75% 75%, 25% 75%);
+  cursor: pointer;
+}
+
+.activeBreakpointLine {
+  background: var(--bgcolor-debug-active-bp);
+  border: 1px solid var(--bgcolor-debug-active-bp);
+}
+
+.unreachableBreakpointMargin {
+  background: var(--color-debug-unreachable-bp);
+  clip-path: circle(25%);
+  cursor: pointer;
+}

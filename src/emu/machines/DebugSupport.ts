@@ -1,7 +1,10 @@
 import { incBreakpointsVersionAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  BreakpointAddressInfo,
+  BreakpointInfo
+} from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 
@@ -119,9 +122,9 @@ export class DebugSupport implements IDebugSupport {
         line: breakpoint.line,
         exec: true
       });
-      console.log(this._execBps)
+      console.log(this._execBps);
     } catch (err) {
-      console.log("err in addExecBreakpoint", err.toString())
+      console.log("err in addExecBreakpoint", err.toString());
     }
 
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -153,5 +156,69 @@ export class DebugSupport implements IDebugSupport {
     oldBp.disabled = !enabled;
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return true;
+  }
+
+  /**
+   * Finds the specified breakpoint
+   * @param address Breakpoint address
+   * @returns True, if the breakpoint has just been removed; otherwise, false
+   */
+  findBreakpoint (
+    breakpoint: BreakpointAddressInfo
+  ): BreakpointInfo | undefined {
+    return this._execBps.get(getBreakpointKey(breakpoint));
+  }
+
+  /**
+   * Scrolls down breakpoints
+   * @param def Breakpoint address
+   * @param lineNo Line number to shift down
+   */
+  scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
+    let changed = false;
+    this._execBps.forEach(bp => {
+      if (bp.resource === def.resource && bp.line >= def.line) {
+        bp.line += shift;
+        changed = true;
+      }
+    });
+    if (changed) {
+      this.store.dispatch(incBreakpointsVersionAction(), "emu");
+    }
+  }
+
+  /**
+   * Normalizes source code breakpoint. Removes the ones that overflow the
+   * file and also deletes duplicates.
+   * @param lineCount
+   * @returns
+   */
+  normalizeBreakpoints (resource: string, lineCount: number): void {
+    const mapped = new Set<string>();
+    const toDelete = new Set<string>();
+
+    // --- Iterate through the breakpoints to find the ones to delete
+    this._execBps.forEach(bp => {
+      const bpKey = getBreakpointKey(bp);
+      if (bp.resource === resource) {
+        if (bp.line > lineCount) {
+          // --- Delete as it overflows the file
+          toDelete.add(bpKey);
+        } else if (mapped.has(bpKey)) {
+          // --- Deletes as it is a duplicate
+          toDelete.add(bpKey);
+        } else {
+          // --- Map as it exists and want to avoid duplication
+          mapped.add(bpKey);
+        }
+      }
+
+      if (toDelete.size > 0) {
+        for (const item of toDelete.values()) {
+          this._execBps.delete(item);
+        }
+        this.store.dispatch(incBreakpointsVersionAction(), "emu");
+      }
+    });
   }
 }

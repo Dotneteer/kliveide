@@ -1,9 +1,6 @@
-import { EmuListBreakpointsResponse } from "@messaging/main-to-emu";
-import { FlagResponse } from "@messaging/messages-core";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
 import {
   writeMessage,
   commandSuccess,
@@ -16,10 +13,6 @@ import {
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 
 export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   readonly id = "bp-ea";

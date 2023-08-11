@@ -1,7 +1,6 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { DebuggableOutput } from "@abstractions/IZ80CompilerService";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 
 /**
