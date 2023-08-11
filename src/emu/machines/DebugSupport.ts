@@ -48,8 +48,21 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @param partition Breakpoint partition
    */
-  getExecBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._execBps.get(getBreakpointKey({ address, partition }));
+  getExecBreakpoint (
+    address: number,
+    partition?: number
+  ): BreakpointInfo | undefined {
+    const binaryBp = this._execBps.get(
+      getBreakpointKey({ address, partition })
+    );
+    if (binaryBp) {
+      return binaryBp;
+    }
+    for (const bpInfo of this._execBps.values()) {
+      if (bpInfo.resolvedAddress === address) {
+        return bpInfo;
+      }
+    }
   }
 
   /**
@@ -220,5 +233,25 @@ export class DebugSupport implements IDebugSupport {
         this.store.dispatch(incBreakpointsVersionAction(), "emu");
       }
     });
+  }
+
+  /**
+   * Resets the resolution of breakpoints
+   */
+  resetBreakpointResolution (): void {
+    for (const bp of this._execBps.values()) {
+      delete bp.resolvedAddress;
+    }
+  }
+
+  /**
+   * Resolves the specified resouce breakpoint to an address
+   */
+  resolveBreakpoint (resource: string, line: number, address: number): void {
+    const bpKey = getBreakpointKey({ resource, line });
+    const bp = this._execBps.get(bpKey);
+    if (bp) {
+      bp.resolvedAddress = address;
+    }
   }
 }

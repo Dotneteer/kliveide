@@ -30,7 +30,7 @@ export type BreakpointInfo = {
   /**
    * Indicates that a source-bound breakpoint has been resolved
    */
-  resolved?: boolean;
+  resolvedAddress?: number;
 
   /**
    * Optional mask for I/O addresses

@@ -2,6 +2,7 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -193,6 +194,10 @@ export interface EmuRunCodeRequest extends MessageBase {
   debug: boolean;
 }
 
+export interface EmuResolveBreakpointsRequest extends MessageBase {
+  type: "EmuResolveBreakpoints";
+  breakpoints: ResolvedBreakpoint[];
+}
 
 export function createMachineCommand (
   command: MachineCommand

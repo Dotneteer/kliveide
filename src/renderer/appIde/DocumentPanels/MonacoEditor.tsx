@@ -127,6 +127,7 @@ export const MonacoEditor = ({
   );
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector(s => s.compilation);
+  const execState = useSelector(s => s.emulatorState?.machineState);
 
   const oldDecorations = useRef<string[]>([]);
   const oldHoverDecorations = useRef<string[]>([]);
@@ -142,6 +143,10 @@ export const MonacoEditor = ({
     requestAnimationFrame(() => {
       editor.current?.focus();
     });
+    if (editor.current) {
+      refreshBreakpoints();
+      refreshCurrentBreakpoint();
+    }
   }, [docActivationVersion]);
 
   // --- Respond to theme changes
@@ -169,8 +174,9 @@ export const MonacoEditor = ({
   useEffect(() => {
     if (editor.current) {
       refreshBreakpoints();
+      refreshCurrentBreakpoint();
     }
-  }, [breakpointsVersion, compilation]);
+}, [breakpointsVersion, compilation, execState]);
 
   // --- Initializes the editor when mounted
   const onMount = (
@@ -212,6 +218,9 @@ export const MonacoEditor = ({
     editor.current.onDidDispose(() => {
       disposables.forEach(d => d.dispose());
     });
+
+    refreshBreakpoints();
+    refreshCurrentBreakpoint();
   };
 
   // --- Saves the document state
@@ -310,12 +319,10 @@ export const MonacoEditor = ({
         }
       }
       if (bp.line <= editorLines) {
-        console.log("unreachable", unreachable);
         const decoration = unreachable
           ? createUnreachableBreakpointDecoration(bp.line)
           : createBreakpointDecoration(bp.line);
         decorations.push(decoration);
-        console.log(decoration);
       } else {
         await removeBreakpoint(messenger, bp);
       }
@@ -402,14 +409,16 @@ export const MonacoEditor = ({
    * @returns
    */
   async function refreshCurrentBreakpoint (): Promise<void> {
+    if (!editor.current) {
+      return;
+    }
+
     // --- Refresh the information only during paused state
-    const state = store.getState();
-    const compilationResult = state?.compilation?.result;
-    const execState = state.emulatorState?.machineState ?? 0;
     if (
       execState !== MachineControllerState.Paused ||
-      !compilationResult ||
-      compilationResult.errors.length > 0
+      !compilation.result ||
+      compilation.failed ||
+      compilation.result.errors.length > 0
     ) {
       oldExecPointDecoration.current = editor.current.deltaDecorations(
         oldExecPointDecoration.current,
@@ -418,7 +427,7 @@ export const MonacoEditor = ({
       return;
     }
 
-    if (!isDebuggableCompilerOutput(compilationResult)) {
+    if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }
 
@@ -436,12 +445,12 @@ export const MonacoEditor = ({
     }
 
     // --- Does this file contains the default breakpoint?
-    const fileIndex = compilationResult.sourceFileList.findIndex(fi =>
+    const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
       fi.filename.endsWith(getResourceName())
     );
     if (fileIndex >= 0) {
       // --- We have address information for this source code file
-      const lineInfo = compilationResult.listFileItems.find(
+      const lineInfo = compilation.result.listFileItems.find(
         li => li.fileIndex === fileIndex && li.address === pc
       );
       if (lineInfo) {

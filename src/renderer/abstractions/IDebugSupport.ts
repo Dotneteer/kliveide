@@ -116,4 +116,14 @@ export interface IDebugSupport {
    * @returns
    */
   normalizeBreakpoints(resource: string, lineCount: number): void;
+
+  /**
+   * Resets the resolution of breakpoints
+   */
+  resetBreakpointResolution(): void;
+
+  /**
+   * Resolves the specified resouce breakpoint to an address
+   */  
+  resolveBreakpoint(resource: string, line: number, address: number): void;
 }

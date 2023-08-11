@@ -69,6 +69,7 @@ import { CompileCommand, DebugCodeCommand, ExportCodeCommand, InjectCodeCommand,
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
+import { IdeEventsHandler } from "./IdeEventsHandler";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -147,6 +148,7 @@ const IdeApp = () => {
 
   return (
     <div id='appMain' className={styles.app}>
+      <IdeEventsHandler />
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />

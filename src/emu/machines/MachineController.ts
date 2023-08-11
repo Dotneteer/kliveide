@@ -17,6 +17,7 @@ import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -274,6 +275,18 @@ export class MachineController implements IMachineController {
       await this.startDebug();
     } else {
       await this.start();
+    }
+  }
+
+  /**
+   * Resolves the source code breakpoints used when running the machine
+   * @param bps 
+   */
+  resolveBreakpoints(bps: ResolvedBreakpoint[]): void {
+    if (!this.debugSupport) return;
+    this.debugSupport.resetBreakpointResolution();
+    for (const bp of bps) {
+      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address);
     }
   }
 

@@ -303,6 +303,13 @@ export async function processMainToEmuMessages (
       await controller.runCode(message.codeToInject, message.debug);
       break;
     }
+
+    case "EmuResolveBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      controller.resolveBreakpoints(message.breakpoints);
+      break;
+    }
   }
   return defaultResponse();
 

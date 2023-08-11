@@ -258,6 +258,7 @@ export async function processRendererToMainMessages (
     case "EmuGetSysVars":
     case "EmuInjectCode":
     case "EmuRunCode":
+    case "EmuResolveBreakpoints":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();
