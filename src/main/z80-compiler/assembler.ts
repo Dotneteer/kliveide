@@ -445,6 +445,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return false;
     }
     this._output.segments.length = 0;
+    this._currentSegment = null;
     this.ensureCodeSegment();
 
     const currentLineIndex = { index: 0 };
