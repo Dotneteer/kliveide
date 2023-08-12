@@ -32,7 +32,6 @@ let monacoInitialized = false;
 
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
-type MarkerData = monacoEditor.editor.IMarkerData;
 
 export async function initializeMonaco (appPath: string) {
   loader.config({
@@ -211,9 +210,11 @@ export const MonacoEditor = ({
     // --- Create the API
     const editorApi: EditorApi = {
       setPosition: (lineNumber: number, column: number) => {
-        ed.revealPositionInCenter({ lineNumber, column });
+        ed.revealLineInCenter(lineNumber);
         ed.setPosition({ lineNumber, column });
-        window.requestAnimationFrame(() => ed.focus());
+        requestAnimationFrame(() => {
+          ed.focus();
+        })
       }
     };
     apiLoaded?.(editorApi);
