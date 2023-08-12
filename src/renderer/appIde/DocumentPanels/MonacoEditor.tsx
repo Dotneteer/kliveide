@@ -18,7 +18,11 @@ import {
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
+import {
+  addBreakpoint,
+  getBreakpoints,
+  removeBreakpoint
+} from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 
 // --- Wait 1000 ms before saving the document being edited
@@ -176,7 +180,7 @@ export const MonacoEditor = ({
       refreshBreakpoints();
       refreshCurrentBreakpoint();
     }
-}, [breakpointsVersion, compilation, execState]);
+  }, [breakpointsVersion, compilation, execState]);
 
   // --- Initializes the editor when mounted
   const onMount = (
@@ -321,7 +325,7 @@ export const MonacoEditor = ({
       if (bp.line <= editorLines) {
         const decoration = unreachable
           ? createUnreachableBreakpointDecoration(bp.line)
-          : createBreakpointDecoration(bp.line);
+          : createBreakpointDecoration(bp.line, bp.disabled);
         decorations.push(decoration);
       } else {
         await removeBreakpoint(messenger, bp);
@@ -376,7 +380,7 @@ export const MonacoEditor = ({
   function handleEditorMouseDown (
     e: monacoEditor.editor.IEditorMouseEvent
   ): void {
-    if (e.target?.type === 2) {
+    if (e.event.leftButton && e.target?.type === 2) {
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
@@ -389,7 +393,7 @@ export const MonacoEditor = ({
         addBreakpoint(messenger, {
           resource: resourceName,
           line: lineNo,
-          exec: true,
+          exec: true
         });
       }
       handleEditorMouseLeave(e);
@@ -474,15 +478,15 @@ export const MonacoEditor = ({
  */
 function createBreakpointDecoration (
   lineNo: number,
-  message?: string
+  disabled: boolean
 ): Decoration {
-  const hoverMessage: MarkdownString = message ? { value: message } : null;
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: styles.breakpointMargin,
-      glyphMarginHoverMessage: hoverMessage
+      glyphMarginClassName: disabled
+        ? styles.disabledBreakpointMargin
+        : styles.breakpointMargin
     }
   };
 }

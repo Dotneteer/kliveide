@@ -306,8 +306,9 @@ export async function processMainToEmuMessages (
 
     case "EmuResolveBreakpoints": {
       const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      controller.resolveBreakpoints(message.breakpoints);
+      if (controller) {
+        controller.resolveBreakpoints(message.breakpoints);
+      }
       break;
     }
   }

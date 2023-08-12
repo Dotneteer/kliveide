@@ -14,7 +14,7 @@ export const asmZxbLanguageProvider: MonacoAwareCustomLanguageInfo = {
       lineComment: ";",
     },
   },
-  supportsBreakpoints: true,
+  supportsBreakpoints: false,
   compiler: "ZxbAsmCompiler",
   languageDef: {
     ignoreCase: true,

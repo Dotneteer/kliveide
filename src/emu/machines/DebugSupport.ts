@@ -125,7 +125,6 @@ export class DebugSupport implements IDebugSupport {
    */
   addExecBreakpoint (breakpoint: BreakpointInfo): boolean {
     const bpKey = getBreakpointKey(breakpoint);
-    console.log(bpKey);
     const oldBp = this._execBps.get(bpKey);
     try {
       this._execBps.set(bpKey, {
@@ -135,7 +134,6 @@ export class DebugSupport implements IDebugSupport {
         line: breakpoint.line,
         exec: true
       });
-      console.log(this._execBps);
     } catch (err) {
       console.log("err in addExecBreakpoint", err.toString());
     }

@@ -6,13 +6,8 @@ import {
 } from "@renderer/core/RendererProvider";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import {
-  EmuListBreakpointsResponse,
-  EmuGetCpuStateResponse
-} from "@messaging/main-to-emu";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
-import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
   MemorySection,
@@ -20,7 +15,6 @@ import {
 } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import {
   reportMessagingError,
@@ -79,7 +73,6 @@ const BreakpointsPanel = () => {
         disassLines.current = [];
         for (let i = 0; i < bpResponse.breakpoints.length; i++) {
           const bpInfo = bpResponse.breakpoints[i];
-          const addr = getBreakpointKey(bpInfo);
           if (bpInfo.address !== undefined) {
             const bpAddr = bpInfo.address;
             const disass = new Z80Disassembler(
@@ -130,12 +123,12 @@ const BreakpointsPanel = () => {
           itemRenderer={idx => {
             const bp = bps[idx];
             let addrKey = getBreakpointKey(bp);
-            const addr = bps[idx].address;
-            const disabled = bps[idx].disabled ?? false;
+            const addr = bp.address;
+            const disabled = bp.disabled ?? false;
             const isCurrent =
               (machineState === MachineControllerState.Running ||
                 machineState === MachineControllerState.Paused) &&
-              pcValue.current === addr;
+              (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
@@ -147,7 +140,7 @@ const BreakpointsPanel = () => {
                 />
                 <LabelSeparator width={4} />
                 <Label text={addrKey} width={40} />
-                {addr !== undefined && (
+                {bp.address !== undefined && (
                   <Secondary text={`(${addr})`} width={64} />
                 )}
                 <Value text={disassLines.current[idx] ?? "???"} width='auto' />

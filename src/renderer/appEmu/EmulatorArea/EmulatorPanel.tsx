@@ -160,28 +160,26 @@ export const EmulatorPanel = () => {
     oldState: MachineControllerState;
     newState: MachineControllerState;
   }): Promise<void> {
-    let overlay = "";
     switch (stateInfo.newState) {
       case MachineControllerState.Running:
-        overlay = controller?.isDebugging ? "Debug mode" : "";
+        setOverlay(controller?.isDebugging ? "Debug mode" : "");
         await beeperRenderer?.current?.play();
         break;
 
       case MachineControllerState.Paused:
-        overlay = "Paused";
+        setOverlay("Paused");
         await beeperRenderer?.current?.suspend();
         break;
 
       case MachineControllerState.Stopped:
-        overlay = "Stopped";
+        setOverlay("Stopped");
         await beeperRenderer?.current?.suspend();
         break;
 
       default:
-        overlay = "";
+        setOverlay("");
         break;
     }
-    setOverlay(overlay);
   }
 
   // --- Handles machine frame completion events

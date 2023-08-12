@@ -188,8 +188,6 @@ export const lightTheme: ThemeProperties = {
   "--border-explorer-focused": "#0076c9",
 
   // --- Debugging
-  "--color-debug-bp": "#e51400",
-  "--color-debug-active-bp": "yellow",
   "--bgcolor-debug-active-bp": "#ffff0032",
-  "--color-debug-unreachable-bp": "#606060"
+  "--color-debug-unreachable-bp": "orange"
 };
