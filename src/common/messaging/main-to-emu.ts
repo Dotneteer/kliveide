@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -197,6 +197,18 @@ export interface EmuRunCodeRequest extends MessageBase {
 export interface EmuResolveBreakpointsRequest extends MessageBase {
   type: "EmuResolveBreakpoints";
   breakpoints: ResolvedBreakpoint[];
+}
+
+export interface EmuScrollBreakpointsRequest extends MessageBase {
+  type: "EmuScrollBreakpoints";
+  addr: BreakpointAddressInfo;
+  shift: number;
+}
+
+export interface EmuNormalizeBreakpointsRequest extends MessageBase {
+  type: "EmuNormalizeBreakpoints";
+  resource: string;
+  lineCount: number;
 }
 
 export function createMachineCommand (

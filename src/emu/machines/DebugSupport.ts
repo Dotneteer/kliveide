@@ -7,6 +7,7 @@ import {
 } from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getKliveProjectFolder } from "@main/projects";
 
 /**
  * This class implement support functions for debugging
@@ -187,10 +188,18 @@ export class DebugSupport implements IDebugSupport {
    */
   scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
     let changed = false;
-    this._execBps.forEach(bp => {
+    const values: BreakpointInfo[] = [];
+    for (const value of this._execBps.values()) {
+      values.push(value);
+    }
+    values.forEach(bp => {
       if (bp.resource === def.resource && bp.line >= def.line) {
+        const oldKey = getBreakpointKey(bp);
+        this._execBps.delete(oldKey);
         bp.line += shift;
+        this._execBps.set(getBreakpointKey(bp), bp);
         changed = true;
+        console.log("changed");
       }
     });
     if (changed) {
@@ -228,6 +237,7 @@ export class DebugSupport implements IDebugSupport {
         for (const item of toDelete.values()) {
           this._execBps.delete(item);
         }
+        console.log(this._execBps);
         this.store.dispatch(incBreakpointsVersionAction(), "emu");
       }
     });

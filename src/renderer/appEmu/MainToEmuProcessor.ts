@@ -311,6 +311,22 @@ export async function processMainToEmuMessages (
       }
       break;
     }
+
+    case "EmuScrollBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (controller) {
+        controller.scrollBreakpoints(message.addr, message.shift);
+      }
+      break;
+    }
+
+    case "EmuNormalizeBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (controller) {
+        controller.normalizeBreakpoints(message.resource, message.lineCount);
+      }
+      break;
+    }
   }
   return defaultResponse();
 
@@ -338,7 +354,9 @@ export async function processMainToEmuMessages (
           message: `Error while processing tape file ${message.file} (${result})`
         });
         if (response.type === "ErrorResponse") {
-          reportMessagingError(`Error displaying message dialog: ${response.message}`);
+          reportMessagingError(
+            `Error displaying message dialog: ${response.message}`
+          );
         }
         return;
       } else {
@@ -362,7 +380,9 @@ export async function processMainToEmuMessages (
       message: `Tape file ${message.file} successfully set.`
     });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(`Error displaying message dialog: ${response.message}`);
+      reportMessagingError(
+        `Error displaying message dialog: ${response.message}`
+      );
     }
-}
+  }
 }

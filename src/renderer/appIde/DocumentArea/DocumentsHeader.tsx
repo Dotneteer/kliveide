@@ -240,22 +240,6 @@ export const DocumentsHeader = () => {
                 tabClicked={() => setHeaderVersion(headerVersion + 1)}
                 tabDoubleClicked={() => {
                   if (d.isTemporary) {
-                    console.log(
-                      "dispatching double click",
-                      {
-                        id: d.id,
-                        name: d.name,
-                        type: d.type,
-                        isReadOnly: d.isReadOnly,
-                        isTemporary: false,
-                        iconName: d.iconName,
-                        iconFill: d.iconFill,
-                        language: d.language,
-                        path: d.path,
-                        stateValue: d.stateValue
-                      },
-                      idx
-                    );
                     dispatch(
                       changeDocumentAction(
                         {

@@ -214,7 +214,7 @@ export const MonacoEditor = ({
         ed.setPosition({ lineNumber, column });
         requestAnimationFrame(() => {
           ed.focus();
-        })
+        });
       }
     };
     apiLoaded?.(editorApi);
@@ -252,9 +252,81 @@ export const MonacoEditor = ({
   };
 
   // --- Handle document changes
-  const onValueChanged = async (val: any) => {
+  const onValueChanged = async (
+    val: string,
+    e: monacoEditor.editor.IModelContentChangedEvent
+  ) => {
+    // --- Now, make this document permanent
+    documentService.setPermanent(document.id);
+
     // --- Save the current value as the previous one
     previousContent.current = editor.current.getValue();
+
+    // --- Does the editor support breakpoints?
+    if (languageInfo?.supportsBreakpoints) {
+      // --- Keep track of breakpoint changes
+      if (e.changes.length > 0) {
+        // --- Get the text that has been deleted
+        const change = e.changes[0];
+        const deletedText = monacoEditor.editor
+          .createModel(previousContent.current)
+          .getValueInRange(change.range);
+        const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || [])
+          .length;
+
+        // --- Have we deleted one or more EOLs?
+        if (deletedLines > 0) {
+          // --- Yes, scroll up breakpoints
+          const response = await messenger.sendMessage({
+            type: "EmuScrollBreakpoints",
+            addr: {
+              resource: resourceName,
+              line: change.range.startLineNumber + deletedLines
+            },
+            shift: -deletedLines
+          });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `EmuScrollBreakpoints call failed: ${response.message}`
+            );
+          }
+        }
+
+        // --- Have we inserted one or more EOLs?
+        const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || [])
+          .length;
+        if (insertedLines > 0) {
+          // --- Yes, scroll down breakpoints.
+          const response = await messenger.sendMessage({
+            type: "EmuScrollBreakpoints",
+            addr: {
+              resource: resourceName,
+              line:
+                change.range.startLineNumber +
+                (change.range.startColumn === 1 ? 0 : 1)
+            },
+            shift: insertedLines
+          });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `EmuScrollBreakpoints call failed: ${response.message}`
+            );
+          }
+        }
+
+        // --- If changed, normalize breakpoints
+        const response = await messenger.sendMessage({
+          type: "EmuNormalizeBreakpoints",
+          resource: resourceName,
+          lineCount: editor.current.getModel().getLineCount()
+        });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `EmuNormalizeBreakpoints call failed: ${response.message}`
+          );
+        }
+      }
+    }
 
     // --- Save document after the change (with delay)
     unsavedChangeCounter.current++;
@@ -388,16 +460,18 @@ export const MonacoEditor = ({
         bp =>
           bp.resource === document.node?.data?.projectPath && bp.line === lineNo
       );
-      if (existingBp) {
-        removeBreakpoint(messenger, existingBp);
-      } else {
-        addBreakpoint(messenger, {
-          resource: resourceName,
-          line: lineNo,
-          exec: true
-        });
-      }
-      handleEditorMouseLeave(e);
+      (async () => {
+        if (existingBp) {
+          await removeBreakpoint(messenger, existingBp);
+        } else {
+          await addBreakpoint(messenger, {
+            resource: resourceName,
+            line: lineNo,
+            exec: true
+          });
+        }
+        handleEditorMouseLeave(e);
+      })();
     }
   }
 

@@ -19,12 +19,14 @@ export const DocumentsContainer = ({ document, data }: DocumentProps) => {
 
   if (docRenderer) {
     document.iconName ||= docRenderer.icon;
-    document.iconFill ||= docRenderer.iconFill
+    document.iconFill ||= docRenderer.iconFill;
   }
 
   return document ? (
     docRenderer ? (
-      createElement<DocumentProps>(docRenderer.renderer, {document, data})
+      <div className={styles.documentContainer}>
+        {createElement<DocumentProps>(docRenderer.renderer, { document, data })}
+      </div>
     ) : (
       <div className={styles.documentContainer}>Cannot find renderer</div>
     )
