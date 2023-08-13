@@ -1,3 +1,4 @@
+import * as path from "path"
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -63,7 +64,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
 
     // --- Get the project node
     const projNode = context.service.projectService.getNodeForFile(
-      this.filename
+      path.normalize(this.filename)
     );
     if (!projNode) {
       return commandError(`File '${this.filename}' not found in the project.`);
