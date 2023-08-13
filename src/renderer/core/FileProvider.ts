@@ -4,6 +4,10 @@ import {
   TextContentsResponse
 } from "@messaging/any-to-main";
 import { MessengerBase } from "@messaging/MessengerBase";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 /**
  * This class implements a file provider to read and write files throught the main process
@@ -17,12 +21,18 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as a string
    */
   async readTextFile (path: string, encoding?: string): Promise<string> {
-    const response = (await this.messenger.sendMessage({
+    const response = await this.messenger.sendMessage({
       type: "MainReadTextFile",
       path,
       encoding
-    })) as TextContentsResponse;
-    return response.contents;
+    });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`MainReadTextFile call failed: ${response.message}`);
+    } else if (response.type !== "TextContents") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      return response.contents;
+    }
   }
 
   /**
@@ -31,11 +41,17 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as an Uint8Array instance
    */
   async readBinaryFile (path: string): Promise<Uint8Array> {
-    const response = (await this.messenger.sendMessage({
+    const response = await this.messenger.sendMessage({
       type: "MainReadBinaryFile",
       path
-    })) as BinaryContentsResponse;
-    return response.contents;
+    });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`MainReadTextFile call failed: ${response.message}`);
+    } else if (response.type !== "BinaryContents") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      return response.contents;
+    }
   }
 
   /**

@@ -42,6 +42,9 @@ import { SpectrumTapeHeader } from "@emu/machines/tape/SpectrumTapeHeader";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
+import { reportMessagingError } from "@renderer/reportError";
+import { endCompileAction, incBreakpointsVersionAction, startCompileAction } from "@common/state/actions";
+import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -129,8 +132,9 @@ export class ExportCodeCommand extends IdeCommandBase {
    * @returns A list of issues
    */
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length < 1) {
       return validationError("This command expects at least 2 arguments");
     }
@@ -225,12 +229,17 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
       if (errorNo > 0) {
         const message = "Code compilation failed, no program to export.";
-        await context.messenger.sendMessage({
+        const response = await context.messenger.sendMessage({
           type: "MainDisplayMessageBox",
           messageType: "error",
           title: "Exporting code",
           message
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `MainDisplayMessageBox call failed: ${response.message}`
+          );
+        }
         return commandError(message);
       }
     }
@@ -257,7 +266,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       // --- Check the validity of the screen file
       const scrFileResponse = await context.messenger.sendMessage({
         type: "MainReadBinaryFile",
-        path: this.screenFile,
+        path: this.screenFile
       });
       if (scrFileResponse.type === "ErrorResponse") {
         return commandError(scrFileResponse.message);
@@ -518,7 +527,8 @@ export class ExportCodeCommand extends IdeCommandBase {
         return commandSuccessWith(
           `Code successfully exported to '${
             (response as MainSaveFileResponse).path
-          }'`)
+          }'`
+        );
       }
       return commandError("Filename not specified");
 
@@ -1045,14 +1055,25 @@ async function compileCode (
   out.writeLine();
   out.resetStyle();
 
-  const response = await context.messenger.sendMessage<MainCompileResponse>({
-    type: "MainCompileFile",
-    filename: fullPath,
-    language
-  });
+  context.store.dispatch(startCompileAction(fullPath));
+  let result: KliveCompilerOutput;
+  let response: MainCompileResponse;
+  try {
+    response = await context.messenger.sendMessage<MainCompileResponse>({
+      type: "MainCompileFile",
+      filename: fullPath,
+      language
+    });
+    if (response.type === "MainCompileFileResponse") {
+      result = response.result;
+    }
+  } finally {
+    context.store.dispatch(endCompileAction(result));
+    await refreshSourceCodeBreakpoints(context.store, context.messenger);
+    context.store.dispatch(incBreakpointsVersionAction());
+  }
 
   // --- Collect errors
-  const result = response.result;
   const errors = result?.errors;
 
   if (response.failed) {
@@ -1105,12 +1126,17 @@ async function injectCode (
     }
     if (errorNo > 0) {
       const message = "Code compilation failed, no program to inject.";
-      await context.messenger.sendMessage({
+      const response = await context.messenger.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "error",
         title: "Injecting code",
         message
       });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `MainDisplayMessageBox call failed: ${response.message}`
+        );
+      }
       return commandError(message);
     }
   }
@@ -1122,7 +1148,7 @@ async function injectCode (
   let sumCodeLength = 0;
   result.segments.forEach(s => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
-    await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "MainDisplayMessageBox",
       messageType: "info",
       title: "Injecting code",
@@ -1130,6 +1156,11 @@ async function injectCode (
         "The length of the compiled code is 0, " +
         "so there is no code to inject into the virtual machine."
     });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(
+        `MainDisplayMessageBox call failed: ${response.message}`
+      );
+    }
     return commandSuccessWith("Code length is 0, no code injected");
   }
 
@@ -1138,13 +1169,18 @@ async function injectCode (
       context.store.getState().emulatorState?.machineState !==
       MachineControllerState.Paused
     ) {
-      await context.messenger.sendMessage({
+      const response = await context.messenger.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "warning",
         title: "Injecting code",
         message:
           "To inject the code into the virtual machine, please put it in paused state."
       });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `MainDisplayMessageBox call failed: ${response.message}`
+        );
+      }
       return commandError("Machine must be in paused state.");
     }
   }
@@ -1165,10 +1201,13 @@ async function injectCode (
 
   switch (operationType) {
     case "inject":
-      await context.messenger.sendMessage({
+      const response = await context.messenger.sendMessage({
         type: "EmuInjectCode",
         codeToInject
       });
+      if (response.type === "ErrorResponse") {
+        return commandError(`EmuInjectCode call failed: ${response.message}`);
+      }
       const message = `Successfully injected ${sumCodeLength} bytes in ${
         codeToInject.segments.length
       } segment${
@@ -1177,29 +1216,42 @@ async function injectCode (
         .toString(16)
         .padStart(4, "0")
         .toUpperCase()}`;
-      await context.messenger.sendMessage({
+      const dlgResponse = await context.messenger.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "info",
         title: "Injecting code",
         message
       });
+      if (dlgResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `MainDisplayMessageBox call failed: ${dlgResponse.message}`
+        );
+      }
       return commandSuccessWith(message);
 
-    case "run":
-      await context.messenger.sendMessage({
+    case "run": {
+      const response = await context.messenger.sendMessage({
         type: "EmuRunCode",
         codeToInject,
         debug: false
       });
+      if (response.type === "ErrorResponse") {
+        return commandError(response.message);
+      }
       return commandSuccessWith(`Code injected and started.`);
+    }
 
-    case "debug":
-      await context.messenger.sendMessage({
+    case "debug": {
+      const response = await context.messenger.sendMessage({
         type: "EmuRunCode",
         codeToInject,
         debug: true
       });
+      if (response.type === "ErrorResponse") {
+        return commandError(response.message);
+      }
       return commandSuccessWith(`Code injected and started in debug mode.`);
+    }
   }
 }
 

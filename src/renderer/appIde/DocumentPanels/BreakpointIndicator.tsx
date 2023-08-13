@@ -1,13 +1,12 @@
 import { useState, useRef } from "react";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory } from "@controls/Tooltip";
-import { useRendererContext } from "@renderer/core/RendererProvider";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 
 type Props = {
-  address: number;
+  address: number | string;
   hasBreakpoint: boolean;
   disabled: boolean;
   current: boolean;
@@ -19,14 +18,15 @@ export const BreakpointIndicator = ({
   disabled,
   current
 }: Props) => {
-  const { messenger } = useRendererContext();
   const { ideCommandsService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
   const [pointed, setPointed] = useState(false);
 
   // --- Calculate tooltip text
+  const addrLabel =
+    typeof address === "number" ? `$${toHexa4(address)} (${address})` : address;
   const tooltip =
-    `$${toHexa4(address)} (${address})\n` +
+    `${addrLabel}\n` +
     (hasBreakpoint
       ? `Left-click to remove\nRight-click to ${
           disabled ? "enable" : "disable"
@@ -44,7 +44,9 @@ export const BreakpointIndicator = ({
     iconName = "circle-filled";
     fill = disabled
       ? "--color-breakpoint-disabled"
-      : "--color-breakpoint-enabled";
+      : typeof address === "number"
+      ? "--color-breakpoint-binary"
+      : "--color-breakpoint-code";
   } else if (pointed) {
     iconName = "circle-large-outline";
     fill = "--color-breakpoint-disabled";
@@ -53,13 +55,16 @@ export const BreakpointIndicator = ({
   // --- Handle addong/removing a breakpoint
   const handleLeftClick = async () => {
     await ideCommandsService.executeCommand(
-      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`);
+      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`
+    );
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
     if (hasBreakpoint) {
-      await ideCommandsService.executeCommand(`bp-en ${address} ${disabled ? "" : "-d"}`)
+      await ideCommandsService.executeCommand(
+        `bp-en ${address} ${disabled ? "" : "-d"}`
+      );
     }
   };
 

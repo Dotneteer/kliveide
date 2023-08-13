@@ -1,17 +1,26 @@
 import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import {
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { EmuListBreakpointsResponse, EmuGetCpuStateResponse } from "@messaging/main-to-emu";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
-import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
-import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
+import {
+  MemorySection,
+  MemorySectionType
+} from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
-import { useAppServices } from "../services/AppServicesProvider";
+import { getBreakpointKey } from "@common/utils/breakpoints";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
+import { toHexa4 } from "../services/ide-commands";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -24,46 +33,70 @@ const BreakpointsPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
-    const bpResponse = (await messenger.sendMessage({
+    const bpResponse = await messenger.sendMessage({
       type: "EmuListBreakpoints"
-    })) as EmuListBreakpointsResponse;
-    const cpuResponse = (await messenger.sendMessage({
-      type: "EmuGetCpuState"
-    })) as EmuGetCpuStateResponse;
-    pcValue.current = cpuResponse.pc;
+    });
+    if (bpResponse.type === "ErrorResponse") {
+      reportMessagingError(
+        `EmuListBreakpoints call failed: ${bpResponse.message}`
+      );
+    } else if (bpResponse.type !== "EmuListBreakpointsResponse") {
+      reportUnexpectedMessageType(bpResponse.type);
+    } else {
+      const cpuResponse = await messenger.sendMessage({
+        type: "EmuGetCpuState"
+      });
+      if (cpuResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetCpuState call failed: ${cpuResponse.message}`
+        );
+      } else if (cpuResponse.type !== "EmuGetCpuStateResponse") {
+        reportUnexpectedMessageType(cpuResponse.type);
+      } else {
+        pcValue.current = cpuResponse.pc;
 
-    // --- Any memory information received?
-    if (!bpResponse.memorySegments) return;
+        // --- Any memory information received?
+        if (!bpResponse.memorySegments) return;
 
-    // --- Copy memory segment samples
-    const mem = new Uint8Array(0x1_0000);
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const memSegment = bpResponse.memorySegments[i];
-      if (!memSegment) continue;
+        // --- Copy memory segment samples
+        const mem = new Uint8Array(0x1_0000);
+        for (let i = 0; i < bpResponse.breakpoints.length; i++) {
+          const memSegment = bpResponse.memorySegments[i];
+          if (!memSegment) continue;
 
-      const addr = bpResponse.breakpoints[i].address;
-      for (let j = 0; j < memSegment.length; j++) {
-        mem[(addr + j) & 0xffff] = memSegment[j];
+          const addr = bpResponse.breakpoints[i].address;
+          for (let j = 0; j < memSegment.length; j++) {
+            mem[(addr + j) & 0xffff] = memSegment[j];
+          }
+        }
+
+        // --- Disassemble memory data
+        disassLines.current = [];
+        for (let i = 0; i < bpResponse.breakpoints.length; i++) {
+          const bpInfo = bpResponse.breakpoints[i];
+          if (bpInfo.address !== undefined) {
+            const bpAddr = bpInfo.address;
+            const disass = new Z80Disassembler(
+              [
+                new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)
+              ],
+              mem,
+              {
+                noLabelPrefix: false
+              }
+            );
+            const output = await disass.disassemble(bpAddr, bpAddr);
+            disassLines.current[i] =
+              output.outputItems?.[0]?.instruction ?? "???";
+          } else {
+            disassLines.current[i] = "";
+          }
+        }
+
+        // --- Store the breakpoint info
+        setBps(bpResponse.breakpoints);
       }
     }
-
-    // --- Disassemble memory data
-    disassLines.current = [];
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const addr = bpResponse.breakpoints[i].address;
-      const disass = new Z80Disassembler(
-        [new MemorySection(addr, addr, MemorySectionType.Disassemble)],
-        mem,
-        {
-          noLabelPrefix: false
-        }
-      );
-      const output = await disass.disassemble(addr, addr);
-      disassLines.current[i] = output.outputItems?.[0]?.instruction ?? "???";
-    }
-
-    // --- Store the breakpoint info
-    setBps(bpResponse.breakpoints);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -89,24 +122,41 @@ const BreakpointsPanel = () => {
           approxSize={20}
           fixItemHeight={false}
           itemRenderer={idx => {
-            const addr = bps[idx].address;
-            const disabled = bps[idx].disabled ?? false;
+            const bp = bps[idx];
+            let addrKey = getBreakpointKey(bp);
+            const addr = bp.address;
+            const disabled = bp.disabled ?? false;
             const isCurrent =
               (machineState === MachineControllerState.Running ||
                 machineState === MachineControllerState.Paused) &&
-              pcValue.current === addr;
+              (pcValue.current === addr ||
+                pcValue.current === bp.resolvedAddress);
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
-                  address={addr}
+                  address={addr ?? addrKey}
                   current={isCurrent}
                   hasBreakpoint={true}
                   disabled={disabled}
                 />
                 <LabelSeparator width={4} />
-                <Label text={`${toHexa4(addr)}`} width={40} />
-                <Secondary text={`(${addr})`} width={64} />
+                {bp.resolvedAddress !== undefined && (
+                  <Value
+                    text={`${toHexa4(bp.resolvedAddress)} (${
+                      bp.resolvedAddress
+                    })`}
+                    width={104}
+                  />
+                )}
+                <Label
+                  text={addrKey}
+                  width={addr !== undefined ? 40 : undefined}
+                />
+                {bp.address !== undefined && (
+                  <Label text={`(${addr})`} width={64} />
+                )}
+
                 <Value text={disassLines.current[idx] ?? "???"} width='auto' />
               </div>
             );

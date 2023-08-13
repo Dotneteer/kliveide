@@ -22,8 +22,9 @@ export class NewProjectCommand extends IdeCommandBase {
   private projectFolder: string;
 
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length !== 2 && args.length !== 3) {
       return validationError("This command must use 2 or 3 arguments");
     }
@@ -45,18 +46,24 @@ export class NewProjectCommand extends IdeCommandBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
-    const result = (await context.messenger.sendMessage({
+    const response = (await context.messenger.sendMessage({
       type: "MainCreateKliveProject",
       machineId: this.machineId,
       projectName: this.projectName,
       projectFolder: this.projectFolder
-    })) as MainCreateKliveProjectResponse;
-    if (result.errorMessage) {
-      return commandError(result.errorMessage);
+    }))
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
+    }
+    if (response.type !== "MainCreateKliveProjectResponse") {
+      return commandError(`Unexpected response type: ${response.type}`);
+    }
+    if (response.errorMessage) {
+      return commandError(response.errorMessage);
     }
     writeSuccessMessage(
       context.output,
-      `Klive project successfully created in ${result.path}`
+      `Klive project successfully created in ${response.path}`
     );
     return commandSuccess;
   }

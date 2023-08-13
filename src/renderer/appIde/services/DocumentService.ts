@@ -406,6 +406,9 @@ class DocumentService implements IDocumentService {
    */
   closeDocument (id: string): void {
     this.store.dispatch(closeDocumentAction(id), "ide");
+    if (this.documentApi.has(id)) {
+      this.documentApi.delete(id);
+    }
     if (this.documentData.has(id)) {
       const data = this.documentData.get(id);
       if (data?.dispose) {

@@ -10,7 +10,10 @@ export const IdeStatusBar = () => {
   const execState = useSelector(s => s.emulatorState?.machineState);
   const statusMessage = useSelector(s => s.ideView?.statusMessage);
   const statusSuccess = useSelector(s => s.ideView?.statusSuccess);
+  const isKliveProject = useSelector(s => s.project?.isKliveProject);
+  const compilation = useSelector(s => s.compilation);
   const [machineState, setMachineState] = useState("");
+  const [compileStatus, setCompileStatus] = useState("");
 
   // --- Reflect machine execution state changes
   useEffect(() => {
@@ -35,6 +38,25 @@ export const IdeStatusBar = () => {
         break;
     }
   }, [execState]);
+
+  useEffect(() => {
+    let compilationLabel = "";
+    if (compilation.inProgress) {
+      compilationLabel = "Compilation in progress...";
+    } else {
+      if (!compilation.result) {
+        compilationLabel = "Not compiled yet";
+      } else {
+        if (compilation.failed || compilation.result?.errors?.length > 0) {
+          compilationLabel = "Compilation failed";
+        } else {
+          compilationLabel = "Compilation successful";
+        }
+      }
+    }
+    setCompileStatus(compilationLabel);
+  }, [compilation]);
+
   return (
     <div className={styles.ideStatusBar}>
       <div className={styles.sectionWrapper}>
@@ -48,6 +70,14 @@ export const IdeStatusBar = () => {
           <LabelSeparator />
           <Label text={machineState} />
         </Section>
+        {isKliveProject && (
+          <Section>
+            <LabelSeparator />
+            <Icon iconName='combine' width={16} height={16} />
+            <LabelSeparator />
+            <Label text={compileStatus} />
+          </Section>
+        )}
         {statusMessage && (
           <Section>
             <Icon

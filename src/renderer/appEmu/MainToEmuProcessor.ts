@@ -19,6 +19,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
+import { reportMessagingError } from "@renderer/reportError";
 
 const borderColors = [
   "Black",
@@ -164,7 +165,28 @@ export async function processMainToEmuMessages (
         .map(bp => ({
           ...bp
         }))
-        .sort((a, b) => a.address - b.address);
+        .sort((a, b) => {
+          if (a.address !== undefined) {
+            if (b.address != undefined) {
+              return a.address - b.address;
+            } else {
+              return -1;
+            }
+          }
+          if (b.address != undefined) {
+            if (a.address != undefined) {
+              return a.address - b.address;
+            } else {
+              return 1;
+            }
+          }
+          if (a.resource > b.resource) {
+            return -1;
+          } else if (a.resource < b.resource) {
+            return 1;
+          }
+          return (a.line ?? 0) - (b.line ?? 0);
+        });
       const segments: number[][] = [];
       for (let i = 0; i < execBreakpoints.length; i++) {
         const addr = execBreakpoints[i].address;
@@ -192,7 +214,10 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.addExecBreakpoint({
-        address: message.bp,
+        address: message.address,
+        partition: message.partition,
+        resource: message.resource,
+        line: message.line,
         exec: true
       });
       return flagResponse(status);
@@ -201,7 +226,12 @@ export async function processMainToEmuMessages (
     case "EmuRemoveBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.removeExecBreakpoint(message.bp);
+      const status = controller.debugSupport.removeExecBreakpoint({
+        address: message.address,
+        partition: message.partition,
+        resource: message.resource,
+        line: message.line
+      });
       return flagResponse(status);
     }
 
@@ -209,7 +239,12 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.enableExecBreakpoint(
-        message.address,
+        {
+          address: message.address,
+          partition: message.partition,
+          resource: message.resource,
+          line: message.line
+        },
         message.enable
       );
       return flagResponse(status);
@@ -261,11 +296,35 @@ export async function processMainToEmuMessages (
       controller.machine.injectCodeToRun(message.codeToInject);
       break;
     }
-    
+
     case "EmuRunCode": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       await controller.runCode(message.codeToInject, message.debug);
+      break;
+    }
+
+    case "EmuResolveBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (controller) {
+        controller.resolveBreakpoints(message.breakpoints);
+      }
+      break;
+    }
+
+    case "EmuScrollBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (controller) {
+        controller.scrollBreakpoints(message.addr, message.shift);
+      }
+      break;
+    }
+
+    case "EmuNormalizeBreakpoints": {
+      const controller = machineService.getMachineController();
+      if (controller) {
+        controller.normalizeBreakpoints(message.resource, message.lineCount);
+      }
       break;
     }
   }
@@ -288,12 +347,17 @@ export async function processMainToEmuMessages (
       const tapReader = new TapReader(reader);
       result = tapReader.readContent();
       if (result) {
-        await emuToMain.sendMessage({
+        const response = await emuToMain.sendMessage({
           type: "MainDisplayMessageBox",
           messageType: "error",
           title: "Tape file error",
           message: `Error while processing tape file ${message.file} (${result})`
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `Error displaying message dialog: ${response.message}`
+          );
+        }
         return;
       } else {
         dataBlocks = tapReader.dataBlocks;
@@ -309,11 +373,16 @@ export async function processMainToEmuMessages (
     controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
 
     // --- Done.
-    await emuToMain.sendMessage({
+    const response = await emuToMain.sendMessage({
       type: "MainDisplayMessageBox",
       messageType: "info",
       title: "Tape file set",
       message: `Tape file ${message.file} successfully set.`
     });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(
+        `Error displaying message dialog: ${response.message}`
+      );
+    }
   }
 }

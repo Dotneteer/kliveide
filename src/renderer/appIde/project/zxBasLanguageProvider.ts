@@ -12,7 +12,7 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   supportsKlive: true,
   options: {
   },
-  supportsBreakpoints: true,
+  supportsBreakpoints: false,
   languageDef: {
     ignoreCase: true,
     statements: [

@@ -48,7 +48,7 @@ export const lightTheme: ThemeProperties = {
   "--color-context-item-pointed": "#ffffff",
   "--color-context-separator": "#606060",
 
-  // --- Modal 
+  // --- Modal
   "--bgcolor-backdrop": "#ffffff80",
   "--bgcolor-modal": "#e8e8e8",
   "--border-modal": "1px solid #0076c9",
@@ -164,7 +164,9 @@ export const lightTheme: ThemeProperties = {
   "--color-tool-border": "#a0a0a0",
 
   // --- Breakpoints panel
-  "--color-breakpoint-enabled": "red",
+  "--color-breakpoint-code": "red",
+  "--color-breakpoint-binary": "#0598bc",
+  "--color-breakpoint-mixed": "#bc05bc",
   "--color-breakpoint-disabled": "#a0a0a0",
   "--color-breakpoint-current": "yellow",
 
@@ -177,13 +179,17 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-memory-pc-pointed": "#00BC00",
   "--color-memory-pointed": "#ffffff",
 
-    // --- Explorer
-    "--color-explorer": "#414141",
-    "--bgcolor-explorer-pointed": "#e4e4e4",
-    "--fill-explorer-icon": "#29b8db",
-    "--bgcolor-explorer-selected": "#dfe2ee",
-    "--bgcolor-explorer-focused-selected": "#0057b3",
-    "--color-explorer-selected": "#616161",
-    "--color-explorer-focused-selected": "#ffffff",
-    "--border-explorer-focused": "#0076c9",
+  // --- Explorer
+  "--color-explorer": "#414141",
+  "--bgcolor-explorer-pointed": "#e4e4e4",
+  "--fill-explorer-icon": "#29b8db",
+  "--bgcolor-explorer-selected": "#dfe2ee",
+  "--bgcolor-explorer-focused-selected": "#0057b3",
+  "--color-explorer-selected": "#616161",
+  "--color-explorer-focused-selected": "#ffffff",
+  "--border-explorer-focused": "#0076c9",
+
+  // --- Debugging
+  "--bgcolor-debug-active-bp": "#ffff0032",
+  "--color-debug-unreachable-bp": "orange"
 };

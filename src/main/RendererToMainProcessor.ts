@@ -109,7 +109,7 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainCreateKliveProject":
-      const createFolderResponse = createKliveProject(
+      const createFolderResponse = await createKliveProject(
         message.machineId,
         message.projectName,
         message.projectFolder
@@ -197,6 +197,7 @@ export async function processRendererToMainMessages (
 
     case "MainSaveBinaryFile":
       try {
+        //throw new Error("Fake Error");
         const filePath = resolveMessagePath(message.path, message.resolveIn);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
@@ -218,11 +219,9 @@ export async function processRendererToMainMessages (
     case "MainCompileFile":
       const compiler = getCompiler(message.language);
       try {
-        dispatch(startCompileAction(message.filename));
         const result = (await compiler.compileFile(
           message.filename
         )) as KliveCompilerOutput;
-        dispatch(endCompileAction(result));
         return {
           type: "MainCompileFileResponse",
           result,
@@ -257,7 +256,10 @@ export async function processRendererToMainMessages (
     case "EmuGetSysVars":
     case "EmuInjectCode":
     case "EmuRunCode":
-      return sendFromMainToEmu(message);
+    case "EmuResolveBreakpoints":
+    case "EmuScrollBreakpoints":
+    case "EmuNormalizeBreakpoints"  :
+      return await sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

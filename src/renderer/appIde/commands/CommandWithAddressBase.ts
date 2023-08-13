@@ -1,3 +1,4 @@
+import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
 import {
@@ -21,16 +22,17 @@ export abstract class CommandWithAddressBase extends IdeCommandBase {
   protected abstract readonly extraArgCount?: number;
 
   async validateArgs (
-    _args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (this.extraArgCount === undefined) {
-      if (_args.length < 1) {
+      if (args.length < 1) {
         return validationError(
           "This command expects at least a 16-bit address argument"
         );
       }
     } else {
-      if (_args.length < 1 + this.extraArgCount) {
+      if (args.length < 1 + this.extraArgCount) {
         return validationError(
           `This command expects a 16-bit address argument and ${
             this.extraArgCount
@@ -39,7 +41,7 @@ export abstract class CommandWithAddressBase extends IdeCommandBase {
       }
     }
 
-    const { value, messages } = getNumericTokenValue(_args[0]);
+    const { value, messages } = getNumericTokenValue(args[0]);
     if (value === null) {
       return messages;
     }

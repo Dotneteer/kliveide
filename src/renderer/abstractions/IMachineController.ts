@@ -9,6 +9,8 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
+import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -118,11 +120,32 @@ export interface IMachineController {
    * @param codeToInject Code to inject into the amchine
    * @param debug Run in debug mode?
    */
-  runCode (codeToInject: CodeToInject, debug?: boolean): Promise<void>;
+  runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void>;
+
+  /**
+   * Resolves the source code breakpoints used when running the machine
+   * @param bps
+   */
+  resolveBreakpoints(bps: ResolvedBreakpoint[]): void;
+
+  /**
+   * Scrolls down breakpoints
+   * @param def Breakpoint address
+   * @param lineNo Line number to shift down
+   */
+  scrollBreakpoints(def: BreakpointAddressInfo, shift: number): void;
+
+  /**
+   * Normalizes source code breakpoint. Removes the ones that overflow the
+   * file and also deletes duplicates.
+   * @param lineCount
+   * @returns
+   */
+  normalizeBreakpoints(resource: string, lineCount: number): void;
 }
 
 export type FrameCompletedArgs = {
   fullFrame: boolean;
   savedFileInfo: SavedFileInfo | null;
   fastLoadInvoked: boolean;
-}
+};

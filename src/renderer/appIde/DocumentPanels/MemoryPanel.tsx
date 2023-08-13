@@ -21,6 +21,10 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemoryPanel.module.scss";
 import { DumpSection } from "./DumpSection";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -82,34 +86,42 @@ const MemoryPanel = ({ document }: DocumentProps) => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
-      const response = (await messenger.sendMessage({
+      const response = await messenger.sendMessage({
         type: "EmuGetMemory"
-      })) as EmuGetMemoryResponse;
-      memory.current = response.memory;
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetMemory request failed: ${response.message}`
+        );
+      } else if (response.type !== "EmuGetMemoryResponse") {
+        reportUnexpectedMessageType(response.type);
+      } else {
+        memory.current = response.memory;
 
-      // --- Calculate tooltips for pointed addresses
-      pointedRegs.current = {};
-      if (
-        useAutoRefresh.current ||
-        machineState === MachineControllerState.Paused ||
-        machineState === MachineControllerState.Stopped
-      ) {
-        extendPointedAddress("AF", response.af);
-        extendPointedAddress("BC", response.bc);
-        extendPointedAddress("DE", response.de);
-        extendPointedAddress("HL", response.hl);
-        extendPointedAddress("AF'", response.af_);
-        extendPointedAddress("BC'", response.bc_);
-        extendPointedAddress("DE'", response.de_);
-        extendPointedAddress("HL'", response.hl_);
-        extendPointedAddress("PC", response.pc);
-        extendPointedAddress("SP", response.sp);
-        extendPointedAddress("IX", response.ix);
-        extendPointedAddress("IY", response.iy);
-        extendPointedAddress("IR", response.ir);
-        extendPointedAddress("WZ", response.sp);
+        // --- Calculate tooltips for pointed addresses
+        pointedRegs.current = {};
+        if (
+          useAutoRefresh.current ||
+          machineState === MachineControllerState.Paused ||
+          machineState === MachineControllerState.Stopped
+        ) {
+          extendPointedAddress("AF", response.af);
+          extendPointedAddress("BC", response.bc);
+          extendPointedAddress("DE", response.de);
+          extendPointedAddress("HL", response.hl);
+          extendPointedAddress("AF'", response.af_);
+          extendPointedAddress("BC'", response.bc_);
+          extendPointedAddress("DE'", response.de_);
+          extendPointedAddress("HL'", response.hl_);
+          extendPointedAddress("PC", response.pc);
+          extendPointedAddress("SP", response.sp);
+          extendPointedAddress("IX", response.ix);
+          extendPointedAddress("IY", response.iy);
+          extendPointedAddress("IR", response.ir);
+          extendPointedAddress("WZ", response.sp);
+        }
+        createDumpSections();
       }
-      createDumpSections();
     } finally {
       refreshInProgress.current = false;
     }
@@ -236,11 +248,13 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           title='Show characters dump?'
           clicked={() => saveViewState()}
         />
-        <AddressInput label="Go To:" onAddressSent={async (address) => {
-          topAddress.current = Math.floor(address/8);
-          setScrollVersion(scrollVersion + 1);
-        }}/>
-
+        <AddressInput
+          label='Go To:'
+          onAddressSent={async address => {
+            topAddress.current = Math.floor(address / 8);
+            setScrollVersion(scrollVersion + 1);
+          }}
+        />
       </div>
       <div className={styles.memoryWrapper}>
         <VirtualizedListView

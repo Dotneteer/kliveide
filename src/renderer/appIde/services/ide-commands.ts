@@ -43,7 +43,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Validate the arguments and display potential issues
     this.prepareCommand();
-    const received = await this.validateArgs(context.argTokens);
+    const received = await this.validateArgs(context);
     const validationMessages = Array.isArray(received) ? received : [received];
     const hasError = validationMessages.some(
       m => m.type === ValidationMessageType.Error
@@ -91,7 +91,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
    * @returns A list of issues
    */
   async validateArgs(
-    _args: Token[]
+    _context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
     return [];
   }

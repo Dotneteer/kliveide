@@ -1,7 +1,13 @@
-import { FrameCompletedArgs, IMachineController } from "@renderer/abstractions/IMachineController";
+import {
+  FrameCompletedArgs,
+  IMachineController
+} from "@renderer/abstractions/IMachineController";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { toHexa4 } from "@appIde/services/ide-commands";
-import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
+import {
+  IOutputBuffer,
+  OutputColor
+} from "@renderer/appIde/ToolArea/abstractions";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { FrameStats } from "@renderer/abstractions/FrameStats";
@@ -17,6 +23,8 @@ import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
+import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -170,7 +178,9 @@ export class MachineController implements IMachineController {
 
     // --- Reset the imminent breakpoint
     if (this.context.debugSupport) {
-      this.context.debugSupport.imminentBreakpoint = undefined;
+      delete this.context.debugSupport.imminentBreakpoint;
+      delete this.debugSupport.lastBreakpoint;
+      delete this.debugSupport.lastStartupBreakpoint;
     }
   }
 
@@ -265,16 +275,51 @@ export class MachineController implements IMachineController {
       m.doWriteMemory(spValue - 2, execInfo.entryPoint & 0xff);
       m.sp = spValue - 2;
       await this.sendOutput(
-        `Code will start as a subroutine to return to $${toHexa4(execInfo.entryPoint)}`,
+        `Code will start as a subroutine to return to $${toHexa4(
+          execInfo.entryPoint
+        )}`,
         "blue"
       );
-      }
+    }
 
     if (debug) {
       await this.startDebug();
     } else {
       await this.start();
     }
+  }
+
+  /**
+   * Resolves the source code breakpoints used when running the machine
+   * @param bps
+   */
+  resolveBreakpoints (bps: ResolvedBreakpoint[]): void {
+    if (!this.debugSupport) return;
+    this.debugSupport.resetBreakpointResolution();
+    for (const bp of bps) {
+      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address);
+    }
+  }
+
+  /**
+   * Scrolls down breakpoints
+   * @param def Breakpoint address
+   * @param lineNo Line number to shift down
+   */
+  scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
+    if (!this.debugSupport) return;
+    this.debugSupport.scrollBreakpoints(def, shift);
+  }
+
+  /**
+   * Normalizes source code breakpoint. Removes the ones that overflow the
+   * file and also deletes duplicates.
+   * @param lineCount
+   * @returns
+   */
+  normalizeBreakpoints (resource: string, lineCount: number): void {
+    if (!this.debugSupport) return;
+    this.debugSupport.normalizeBreakpoints(resource, lineCount);
   }
 
   /**
@@ -329,15 +374,18 @@ export class MachineController implements IMachineController {
         let savedInfo: SavedFileInfo | null = null;
         if (frameCompleted) {
           // --- Check for file to save
-          savedInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as (SavedFileInfo | null);
+          savedInfo = this.machine.getMachineProperty(
+            SAVED_TO_TAPE
+          ) as SavedFileInfo | null;
           if (savedInfo) {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
           }
         }
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
-          savedFileInfo: savedInfo ,
-          fastLoadInvoked: (this.machine as IZxSpectrumMachine).fastLoadInvoked ?? false
+          savedFileInfo: savedInfo,
+          fastLoadInvoked:
+            (this.machine as IZxSpectrumMachine).fastLoadInvoked ?? false
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

@@ -6,7 +6,8 @@ import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   toHexa4,
   writeSuccessMessage,
-  commandSuccess
+  commandSuccess,
+  commandError
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import {
@@ -17,6 +18,7 @@ import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { Token } from "../services/command-parser";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 
 let disassemblyIndex = 1;
 
@@ -33,17 +35,15 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   conciseMode = false;
   useColons = false;
 
-  async validateArgs(
-    args: Token[]
+  async validateArgs (
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
-    this.conciseMode = args.some(t => t.text === "-c");
-    this.useColons = args.some(t => t.text === "-lc");
+    this.conciseMode = context.argTokens.some(t => t.text === "-c");
+    this.useColons = context.argTokens.some(t => t.text === "-lc");
     return [];
   }
-  
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const fromH = toHexa4(this.startAddress);
     const toH = toHexa4(this.endAddress);
     const buffer = await this.getDisassembly(context);
@@ -74,51 +74,54 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     return commandSuccess;
   }
 
-  async getDisassembly (
-    context: IdeCommandContext
-  ): Promise<OutputPaneBuffer> {
-
+  async getDisassembly (context: IdeCommandContext): Promise<OutputPaneBuffer> {
     // --- Get the memory
-    const response = (await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "EmuGetMemory"
-    })) as EmuGetMemoryResponse;
-    const memory = response.memory;
-
-    // --- Specify memory sections to disassemble
-    const memSections: MemorySection[] = [];
-
-    // --- Use the memory segments according to the "ram" and "screen" flags
-    memSections.push(
-      new MemorySection(
-        this.startAddress,
-        this.endAddress,
-        MemorySectionType.Disassemble
-      )
-    );
-
-    // --- Disassemble the specified memory segments
-    const disassembler = new Z80Disassembler(memSections, memory, {});
-    const disassItems = (
-      await disassembler.disassemble(this.startAddress, this.endAddress)
-    ).outputItems;
-
-    const buffer = new OutputPaneBuffer(0x1_0000);
-    disassItems.forEach(item => {
-      buffer.resetStyle();
-      if (!this.conciseMode) {
-        buffer.write(`${toHexa4(item.address)} `);
-        buffer.write(item.opCodes.padEnd(13, " "));
-      }
-      buffer.color("green");
-      buffer.write(
-        (item.hasLabel
-          ? `L${toHexa4(item.address)}${this.useColons ? ":" : ""}`
-          : ""
-        ).padEnd(12, " ")
-      );
-      buffer.color("bright-cyan");
-      buffer.writeLine(item.instruction);
     });
-    return buffer;
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`EmuGetMemory call failed: ${response.message}`);
+    } else if (response.type !== "EmuGetMemoryResponse") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      const memory = response.memory;
+
+      // --- Specify memory sections to disassemble
+      const memSections: MemorySection[] = [];
+
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      memSections.push(
+        new MemorySection(
+          this.startAddress,
+          this.endAddress,
+          MemorySectionType.Disassemble
+        )
+      );
+
+      // --- Disassemble the specified memory segments
+      const disassembler = new Z80Disassembler(memSections, memory, {});
+      const disassItems = (
+        await disassembler.disassemble(this.startAddress, this.endAddress)
+      ).outputItems;
+
+      const buffer = new OutputPaneBuffer(0x1_0000);
+      disassItems.forEach(item => {
+        buffer.resetStyle();
+        if (!this.conciseMode) {
+          buffer.write(`${toHexa4(item.address)} `);
+          buffer.write(item.opCodes.padEnd(13, " "));
+        }
+        buffer.color("green");
+        buffer.write(
+          (item.hasLabel
+            ? `L${toHexa4(item.address)}${this.useColons ? ":" : ""}`
+            : ""
+          ).padEnd(12, " ")
+        );
+        buffer.color("bright-cyan");
+        buffer.writeLine(item.instruction);
+      });
+      return buffer;
+    }
   }
 }

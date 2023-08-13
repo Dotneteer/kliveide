@@ -1,7 +1,8 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -62,12 +63,18 @@ export interface EmuEraseAllBreakpointsRequest extends MessageBase {
 
 export interface EmuSetBreakpointRequest extends MessageBase {
   type: "EmuSetBreakpoint";
-  bp: number;
+  address?: number;
+  partition?: number; 
+  resource?: string;
+  line?: number;
 }
 
 export interface EmuRemoveBreakpointRequest extends MessageBase {
   type: "EmuRemoveBreakpoint";
-  bp: number;
+  address?: number;
+  partition?: number; 
+  resource?: string;
+  line?: number;
 }
 
 export interface EmuListBreakpointsRequest extends MessageBase {
@@ -76,7 +83,10 @@ export interface EmuListBreakpointsRequest extends MessageBase {
 
 export interface EmuEnableBreakpointRequest extends MessageBase {
   type: "EmuEnableBreakpoint";
-  address: number;
+  address?: number;
+  partition?: number; 
+  resource?: string;
+  line?: number;
   enable: boolean;
 }
 
@@ -184,6 +194,22 @@ export interface EmuRunCodeRequest extends MessageBase {
   debug: boolean;
 }
 
+export interface EmuResolveBreakpointsRequest extends MessageBase {
+  type: "EmuResolveBreakpoints";
+  breakpoints: ResolvedBreakpoint[];
+}
+
+export interface EmuScrollBreakpointsRequest extends MessageBase {
+  type: "EmuScrollBreakpoints";
+  addr: BreakpointAddressInfo;
+  shift: number;
+}
+
+export interface EmuNormalizeBreakpointsRequest extends MessageBase {
+  type: "EmuNormalizeBreakpoints";
+  resource: string;
+  lineCount: number;
+}
 
 export function createMachineCommand (
   command: MachineCommand

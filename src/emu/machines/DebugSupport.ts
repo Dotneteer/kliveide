@@ -1,8 +1,13 @@
 import { incBreakpointsVersionAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  BreakpointAddressInfo,
+  BreakpointInfo
+} from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import { getBreakpointKey } from "@common/utils/breakpoints";
+import { getKliveProjectFolder } from "@main/projects";
 
 /**
  * This class implement support functions for debugging
@@ -44,8 +49,21 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @param partition Breakpoint partition
    */
-  getExecBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._execBps.get(getBpKey(address, partition));
+  getExecBreakpoint (
+    address: number,
+    partition?: number
+  ): BreakpointInfo | undefined {
+    const binaryBp = this._execBps.get(
+      getBreakpointKey({ address, partition })
+    );
+    if (binaryBp) {
+      return binaryBp;
+    }
+    for (const bpInfo of this._execBps.values()) {
+      if (bpInfo.resolvedAddress === address) {
+        return bpInfo;
+      }
+    }
   }
 
   /**
@@ -61,7 +79,7 @@ export class DebugSupport implements IDebugSupport {
    * @param partition Breakpoint partition
    */
   getMemoryBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._memoryBps.get(getBpKey(address, partition));
+    return this._memoryBps.get(getBreakpointKey({ address, partition }));
   }
 
   /**
@@ -107,13 +125,20 @@ export class DebugSupport implements IDebugSupport {
    * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
    */
   addExecBreakpoint (breakpoint: BreakpointInfo): boolean {
-    const bpKey = getBpKey(breakpoint.address, breakpoint.partition);
+    const bpKey = getBreakpointKey(breakpoint);
     const oldBp = this._execBps.get(bpKey);
-    this._execBps.set(bpKey, {
-      address: breakpoint.address,
-      partition: breakpoint.partition,
-      exec: true
-    });
+    try {
+      this._execBps.set(bpKey, {
+        address: breakpoint.address,
+        partition: breakpoint.partition,
+        resource: breakpoint.resource,
+        line: breakpoint.line,
+        exec: true
+      });
+    } catch (err) {
+      console.log("err in addExecBreakpoint", err.toString());
+    }
+
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return !oldBp;
   }
@@ -123,8 +148,8 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
-  removeExecBreakpoint (address: number): boolean {
-    const bpKey = getBpKey(address);
+  removeExecBreakpoint (bp: BreakpointAddressInfo): boolean {
+    const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -136,21 +161,105 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @param enabled Is the breakpoint enabled?
    */
-  enableExecBreakpoint (address: number, enabled: boolean): boolean {
-    const bpKey = getBpKey(address);
+  enableExecBreakpoint (bp: BreakpointAddressInfo, enabled: boolean): boolean {
+    const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return true;
   }
-}
 
-/**
- * Gets the storage key for the specified address and partition
- */
-function getBpKey (address: number, partition?: number): string {
-  return partition !== undefined
-    ? `${partition.toString(16)}:${address.toString(16).padStart(4, "0")}`
-    : `${address.toString(16).padStart(4, "0")}`;
+  /**
+   * Finds the specified breakpoint
+   * @param address Breakpoint address
+   * @returns True, if the breakpoint has just been removed; otherwise, false
+   */
+  findBreakpoint (
+    breakpoint: BreakpointAddressInfo
+  ): BreakpointInfo | undefined {
+    return this._execBps.get(getBreakpointKey(breakpoint));
+  }
+
+  /**
+   * Scrolls down breakpoints
+   * @param def Breakpoint address
+   * @param lineNo Line number to shift down
+   */
+  scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
+    let changed = false;
+    const values: BreakpointInfo[] = [];
+    for (const value of this._execBps.values()) {
+      values.push(value);
+    }
+    values.forEach(bp => {
+      if (bp.resource === def.resource && bp.line >= def.line) {
+        const oldKey = getBreakpointKey(bp);
+        this._execBps.delete(oldKey);
+        bp.line += shift;
+        this._execBps.set(getBreakpointKey(bp), bp);
+        changed = true;
+        console.log("changed");
+      }
+    });
+    if (changed) {
+      this.store.dispatch(incBreakpointsVersionAction(), "emu");
+    }
+  }
+
+  /**
+   * Normalizes source code breakpoint. Removes the ones that overflow the
+   * file and also deletes duplicates.
+   * @param lineCount
+   * @returns
+   */
+  normalizeBreakpoints (resource: string, lineCount: number): void {
+    const mapped = new Set<string>();
+    const toDelete = new Set<string>();
+
+    // --- Iterate through the breakpoints to find the ones to delete
+    this._execBps.forEach(bp => {
+      const bpKey = getBreakpointKey(bp);
+      if (bp.resource === resource) {
+        if (bp.line > lineCount) {
+          // --- Delete as it overflows the file
+          toDelete.add(bpKey);
+        } else if (mapped.has(bpKey)) {
+          // --- Deletes as it is a duplicate
+          toDelete.add(bpKey);
+        } else {
+          // --- Map as it exists and want to avoid duplication
+          mapped.add(bpKey);
+        }
+      }
+
+      if (toDelete.size > 0) {
+        for (const item of toDelete.values()) {
+          this._execBps.delete(item);
+        }
+        console.log(this._execBps);
+        this.store.dispatch(incBreakpointsVersionAction(), "emu");
+      }
+    });
+  }
+
+  /**
+   * Resets the resolution of breakpoints
+   */
+  resetBreakpointResolution (): void {
+    for (const bp of this._execBps.values()) {
+      delete bp.resolvedAddress;
+    }
+  }
+
+  /**
+   * Resolves the specified resouce breakpoint to an address
+   */
+  resolveBreakpoint (resource: string, line: number, address: number): void {
+    const bpKey = getBreakpointKey({ resource, line });
+    const bp = this._execBps.get(bpKey);
+    if (bp) {
+      bp.resolvedAddress = address;
+    }
+  }
 }

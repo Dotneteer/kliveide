@@ -4,6 +4,7 @@ import { SideBarPanelState } from "./AppState";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import { DebuggableOutput } from "@abstractions/IZ80CompilerService";
 
 /**
  * Available action types you can use with state manangement

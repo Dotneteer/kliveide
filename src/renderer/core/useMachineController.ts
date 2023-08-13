@@ -8,8 +8,8 @@ export const useMachineController = (
   machineStateChanged?: (states: {
     oldState: MachineControllerState;
     newState: MachineControllerState;
-  }) => Promise<void>,
-  frameCompleted?: (args: FrameCompletedArgs) => Promise<void>
+  }) => void,
+  frameCompleted?: (args: FrameCompletedArgs) => void
 ) => {
   const { machineService, outputPaneService } = useAppServices();
   const [controller, setController] = useState<IMachineController>();

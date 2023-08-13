@@ -19,6 +19,13 @@ import {
   FrameCompletedArgs,
   IMachineController
 } from "../../abstractions/IMachineController";
+import { reportMessagingError } from "@renderer/reportError";
+
+let machineStateHandlerQueue: {
+  oldState: MachineControllerState;
+  newState: MachineControllerState;
+}[] = [];
+let machineStateProcessing = false;
 
 export const EmulatorPanel = () => {
   // --- Access state information
@@ -130,7 +137,9 @@ export const EmulatorPanel = () => {
   );
 
   // --- Handles machine controller changes
-  async function machineControllerChanged (ctrl: MachineController): Promise<void> {
+  async function machineControllerChanged (
+    ctrl: MachineController
+  ): Promise<void> {
     // --- Let's store a reference to the controller
     controllerRef.current = controller;
     if (!controller) return;
@@ -146,7 +155,9 @@ export const EmulatorPanel = () => {
         (controller.machine.tactsInFrame * audioSampleRate) /
         controller.machine.baseClockFrequency /
         controller.machine.clockMultiplier;
-      beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerFrame));
+      beeperRenderer.current = new AudioRenderer(
+        await getBeeperContext(samplesPerFrame)
+      );
     }
   }
 
@@ -155,32 +166,45 @@ export const EmulatorPanel = () => {
     oldState: MachineControllerState;
     newState: MachineControllerState;
   }): Promise<void> {
-    let overlay = "";
-    switch (stateInfo.newState) {
-      case MachineControllerState.Running:
-        overlay = controller?.isDebugging ? "Debug mode" : "";
-        await beeperRenderer?.current?.play();
-        break;
+    // --- Because event triggering does not await async methods, we have to queue
+    // --- change events and serialize their processing
+    machineStateHandlerQueue.push(stateInfo);
+    if (machineStateProcessing) return;
+    machineStateProcessing = true;
+    try {
+      while (machineStateHandlerQueue.length > 0) {
+        const toProcess = machineStateHandlerQueue.shift();
+        switch (toProcess.newState) {
+          case MachineControllerState.Running:
+            setOverlay(controller?.isDebugging ? "Debug mode" : "");
+            await beeperRenderer?.current?.play();
+            break;
 
-      case MachineControllerState.Paused:
-        overlay = "Paused";
-        await beeperRenderer?.current?.suspend();
-        break;
+          case MachineControllerState.Paused:
+            setOverlay("Paused");
+            await beeperRenderer?.current?.suspend();
+            break;
 
-      case MachineControllerState.Stopped:
-        overlay = "Stopped";
-        await beeperRenderer?.current?.suspend();
-        break;
+          case MachineControllerState.Stopped:
+            setOverlay("Stopped");
+            await beeperRenderer?.current?.suspend();
+            machineStateHandlerQueue.length = 0;
+            break;
 
-      default:
-        overlay = "";
-        break;
+          default:
+            setOverlay("");
+            break;
+        }
+      }
+    } finally {
+      machineStateProcessing = false;
     }
-    setOverlay(overlay);
   }
 
   // --- Handles machine frame completion events
-  async function machineFrameCompleted (args: FrameCompletedArgs): Promise<void> {
+  async function machineFrameCompleted (
+    args: FrameCompletedArgs
+  ): Promise<void> {
     // --- Update the screen
     displayScreenData();
 
@@ -203,11 +227,16 @@ export const EmulatorPanel = () => {
     // --- There's a saved file, store it
     if (args.savedFileInfo) {
       (async () => {
-        await messenger.sendMessage({
+        const response = await messenger.sendMessage({
           type: "MainSaveBinaryFile",
           path: args.savedFileInfo.name,
           data: args.savedFileInfo.contents
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `File saved with the SAVE ZX Spectrum command failed: ${response.message}.`
+          );
+        }
       })();
     }
   }
@@ -222,9 +251,6 @@ export const EmulatorPanel = () => {
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;
     const clientHeight = hostElement.current.offsetHeight;
-    if (shadowCanvasWidth === undefined || shadowCanvasHeight === undefined) {
-      console.log("undef canvas size");
-    }
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
     let widthRatio = Math.floor((clientWidth - 8) / width);

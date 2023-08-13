@@ -19,8 +19,9 @@ export class OpenFolderCommand extends IdeCommandBase {
   private projectFolder: string;
 
   async validateArgs (
-    args: Token[]
+    context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const args = context.argTokens;
     if (args.length !== 1) {
       return validationError("This command expects a path as its argument");
     }
@@ -33,12 +34,12 @@ export class OpenFolderCommand extends IdeCommandBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
-    const result = await context.messenger.sendMessage({
+    const response = await context.messenger.sendMessage({
       type: "MainOpenFolder",
       folder: this.projectFolder
     });
-    if (result.type === "ErrorResponse") {
-      return commandError(result.message);
+    if (response.type === "ErrorResponse") {
+      return commandError(response.message);
     }
     writeSuccessMessage(
       context.output,

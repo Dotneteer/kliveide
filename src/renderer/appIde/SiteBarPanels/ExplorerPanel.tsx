@@ -31,12 +31,18 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
+  displayDialogAction,
   incDocumentActivationVersionAction,
   setBuildRootAction
 } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
+import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -104,7 +110,10 @@ const ExplorerPanel = () => {
   // --- Saves the current project
   const saveProject = async () => {
     await new Promise(r => setTimeout(r, 100));
-    await messenger.sendMessage({ type: "MainSaveProject" });
+    const response = await messenger.sendMessage({ type: "MainSaveProject" });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`EmuGetMemory request failed: ${response.message}`);
+    }
   };
 
   // --- Let's use this context menu when clicking a project tree node
@@ -205,12 +214,17 @@ const ExplorerPanel = () => {
         // --- Check for successful operation
         if (response.type === "ErrorResponse") {
           // --- Display an error message
-          await messenger.sendMessage({
+          const dlgResponse = await messenger.sendMessage({
             type: "MainDisplayMessageBox",
             messageType: "error",
             title: "Rename Error",
             message: response.message
           });
+          if (dlgResponse.type === "ErrorResponse") {
+            reportMessagingError(
+              `Error displaying message dialog: ${dlgResponse.message}`
+            );
+          }
         } else {
           // --- Succesfully renamed
           const oldId = selectedContextNode.data.fullPath;
@@ -257,12 +271,17 @@ const ExplorerPanel = () => {
 
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          await messenger.sendMessage({
+          const dlgResponse = await messenger.sendMessage({
             type: "MainDisplayMessageBox",
             messageType: "error",
             title: "Delete Error",
             message: response.message
           });
+          if (dlgResponse.type === "ErrorResponse") {
+            reportMessagingError(
+              `Error displaying message dialog: ${dlgResponse.message}`
+            );
+          }
         } else {
           // --- Succesfully deleted
           selectedContextNode.parentNode.removeChild(selectedContextNode);
@@ -298,12 +317,17 @@ const ExplorerPanel = () => {
 
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          await messenger.sendMessage({
+          const dlgResponse = await messenger.sendMessage({
             type: "MainDisplayMessageBox",
             messageType: "error",
             title: "Add new item error",
             message: response.message
           });
+          if (dlgResponse.type === "ErrorResponse") {
+            reportMessagingError(
+              `Error displaying message dialog: ${dlgResponse.message}`
+            );
+          }
         } else {
           // --- Succesfully added
           const fileTypeEntry = getFileTypeEntry(newName);
@@ -372,12 +396,12 @@ const ExplorerPanel = () => {
         onDoubleClick={() => {
           if (node.data.isFolder) return;
           if (documentService.isOpen(node.data.fullPath)) {
-            console.log("set")
+            console.log("set");
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
             dispatch(incDocumentActivationVersionAction());
           } else {
-            console.log("nav")
+            console.log("nav");
             ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
@@ -461,19 +485,31 @@ const ExplorerPanel = () => {
       }
 
       // --- Read the folder tree
-      const dir = (
-        (await messenger.sendMessage({
-          type: "MainGetDirectoryContent",
-          directory: folderPath
-        })) as MainGetDirectoryContentResponse
-      ).contents;
+      const response = await messenger.sendMessage({
+        type: "MainGetDirectoryContent",
+        directory: folderPath
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `MainGetDirectoryContent call failed: ${response.message}`
+        );
+      } else if (response.type !== "MainGetDirectoryContentResponse") {
+        reportUnexpectedMessageType(response.type);
+      } else {
+        const dir = (
+          (await messenger.sendMessage({
+            type: "MainGetDirectoryContent",
+            directory: folderPath
+          })) as MainGetDirectoryContentResponse
+        ).contents;
 
-      // --- Build the folder tree
-      const projectTree = buildProjectTree(dir);
-      setTree(projectTree);
-      setVisibleNodes(projectTree.getVisibleNodes());
-      projectService.setProjectTree(projectTree);
-      folderCache.set(folderPath, projectTree);
+        // --- Build the folder tree
+        const projectTree = buildProjectTree(dir);
+        setTree(projectTree);
+        setVisibleNodes(projectTree.getVisibleNodes());
+        projectService.setProjectTree(projectTree);
+        folderCache.set(folderPath, projectTree);
+      }
     })();
   }, [folderPath]);
 
@@ -512,9 +548,22 @@ const ExplorerPanel = () => {
         spaceLeft={16}
         spaceRight={16}
         clicked={async () => {
-          await messenger.sendMessage({
+          const response = await messenger.sendMessage({
             type: "MainOpenFolder"
           });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
+          }
+        }}
+      />
+      <div className={styles.noFolder}>or</div>
+      <Button
+        text='Create a Klive Project'
+        disabled={dimmed}
+        spaceLeft={16}
+        spaceRight={16}
+        clicked={async () => {
+          dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }}
       />
     </>

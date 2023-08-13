@@ -167,7 +167,9 @@ export type ThemeProperties = {
   "--color-tool-border"?: string;
 
   // --- Breakpoints panel
-  "--color-breakpoint-enabled"?: string;
+  "--color-breakpoint-code"?: string;
+  "--color-breakpoint-binary"?: string;
+  "--color-breakpoint-mixed"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
 
@@ -189,6 +191,10 @@ export type ThemeProperties = {
   "--color-explorer-selected"?: string;
   "--color-explorer-focused-selected"?: string;
   "--border-explorer-focused"?: string;
+
+  // --- Debugging
+  "--bgcolor-debug-active-bp": string;
+  "--color-debug-unreachable-bp": string;
 };
 
 /**

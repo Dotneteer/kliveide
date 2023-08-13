@@ -5,6 +5,7 @@ import {
   maximizeToolsAction,
   openFolderAction,
   primaryBarOnRightAction,
+  resetCompileAction,
   setBuildRootAction,
   setIdeFontSizeAction,
   showEmuStatusBarAction,
@@ -42,11 +43,11 @@ type ProjectCreationResult = {
  * @param projectName Name of the project subfolder
  * @param projectFolder Project home directory
  */
-export function createKliveProject (
+export async function createKliveProject (
   machineId: string,
   projectName: string,
   projectFolder?: string
-): ProjectCreationResult {
+): Promise<ProjectCreationResult> {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
   const templateFolder = resolvePublicFilePath(TEMPLATES);
@@ -67,7 +68,13 @@ export function createKliveProject (
 
     // --- Create project files
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
-    const project = {};
+
+    // --- Set up the initial project structure
+    const project = await getKliveProjectStructure();
+    project.machineType = machineId;
+    project.builder = {
+      roots: [ "code/code.kz80.asm" ]
+    }
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {
@@ -98,6 +105,7 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
     });
     if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
     openFolderByPath(dialogResult.filePaths[0]);
+    mainStore.dispatch(resetCompileAction())
   } finally {
     mainStore.dispatch(dimMenuAction(false));
   }

@@ -12,7 +12,9 @@ import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { EXPORT_CODE_DIALOG, NEW_PROJECT_DIALOG } from "@messaging/dialog-ids";
 import {
   RequestMessage,
-  NotReadyResponse
+  NotReadyResponse,
+  ResponseMessage,
+  errorResponse
 } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
@@ -67,6 +69,7 @@ import { CompileCommand, DebugCodeCommand, ExportCodeCommand, InjectCodeCommand,
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
+import { IdeEventsHandler } from "./IdeEventsHandler";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -145,6 +148,7 @@ const IdeApp = () => {
 
   return (
     <div id='appMain' className={styles.app}>
+      <IdeEventsHandler />
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
@@ -203,12 +207,20 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
     return;
   }
 
-  const response = await processMainToIdeMessages(
-    msg,
-    storeCached,
-    messengerCached,
-    appServicesCached
-  );
+  let response: ResponseMessage;
+  try {
+    response = await processMainToIdeMessages(
+      msg,
+      storeCached,
+      messengerCached,
+      appServicesCached
+    );
+  } catch (err) {
+    // --- In case of errors (rejected promises), retrieve an error response
+    response = errorResponse(err.toString());
+  }
+
+  // --- Set the correlation ID to let the caller identify the response
   response.correlationId = msg.correlationId;
   response.sourceId = "ide";
   ipcRenderer.send("MainToIdeResponse", response);

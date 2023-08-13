@@ -463,6 +463,33 @@ export type ListFileItem = {
 };
 
 /**
+ * Represents the debuggable output coming from the compilation
+ */
+export type DebuggableOutput = {
+  /**
+   * The source files involved in this compilation, in
+   * their file index order
+   */
+  readonly sourceFileList: SourceFileItem[];
+
+  /**
+   * Source map information that assigns source file info with
+   * the address
+   */
+  readonly sourceMap: Record<number, FileLine>;
+
+  /**
+   * Source map information that assigns source file info with the address
+   */
+  readonly addressMap: Map<FileLine, number[]>;
+
+  /**
+   * Items of the list file
+   */
+  readonly listFileItems: ListFileItem[];
+}
+
+/**
  * Represents the entire compiler output
  */
 export interface CompilerOutput extends CompiledModule {

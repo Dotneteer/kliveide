@@ -9,6 +9,10 @@ import {
   MainShowOpenFolderDialogResponse
 } from "@messaging/any-to-main";
 import { DialogRow } from "@renderer/controls/DialogRow";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 import { useAppServices } from "../services/AppServicesProvider";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
@@ -66,33 +70,51 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         const folder = result ? result[1] : projectFolder;
 
         // --- Create the project
-        const response = (await messenger.sendMessage({
+        const response = await messenger.sendMessage({
           type: "MainCreateKliveProject",
           machineId,
           projectName: name,
           projectFolder: folder
-        })) as MainCreateKliveProjectResponse;
-        if (response.errorMessage) {
-          // --- Display the error
-          await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "New Klive Project Error",
-            message: response.errorMessage
-          });
-
-          // --- Keep the dialog open
-          return true;
-        }
-
-        // --- Open the newly created project
-        await messenger.sendMessage({
-          type: "MainOpenFolder",
-          folder: response.path
         });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `MainCreateKliveProject call failed: ${response.message}`
+          );
+        } else if (response.type !== "MainCreateKliveProjectResponse") {
+          reportUnexpectedMessageType(response.type);
+        } else {
+          if (response.errorMessage) {
+            // --- Display the error
+            const dlgResponse = await messenger.sendMessage({
+              type: "MainDisplayMessageBox",
+              messageType: "error",
+              title: "New Klive Project Error",
+              message: response.errorMessage
+            });
+            if (dlgResponse.type === "ErrorResponse") {
+              reportMessagingError(
+                `MainDisplayMessaBox call failed: ${dlgResponse.message}`
+              );
+            }
 
-        // --- Dialog can be closed
-        return false;
+            // --- Keep the dialog open
+            return true;
+          }
+
+          // --- Open the newly created project
+          const folderResponse = await messenger.sendMessage({
+            type: "MainOpenFolder",
+            folder: response.path
+          });
+          if (folderResponse.type === "ErrorResponse") {
+            reportMessagingError(
+              `MainOpenFolder call failed: ${folderResponse.message}`
+            );
+          }
+
+          // --- Dialog can be closed
+          return false;
+        }
       }}
       onClose={() => {
         onClose();
@@ -116,14 +138,22 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           buttonIcon='folder'
           buttonTitle='Select the root project folder'
           buttonClicked={async () => {
-            const response = (await messenger.sendMessage({
+            const response = await messenger.sendMessage({
               type: "MainShowOpenFolderDialog",
               settingsId: NEW_PROJECT_FOLDER_ID
-            })) as MainShowOpenFolderDialogResponse;
-            if (response.folder) {
-              setProjectFolder(response.folder);
+            });
+            if (response.type === "ErrorResponse") {
+              reportMessagingError(
+                `MainShowOpenFolderDialog call failed: ${response.message}`
+              );
+            } else if (response.type !== "MainShowOpenFolderDialogResponse") {
+              reportUnexpectedMessageType(response.type);
+            } else {
+              if (response.folder) {
+                setProjectFolder(response.folder);
+              }
+              return response.folder;
             }
-            return response.folder;
           }}
           valueChanged={val => {
             setProjectFolder(val);

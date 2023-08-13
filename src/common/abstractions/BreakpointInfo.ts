@@ -5,7 +5,7 @@ export type BreakpointInfo = {
   /**
    * Breakpoint address
    */
-  address: number;
+  address?: number;
 
   /**
    * Optional partition (reserved for future use)
@@ -30,7 +30,7 @@ export type BreakpointInfo = {
   /**
    * Indicates that a source-bound breakpoint has been resolved
    */
-  resolved?: boolean;
+  resolvedAddress?: number;
 
   /**
    * Optional mask for I/O addresses
@@ -62,3 +62,11 @@ export type BreakpointInfo = {
    */
   ioWrite?: boolean;
 };
+
+export type BreakpointAddressInfo = {
+  address?: number;
+  partition?: number;
+  resource?: string;
+  line?: number;
+};
+

@@ -12,6 +12,10 @@ import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -147,21 +151,34 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         }`;
         console.log(command);
         const buildPane = outputPaneService.getOutputPaneBuffer("build");
-        const result = await ideCommandsService.executeCommand(command, buildPane);
+        const result = await ideCommandsService.executeCommand(
+          command,
+          buildPane
+        );
         if (result.success) {
-          await messenger.sendMessage({
+          const response = await messenger.sendMessage({
             type: "MainDisplayMessageBox",
             messageType: "info",
             title: "Exporting code",
             message: result.finalMessage ?? "Code successfully exported."
           });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `MainDisplayMessagBox call failed: ${response.message}`
+            );
+          }
         } else {
-          await messenger.sendMessage({
+          const response = await messenger.sendMessage({
             type: "MainDisplayMessageBox",
             messageType: "error",
             title: "Exporting code",
             message: result.finalMessage ?? "Code export failed."
           });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `MainDisplayMessagBox call failed: ${response.message}`
+            );
+          }
         }
         return !result.success;
       }}
@@ -186,14 +203,22 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           buttonIcon='folder'
           buttonTitle='Select the root project folder'
           buttonClicked={async () => {
-            const response = (await messenger.sendMessage({
+            const response = await messenger.sendMessage({
               type: "MainShowOpenFolderDialog",
               settingsId: EXPORT_CODE_FOLDER_ID
-            })) as MainShowOpenFolderDialogResponse;
-            if (response.folder) {
-              setExportFolder(response.folder);
+            });
+            if (response.type === "ErrorResponse") {
+              reportMessagingError(
+                `MainShowOpenFolderDialog call failed: ${response.message}`
+              );
+            } else if (response.type !== "MainShowOpenFolderDialogResponse") {
+              reportUnexpectedMessageType(response.type);
+            } else {
+              if (response.folder) {
+                setExportFolder(response.folder);
+              }
+              return response.folder;
             }
-            return response.folder;
           }}
           valueChanged={val => {
             setExportFolder(val);
@@ -241,14 +266,22 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           buttonIcon='file-code'
           buttonTitle='Select the screen file'
           buttonClicked={async () => {
-            const response = (await messenger.sendMessage({
+            const response = await messenger.sendMessage({
               type: "MainShowOpenFileDialog",
               settingsId: EXPORT_CODE_FOLDER_ID
-            })) as MainShowOpenFileDialogResponse;
-            if (response.file) {
-              setScreenFilename(response.file);
+            });
+            if (response.type === "ErrorResponse") {
+              reportMessagingError(
+                `MainShowOpenFolderDialog call failed: ${response.message}`
+              );
+            } else if (response.type !== "MainShowOpenFileDialogResponse") {
+              reportUnexpectedMessageType(response.type);
+            } else {
+              if (response.file) {
+                setScreenFilename(response.file);
+              }
+              return response.file;
             }
-            return response.file;
           }}
           valueChanged={val => {
             setScreenFilename(val);

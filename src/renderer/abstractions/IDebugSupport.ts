@@ -1,4 +1,7 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  BreakpointAddressInfo,
+  BreakpointInfo
+} from "@abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -79,7 +82,7 @@ export interface IDebugSupport {
    * @param address Breakpoint address
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
-  removeExecBreakpoint(address: number): boolean;
+  removeExecBreakpoint(breakpoint: BreakpointAddressInfo): boolean;
 
   /**
    * Enables or disables the specified breakpoint
@@ -87,5 +90,40 @@ export interface IDebugSupport {
    * @param enabled Is the breakpoint enabled?
    * @returns True, if the breakpoint exists, and it has been updated; otherwise, false
    */
-  enableExecBreakpoint(address: number, enabled: boolean): boolean;
+  enableExecBreakpoint(
+    breakpoint: BreakpointAddressInfo,
+    enabled: boolean
+  ): boolean;
+
+  /**
+   * Finds the specified breakpoint
+   * @param address Breakpoint address
+   * @returns True, if the breakpoint has just been removed; otherwise, false
+   */
+  findBreakpoint(breakpoint: BreakpointAddressInfo): BreakpointInfo | undefined;
+
+  /**
+   * Scrolls down breakpoints
+   * @param def Breakpoint address
+   * @param lineNo Line number to shift down
+   */
+  scrollBreakpoints(def: BreakpointAddressInfo, shift: number): void;
+
+  /**
+   * Normalizes source code breakpoint. Removes the ones that overflow the
+   * file and also deletes duplicates.
+   * @param lineCount
+   * @returns
+   */
+  normalizeBreakpoints(resource: string, lineCount: number): void;
+
+  /**
+   * Resets the resolution of breakpoints
+   */
+  resetBreakpointResolution(): void;
+
+  /**
+   * Resolves the specified resouce breakpoint to an address
+   */  
+  resolveBreakpoint(resource: string, line: number, address: number): void;
 }
