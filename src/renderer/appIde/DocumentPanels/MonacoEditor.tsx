@@ -24,6 +24,8 @@ import {
   removeBreakpoint
 } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
+import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
+import { incBreakpointsVersionAction } from "@common/state/actions";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -369,7 +371,6 @@ export const MonacoEditor = ({
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
-    const editorBps = bps.filter(bp => bp.resource === resourceName);
 
     // --- Get the active compilation result
     const compilationResult = state?.compilation?.result;
@@ -377,7 +378,9 @@ export const MonacoEditor = ({
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
     const editorLines = editor.current.getModel().getLineCount();
-    editorBps.forEach(async bp => {
+
+    // --- Iterate through all breakpoins
+    bps.forEach(async bp => {
       let unreachable = true;
       if (
         compilationResult?.errors?.length === 0 &&
@@ -389,18 +392,33 @@ export const MonacoEditor = ({
         );
         if (fileIndex >= 0) {
           // --- We have address information for this source code file
-          const bpInfo = compilationResult.listFileItems.find(
-            li => li.fileIndex === fileIndex && li.lineNumber === bp.line
-          );
-          unreachable = !bpInfo;
+          if (bp.resource) {
+            // --- This is a source code breakpoint
+            const bpInfo = compilationResult.listFileItems.find(
+              li => li.fileIndex === fileIndex && li.lineNumber === bp.line
+            );
+            unreachable = !bpInfo;
+          } else if (bp.resolvedAddress) {
+            // --- This is a binary breakpoint
+            console.log("Binary bp");
+            const bpInfo = compilationResult.sourceMap[bp.resolvedAddress];
+            if (bpInfo) {
+              if (bpInfo.fileIndex === fileIndex) {
+                decorations.push(
+                  createBinaryBreakpointDecoration(bp.line, bp.disabled)
+                );
+              }
+            }
+          }
         }
       }
       if (bp.line <= editorLines) {
         const decoration = unreachable
           ? createUnreachableBreakpointDecoration(bp.line)
-          : createBreakpointDecoration(bp.line, bp.disabled);
+          : createCodeBreakpointDecoration(bp.line, bp.disabled);
         decorations.push(decoration);
-      } else {
+      } else if (bp.resource) {
+        // --- Remove the source code breakpoint exceeding the source code range
         await removeBreakpoint(messenger, bp);
       }
     });
@@ -469,6 +487,8 @@ export const MonacoEditor = ({
             line: lineNo,
             exec: true
           });
+          await refreshSourceCodeBreakpoints(store, messenger);
+          store.dispatch(incBreakpointsVersionAction());
         }
         handleEditorMouseLeave(e);
       })();
@@ -551,7 +571,7 @@ export const MonacoEditor = ({
  * Creates a breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createBreakpointDecoration (
+function createCodeBreakpointDecoration (
   lineNo: number,
   disabled: boolean
 ): Decoration {
@@ -561,7 +581,22 @@ function createBreakpointDecoration (
       isWholeLine: false,
       glyphMarginClassName: disabled
         ? styles.disabledBreakpointMargin
-        : styles.breakpointMargin
+        : styles.codeBreakpointMargin
+    }
+  };
+}
+
+function createBinaryBreakpointDecoration (
+  lineNo: number,
+  disabled: boolean
+): Decoration {
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: disabled
+        ? styles.disabledBreakpointMargin
+        : styles.binaryBreakpointMargin
     }
   };
 }

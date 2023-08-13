@@ -20,6 +20,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { toHexa4 } from "../services/ide-commands";
 
 const BreakpointsPanel = () => {
   const { messenger } = useRendererContext();
@@ -128,7 +129,8 @@ const BreakpointsPanel = () => {
             const isCurrent =
               (machineState === MachineControllerState.Running ||
                 machineState === MachineControllerState.Paused) &&
-              (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
+              (pcValue.current === addr ||
+                pcValue.current === bp.resolvedAddress);
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
@@ -139,10 +141,22 @@ const BreakpointsPanel = () => {
                   disabled={disabled}
                 />
                 <LabelSeparator width={4} />
-                <Label text={addrKey} width={40} />
-                {bp.address !== undefined && (
-                  <Secondary text={`(${addr})`} width={64} />
+                {bp.resolvedAddress !== undefined && (
+                  <Value
+                    text={`${toHexa4(bp.resolvedAddress)} (${
+                      bp.resolvedAddress
+                    })`}
+                    width={104}
+                  />
                 )}
+                <Label
+                  text={addrKey}
+                  width={addr !== undefined ? 40 : undefined}
+                />
+                {bp.address !== undefined && (
+                  <Label text={`(${addr})`} width={64} />
+                )}
+
                 <Value text={disassLines.current[idx] ?? "???"} width='auto' />
               </div>
             );

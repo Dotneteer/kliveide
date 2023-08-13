@@ -1,5 +1,11 @@
-.breakpointMargin {
-  background: var(--color-breakpoint-enabled);
+.codeBreakpointMargin {
+  background: var(--color-breakpoint-code);
+  clip-path: circle(25%);
+  cursor: pointer;
+}
+
+.binaryBreakpointMargin {
+  background: var(--color-breakpoint-binary);
   clip-path: circle(25%);
   cursor: pointer;
 }
@@ -11,7 +17,7 @@
 }
 
 .hoverBreakpointMargin {
-  background: var(--color-breakpoint-enabled);
+  background: var(--color-breakpoint-code);
   clip-path: circle(35%);
   cursor: pointer;
 }

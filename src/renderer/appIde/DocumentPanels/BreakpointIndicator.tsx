@@ -23,9 +23,8 @@ export const BreakpointIndicator = ({
   const [pointed, setPointed] = useState(false);
 
   // --- Calculate tooltip text
-  const addrLabel = typeof address === "number"
-    ? `$${toHexa4(address)} (${address})`
-    : address;
+  const addrLabel =
+    typeof address === "number" ? `$${toHexa4(address)} (${address})` : address;
   const tooltip =
     `${addrLabel}\n` +
     (hasBreakpoint
@@ -45,7 +44,9 @@ export const BreakpointIndicator = ({
     iconName = "circle-filled";
     fill = disabled
       ? "--color-breakpoint-disabled"
-      : "--color-breakpoint-enabled";
+      : typeof address === "number"
+      ? "--color-breakpoint-binary"
+      : "--color-breakpoint-code";
   } else if (pointed) {
     iconName = "circle-large-outline";
     fill = "--color-breakpoint-disabled";
@@ -54,13 +55,16 @@ export const BreakpointIndicator = ({
   // --- Handle addong/removing a breakpoint
   const handleLeftClick = async () => {
     await ideCommandsService.executeCommand(
-      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`);
+      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`
+    );
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
     if (hasBreakpoint) {
-      await ideCommandsService.executeCommand(`bp-en ${address} ${disabled ? "" : "-d"}`)
+      await ideCommandsService.executeCommand(
+        `bp-en ${address} ${disabled ? "" : "-d"}`
+      );
     }
   };
 

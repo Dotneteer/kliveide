@@ -43,6 +43,8 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { reportMessagingError } from "@renderer/reportError";
+import { endCompileAction, incBreakpointsVersionAction, startCompileAction } from "@common/state/actions";
+import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -1053,14 +1055,25 @@ async function compileCode (
   out.writeLine();
   out.resetStyle();
 
-  const response = await context.messenger.sendMessage<MainCompileResponse>({
-    type: "MainCompileFile",
-    filename: fullPath,
-    language
-  });
+  context.store.dispatch(startCompileAction(fullPath));
+  let result: KliveCompilerOutput;
+  let response: MainCompileResponse;
+  try {
+    response = await context.messenger.sendMessage<MainCompileResponse>({
+      type: "MainCompileFile",
+      filename: fullPath,
+      language
+    });
+    if (response.type === "MainCompileFileResponse") {
+      result = response.result;
+    }
+  } finally {
+    context.store.dispatch(endCompileAction(result));
+    await refreshSourceCodeBreakpoints(context.store, context.messenger);
+    context.store.dispatch(incBreakpointsVersionAction());
+  }
 
   // --- Collect errors
-  const result = response.result;
   const errors = result?.errors;
 
   if (response.failed) {

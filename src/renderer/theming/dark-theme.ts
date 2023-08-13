@@ -167,7 +167,8 @@ export const darkTheme: ThemeProperties = {
   "--color-tool-border": "#505050",
 
   // --- Breakpoints panel
-  "--color-breakpoint-enabled": "red",
+  "--color-breakpoint-code": "red",
+  "--color-breakpoint-binary": "#29b8db",
   "--color-breakpoint-disabled": "#606060",
   "--color-breakpoint-current": "yellow",
 

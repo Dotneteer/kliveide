@@ -164,7 +164,8 @@ export const lightTheme: ThemeProperties = {
   "--color-tool-border": "#a0a0a0",
 
   // --- Breakpoints panel
-  "--color-breakpoint-enabled": "red",
+  "--color-breakpoint-code": "red",
+  "--color-breakpoint-binary": "#0598bc",
   "--color-breakpoint-disabled": "#a0a0a0",
   "--color-breakpoint-current": "yellow",
 

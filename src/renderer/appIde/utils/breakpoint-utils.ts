@@ -1,5 +1,12 @@
-import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  BreakpointAddressInfo,
+  BreakpointInfo
+} from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
+import { MessageBase } from "@common/messaging/messages-core";
+import { Store } from "@common/state/redux-light";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
+import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import {
   reportMessagingError,
   reportUnexpectedMessageType
@@ -36,9 +43,7 @@ export async function addBreakpoint (
     line: bp.line
   });
   if (response.type === "ErrorResponse") {
-    reportMessagingError(
-      `EmuSetBreakpoint call failed: ${response.message}`
-    );
+    reportMessagingError(`EmuSetBreakpoint call failed: ${response.message}`);
   } else if (response.type !== "FlagResponse") {
     reportUnexpectedMessageType(response.type);
   } else {

@@ -219,11 +219,9 @@ export async function processRendererToMainMessages (
     case "MainCompileFile":
       const compiler = getCompiler(message.language);
       try {
-        dispatch(startCompileAction(message.filename));
         const result = (await compiler.compileFile(
           message.filename
         )) as KliveCompilerOutput;
-        dispatch(endCompileAction(result));
         return {
           type: "MainCompileFileResponse",
           result,
