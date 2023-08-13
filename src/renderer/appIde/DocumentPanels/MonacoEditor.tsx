@@ -346,7 +346,7 @@ export const MonacoEditor = ({
           options={{
             fontSize: editorFontSize,
             readOnly: document.isReadOnly,
-            glyphMargin: languageInfo.supportsBreakpoints
+            glyphMargin: languageInfo?.supportsBreakpoints
           }}
           loading=''
           width={width}
