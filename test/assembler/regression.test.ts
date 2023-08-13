@@ -126,4 +126,21 @@ describe("Assembler - regression cases", async () => {
     const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
+
+  it("fixup - no missing output segments", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    .db Bar & 0xFF
+
+    #if ($ >> 8) > ($ & 0xFF)
+    nop
+    #endif
+
+    Bar:
+    jp 0
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
 });

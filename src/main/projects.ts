@@ -26,7 +26,7 @@ import {
   TEMPLATES,
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
-  KLIVE_PROJET_ROOT,
+  KLIVE_PROJECT_ROOT,
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -246,8 +246,8 @@ export function getKliveProjectFolder (projectFolder: string): string {
   return projectFolder
     ? path.isAbsolute(projectFolder)
       ? projectFolder
-      : path.join(app.getPath("home"), KLIVE_PROJET_ROOT, projectFolder)
-    : path.join(app.getPath("home"), KLIVE_PROJET_ROOT);
+      : path.join(app.getPath("home"), KLIVE_PROJECT_ROOT, projectFolder)
+    : path.join(app.getPath("home"), KLIVE_PROJECT_ROOT);
 }
 
 // --- Get the current klive project structure to save

@@ -13,10 +13,9 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { useAppServices } from "../services/AppServicesProvider";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
-const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
-const VALID_FOLDERNAME = /^[^>:"|?*]+$/;
 
 const machineIds = [
   {
@@ -40,6 +39,7 @@ type Props = {
 
 export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const { messenger } = useRendererContext();
+  const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [machineId, setMachineId] = useState("sp48");
   const [projectFolder, setProjectFolder] = useState("");
@@ -48,11 +48,9 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const [projectIsValid, setProjectIsValid] = useState(true);
 
   useEffect(() => {
-    const fValid =
-      projectFolder.trim() === "" || VALID_FOLDERNAME.test(projectFolder);
-    const nValid =
-      projectName.trim() !== "" && VALID_FILENAME.test(projectName);
+    const fValid = validationService.isValidPath(projectFolder);
     setFolderIsValid(fValid);
+    const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
   }, [projectFolder, projectName]);

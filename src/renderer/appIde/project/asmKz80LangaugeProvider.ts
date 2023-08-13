@@ -736,15 +736,28 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         // --- Special registers
         [/af'|AF'/, "register"],
 
+        // --- Hexadecimal literal
+        // see Directives action, for additinal case
+        [/(?:(0x|\$)[0-9A-Fa-f]{1,4}|[0-9][0-9A-Fa-f]{0,3}[Hh])/, "number"],
+
         // --- Real literal
         [/[0-9]*(\.[0-9]+)([eE][+-]?[0-9]+)?/, "number"],
 
-        // --- Hexadecimal literal
-        [/((\$|#|0x)[0-9A-Fa-f]{1,4}|[0-9][0-9A-Fa-f]{1,4}(h|H))/, "number"],
+        // --- Directives
+        [
+          /#[0-9A-Za-z_]+/,
+          {
+            cases: {
+              "@directives": "keyword",
+              "#[0-9A-Fa-f]{1,4}": "number",
+              "@default": "identifier"
+            }
+          }
+        ],
 
         // --- Keyword-like tokens
         [
-          /[\._@`a-zA-Z][_@!?\.0-9A-Za-z]*/,
+          /[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/,
           {
             cases: {
               "@keywords": "keyword",
@@ -761,17 +774,6 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
 
         // --- Whitespace
         { include: "@whitespace" },
-
-        // --- Directives
-        [
-          /#[a-z_]+/,
-          {
-            cases: {
-              "@directives": "keyword",
-              "@default": "identifier"
-            }
-          }
-        ],
 
         // --- Binary literal
         [/%[01_]+/, "number"],

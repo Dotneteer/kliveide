@@ -2,6 +2,7 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { createMachineService } from "@renderer/appEmu/MachineService";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { createUiService } from "@renderer/core/UiServices";
+import { createValidationService } from "@renderer/core/ValidationService";
 import { useContext, useRef, useEffect, createContext } from "react";
 import { createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./IdeCommandService";
@@ -38,7 +39,8 @@ export function AppServicesProvider ({ children }: Props) {
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
     ideCommandsService: interactiveCommandsService,
-    projectService: createProjectService(store)
+    projectService: createProjectService(store),
+    validationService: createValidationService(),
   });
 
   // --- Set the app services instance whenever the provider's value changes

@@ -445,6 +445,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return false;
     }
     this._output.segments.length = 0;
+    this._currentSegment = null;
     this.ensureCodeSegment();
 
     const currentLineIndex = { index: 0 };
@@ -1099,7 +1100,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
             (
-              (isFieldAssignment || 
+              (isFieldAssignment &&
               isByteEmittingPragma(asmLine)) &&
               this._currentStructInvocation
             )
@@ -1112,11 +1113,13 @@ export class Z80Assembler extends ExpressionEvaluator {
             // --- Check if temporary scope should be fixed and disposed
             await this.fixupTemporaryScope();
           }
-          await this.addSymbol(
-            currentLabel,
-            asmLine,
-            new ExpressionValue(this.getCurrentAddress())
-          );
+          if (!isFieldAssignment) {
+            await this.addSymbol(
+              currentLabel,
+              asmLine,
+              new ExpressionValue(this.getCurrentAddress())
+            );
+          }
         }
       }
 
@@ -1833,7 +1836,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     let currentAddr = this.getCurrentAssemblyAddress();
     if (skipAddr.value < currentAddr) {
-      this.reportAssemblyError("Z0313", pragma, null, skipAddr, currentAddr);
+      this.reportAssemblyError("Z0313", pragma, null, skipAddr.value, currentAddr);
       return;
     }
     var fillByte = 0xff;

@@ -6,7 +6,7 @@
 // - `ideWindow`: Displays the IDE tools
 //
 // By default, only the EMU window is displayed. The app displays the IDE window whenever the user requests directly
-// (with the Show IDE  function) or indirectly (with any other menu commands that require the IDE).
+// (with the Show IDE function) or indirectly (with any other menu commands that require the IDE).
 //
 // The app manages the communication among the three processes (main, emu, ide). The application state is synched;
 // thus, if any of these processes change the state, the actions causing the changes are sent to the other two

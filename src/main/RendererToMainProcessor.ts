@@ -387,27 +387,27 @@ async function displayOpenFileDialog (
   return selectedFile;
 }
 
-function resolveMessagePath (path: string, resolveIn?: string): string {
-  let fullPath = path;
+function resolveMessagePath (inputPath: string, resolveIn?: string): string {
+  if (path.isAbsolute(inputPath))
+    return inputPath;
+
   const segments = resolveIn?.split(":");
   if (!segments || segments.length === 0) {
-    fullPath = resolvePublicFilePath(path);
+    inputPath = resolvePublicFilePath(inputPath);
   } else {
+    if (segments.length > 1)
+      inputPath = path.join(segments[1], inputPath);
     switch (segments[0]) {
       case "home":
-        if (segments.length > 1) {
-          fullPath = resolveHomeFilePath(`${segments[1]}/${path}`);
-        } else {
-          fullPath = resolveHomeFilePath(path);
-        }
+        inputPath = resolveHomeFilePath(inputPath);
         break;
       case "project":
-        fullPath = `${getKliveProjectFolder(segments[1])}/${path}}`;
+        inputPath = getKliveProjectFolder(inputPath);
         break;
       default:
-        fullPath = resolvePublicFilePath(path);
+        inputPath = resolvePublicFilePath(inputPath);
         break;
     }
   }
-  return fullPath;
+  return inputPath;
 }
