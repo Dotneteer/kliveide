@@ -230,6 +230,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".txt",
+    editor: CODE_EDITOR,
+    subType: "plain-text",
+    icon: "@file-text-txt"
+  },
+  {
+    matchType: "ends",
     pattern: ".tzx",
     editor: TAP_EDITOR,
     icon: "@file-tap-tzx",

@@ -38,6 +38,7 @@ export type Payload = {
   state: MachineControllerState;
   numValue: number;
   file: string;
+  files: string[];
   text: string;
   compileResult: KliveCompilerOutput;
   failed: string

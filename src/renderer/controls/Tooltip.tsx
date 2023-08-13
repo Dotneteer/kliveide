@@ -73,7 +73,7 @@ export const Tooltip = ({
         {
           name: "offset",
           options: {
-            offset: [offsetY, offsetX]
+            offset: [offsetX, offsetY]
           }
         }
       ],
