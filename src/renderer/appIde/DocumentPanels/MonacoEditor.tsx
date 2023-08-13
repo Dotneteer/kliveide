@@ -397,25 +397,35 @@ export const MonacoEditor = ({
             const bpInfo = compilationResult.listFileItems.find(
               li => li.fileIndex === fileIndex && li.lineNumber === bp.line
             );
+
+            // --- Check if the breakpoint is reachable (a single label, for example, is not)
             unreachable = !bpInfo;
-          } else if (bp.resolvedAddress) {
+          } else if (bp.address != undefined) {
             // --- This is a binary breakpoint
-            console.log("Binary bp");
-            const bpInfo = compilationResult.sourceMap[bp.resolvedAddress];
+            const bpInfo = compilationResult.sourceMap[bp.address];
             if (bpInfo) {
               if (bpInfo.fileIndex === fileIndex) {
                 decorations.push(
-                  createBinaryBreakpointDecoration(bp.line, bp.disabled)
+                  createBinaryBreakpointDecoration(bpInfo.line, bp.disabled)
                 );
               }
             }
           }
         }
       }
+
+      // --- Render the breakpoint according to its type and reachability
       if (bp.line <= editorLines) {
-        const decoration = unreachable
-          ? createUnreachableBreakpointDecoration(bp.line)
-          : createCodeBreakpointDecoration(bp.line, bp.disabled);
+        let decoration: monacoEditor.editor.IModelDeltaDecoration;
+        if (unreachable) {
+          decoration = createUnreachableBreakpointDecoration(bp.line);
+        } else {
+          // --- Check if there is a binary breakpoint
+          const binBp = bps.find(b => b.address === bp.resolvedAddress);
+          decoration = binBp
+            ? createMixedBreakpointDecoration(bp.line, bp.disabled)
+            : createCodeBreakpointDecoration(bp.line, bp.disabled);
+        }
         decorations.push(decoration);
       } else if (bp.resource) {
         // --- Remove the source code breakpoint exceeding the source code range
@@ -568,7 +578,7 @@ export const MonacoEditor = ({
 };
 
 /**
- * Creates a breakpoint decoration
+ * Creates a code breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
 function createCodeBreakpointDecoration (
@@ -586,6 +596,10 @@ function createCodeBreakpointDecoration (
   };
 }
 
+/**
+ * Creates a binary breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ */
 function createBinaryBreakpointDecoration (
   lineNo: number,
   disabled: boolean
@@ -597,6 +611,25 @@ function createBinaryBreakpointDecoration (
       glyphMarginClassName: disabled
         ? styles.disabledBreakpointMargin
         : styles.binaryBreakpointMargin
+    }
+  };
+}
+
+/**
+ * Creates a mixed breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ */
+function createMixedBreakpointDecoration (
+  lineNo: number,
+  disabled: boolean
+): Decoration {
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: disabled
+        ? styles.disabledBreakpointMargin
+        : styles.mixedBreakpointMargin
     }
   };
 }

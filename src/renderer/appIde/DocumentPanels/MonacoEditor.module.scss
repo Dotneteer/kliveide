@@ -10,6 +10,12 @@
   cursor: pointer;
 }
 
+.mixedBreakpointMargin {
+  background: var(--color-breakpoint-mixed);
+  clip-path: circle(25%);
+  cursor: pointer;
+}
+
 .disabledBreakpointMargin {
   background: var(--color-breakpoint-disabled);
   clip-path: circle(25%);

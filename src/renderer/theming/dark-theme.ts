@@ -169,6 +169,7 @@ export const darkTheme: ThemeProperties = {
   // --- Breakpoints panel
   "--color-breakpoint-code": "red",
   "--color-breakpoint-binary": "#29b8db",
+  "--color-breakpoint-mixed": "#d670d6",
   "--color-breakpoint-disabled": "#606060",
   "--color-breakpoint-current": "yellow",
 

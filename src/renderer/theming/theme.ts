@@ -169,6 +169,7 @@ export type ThemeProperties = {
   // --- Breakpoints panel
   "--color-breakpoint-code"?: string;
   "--color-breakpoint-binary"?: string;
+  "--color-breakpoint-mixed"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
 
