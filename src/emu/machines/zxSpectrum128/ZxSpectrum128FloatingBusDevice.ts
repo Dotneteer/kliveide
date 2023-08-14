@@ -33,7 +33,7 @@ export class ZxSpectrum128FloatingBusDevice implements IFloatingBusDevice {
   public readFloatingBus (): number {
     const screen = this.machine.screenDevice;
     const currentTactIndex =
-      (this.machine.currentFrameTact - 5 + this.machine.tactsInFrame) %
+      (this.machine.currentFrameTact - 3 + this.machine.tactsInFrame) %
       this.machine.tactsInFrame;
     const renderingTact = screen.renderingTactTable[currentTactIndex];
     switch (renderingTact.phase) {

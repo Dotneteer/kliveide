@@ -24,8 +24,13 @@ export const SP48_MAIN_ENTRY = 0x12ac;
  * This class represents the emulator of a ZX Spectrum 48 machine.
  */
 export class ZxSpectrum128Machine extends ZxSpectrumBase {
-  // --- This byte array represents the 64K memory, including the 16K ROM and 48K RAM.
-  private readonly _memory = new Uint8Array(0x2_8000);
+  // --- This array represents the storage for ROM pages
+  private readonly romPages: Uint8Array[] = [];
+  private readonly ramBanks: Uint8Array[] = [];
+  private selectedRom = 0;
+  private selectedBank = 0;
+  private pagingEnabled = true;
+  private useShadowScreen = false;
 
   /**
    * The unique identifier of the machine type
@@ -41,6 +46,19 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     this.baseClockFrequency = 3_546_900;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
+
+    // --- Initialize the memory contents
+    this.romPages = [new Uint8Array(0x4000), new Uint8Array(0x4000)];
+    this.ramBanks = [
+      new Uint8Array(0x4000), // Bank 0
+      new Uint8Array(0x4000), // Bank 1
+      new Uint8Array(0x4000), // Bank 2
+      new Uint8Array(0x4000), // Bank 3
+      new Uint8Array(0x4000), // Bank 4
+      new Uint8Array(0x4000), // Bank 5
+      new Uint8Array(0x4000), // Bank 7
+      new Uint8Array(0x4000) // Bank 8
+    ];
 
     // --- Create and initialize devices
     this.keyboardDevice = new KeyboardDevice(this);
@@ -59,10 +77,11 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    */
   async setup (): Promise<void> {
     // --- Get the ROM file
-    const romContents = await this.loadRomFromResource("sp48");
+    const romContents = await this.loadRomFromResource(this.machineId);
 
     // --- Initialize the machine's ROM (roms/sp48.rom)
-    this.uploadRomBytes(romContents);
+    this.uploadRomBytes(0, await this.loadRomFromResource(this.machineId, 0));
+    this.uploadRomBytes(1, await this.loadRomFromResource(this.machineId, 1));
   }
 
   /**
@@ -86,7 +105,10 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    */
   hardReset (): void {
     super.hardReset();
-    for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
+    for (let b = 0; b < this.ramBanks.length; b++) {
+      const bank = this.ramBanks[b];
+      for (let i = 0; i < bank.length; i++) bank[i] = 0;
+    }
     this.reset();
   }
 
@@ -96,6 +118,16 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   reset (): void {
     // --- Reset the CPU
     super.reset();
+
+    // --- Reset the ROM page and the RAM bank
+    this.selectedRom = 0;
+    this.selectedBank = 0;
+
+    // --- Enable memory paging
+    this.pagingEnabled = true;
+
+    // --- Shadow screen is disabled
+    this.useShadowScreen = false;
 
     // --- Reset and setup devices
     this.keyboardDevice.reset();
@@ -130,12 +162,19 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
+   */
+  get isSpectrum48RomSelected (): boolean {
+    return this.selectedRom == 1;
+  }
+
+  /**
    * Reads the screen memory byte
    * @param offset Offset from the beginning of the screen memory
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory (offset: number): number {
-    return this._memory[0x4000 + (offset & 0x3fff)];
+    return this.ramBanks[this.useShadowScreen ? 7 : 5][offset & 0x3fff];
   }
 
   /**
@@ -143,7 +182,15 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    return this._memory;
+    const memory = new Uint8Array(0x01_0000);
+    const rom = this.selectedRom ? this.romPages[1] : this.romPages[0];
+    for (let i = 0; i < 0x4000; i++) {
+      memory[i] = rom[i];
+      memory[i + 0x4000] = this.ramBanks[5][i];
+      memory[i + 0x8000] = this.ramBanks[2][i];
+      memory[i + 0xc000] = this.ramBanks[this.selectedBank][i];
+    }
+    return memory;
   }
 
   /**
@@ -151,9 +198,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param index Partition index
    */
   get16KPartition (index: number): Uint8Array {
-    throw new Error(
-      "This operation is not supported in the ZX Spectrum 48K model"
-    );
+    switch (index) {
+      case -1:
+        return this.romPages[0];
+      case -2:
+        return this.romPages[1];
+      default:
+        return this.ramBanks[index & 0x07];
+    }
   }
 
   /**
@@ -169,6 +221,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @returns Array with the audio samples
    */
   getAudioSamples (): number[] {
+    // TODO: Update it after implementing the PSG device
     return this.beeperDevice.getAudioSamples();
   }
 
@@ -185,7 +238,17 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this._memory[address];
+    const memIndex = address & 0x3fff;
+    switch (address & 0xc000) {
+      case 0x0000:
+        return this.romPages[this.selectedRom][memIndex];
+      case 0x4000:
+        return this.ramBanks[5][memIndex];
+      case 0x8000:
+        return this.ramBanks[2][memIndex];
+      default:
+        return this.ramBanks[this.selectedBank][memIndex];
+    }
   }
 
   /**
@@ -194,9 +257,40 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    if ((address & 0xc000) !== 0x0000) {
-      this._memory[address] = value;
+    const memIndex = address & 0x3fff;
+    switch (address & 0xc000) {
+      case 0x0000:
+        return;
+      case 0x4000:
+        this.ramBanks[5][memIndex] = value;
+        return;
+      case 0x8000:
+        this.ramBanks[2][memIndex] = value;
+        return;
+      default:
+        this.ramBanks[this.selectedBank][memIndex] = value;
+        return;
     }
+  }
+
+  /**
+   * This method implements memory operation delays.
+   * @param address Memory address
+   *
+   * Whenever the CPU accesses the 0x4000-0x7fff memory range, it contends with the ULA. We keep the contention
+   * delay values for a particular machine frame tact in _contentionValues.Independently of the memory address,
+   * the Z80 CPU takes 3 T-states to read or write the memory contents.
+   */
+  delayAddressBusAccess (address: number): void {
+    const page = address & 0xc000;
+    if (page != 0x4000 && (page != 0xc000 || (this.selectedBank & 0x01) !== 1))
+      return;
+
+    // --- We read from contended memory
+    const delay = this.contentionValues[this.currentFrameTact];
+    this.tactPlusN(delay);
+    this.totalContentionDelaySinceStart += delay;
+    this.contentionDelaySincePause += delay;
   }
 
   /**
@@ -208,9 +302,25 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * I/O port read operation.
    */
   doReadPort (address: number): number {
-    return (address & 0x0001) == 0
-      ? this.readPort0Xfe(address)
-      : this.floatingBusDevice.readFloatingBus();
+    if ((address & 0x0001) === 0) {
+      // --- Standard ZX Spectrum 48 I/O read
+      return this.readPort0Xfe(address);
+    }
+
+    // --- Handle the Kempston port
+    if ((address & 0x00e0) === 0) {
+      // TODO: Implement Kempston port handling
+      return 0xff;
+    }
+
+    // --- Handle the PSG register index port
+    if ((address & 0xc002) === 0xc000) {
+      // TODO: Update when PSG device is implemented
+      // return psgDevice.readPsgRegisterValue();
+      return 0xff;
+    }
+
+    return this.floatingBusDevice.readFloatingBus();
   }
 
   /**
@@ -234,6 +344,45 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * I/O port write operation.
    */
   doWritePort (address: number, value: number): void {
+    // --- Standard ZX Spectrum 48 port
+    if ((address & 0x0001) === 0) {
+      this.writePort0xFE(value);
+      return;
+    }
+
+    // --- Memory paging port
+    if ((address & 0xc002) === 0x4000) {
+      // --- Abort if paging is not enabled
+      if (!this.pagingEnabled) return;
+
+      // --- Choose the RAM bank for Slot 3 (0xc000-0xffff)
+      this.selectedBank = value & 0x07;
+
+      // --- Choose screen (Bank 5 or 7)
+      this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
+
+      // --- Choose ROM bank for Slot 0 (0x0000-0x3fff)
+      this.selectedRom = (value >> 4) & 0x01;
+
+      // --- Enable/disable paging
+      this.pagingEnabled = (value & 0x20) == 0x00;
+      return;
+    }
+
+    // --- Test for PSG register index port
+    if ((address & 0xc002) === 0xc000) {
+      // TODO: Update when PSG device implemented
+      //this.psgDevice.setPsgRegisterIndex(byte(value & 0x0f));
+      return;
+    }
+
+    // --- Test for PSG register value port
+    if ((address & 0xc002) === 0x8000) {
+      // TODO: Update when PSG device implemented
+      // this.psgDevice.writePsgRegisterValue(value);
+      return;
+    }
+
     if ((address & 0x0001) === 0) {
       this.writePort0xFE(value);
     }
@@ -272,11 +421,11 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
    * @param data ROM contents
    */
-  uploadRomBytes (data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      this._memory[i] = data[i];
+  uploadRomBytes (pageIndex: number, data: Uint8Array): void {
+    for (let i = 0; i < data.length; i++)    {
+        this.romPages[pageIndex][i] = data[i];
     }
-  }
+}
 
   /**
    * Gets the main execution point information of the machine
@@ -287,6 +436,51 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       romIndex: 0,
       entryPoint: SP48_MAIN_ENTRY
     };
+  }
+
+  /**
+   * The machine's execution loop calls this method when it is about to initialize a new frame.
+   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * previous frame.
+   */
+  onInitNewFrame (clockMultiplierChanged: boolean): void {
+    // --- No screen tact rendered in this frame
+    this.lastRenderedFrameTact = 0;
+
+    // --- Prepare the screen device for the new machine frame
+    this.screenDevice.onNewFrame();
+
+    // --- Handle audio sample recalculations when the actual clock frequency changes
+    if (this.oldClockMultiplier !== this.clockMultiplier) {
+      const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+      if (typeof audioRate === "number") {
+        this.beeperDevice.setAudioSampleRate(audioRate);
+        // TODO: Update PSG sample rate
+      }
+      this.oldClockMultiplier = this.clockMultiplier;
+    }
+
+    // --- Prepare the beeper device for the new frame
+    this.fastLoadInvoked = false;
+    this.beeperDevice.onNewFrame();
+    // TODO: invoke the PSG device's onNewFrame
+  }
+
+  /**
+   * Check for current tape mode after each executed instruction
+   */
+  afterInstructionExecuted (): void {
+    // TODO: Update this method afterm implementing the PSG device
+    super.afterInstructionExecuted();
+  }
+
+  /**
+   * Every time the CPU clock is incremented, this function is executed.
+   * @param increment The tact increment value
+   */
+  onTactIncremented (increment: number): void {
+    // TODO: Update this method afterm implementing the PSG device
+    super.onTactIncremented(increment);
   }
 
   /**

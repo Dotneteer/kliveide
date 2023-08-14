@@ -21,7 +21,7 @@ export abstract class ZxSpectrumBase
   implements IZxSpectrumMachine
 {
   // --- This byte array stores the contention values associated with a particular machine frame tact.
-  private _contentionValues: number[] = [];
+  protected contentionValues: number[] = [];
 
   // --- Last value of bit 3 on port $FE
   private _portBit3LastValue = false;
@@ -177,7 +177,7 @@ export abstract class ZxSpectrumBase
     if ((address & 0xc000) != 0x4000) return;
 
     // --- We read from contended memory
-    const delay = this._contentionValues[this.currentFrameTact];
+    const delay = this.contentionValues[this.currentFrameTact];
     this.tactPlusN(delay);
     this.totalContentionDelaySinceStart += delay;
     this.contentionDelaySincePause += delay;
@@ -194,7 +194,7 @@ export abstract class ZxSpectrumBase
    * @param value Contention value
    */
   setContentionValue (tact: number, value: number): void {
-    this._contentionValues[tact] = value;
+    this.contentionValues[tact] = value;
   }
 
   /**
@@ -203,7 +203,7 @@ export abstract class ZxSpectrumBase
    * @returns The contention value associated with the specified tact.
    */
   getContentionValue (tact: number): number {
-    return this._contentionValues[tact];
+    return this.contentionValues[tact];
   }
 
   /**
