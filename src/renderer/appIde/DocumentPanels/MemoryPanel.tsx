@@ -43,6 +43,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
+  const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   // --- Get the services used in this component
   const dispatch = useDispatch();
@@ -167,7 +168,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   // --- Whenever the state of view options change
   useEffect(() => {
     refreshMemoryView();
-  }, [autoRefresh, charDump]);
+  }, [autoRefresh, charDump, injectionVersion]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
