@@ -14,7 +14,7 @@ export class ZxSpectrum128PsgDevice
   private _psgNextClockTact: number;
 
   // --- The PsgChip instance that provides the sound sample calculation
-  private readonly _psg = new PsgChip();
+  private readonly _psg: PsgChip;
 
   /**
    * Initialize the PSG device and assign it to its host machine.
@@ -22,6 +22,7 @@ export class ZxSpectrum128PsgDevice
    */
   constructor (public readonly machine: IZxSpectrumMachine) {
     super(machine);
+    this._psg = new PsgChip();
 
     // --- Set the first tact to create a sample for
     this._psgNextClockTact = PSG_CLOCK_STEP;
@@ -76,7 +77,7 @@ export class ZxSpectrum128PsgDevice
   getCurrentSampleValue (): number {
     let value =
       this._psg.orphanSamples > 0
-        ? this._psg.orphanSum / this._psg.orphanSamples / 65535 / 4
+        ? this._psg.orphanSum / this._psg.orphanSamples / 65535 / 3
         : 0.0;
     this._psg.orphanSum = 0;
     this._psg.orphanSamples = 0;

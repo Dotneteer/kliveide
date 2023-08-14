@@ -112,11 +112,6 @@ export abstract class ZxSpectrumBase
   abstract get16KPartition(index: number): Uint8Array;
 
   /**
-   * Gets the audio sample rate
-   */
-  abstract getAudioSampleRate(): number;
-
-  /**
    * Gets the audio samples rendered in the current frame
    */
   abstract getAudioSamples(): number[];

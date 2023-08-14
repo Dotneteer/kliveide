@@ -157,14 +157,6 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   }
 
   /**
-   * Gets the audio sample rate
-   * @returns
-   */
-  getAudioSampleRate (): number {
-    return this.beeperDevice.getAudioSampleRate();
-  }
-
-  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

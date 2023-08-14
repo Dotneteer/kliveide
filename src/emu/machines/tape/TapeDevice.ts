@@ -535,9 +535,10 @@ export class TapeDevice implements ITapeDevice {
     this._tapeBitMask = 0x80;
   }
 
-  /// <summary>
-  /// Emulates loading the current block in fast mode.
-  /// </summary>
+  /**
+   * Emulates loading the current block in fast mode.
+   * @returns 
+   */
   fastLoad (): void {
     // --- Stop playing if no more blocks
     if (this._tapeEof) {

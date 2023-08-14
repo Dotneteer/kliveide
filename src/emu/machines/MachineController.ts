@@ -21,7 +21,7 @@ import { setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
-import { TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
+import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
@@ -353,6 +353,9 @@ export class MachineController implements IMachineController {
     // --- Set up the state
     this.machine.contentionDelaySincePause = 0;
     this.machine.tactsAtLastStart = this.machine.tacts;
+
+    // --- Obtain fastload settings
+    this.machine.setMachineProperty(FAST_LOAD, this.store.getState()?.emulatorState.fastLoad);
 
     // --- Now, run!
     this.state = MachineControllerState.Running;

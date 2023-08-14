@@ -3,7 +3,7 @@
  */
 export class PsgChip {
   // --- The last register index set
-  private _psgRegisterIndex: number;
+  private _psgRegisterIndex = 0;
 
   // --- The last values of the PSG registers set
   private readonly _regValues = new Uint8Array(16);
@@ -59,12 +59,12 @@ export class PsgChip {
   /**
    * Sum of orphan samples
    */
-  orphanSum: number;
+  orphanSum = 0;
 
   /**
    * Number of orphan samples
    */
-  orphanSamples: number;
+  orphanSamples = 0;
 
   /**
    * Reset the device when creating it
@@ -128,6 +128,9 @@ export class PsgChip {
     this._envStyle = 0;
     this._cntEnv = 0;
     this._posEnv = 0;
+
+    this.orphanSamples = 0;
+    this.orphanSum = 0;
   }
 
   /**
@@ -213,37 +216,37 @@ export class PsgChip {
     switch (this._psgRegisterIndex) {
       case 0:
         // --- Tone A (lower 8 bits)
-        this._toneA = ((this._toneA & 0x0f00) | v) & 0xffff;
+        this._toneA = (this._toneA & 0x0f00) | v;
         return;
 
       case 1:
         // --- Tone A (upper 4 bits)
-        this._toneA = ((this._toneA & 0x00ff) | ((v & 0x0f) << 8)) & 0xffff;
+        this._toneA = (this._toneA & 0x00ff) | ((v & 0x0f) << 8);
         return;
 
       case 2:
         // --- Tone B (lower 8 bits)
-        this._toneB = ((this._toneB & 0x0f00) | v) & 0xffff;
+        this._toneB = (this._toneB & 0x0f00) | v;
         return;
 
       case 3:
         // --- Tone B (upper 4 bits)
-        this._toneB = ((this._toneB & 0x00ff) | ((v & 0x0f) << 8)) & 0xffff;
+        this._toneB = (this._toneB & 0x00ff) | ((v & 0x0f) << 8);
         return;
 
       case 4:
         // --- Tone C (lower 8 bits)
-        this._toneC = ((this._toneC & 0x0f00) | v) & 0xffff;
+        this._toneC = (this._toneC & 0x0f00) | v;
         return;
 
       case 5:
         // --- Tone C (upper 4 bits)
-        this._toneC = ((this._toneC & 0x00ff) | ((v & 0x0f) << 8)) & 0xffff;
+        this._toneC = (this._toneC & 0x00ff) | ((v & 0x0f) << 8);
         return;
 
       case 6:
         // --- Noise frequency
-        this._noiseFreq = (v & 0x1f) & 0xffff;
+        this._noiseFreq = v & 0x1f;
         return;
 
       case 7:
@@ -258,35 +261,35 @@ export class PsgChip {
 
       case 8:
         // --- Volume A
-        this._volA = (v & 0x0f) & 0xff;
+        this._volA = v & 0x0f;
         this._envA = (v & 0x10) !== 0;
         return;
 
       case 9:
         // --- Volume B
-        this._volB = (v & 0x0f) & 0xff;
+        this._volB = v & 0x0f;
         this._envB = (v & 0x10) !== 0;
         return;
 
       case 10:
         // --- Volume C
-        this._volC = (v & 0x0f) & 0xff;
+        this._volC = v & 0x0f;
         this._envC = (v & 0x10) !== 0;
         return;
 
       case 11:
         // --- Envelope fequency (lower 8 bit)
-        this._envFreq = ((this._envFreq & 0xff00) | v) & 0xffff;
+        this._envFreq = (this._envFreq & 0xff00) | v;
         return;
 
       case 12:
         // --- Envelope frequency (upper 8 bits)
-        this._envFreq = ((this._envFreq & 0x00ff) | (v << 8)) & 0xffff;
+        this._envFreq = (this._envFreq & 0x00ff) | (v << 8);
         return;
 
       case 13:
         // --- Check envelope shape
-        this._envStyle = (v & 0x0f) & 0xff;
+        this._envStyle = v & 0x0f;
         this._cntEnv = 0;
         this._posEnv = 0;
         return;

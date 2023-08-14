@@ -84,11 +84,6 @@ export interface IZxSpectrumMachine extends IZ80Machine {
   get16KPartition(index: number): Uint8Array;
 
   /**
-   * Gets the audio sample rate
-   */
-  getAudioSampleRate(): number;
-
-  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

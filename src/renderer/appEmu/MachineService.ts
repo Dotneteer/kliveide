@@ -74,6 +74,7 @@ class MachineService implements IMachineService {
       this.store.getState()?.emulatorState?.audioSampleRate
     );
     await machine.setup();
+    machine.reset();
     this._newInitialized.fire(machine);
 
     // --- Ready, sign the machine type state change
