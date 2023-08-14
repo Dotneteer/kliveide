@@ -38,6 +38,7 @@ import {
 } from "./appIde/ToolArea/OutputPanel";
 import { ZxSpectrum48Machine } from "../emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
+import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -179,6 +180,11 @@ export const machineRegistry: MachineInfo[] = [
     machineId: "sp48",
     displayName: "ZX Spectrum 48K",
     factory: () => new ZxSpectrum48Machine()
+  },
+  {
+    machineId: "sp128",
+    displayName: "ZX Spectrum 128K",
+    factory: () => new ZxSpectrum128Machine()
   }
 ];
 

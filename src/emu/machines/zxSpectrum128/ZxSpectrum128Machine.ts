@@ -12,8 +12,8 @@ import {
 } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
-import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
 import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
+import { ZxSpectrum128FloatingBusDevice } from "./ZxSpectrum128FloatingBusDevice";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -23,14 +23,14 @@ export const SP48_MAIN_ENTRY = 0x12ac;
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
  */
-export class ZxSpectrum48Machine extends ZxSpectrumBase {
+export class ZxSpectrum128Machine extends ZxSpectrumBase {
   // --- This byte array represents the 64K memory, including the 16K ROM and 48K RAM.
-  private readonly _memory = new Uint8Array(0x1_0000);
+  private readonly _memory = new Uint8Array(0x2_8000);
 
   /**
    * The unique identifier of the machine type
    */
-  public readonly machineId = "sp48";
+  public readonly machineId = "sp128";
 
   /**
    * Initialize the machine
@@ -38,7 +38,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   constructor () {
     super();
     // --- Set up machine attributes
-    this.baseClockFrequency = 3_500_000;
+    this.baseClockFrequency = 3_546_900;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
 
@@ -46,10 +46,10 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     this.keyboardDevice = new KeyboardDevice(this);
     this.screenDevice = new CommonScreenDevice(
       this,
-      CommonScreenDevice.ZxSpectrum48ScreenConfiguration
+      CommonScreenDevice.ZxSpectrum128ScreenConfiguration
     );
     this.beeperDevice = new BeeperDevice(this);
-    this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
+    this.floatingBusDevice = new ZxSpectrum128FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
     this.reset();
   }
@@ -59,7 +59,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   async setup (): Promise<void> {
     // --- Get the ROM file
-    const romContents = await this.loadRomFromResource(this.machineId);
+    const romContents = await this.loadRomFromResource("sp48");
 
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(romContents);
