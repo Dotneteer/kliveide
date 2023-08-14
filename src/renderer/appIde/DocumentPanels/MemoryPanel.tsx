@@ -12,7 +12,6 @@ import {
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import classnames from "@renderer/utils/classnames";
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";

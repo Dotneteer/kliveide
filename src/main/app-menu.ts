@@ -78,6 +78,7 @@ const SHOW_IDE_WINDOW = "show_ide_window";
 
 const MACHINE_TYPES = "machine_types";
 const MACHINE_SP48 = "machine_sp48";
+const MACHINE_SP128 = "machine_sp128";
 const START_MACHINE = "start";
 const PAUSE_MACHINE = "pause";
 const STOP_MACHINE = "stop";
@@ -432,24 +433,26 @@ export function setupMenu (
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
 
+  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(mt => {
+    return {
+      id: `machine_${mt.id}`,
+      label: mt.displayName,
+      type: "checkbox",
+      checked: appState.emulatorState?.machineId === mt.id,
+      click: async () => {
+        await setMachineType(mt.id);
+        await saveKliveProject();
+      }
+    }
+  })
+
   template.push({
     label: "Machine",
     submenu: [
       {
         id: MACHINE_TYPES,
         label: "Machine type",
-        submenu: [
-          {
-            id: MACHINE_SP48,
-            label: "ZX Spectrum 48K",
-            type: "checkbox",
-            checked: appState.emulatorState?.machineId === "sp48",
-            click: async () => {
-              await setMachineType("sp48");
-              await saveKliveProject();
-            }
-          }
-        ]
+        submenu: machineTypesMenu
       },
       { type: "separator" },
       {
@@ -871,3 +874,14 @@ async function showMessage (
     mainStore.dispatch(dimMenuAction(false));
   }
 }
+
+const registeredMachines = [
+  { 
+    id: "sp48",
+    displayName: "ZX Spectrum 48K"
+  },
+  { 
+    id: "sp128",
+    displayName: "ZX Spectrum 128K"
+  },
+]
