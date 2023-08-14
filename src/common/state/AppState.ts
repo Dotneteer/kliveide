@@ -100,6 +100,7 @@ export type CompilationState = {
   filename?: string;
   result?: KliveCompilerOutput;
   failed?: string;
+  injectionVersion?: number;
 };
 
 /**
@@ -150,5 +151,6 @@ export const initialAppState: AppState = {
   },
   compilation: {
     inProgress: false,
+    injectionVersion: 0
   }
 };

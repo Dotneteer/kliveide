@@ -32,6 +32,12 @@ export function compilationReducer (
         failed: payload.failed
       };
 
+    case "INC_INJECTION_VERSION":
+      return {
+        ...state,
+        injectionVersion: (state.injectionVersion ?? 0) + 1
+      };
+
     default:
       return state;
   }

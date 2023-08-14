@@ -33,7 +33,6 @@ import {
   SpectrumModelType
 } from "@abstractions/IZ80CompilerService";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
 import { BinaryReader } from "@utils/BinaryReader";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
@@ -43,7 +42,12 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { reportMessagingError } from "@renderer/reportError";
-import { endCompileAction, incBreakpointsVersionAction, startCompileAction } from "@common/state/actions";
+import {
+  endCompileAction,
+  incBreakpointsVersionAction,
+  incInjectionVersionAction,
+  startCompileAction
+} from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
@@ -1125,19 +1129,19 @@ async function injectCode (
       return commandError(message);
     }
     if (errorNo > 0) {
-      const message = "Code compilation failed, no program to inject.";
+      const returnMessage = "Code compilation failed, no program to inject.";
       const response = await context.messenger.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "error",
         title: "Injecting code",
-        message
+        message: returnMessage
       });
       if (response.type === "ErrorResponse") {
         reportMessagingError(
           `MainDisplayMessageBox call failed: ${response.message}`
         );
       }
-      return commandError(message);
+      return commandError(returnMessage);
     }
   }
 
@@ -1199,6 +1203,9 @@ async function injectCode (
     options: result.injectOptions
   };
 
+  const dispatch = context.store.dispatch;
+  let returnMessage = "";
+
   switch (operationType) {
     case "inject":
       const response = await context.messenger.sendMessage({
@@ -1208,7 +1215,7 @@ async function injectCode (
       if (response.type === "ErrorResponse") {
         return commandError(`EmuInjectCode call failed: ${response.message}`);
       }
-      const message = `Successfully injected ${sumCodeLength} bytes in ${
+      returnMessage = `Successfully injected ${sumCodeLength} bytes in ${
         codeToInject.segments.length
       } segment${
         codeToInject.segments.length > 1 ? "s" : ""
@@ -1220,14 +1227,14 @@ async function injectCode (
         type: "MainDisplayMessageBox",
         messageType: "info",
         title: "Injecting code",
-        message
+        message: returnMessage
       });
       if (dlgResponse.type === "ErrorResponse") {
         reportMessagingError(
           `MainDisplayMessageBox call failed: ${dlgResponse.message}`
         );
       }
-      return commandSuccessWith(message);
+      break;
 
     case "run": {
       const response = await context.messenger.sendMessage({
@@ -1238,7 +1245,8 @@ async function injectCode (
       if (response.type === "ErrorResponse") {
         return commandError(response.message);
       }
-      return commandSuccessWith(`Code injected and started.`);
+      returnMessage = `Code injected and started.`;
+      break;
     }
 
     case "debug": {
@@ -1250,9 +1258,14 @@ async function injectCode (
       if (response.type === "ErrorResponse") {
         return commandError(response.message);
       }
-      return commandSuccessWith(`Code injected and started in debug mode.`);
+      returnMessage = `Code injected and started in debug mode.`;
+      break;
     }
   }
+
+  // --- Injection done
+  dispatch(incInjectionVersionAction());
+  return commandSuccessWith(returnMessage);
 }
 
 const CLEAR_TKN = 0xfd;

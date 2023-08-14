@@ -71,4 +71,5 @@ export interface ActionTypes {
   RESET_COMPILE: null;
   START_COMPILE: null;
   END_COMPILE: null;
+  INC_INJECTION_VERSION: null;
 }

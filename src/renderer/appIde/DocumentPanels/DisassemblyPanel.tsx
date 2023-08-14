@@ -15,7 +15,6 @@ import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import classnames from "@renderer/utils/classnames";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
@@ -34,6 +33,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { getBreakpointKey } from "@common/utils/breakpoints";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -50,6 +50,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
+  const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   // --- Get the services used in this component
   const dispatch = useDispatch();
@@ -80,6 +81,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   const refreshedOnStateChange = useRef(false);
   const isRefreshing = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
+  const [viewVersion, setViewVersion] = useState(0);
 
   // --- This function refreshes the disassembly
   const refreshDisassembly = async () => {
@@ -158,6 +160,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
       }
     } finally {
       isRefreshing.current = false;
+      setViewVersion(viewVersion + 1);
     }
   };
 
@@ -202,7 +205,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Whenever the state of view options change
   useEffect(() => {
     refreshDisassembly();
-  }, [ram, screen, followPc, bpsVersion, pausedPc]);
+  }, [ram, screen, followPc, bpsVersion, pausedPc, injectionVersion]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
@@ -303,7 +306,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
             const address = cachedItems.current?.[idx].address;
             const execPoint = address === pausedPc;
             const breakpoint = breakpoints.current.find(
-              bp => bp.address === address
+              bp => bp.address === address || bp.resolvedAddress === address
             );
             return (
               <div
@@ -313,7 +316,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
               >
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
-                  address={address}
+                  address={breakpoint?.resource ? getBreakpointKey(breakpoint) : address}
                   hasBreakpoint={!!breakpoint}
                   current={execPoint}
                   disabled={breakpoint?.disabled ?? false}
