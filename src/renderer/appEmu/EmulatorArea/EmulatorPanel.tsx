@@ -217,7 +217,7 @@ export const EmulatorPanel = () => {
     if (args.fullFrame && beeperRenderer.current) {
       const zxSpectrum = controller.machine as IZxSpectrumMachine;
       if (zxSpectrum?.beeperDevice) {
-        const samples = zxSpectrum.beeperDevice.getAudioSamples();
+        const samples = zxSpectrum.getAudioSamples();
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
         await beeperRenderer.current.play();

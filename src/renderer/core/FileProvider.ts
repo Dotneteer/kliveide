@@ -1,8 +1,4 @@
 import { IFileProvider } from "@renderer/core/IFileProvider";
-import {
-  BinaryContentsResponse,
-  TextContentsResponse
-} from "@messaging/any-to-main";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   reportMessagingError,
@@ -46,7 +42,7 @@ export class FileProvider implements IFileProvider {
       path
     });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainReadTextFile call failed: ${response.message}`);
+      reportMessagingError(`MainBinaryTextFile call failed: ${response.message}`);
     } else if (response.type !== "BinaryContents") {
       reportUnexpectedMessageType(response.type);
     } else {

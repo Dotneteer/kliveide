@@ -7,6 +7,8 @@ import samplingWorklet from "./Sampling.worklet.js?url";
 // --- Let's create audio contextes before using the renderers
 let beeperAudioContext: AudioContext | undefined;
 let beeperWorklet: AudioWorkletNode | undefined;
+let psgAudioContext: AudioContext | undefined;
+let psgWorklet: AudioWorkletNode | undefined;
 
 // --- Infomation about an audio renderer
 export type AudioRendererInfo = {

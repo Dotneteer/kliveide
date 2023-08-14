@@ -14,6 +14,8 @@ import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
 import { ZxSpectrum128FloatingBusDevice } from "./ZxSpectrum128FloatingBusDevice";
+import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
+import { ZxSpectrum128PsgDevice } from "./ZxSpectrum128PsgDevice";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -35,7 +37,12 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * The unique identifier of the machine type
    */
-  public readonly machineId = "sp128";
+  readonly machineId = "sp128";
+
+  /**
+   * Represents the PSG device of ZX Spectrum 128
+   */
+  psgDevice: IPsgDevice;
 
   /**
    * Initialize the machine
@@ -67,6 +74,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       CommonScreenDevice.ZxSpectrum128ScreenConfiguration
     );
     this.beeperDevice = new BeeperDevice(this);
+    this.psgDevice = new ZxSpectrum128PsgDevice(this);
     this.floatingBusDevice = new ZxSpectrum128FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
     this.reset();
@@ -76,9 +84,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Sets up the machine (async)
    */
   async setup (): Promise<void> {
-    // --- Get the ROM file
-    const romContents = await this.loadRomFromResource(this.machineId);
-
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(0, await this.loadRomFromResource(this.machineId, 0));
     this.uploadRomBytes(1, await this.loadRomFromResource(this.machineId, 1));
@@ -133,9 +138,11 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     this.keyboardDevice.reset();
     this.screenDevice.reset();
     this.beeperDevice.reset();
+    this.psgDevice.reset();
     const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
     if (typeof audioRate === "number") {
       this.beeperDevice.setAudioSampleRate(audioRate);
+      this.psgDevice.setAudioSampleRate(audioRate);
     }
     this.floatingBusDevice.reset();
     this.tapeDevice.reset();
@@ -221,8 +228,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @returns Array with the audio samples
    */
   getAudioSamples (): number[] {
-    // TODO: Update it after implementing the PSG device
-    return this.beeperDevice.getAudioSamples();
+    const beeperSamples = this.beeperDevice.getAudioSamples();
+    const psgSamples = this.psgDevice.getAudioSamples();
+    const samplesCount = Math.min(beeperSamples.length, psgSamples.length);
+    var sumSamples: number[] = [];
+    for (let i = 0; i < samplesCount; i++) {
+      sumSamples[i] = beeperSamples[i] + psgSamples[i];
+    }
+    return sumSamples;
   }
 
   /**
@@ -315,9 +328,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
     // --- Handle the PSG register index port
     if ((address & 0xc002) === 0xc000) {
-      // TODO: Update when PSG device is implemented
-      // return psgDevice.readPsgRegisterValue();
-      return 0xff;
+      return this.psgDevice.readPsgRegisterValue();
     }
 
     return this.floatingBusDevice.readFloatingBus();
@@ -371,15 +382,13 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
     // --- Test for PSG register index port
     if ((address & 0xc002) === 0xc000) {
-      // TODO: Update when PSG device implemented
-      //this.psgDevice.setPsgRegisterIndex(byte(value & 0x0f));
+      this.psgDevice.setPsgRegisterIndex(value & 0x0f);
       return;
     }
 
     // --- Test for PSG register value port
     if ((address & 0xc002) === 0x8000) {
-      // TODO: Update when PSG device implemented
-      // this.psgDevice.writePsgRegisterValue(value);
+      this.psgDevice.writePsgRegisterValue(value);
       return;
     }
 
@@ -422,10 +431,10 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param data ROM contents
    */
   uploadRomBytes (pageIndex: number, data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++)    {
-        this.romPages[pageIndex][i] = data[i];
+    for (let i = 0; i < data.length; i++) {
+      this.romPages[pageIndex][i] = data[i];
     }
-}
+  }
 
   /**
    * Gets the main execution point information of the machine
@@ -455,7 +464,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
       if (typeof audioRate === "number") {
         this.beeperDevice.setAudioSampleRate(audioRate);
-        // TODO: Update PSG sample rate
+        this.psgDevice.setAudioSampleRate(audioRate);
       }
       this.oldClockMultiplier = this.clockMultiplier;
     }
@@ -463,15 +472,15 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     // --- Prepare the beeper device for the new frame
     this.fastLoadInvoked = false;
     this.beeperDevice.onNewFrame();
-    // TODO: invoke the PSG device's onNewFrame
+    this.psgDevice.onNewFrame();
   }
 
   /**
    * Check for current tape mode after each executed instruction
    */
   afterInstructionExecuted (): void {
-    // TODO: Update this method afterm implementing the PSG device
     super.afterInstructionExecuted();
+    this.psgDevice.calculateCurrentAudioValue();
   }
 
   /**
@@ -479,8 +488,8 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param increment The tact increment value
    */
   onTactIncremented (increment: number): void {
-    // TODO: Update this method afterm implementing the PSG device
     super.onTactIncremented(increment);
+    this.psgDevice.setNextAudioSample();
   }
 
   /**
