@@ -12,7 +12,6 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
   const spanRef= useRef<HTMLSpanElement>(null);
   const [radix, setRadix] = useState(16);
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    console.log(e);
     if (
       !(
         (e.key >= "0" && e.key <= "9") ||
@@ -32,7 +31,6 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
       setTimeout(async () => {
         const address = parseInt(inputRef.current.value.trim(), radix);
         if (!isNaN(address)) {
-          console.log("Processing", address);
           if (onAddressSent) {
             await onAddressSent(address);
           }

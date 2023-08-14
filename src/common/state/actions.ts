@@ -318,3 +318,7 @@ export const endCompileAction: ActionCreator = (
   type: "END_COMPILE",
   payload: { compileResult, failed },
 });
+
+export const incInjectionVersionAction: ActionCreator = () => ({
+  type: "INC_INJECTION_VERSION"
+});
