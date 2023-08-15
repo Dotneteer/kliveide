@@ -383,10 +383,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       this.psgDevice.writePsgRegisterValue(value);
       return;
     }
-
-    if ((address & 0x0001) === 0) {
-      this.writePort0xFE(value);
-    }
   }
 
   /**

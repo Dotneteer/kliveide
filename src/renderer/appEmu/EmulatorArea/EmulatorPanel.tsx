@@ -10,7 +10,11 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
-import { AudioRenderer, getBeeperContext } from "./AudioRenderer";
+import {
+  AudioRenderer,
+  getBeeperContext,
+  releaseBeeperContext
+} from "./AudioRenderer";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
@@ -140,9 +144,11 @@ export const EmulatorPanel = () => {
   async function machineControllerChanged (
     ctrl: MachineController
   ): Promise<void> {
-    // --- Let's store a reference to the controller
+    // --- Let's store a ref
     controllerRef.current = controller;
     if (!controller) return;
+
+    console.log("Controller change started");
 
     // --- Initial overlay message
     setOverlay(
@@ -155,10 +161,12 @@ export const EmulatorPanel = () => {
         (controller.machine.tactsInFrame * audioSampleRate) /
         controller.machine.baseClockFrequency /
         controller.machine.clockMultiplier;
+      await releaseBeeperContext();
       beeperRenderer.current = new AudioRenderer(
         await getBeeperContext(samplesPerFrame)
       );
     }
+    console.log("Controller change completed");
   }
 
   // --- Handles machine state changes
@@ -168,6 +176,7 @@ export const EmulatorPanel = () => {
   }): Promise<void> {
     // --- Because event triggering does not await async methods, we have to queue
     // --- change events and serialize their processing
+    console.log(`Machine state changed: ${stateInfo.newState}`);
     machineStateHandlerQueue.push(stateInfo);
     if (machineStateProcessing) return;
     machineStateProcessing = true;
@@ -211,16 +220,16 @@ export const EmulatorPanel = () => {
     // --- Stop sound rendering when fast load has been invoked
     if (args.fastLoadInvoked && beeperRenderer.current) {
       await beeperRenderer.current.suspend();
-    }
-
-    // --- Do we need to render sound samples?
-    if (args.fullFrame && beeperRenderer.current) {
-      const zxSpectrum = controller.machine as IZxSpectrumMachine;
-      if (zxSpectrum?.beeperDevice) {
-        const samples = zxSpectrum.getAudioSamples();
-        const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
-        beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
-        await beeperRenderer.current.play();
+    } else {
+      // --- Do we need to render sound samples?
+      if (args.fullFrame && beeperRenderer.current) {
+        const zxSpectrum = controller.machine as IZxSpectrumMachine;
+        if (zxSpectrum?.beeperDevice) {
+          const samples = zxSpectrum.getAudioSamples();
+          const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
+          beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
+          await beeperRenderer.current.play();
+        }
       }
     }
 
