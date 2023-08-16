@@ -9,10 +9,6 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import {
-  EmuGetMemoryResponse,
-  EmuGetSysVarsResponse
-} from "@messaging/main-to-emu";
 import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
@@ -197,7 +193,7 @@ const DumpSection = ({ sysVarData, index }: DumpProps) => {
         key={i}
         address={sysVarData.sysVar.address + i}
         value={sysVarData.valueList[i]}
-        tooltip={sysVarData.sysVar.byteDescriptions[i] ?? ""}
+        tooltip={sysVarData.sysVar.byteDescriptions?.[i] ?? ""}
       />
     );
     byteItems.push(byteValue);
