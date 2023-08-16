@@ -1,6 +1,7 @@
 import { AnyMessage } from "@common/messaging/messages-core";
 
 export async function reportMessagingError (message: string): Promise<void> {
+  console.trace();
   console.error(message);
 }
 

@@ -37,6 +37,12 @@ export async function getBeeperContext (
   };
 }
 
+export async function releaseBeeperContext(): Promise<void> {
+  if (beeperAudioContext) {
+    await beeperAudioContext.close();
+  }
+  beeperAudioContext = undefined;
+}
 /**
  * This class renders audio samples in the browser
  * through Web Audio Api

@@ -16,6 +16,7 @@ import {
   MachineTypeEventHandler,
   MachineInstanceEventHandler
 } from "../abstractions/IMachineService";
+import { delay } from "@renderer/utils/timing";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -74,6 +75,7 @@ class MachineService implements IMachineService {
       this.store.getState()?.emulatorState?.audioSampleRate
     );
     await machine.setup();
+    machine.hardReset();
     this._newInitialized.fire(machine);
 
     // --- Ready, sign the machine type state change
