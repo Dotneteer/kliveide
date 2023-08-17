@@ -1,3 +1,4 @@
+import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
 import { IAudioDevice } from "./IAudioDevice";
 
 /**
@@ -20,4 +21,9 @@ export interface IPsgDevice extends IAudioDevice {
    * @param value Value to set for the PSG register
    */
   writePsgRegisterValue(value: number): void;
+
+  /**
+   * Queries the current state of the PSG chip
+   */
+  getPsgState(): PsgChipState;
 }

@@ -192,11 +192,11 @@ const KeyboardLine = ({ value, titles }: FlagLineProps) => {
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   return (
     <div className={styles.cols}>
-      <Flag value={toFlag(value, 4)} width={FLAG_WIDTH} tooltip={titles?.[4]} />
-      <Flag value={toFlag(value, 3)} width={FLAG_WIDTH} tooltip={titles?.[3]} />
-      <Flag value={toFlag(value, 2)} width={FLAG_WIDTH} tooltip={titles?.[2]} />
-      <Flag value={toFlag(value, 1)} width={FLAG_WIDTH} tooltip={titles?.[1]} />
-      <Flag value={toFlag(value, 0)} width={FLAG_WIDTH} tooltip={titles?.[0]} />
+      <Flag value={toFlag(value, 4)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[4]} />
+      <Flag value={toFlag(value, 3)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[3]} />
+      <Flag value={toFlag(value, 2)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[2]} />
+      <Flag value={toFlag(value, 1)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[1]} />
+      <Flag value={toFlag(value, 0)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[0]} />
     </div>
   );
 };

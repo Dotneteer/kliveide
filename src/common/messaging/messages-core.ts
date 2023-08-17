@@ -64,7 +64,9 @@ import {
   EmuRunCodeRequest,
   EmuResolveBreakpointsRequest,
   EmuNormalizeBreakpointsRequest,
-  EmuScrollBreakpointsRequest
+  EmuScrollBreakpointsRequest,
+  EmuGetPsgStateRequest,
+  EmuGetPsgStateResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -143,6 +145,7 @@ export type RequestMessage =
   | EmuSetTapeFileRequest
   | EmuGetCpuStateRequest
   | EmuGetUlaStateRequest
+  | EmuGetPsgStateRequest
   | EmuEraseAllBreakpointsRequest
   | EmuSetBreakpointRequest
   | EmuRemoveBreakpointRequest
@@ -195,6 +198,7 @@ export type ResponseMessage =
   | MainCompileResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
+  | EmuGetPsgStateResponse
   | EmuListBreakpointsResponse
   | EmuGetMemoryResponse
   | EmuGetSysVarsResponse

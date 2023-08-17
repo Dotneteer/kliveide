@@ -1,6 +1,6 @@
 import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
 import { AudioDeviceBase } from "../AudioDeviceBase";
-import { PsgChip } from "./PsgChip";
+import { PsgChip, PsgChipState } from "./PsgChip";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 // ---The number of ULA tacts that represent a single PSG clock tick
@@ -50,6 +50,13 @@ export class ZxSpectrum128PsgDevice
    */
   writePsgRegisterValue (value: number): void {
     return this._psg.writePsgRegisterValue(value);
+  }
+
+  /**
+   * Queries the current state of the PSG chip
+   */
+  getPsgState (): PsgChipState {
+    return this._psg.getPsgData();
   }
 
   /**

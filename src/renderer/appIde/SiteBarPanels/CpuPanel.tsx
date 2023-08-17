@@ -266,6 +266,7 @@ const CpuPanel = () => {
         <Flag
           value={cpuState?.iff1}
           width={FLAG_WIDTH + 3}
+          adjustLeft={false}
           center={false}
           tooltip='Interrupt flip-flop #1'
         />
@@ -274,6 +275,7 @@ const CpuPanel = () => {
         <Flag
           value={cpuState?.iff2}
           width={FLAG_WIDTH + 3}
+          adjustLeft={false}
           center={false}
           tooltip='Interrupt flip-flop #2'
         />
@@ -283,6 +285,7 @@ const CpuPanel = () => {
         <Flag
           value={cpuState?.sigINT}
           width={FLAG_WIDTH + 3}
+          adjustLeft={false}
           center={false}
           tooltip='Interrupt signal'
         />
@@ -291,6 +294,7 @@ const CpuPanel = () => {
         <Flag
           value={cpuState?.halted}
           width={R16_WIDTH + 3}
+          adjustLeft={false}
           center={false}
           tooltip='Halted'
         />

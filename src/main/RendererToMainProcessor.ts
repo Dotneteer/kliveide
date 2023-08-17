@@ -247,6 +247,7 @@ export async function processRendererToMainMessages (
     // --- Forward these messages to the emulator
     case "EmuGetCpuState":
     case "EmuGetUlaState":
+    case "EmuGetPsgState":
     case "EmuEraseAllBreakpoints":
     case "EmuListBreakpoints":
     case "EmuSetBreakpoint":
@@ -258,7 +259,7 @@ export async function processRendererToMainMessages (
     case "EmuRunCode":
     case "EmuResolveBreakpoints":
     case "EmuScrollBreakpoints":
-    case "EmuNormalizeBreakpoints"  :
+    case "EmuNormalizeBreakpoints":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();
@@ -388,15 +389,13 @@ async function displayOpenFileDialog (
 }
 
 function resolveMessagePath (inputPath: string, resolveIn?: string): string {
-  if (path.isAbsolute(inputPath))
-    return inputPath;
+  if (path.isAbsolute(inputPath)) return inputPath;
 
   const segments = resolveIn?.split(":");
   if (!segments || segments.length === 0) {
     inputPath = resolvePublicFilePath(inputPath);
   } else {
-    if (segments.length > 1)
-      inputPath = path.join(segments[1], inputPath);
+    if (segments.length > 1) inputPath = path.join(segments[1], inputPath);
     switch (segments[0]) {
       case "home":
         inputPath = resolveHomeFilePath(inputPath);

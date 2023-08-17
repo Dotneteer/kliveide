@@ -76,11 +76,12 @@ export const Secondary = ({ text, width }: Props) => (
 type FlagProps = {
   value?: boolean | number;
   width?: string | number;
+  adjustLeft?: boolean;
   center?: boolean;
   tooltip?: string;
 };
 
-export const Flag = ({ value, width, center = true, tooltip }: FlagProps) => {
+export const Flag = ({ value, width, adjustLeft = true, center = true, tooltip }: FlagProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const toolTipLines = (tooltip ?? "").split("\n");
 
@@ -91,7 +92,8 @@ export const Flag = ({ value, width, center = true, tooltip }: FlagProps) => {
       style={{
         width,
         display: "flex",
-        justifyContent: center ? "center" : undefined
+        justifyContent: center ? "center" : undefined,
+        marginLeft: adjustLeft ? -4 : undefined
       }}
     >
       <Icon
