@@ -52,6 +52,8 @@ export type EmuViewOptions = {
 export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
+  documentHubs?: DocumentHub[];
+  activeDocumentHub?: number;
   openDocuments?: DocumentInfo[];
   activeDocumentIndex?: number;
   documentActivationVersion?: number;
@@ -63,6 +65,12 @@ export type IdeView = {
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
 };
+
+export type DocumentHub = {
+  openDocuments?: DocumentInfo[];
+  activeDocumentIndex?: number;
+  documentActivationVersion?: number;
+}
 
 export type EmulatorState = {
   machineId?: string;
@@ -126,6 +134,8 @@ export const initialAppState: AppState = {
   },
   ideView: {
     sideBarPanels: {},
+    documentHubs: [],
+    activeDocumentHub: -1,
     openDocuments: [],
     activeDocumentIndex: -1,
     tools: [],

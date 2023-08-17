@@ -26,6 +26,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
@@ -36,6 +37,8 @@ export const DocumentsHeader = () => {
     ideCommandsService
   } = useAppServices();
   const { messenger } = useRendererContext();
+  const { setDocumentHub } = useAppServices();
+  const docService = useDocumentService();
   const ref = useRef<HTMLDivElement>();
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
@@ -65,6 +68,11 @@ export const DocumentsHeader = () => {
       setDocsToDisplay(mappedDocs);
     }
   };
+
+  // --- Use the document service instance
+  useEffect(() => {
+    setDocumentHub(docService);
+  }, [docService]);
 
   // --- Prepare the open documents to display
   useEffect(() => {
