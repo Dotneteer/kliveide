@@ -24,6 +24,8 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { Label } from "@renderer/controls/Labels";
+import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -42,6 +44,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
+  const machineId = useSelector(s => s.emulatorState.machineId);
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   // --- Get the services used in this component
@@ -248,6 +251,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           title='Show characters dump?'
           clicked={() => saveViewState()}
         />
+        <ToolbarSeparator small={true} />
         <AddressInput
           label='Go To:'
           onAddressSent={async address => {
@@ -256,6 +260,17 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           }}
         />
       </div>
+      {machineId === "sp128" && (
+        <div className={styles.header}>
+          <LabeledGroup
+            label='ROM: '
+            title='Select the ROM to display'
+            values={["0", "1"]}
+            marked="0"
+            selected="1"
+          />
+        </div>
+      )}
       <div className={styles.memoryWrapper}>
         <VirtualizedListView
           items={memoryItems}
