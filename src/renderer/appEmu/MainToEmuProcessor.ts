@@ -20,6 +20,7 @@ import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { reportMessagingError } from "@renderer/reportError";
+import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 
 const borderColors = [
   "Black",
@@ -155,6 +156,21 @@ export async function processMainToEmuMessages (
           kbDevice.getKeyLineValue(6),
           kbDevice.getKeyLineValue(7)
         ]
+      };
+    }
+
+    case "EmuGetPsgState": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const machine = controller.machine;
+      if (machine.machineId !== "sp128") {
+        return errorResponse(`EmuGetPsgState is not implemented for ${machine.machineId}`);
+      }
+      const psgDevice = (machine as ZxSpectrum128Machine).psgDevice;
+      console.log(psgDevice.getPsgState());
+      return {
+        type: "EmuGetPsgStateResponse",
+        psgState: psgDevice.getPsgState()
       };
     }
 

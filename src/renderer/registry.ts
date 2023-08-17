@@ -39,6 +39,7 @@ import {
 import { ZxSpectrum48Machine } from "../emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
+import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -105,6 +106,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     noScrollViewer: false,
     renderer: sysVarsPanelRenderer
+  },
+  {
+    id: "psgPanel",
+    title: "PSG (AY-3-8912)",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: psgPanelRenderer,
+    initialSize: 500,
+    restrictTo: ["sp128"]
   }
 ];
 
@@ -233,7 +242,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: TAP_EDITOR,
     icon: "@file-tap-tzx",
     isBinary: true,
-    openPermanent: true,
+    openPermanent: true
   }
 ];
 

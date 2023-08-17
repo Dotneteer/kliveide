@@ -37,4 +37,9 @@ export type SideBarPanelInfo = {
    * The initial size of the panel
    */
   readonly initialSize?: number;
+
+  /**
+   * The machine IDs this panel is restricted to
+   */
+  readonly restrictTo?: string[];
 };

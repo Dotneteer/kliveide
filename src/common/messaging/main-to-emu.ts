@@ -3,6 +3,7 @@ import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
+import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -56,6 +57,14 @@ export interface EmuGetCpuStateRequest extends MessageBase {
 export interface EmuGetUlaStateRequest extends MessageBase {
   type: "EmuGetUlaState";
 }
+
+/**
+ * The Ide process asks the emu process for ULA state information
+ */
+export interface EmuGetPsgStateRequest extends MessageBase {
+  type: "EmuGetPsgState";
+}
+
 
 export interface EmuEraseAllBreakpointsRequest extends MessageBase {
   type: "EmuEraseAllBreakpoints";
@@ -143,6 +152,14 @@ export interface EmuGetUlaStateResponse extends MessageBase {
   ear: boolean;
   mic: boolean;
   keyLines: number[];
+}
+
+/**
+ * The Emu process sends back CPU state information
+ */
+export interface EmuGetPsgStateResponse extends MessageBase {
+  type: "EmuGetPsgStateResponse";
+  psgState: PsgChipState;
 }
 
 /**

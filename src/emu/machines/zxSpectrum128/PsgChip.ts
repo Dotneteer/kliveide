@@ -188,6 +188,45 @@ export class PsgChip {
   }
 
   /**
+   * Gets the current PSG state
+   */
+  getPsgData (): PsgChipState {
+    return {
+      psgRegisterIndex: this._psgRegisterIndex,
+      regValues: this._regValues,
+      toneA: this._toneA,
+      toneAEnabled: this._toneAEnabled,
+      noiseAEnabled: this._noiseAEnabled,
+      volA: this._volA,
+      envA: this._envA,
+      cntA: this._cntA,
+      bitA: this._bitA,
+      toneB: this._toneB,
+      toneBEnabled: this._toneBEnabled,
+      noiseBEnabled: this._noiseBEnabled,
+      volB: this._volB,
+      envB: this._envB,
+      cntB: this._cntB,
+      bitB: this._bitB,
+      toneC: this._toneC,
+      toneCEnabled: this._toneCEnabled,
+      noiseCEnabled: this._noiseCEnabled,
+      volC: this._volC,
+      envC: this._envC,
+      cntC: this._cntC,
+      bitC: this._bitC,
+      noiseSeed: this._noiseSeed,
+      noiseFreq: this._noiseFreq,
+      cntNoise: this._cntNoise,
+      bitNoise: this._bitNoise,
+      envFreq: this._envFreq,
+      envStyle: this._envStyle,
+      cntEnv: this._cntEnv,
+      posEnv: this._posEnv
+    };
+  }
+
+  /**
    * Set the PSG register index
    * @param index PSG register index (0-15)
    */
@@ -398,3 +437,50 @@ export class PsgChip {
     this.orphanSamples += 1;
   }
 }
+
+export type PsgChipState = {
+  // --- The last register index set
+  psgRegisterIndex: number;
+
+  // --- The last values of the PSG registers set
+  regValues: Uint8Array;
+
+  // --- Channel A
+  toneA: number;
+  toneAEnabled: boolean;
+  noiseAEnabled: boolean;
+  volA: number;
+  envA: boolean;
+  cntA: number;
+  bitA: boolean;
+
+  // --- Channel B
+  toneB: number;
+  toneBEnabled: boolean;
+  noiseBEnabled: boolean;
+  volB: number;
+  envB: boolean;
+  cntB: number;
+  bitB: boolean;
+
+  // --- Channel C
+  toneC: number;
+  toneCEnabled: boolean;
+  noiseCEnabled: boolean;
+  volC: number;
+  envC: boolean;
+  cntC: number;
+  bitC: boolean;
+
+  // --- Noise
+  noiseSeed: number;
+  noiseFreq: number;
+  cntNoise: number;
+  bitNoise: boolean;
+
+  // --- Envelope data
+  envFreq: number;
+  envStyle: number; // 8-bit
+  cntEnv: number;
+  posEnv: number;
+};
