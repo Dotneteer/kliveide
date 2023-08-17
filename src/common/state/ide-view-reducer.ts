@@ -208,6 +208,26 @@ export function ideViewReducer (
       };
     }
 
+    case "RESET_DOCUMENT_HUB": {
+      const documentHubs = state.documentHubs;
+      documentHubs[payload.index] = {
+        openDocuments: [],
+        activeDocumentIndex: -1,
+        documentActivationVersion: 0
+      };
+      return {
+        ...state,
+        documentHubs
+      };
+    }
+
+    case "SET_ACTIVE_DOCUMENT_HUB": {
+      return {
+        ...state,
+        activeDocumentHub: payload.index
+      };
+    }
+
     default:
       return state;
   }

@@ -140,6 +140,16 @@ export const setSideBarPanelSizeAction: ActionCreator = (
   payload: { id, size, nextId, nextSize }
 });
 
+export const resetDocumentHubAction: ActionCreator = (index: number) => ({
+  type: "RESET_DOCUMENT_HUB",
+  payload: { index }
+});
+
+export const setActiveDocumentHubAction: ActionCreator = (index: number) => ({
+  type: "SET_ACTIVE_DOCUMENT_HUB",
+  payload: { index }
+});
+
 export const createDocumentAction: ActionCreator = (
   document: DocumentInfo,
   index: number
@@ -303,12 +313,12 @@ export const incProjectVersionAction: ActionCreator = () => ({
 });
 
 export const resetCompileAction: ActionCreator = () => ({
-  type: "RESET_COMPILE",
+  type: "RESET_COMPILE"
 });
 
 export const startCompileAction: ActionCreator = (file: string) => ({
   type: "START_COMPILE",
-  payload: { file },
+  payload: { file }
 });
 
 export const endCompileAction: ActionCreator = (
@@ -316,7 +326,7 @@ export const endCompileAction: ActionCreator = (
   failed?: string
 ) => ({
   type: "END_COMPILE",
-  payload: { compileResult, failed },
+  payload: { compileResult, failed }
 });
 
 export const incInjectionVersionAction: ActionCreator = () => ({
