@@ -101,6 +101,7 @@ export interface EmuEnableBreakpointRequest extends MessageBase {
 
 export interface EmuGetMemoryRequest extends MessageBase {
   type: "EmuGetMemory";
+  partition?: number;
 }
 
 export interface EmuGetSysVarsRequest extends MessageBase {

@@ -14,7 +14,7 @@ import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import classnames from "@renderer/utils/classnames";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { useStateRefresh } from "../useStateRefresh";
@@ -92,9 +92,9 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   const pointedRegs = useRef<Record<number, string>>({});
 
   // --- Creates the addresses to represent dump sections
-  const createDumpSections = () => {
+  const createDumpSections = (length: number) => {
     const memItems: number[] = [];
-    for (let addr = 0; addr < 0x1_0000; addr += twoColumns ? 0x10 : 0x08) {
+    for (let addr = 0; addr < length; addr += twoColumns ? 0x10 : 0x08) {
       memItems.push(addr);
     }
     cachedItems.current = memItems;
@@ -107,8 +107,17 @@ const MemoryPanel = ({ document }: DocumentProps) => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
+      let partition: number | undefined;
+      if (!fullView) {
+        if (romPage != undefined) {
+          partition = -(romPage + 1);
+        } else {
+          partition = ramBank ?? 0;
+        }
+      }
       const response = await messenger.sendMessage({
-        type: "EmuGetMemory"
+        type: "EmuGetMemory",
+        partition
       });
       if (response.type === "ErrorResponse") {
         reportMessagingError(
@@ -141,7 +150,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           extendPointedAddress("IR", response.ir);
           extendPointedAddress("WZ", response.sp);
         }
-        createDumpSections();
+        createDumpSections(memory.current.length);
 
         // --- Obtain ULA information
         const ulaResponse = await messenger.sendMessage({
@@ -154,7 +163,6 @@ const MemoryPanel = ({ document }: DocumentProps) => {
         } else if (ulaResponse.type !== "EmuGetUlaStateResponse") {
           reportUnexpectedMessageType(ulaResponse.type);
         } else {
-          console.log(ulaResponse.romP, ulaResponse.ramB);
           setCurrentRomPage(ulaResponse.romP);
           setCurrentRamBank(ulaResponse.ramB);
         }
@@ -204,7 +212,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   // --- Whenever the state of view options change
   useEffect(() => {
     refreshMemoryView();
-  }, [autoRefresh, charDump, injectionVersion]);
+  }, [autoRefresh, charDump, injectionVersion, fullView, romPage, ramBank]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
@@ -216,7 +224,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Whenever two-section mode changes, refresh sections
   useEffect(() => {
-    createDumpSections();
+    createDumpSections(memory.current.length);
   }, [twoColumns]);
 
   // --- Save the current top addresds
