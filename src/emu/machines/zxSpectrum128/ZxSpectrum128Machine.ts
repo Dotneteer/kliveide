@@ -30,10 +30,10 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   // --- This array represents the storage for ROM pages
   private readonly romPages: Uint8Array[] = [];
   private readonly ramBanks: Uint8Array[] = [];
-  private selectedRom = 0;
-  private selectedBank = 0;
-  private pagingEnabled = true;
-  private useShadowScreen = false;
+  selectedRom = 0;
+  selectedBank = 0;
+  pagingEnabled = true;
+  useShadowScreen = false;
 
   /**
    * The unique identifier of the machine type

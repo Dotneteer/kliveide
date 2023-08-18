@@ -481,7 +481,7 @@ class DocumentService implements IDocumentService {
     const state = this.store.getState();
     const docs = state?.ideView?.openDocuments ?? [];
     const existingIndex = docs.findIndex(d => d.id === id);
-    if (existingIndex) {
+    if (existingIndex !== undefined) {
       const doc = { ...docs[existingIndex], stateValue: viewState };
       this.store.dispatch(changeDocumentAction(doc, existingIndex));
     }

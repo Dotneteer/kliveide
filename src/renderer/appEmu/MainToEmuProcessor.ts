@@ -131,6 +131,12 @@ export async function processMainToEmuMessages (
       const machine = controller.machine;
       const screenDevice = (machine as ZxSpectrumBase).screenDevice;
       const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
+      let romP = 0;
+      let ramB = 0;
+      if (machine.machineId === "sp128") {
+        (romP = (machine as ZxSpectrum128Machine).selectedRom),
+          (ramB = (machine as ZxSpectrum128Machine).selectedBank);
+      }
       return {
         type: "EmuGetUlaStateResponse",
         fcl: machine.currentFrameTact,
@@ -155,7 +161,9 @@ export async function processMainToEmuMessages (
           kbDevice.getKeyLineValue(5),
           kbDevice.getKeyLineValue(6),
           kbDevice.getKeyLineValue(7)
-        ]
+        ],
+        romP,
+        ramB
       };
     }
 
@@ -164,7 +172,9 @@ export async function processMainToEmuMessages (
       if (!controller) return noControllerResponse();
       const machine = controller.machine;
       if (machine.machineId !== "sp128") {
-        return errorResponse(`EmuGetPsgState is not implemented for ${machine.machineId}`);
+        return errorResponse(
+          `EmuGetPsgState is not implemented for ${machine.machineId}`
+        );
       }
       const psgDevice = (machine as ZxSpectrum128Machine).psgDevice;
       console.log(psgDevice.getPsgState());
@@ -270,9 +280,12 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const m = controller.machine;
-      const memory = (
-        controller.machine as IZxSpectrumMachine
-      ).get64KFlatMemory();
+      let memory: Uint8Array;
+      if (message.partition === undefined) {
+        memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
+      } else {
+        memory = (controller.machine as IZxSpectrumMachine).get16KPartition(message.partition);
+      }
       return {
         type: "EmuGetMemoryResponse",
         memory,
