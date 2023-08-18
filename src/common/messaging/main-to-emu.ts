@@ -152,6 +152,8 @@ export interface EmuGetUlaStateResponse extends MessageBase {
   ear: boolean;
   mic: boolean;
   keyLines: number[];
+  romP: number;
+  ramB: number;
 }
 
 /**

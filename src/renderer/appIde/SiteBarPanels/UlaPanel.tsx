@@ -1,24 +1,23 @@
+import { Flag, Label, Separator, Value } from "@controls/Labels";
 import {
-  Flag,
-  Label,
-  Separator,
-  Value
-} from "@controls/Labels";
-import { useRendererContext } from "@renderer/core/RendererProvider";
-import {
-  EmuGetUlaStateResponse
-} from "@messaging/main-to-emu";
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
+import { EmuGetUlaStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";
+import { LabeledValue } from "@renderer/controls/LabeledValue";
+import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 
 const FLAG_WIDTH = 16;
-const LAB_WIDTH = 36;
+const LAB_WIDTH = 48;
 const R16_WIDTH = 48;
 
 const UlaPanel = () => {
   const { messenger } = useRendererContext();
   const [ulaState, setUlaState] = useState<EmuGetUlaStateResponse>(null);
+  const machineId = useSelector(s => s.emulatorState?.machineId);
 
   useStateRefresh(250, async () => {
     setUlaState(
@@ -30,97 +29,50 @@ const UlaPanel = () => {
 
   return (
     <div className={styles.ulaPanel}>
-      <div className={styles.cols}>
-        <Label text='FCL' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.fcl?.toString()}
-          tooltip='Frame Clock'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='FRM' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.frm?.toString()}
-          tooltip='#of frames rendered'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='RAS' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.ras?.toString()}
-          tooltip='Current raster line'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='POS' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.pos?.toString()}
-          tooltip='Pixel in the current line'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='PIX' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.pix}
-          tooltip='Pixel operation'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='BOR' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.bor}
-          tooltip='Current border color'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='FLO' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.flo?.toString()}
-          tooltip='Floating bus value'
-          width={R16_WIDTH}
-        />
-      </div>
+      <LabeledValue label='FCL' value={ulaState?.fcl} toolTip='Frame Clock' />
+      <LabeledValue
+        label='FRM'
+        value={ulaState?.frm}
+        toolTip='#of frames rendered'
+      />
+      <LabeledValue
+        label='RAS'
+        value={ulaState?.ras}
+        toolTip='Current raster line'
+      />
+      <LabeledValue
+        label='POS'
+        value={ulaState?.pos}
+        toolTip='Pixel in the current line'
+      />
+      <LabeledValue
+        label='PIX'
+        value={ulaState?.pix}
+        toolTip='Pixel operation'
+      />
+      <LabeledValue
+        label='BOR'
+        value={ulaState?.bor}
+        toolTip='Current border color'
+      />
+      <LabeledValue
+        label='FLO'
+        value={ulaState?.flo}
+        toolTip='Floating bus value'
+      />
       <Separator />
-      <div className={styles.cols}>
-        <Label text='CON' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.con?.toString()}
-          tooltip='Accumulated contention tacts'
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='LCO' width={LAB_WIDTH} />
-        <Value
-          text={ulaState?.lco?.toString()}
-          tooltip={"Accumulated contention \n since last resume"}
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='EAR' width={LAB_WIDTH} />
-        <Flag
-          value={ulaState?.ear}
-          tooltip='EAR bit value'
-          width={FLAG_WIDTH}
-          center={false}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='MIC' width={LAB_WIDTH} />
-        <Flag
-          value={false}
-          tooltip='MIC bit value'
-          width={FLAG_WIDTH}
-          center={ulaState?.mic}
-        />
-      </div>
+      <LabeledValue
+        label='CON'
+        value={ulaState?.con}
+        toolTip='Accumulated contention tacts'
+      />
+      <LabeledValue
+        label='LCO'
+        value={ulaState?.con}
+        toolTip='Accumulated contention tacts'
+      />
+      <LabeledFlag label='EAR' value={ulaState?.ear} toolTip='EAR bit value' />
+      <LabeledFlag label='MIC' value={ulaState?.mic} toolTip='MIC bit value' />
       <Separator />
       <div className={styles.cols}>
         <Label text='KL0' width={LAB_WIDTH} tooltip='Keyboard line #0' />
@@ -178,6 +130,21 @@ const UlaPanel = () => {
           titles={["Space", "Symbol Shift", "M", "N", "B"]}
         />
       </div>
+      {machineId === "sp128" && (
+        <>
+          <Separator />
+          <LabeledValue
+            label='ROMP'
+            value={ulaState?.romP}
+            toolTip='Current ROM page'
+          />
+          <LabeledValue
+            label='RAMB'
+            value={ulaState?.ramB}
+            toolTip='Current RAM bank'
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -192,11 +159,36 @@ const KeyboardLine = ({ value, titles }: FlagLineProps) => {
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   return (
     <div className={styles.cols}>
-      <Flag value={toFlag(value, 4)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[4]} />
-      <Flag value={toFlag(value, 3)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[3]} />
-      <Flag value={toFlag(value, 2)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[2]} />
-      <Flag value={toFlag(value, 1)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[1]} />
-      <Flag value={toFlag(value, 0)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[0]} />
+      <Flag
+        value={toFlag(value, 4)}
+        adjustLeft={false}
+        width={FLAG_WIDTH}
+        tooltip={titles?.[4]}
+      />
+      <Flag
+        value={toFlag(value, 3)}
+        adjustLeft={false}
+        width={FLAG_WIDTH}
+        tooltip={titles?.[3]}
+      />
+      <Flag
+        value={toFlag(value, 2)}
+        adjustLeft={false}
+        width={FLAG_WIDTH}
+        tooltip={titles?.[2]}
+      />
+      <Flag
+        value={toFlag(value, 1)}
+        adjustLeft={false}
+        width={FLAG_WIDTH}
+        tooltip={titles?.[1]}
+      />
+      <Flag
+        value={toFlag(value, 0)}
+        adjustLeft={false}
+        width={FLAG_WIDTH}
+        tooltip={titles?.[0]}
+      />
     </div>
   );
 };

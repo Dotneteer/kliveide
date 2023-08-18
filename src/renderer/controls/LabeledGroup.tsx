@@ -5,11 +5,11 @@ import classNames from "../utils/classnames";
 type Props = {
   label: string;
   title?: string;
-  values: string[];
-  marked?: string;
-  selected?: string;
-  setterFn?: (val: string) => void;
-  clicked?: (val: string) => void;
+  values: number[];
+  marked?: number;
+  selected?: number;
+  setterFn?: (val: number) => void;
+  clicked?: (val: number) => void;
 };
 
 export const LabeledGroup = ({
@@ -18,22 +18,21 @@ export const LabeledGroup = ({
   values,
   marked,
   selected,
-  setterFn,
   clicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [currentValue, setCurrentValue] = useState(selected);
   return (
     <>
       <div ref={ref} className={styles.labeledGroup}>
         <span className={styles.headerLabel}>{label}</span>
         {values.map(v => (
           <OptionValue
+            key={v}
             label={v}
-            isSelected={v === currentValue}
+            isSelected={v === selected}
             isMarked={v === marked}
             clicked={() => {
-              setCurrentValue(v);
+              clicked?.(v);
             }}
           />
         ))}
@@ -53,7 +52,7 @@ export const LabeledGroup = ({
 };
 
 type OptionValueProp = {
-  label: string;
+  label: number;
   isMarked: boolean;
   isSelected: boolean;
   clicked?: () => void;

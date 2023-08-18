@@ -131,6 +131,12 @@ export async function processMainToEmuMessages (
       const machine = controller.machine;
       const screenDevice = (machine as ZxSpectrumBase).screenDevice;
       const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
+      let romP = 0;
+      let ramB = 0;
+      if (machine.machineId === "sp128") {
+        romP = (machine as ZxSpectrum128Machine).selectedRom,
+        ramB = (machine as ZxSpectrum128Machine).selectedBank
+      }
       return {
         type: "EmuGetUlaStateResponse",
         fcl: machine.currentFrameTact,
@@ -155,7 +161,9 @@ export async function processMainToEmuMessages (
           kbDevice.getKeyLineValue(5),
           kbDevice.getKeyLineValue(6),
           kbDevice.getKeyLineValue(7)
-        ]
+        ],
+        romP,
+        ramB
       };
     }
 

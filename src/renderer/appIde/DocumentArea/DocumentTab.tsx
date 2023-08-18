@@ -36,7 +36,7 @@ export const DocumentTab = ({
   tabClicked,
   tabDoubleClicked
 }: Props) => {
-  const {documentService } = useAppServices();
+  const { documentService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const readOnlyRef = useRef<HTMLDivElement>(null);
@@ -72,14 +72,16 @@ export const DocumentTab = ({
         })}
       >
         <bdi>{name}</bdi>
-        <TooltipFactory
-          refElement={nameRef.current}
-          placement='right'
-          offsetX={-28}
-          offsetY={28}
-        >
-          {path}
-        </TooltipFactory>
+        {path && (
+          <TooltipFactory
+            refElement={nameRef.current}
+            placement='right'
+            offsetX={-28}
+            offsetY={28}
+          >
+            {path}
+          </TooltipFactory>
+        )}
       </span>
       {isReadOnly && (
         <div className={styles.readOnlyIcon} ref={readOnlyRef}>

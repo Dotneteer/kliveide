@@ -88,7 +88,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   },
   {
     id: "ulaPanel",
-    title: "ULA",
+    title: "ULA & I/O",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: ulaPanelRenderer,
     initialSize: 500

@@ -28,10 +28,10 @@
   }
 
   &.isSelected {
-    border-bottom: 2px solid var(--console-ansi-bright-red)
+    background-color: var(--bgcolor-context-item-pointed);
   }
 
   &.isMarked {
-    background-color: var(--bgcolor-context-item-pointed);
+    border-bottom: 2px solid var(--console-ansi-bright-red)
   }
 }
