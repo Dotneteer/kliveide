@@ -1,12 +1,9 @@
-const FRAMES_BUFFERED = 40000;
-const FRAMES_DELAYED = 1;
+const FRAMES_BUFFERED = 40;
+const FRAMES_DELAYED = 4;
 
 let waveBuffer;
 let writeIndex = 0;
 let readIndex = 0;
-let avg = 0;
-let storeCount = 0;
-let lastProcess = 0;
 
 class SamplingGenerator extends AudioWorkletProcessor {
   constructor () {
@@ -16,11 +13,6 @@ class SamplingGenerator extends AudioWorkletProcessor {
         this.initSampleBuffer(event.data.initialize);
       } else if (event.data.samples) {
         this.storeSamples(event.data.samples);
-        const diff = writeIndex - readIndex;
-        storeCount++;
-        avg = (avg * (storeCount - 1) + diff) / storeCount;
-        console.log("wb", diff, Math.round(avg), lastProcess);
-        lastProcess = 0;
       }
     };
   }
@@ -56,11 +48,9 @@ class SamplingGenerator extends AudioWorkletProcessor {
 
   process (_inputs, outputs) {
     const output = outputs[0];
-    let processed = 0;
 
     for (let channel = 0; channel < output.length; ++channel) {
       const outputChannel = output[channel];
-      processed += outputChannel.length;
       for (let i = 0; i < outputChannel.length; ++i) {
         outputChannel[i] = waveBuffer[readIndex++];
         if (readIndex >= waveBuffer.length) {
@@ -68,8 +58,6 @@ class SamplingGenerator extends AudioWorkletProcessor {
         }
       }
     }
-    processed /= output.length;
-    lastProcess += processed;
     return true;
   }
 }
