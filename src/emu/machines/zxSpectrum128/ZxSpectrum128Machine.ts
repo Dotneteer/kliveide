@@ -192,7 +192,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   get64KFlatMemory (): Uint8Array {
     const memory = new Uint8Array(0x01_0000);
     const rom = this.selectedRom ? this.romPages[1] : this.romPages[0];
-    console.log("page 3", this.ramBanks[this.selectedBank]);
     for (let i = 0; i < 0x4000; i++) {
       memory[i] = rom[i];
       memory[i + 0x4000] = this.ramBanks[5][i];
@@ -460,7 +459,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     }
 
     // --- Prepare the beeper device for the new frame
-    this.fastLoadInvoked = false;
     this.beeperDevice.onNewFrame();
     this.psgDevice.onNewFrame();
   }
@@ -680,26 +678,26 @@ export const zxSpectrum128SysVars: SysVar[] = [
     address: 0x5b7c,
     name: "STRIP1",
     type: SysVarType.Array,
-    length: 8, 
+    length: 8,
     description: "Stripe one bitmap"
   },
   {
     address: 0x5b84,
     name: "STRIP2",
     type: SysVarType.Array,
-    length: 8, 
+    length: 8,
     description: "Stripe two bitmap. This extends to 5B8Bh (23436)"
   },
   {
     address: 0x5bff,
     name: "TSTACK",
     type: SysVarType.Array,
-    length: 115, 
-    description: 
-      "Temporary stack grows down from here. Used when RAM page 7\n" + 
+    length: 115,
+    description:
+      "Temporary stack grows down from here. Used when RAM page 7\n" +
       "is switched in at top of memory (while executing the editor\n" +
-      "or calling +3DOS). It may safely go down to 5B8Ch (and\n" + 
-      "across STRIP1 and STRIP2 if necessary). This guarantees at\n" + 
+      "or calling +3DOS). It may safely go down to 5B8Ch (and\n" +
+      "across STRIP1 and STRIP2 if necessary). This guarantees at\n" +
       "least 115 bytes of stack when BASIC calls +3DOS."
-  },
+  }
 ];

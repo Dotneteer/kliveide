@@ -387,8 +387,6 @@ export class MachineController implements IMachineController {
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
           savedFileInfo: savedInfo,
-          fastLoadInvoked:
-            (this.machine as IZxSpectrumMachine).fastLoadInvoked ?? false
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

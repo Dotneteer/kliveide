@@ -1,19 +1,18 @@
-const FRAMES_BUFFERED = 400;
-const FRAMES_DELAYED = 1;
+const FRAMES_BUFFERED = 40;
+const FRAMES_DELAYED = 4;
 
 let waveBuffer;
 let writeIndex = 0;
 let readIndex = 0;
 
 class SamplingGenerator extends AudioWorkletProcessor {
-  constructor() {
+  constructor () {
     super();
-    this.port.onmessage = (event) => {
+    this.port.onmessage = event => {
       if (event.data.initialize) {
         this.initSampleBuffer(event.data.initialize);
-      } 
-      else if (event.data.samples) {
-        this.storeSamples(event.data.samples)
+      } else if (event.data.samples) {
+        this.storeSamples(event.data.samples);
       }
     };
   }
@@ -22,7 +21,7 @@ class SamplingGenerator extends AudioWorkletProcessor {
    * Initializes sample buffer
    * @param samplesPerFrame Samples in a single Screen frame
    */
-  initSampleBuffer(samplesPerFrame) {
+  initSampleBuffer (samplesPerFrame) {
     waveBuffer = new Float32Array(
       (Math.floor(samplesPerFrame) + 1) * FRAMES_BUFFERED
     );
@@ -38,7 +37,7 @@ class SamplingGenerator extends AudioWorkletProcessor {
    * Stores the samples to render
    * @param samples Next batch of samples to store
    */
-  storeSamples(samples) {
+  storeSamples (samples) {
     for (const sample of samples) {
       waveBuffer[writeIndex++] = sample;
       if (writeIndex >= waveBuffer.length) {
@@ -47,7 +46,7 @@ class SamplingGenerator extends AudioWorkletProcessor {
     }
   }
 
-  process(_inputs, outputs) {
+  process (_inputs, outputs) {
     const output = outputs[0];
 
     for (let channel = 0; channel < output.length; ++channel) {

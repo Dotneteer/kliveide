@@ -240,7 +240,6 @@ export class TapeDevice implements ITapeDevice {
     ) {
       // --- Leave the SAVE mode
       this.tapeMode = TapeMode.Passive;
-      //saveModeLeft(tapeSaveDataLen);
     }
   }
 
@@ -360,7 +359,7 @@ export class TapeDevice implements ITapeDevice {
   /**
    * The current value of the MIC bit
    */
-  micBit: boolean;
+  micBit = false;
 
   /// <summary>
   /// Process the specified MIC bit value.
@@ -546,7 +545,6 @@ export class TapeDevice implements ITapeDevice {
     }
 
     // --- No it's time to fast load
-    this.machine.fastLoadInvoked = true;
     const block = this._blocks[this._currentBlockIndex];
     let dataIndex = 0;
     let machine = this.machine;
@@ -636,6 +634,11 @@ export class TapeDevice implements ITapeDevice {
     handler: { propertyName: string; newValue?: any }
   ): void {
     switch (handler.propertyName) {
+      case TAPE_MODE:
+        if ((handler.newValue as TapeMode) === TapeMode.Passive) {
+          device.machine.beeperDevice.setEarBit(false);
+        }
+        break;
       case TAPE_SAVER:
         if (handler.newValue.setName) {
           device._tapeSaver = handler.newValue as ITapeSaver;

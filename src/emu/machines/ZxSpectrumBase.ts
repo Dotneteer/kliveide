@@ -122,11 +122,6 @@ export abstract class ZxSpectrumBase
   abstract get sysVars(): SysVar[];
 
   /**
-   * Signs if fast load has been invoked during the last frame
-   */
-  fastLoadInvoked: boolean;
-
-  /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
   get tactsInDisplayLine (): number {
@@ -540,7 +535,6 @@ export abstract class ZxSpectrumBase
     }
 
     // --- Prepare the beeper device for the new frame
-    this.fastLoadInvoked = false;
     this.beeperDevice.onNewFrame();
   }
 
