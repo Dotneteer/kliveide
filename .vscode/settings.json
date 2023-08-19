@@ -20,5 +20,8 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
   }
 }
