@@ -84,7 +84,7 @@ export class ZxSpectrum128PsgDevice
   getCurrentSampleValue (): number {
     let value =
       this._psg.orphanSamples > 0
-        ? this._psg.orphanSum / this._psg.orphanSamples / 65535 / 3
+        ? this._psg.orphanSum / this._psg.orphanSamples / 65535
         : 0.0;
     this._psg.orphanSum = 0;
     this._psg.orphanSamples = 0;

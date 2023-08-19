@@ -335,6 +335,10 @@ export class PsgChip {
     }
   }
 
+  started = false;
+  samplesCount = 0;
+  samplesList: { vol: number; count: number }[] = [];
+
   /**
    * Generates the current PSG output value
    */
@@ -342,48 +346,58 @@ export class PsgChip {
     let vol = 0;
 
     // --- Increment TONE A counter
-    this._cntA++;
-    if (this._cntA >= this._toneA) {
-      // --- Reset counter and reverse output bit
-      this._cntA = 0;
-      this._bitA = !this._bitA;
+    if (this._toneA) {
+      this._cntA++;
+      if (this._cntA >= this._toneA) {
+        // --- Reset counter and reverse output bit
+        this._cntA = 0;
+        this._bitA = !this._bitA;
+      }
     }
 
     // --- Increment TONE B counter
-    this._cntB++;
-    if (this._cntB >= this._toneB) {
-      // --- Reset counter and reverse output bit
-      this._cntB = 0;
-      this._bitB = !this._bitB;
+    if (this._toneB) {
+      this._cntB++;
+      if (this._cntB >= this._toneB) {
+        // --- Reset counter and reverse output bit
+        this._cntB = 0;
+        this._bitB = !this._bitB;
+      }
     }
 
     // --- Increment TONE C counter
-    this._cntC++;
-    if (this._cntC >= this._toneC) {
-      // --- Reset counter and reverse output bit
-      this._cntC = 0;
-      this._bitC = !this._bitC;
+    if (this._toneC) {
+      this._cntC++;
+      if (this._cntC >= this._toneC) {
+        // --- Reset counter and reverse output bit
+        this._cntC = 0;
+        this._bitC = !this._bitC;
+      }
     }
 
     // --- Calculate noise sample
-    this._cntNoise++;
-    if (this._cntNoise >= this._noiseFreq) {
-      // --- It is time to generate the next noise sample
-      this._cntNoise = 0;
-      this._noiseSeed =
-        (this._noiseSeed * 2 + 1) ^
-        (((this._noiseSeed >>> 16) ^ (this._noiseSeed >>> 13)) & 0x01);
-      this._bitNoise = ((this._noiseSeed >>> 16) & 0x01) != 0;
+    if (this._noiseFreq) {
+      this._cntNoise++;
+      if (this._cntNoise >= this._noiseFreq) {
+        // --- It is time to generate the next noise sample
+        this._cntNoise = 0;
+        this._noiseSeed =
+          (this._noiseSeed * 2 + 1) ^
+          (((this._noiseSeed >>> 16) ^ (this._noiseSeed >>> 13)) & 0x01);
+        this._bitNoise = ((this._noiseSeed >>> 16) & 0x01) != 0;
+      }
     }
 
     // --- Calculate envelope position
-    this._cntEnv++;
-    if (this._cntEnv >= this._envFreq) {
-      // --- Move to the new position
-      this._cntEnv = 0;
-      this._posEnv++;
-      if (this._posEnv > 0x7f) {
-        this._posEnv = 0x40;
+    if (this._envFreq) {
+      this._cntEnv++;
+      if (this._cntEnv >= this._envFreq) {
+        // --- Move to the new position
+        this._cntEnv = 0;
+        this._posEnv++;
+        if (this._posEnv > 0x7f) {
+          this._posEnv = 0x40;
+        }
       }
     }
 
@@ -435,6 +449,28 @@ export class PsgChip {
 
     this.orphanSum += vol;
     this.orphanSamples += 1;
+
+    // --- Diagnostics
+    if (!this.started && vol > 0) {
+      this.started = true;
+    }
+
+    if (this.started && this.samplesCount < 20000) {
+      if (this.samplesCount) {
+        const lastSample = this.samplesList[this.samplesList.length - 1];
+        if (lastSample.vol === vol) {
+          lastSample.count++;
+        } else {
+          this.samplesList.push({ vol, count: 0 });
+        }
+      } else {
+        this.samplesList.push({ vol, count: 0 });
+      }
+      this.samplesCount++;
+      // if (this.samplesCount === 20000) {
+      //   console.log(this.samplesList);
+      // }
+    }
   }
 }
 

@@ -148,8 +148,6 @@ export const EmulatorPanel = () => {
     controllerRef.current = controller;
     if (!controller) return;
 
-    console.log("Controller change started");
-
     // --- Initial overlay message
     setOverlay(
       "Not yet started. Press F5 to start or Ctrl+F5 to debug machine."
@@ -166,7 +164,6 @@ export const EmulatorPanel = () => {
         await getBeeperContext(samplesPerFrame)
       );
     }
-    console.log("Controller change completed");
   }
 
   // --- Handles machine state changes
@@ -176,7 +173,6 @@ export const EmulatorPanel = () => {
   }): Promise<void> {
     // --- Because event triggering does not await async methods, we have to queue
     // --- change events and serialize their processing
-    console.log(`Machine state changed: ${stateInfo.newState}`);
     machineStateHandlerQueue.push(stateInfo);
     if (machineStateProcessing) return;
     machineStateProcessing = true;
@@ -218,18 +214,14 @@ export const EmulatorPanel = () => {
     displayScreenData();
 
     // --- Stop sound rendering when fast load has been invoked
-    if (args.fastLoadInvoked && beeperRenderer.current) {
-      await beeperRenderer.current.suspend();
-    } else {
-      // --- Do we need to render sound samples?
-      if (args.fullFrame && beeperRenderer.current) {
-        const zxSpectrum = controller.machine as IZxSpectrumMachine;
-        if (zxSpectrum?.beeperDevice) {
-          const samples = zxSpectrum.getAudioSamples();
-          const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
-          beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
-          await beeperRenderer.current.play();
-        }
+    // --- Do we need to render sound samples?
+    if (args.fullFrame && beeperRenderer.current) {
+      const zxSpectrum = controller.machine as IZxSpectrumMachine;
+      if (zxSpectrum?.beeperDevice) {
+        const samples = zxSpectrum.getAudioSamples();
+        const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
+        beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
+        await beeperRenderer.current.play();
       }
     }
 
