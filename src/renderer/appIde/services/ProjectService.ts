@@ -3,8 +3,13 @@ import { LiteEvent, ILiteEvent } from "@emu/utils/lite-event";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { ProjectNode } from "../project/project-node";
+import { ProjectNode, getFileTypeEntry } from "../project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
@@ -17,8 +22,12 @@ class ProjectService implements IProjectService {
     node: ITreeNode<ProjectNode>;
   }>();
   private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>();
+  private _fileCache = new Map<string, string | Uint8Array>();
 
-  constructor (store: Store<AppState>) {
+  constructor (
+    private readonly store: Store<AppState>,
+    private readonly messenger: MessengerBase
+  ) {
     store.subscribe(() => {
       const newState = store.getState();
       const newFolderPath = newState?.project?.folderPath;
@@ -129,7 +138,107 @@ class ProjectService implements IProjectService {
         }
       : undefined;
   }
+
+  /**
+   * Reads the contents of the specified file from the file system and puts the content into the cache
+   * @param file File to read
+   * @param isBinary Read it as a binary file? (Use the default according to the file's type)
+   */
+  async readFileContent (
+    file: string,
+    isBinary?: boolean
+  ): Promise<string | Uint8Array> {
+    const fileTypeEntry = getFileTypeEntry(file);
+    let contents: string | Uint8Array;
+    if (isBinary ?? fileTypeEntry?.isBinary) {
+      // --- Read a binary file file
+      const response = await this.messenger.sendMessage({
+        type: "MainReadBinaryFile",
+        path: file
+      });
+      if (response.type === "ErrorResponse") {
+        throw new Error(response.message);
+      } else if (response.type !== "BinaryContents") {
+        throw new Error(`Unexpected response type: ${response.type}`);
+      } else {
+        contents = response.contents;
+      }
+    } else {
+      // --- Read a text file
+      const response = await this.messenger.sendMessage({
+        type: "MainReadTextFile",
+        path: file
+      });
+      if (response.type === "ErrorResponse") {
+        throw new Error(response.message);
+      } else if (response.type !== "TextContents") {
+        throw new Error(`Unexpected response type: ${response.type}`);
+      } else {
+        contents = response.contents;
+      }
+    }
+
+    // --- Done
+    this._fileCache.set(file, contents);
+    return contents;
+  }
+
+  /**
+   * Reads the contents of the specified file from the file system and puts the content into the cache
+   * @param file File to read
+   * @param isBinary Read it as a binary file? (Use the default according to the file's type)
+   */
+  async getFileContent (
+    file: string,
+    isBinary?: boolean
+  ): Promise<string | Uint8Array> {
+    const contents = this._fileCache.get(file);
+    return contents ?? (await this.readFileContent(file, isBinary));
+  }
+
+  /**
+   * Saves the specified contents of the file to the file system, and then to the cache
+   * @param file File name
+   * @param contents File contents to save
+   */
+  async saveFileContent (
+    file: string,
+    contents: string | Uint8Array
+  ): Promise<void> {
+    if (typeof contents === "string") {
+      const response = await this.messenger.sendMessage({
+        type: "MainSaveTextFile",
+        path: file,
+        data: contents
+      });
+      if (response.type === "ErrorResponse") {
+        throw new Error(response.message);
+      }
+    } else {
+      const response = await this.messenger.sendMessage({
+        type: "MainSaveBinaryFile",
+        path: file,
+        data: contents
+      });
+      if (response.type === "ErrorResponse") {
+        throw new Error(response.message);
+      }
+    }
+
+    // --- Done.
+    this._fileCache.set(file, contents);
+  }
+
+  /**
+   * Removes the specified file from the cache
+   * @param file File to remove from the cache
+   */
+  forgetFile (file: string): void {
+    this._fileCache.delete(file);
+  }
 }
 
-export const createProjectService = (store: Store<AppState>) =>
-  new ProjectService(store);
+export const createProjectService = (
+  store: Store<AppState>,
+  messenger: MessengerBase
+) => new ProjectService(store, messenger);

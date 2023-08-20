@@ -1,4 +1,4 @@
-import * as path from "path"
+import * as path from "path";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { incDocumentActivationVersionAction } from "@state/actions";
+import { EditorApi } from "../DocumentPanels/MonacoEditor";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
   readonly id = "nav";
@@ -79,33 +80,15 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       docService.setActiveDocument(doc.id);
     } else {
       // --- Load the document
-      const docContent: any = {};
-      if (nodeData.isBinary) {
-        const response = await context.messenger.sendMessage({
-          type: "MainReadBinaryFile",
-          path: nodeData.fullPath
-        });
-        if (response.type === "ErrorResponse") {
-          return commandError(response.message);
-        }
-        if (response.type !== "BinaryContents") {
-          return commandError(`Unexpected response type: ${response.type}`);
-        }
-        docContent.value = response.contents;
-      } else {
-        const response = await context.messenger.sendMessage({
-          type: "MainReadTextFile",
-          path: nodeData.fullPath
-        });
-        if (response.type === "ErrorResponse") {
-          return commandError(response.message);
-        }
-        if (response.type !== "TextContents") {
-          return commandError(`Unexpected response type: ${response.type}`);
-        }
-        docContent.value = response.contents;
-      }
+      const docContent = {
+        value: await context.service.projectService.getFileContent(
+          nodeData.fullPath
+        )
+      };
 
+      // TODO: Allow the currently active document to save itself before opening the new one
+
+      // --- Open it
       docService.openDocument(
         {
           id: nodeData.fullPath,
@@ -130,7 +113,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       if (this.lineNo != undefined) {
         const api = docService.getDocumentApi(openDoc.id);
         if (api) {
-          const apiEndpoint = api?.setPosition;
+          const apiEndpoint = (api as EditorApi)?.setPosition;
           if (typeof apiEndpoint === "function") {
             apiEndpoint(this.lineNo, this.columnNo ?? 0);
           }

@@ -116,7 +116,7 @@ export const MonacoEditor = ({
 }: EditorProps) => {
   const { theme } = useTheme();
   const { store, messenger } = useRendererContext();
-  const { documentService } = useAppServices();
+  const { documentService, projectService } = useAppServices();
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);
@@ -214,6 +214,7 @@ export const MonacoEditor = ({
 
     // --- Create the API
     const editorApi: EditorApi = {
+      saveDocumentState: () => saveDocument(),
       isBusy: () => isBusy.current,
 
       // --- Editor API specific
@@ -246,20 +247,11 @@ export const MonacoEditor = ({
   };
 
   // Saves the document to its file
-  const saveDocumentToFile = async (documentText: string): Promise<void> => {
+  const saveDocument = async (): Promise<void> => {
+    if (!editor.current) return;
     isBusy.current = true;
     try {
-      await delay(3000);
-      const response = await messenger.sendMessage({
-        type: "MainSaveTextFile",
-        path: document.id,
-        data: documentText
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `Errors saving code file '${document.id}': ${response.message}`
-        );
-      }
+      await projectService.saveFileContent(document.id, editor.current.getModel().getValue())
     } finally {
       isBusy.current = false;
     }
@@ -346,7 +338,7 @@ export const MonacoEditor = ({
     unsavedChangeCounter.current++;
     await new Promise(r => setTimeout(r, SAVE_DEBOUNCE));
     if (unsavedChangeCounter.current === 1 && previousContent.current) {
-      await saveDocumentToFile(editor.current.getModel().getValue());
+      await saveDocument();
     }
     unsavedChangeCounter.current--;
   };

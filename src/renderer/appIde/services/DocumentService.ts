@@ -162,7 +162,7 @@ export interface IDocumentService {
    * Gets the associated API of the specified document
    * @param id Document ID
    */
-  getDocumentApi(id: string): any;
+  getDocumentApi(id: string): DocumentApi;
 
   /**
    * Sets the API of the specified document

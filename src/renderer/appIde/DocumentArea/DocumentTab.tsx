@@ -14,6 +14,7 @@ type Props = {
   isActive?: boolean;
   isReadOnly?: boolean;
   isTemporary?: boolean;
+  awaiting?: boolean;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
   tabDoubleClicked?: () => void;
@@ -31,6 +32,7 @@ export const DocumentTab = ({
   iconName = "file-code",
   iconFill = "--color-doc-icon",
   isActive = false,
+  awaiting = false,
   tabDisplayed,
   tabClicked,
   tabDoubleClicked,
@@ -52,7 +54,7 @@ export const DocumentTab = ({
   return (
     <div
       ref={ref}
-      className={classnames(styles.documentTab, { [styles.active]: isActive })}
+      className={classnames(styles.documentTab, { [styles.active]: isActive, [styles.awaiting]: awaiting })}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onClick={() => tabClicked?.()}
@@ -84,11 +86,7 @@ export const DocumentTab = ({
             iconName='shield'
             width={16}
             height={16}
-            fill={
-              isActive
-                ? "--color-readonly-icon-active"
-                : "--color-readonly-icon-inactive"
-            }
+            fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
           />
           <TooltipFactory
             refElement={readOnlyRef.current}
@@ -103,11 +101,7 @@ export const DocumentTab = ({
       <TabButton
         iconName='close'
         hide={!pointed && !isActive}
-        fill={
-          isActive
-            ? "--color-tabbutton-fill-active"
-            : "--color-tabbutton-fill-inactive"
-        }
+        fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
         clicked={() => tabCloseClicked?.()}
       />
     </div>

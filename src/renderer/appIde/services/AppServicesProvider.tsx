@@ -42,9 +42,9 @@ export function AppServicesProvider ({ children }: Props) {
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
     ideCommandsService: interactiveCommandsService,
-    projectService: createProjectService(store),
+    projectService: createProjectService(store, messenger),
     validationService: createValidationService(),
-    get documentHub(): IDocumentService {
+    get documentHub (): IDocumentService {
       return documentHub.current;
     },
     setDocumentHub: hub => {
