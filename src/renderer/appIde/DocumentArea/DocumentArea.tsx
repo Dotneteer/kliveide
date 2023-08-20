@@ -49,12 +49,13 @@ export const DocumentArea = ({ areaId = 0}: Props) => {
         onFocus={() => {
           setDocumentHub(documentService);
           dispatch(setActiveDocumentHubAction(areaId));
-          console.log("Setting document hub", areaId);
         }}
       >
         <DocumentsHeader />
         {activeDocIndex >= 0 && (
-          <DocumentsContainer document={activeDoc} data={data} />
+          <DocumentsContainer document={activeDoc} data={data} apiLoaded={(api) => {
+            documentService.setDocumentApi(activeDoc.id, api);
+          }}/>
         )}
       </div>
     </DocumentServiceProvider>

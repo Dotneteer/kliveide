@@ -13,6 +13,7 @@ import { DocumentInfo } from "@abstractions/DocumentInfo";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { delay } from "@renderer/utils/timing";
+import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 
 /**
  * Represents the view state of a code document
@@ -168,7 +169,7 @@ export interface IDocumentService {
    * @param id Document ID
    * @param api API instance
    */
-  setDocumentApi(id: string, api: any): void;
+  setDocumentApi(id: string, api: DocumentApi): void;
 }
 
 /**
@@ -176,7 +177,7 @@ export interface IDocumentService {
  */
 class DocumentService implements IDocumentService {
   private documentData = new Map<string, any>();
-  private documentApi = new Map<string, any>();
+  private documentApi = new Map<string, DocumentApi>();
 
   /**
    * Initializes the service instance to use the specified store
@@ -533,7 +534,7 @@ class DocumentService implements IDocumentService {
    * @param id Document ID
    * @param api API instance
    */
-  setDocumentApi(id: string, api: any): void {
+  setDocumentApi(id: string, api: DocumentApi): void {
     const doc = this.getDocument(id);
     if (doc) {
       if (api) {

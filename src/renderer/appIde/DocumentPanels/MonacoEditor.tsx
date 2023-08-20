@@ -26,6 +26,8 @@ import {
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
+import { DocumentApi } from "@renderer/abstractions/DocumentApi";
+import { delay } from "@renderer/utils/timing";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -95,7 +97,7 @@ export async function initializeMonaco (appPath: string) {
   }
 }
 
-export interface EditorApi {
+export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
 }
 
@@ -118,6 +120,7 @@ export const MonacoEditor = ({
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);
+  const isBusy = useRef(false);
   const docActivationVersion = useSelector(
     s => s.ideView?.documentActivationVersion
   );
@@ -211,6 +214,9 @@ export const MonacoEditor = ({
 
     // --- Create the API
     const editorApi: EditorApi = {
+      isBusy: () => isBusy.current,
+
+      // --- Editor API specific
       setPosition: (lineNumber: number, column: number) => {
         ed.revealLineInCenter(lineNumber);
         ed.setPosition({ lineNumber, column });
@@ -241,15 +247,21 @@ export const MonacoEditor = ({
 
   // Saves the document to its file
   const saveDocumentToFile = async (documentText: string): Promise<void> => {
-    const response = await messenger.sendMessage({
-      type: "MainSaveTextFile",
-      path: document.id,
-      data: documentText
-    });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(
-        `Errors saving code file '${document.id}': ${response.message}`
-      );
+    isBusy.current = true;
+    try {
+      await delay(3000);
+      const response = await messenger.sendMessage({
+        type: "MainSaveTextFile",
+        path: document.id,
+        data: documentText
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `Errors saving code file '${document.id}': ${response.message}`
+        );
+      }
+    } finally {
+      isBusy.current = false;
     }
   };
 

@@ -397,12 +397,9 @@ const ExplorerPanel = () => {
         onDoubleClick={() => {
           if (node.data.isFolder) return;
           if (documentService.isOpen(node.data.fullPath)) {
-            console.log("set");
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
-            dispatch(incDocumentActivationVersionAction());
           } else {
-            console.log("nav");
             ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}

@@ -12,7 +12,9 @@ import {
 import { ITreeNode } from "@renderer/core/tree-node";
 import { documentPanelRegistry } from "@renderer/registry";
 import {
+  activateDocumentAction,
   changeDocumentAction,
+  closeDocumentAction,
   incDocumentActivationVersionAction
 } from "@state/actions";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +30,9 @@ import {
 } from "@renderer/reportError";
 import { useDocumentService } from "../services/DocumentServiceProvider";
 
+/**
+ * This component represents the header of a document hub
+ */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
   const {
@@ -46,28 +51,10 @@ export const DocumentsHeader = () => {
   const [docsToDisplay, setDocsToDisplay] = useState<DocumentInfo[]>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
-  const [headerVersion, setHeaderVersion] = useState(0);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
-
-  // --- Initiate refreshing the documents
-  const refreshDocs = () => {
-    if (openDocs) {
-      const mappedDocs = openDocs.map(d => {
-        const cloned: DocumentInfo = { ...d };
-        const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
-
-        if (docRenderer) {
-          cloned.iconName ||= docRenderer.icon;
-          cloned.iconFill ||= docRenderer.iconFill;
-        }
-        return cloned;
-      });
-      setDocsToDisplay(mappedDocs);
-    }
-  };
 
   // --- Use the document service instance
   useEffect(() => {
@@ -78,6 +65,22 @@ export const DocumentsHeader = () => {
   useEffect(() => {
     refreshDocs();
   }, [openDocs]);
+
+  // --- Update the UI when the build root changes
+  useEffect(() => {
+    if (docsToDisplay) {
+      setSelectedIsBuildRoot(
+        buildRoots.indexOf(
+          docsToDisplay[activeDocIndex]?.node?.data?.projectPath
+        ) >= 0
+      );
+    }
+  }, [docsToDisplay, buildRoots, activeDocIndex]);
+
+  // --- Make sure that the index is visible
+  useEffect(() => {
+    ensureTabVisible();
+  }, [activeDocIndex]);
 
   // --- Refresh the changed project document
   useEffect(() => {
@@ -111,36 +114,6 @@ export const DocumentsHeader = () => {
       }
     })();
   }, [projectVersion]);
-
-  // --- Respond to active document tab changes: make sure that the activated tab is displayed
-  // --- entirely. If necessary, scroll in the active tab
-  useEffect(() => {
-    const tabDim = tabDims.current[activeDocIndex];
-    if (!tabDim || !ref.current) return;
-    const parent = tabDim.parentElement;
-    if (!parent) return;
-
-    // --- There is an active document
-    const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
-    const tabRightPos = tabLeftPos + tabDim.offsetWidth;
-    const scrollPos = svApi.current.getScrollLeft();
-    if (tabLeftPos < scrollPos) {
-      // --- Left tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(tabLeftPos);
-    } else if (tabRightPos > scrollPos + parent.offsetWidth) {
-      // --- Right tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(
-        tabLeftPos - parent.offsetWidth + tabDim.offsetWidth
-      );
-    }
-
-    // --- Check for build root
-    setSelectedIsBuildRoot(
-      buildRoots.indexOf(
-        docsToDisplay[activeDocIndex]?.node?.data?.projectPath
-      ) >= 0
-    );
-  }, [activeDocIndex, headerVersion, docsToDisplay, buildRoots]);
 
   // --- Respond to project service notifications
   useEffect(() => {
@@ -211,6 +184,92 @@ export const DocumentsHeader = () => {
     };
   }, [projectService]);
 
+  // --- Initiate refreshing the documents
+  const refreshDocs = () => {
+    if (openDocs) {
+      const mappedDocs = openDocs.map(d => {
+        const cloned: DocumentInfo = { ...d };
+        const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
+
+        if (docRenderer) {
+          cloned.iconName ||= docRenderer.icon;
+          cloned.iconFill ||= docRenderer.iconFill;
+        }
+        return cloned;
+      });
+      setDocsToDisplay(mappedDocs);
+    }
+  };
+
+  // --- Ensures that the active document tab is visible in its full size
+  const ensureTabVisible = () => {
+    const tabDim = tabDims.current[activeDocIndex];
+    if (!tabDim || !ref.current) return;
+    const parent = tabDim.parentElement;
+    if (!parent || !svApi.current) return;
+
+    // --- There is an active document
+    const tabLeftPos = tabDim.offsetLeft - parent.offsetLeft;
+    const tabRightPos = tabLeftPos + tabDim.offsetWidth;
+    const scrollPos = svApi.current.getScrollLeft();
+    if (tabLeftPos < scrollPos) {
+      // --- Left tab edge is hidden, scroll to the left to display the tab
+      svApi.current.scrollToHorizontal(tabLeftPos);
+    } else if (tabRightPos > scrollPos + parent.offsetWidth) {
+      // --- Right tab edge is hidden, scroll to the left to display the tab
+      svApi.current.scrollToHorizontal(
+        tabLeftPos - parent.offsetWidth + tabDim.offsetWidth
+      );
+    }
+  };
+
+  // --- Stores the tab element reference, as later we'll need its dimensions to
+  // --- ensure it is entirelly visible
+  const tabDisplayed = (idx: number, el: HTMLDivElement) => {
+    const oldTabElement = tabDims.current[idx];
+    tabDims.current[idx] = el;
+    if (!oldTabElement) {
+      ensureTabVisible();
+    }
+  };
+
+  // --- Responds to the event when a document tab has been clicked; it makes the clicked
+  // --- document the active one
+  const tabClicked = (id: string) => {
+    dispatch(activateDocumentAction(id));
+  };
+
+  // --- Responds to the event when a document tab was double clicked. Double clicking
+  // --- makes a temporary document permanent.
+  const tabDoubleClicked = (d: DocumentInfo, idx: number) => {
+    if (d.isTemporary) {
+      dispatch(
+        changeDocumentAction(
+          {
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            isReadOnly: d.isReadOnly,
+            isTemporary: false,
+            iconName: d.iconName,
+            iconFill: d.iconFill,
+            language: d.language,
+            path: d.path,
+            stateValue: d.stateValue
+          },
+          idx
+        )
+      );
+    }
+    dispatch(incDocumentActivationVersionAction());
+  };
+
+  // --- Responds to the event when the close button of the tab is clicked
+  const tabCloseClicked = (id: string) => {
+    dispatch(closeDocumentAction(id));
+    documentService.closeDocument(id);
+  };
+
   return (docsToDisplay?.length ?? 0) > 0 ? (
     <div ref={ref} className={styles.documentsHeader}>
       <ScrollViewer
@@ -230,44 +289,17 @@ export const DocumentsHeader = () => {
             return (
               <DocumentTab
                 key={d.id}
-                index={idx}
-                id={d.id}
                 name={docName}
                 path={d.path}
-                type={d.type}
                 isActive={idx === activeDocIndex}
                 isTemporary={d.isTemporary}
                 isReadOnly={d.isReadOnly}
                 iconName={d.iconName}
                 iconFill={d.iconFill}
-                language={d.language}
-                viewVersion={d.viewVersion}
-                tabDisplayed={el => {
-                  tabDims.current[idx] = el;
-                }}
-                tabClicked={() => setHeaderVersion(headerVersion + 1)}
-                tabDoubleClicked={() => {
-                  if (d.isTemporary) {
-                    dispatch(
-                      changeDocumentAction(
-                        {
-                          id: d.id,
-                          name: d.name,
-                          type: d.type,
-                          isReadOnly: d.isReadOnly,
-                          isTemporary: false,
-                          iconName: d.iconName,
-                          iconFill: d.iconFill,
-                          language: d.language,
-                          path: d.path,
-                          stateValue: d.stateValue
-                        },
-                        idx
-                      )
-                    );
-                  }
-                  dispatch(incDocumentActivationVersionAction());
-                }}
+                tabDisplayed={el => tabDisplayed(idx, el)}
+                tabClicked={() => tabClicked(d.id)}
+                tabDoubleClicked={() => tabDoubleClicked(d, idx)}
+                tabCloseClicked={() => tabCloseClicked(d.id)}
               />
             );
           })}
@@ -336,18 +368,12 @@ export const DocumentsHeader = () => {
           title={"Move the active\ntab to right"}
           disabled={activeDocIndex === (docsToDisplay?.length ?? 0) - 1}
           useSpace={true}
-          clicked={() => {
-            documentService.moveActiveToRight();
-            setHeaderVersion(headerVersion + 1);
-          }}
+          clicked={() => documentService.moveActiveToRight()}
         />
         <TabButton
           iconName='close'
           useSpace={true}
-          clicked={() => {
-            documentService.closeAllDocuments();
-            setHeaderVersion(headerVersion + 1);
-          }}
+          clicked={() => documentService.closeAllDocuments()}
         />
       </div>
     </div>
