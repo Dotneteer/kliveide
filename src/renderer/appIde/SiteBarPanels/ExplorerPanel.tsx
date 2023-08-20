@@ -75,7 +75,7 @@ const ExplorerPanel = () => {
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
 
   // --- State and helpers for the selected node's context menu
-  const contextRef = useRef<HTMLElement>(document.getElementById("appMain"));
+  const [contextRef, setContextRef] = useState(null);
   const [contextVisible, setContextVisible] = useState(false);
   const [contextX, setContextX] = useState(0);
   const [contextY, setContextY] = useState(0);
@@ -119,7 +119,7 @@ const ExplorerPanel = () => {
   // --- Let's use this context menu when clicking a project tree node
   const contextMenu = (
     <ContextMenu
-      refElement={contextRef.current}
+      refElement={contextRef}
       isVisible={contextVisible}
       offsetX={contextX}
       offsetY={contextY}
@@ -373,11 +373,12 @@ const ExplorerPanel = () => {
         tabIndex={idx}
         onContextMenu={(e: MouseEvent) => {
           setSelectedContextNode(node);
+          const t = e.target as HTMLElement;
+          setContextRef(t);
+          const rc = t?.getBoundingClientRect();
+          setContextX(rc ? e.clientX - rc.left : 0);
+          setContextY(rc ? e.clientY - rc.bottom : 0);
           setContextVisible(true);
-          setContextX(e.nativeEvent.screenX);
-          setContextY(
-            e.nativeEvent.screenY - contextRef.current.offsetHeight - 20
-          );
         }}
         onMouseDown={e => {
           if (e.button === 0) {
