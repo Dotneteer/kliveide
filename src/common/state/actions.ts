@@ -312,6 +312,17 @@ export const incProjectVersionAction: ActionCreator = () => ({
   type: "INC_PROJECT_VERSION"
 });
 
+export const addExcludedProjectItemAction: ActionCreator = (file: string) => ({
+  type: "ADD_EXCLUDED_PROJECT_ITEM",
+  payload: { file }
+});
+
+
+export const setExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
+  type: "SET_EXCLUDED_PROJECT_ITEMS",
+  payload: { files }
+});
+
 export const resetCompileAction: ActionCreator = () => ({
   type: "RESET_COMPILE"
 });

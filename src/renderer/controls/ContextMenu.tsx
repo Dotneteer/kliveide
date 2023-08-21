@@ -62,15 +62,17 @@ export const ContextMenu = ({
 };
 
 type ContextMenuItemProps = {
+  dangerous?: boolean;
   text?: string;
   disabled?: boolean;
   clicked?: () => void;
 };
 
-export const ContextMenuItem = ({ text, disabled, clicked }: ContextMenuItemProps) => {
+export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextMenuItemProps) => {
   return (
     <div
       className={classnames(localStyles.menuItem, {
+        [localStyles.dangerous]: dangerous,
         [localStyles.disabled]: disabled
       })}
       onMouseDown={e => {

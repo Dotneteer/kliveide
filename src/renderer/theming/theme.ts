@@ -43,6 +43,7 @@ export type ThemeProperties = {
   // --- Context menu
   "--bgcolor-context-menu"?: string;
   "--color-context-item"?: string;
+  "--color-context-item-dangerous"?: string;
   "--color-context-item-disabled"?: string;
   "--bgcolor-context-item-pointed"?: string;
   "--color-context-item-pointed"?: string;

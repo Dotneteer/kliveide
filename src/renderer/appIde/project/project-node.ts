@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@renderer/core/tree-node";
 import { customLanguagesRegistry, fileTypeRegistry } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
@@ -82,8 +84,7 @@ export type ProjectNodeWithChildren = ProjectNode & {
  */
 export function getNodeDir (node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
-  const segments = fullPath.split("/");
-  return segments.slice(0, -1).join("/");
+  return fullPath ? path.dirname(fullPath) : "";
 }
 
 /**
@@ -93,8 +94,7 @@ export function getNodeDir (node: ProjectNode | string): string {
  */
 export function getNodeFile (node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
-  const segments = fullPath.split("/");
-  return segments.length > 0 ? segments[segments.length - 1] : "";
+  return fullPath ? path.basename(fullPath) : "";
 }
 
 /**
@@ -144,15 +144,11 @@ export function buildProjectTree (
 
     // --- Get the language information
     if (!node.isFolder) {
-      const fileExt = getNodeExtension(node);
-      const langServices = customLanguagesRegistry.filter(reg => reg.extensions.indexOf(fileExt) >= 0);
-      if (langServices.length > 0) {
-        node.canBeBuildRoot = langServices[0].allowBuildRoot;
-      }
+      const nodeFullPath = typeof node === "string" ? node : node.fullPath;
+      node.canBeBuildRoot = customLanguagesRegistry
+        .filter(reg => reg.extensions.some(ext => nodeFullPath.endsWith(ext)))
+        .some(reg => reg.allowBuildRoot);
     }
-    
-    // --- Create the initial node
-    const rootNode: ITreeNode<ProjectNode> = new TreeNode<ProjectNode>(node);
 
     // --- Recursively process child nodes
     let childNodes: ITreeNode<ProjectNode>[] = [];
@@ -160,12 +156,23 @@ export function buildProjectTree (
       childNodes.push(toTreeNode(child));
     }
 
-    // --- Add child nodes alphabetically
-    childNodes = childNodes.sort((a, b) => compareProjectNode(a.data, b.data));
-    childNodes.forEach(cn => rootNode.appendChild(cn));
-
     // --- Drop the child nodes from the data
     delete node.children;
+
+    // --- Create the initial node
+    const rootNode: ITreeNode<ProjectNode> = new TreeNode<ProjectNode>(node);
+
+    let visibleChildrenCount = 0;
+
+    // --- Add child nodes alphabetically
+    childNodes = childNodes.sort((a, b) => compareProjectNode(a.data, b.data));
+    childNodes.forEach(cn => {
+      if (!cn.isHidden) ++visibleChildrenCount;
+      rootNode.appendChild(cn);
+    });
+
+    let isVisible = !node.isFolder && fileTypeEntry || visibleChildrenCount > 0;
+    rootNode.isHidden = !isVisible;
 
     // --- Done
     return rootNode;

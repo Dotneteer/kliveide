@@ -31,6 +31,7 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
+  addExcludedProjectItemAction,
   displayDialogAction,
   incDocumentActivationVersionAction,
   setBuildRootAction
@@ -49,7 +50,7 @@ let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   // --- Services used in this component
-  const { messenger } = useRendererContext();
+  const { messenger, store } = useRendererContext();
   const dispatch = useDispatch();
   const { projectService, documentService, ideCommandsService } =
     useAppServices();
@@ -70,7 +71,10 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const folderPath = useSelector(s => s.project?.folderPath);
+  const {folderPath, excludedItems} = useSelector(s => ({
+    folderPath: s.project?.folderPath,
+    excludedItems: s.project?.excludedItems,
+  }));
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
 
@@ -112,7 +116,7 @@ const ExplorerPanel = () => {
     await new Promise(r => setTimeout(r, 100));
     const response = await messenger.sendMessage({ type: "MainSaveProject" });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetMemory request failed: ${response.message}`);
+      reportMessagingError(`MainSaveProject request failed: ${response.message}`);
     }
   };
 
@@ -167,6 +171,35 @@ const ExplorerPanel = () => {
         clicked={() => setIsRenameDialogOpen(true)}
       />
       <ContextMenuItem
+        text='Exclude'
+        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
+        clicked={async () => {
+          if (selectedNodeIsBuildRoot) {
+            // Excluded items are revoked from build root automatically.
+            dispatch(setBuildRootAction(
+                selectedContextNode.data.projectPath,
+                false
+              ));
+          }
+
+          dispatch(addExcludedProjectItemAction(
+              selectedContextNode.data.fullPath
+            ));
+
+          const savePromise = saveProject();
+          // Meanwhile find and close any of the excluded documents.
+          if (selectedContextNode.data.isFolder) {
+            store.getState().ideView?.openDocuments
+              .filter(doc => doc.id.startsWith(selectedContextNode.data.fullPath))
+              .forEach(doc => documentService.closeDocument(doc.id));
+          } else {
+            documentService.closeDocument(selectedContextNode.data.fullPath);
+          }
+          await savePromise;
+        }}
+      />
+      <ContextMenuItem
+        dangerous={true}
         text='Delete'
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => setIsDeleteDialogOpen(true)}
@@ -177,7 +210,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text={
               selectedNodeIsBuildRoot
-                ? "Remove from Build Root"
+                ? "Demote from Build Root"
                 : "Promote to Build Root"
             }
             clicked={async () => {
@@ -462,6 +495,10 @@ const ExplorerPanel = () => {
     };
   }, [projectService]);
 
+  useEffect(() => {
+    if (lastExplorerPath) folderCache.delete(lastExplorerPath);
+  }, [excludedItems])
+
   // --- Get the current project tree when the project path changes
   useEffect(() => {
     (async () => {
@@ -509,7 +546,7 @@ const ExplorerPanel = () => {
         folderCache.set(folderPath, projectTree);
       }
     })();
-  }, [folderPath]);
+  }, [folderPath, excludedItems]);
 
   // --- Render the Explorer panel
   return folderPath ? (

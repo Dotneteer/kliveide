@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { Action } from "./Action";
 import { IdeProject } from "./AppState";
 
@@ -18,9 +20,7 @@ export function projectReducer (
 
     case "CLOSE_FOLDER":
       return {
-        ...state,
-        folderPath: undefined,
-        isKliveProject: false
+        projectVersion: 0
       };
 
     case "SET_BUILD_ROOT":
@@ -34,6 +34,26 @@ export function projectReducer (
         ...state,
         projectVersion: state.projectVersion + 1
       };
+
+    case "ADD_EXCLUDED_PROJECT_ITEM": {
+      const excludedItems = [
+          path.relative(state.folderPath, payload.file.trim())
+            .replace(path.sep, "/")
+        ];
+      return {
+        ...state,
+        excludedItems: state.excludedItems
+          ? state.excludedItems.concat(excludedItems)
+              .filter((v,i,a) => a.indexOf(v) === i)
+          : excludedItems
+      }
+    }
+
+    case "SET_EXCLUDED_PROJECT_ITEMS":
+      return {
+        ...state,
+        excludedItems: payload.files
+      }
 
     default:
       return state;

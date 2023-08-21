@@ -90,6 +90,7 @@ export type IdeProject = {
   isKliveProject?: boolean;
   buildRoots?: string[];
   projectVersion: number;
+  excludedItems?: string[];
 }
 
 /**

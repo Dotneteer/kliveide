@@ -28,6 +28,7 @@ import {
   MainCreateKliveProjectResponse,
   MainOpenFolderRequest,
   MainAddNewFileEntryRequest,
+  MainGloballyExcludedProjectItemsRequest,
   MainDeleteFileEntryRequest,
   MainRenameFileEntryRequest,
   MainShowOpenFolderDialogRequest,
@@ -165,6 +166,7 @@ export type RequestMessage =
   | MainOpenFolderRequest
   | MainCreateKliveProjectRequest
   | MainAddNewFileEntryRequest
+  | MainGloballyExcludedProjectItemsRequest
   | MainDeleteFileEntryRequest
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest

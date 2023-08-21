@@ -45,7 +45,8 @@ import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
   EXPORT_CODE_DIALOG,
-  NEW_PROJECT_DIALOG
+  NEW_PROJECT_DIALOG,
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
 } from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
@@ -73,6 +74,7 @@ const INJECT_CODE = "inject_code";
 const RUN_CODE = "run_code";
 const DEBUG_CODE = "debug_code";
 const EXPORT_CODE = "export_code";
+const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
 
@@ -597,7 +599,16 @@ export function setupMenu (
           click: () => {
             mainStore.dispatch(displayDialogAction(EXPORT_CODE_DIALOG));
           }
-        }
+        },
+        { type: "separator" },
+        {
+          id: EXCLUDED_PROJECT_ITEMS,
+          label: "Manage Excluded Items",
+          enabled: true,
+          click: () => {
+            mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+          }
+        },
       ]
     });
   }
@@ -876,11 +887,11 @@ async function showMessage (
 }
 
 const registeredMachines = [
-  { 
+  {
     id: "sp48",
     displayName: "ZX Spectrum 48K"
   },
-  { 
+  {
     id: "sp128",
     displayName: "ZX Spectrum 128K"
   },
