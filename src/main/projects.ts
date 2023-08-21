@@ -7,6 +7,7 @@ import {
   primaryBarOnRightAction,
   resetCompileAction,
   setBuildRootAction,
+  setExcludedProjectItemsAction,
   setIdeFontSizeAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
@@ -122,6 +123,9 @@ export function openFolderByPath (projectFolder: string): string | null {
   if (!fs.existsSync(projectFolder)) {
     return `Folder ${projectFolder} does not exists.`;
   }
+  const disp = mainStore.dispatch;
+  disp(closeFolderAction());
+
   const projectFile = path.join(projectFolder, PROJECT_FILE);
   let isValidProject = false;
   if (fs.existsSync(projectFile)) {
@@ -131,7 +135,7 @@ export function openFolderByPath (projectFolder: string): string | null {
       isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
 
       // --- Apply settings if the project is valid
-      const disp = mainStore.dispatch;
+      disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
       disp(showEmuToolbarAction(projectStruct.viewOptions.showEmuToolbar));
       disp(showEmuStatusBarAction(projectStruct.viewOptions.showEmuStatusbar));
       disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
@@ -149,9 +153,8 @@ export function openFolderByPath (projectFolder: string): string | null {
       // --- Intentionally ingored
     }
   }
-    
-  mainStore.dispatch(closeFolderAction());
-  mainStore.dispatch(openFolderAction(projectFolder, isValidProject));
+
+  disp(openFolderAction(projectFolder, isValidProject));
 
   // --- Save the folder into settings
   appSettings.folders ??= {};
@@ -267,7 +270,9 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     tapeFile: state.emulatorState.tapeFile,
     fastLoad: state.emulatorState.fastLoad,
     machineSpecific: {},
-    ide: {},
+    ide: {
+      excludedProjectItems: state.project?.excludedItems ?? []
+    },
     viewOptions: {
       theme: state.theme,
       editorFontSize: state.ideViewOptions?.editorFontSize,

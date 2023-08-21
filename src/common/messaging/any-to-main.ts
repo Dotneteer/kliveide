@@ -59,6 +59,13 @@ export interface MainCreateKliveProjectRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get a list of globally excluded project items (those, specified inside *.settings file)
+ */
+export interface MainGloballyExcludedProjectItemsRequest extends MessageBase {
+  type: "MainGloballyExcludedProjectItems";
+}
+
+/**
  * The client wants to delete a file entry
  */
 export interface MainDeleteFileEntryRequest extends MessageBase {

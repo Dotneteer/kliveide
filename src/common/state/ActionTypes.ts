@@ -67,6 +67,8 @@ export interface ActionTypes {
   CLOSE_FOLDER: null;
   SET_BUILD_ROOT: null;
   INC_PROJECT_VERSION: null;
+  ADD_EXCLUDED_PROJECT_ITEM: null;
+  SET_EXCLUDED_PROJECT_ITEMS: null;
 
   DISPLAY_DIALOG: null;
 

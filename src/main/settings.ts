@@ -12,7 +12,8 @@ export type AppSettings = {
     ideWindow?: WindowState,
     showIdeOnStartup?: boolean;
   },
-  folders?: Record<string, string>
+  folders?: Record<string, string>,
+  excludedProjectItems?: string[]
 };
 
 export let appSettings: AppSettings = {};

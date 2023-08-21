@@ -10,6 +10,10 @@
     padding: 2px 12px;
     cursor: pointer;
 
+    &.dangerous {
+      color: var(--color-context-item-dangerous);
+    }
+
     &.disabled {
       background-color: var(--bgcolor-context-item-disabled);
       color: var(--color-context-item-disabled);

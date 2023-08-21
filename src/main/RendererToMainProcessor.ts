@@ -1,12 +1,13 @@
+import * as path from "path";
+import * as fs from "fs";
+
+import { app, BrowserWindow, dialog } from "electron";
 import {
   defaultResponse,
   errorResponse,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
-import * as path from "path";
-import * as fs from "fs";
-import { app, BrowserWindow, dialog } from "electron";
 import {
   textContentsResponse,
   binaryContentsResponse,
@@ -16,10 +17,6 @@ import {
 } from "../common/messaging/any-to-main";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import {
-  getNodeDir,
-  ProjectNodeWithChildren
-} from "../renderer/appIde/project/project-node";
 import {
   createKliveProject,
   getKliveProjectFolder,
@@ -32,15 +29,17 @@ import {
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
-  dimMenuAction,
-  endCompileAction,
-  startCompileAction
+  dimMenuAction
 } from "../common/state/actions";
 import {
   getCompiler,
   KliveCompilerOutput,
   SimpleAssemblerOutput
 } from "./compiler-integration/compiler-registry";
+import {
+  getDirectoryContent,
+  getProjectDirectoryContentFilter
+} from "./directory-content";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -91,11 +90,16 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainGetDirectoryContent":
-      const folderContent = await getDirectoryContent(message.directory);
+      const filter = await getProjectDirectoryContentFilter();
+      const folderContent = await getDirectoryContent(
+        message.directory, filter);
       return {
         type: "MainGetDirectoryContentResponse",
         contents: folderContent
       };
+
+    case "MainGloballyExcludedProjectItems":
+      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
 
     case "MainOpenFolder":
       if (message.folder) {
@@ -263,61 +267,6 @@ export async function processRendererToMainMessages (
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();
-}
-
-/**
- * Gets the contents of the specified directory
- * @param root
- */
-async function getDirectoryContent (
-  root: string
-): Promise<ProjectNodeWithChildren> {
-  if (!path.isAbsolute(root)) {
-    root = path.join(app.getPath("home"), root);
-  }
-
-  let fileEntryCount = 0;
-  const folderSegments = root.replace("\\", "/").split("/");
-  const lastFolder =
-    folderSegments.length > 0
-      ? folderSegments[folderSegments.length - 1]
-      : root;
-  return getFileEntryInfo(root, "", lastFolder);
-
-  function getFileEntryInfo (
-    entryPath: string,
-    projectRelative: string,
-    name: string
-  ): ProjectNodeWithChildren {
-    // --- Store the root node information
-    const fileEntryInfo = fs.statSync(entryPath);
-    const entry: ProjectNodeWithChildren = {
-      isFolder: false,
-      name,
-      fullPath: entryPath,
-      projectPath: projectRelative,
-      children: []
-    };
-    if (fileEntryInfo.isFile()) {
-      fileEntryCount++;
-      return entry;
-    }
-    if (fileEntryInfo.isDirectory()) {
-      entry.isFolder = true;
-      const names = fs.readdirSync(entryPath);
-      for (const name of names) {
-        if (fileEntryCount++ > 10240) break;
-        entry.children.push(
-          getFileEntryInfo(
-            path.join(entryPath, name),
-            path.join(projectRelative, name),
-            name
-          )
-        );
-      }
-      return entry;
-    }
-  }
 }
 
 /**
