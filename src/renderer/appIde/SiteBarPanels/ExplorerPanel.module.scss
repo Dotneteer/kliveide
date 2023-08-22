@@ -55,7 +55,7 @@
     text-overflow: ellipsis;
   }
 
-  .rootBuilder {
+  .iconRight {
     display: flex;
     flex-grow: 0;
     flex-shrink: 0;
@@ -63,10 +63,21 @@
   }
 }
 
+.actionButton {
+  fill: var(--color-explorer) !important;
+
+  &:hover {
+    fill: var(--fill-explorer-icon) !important;
+  }
+
+  &:active {
+    fill: var(--color-explorer-selected) !important;
+  }
+}
+
 .noFolder {
   color: var(--color-explorer);
   padding: 16px;
-
 }
 
 .editor {

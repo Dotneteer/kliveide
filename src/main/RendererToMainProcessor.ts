@@ -29,7 +29,8 @@ import {
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
-  dimMenuAction
+  dimMenuAction,
+  refreshExcludedProjectItemsAction
 } from "../common/state/actions";
 import {
   getCompiler,
@@ -100,6 +101,20 @@ export async function processRendererToMainMessages (
 
     case "MainGloballyExcludedProjectItems":
       return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
+
+    case "MainAddGloballyExcludedProjectItems": {
+      const excludedItems = message.files.map(p => p.trim().replace(path.sep, "/"));
+      appSettings.excludedProjectItems = (
+          appSettings.excludedProjectItems?.concat(excludedItems)
+            ?? excludedItems
+        ).filter((v,i,a) => a.indexOf(v) === i)
+      return textContentsResponse(appSettings.excludedProjectItems.join(path.delimiter));
+    }
+
+    case "MainSetGloballyExcludedProjectItems": {
+      appSettings.excludedProjectItems = message.files;
+      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
+    }
 
     case "MainOpenFolder":
       if (message.folder) {
@@ -218,6 +233,11 @@ export async function processRendererToMainMessages (
 
     case "MainSaveProject":
       await saveKliveProject();
+      break;
+
+    case "MainSaveSettings":
+      saveAppSettings();
+      mainStore.dispatch(refreshExcludedProjectItemsAction());
       break;
 
     case "MainCompileFile":

@@ -4,6 +4,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { Token } from "@appIde/services/command-parser";
 import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
+import { MessageSource } from "@common/messaging/messages-core";
 
 /**
  * Describes the execution context of a command
@@ -38,4 +39,9 @@ export type IdeCommandContext = {
    * The messenger to access the main process
    */
   messenger: MessengerBase;
+
+  /**
+   * Redux message source Id
+   */
+  messageSource: MessageSource;
 };

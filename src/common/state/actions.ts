@@ -312,15 +312,18 @@ export const incProjectVersionAction: ActionCreator = () => ({
   type: "INC_PROJECT_VERSION"
 });
 
-export const addExcludedProjectItemAction: ActionCreator = (file: string) => ({
-  type: "ADD_EXCLUDED_PROJECT_ITEM",
-  payload: { file }
+export const addExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
+  type: "ADD_EXCLUDED_PROJECT_ITEMS",
+  payload: { files }
 });
-
 
 export const setExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
   type: "SET_EXCLUDED_PROJECT_ITEMS",
   payload: { files }
+});
+
+export const refreshExcludedProjectItemsAction: ActionCreator = () => ({
+  type: "REFRESH_EXCLUDED_PROJECT_ITEMS",
 });
 
 export const resetCompileAction: ActionCreator = () => ({

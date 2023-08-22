@@ -66,6 +66,22 @@ export interface MainGloballyExcludedProjectItemsRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get a list of globally excluded project items (those, specified inside *.settings file)
+ */
+export interface MainAddGloballyExcludedProjectItemsRequest extends MessageBase {
+  type: "MainAddGloballyExcludedProjectItems";
+  files: string[];
+}
+
+/**
+ * The client wants to get a list of globally excluded project items (those, specified inside *.settings file)
+ */
+export interface MainSetGloballyExcludedProjectItemsRequest extends MessageBase {
+  type: "MainSetGloballyExcludedProjectItems";
+  files: string[];
+}
+
+/**
  * The client wants to delete a file entry
  */
 export interface MainDeleteFileEntryRequest extends MessageBase {
@@ -145,6 +161,13 @@ export interface MainSaveBinaryFileRequest extends MessageBase {
  */
 export interface MainSaveProjectRequest extends MessageBase {
   type: "MainSaveProject";
+}
+
+/**
+ * The client wants to save the current project
+ */
+export interface MainSaveSettingsRequest extends MessageBase {
+  type: "MainSaveSettings";
 }
 
 /**

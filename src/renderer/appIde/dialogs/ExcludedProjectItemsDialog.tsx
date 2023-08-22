@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 import styles from "./ExcludedProjectItemsDialog.module.scss";
-import { ModalApi, Modal } from "@controls/Modal";
+import { Modal } from "@controls/Modal";
 import { useEffect, useRef, useState } from "react";
 import classnames from "@renderer/utils/classnames";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
@@ -12,7 +12,12 @@ import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory } from "@renderer/controls/Tooltip";
 import { setExcludedProjectItemsAction } from "@common/state/actions";
-import { reportMessagingError } from "@renderer/reportError";
+import { saveProject } from "../utils/save-project";
+import {
+  ExcludedItemInfo,
+  excludedItemsFromGlobalSettingsAsync,
+  excludedItemsFromProject
+} from "../utils/excluded-items-utils";
 
 type Props = {
   onClose: () => void;
@@ -21,28 +26,14 @@ type Props = {
 export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
   const { messenger, store } = useRendererContext();
 
-  // --- Saves the current project
-  const saveProject = async () => {
-    await new Promise(r => setTimeout(r, 100));
-    const response = await messenger.sendMessage({ type: "MainSaveProject" });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainSaveProject request failed: ${response.message}`);
-    }
-  };
-
   const [ globalExcludes, setGlobalExcludes ] = useState([]);
   useEffect(() => {
-    messenger.sendMessage({
-      type: "MainGloballyExcludedProjectItems"
-    }).then(response => {
-      if (response.type == "TextContents") {
-        setGlobalExcludes(response.contents.split(path.delimiter));
-      }
-    });
+    excludedItemsFromGlobalSettingsAsync(messenger)
+      .then(setGlobalExcludes);
   },[ /* once */ ]);
 
   const project = store.getState().project;
-  const [excludedItems, setExcludedItems] = useState(project?.excludedItems);
+  const [excludedItems, setExcludedItems] = useState(excludedItemsFromProject(project));
   const projectName = useSelector(s => path.basename(s.project?.folderPath ?? "Unnamed"));
 
   const disp = useDispatch();
@@ -57,8 +48,8 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
       primaryEnabled={true}
       initialFocus='none'
       onPrimaryClicked={async () => {
-        disp(setExcludedProjectItemsAction(excludedItems));
-        await saveProject();
+        disp(setExcludedProjectItemsAction(excludedItems.map(t => t.id)));
+        await saveProject(messenger);
         return false;
       }}
       onClose={() => {
@@ -73,9 +64,8 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
             fixItemHeight={false}
             itemRenderer={idx => (<>
               <ExcludedItem
-                root={project?.folderPath}
-                value={excludedItems[idx]}
-                onRemove={_ => setExcludedItems(
+                itemInfo={excludedItems[idx]}
+                onRemove={() => setExcludedItems(
                   excludedItems.filter((_, i) => i !== idx))}/>
             </>)}
           />
@@ -89,8 +79,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
             fixItemHeight={false}
             itemRenderer={idx => (<>
               <ExcludedItem
-                root={project?.folderPath}
-                value={globalExcludes[idx]}/>
+                itemInfo={globalExcludes[idx]}/>
             </>)}
           />
         </div>
@@ -100,18 +89,16 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
 };
 
 type ItemProps = {
-  root: string,
-  value: string,
-  onRemove?: (value:string) => void,
+  itemInfo: ExcludedItemInfo,
+  onRemove?: () => void,
 };
 
-const ExcludedItem = ({root, value, onRemove = undefined}: ItemProps) => {
+const ExcludedItem = ({itemInfo, onRemove = undefined}: ItemProps) => {
   const ref = useRef(null);
   const [mouseOver, setMouseOver] = useState(false);
   const [offset, setOffset] = useState({x:0, y:0});
 
   const disabled = !onRemove;
-  const missing = !fs.existsSync(path.join(root, value.replace('/', path.sep)));
 
   return (
     <div
@@ -120,7 +107,7 @@ const ExcludedItem = ({root, value, onRemove = undefined}: ItemProps) => {
       })}
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}>
-        { missing && <Label text="!" width={12} /> }
+        { itemInfo.missing && <Label text="?" width={12} /> }
         <div className={styles.listItemTitle}>
           <span
             ref={ref}
@@ -131,21 +118,21 @@ const ExcludedItem = ({root, value, onRemove = undefined}: ItemProps) => {
                 ...offset, // y: (rc ? e.clientY - rc.bottom : 0)
               });
             }}>
-              {value}
+              {itemInfo.value}
           </span>
         </div>
         <TabButton
           iconName="close"
           disabled={disabled}
           hide={disabled || !mouseOver}
-          clicked={() => onRemove(value)}/>
+          clicked={() => onRemove()}/>
 
         <TooltipFactory refElement={ref.current}
           placement='top'
           offsetX={offset.x}
           offsetY={offset.y}
           isShown={mouseOver}>
-            {value}
+            {itemInfo.id}
         </TooltipFactory>
 
     </div>

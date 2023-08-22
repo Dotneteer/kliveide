@@ -5,7 +5,6 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@renderer/core/tree-node";
-import { MainGetDirectoryContentResponse } from "@messaging/any-to-main";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
@@ -31,7 +30,7 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
-  addExcludedProjectItemAction,
+  addExcludedProjectItemsAction,
   displayDialogAction,
   incDocumentActivationVersionAction,
   setBuildRootAction
@@ -43,7 +42,8 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
-import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import { saveProject } from "../utils/save-project";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -77,6 +77,7 @@ const ExplorerPanel = () => {
   }));
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
+  const hasExcludedItems = useSelector(s => s.project?.excludedItems?.length > 0);
 
   // --- State and helpers for the selected node's context menu
   const [contextRef, setContextRef] = useState(null);
@@ -109,15 +110,6 @@ const ExplorerPanel = () => {
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
     vlApi.current.refresh();
-  };
-
-  // --- Saves the current project
-  const saveProject = async () => {
-    await new Promise(r => setTimeout(r, 100));
-    const response = await messenger.sendMessage({ type: "MainSaveProject" });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainSaveProject request failed: ${response.message}`);
-    }
   };
 
   // --- Let's use this context menu when clicking a project tree node
@@ -182,11 +174,11 @@ const ExplorerPanel = () => {
               ));
           }
 
-          dispatch(addExcludedProjectItemAction(
-              selectedContextNode.data.fullPath
+          dispatch(addExcludedProjectItemsAction(
+              [selectedContextNode.data.fullPath]
             ));
 
-          const savePromise = saveProject();
+          const savePromise = saveProject(messenger);
           // Meanwhile find and close any of the excluded documents.
           if (selectedContextNode.data.isFolder) {
             store.getState().ideView?.openDocuments
@@ -220,7 +212,7 @@ const ExplorerPanel = () => {
                   !selectedNodeIsBuildRoot
                 )
               );
-              await saveProject();
+              await saveProject(messenger);
             }}
           />
         </>
@@ -472,9 +464,24 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
         <SpaceFiller />
+        {isRoot && isKliveProject &&
+          hasExcludedItems && (
+            <div className={styles.iconRight}
+              onClick={e => {
+                e.stopPropagation();
+                dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+              }}>
+              <Icon
+                xclass={styles.actionButton}
+                iconName='exclude'
+                width={16}
+                height={16}
+              />
+            </div>
+          )}
         {!node.data.isFolder &&
           buildRoots.indexOf(node.data.projectPath) >= 0 && (
-            <div className={styles.rootBuilder}>
+            <div className={styles.iconRight}>
               <Icon
                 iconName='combine'
                 fill='--console-ansi-bright-green'
@@ -534,15 +541,8 @@ const ExplorerPanel = () => {
       } else if (response.type !== "MainGetDirectoryContentResponse") {
         reportUnexpectedMessageType(response.type);
       } else {
-        const dir = (
-          (await messenger.sendMessage({
-            type: "MainGetDirectoryContent",
-            directory: folderPath
-          })) as MainGetDirectoryContentResponse
-        ).contents;
-
         // --- Build the folder tree
-        const projectTree = buildProjectTree(dir);
+        const projectTree = buildProjectTree(response.contents);
         setTree(projectTree);
         setVisibleNodes(projectTree.getVisibleNodes());
         projectService.setProjectTree(projectTree);
