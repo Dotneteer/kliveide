@@ -16,7 +16,6 @@ import {
   changeDocumentAction,
   closeDocumentAction,
   incDocumentActivationVersionAction,
-  setActiveDocumentHubAction
 } from "@state/actions";
 import { useEffect, useRef, useState } from "react";
 import { ProjectNode } from "../project/project-node";
@@ -24,10 +23,6 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { useDocumentService } from "../services/DocumentServiceProvider";
 import styles from "./DocumentsHeader.module.scss";
 import { delay, delayAction } from "@renderer/utils/timing";

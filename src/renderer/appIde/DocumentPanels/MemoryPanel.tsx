@@ -400,5 +400,5 @@ const MemoryPanel = ({ document }: DocumentProps) => {
 };
 
 export const createMemoryPanel = ({ document }: DocumentProps) => (
-  <MemoryPanel document={document} />
+  <MemoryPanel document={document} apiLoaded={() => {}}/>
 );

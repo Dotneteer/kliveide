@@ -6,10 +6,6 @@ import { IProjectService } from "../../abstractions/IProjectService";
 import { ProjectNode, getFileTypeEntry } from "../project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;

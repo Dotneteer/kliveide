@@ -501,5 +501,5 @@ const ValueLabel = ({ text }: LabelProps) => {
 };
 
 export const createDisassemblyPanel = ({ document, data }: DocumentProps) => (
-  <DisassemblyPanel document={document} data={data} />
+  <DisassemblyPanel document={document} data={data} apiLoaded={() => {}} />
 );

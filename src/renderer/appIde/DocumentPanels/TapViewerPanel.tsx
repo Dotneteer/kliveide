@@ -298,7 +298,12 @@ const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
 };
 
 export const createTapViewerPanel = ({ document, data }: DocumentProps) => (
-  <TapViewerPanel key={document.id} document={document} data={data} />
+  <TapViewerPanel
+    key={document.id}
+    document={document}
+    data={data}
+    apiLoaded={() => {}}
+  />
 );
 
 function isHeaderBlock (data: Uint8Array): boolean {

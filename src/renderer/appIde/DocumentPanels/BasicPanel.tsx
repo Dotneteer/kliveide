@@ -498,5 +498,5 @@ function getColorCode (code: number): SpectrumColor {
 }
 
 export const createBasicPanel = ({ document }: DocumentProps) => (
-  <BasicPanel document={document} />
+  <BasicPanel document={document} apiLoaded={() => {}} />
 );

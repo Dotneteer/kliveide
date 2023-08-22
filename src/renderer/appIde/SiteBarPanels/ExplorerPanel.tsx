@@ -33,7 +33,6 @@ import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
   addExcludedProjectItemAction,
   displayDialogAction,
-  incDocumentActivationVersionAction,
   setBuildRootAction
 } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
