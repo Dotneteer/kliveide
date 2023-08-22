@@ -33,7 +33,6 @@ import { delay, delayAction } from "@renderer/utils/timing";
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
   const { documentService, projectService } = useAppServices();
-  const { messenger } = useRendererContext();
   const { setDocumentHub } = useAppServices();
   const docService = useDocumentService();
   const handlersInitialized = useRef(false);

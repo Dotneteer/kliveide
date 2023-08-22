@@ -43,6 +43,7 @@ export interface ActionTypes {
   DOC_MOVE_LEFT: null;
   DOC_MOVE_RIGHT: null;
   INC_DOC_ACTIVATION_VERSION: null;
+  INC_DOC_SERVICE_VERSION: null;
 
   SET_TOOLS: null;
   ACTIVATE_TOOL: null;

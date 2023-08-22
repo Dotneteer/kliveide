@@ -1,5 +1,6 @@
 import { ProjectNode } from "@renderer/appIde/project/project-node";
 import { ITreeNode } from "@renderer/core/tree-node";
+import { IDocumentService } from "./IDocumentService";
 
 /**
  * This type describes the state information of a particular project document.
@@ -76,4 +77,9 @@ export type ProjectDocumentState = {
    * this value takes the editVersionCount of the document at the point of saving.
    */
   savedVersionCount: number;
+
+  /**
+   * References to document services that use the particular project documents
+   */
+  usedIn?: IDocumentService[]
 };

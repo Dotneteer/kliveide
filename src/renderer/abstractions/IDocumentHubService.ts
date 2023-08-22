@@ -1,4 +1,3 @@
-import { ILiteEvent } from "@emu/utils/lite-event";
 import { IDocumentService } from "./IDocumentService"
 
 /**
@@ -25,14 +24,8 @@ export type IDocumentHubService = {
   setActiveDocumentService(instance: IDocumentService): void;
 
   /**
-   * This event is fired when the active document service has been changed.
-   */
-  get activeDocumentServiceChanged(): ILiteEvent<void>;
-
-  /**
    * Closes (and removes) the specified document service instance
    * @param instance 
    */
   closeDocumentService(instance: IDocumentService): void;
-
 }

@@ -343,3 +343,7 @@ export const endCompileAction: ActionCreator = (
 export const incInjectionVersionAction: ActionCreator = () => ({
   type: "INC_INJECTION_VERSION"
 });
+
+export const incDocServiceVersionAction: ActionCreator = () => ({
+  type: "INC_DOC_SERVICE_VERSION"
+});

@@ -172,41 +172,36 @@ export function ideViewReducer (
       return state;
     }
 
-    case "ACTIVATE_TOOL": {
+    case "ACTIVATE_TOOL":
       return {
         ...state,
         activeTool: payload.id
       };
-    }
 
-    case "ACTIVATE_OUTPUT_PANE": {
+    case "ACTIVATE_OUTPUT_PANE":
       return {
         ...state,
         activeOutputPane: payload.id
       };
-    }
 
-    case "SET_IDE_STATUS_MESSAGE": {
+    case "SET_IDE_STATUS_MESSAGE":
       return {
         ...state,
         statusMessage: payload.text,
         statusSuccess: payload.flag
       };
-    }
 
-    case "INC_TOOL_CMD_SEQ": {
+    case "INC_TOOL_CMD_SEQ":
       return {
         ...state,
         toolCommandSeqNo: (state.toolCommandSeqNo ?? 0) + 1
       };
-    }
 
-    case "DISPLAY_DIALOG": {
+    case "DISPLAY_DIALOG":
       return {
         ...state,
         dialogToDisplay: payload.index
       };
-    }
 
     case "RESET_DOCUMENT_HUB": {
       const documentHubs = state.documentHubs;
@@ -221,12 +216,17 @@ export function ideViewReducer (
       };
     }
 
-    case "SET_ACTIVE_DOCUMENT_HUB": {
+    case "SET_ACTIVE_DOCUMENT_HUB":
       return {
         ...state,
         activeDocumentHub: payload.index
       };
-    }
+
+    case "INC_DOC_SERVICE_VERSION":
+      return {
+        ...state,
+        documentServiceVersion: (state.documentServiceVersion ?? 0) + 1
+      };
 
     default:
       return state;
