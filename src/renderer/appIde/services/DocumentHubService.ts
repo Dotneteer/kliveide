@@ -20,6 +20,13 @@ class DocumentHubService implements IDocumentHubService {
   constructor (private readonly store: Store<AppState>) {}
 
   /**
+   * Gets the available document service instances
+   */
+  getDocumentServiceInstances(): IDocumentService[] {
+    return this._docServices.slice(0);
+  }
+
+  /**
    * Instantiates a new document service and registers it with the hub. The new document service
    * will be the active one.
    */

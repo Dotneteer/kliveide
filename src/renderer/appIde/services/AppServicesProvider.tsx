@@ -4,11 +4,10 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import { createUiService } from "@renderer/core/UiServices";
 import { createValidationService } from "@renderer/core/ValidationService";
 import { useContext, useRef, useEffect, createContext } from "react";
-import { IDocumentService, createDocumentService } from "./DocumentService";
 import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
-import { setRandomSeed } from "@main/z80-compiler/expressions";
+import { createDocumentHubService } from "./DocumentHubService";
 
 // =====================================================================================================================
 /**
@@ -34,22 +33,19 @@ export function AppServicesProvider ({ children }: Props) {
     store,
     messenger
   );
-  const documentHub = useRef<IDocumentService>(null);
+
+  const documentHubService = createDocumentHubService(store);
+  const documentService = documentHubService.createDocumentService();
 
   const servicesRef = useRef<AppServices>({
     uiService: createUiService(),
-    documentService: createDocumentService(store),
+    documentHubService,
+    documentService,
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
     ideCommandsService: interactiveCommandsService,
     projectService: createProjectService(store, messenger),
     validationService: createValidationService(),
-    get documentHub (): IDocumentService {
-      return documentHub.current;
-    },
-    setDocumentHub: hub => {
-      documentHub.current = hub;
-    }
   });
 
   // --- Set the app services instance whenever the provider's value changes

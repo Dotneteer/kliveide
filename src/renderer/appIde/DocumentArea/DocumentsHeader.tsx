@@ -23,9 +23,8 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
-import { useDocumentService } from "../services/DocumentServiceProvider";
 import styles from "./DocumentsHeader.module.scss";
-import { delay, delayAction } from "@renderer/utils/timing";
+import { delayAction } from "@renderer/utils/timing";
 
 /**
  * This component represents the header of a document hub
@@ -33,8 +32,6 @@ import { delay, delayAction } from "@renderer/utils/timing";
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
   const { documentService, projectService } = useAppServices();
-  const { setDocumentHub } = useAppServices();
-  const docService = useDocumentService();
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const projectVersion = useSelector(s => s.project?.projectVersion);
@@ -46,11 +43,6 @@ export const DocumentsHeader = () => {
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
-
-  // --- Use the document service instance
-  useEffect(() => {
-    setDocumentHub(docService);
-  }, [docService]);
 
   // --- Prepare the open documents to display
   useEffect(() => {

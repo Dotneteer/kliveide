@@ -140,16 +140,6 @@ export const setSideBarPanelSizeAction: ActionCreator = (
   payload: { id, size, nextId, nextSize }
 });
 
-export const resetDocumentHubAction: ActionCreator = (index: number) => ({
-  type: "RESET_DOCUMENT_HUB",
-  payload: { index }
-});
-
-export const setActiveDocumentHubAction: ActionCreator = (index: number) => ({
-  type: "SET_ACTIVE_DOCUMENT_HUB",
-  payload: { index }
-});
-
 export const createDocumentAction: ActionCreator = (
   document: DocumentInfo,
   index: number

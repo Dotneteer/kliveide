@@ -203,25 +203,6 @@ export function ideViewReducer (
         dialogToDisplay: payload.index
       };
 
-    case "RESET_DOCUMENT_HUB": {
-      const documentHubs = state.documentHubs;
-      documentHubs[payload.index] = {
-        openDocuments: [],
-        activeDocumentIndex: -1,
-        documentActivationVersion: 0
-      };
-      return {
-        ...state,
-        documentHubs
-      };
-    }
-
-    case "SET_ACTIVE_DOCUMENT_HUB":
-      return {
-        ...state,
-        activeDocumentHub: payload.index
-      };
-
     case "INC_DOC_SERVICE_VERSION":
       return {
         ...state,

@@ -1,20 +1,15 @@
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
-import styles from "./DocumentArea.module.scss";
 import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
+import styles from "./DocumentArea.module.scss";
 import { DocumentServiceProvider } from "../services/DocumentServiceProvider";
-import { resetDocumentHubAction, setActiveDocumentHubAction } from "@common/state/actions";
 
-type Props = {
-  areaId?: number;
-}
-
-export const DocumentArea = ({ areaId = 0}: Props) => {
-  const dispatch  = useDispatch();
-  const { documentService, setDocumentHub } = useAppServices();
+export const DocumentArea = () => {
+  const { documentHubService } = useAppServices();
+  const documentService = documentHubService.getActiveDocumentService();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [activeDoc, setActiveDoc] = useState<DocumentInfo>(null);
@@ -23,12 +18,11 @@ export const DocumentArea = ({ areaId = 0}: Props) => {
   useEffect(() => {
     if (mounted.current) return;
     mounted.current = true;
-    dispatch(resetDocumentHubAction(areaId));
 
     return () => {
       mounted.current = false;
-    }
-  })
+    };
+  });
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
@@ -43,19 +37,16 @@ export const DocumentArea = ({ areaId = 0}: Props) => {
     : null;
   return (
     <DocumentServiceProvider>
-      <div
-        className={styles.documentArea}
-        tabIndex={-1}
-        onFocus={() => {
-          setDocumentHub(documentService);
-          dispatch(setActiveDocumentHubAction(areaId));
-        }}
-      >
+      <div className={styles.documentArea} tabIndex={-1}>
         <DocumentsHeader />
         {activeDocIndex >= 0 && (
-          <DocumentsContainer document={activeDoc} data={data} apiLoaded={(api) => {
-            documentService.setDocumentApi(activeDoc.id, api);
-          }}/>
+          <DocumentsContainer
+            document={activeDoc}
+            data={data}
+            apiLoaded={api => {
+              documentService.setDocumentApi(activeDoc.id, api);
+            }}
+          />
         )}
       </div>
     </DocumentServiceProvider>

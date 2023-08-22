@@ -5,18 +5,18 @@ import { IProjectService } from "./IProjectService";
 import { IUiService } from "@renderer/core/UiServices";
 import { IValidationService } from "@renderer/core/ValidationService";
 import { IDocumentService } from "./IDocumentService";
+import { IDocumentHubService } from "./IDocumentHubService";
 
 /**
  * This type defines the services the IDE provides
  */
 export type AppServices = {
   uiService: IUiService;
+  projectService: IProjectService;
+  documentHubService: IDocumentHubService;
   documentService: IDocumentService;
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;
   ideCommandsService: IIdeCommandService;
-  projectService: IProjectService;
   validationService: IValidationService;
-  documentHub: IDocumentService;
-  setDocumentHub?: (hub: IDocumentService) => void;
 };

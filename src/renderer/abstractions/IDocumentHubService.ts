@@ -6,6 +6,11 @@ import { IDocumentService } from "./IDocumentService"
  */
 export type IDocumentHubService = {
   /**
+   * Gets the available document service instances
+   */
+  getDocumentServiceInstances(): IDocumentService[];
+
+  /**
    * Instantiates a new document service and registers it with the hub. The new document service 
    * will be the active one.
    */  

@@ -53,8 +53,6 @@ export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
   documentServiceVersion?: number;
-  documentHubs?: DocumentHub[];
-  activeDocumentHub?: number;
   openDocuments?: DocumentInfo[];
   activeDocumentIndex?: number;
   documentActivationVersion?: number;
@@ -137,8 +135,6 @@ export const initialAppState: AppState = {
   ideView: {
     sideBarPanels: {},
     documentServiceVersion: 1,
-    documentHubs: [],
-    activeDocumentHub: -1,
     openDocuments: [],
     activeDocumentIndex: -1,
     tools: [],

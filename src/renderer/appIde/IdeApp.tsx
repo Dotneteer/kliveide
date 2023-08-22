@@ -117,8 +117,9 @@ const IdeApp = () => {
     // --- Whenever each of these props are known, we can state the UI is loaded
     if (!appServices || !store || !messenger || mounted.current) return;
 
-    // --- Run the app initialiation sequence
+    // --- Run the app initialization sequence
     mounted.current = true;
+
     // --- Register the services to be used with the IDE
     registerCommands(appServices.ideCommandsService);
 
