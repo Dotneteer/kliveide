@@ -24,9 +24,9 @@ import { Store } from "@state/redux-light";
 export async function processMainToIdeMessages (
   message: RequestMessage,
   store: Store<AppState>,
-  ideToMain: MessengerBase,
-  { outputPaneService, documentService, ideCommandsService }: AppServices
+  { outputPaneService, ideCommandsService, documentHubService }: AppServices
 ): Promise<ResponseMessage> {
+  const documentService = documentHubService.getActiveDocumentService();
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it

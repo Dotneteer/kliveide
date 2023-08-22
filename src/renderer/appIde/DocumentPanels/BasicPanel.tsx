@@ -10,12 +10,10 @@ import {
 } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useUncommittedState } from "@renderer/core/useUncommittedState";
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa2 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
@@ -28,6 +26,7 @@ import {
 import styles from "./BasicPanel.module.scss";
 import { ZxSpectrumChars } from "./char-codes";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 type BasicViewState = {
   topIndex?: number;
@@ -46,7 +45,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const { documentService } = useAppServices();
+  const documentService = useDocumentService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.

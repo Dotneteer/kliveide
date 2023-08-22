@@ -28,6 +28,7 @@ import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { delay } from "@renderer/utils/timing";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -116,7 +117,8 @@ export const MonacoEditor = ({
 }: EditorProps) => {
   const { theme } = useTheme();
   const { store, messenger } = useRendererContext();
-  const { documentService, projectService } = useAppServices();
+  const { projectService } = useAppServices();
+  const documentService = useDocumentService();
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);

@@ -10,6 +10,7 @@ import { DocumentServiceProvider } from "../services/DocumentServiceProvider";
 export const DocumentArea = () => {
   const { documentHubService } = useAppServices();
   const documentService = documentHubService.getActiveDocumentService();
+  console.log("docService", documentHubService);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [activeDoc, setActiveDoc] = useState<DocumentInfo>(null);
@@ -36,7 +37,7 @@ export const DocumentArea = () => {
     ? documentService.getDocumentData(activeDoc?.id)
     : null;
   return (
-    <DocumentServiceProvider>
+    <DocumentServiceProvider value={documentService}>
       <div className={styles.documentArea} tabIndex={-1}>
         <DocumentsHeader />
         {activeDocIndex >= 0 && (

@@ -14,9 +14,8 @@ import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import classnames from "@renderer/utils/classnames";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { memo, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useAppServices } from "../services/AppServicesProvider";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemoryPanel.module.scss";
 import { DumpSection } from "./DumpSection";
@@ -25,6 +24,7 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -52,7 +52,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const { documentService } = useAppServices();
+  const documentService = useDocumentService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.

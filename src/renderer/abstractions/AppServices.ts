@@ -4,7 +4,6 @@ import { IOutputPaneService } from "./IOutputPaneService";
 import { IProjectService } from "./IProjectService";
 import { IUiService } from "@renderer/core/UiServices";
 import { IValidationService } from "@renderer/core/ValidationService";
-import { IDocumentService } from "./IDocumentService";
 import { IDocumentHubService } from "./IDocumentHubService";
 
 /**
@@ -14,7 +13,6 @@ export type AppServices = {
   uiService: IUiService;
   projectService: IProjectService;
   documentHubService: IDocumentHubService;
-  documentService: IDocumentService;
   machineService: IMachineService;
   outputPaneService: IOutputPaneService;
   ideCommandsService: IIdeCommandService;

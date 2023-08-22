@@ -25,13 +25,15 @@ import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import styles from "./DocumentsHeader.module.scss";
 import { delayAction } from "@renderer/utils/timing";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 /**
  * This component represents the header of a document hub
  */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
-  const { documentService, projectService } = useAppServices();
+  const { projectService } = useAppServices();
+  const documentService = useDocumentService();
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const projectVersion = useSelector(s => s.project?.projectVersion);

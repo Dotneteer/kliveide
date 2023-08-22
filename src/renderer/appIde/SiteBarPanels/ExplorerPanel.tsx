@@ -43,6 +43,7 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -51,8 +52,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { messenger, store } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, documentService, ideCommandsService } =
-    useAppServices();
+  const { projectService, ideCommandsService, documentHubService } = useAppServices();
+  const documentService = documentHubService.getActiveDocumentService();
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
@@ -70,9 +71,9 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const {folderPath, excludedItems} = useSelector(s => ({
+  const { folderPath, excludedItems } = useSelector(s => ({
     folderPath: s.project?.folderPath,
-    excludedItems: s.project?.excludedItems,
+    excludedItems: s.project?.excludedItems
   }));
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
@@ -115,7 +116,9 @@ const ExplorerPanel = () => {
     await new Promise(r => setTimeout(r, 100));
     const response = await messenger.sendMessage({ type: "MainSaveProject" });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainSaveProject request failed: ${response.message}`);
+      reportMessagingError(
+        `MainSaveProject request failed: ${response.message}`
+      );
     }
   };
 
@@ -175,21 +178,23 @@ const ExplorerPanel = () => {
         clicked={async () => {
           if (selectedNodeIsBuildRoot) {
             // Excluded items are revoked from build root automatically.
-            dispatch(setBuildRootAction(
-                selectedContextNode.data.projectPath,
-                false
-              ));
+            dispatch(
+              setBuildRootAction(selectedContextNode.data.projectPath, false)
+            );
           }
 
-          dispatch(addExcludedProjectItemAction(
-              selectedContextNode.data.fullPath
-            ));
+          dispatch(
+            addExcludedProjectItemAction(selectedContextNode.data.fullPath)
+          );
 
           const savePromise = saveProject();
           // Meanwhile find and close any of the excluded documents.
           if (selectedContextNode.data.isFolder) {
-            store.getState().ideView?.openDocuments
-              .filter(doc => doc.id.startsWith(selectedContextNode.data.fullPath))
+            store
+              .getState()
+              .ideView?.openDocuments.filter(doc =>
+                doc.id.startsWith(selectedContextNode.data.fullPath)
+              )
               .forEach(doc => documentService.closeDocument(doc.id));
           } else {
             documentService.closeDocument(selectedContextNode.data.fullPath);
@@ -496,7 +501,7 @@ const ExplorerPanel = () => {
 
   useEffect(() => {
     if (lastExplorerPath) folderCache.delete(lastExplorerPath);
-  }, [excludedItems])
+  }, [excludedItems]);
 
   // --- Get the current project tree when the project path changes
   useEffect(() => {
@@ -586,7 +591,9 @@ const ExplorerPanel = () => {
             type: "MainOpenFolder"
           });
           if (response.type === "ErrorResponse") {
-            reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
+            reportMessagingError(
+              `MainOpenFolder call failed: ${response.message}`
+            );
           }
         }}
       />

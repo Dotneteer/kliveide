@@ -35,12 +35,10 @@ export function AppServicesProvider ({ children }: Props) {
   );
 
   const documentHubService = createDocumentHubService(store);
-  const documentService = documentHubService.createDocumentService();
 
   const servicesRef = useRef<AppServices>({
     uiService: createUiService(),
     documentHubService,
-    documentService,
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
     ideCommandsService: interactiveCommandsService,
