@@ -108,11 +108,13 @@ export async function processRendererToMainMessages (
           appSettings.excludedProjectItems?.concat(excludedItems)
             ?? excludedItems
         ).filter((v,i,a) => a.indexOf(v) === i)
+      mainStore.dispatch(refreshExcludedProjectItemsAction());
       return textContentsResponse(appSettings.excludedProjectItems.join(path.delimiter));
     }
 
     case "MainSetGloballyExcludedProjectItems": {
       appSettings.excludedProjectItems = message.files;
+      mainStore.dispatch(refreshExcludedProjectItemsAction());
       return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
     }
 
@@ -237,7 +239,6 @@ export async function processRendererToMainMessages (
 
     case "MainSaveSettings":
       saveAppSettings();
-      mainStore.dispatch(refreshExcludedProjectItemsAction());
       break;
 
     case "MainCompileFile":
