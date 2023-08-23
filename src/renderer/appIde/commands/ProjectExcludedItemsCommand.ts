@@ -15,6 +15,7 @@ import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import { ExcludedItemInfo, excludedItemsFromGlobalSettingsAsync, excludedItemsFromProject } from "../utils/excluded-items-utils";
 import { addExcludedProjectItemsAction, setBuildRootAction, setExcludedProjectItemsAction } from "@common/state/actions";
 import { saveProject } from "../utils/save-project";
+import { pathStartsWith } from "@common/utils/path-utils";
 
 export class ProjectListExcludedItemsCommand extends IdeCommandBase {
   readonly id = "project:excluded-items";
@@ -190,7 +191,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;
           }
-          if (path.isAbsolute(p) && !p.startsWith(root)) {
+          if (path.isAbsolute(p) && !pathStartsWith(p, root)) {
             writeInfoMessage(context.output, `${p} is not within the project file tree.`);
             continue;
           }
@@ -222,7 +223,7 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
     items = items.map(t => path.isAbsolute(t) ? t : path.join(root, t));
 
     const buildRoots = proj.buildRoots?.filter(b =>
-      !items.some(t => path.join(root, b).startsWith(t)));
+      !items.some(t => pathStartsWith(path.join(root, b), t)));
     if (buildRoots && buildRoots.length < proj.buildRoots.length) {
       context.store.dispatch(setBuildRootAction(buildRoots, true), context.messageSource);
       result = true;
@@ -231,7 +232,7 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
 
   const documentService = context.service.documentService;
   state.ideView?.openDocuments
-    ?.filter(doc => items.some(t => doc.id.startsWith(t)))
+    ?.filter(doc => items.some(t => pathStartsWith(doc.id, t)))
       .forEach(doc => documentService.closeDocument(doc.id));
 
   return result;
