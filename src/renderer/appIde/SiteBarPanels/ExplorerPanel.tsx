@@ -166,28 +166,9 @@ const ExplorerPanel = () => {
         text='Exclude'
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={async () => {
-          if (selectedNodeIsBuildRoot) {
-            // Excluded items are revoked from build root automatically.
-            dispatch(setBuildRootAction(
-                selectedContextNode.data.projectPath,
-                false
-              ));
-          }
-
-          dispatch(addExcludedProjectItemsAction(
-              [selectedContextNode.data.fullPath]
-            ));
-
-          const savePromise = saveProject(messenger);
-          // Meanwhile find and close any of the excluded documents.
-          if (selectedContextNode.data.isFolder) {
-            store.getState().ideView?.openDocuments
-              .filter(doc => doc.id.startsWith(selectedContextNode.data.fullPath))
-              .forEach(doc => documentService.closeDocument(doc.id));
-          } else {
-            documentService.closeDocument(selectedContextNode.data.fullPath);
-          }
-          await savePromise;
+          await ideCommandsService.executeCommand(
+            `p:x ${selectedContextNode.data.fullPath}`
+          );
         }}
       />
       <ContextMenuItem
@@ -208,7 +189,7 @@ const ExplorerPanel = () => {
             clicked={async () => {
               dispatch(
                 setBuildRootAction(
-                  selectedContextNode.data.projectPath,
+                  [selectedContextNode.data.projectPath],
                   !selectedNodeIsBuildRoot
                 )
               );

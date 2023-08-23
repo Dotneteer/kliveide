@@ -13,7 +13,7 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import { ExcludedItemInfo, excludedItemsFromGlobalSettingsAsync, excludedItemsFromProject } from "../utils/excluded-items-utils";
-import { addExcludedProjectItemsAction, setExcludedProjectItemsAction } from "@common/state/actions";
+import { addExcludedProjectItemsAction, setBuildRootAction, setExcludedProjectItemsAction } from "@common/state/actions";
 import { saveProject } from "../utils/save-project";
 
 export class ProjectListExcludedItemsCommand extends IdeCommandBase {
@@ -115,6 +115,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
   async doExecute (
     context: IdeCommandContext
   ): Promise<IdeCommandResult> {
+    let needSaveProject = false;
     if (this.globalMode) {
       // System-wide operation
       if (this.deleteMode) {
@@ -150,6 +151,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
 
           filteredPaths.push(p);
         }
+        needSaveProject = beforeExcluded(context, filteredPaths);
         await context.messenger.sendMessage({
           type:"MainAddGloballyExcludedProjectItems",
           files: filteredPaths
@@ -195,11 +197,42 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
 
           filteredPaths.push(p);
         }
+        beforeExcluded(context, filteredPaths);
         disp(addExcludedProjectItemsAction(filteredPaths));
       }
-      await saveProject(context.messenger);
+      needSaveProject = true;
     }
+
     writeSuccessMessage(context.output, "Done.");
+
+    if (needSaveProject)
+      await saveProject(context.messenger);
+
     return commandSuccess;
   }
+}
+
+function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
+  let result = false;
+
+  const state = context.store.getState();
+  const proj = state.project;
+  if (proj?.isKliveProject === true) {
+    const root = proj.folderPath;
+    items = items.map(t => path.isAbsolute(t) ? t : path.join(root, t));
+
+    const buildRoots = proj.buildRoots?.filter(b =>
+      !items.some(t => path.join(root, b).startsWith(t)));
+    if (buildRoots && buildRoots.length < proj.buildRoots.length) {
+      context.store.dispatch(setBuildRootAction(buildRoots, true), context.messageSource);
+      result = true;
+    }
+  }
+
+  const documentService = context.service.documentService;
+  state.ideView?.openDocuments
+    ?.filter(doc => items.some(t => doc.id.startsWith(t)))
+      .forEach(doc => documentService.closeDocument(doc.id));
+
+  return result;
 }

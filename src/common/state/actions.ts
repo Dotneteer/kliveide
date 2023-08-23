@@ -301,11 +301,11 @@ export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
 });
 
 export const setBuildRootAction: ActionCreator = (
-  file: string,
+  files: string[],
   flag: boolean
 ) => ({
   type: "SET_BUILD_ROOT",
-  payload: { file, flag }
+  payload: { files, flag }
 });
 
 export const incProjectVersionAction: ActionCreator = () => ({

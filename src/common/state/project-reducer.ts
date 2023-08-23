@@ -26,7 +26,7 @@ export function projectReducer (
     case "SET_BUILD_ROOT":
       return {
         ...state,
-        buildRoots: payload.flag ? [payload.file] : []
+        buildRoots: payload.flag ? payload.files : []
       };
 
     case "INC_PROJECT_VERSION":
