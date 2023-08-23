@@ -39,6 +39,7 @@ import {
   MainSaveProjectRequest,
   MainSaveSettingsRequest,
   MainCompileFileRequest,
+  MainExitAppRequest,
   MainCompileResponse,
   MainSaveBinaryFileRequest,
   MainShowOpenFileDialogResponse,
@@ -181,6 +182,7 @@ export type RequestMessage =
   | MainSaveProjectRequest
   | MainSaveSettingsRequest
   | MainCompileFileRequest
+  | MainExitAppRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

@@ -182,6 +182,13 @@ export interface MainCompileFileRequest extends MessageBase {
 }
 
 /**
+ * The client wants to quit the app
+ */
+export interface MainExitAppRequest extends MessageBase {
+  type: "MainExitApp";
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {

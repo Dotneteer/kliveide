@@ -30,6 +30,7 @@ class IdeCommandService implements IIdeCommandService {
     private readonly messenger: MessengerBase,
     private readonly messageSource: MessageSource
   ) {
+    this.registerCommand(new ExitCommand());
     this.registerCommand(new HelpCommand());
   }
 
@@ -309,6 +310,17 @@ class HelpCommand extends IdeCommandBase {
       success: true,
       finalMessage: `${count} command${count > 1 ? "s" : ""} displayed.`
     };
+  }
+}
+
+class ExitCommand extends IdeCommandBase {
+  readonly id = "exit";
+  readonly description = "Exits Klvie IDE.";
+  readonly usage = "exit";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.messenger.postMessage({type: "MainExitApp"});
+    return {success: true, finalMessage: "Farewell!"};
   }
 }
 

@@ -259,6 +259,10 @@ export async function processRendererToMainMessages (
         };
       }
 
+    case "MainExitApp":
+      app.quit();
+      break;
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
