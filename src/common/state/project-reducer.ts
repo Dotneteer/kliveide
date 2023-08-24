@@ -55,8 +55,9 @@ export function projectReducer (
       }
 
     case "REFRESH_EXCLUDED_PROJECT_ITEMS":
-      // This action is needed to force-refresh project tree,
-      // e.g.: when global Klive setting have been changed.
+      // This action is needed to force-refresh excluded project items,
+      // e.g. trigger the project tree view update when global Klive
+      // settings have been changed.
       return {
         ...state,
         excludedItems: state.excludedItems?.slice()
