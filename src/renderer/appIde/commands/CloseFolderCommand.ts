@@ -20,7 +20,7 @@ export class CloseFolderCommand extends CommandWithNoArgBase {
     if (!projectPath) {
       return commandError("No folder is open in the IDE.");
     }
-    context.store.dispatch(closeFolderAction());
+    context.store.dispatch(closeFolderAction(), context.messageSource);
     writeSuccessMessage(context.output, `Folder ${projectPath} closed.`);
     return commandSuccess;
   }

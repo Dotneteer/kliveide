@@ -6,7 +6,6 @@ import {
 } from "@controls/TabButton";
 import {
   useDispatch,
-  useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
 import { ITreeNode } from "@renderer/core/tree-node";

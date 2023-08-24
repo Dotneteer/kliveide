@@ -31,7 +31,8 @@ export function AppServicesProvider ({ children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
   const interactiveCommandsService = createInteractiveCommandsService(
     store,
-    messenger
+    messenger,
+    messageSource
   );
 
   const documentHubService = createDocumentHubService(store);

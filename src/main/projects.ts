@@ -147,7 +147,7 @@ export function openFolderByPath (projectFolder: string): string | null {
       disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
       disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
-      disp(setBuildRootAction(projectStruct.builder?.roots?.[0], !!projectStruct.builder?.roots?.[0]));
+      disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
 
     } catch {
       // --- Intentionally ingored

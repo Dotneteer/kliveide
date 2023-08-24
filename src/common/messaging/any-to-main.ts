@@ -59,10 +59,26 @@ export interface MainCreateKliveProjectRequest extends MessageBase {
 }
 
 /**
- * The client wants to get a list of globally excluded project items (those, specified inside *.settings file)
+ * The client wants to get the list of globally excluded project items (those, specified inside *.settings file)
  */
 export interface MainGloballyExcludedProjectItemsRequest extends MessageBase {
   type: "MainGloballyExcludedProjectItems";
+}
+
+/**
+ * The client wants to add items to the list of globally excluded project items
+ */
+export interface MainAddGloballyExcludedProjectItemsRequest extends MessageBase {
+  type: "MainAddGloballyExcludedProjectItems";
+  files: string[];
+}
+
+/**
+ * The client wants to set (override) the list of globally excluded project items
+ */
+export interface MainSetGloballyExcludedProjectItemsRequest extends MessageBase {
+  type: "MainSetGloballyExcludedProjectItems";
+  files: string[];
 }
 
 /**
@@ -148,6 +164,13 @@ export interface MainSaveProjectRequest extends MessageBase {
 }
 
 /**
+ * The client wants to save the global app settings
+ */
+export interface MainSaveSettingsRequest extends MessageBase {
+  type: "MainSaveSettings";
+}
+
+/**
  * The client wants to compile a particular file
  */
 export interface MainCompileFileRequest extends MessageBase {
@@ -156,6 +179,13 @@ export interface MainCompileFileRequest extends MessageBase {
   language: string;
   options?: CompilerOptions;
   params?: any;
+}
+
+/**
+ * The client wants to quit the app
+ */
+export interface MainExitAppRequest extends MessageBase {
+  type: "MainExitApp";
 }
 
 /**

@@ -204,6 +204,15 @@ export function writeMessage(
 }
 
 /**
+ * Writes a info message to the specified output
+ * @param output
+ * @param text
+ */
+export function writeInfoMessage(output: IOutputBuffer, text: string): void {
+  writeMessage(output, text, "bright-blue");
+}
+
+/**
  * Writes a success message to the specified output
  * @param output
  * @param text
