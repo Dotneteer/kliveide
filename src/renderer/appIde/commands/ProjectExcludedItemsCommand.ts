@@ -182,7 +182,6 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       }
       else {
         // Add new entries to project-specific exclusion list
-
         const filteredPaths:string[] = [];
         const root = proj.folderPath;
         for (let p of this.paths) {
