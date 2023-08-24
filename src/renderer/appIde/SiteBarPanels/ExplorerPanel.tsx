@@ -30,9 +30,7 @@ import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
 import {
-  addExcludedProjectItemsAction,
   displayDialogAction,
-  incDocumentActivationVersionAction,
   setBuildRootAction
 } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
@@ -52,8 +50,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { messenger, store } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, documentService, ideCommandsService } =
-    useAppServices();
+  const { projectService, ideCommandsService, documentHubService } = useAppServices();
+  const documentService = documentHubService.getActiveDocumentService();
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
@@ -71,9 +69,9 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const {folderPath, excludedItems} = useSelector(s => ({
+  const { folderPath, excludedItems } = useSelector(s => ({
     folderPath: s.project?.folderPath,
-    excludedItems: s.project?.excludedItems,
+    excludedItems: s.project?.excludedItems
   }));
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
@@ -403,12 +401,9 @@ const ExplorerPanel = () => {
         onDoubleClick={() => {
           if (node.data.isFolder) return;
           if (documentService.isOpen(node.data.fullPath)) {
-            console.log("set");
             documentService.setActiveDocument(node.data.fullPath);
             documentService.setPermanent(node.data.fullPath);
-            dispatch(incDocumentActivationVersionAction());
           } else {
-            console.log("nav");
             ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
@@ -488,7 +483,7 @@ const ExplorerPanel = () => {
 
   useEffect(() => {
     if (lastExplorerPath) folderCache.delete(lastExplorerPath);
-  }, [excludedItems])
+  }, [excludedItems]);
 
   // --- Get the current project tree when the project path changes
   useEffect(() => {
@@ -571,7 +566,9 @@ const ExplorerPanel = () => {
             type: "MainOpenFolder"
           });
           if (response.type === "ErrorResponse") {
-            reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
+            reportMessagingError(
+              `MainOpenFolder call failed: ${response.message}`
+            );
           }
         }}
       />

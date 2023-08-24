@@ -1,6 +1,5 @@
-import { useRendererContext } from "@renderer/core/RendererProvider";
 import { createContext, useContext, useRef } from "react";
-import { IDocumentService, createDocumentService } from "./DocumentService";
+import { IDocumentService } from "@renderer/abstractions/IDocumentService";
 
 const DocumentServiceContext = createContext<IDocumentService>(undefined);
 
@@ -9,17 +8,13 @@ export function useDocumentService (): IDocumentService {
 }
 
 type Props = {
+  value: IDocumentService;
   children?: React.ReactNode;
 };
 
-export function DocumentServiceProvider ({ children }: Props) {
-  const { store } = useRendererContext();
-  const documentServiceRef = useRef<IDocumentService>(
-    createDocumentService(store)
-  );
-
+export function DocumentServiceProvider ({ value, children }: Props) {
   return (
-    <DocumentServiceContext.Provider value={documentServiceRef.current}>
+    <DocumentServiceContext.Provider value={value}>
       {children}
     </DocumentServiceContext.Provider>
   );

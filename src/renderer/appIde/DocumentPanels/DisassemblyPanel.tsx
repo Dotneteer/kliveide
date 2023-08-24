@@ -18,7 +18,6 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useAppServices } from "../services/AppServicesProvider";
 import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
@@ -35,6 +34,7 @@ import {
 } from "@renderer/reportError";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -60,7 +60,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const { documentService } = useAppServices();
+  const documentService = useDocumentService();
 
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -501,5 +501,5 @@ const ValueLabel = ({ text }: LabelProps) => {
 };
 
 export const createDisassemblyPanel = ({ document, data }: DocumentProps) => (
-  <DisassemblyPanel document={document} data={data} />
+  <DisassemblyPanel document={document} data={data} apiLoaded={() => {}} />
 );

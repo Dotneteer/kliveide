@@ -8,17 +8,17 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
 import { Icon } from "@controls/Icon";
-import { useAppServices } from "../services/AppServicesProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { changeDocumentAction } from "@state/actions";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 const TapViewerPanel = ({ document, data }: DocumentProps) => {
   const dispatch = useDispatch();
-  const { documentService } = useAppServices();
+  const documentService = useDocumentService();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const docIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [docState, setDocState] = useState({});
@@ -298,7 +298,12 @@ const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
 };
 
 export const createTapViewerPanel = ({ document, data }: DocumentProps) => (
-  <TapViewerPanel key={document.id} document={document} data={data} />
+  <TapViewerPanel
+    key={document.id}
+    document={document}
+    data={data}
+    apiLoaded={() => {}}
+  />
 );
 
 function isHeaderBlock (data: Uint8Array): boolean {

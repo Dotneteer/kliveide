@@ -9,9 +9,9 @@ import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef, useState, useEffect } from "react";
 import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { useAppServices } from "../services/AppServicesProvider";
 import { OutputLine } from "../ToolArea/OutputPanel";
 import styles from "./CommandResult.module.scss";
+import { useDocumentService } from "../services/DocumentServiceProvider";
 
 type CommandResultViewState = {
   topIndex?: number;
@@ -29,7 +29,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
 
   // --- Get the services used in this component
   const dispatch = useDispatch();
-  const { documentService } = useAppServices();
+  const documentService = useDocumentService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -126,5 +126,5 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
 };
 
 export const createCommandResultPanel = ({ document, data }: DocumentProps) => (
-  <CommandResultPanel document={document} data={data} />
+  <CommandResultPanel document={document} data={data} apiLoaded={() => {}}/>
 );

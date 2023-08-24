@@ -268,14 +268,11 @@ export class ExportCodeCommand extends IdeCommandBase {
     let scrContent: Uint8Array;
     if (this.screenFile) {
       // --- Check the validity of the screen file
-      const scrFileResponse = await context.messenger.sendMessage({
-        type: "MainReadBinaryFile",
-        path: this.screenFile
-      });
-      if (scrFileResponse.type === "ErrorResponse") {
-        return commandError(scrFileResponse.message);
-      }
-      scrContent = (scrFileResponse as BinaryContentsResponse).contents;
+      const scrContent = (await context.service.projectService.readFileContent(
+        this.screenFile,
+        true
+      )) as Uint8Array;
+      context.service.projectService.forgetFile(this.screenFile);
       if (!isScreenFile(scrContent)) {
         return commandError(
           `File '${this.screenFile}' is not a valid screen file`

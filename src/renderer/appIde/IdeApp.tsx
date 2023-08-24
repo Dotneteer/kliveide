@@ -20,7 +20,6 @@ import {
   ResponseMessage,
   errorResponse
 } from "@messaging/messages-core";
-import { MessengerBase } from "@messaging/MessengerBase";
 import {
   ideLoadedAction,
   setAudioSampleRateAction,
@@ -79,7 +78,6 @@ import { ProjectExcludeItemsCommand, ProjectListExcludedItemsCommand } from "./c
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
-let messengerCached: MessengerBase;
 let storeCached: Store<AppState>;
 
 const IdeApp = () => {
@@ -87,6 +85,11 @@ const IdeApp = () => {
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { store, messenger } = useRendererContext();
+
+  // --- Default document service instance
+  if (!appServices.documentHubService.getActiveDocumentService()) {
+    appServices.documentHubService.createDocumentService();
+  }
 
   // --- Visual state
   const appPath = useSelector(s => s.appPath);
@@ -112,14 +115,14 @@ const IdeApp = () => {
   const mounted = useRef(false);
   useEffect(() => {
     appServicesCached = appServices;
-    messengerCached = messenger;
     storeCached = store;
 
     // --- Whenever each of these props are known, we can state the UI is loaded
     if (!appServices || !store || !messenger || mounted.current) return;
 
-    // --- Run the app initialiation sequence
+    // --- Run the app initialization sequence
     mounted.current = true;
+
     // --- Register the services to be used with the IDE
     registerCommands(appServices.ideCommandsService);
 
@@ -225,7 +228,6 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
     response = await processMainToIdeMessages(
       msg,
       storeCached,
-      messengerCached,
       appServicesCached
     );
   } catch (err) {

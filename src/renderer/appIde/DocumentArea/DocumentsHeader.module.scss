@@ -4,7 +4,8 @@
   @include fix-height-panel(38px);
   flex-direction: row;
   background: var(--bgcolor-docsheader);
-
+  outline: none;
+  
   .tabWrapper {
     display: flex;
     flex-direction: row;
