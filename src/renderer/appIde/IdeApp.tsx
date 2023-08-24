@@ -75,6 +75,7 @@ import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
 import { IdeEventsHandler } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
+import { ProjectExcludeItemsCommand, ProjectListExcludedItemsCommand } from "./commands/ProjectExcludedItemsCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -277,4 +278,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new RunCodeCommand());
   cmdSrv.registerCommand(new DebugCodeCommand());
   cmdSrv.registerCommand(new ExportCodeCommand());
+
+  cmdSrv.registerCommand(new ProjectListExcludedItemsCommand());
+  cmdSrv.registerCommand(new ProjectExcludeItemsCommand());
 }

@@ -29,13 +29,17 @@ import {
   MainOpenFolderRequest,
   MainAddNewFileEntryRequest,
   MainGloballyExcludedProjectItemsRequest,
+  MainAddGloballyExcludedProjectItemsRequest,
+  MainSetGloballyExcludedProjectItemsRequest,
   MainDeleteFileEntryRequest,
   MainRenameFileEntryRequest,
   MainShowOpenFolderDialogRequest,
   MainShowOpenFolderDialogResponse,
   MainSaveTextFileRequest,
   MainSaveProjectRequest,
+  MainSaveSettingsRequest,
   MainCompileFileRequest,
+  MainExitAppRequest,
   MainCompileResponse,
   MainSaveBinaryFileRequest,
   MainShowOpenFileDialogResponse,
@@ -167,6 +171,8 @@ export type RequestMessage =
   | MainCreateKliveProjectRequest
   | MainAddNewFileEntryRequest
   | MainGloballyExcludedProjectItemsRequest
+  | MainAddGloballyExcludedProjectItemsRequest
+  | MainSetGloballyExcludedProjectItemsRequest
   | MainDeleteFileEntryRequest
   | MainRenameFileEntryRequest
   | MainShowOpenFolderDialogRequest
@@ -174,7 +180,9 @@ export type RequestMessage =
   | MainSaveTextFileRequest
   | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
+  | MainSaveSettingsRequest
   | MainCompileFileRequest
+  | MainExitAppRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

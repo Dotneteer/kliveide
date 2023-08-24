@@ -10,6 +10,7 @@ import {
   appSettings,
   saveAppSettings
 } from "./settings";
+import { pathStartsWith } from "../common/utils/path-utils";
 
 type DirectoryContentFilter = (p: string) => boolean;
 
@@ -89,5 +90,5 @@ export async function getProjectDirectoryContentFilter(
     .concat(proj.ide.excludedProjectItems)
     .filter((value, index, array) => array.indexOf(value) === index)
     .map((v) => v.replace('/', path.sep));
-  return (p: string) => !ignored.some(v => p.startsWith(v));
+  return (p: string) => !ignored.some(v => pathStartsWith(p, v));
 }

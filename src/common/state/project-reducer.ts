@@ -26,7 +26,7 @@ export function projectReducer (
     case "SET_BUILD_ROOT":
       return {
         ...state,
-        buildRoots: payload.flag ? [payload.file] : []
+        buildRoots: payload.flag ? payload.files : []
       };
 
     case "INC_PROJECT_VERSION":
@@ -35,17 +35,16 @@ export function projectReducer (
         projectVersion: state.projectVersion + 1
       };
 
-    case "ADD_EXCLUDED_PROJECT_ITEM": {
-      const excludedItems = [
-          path.relative(state.folderPath, payload.file.trim())
-            .replace(path.sep, "/")
-        ];
+    case "ADD_EXCLUDED_PROJECT_ITEMS": {
+      const excludedItems = payload.files.map(p => {
+        p = p.trim();
+        if (path.isAbsolute(p)) p = path.relative(state.folderPath, p);
+        return p.replace(path.sep, "/");
+      });
       return {
         ...state,
-        excludedItems: state.excludedItems
-          ? state.excludedItems.concat(excludedItems)
-              .filter((v,i,a) => a.indexOf(v) === i)
-          : excludedItems
+        excludedItems: (state.excludedItems?.concat(excludedItems) ?? excludedItems)
+          .filter((v,i,a) => a.indexOf(v) === i)
       }
     }
 
@@ -53,6 +52,14 @@ export function projectReducer (
       return {
         ...state,
         excludedItems: payload.files
+      }
+
+    case "REFRESH_EXCLUDED_PROJECT_ITEMS":
+      // This action is needed to force-refresh project tree,
+      // e.g.: when global Klive setting have been changed.
+      return {
+        ...state,
+        excludedItems: state.excludedItems?.slice()
       }
 
     default:

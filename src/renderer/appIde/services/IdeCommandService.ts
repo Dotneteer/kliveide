@@ -12,6 +12,7 @@ import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand, Token } from "./command-parser";
 import { IdeCommandBase } from "./ide-commands";
+import { MessageSource } from "@common/messaging/messages-core";
 
 const MAX_HISTORY = 1024;
 
@@ -26,8 +27,10 @@ class IdeCommandService implements IIdeCommandService {
    */
   constructor (
     private readonly store: Store<AppState>,
-    private readonly messenger: MessengerBase
+    private readonly messenger: MessengerBase,
+    private readonly messageSource: MessageSource
   ) {
+    this.registerCommand(new ExitCommand());
     this.registerCommand(new HelpCommand());
   }
 
@@ -154,14 +157,15 @@ class IdeCommandService implements IIdeCommandService {
       argTokens: tokens.slice(1),
       output: buffer,
       service: this._appServices,
-      messenger: this.messenger
+      messenger: this.messenger,
+      messageSource: this.messageSource
     };
     const commandResult = await commandInfo.execute(context);
     if (commandResult.success) {
       if (commandResult.finalMessage) {
         buffer.color("bright-green");
         buffer.writeLine(commandResult.finalMessage);
-        buffer.resetStyle();        
+        buffer.resetStyle();
       }
     } else {
       buffer.color("bright-red");
@@ -309,6 +313,17 @@ class HelpCommand extends IdeCommandBase {
   }
 }
 
+class ExitCommand extends IdeCommandBase {
+  readonly id = "exit";
+  readonly description = "Exits Klvie IDE.";
+  readonly usage = "exit";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.messenger.postMessage({type: "MainExitApp"});
+    return {success: true, finalMessage: "Farewell!"};
+  }
+}
+
 /**
  * Creates an interactive commands service instance
  * @param dispatch Dispatch function to use
@@ -316,7 +331,8 @@ class HelpCommand extends IdeCommandBase {
  */
 export function createInteractiveCommandsService (
   store: Store<AppState>,
-  messenger: MessengerBase
+  messenger: MessengerBase,
+  messageSource: MessageSource
 ) {
-  return new IdeCommandService(store, messenger);
+  return new IdeCommandService(store, messenger, messageSource);
 }
