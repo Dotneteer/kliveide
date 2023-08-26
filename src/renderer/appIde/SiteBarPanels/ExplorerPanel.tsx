@@ -233,21 +233,10 @@ const ExplorerPanel = () => {
           }
         } else {
           // --- Succesfully renamed
-          const oldId = selectedContextNode.data.fullPath;
-          const fileTypeEntry = getFileTypeEntry(newFullName);
-          selectedContextNode.data.icon = fileTypeEntry?.icon;
-
-          // TODO: Manage editor type change
-          // --- Change the properties of the renamed node
-          selectedContextNode.data.fullPath = newFullName;
-          selectedContextNode.data.name = newName;
-          selectedContextNode.parentNode.sortChildren((a, b) =>
-            compareProjectNode(a.data, b.data)
-          );
+          projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
 
           // --- Refresh the tree and notify other objects listening to a rename
           refreshTree();
-          projectService.signItemRenamed(oldId, selectedContextNode);
 
           // --- Make sure the selected node is displayed
           const newIndex = tree.findIndex(selectedContextNode);
@@ -404,7 +393,7 @@ const ExplorerPanel = () => {
           if (node.data.isFolder) return;
           if (documentHubService.isOpen(node.data.fullPath)) {
             documentHubService.setActiveDocument(node.data.fullPath);
-            documentHubService.setPermanent(node.data.fullPath);
+            projectService.setPermanent(node.data.fullPath);
           } else {
             ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }

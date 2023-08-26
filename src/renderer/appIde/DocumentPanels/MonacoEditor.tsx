@@ -9,7 +9,6 @@ import {
 } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import {
   reportMessagingError,
   reportUnexpectedMessageType
@@ -26,7 +25,8 @@ import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService, useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -109,7 +109,7 @@ export type EditorApi = DocumentApi & {
 };
 
 type EditorProps = {
-  document: DocumentInfo;
+  document: ProjectDocumentState;
   value: string;
   viewState?: monacoEditor.editor.ICodeEditorViewState;
   apiLoaded?: (api: EditorApi) => void;
@@ -125,13 +125,11 @@ export const MonacoEditor = ({
   const { store, messenger } = useRendererContext();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
+  const hubVersion = useDocumentHubServiceVersion();
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);
   const isBusy = useRef(false);
-  const docActivationVersion = useSelector(
-    s => s.ideView?.documentActivationVersion
-  );
   const previousContent = useRef<string>();
   const unsavedChangeCounter = useRef(0);
   const editorFontSize = useSelector(
@@ -149,7 +147,7 @@ export const MonacoEditor = ({
   const oldHoverDecorations = useRef<string[]>([]);
   const oldExecPointDecoration = useRef<string[]>([]);
 
-  const resourceName = document.node?.data?.projectPath;
+  const resourceName = document.node?.projectPath;
   const languageInfo = customLanguagesRegistry.find(
     l => l.id === document.language
   );
@@ -163,7 +161,7 @@ export const MonacoEditor = ({
       refreshBreakpoints();
       refreshCurrentBreakpoint();
     }
-  }, [docActivationVersion]);
+  }, [hubVersion]);
 
   // --- Respond to theme changes
   useEffect(() => {
@@ -274,7 +272,7 @@ export const MonacoEditor = ({
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
     // --- Now, make this document permanent
-    documentHubService.setPermanent(document.id);
+    projectService.setPermanent(document.id);
 
     // --- Save the current value as the previous one
     previousContent.current = editor.current.getValue();
@@ -501,7 +499,7 @@ export const MonacoEditor = ({
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
         bp =>
-          bp.resource === document.node?.data?.projectPath && bp.line === lineNo
+          bp.resource === document.node?.projectPath && bp.line === lineNo
       );
       (async () => {
         if (existingBp) {

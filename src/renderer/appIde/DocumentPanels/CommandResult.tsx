@@ -18,18 +18,20 @@ type CommandResultViewState = {
 };
 
 const CommandResultPanel = ({ document, data }: DocumentProps) => {
+  // --- Get the services used in this component
+  const dispatch = useDispatch();
+  const documentHubService = useDocumentHubService();
+
   // --- Read the view state of the document
   const viewState = useRef(
-    (document.stateValue as CommandResultViewState) ?? {}
+    (documentHubService.getDocumentViewState(
+      document.id
+    ) as CommandResultViewState) ?? {}
   );
   const topIndex = useRef(viewState.current?.topIndex ?? 0);
   const title = (data as CommandResultData)?.title;
   const output = (data as CommandResultData)?.lines ?? [];
   const bufferText = (data as CommandResultData)?.bufferText;
-
-  // --- Get the services used in this component
-  const dispatch = useDispatch();
-  const documentHubService = useDocumentHubService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -126,5 +128,5 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
 };
 
 export const createCommandResultPanel = ({ document, data }: DocumentProps) => (
-  <CommandResultPanel document={document} data={data} apiLoaded={() => {}}/>
+  <CommandResultPanel document={document} data={data} apiLoaded={() => {}} />
 );

@@ -62,20 +62,15 @@ export type ProjectDocumentState = {
   isTemporary?: boolean;
 
   /**
-   * Document state depending on the document type
-   */
-  stateValue?: any;
-
-  /**
    * A continuously changing version count that increments at every document edit.
    */
-  editVersionCount: number;
+  editVersionCount?: number;
 
   /**
    * A version count that is set to the corresponding editVersionCount. When a document is saved,
    * this value takes the editVersionCount of the document at the point of saving.
    */
-  savedVersionCount: number;
+  savedVersionCount?: number;
 
   /**
    * References to document services that use the particular project documents

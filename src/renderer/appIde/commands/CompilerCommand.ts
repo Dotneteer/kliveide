@@ -1,5 +1,4 @@
 import {
-  BinaryContentsResponse,
   MainCompileResponse,
   MainSaveFileResponse
 } from "@messaging/any-to-main";

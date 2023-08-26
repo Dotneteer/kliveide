@@ -35,17 +35,17 @@ type BasicViewState = {
 };
 
 const BasicPanel = ({ document }: DocumentProps) => {
-  // --- Read the view state of the document
-  const viewState = useRef((document.stateValue as BasicViewState) ?? {});
-  const topIndex = useRef(viewState.current?.topIndex ?? 0);
-
-  // --- Use these app state variables
-  const machineState = useSelector(s => s.emulatorState?.machineState);
-
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
+
+  // --- Read the view state of the document
+  const viewState = useRef((documentHubService.getDocumentViewState(document.id) as BasicViewState) ?? {});
+  const topIndex = useRef(viewState.current?.topIndex ?? 0);
+
+  // --- Use these app state variables
+  const machineState = useSelector(s => s.emulatorState?.machineState);
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.

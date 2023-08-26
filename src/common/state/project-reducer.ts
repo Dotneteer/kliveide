@@ -20,7 +20,8 @@ export function projectReducer (
 
     case "CLOSE_FOLDER":
       return {
-        projectVersion: 0
+        projectFileVersion: 1,
+        projectViewStateVersion: 1
       };
 
     case "SET_BUILD_ROOT":
@@ -29,10 +30,16 @@ export function projectReducer (
         buildRoots: payload.flag ? payload.files : []
       };
 
-    case "INC_PROJECT_VERSION":
+    case "INC_PROJECT_FILE_VERSION":
       return {
         ...state,
-        projectVersion: state.projectVersion + 1
+        projectFileVersion: state.projectFileVersion + 1
+      };
+
+    case "INC_PROJECT_VIEWSTATE_VERSION":
+      return {
+        ...state,
+        projectViewStateVersion: state.projectViewStateVersion + 1
       };
 
     case "ADD_EXCLUDED_PROJECT_ITEMS": {
@@ -43,16 +50,17 @@ export function projectReducer (
       });
       return {
         ...state,
-        excludedItems: (state.excludedItems?.concat(excludedItems) ?? excludedItems)
-          .filter((v,i,a) => a.indexOf(v) === i)
-      }
+        excludedItems: (
+          state.excludedItems?.concat(excludedItems) ?? excludedItems
+        ).filter((v, i, a) => a.indexOf(v) === i)
+      };
     }
 
     case "SET_EXCLUDED_PROJECT_ITEMS":
       return {
         ...state,
         excludedItems: payload.files
-      }
+      };
 
     case "REFRESH_EXCLUDED_PROJECT_ITEMS":
       // This action is needed to force-refresh excluded project items,
@@ -61,7 +69,7 @@ export function projectReducer (
       return {
         ...state,
         excludedItems: state.excludedItems?.slice()
-      }
+      };
 
     default:
       return state;

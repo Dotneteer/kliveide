@@ -58,7 +58,10 @@ export type IProjectService = {
   /**
    * Fires when an item has been renamed in the project
    */
-  readonly itemRenamed: ILiteEvent<{oldName: string, node: ITreeNode<ProjectNode>}>;
+  readonly itemRenamed: ILiteEvent<{
+    oldName: string;
+    node: ITreeNode<ProjectNode>;
+  }>;
 
   /**
    * Fires when an item hasn been deleted from the project
@@ -67,14 +70,14 @@ export type IProjectService = {
 
   /**
    * Gets the project node for the file with the specified name
-   * @param file 
-   */  
+   * @param file
+   */
   getNodeForFile(file: string): ITreeNode<ProjectNode> | undefined;
 
   /**
-   * Gets breakpoint information according to the address. 
+   * Gets breakpoint information according to the address.
    * @param addr Binary address or a "[<projectFile>]:<lineNo>" format for source code address
-   */  
+   */
   getBreakpointAddressInfo(addr: string | number): BreakpointAddressInfo;
 
   /**
@@ -83,10 +86,10 @@ export type IProjectService = {
   getDocumentHubServiceInstances(): IDocumentHubService[];
 
   /**
-   * Instantiates a new document service and registers it with the hub. The new document service 
+   * Instantiates a new document service and registers it with the hub. The new document service
    * will be the active one.
-   */  
-  createDocumentHubService(): IDocumentHubService
+   */
+  createDocumentHubService(): IDocumentHubService;
 
   /**
    * Gets the active document service. Many project document related events are executed with the
@@ -102,30 +105,36 @@ export type IProjectService = {
 
   /**
    * Closes (and removes) the specified document service instance
-   * @param instance 
+   * @param instance
    */
-  closeDocumentService(instance: IDocumentHubService): void;
+  closeDocumentHubService(instance: IDocumentHubService): void;
 
   /**
    * Reads the contents of the specified file from the file system and puts the content into the cache
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
    */
-  readFileContent(file: string, isBinary?: boolean): Promise<string | Uint8Array>;
+  readFileContent(
+    file: string,
+    isBinary?: boolean
+  ): Promise<string | Uint8Array>;
 
   /**
    * Gets the contents of the file. First checks the cache, than uses the file system
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
    */
-  getFileContent(file: string, isBinary?: boolean): Promise<string | Uint8Array>;
+  getFileContent(
+    file: string,
+    isBinary?: boolean
+  ): Promise<string | Uint8Array>;
 
   /**
    * Saves the specified contents of the file to the file system, and then to the cache
    * @param file File name
    * @param contents File contents to save
    */
-  saveFileContent(file: string, contents: string | Uint8Array): Promise<void>
+  saveFileContent(file: string, contents: string | Uint8Array): Promise<void>;
 
   /**
    * Removes the specified file from the cache
@@ -147,7 +156,45 @@ export type IProjectService = {
 
   /**
    * Gets a volatile document according to the specified info
-   * @param docInfo 
+   * @param docInfo
    */
-  getVolatileDocument(docInfo: VolatileDocumentInfo): Promise<ProjectDocumentState>;
+  getVolatileDocument(
+    docInfo: VolatileDocumentInfo
+  ): Promise<ProjectDocumentState>;
+
+  /**
+   * Signs that a document hub has opened the specified document
+   * @param id Document ID
+   * @param hub Hub opening the document
+   */
+  openInDocumentHub(id: string, hub: IDocumentHubService): void;
+
+  /**
+   * Signs that a document hub has closed the specified document
+   * @param id Document ID
+   * @param hub Hub opening the document
+   */
+  closeInDocumentHub(id: string, hub: IDocumentHubService): void;
+
+  /**
+   * Gets the project document by its ID
+   * @param id Project document id
+   */
+  getDocumentById(id: string): ProjectDocumentState | undefined;
+
+  /**
+   * Sets the specified document permanent
+   * @param id The ID of the document to set permanent
+   */
+  setPermanent(id: string): void;
+
+  /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   */
+  renameDocument(
+    oldId: string,
+    newId: string,
+  ): void;
 };

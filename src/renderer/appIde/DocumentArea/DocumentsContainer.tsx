@@ -1,14 +1,14 @@
 import { documentPanelRegistry } from "@renderer/registry";
 import { createElement } from "react";
 import styles from "./DocumentsContainer.module.scss";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 /**
  * Properties to pass to a document renderer
  */
 export type DocumentProps = {
-  document?: DocumentInfo;
+  document?: ProjectDocumentState;
   data?: any;
   apiLoaded: (api: DocumentApi) => void;
 };

@@ -10,7 +10,6 @@ import {
   writeSuccessMessage
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { incDocumentActivationVersionAction } from "@state/actions";
 import { EditorApi } from "../DocumentPanels/MonacoEditor";
 
 export class NavigateToDocumentCommand extends IdeCommandBase {
@@ -98,8 +97,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
           language: nodeData.subType,
           iconName: nodeData.icon,
           isReadOnly: nodeData.isReadOnly,
-          node: projNode,
-          viewVersion: 0
+          node: nodeData
         },
         docContent,
         !nodeData.openPermanent
@@ -119,7 +117,9 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
           }
         }
       }
-      context.store.dispatch(incDocumentActivationVersionAction());
+      
+      // TODO: ?
+      //context.store.dispatch(incDocumentActivationVersionAction());
     }
 
     // --- Done.

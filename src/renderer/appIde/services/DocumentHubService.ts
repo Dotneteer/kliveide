@@ -1,114 +1,64 @@
 import {
-  activateDocumentAction,
-  changeDocumentAction,
-  closeAllDocumentsAction,
-  closeDocumentAction,
-  createDocumentAction,
-  moveDocumentLeftAction,
-  moveDocumentRightAction
+  incDocHubServiceVersionAction,
+  incProjectViewStateVersionAction
 } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { delay } from "@renderer/utils/timing";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 /**
  * This class provides the default implementation of the document service
  */
 class DocumentHubService implements IDocumentHubService {
-  private documentData = new Map<string, any>();
-  private documentApi = new Map<string, DocumentApi>();
+  private _documentData = new Map<string, any>();
+  private _documentViewState = new Map<string, any>();
+  private _documentApi = new Map<string, DocumentApi>();
+
+  private _openDocs: ProjectDocumentState[] = [];
+  private _activeDocIndex = -1;
 
   /**
    * Initializes the service instance to use the specified store
    * @param store Store instance to use
    */
   constructor (
+    public readonly hubId: number,
     private readonly store: Store<AppState>,
     private readonly projectService: IProjectService
   ) {}
 
   /**
-   * Sets the specified document as the active one
-   * @param id The ID of the active document
+   * Gets the list of open documents
    */
-  setActiveDocument (id: string): void {
-    this.store.dispatch(activateDocumentAction(id), "ide");
+  getOpenDocuments (): ProjectDocumentState[] {
+    return this._openDocs;
   }
 
   /**
-   * Gets the ID of the active document
+   * Gets the document with the specified ID
+   * @param id Document ID
    */
-  getActiveDocumentId (): string {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    return docs?.[state?.ideView?.activeDocumentIndex]?.id;
+  getDocument (id: string): ProjectDocumentState | undefined {
+    return this._openDocs.find(d => d.id === id);
   }
 
   /**
-   * Sets the specified document permanent
-   * @param id The ID of the document to set permanent
+   * Gets the active document instance
    */
-  setPermanent (id: string): void {
-    const state = this.store.getState();
-    const dispatch = this.store.dispatch;
-    const docs = state?.ideView?.openDocuments ?? [];
-    const existingIndex = docs.findIndex(d => d.id === id);
-    if (existingIndex >= 0) {
-      const existingDoc = docs[existingIndex];
-      dispatch(
-        changeDocumentAction(
-          {
-            ...existingDoc,
-            isTemporary: false
-          } as DocumentInfo,
-          existingIndex
-        ),
-        "ide"
-      );
-    }
+  getActiveDocument (): ProjectDocumentState | undefined {
+    return this._openDocs[this._activeDocIndex];
   }
 
   /**
-   * Renames the document and optionally changes its ID
-   * @param oldId Old document ID
-   * @param newId New document ID
-   * @param newName New document name
+   * Gets the index of the active document
    */
-  renameDocument (
-    oldId: string,
-    newId: string,
-    newName: string,
-    newIcon?: string
-  ): void {
-    const state = this.store.getState();
-    const dispatch = this.store.dispatch;
-    const docs = state?.ideView?.openDocuments ?? [];
-    const existingIndex = docs.findIndex(d => d.id === oldId);
-    if (existingIndex < 0) return;
-
-    // --- Ok, document exists, change it
-    const oldActive = this.getActiveDocumentId();
-    const existingDoc = docs[existingIndex];
-    dispatch(
-      changeDocumentAction(
-        {
-          ...existingDoc,
-          id: newId ?? oldId,
-          name: newName,
-          iconName: newIcon
-        } as DocumentInfo,
-        existingIndex
-      ),
-      "ide"
-    );
-    if (oldActive === oldId && newId) {
-      this.setActiveDocument(newId);
-    }
+  getActiveDocumentIndex (): number {
+    return this._activeDocIndex;
   }
 
   /**
@@ -117,75 +67,50 @@ class DocumentHubService implements IDocumentHubService {
    * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument (document: DocumentInfo, data?: any, temporary?: boolean): void {
-    temporary ??= true;
-    const state = this.store.getState();
-    const dispatch = this.store.dispatch;
-    const docs = state?.ideView?.openDocuments ?? [];
-    const existingIndex = docs.findIndex(d => d.id === document.id);
-    if (existingIndex >= 0) {
+  openDocument (
+    document: ProjectDocumentState,
+    data?: any,
+    temporary = true
+  ): void {
+    const docIndex = this._openDocs.findIndex(d => d.id === document.id);
+    if (docIndex >= 0) {
       // --- A similar document exists with the same ID
-      const existingDoc = docs[existingIndex];
+      const existingDoc = this._openDocs[docIndex];
       if (existingDoc !== document) {
         throw new Error(`Duplicated document with ID '${document.id}'`);
       }
-
-      // --- Save the document data
-      if (data) {
-        this.documentData.set(document.id, data);
-      }
-
-      // --- Now, open the document
-      dispatch(activateDocumentAction(document.id), "ide");
-      return;
-    }
-
-    // --- Check for temporary documents
-    if (temporary) {
-      const existingTempIndex = docs.findIndex(d => d.isTemporary);
-      if (existingTempIndex >= 0) {
-        // --- Save the document data
-        if (data) {
-          this.documentData.set(document.id, data);
+    } else {
+      if (temporary) {
+        // --- Check for temporary documents
+        const tempIndex = this._openDocs.findIndex(d => d.isTemporary);
+        if (tempIndex >= 0) {
+          // --- Change the former temp document to this one
+          this._openDocs[tempIndex] = document;
         }
-        dispatch(
-          changeDocumentAction(
-            {
-              ...document,
-              isTemporary: true
-            } as DocumentInfo,
-            existingTempIndex
-          ),
-          "ide"
-        );
-        return;
+      } else {
+        // --- Add as the last document
+        this._openDocs.push(document);
       }
     }
 
-    // --- Save the document data
+    // --- Save (or remove) the document data
     if (data) {
-      this.documentData.set(document.id, data);
+      this._documentData.set(document.id, data);
+    } else {
+      this._documentData.delete(document.id);
     }
-    dispatch(
-      createDocumentAction(
-        {
-          ...document,
-          isTemporary: temporary
-        } as DocumentInfo,
-        docs.length
-      ),
-      "ide"
-    );
+
+    // --- Now, activate the newly opened document
+    this.projectService.openInDocumentHub(document.id, this);
+    this.setActiveDocument(document.id);
   }
 
   /**
    * Tests if the specified document is open
-   * @param document
+   * @param id Document ID to check
    */
   isOpen (id: string): boolean {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    return !!docs.find(doc => doc.id === id);
+    return !!this.getDocument(id);
   }
 
   /**
@@ -197,11 +122,11 @@ class DocumentHubService implements IDocumentHubService {
     id: string,
     waitForApi = false,
     timeout = 5000
-  ): Promise<DocumentInfo | null> {
+  ): Promise<ProjectDocumentState | null> {
     let waitTime = 0;
     while (waitTime < timeout) {
       if (this.isOpen(id)) {
-        const doc = this.getDocument(id);
+        const doc = this.projectService.getDocumentById(id);
         const api = this.getDocumentApi(id);
         if (!waitForApi || api) return doc;
       }
@@ -214,57 +139,67 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Gets the project file is open
    */
-  getOpenProjectFileDocument (): DocumentInfo | undefined {
+  getOpenProjectFileDocument (): ProjectDocumentState | undefined {
     const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
     var projectInfo = state?.project;
     return projectInfo?.isKliveProject
-      ? docs.find(d => d.path === `${projectInfo.folderPath}/${PROJECT_FILE}`)
+      ? this._openDocs.find(
+          d => d.path === `${projectInfo.folderPath}/${PROJECT_FILE}`
+        )
       : undefined;
   }
 
   /**
-   * Increment the view version of the specified document
+   * Sets the specified document as the active one
+   * @param id The ID of the active document
    */
-  incrementViewVersion (id: string): void {
-    const document = this.getDocument(id);
-    if (!document) return;
+  setActiveDocument (id: string): void {
+    const docIndex = this._openDocs.findIndex(d => d.id === id);
+    if (docIndex < 0) {
+      throw new Error(`Unknown document: ${id}`);
+    }
+    if (this._activeDocIndex === docIndex) {
+      // --- No change
+      return;
+    }
 
-    this.store.dispatch(
-      changeDocumentAction({
-        ...document,
-        viewVersion: (document.viewVersion ?? 0) + 1
-      } as DocumentInfo),
-      "ide"
-    );
-  }
-
-  /**
-   * Gets the document with the specified ID
-   * @param id Document ID
-   * @returns The document with the specified ID, if exists; othwerwise, null
-   */
-  getDocument (id: string): DocumentInfo {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    return docs.find(d => d.id === id);
+    this._activeDocIndex = docIndex;
+    this.signHubStateChanged();
   }
 
   /**
    * Closes the specified document
-   * @param id
+   * @param id Document to close
    */
   closeDocument (id: string): void {
-    this.store.dispatch(closeDocumentAction(id), "ide");
-    if (this.documentApi.has(id)) {
-      this.documentApi.delete(id);
+    const docIndex = this._openDocs.findIndex(d => d.id === id);
+    if (!docIndex) return;
+
+    // --- Remove the document
+    this._openDocs.splice(docIndex, 1);
+
+    // --- Release the document API
+    if (this._documentApi.has(id)) {
+      this._documentApi.delete(id);
     }
-    if (this.documentData.has(id)) {
-      const data = this.documentData.get(id);
+
+    // --- Release the document view data
+    if (this._documentData.has(id)) {
+      const data = this._documentData.get(id);
       if (data?.dispose) {
         data.dispose();
       }
-      this.documentData.delete(id);
+      this._documentData.delete(id);
+    }
+
+    // --- Notify the project service about closing the document
+    this.projectService.closeInDocumentHub(id, this);
+
+    // --- Activate another document
+    if (docIndex > 0) {
+      this.setActiveDocument(this._openDocs[docIndex - 1].id);
+    } else if (docIndex < this._openDocs.length) {
+      this.setActiveDocument(this._openDocs[docIndex].id);
     }
   }
 
@@ -272,26 +207,30 @@ class DocumentHubService implements IDocumentHubService {
    * Closes all open documents
    */
   closeAllDocuments (): void {
-    this.store.dispatch(closeAllDocumentsAction(), "ide");
-    for (const doc of this.documentData) {
-      if (doc[1]?.dispose) {
-        doc[1].dispose();
-      }
-    }
-    this.documentData.clear();
+    // --- Close the documents one-by-one
+    this._openDocs.slice(0).forEach(d => {
+      this.closeDocument(d.id);
+    });
+
+    // --- Close the document hub service
+    this.projectService.closeDocumentHubService(this);
   }
 
   /**
    * Closes all open explorer documents
    */
   closeAllExplorerDocuments (): void {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    for (const doc of docs) {
-      if (doc.node) {
-        // --- This is an explorer document, close it
-        this.closeDocument(doc.id);
-      }
+    // --- Close the documents one-by-one
+    this._openDocs
+      .slice(0)
+      .filter(d => d.node)
+      .forEach(d => {
+        this.closeDocument(d.id);
+      });
+
+    // --- Close the document hub service
+    if (this._openDocs.length === 0) {
+      this.projectService.closeDocumentHubService(this);
     }
   }
 
@@ -299,27 +238,32 @@ class DocumentHubService implements IDocumentHubService {
    * Moves the active tab to left
    */
   moveActiveToLeft (): void {
-    this.store.dispatch(moveDocumentLeftAction(), "ide");
+    const index = this._activeDocIndex;
+    if (index === 0) return;
+    const tmp = this._openDocs[index - 1];
+    this._openDocs[index - 1] = this._openDocs[index];
+    this._openDocs[index] = tmp;
+    this.signHubStateChanged();
   }
 
   /**
    * Moves the active tab to right
    */
   moveActiveToRight (): void {
-    this.store.dispatch(moveDocumentRightAction(), "ide");
+    const index = this._activeDocIndex;
+    if (index >= this._openDocs.length) return;
+    const tmp = this._openDocs[index + 1];
+    this._openDocs[index + 1] = this._openDocs[index];
+    this._openDocs[index] = tmp;
+    this.signHubStateChanged();
   }
 
   /**
    * Gets the state of the specified document
    * @param id Document ID
    */
-  getDocumentState (id: string): any {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    const existingIndex = docs.findIndex(d => d.id === id);
-    return existingIndex !== undefined
-      ? docs[existingIndex]?.stateValue
-      : undefined;
+  getDocumentViewState (id: string): any {
+    return this._documentViewState.get(id);
   }
 
   /**
@@ -327,21 +271,9 @@ class DocumentHubService implements IDocumentHubService {
    * @param id Document ID
    * @param vieState State to save
    */
-  saveDocumentState (id: string, viewState: any): void {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    const existingIndex = docs.findIndex(d => d.id === id);
-    if (existingIndex !== undefined) {
-      const doc = { ...docs[existingIndex], stateValue: viewState };
-      this.store.dispatch(changeDocumentAction(doc, existingIndex));
-    }
-  }
-
-  /**
-   * Gets the state of the active document
-   */
-  getActiveDocumentState (): any {
-    return this.getDocumentState(this.getActiveDocumentId());
+  setDocumentViewState (id: string, viewState: any): void {
+    this._documentViewState.set(id, viewState);
+    this.signHubStateChanged();
   }
 
   /**
@@ -349,7 +281,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param viewState State to save
    */
   saveActiveDocumentState (viewState: any): void {
-    this.saveDocumentState(this.getActiveDocumentId(), viewState);
+    this.setDocumentViewState(this.getActiveDocumentId(), viewState);
   }
 
   /**
@@ -358,7 +290,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param data New data to set
    */
   setDocumentData (id: string, data: any): void {
-    this.documentData.set(id, data);
+    this._documentData.set(id, data);
   }
 
   /**
@@ -366,7 +298,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param id
    */
   getDocumentData (id: string): any {
-    return this.documentData.get(id);
+    return this._documentData.get(id);
   }
 
   /**
@@ -374,7 +306,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param id Document ID
    */
   getDocumentApi (id: string): any {
-    return this.documentApi.get(id);
+    return this._documentApi.get(id);
   }
 
   /**
@@ -383,26 +315,43 @@ class DocumentHubService implements IDocumentHubService {
    * @param api API instance
    */
   setDocumentApi (id: string, api: DocumentApi): void {
-    const doc = this.getDocument(id);
-    if (doc) {
-      if (api) {
-        this.documentApi.set(id, api);
-      } else {
-        this.documentApi.delete(id);
-      }
+    const doc = this._openDocs.find(d => d.id === id);
+    if (!doc) return;
+    if (api) {
+      this._documentApi.set(id, api);
+    } else {
+      this._documentApi.delete(id);
     }
+  }
+
+  // --- Helper methods
+
+  private signHubStateChanged (): void {
+    this.store.dispatch(incDocHubServiceVersionAction(this.hubId), "ide");
+  }
+
+  private signProjectViewstateChanged (): void {
+    this.store.dispatch(incProjectViewStateVersionAction(), "ide");
+  }
+
+  private getActiveDocumentId (): string {
+    const state = this.store.getState();
+    const docs = state?.ideView?.openDocuments ?? [];
+    return docs?.[state?.ideView?.activeDocumentIndex]?.id;
   }
 }
 
 /**
- * Creates a document service instance
+ * Creates a document hub service instance
+ * @param id: Document hub service instance ID
  * @param store Store instance
  * @param projectService Project service instance
  * @returns Document service instance
  */
 export function createDocumentHubService (
+  id: number,
   store: Store<AppState>,
   projectService: IProjectService
 ) {
-  return new DocumentHubService(store, projectService);
+  return new DocumentHubService(id, store, projectService);
 }

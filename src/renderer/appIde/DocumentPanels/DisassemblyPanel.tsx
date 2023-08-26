@@ -47,8 +47,17 @@ type DisassemblyViewState = {
 };
 
 const DisassemblyPanel = ({ document }: DocumentProps) => {
+  // --- Get the services used in this component
+  const dispatch = useDispatch();
+  const { messenger } = useRendererContext();
+  const documentHubService = useDocumentHubService();
+
   // --- Read the view state of the document
-  const viewState = useRef((document.stateValue as DisassemblyViewState) ?? {});
+  const viewState = useRef(
+    (documentHubService.getDocumentViewState(
+      document.id
+    ) as DisassemblyViewState) ?? {}
+  );
   const topAddress = useRef(viewState.current?.topAddress ?? 0);
 
   // --- Use these app state variables
@@ -56,11 +65,6 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   const machineId = useSelector(s => s.emulatorState.machineId);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
-
-  // --- Get the services used in this component
-  const dispatch = useDispatch();
-  const { messenger } = useRendererContext();
-  const documentHubService = useDocumentHubService();
 
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.

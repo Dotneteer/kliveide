@@ -140,40 +140,6 @@ export const setSideBarPanelSizeAction: ActionCreator = (
   payload: { id, size, nextId, nextSize }
 });
 
-export const createDocumentAction: ActionCreator = (
-  document: DocumentInfo,
-  index: number
-) => ({
-  type: "CREATE_DOC",
-  payload: { document, index }
-});
-
-export const changeDocumentAction: ActionCreator = (
-  document: DocumentInfo,
-  index: number
-) => ({
-  type: "CHANGE_DOC",
-  payload: { document, index }
-});
-
-export const incDocumentActivationVersionAction: ActionCreator = () => ({
-  type: "INC_DOC_ACTIVATION_VERSION"
-});
-
-export const activateDocumentAction: ActionCreator = (id: string) => ({
-  type: "ACTIVATE_DOC",
-  payload: { id }
-});
-
-export const closeDocumentAction: ActionCreator = (id: string) => ({
-  type: "CLOSE_DOC",
-  payload: { id }
-});
-
-export const closeAllDocumentsAction: ActionCreator = () => ({
-  type: "CLOSE_ALL_DOCS"
-});
-
 export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   type: "SET_TOOLS",
   payload: { tools }
@@ -260,14 +226,6 @@ export const incToolCommandSeqNoAction: ActionCreator = () => ({
   type: "INC_TOOL_CMD_SEQ"
 });
 
-export const moveDocumentLeftAction: ActionCreator = () => ({
-  type: "DOC_MOVE_LEFT"
-});
-
-export const moveDocumentRightAction: ActionCreator = () => ({
-  type: "DOC_MOVE_RIGHT"
-});
-
 export const openFolderAction: ActionCreator = (
   file: string,
   flag: boolean
@@ -298,8 +256,12 @@ export const setBuildRootAction: ActionCreator = (
   payload: { files, flag }
 });
 
-export const incProjectVersionAction: ActionCreator = () => ({
-  type: "INC_PROJECT_VERSION"
+export const incProjectFileVersionAction: ActionCreator = () => ({
+  type: "INC_PROJECT_FILE_VERSION"
+});
+
+export const incProjectViewStateVersionAction: ActionCreator = () => ({
+  type: "INC_PROJECT_VIEWSTATE_VERSION"
 });
 
 export const addExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
@@ -339,4 +301,9 @@ export const incInjectionVersionAction: ActionCreator = () => ({
 
 export const incDocServiceVersionAction: ActionCreator = () => ({
   type: "INC_DOC_SERVICE_VERSION"
+});
+
+export const incDocHubServiceVersionAction: ActionCreator = (index) => ({
+  type: "INC_DOC_HUB_SERVICE_VERSION",
+  payload: { index }
 });

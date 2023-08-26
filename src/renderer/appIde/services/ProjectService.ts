@@ -3,14 +3,23 @@ import { LiteEvent, ILiteEvent } from "@emu/utils/lite-event";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { ProjectNode, getFileTypeEntry } from "../project/project-node";
+import {
+  ProjectNode,
+  compareProjectNode,
+  getFileTypeEntry,
+  getNodeDir
+} from "../project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { VolatileDocumentInfo } from "@renderer/abstractions/VolatileDocumentInfo";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { createDocumentHubService } from "./DocumentHubService";
-import { incDocServiceVersionAction } from "@common/state/actions";
+import {
+  incDocHubServiceVersionAction,
+  incProjectViewStateVersionAction
+} from "@common/state/actions";
+import { documentPanelRegistry } from "@renderer/registry";
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
@@ -25,9 +34,12 @@ class ProjectService implements IProjectService {
   private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>();
   private _fileCache = new Map<string, string | Uint8Array>();
   private _projectItemCache = new Map<string, ProjectDocumentState>();
-  private _docServices: IDocumentHubService[] = [];
-  private _activations: IDocumentHubService[] = [];
-  private _active: IDocumentHubService | undefined;
+
+  // --- Document hub related fields
+  private _docHubIdSlots: boolean[] = [];
+  private _docHubServices: IDocumentHubService[] = [];
+  private _docHubActivations: IDocumentHubService[] = [];
+  private _activeDocHub: IDocumentHubService | undefined;
 
   constructor (
     private readonly store: Store<AppState>,
@@ -148,7 +160,7 @@ class ProjectService implements IProjectService {
    * Gets the available document service instances
    */
   getDocumentHubServiceInstances (): IDocumentHubService[] {
-    return this._docServices.slice(0);
+    return this._docHubServices.slice(0);
   }
 
   /**
@@ -156,10 +168,15 @@ class ProjectService implements IProjectService {
    * will be the active one.
    */
   createDocumentHubService (): IDocumentHubService {
-    const newDocService = createDocumentHubService(this.store, this);
-    this._docServices.push(newDocService);
-    this.setActiveDocumentHubService(newDocService);
-    return newDocService;
+    const newDocHubService = createDocumentHubService(
+      this.getNextDocumentHubId(),
+      this.store,
+      this
+    );
+    this._docHubServices.push(newDocHubService);
+    this.setActiveDocumentHubService(newDocHubService);
+    this.signDocServiceVersionChanged(newDocHubService.hubId);
+    return newDocHubService;
   }
 
   /**
@@ -167,7 +184,7 @@ class ProjectService implements IProjectService {
    * active document service.
    */
   getActiveDocumentHubService (): IDocumentHubService | undefined {
-    return this._active;
+    return this._activeDocHub;
   }
 
   /**
@@ -175,31 +192,41 @@ class ProjectService implements IProjectService {
    * @param instance The document service instance to activate
    */
   setActiveDocumentHubService (instance: IDocumentHubService): void {
-    if (this._active === instance) return;
-    if (this._docServices.indexOf(instance) < 0) {
+    if (this._activeDocHub === instance) return;
+    if (this._docHubServices.indexOf(instance) < 0) {
       throw new Error("Cannot find document service instance");
     }
-    this._active = instance;
-    this._activations = this._activations.filter(d => d !== instance);
-    this._activations.push(instance);
-    this.store.dispatch(incDocServiceVersionAction());
+    this._activeDocHub = instance;
+    this._docHubActivations = this._docHubActivations.filter(
+      d => d !== instance
+    );
+    this._docHubActivations.push(instance);
+    this.signDocServiceVersionChanged(instance.hubId);
   }
 
   /**
    * Closes (and removes) the specified document service instance
    * @param instance
    */
-  closeDocumentService (instance: IDocumentHubService): void {
-    if (this._docServices.indexOf(instance) < 0) {
+  closeDocumentHubService (instance: IDocumentHubService): void {
+    if (this._docHubServices.indexOf(instance) < 0) {
       throw new Error("Cannot find document service instance");
     }
-    this._docServices = this._docServices.filter(d => d !== instance);
-    this._activations = this._activations.filter(d => d !== instance);
-    if (this._activations.length === 0) {
-      this._active = null;
-      this.store.dispatch(incDocServiceVersionAction());
+
+    // --- Keep the last instance alive
+    if (this._docHubServices.length <= 1) return;
+
+    // --- Remove the doucment hub service gracefully
+    delete this._docHubIdSlots[instance.hubId];
+    this._docHubServices = this._docHubServices.filter(d => d !== instance);
+    this._docHubActivations = this._docHubActivations.filter(
+      d => d !== instance
+    );
+    if (this._docHubActivations.length === 0) {
+      this._activeDocHub = null;
+      this.signDocServiceVersionChanged(instance.hubId);
     } else {
-      this.setActiveDocumentHubService(this._activations.pop());
+      this.setActiveDocumentHubService(this._docHubActivations.pop());
     }
   }
 
@@ -320,15 +347,22 @@ class ProjectService implements IProjectService {
     const documentState = this._projectItemCache.get(node.fullPath);
     if (documentState) return documentState;
 
+    // --- Load the document's contents
+    const contents = await this.getFileContent(node.fullPath, node.isBinary);
+
+    // --- Get renderer information to extract icon properties
+    const docRenderer = documentPanelRegistry.find(dp => dp.id === node.editor);
+
     // --- Create the document's initial state
     const projectDoc: ProjectDocumentState = {
       id: node.fullPath,
       name: node.name,
       path: node.fullPath,
       type: node.editor,
-      contents: await this.getFileContent(node.fullPath, node.isBinary),
+      contents,
       language: node.subType,
-      iconName: node.icon,
+      iconName: node.icon ?? docRenderer?.icon,
+      iconFill: docRenderer?.iconFill,
       isReadOnly: node.isReadOnly,
       node,
       editVersionCount: 1,
@@ -361,6 +395,110 @@ class ProjectService implements IProjectService {
     };
     this._projectItemCache.set(docInfo.id, projectDoc);
     return projectDoc;
+  }
+
+  /**
+   * Signs that a document hub has opened the specified document
+   * @param id Document ID
+   * @param hub Hub opening the document
+   */
+  openInDocumentHub (id: string, hub: IDocumentHubService): void {
+    const doc = this.getDocumentById(id);
+    if (!doc) return;
+    doc.usedIn ??= [];
+    if (doc.usedIn.includes(hub)) return;
+    doc.usedIn.push(hub);
+  }
+
+  /**
+   * Signs that a document hub has closed the specified document
+   * @param id Document ID
+   * @param hub Hub opening the document
+   */
+  closeInDocumentHub (id: string, hub: IDocumentHubService): void {
+    const doc = this.getDocumentById(id);
+    if (!doc?.usedIn) return;
+    const docIndex = doc.usedIn.indexOf(hub);
+    if (docIndex < 0) return;
+    doc.usedIn.splice(docIndex, 1);
+
+    if (!doc.usedIn.length) {
+      // --- We deleted the last view of the document instance, close in the project service
+      this._projectItemCache.delete(id);
+    }
+  }
+
+  /**
+   * Gets the project document by its ID
+   * @param id Project document id
+   */
+  getDocumentById (id: string): ProjectDocumentState | undefined {
+    return this._projectItemCache.get(id);
+  }
+
+  /**
+   * Sets the specified document permanent
+   * @param id The ID of the document to set permanent
+   */
+  setPermanent (id: string): void {
+    const doc = this.getDocumentById(id);
+    if (!doc) {
+      throw new Error(`Cannot find document ${id}`);
+    }
+    if (!doc.isTemporary) return;
+    doc.isTemporary = false;
+    this.signProjectViewstateVersionChanged();
+  }
+
+  /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   */
+  renameDocument (oldId: string, newId: string): void {
+    const renamedNode = this.getNodeForFile(oldId);
+    if (!renamedNode) {
+      throw new Error(`Cannot find file node for ${oldId}`);
+    }
+
+    const fileTypeEntry = getFileTypeEntry(newId);
+    renamedNode.data.icon = fileTypeEntry?.icon;
+
+    // --- Change the properties of the renamed node
+    renamedNode.data.fullPath = newId;
+    renamedNode.data.name = getNodeDir(newId);
+    renamedNode.parentNode.sortChildren((a, b) =>
+      compareProjectNode(a.data, b.data)
+    );
+
+    // --- Sign the change
+    this.signProjectViewstateVersionChanged();
+    this.signItemRenamed(oldId, renamedNode);
+  }
+
+  // --- Helper methods
+
+  /**
+   * Gets the next available document hub ID
+   */
+  private getNextDocumentHubId (): number {
+    let nextId = 1;
+    while (
+      nextId < this._docHubIdSlots.length &&
+      !this._docHubIdSlots[nextId]
+    ) {
+      nextId++;
+    }
+    this._docHubIdSlots[nextId] = true;
+    return nextId;
+  }
+
+  private signProjectViewstateVersionChanged (): void {
+    this.store.dispatch(incProjectViewStateVersionAction(), "ide");
+  }
+
+  private signDocServiceVersionChanged (hubId: number): void {
+    this.store.dispatch(incDocHubServiceVersionAction(hubId), "ide");
   }
 }
 

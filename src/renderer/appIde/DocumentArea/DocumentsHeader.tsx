@@ -4,42 +4,32 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@controls/TabButton";
-import {
-  useDispatch,
-  useSelector
-} from "@renderer/core/RendererProvider";
-import { ITreeNode } from "@renderer/core/tree-node";
-import { documentPanelRegistry } from "@renderer/registry";
-import {
-  activateDocumentAction,
-  changeDocumentAction,
-  closeDocumentAction,
-  incDocumentActivationVersionAction,
-} from "@state/actions";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
-import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import styles from "./DocumentsHeader.module.scss";
 import { delayAction } from "@renderer/utils/timing";
-import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import {
+  useDocumentHubService,
+  useDocumentHubServiceVersion
+} from "../services/DocumentServiceProvider";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 /**
  * This component represents the header of a document hub
  */
 export const DocumentsHeader = () => {
-  const dispatch = useDispatch();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
+  const hubVersion = useDocumentHubServiceVersion();
   const handlersInitialized = useRef(false);
-  const openDocs = useSelector(s => s.ideView?.openDocuments);
-  const projectVersion = useSelector(s => s.project?.projectVersion);
-  const [docsToDisplay, setDocsToDisplay] = useState<DocumentInfo[]>(null);
+  const projectVersion = useSelector(s => s.project?.projectFileVersion);
+  const [openDocs, setOpenDocs] = useState<ProjectDocumentState[]>(null);
+  const [activeDocIndex, setActiveDocIndex] = useState<number>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
-  const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
 
   const svApi = useRef<ScrollViewerApi>();
@@ -47,19 +37,19 @@ export const DocumentsHeader = () => {
 
   // --- Prepare the open documents to display
   useEffect(() => {
-    refreshDocs();
-  }, [openDocs]);
+    if (!documentHubService) return;
+    setOpenDocs(documentHubService.getOpenDocuments());
+    setActiveDocIndex(documentHubService.getActiveDocumentIndex());
+  }, [hubVersion]);
 
   // --- Update the UI when the build root changes
   useEffect(() => {
-    if (docsToDisplay) {
+    if (openDocs) {
       setSelectedIsBuildRoot(
-        buildRoots.indexOf(
-          docsToDisplay[activeDocIndex]?.node?.data?.projectPath
-        ) >= 0
+        buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
       );
     }
-  }, [docsToDisplay, buildRoots, activeDocIndex]);
+  }, [openDocs, buildRoots, activeDocIndex]);
 
   // --- Make sure that the index is visible
   useEffect(() => {
@@ -82,9 +72,6 @@ export const DocumentsHeader = () => {
         value: contents,
         viewState
       });
-
-      // --- Display the newest document version
-      documentHubService.incrementViewVersion(projectDoc.id);
     })();
   }, [projectVersion]);
 
@@ -97,51 +84,10 @@ export const DocumentsHeader = () => {
       documentHubService.closeAllExplorerDocuments();
     };
 
-    // --- Open the newly added document
-    const itemAdded = (node: ITreeNode<ProjectNode>) => {
-      if (node.data.isFolder) return;
-
-      // --- Open the newly added file
-      documentHubService.openDocument(
-        {
-          id: node.data.fullPath,
-          name: node.data.name,
-          type: node.data.editor,
-          language: node.data.subType,
-          iconName: node.data.icon,
-          node,
-          viewVersion: 0
-        },
-        undefined,
-        false
-      );
-    };
-
-    // --- Refresh the renamed item's document
-    const itemRenamed = ({ oldName, node }) => {
-      documentHubService.renameDocument(
-        oldName,
-        node.data.fullPath,
-        node.data.name,
-        node.data.icon
-      );
-    };
-
-    // --- Close the deleted documents
-    const itemDeleted = (node: ITreeNode<ProjectNode>) => {
-      node.forEachDescendant(des => {
-        documentHubService.closeDocument(des.data.fullPath);
-      });
-      documentHubService.closeDocument(node.data.fullPath);
-    };
-
     // --- Set up project event handlers
     if (projectService) {
       handlersInitialized.current = true;
       projectService.projectClosed.on(projectClosed);
-      projectService.itemAdded.on(itemAdded);
-      projectService.itemRenamed.on(itemRenamed);
-      projectService.itemDeleted.on(itemDeleted);
     }
 
     // --- Remove project event handlers
@@ -150,29 +96,9 @@ export const DocumentsHeader = () => {
       if (projectService) {
         handlersInitialized.current = true;
         projectService.projectClosed.off(projectClosed);
-        projectService.itemAdded.off(itemAdded);
-        projectService.itemRenamed.off(itemRenamed);
-        projectService.itemDeleted.off(itemDeleted);
       }
     };
   }, [projectService]);
-
-  // --- Initiate refreshing the documents
-  const refreshDocs = () => {
-    if (openDocs) {
-      const mappedDocs = openDocs.map(d => {
-        const cloned: DocumentInfo = { ...d };
-        const docRenderer = documentPanelRegistry.find(dp => dp.id === d?.type);
-
-        if (docRenderer) {
-          cloned.iconName ||= docRenderer.icon;
-          cloned.iconFill ||= docRenderer.iconFill;
-        }
-        return cloned;
-      });
-      setDocsToDisplay(mappedDocs);
-    }
-  };
 
   // --- Ensures that the active document tab is visible in its full size
   const ensureTabVisible = () => {
@@ -225,7 +151,7 @@ export const DocumentsHeader = () => {
       );
 
       // --- Now, activate the document
-      dispatch(activateDocumentAction(id));
+      documentHubService.setActiveDocument(id);
     } finally {
       setAwaiting(false);
     }
@@ -233,36 +159,16 @@ export const DocumentsHeader = () => {
 
   // --- Responds to the event when a document tab was double clicked. Double clicking
   // --- makes a temporary document permanent.
-  const tabDoubleClicked = (d: DocumentInfo, idx: number) => {
-    if (d.isTemporary) {
-      dispatch(
-        changeDocumentAction(
-          {
-            id: d.id,
-            name: d.name,
-            type: d.type,
-            isReadOnly: d.isReadOnly,
-            isTemporary: false,
-            iconName: d.iconName,
-            iconFill: d.iconFill,
-            language: d.language,
-            path: d.path,
-            stateValue: d.stateValue
-          },
-          idx
-        )
-      );
-    }
-    dispatch(incDocumentActivationVersionAction());
+  const tabDoubleClicked = (d: ProjectDocumentState) => {
+    projectService.setPermanent(d.id);
   };
 
   // --- Responds to the event when the close button of the tab is clicked
   const tabCloseClicked = (id: string) => {
-    dispatch(closeDocumentAction(id));
     documentHubService.closeDocument(id);
   };
 
-  return (docsToDisplay?.length ?? 0) > 0 ? (
+  return (openDocs?.length ?? 0) > 0 ? (
     <div className={styles.documentsHeader}>
       <ScrollViewer
         allowHorizontal={true}
@@ -271,9 +177,9 @@ export const DocumentsHeader = () => {
         apiLoaded={api => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>
-          {(docsToDisplay ?? []).map((d, idx) => {
+          {(openDocs ?? []).map((d, idx) => {
             // --- Take care of unique names
-            const docName = docsToDisplay.find(
+            const docName = openDocs.find(
               doc => doc.name === d.name && doc.id !== d.id && doc.path
             )
               ? d.path
@@ -291,7 +197,7 @@ export const DocumentsHeader = () => {
                 iconFill={d.iconFill}
                 tabDisplayed={el => tabDisplayed(idx, el)}
                 tabClicked={() => tabClicked(d.id)}
-                tabDoubleClicked={() => tabDoubleClicked(d, idx)}
+                tabDoubleClicked={() => tabDoubleClicked(d)}
                 tabCloseClicked={() => tabCloseClicked(d.id)}
               />
             );
@@ -312,7 +218,7 @@ export const DocumentsHeader = () => {
         <TabButton
           iconName='arrow-small-right'
           title={"Move the active\ntab to right"}
-          disabled={activeDocIndex === (docsToDisplay?.length ?? 0) - 1}
+          disabled={activeDocIndex === (openDocs?.length ?? 0) - 1}
           useSpace={true}
           clicked={() => documentHubService.moveActiveToRight()}
         />

@@ -1,17 +1,43 @@
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { DocumentApi } from "./DocumentApi";
+import { ProjectDocumentState } from "./ProjectDocumentState";
 
 /**
  * Represents a service managing a collection of document views
  */
 export interface IDocumentHubService {
   /**
+   * The ID of the particular document hub service
+   */
+  readonly hubId: number;
+
+  /**
+   * Gets the list of open documents
+   */
+  getOpenDocuments(): ProjectDocumentState[];
+
+  /**
+   * Gets the document with the specified ID
+   * @param id Document ID
+   */
+  getDocument(id: string): ProjectDocumentState | undefined;
+
+  /**
+   * Gets the active document instance
+   */
+  getActiveDocument(): ProjectDocumentState | undefined;
+
+  /**
+   * Gets the index of the active document
+   */
+  getActiveDocumentIndex(): number;
+
+  /**
    * Opens the specified document
    * @param document Document to open
    * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument(document: DocumentInfo, data?: any, temporary?: boolean): void;
+  openDocument(document: ProjectDocumentState, data?: any, temporary?: boolean): void;
 
   /**
    * Tests if the specified document is open
@@ -28,17 +54,12 @@ export interface IDocumentHubService {
     id: string,
     waitForApi?: boolean,
     timeout?: number
-  ): Promise<DocumentInfo | null>;
+  ): Promise<ProjectDocumentState | null>;
 
   /**
    * Tests if the project file is open
    */
-  getOpenProjectFileDocument(): DocumentInfo;
-
-  /**
-   * Increment the view version of the specified document
-   */
-  incrementViewVersion(id: string): void;
+  getOpenProjectFileDocument(): ProjectDocumentState;
 
   /**
    * Sets the specified document as the active one
@@ -47,39 +68,8 @@ export interface IDocumentHubService {
   setActiveDocument(id: string): void;
 
   /**
-   * Gets the ID of the active document
-   */
-  getActiveDocumentId(): string;
-
-  /**
-   * Gets the document with the specified ID
-   * @param id Document ID
-   * @returns The document with the specified ID, if exists; othwerwise, null
-   */
-  getDocument(id: string): DocumentInfo;
-
-  /**
-   * Sets the specified document permanent
-   * @param id The ID of the document to set permanent
-   */
-  setPermanent(id: string): void;
-
-  /**
-   * Renames the document and optionally changes its ID
-   * @param oldId Old document ID
-   * @param newId New document ID
-   * @param newName New document name
-   */
-  renameDocument(
-    oldId: string,
-    newId: string,
-    newName: string,
-    newIcon?: string
-  ): void;
-
-  /**
    * Closes the specified document
-   * @param id
+   * @param id Document to close
    */
   closeDocument(id: string): void;
 
@@ -107,19 +97,14 @@ export interface IDocumentHubService {
    * Gets the state of the specified document
    * @param id Document ID
    */
-  getDocumentState(id: string): any;
+  getDocumentViewState(id: string): any;
 
   /**
    * Saves the specified document state
    * @param id Document ID
    * @param state State to save
    */
-  saveDocumentState(id: string, state: any): void;
-
-  /**
-   * Gets the state of the active document
-   */
-  getActiveDocumentState(): any;
+  setDocumentViewState(id: string, state: any): void;
 
   /**
    * Saves the state of the active document
