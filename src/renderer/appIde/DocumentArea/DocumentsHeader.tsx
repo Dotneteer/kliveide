@@ -24,7 +24,7 @@ import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import styles from "./DocumentsHeader.module.scss";
 import { delayAction } from "@renderer/utils/timing";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 /**
  * This component represents the header of a document hub
@@ -32,7 +32,7 @@ import { useDocumentService } from "../services/DocumentServiceProvider";
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
   const { projectService } = useAppServices();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
   const handlersInitialized = useRef(false);
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const projectVersion = useSelector(s => s.project?.projectVersion);
@@ -69,22 +69,22 @@ export const DocumentsHeader = () => {
   // --- Refresh the changed project document
   useEffect(() => {
     // --- Check if the project document is visible
-    const projectDoc = documentService.getOpenProjectFileDocument();
+    const projectDoc = documentHubService.getOpenProjectFileDocument();
     if (!projectDoc) return;
 
     // --- Get the data of the document
     (async () => {
-      const data = documentService.getDocumentData(projectDoc.id);
+      const data = documentHubService.getDocumentData(projectDoc.id);
       const viewState = data?.viewState;
       const contents = await projectService.readFileContent(projectDoc.path);
       // --- Refresh the contents of the document
-      documentService.setDocumentData(projectDoc.id, {
+      documentHubService.setDocumentData(projectDoc.id, {
         value: contents,
         viewState
       });
 
       // --- Display the newest document version
-      documentService.incrementViewVersion(projectDoc.id);
+      documentHubService.incrementViewVersion(projectDoc.id);
     })();
   }, [projectVersion]);
 
@@ -94,7 +94,7 @@ export const DocumentsHeader = () => {
 
     // --- Remove open explorer document when the folder is closed
     const projectClosed = () => {
-      documentService.closeAllExplorerDocuments();
+      documentHubService.closeAllExplorerDocuments();
     };
 
     // --- Open the newly added document
@@ -102,7 +102,7 @@ export const DocumentsHeader = () => {
       if (node.data.isFolder) return;
 
       // --- Open the newly added file
-      documentService.openDocument(
+      documentHubService.openDocument(
         {
           id: node.data.fullPath,
           name: node.data.name,
@@ -119,7 +119,7 @@ export const DocumentsHeader = () => {
 
     // --- Refresh the renamed item's document
     const itemRenamed = ({ oldName, node }) => {
-      documentService.renameDocument(
+      documentHubService.renameDocument(
         oldName,
         node.data.fullPath,
         node.data.name,
@@ -130,9 +130,9 @@ export const DocumentsHeader = () => {
     // --- Close the deleted documents
     const itemDeleted = (node: ITreeNode<ProjectNode>) => {
       node.forEachDescendant(des => {
-        documentService.closeDocument(des.data.fullPath);
+        documentHubService.closeDocument(des.data.fullPath);
       });
-      documentService.closeDocument(node.data.fullPath);
+      documentHubService.closeDocument(node.data.fullPath);
     };
 
     // --- Set up project event handlers
@@ -213,7 +213,7 @@ export const DocumentsHeader = () => {
     if (id === openDocs?.[activeDocIndex]?.id) return;
 
     // --- Make sure to save the state of the active document gracefully
-    const docApi = documentService.getDocumentApi(id);
+    const docApi = documentHubService.getDocumentApi(id);
     try {
       await delayAction(
         async () => {
@@ -259,7 +259,7 @@ export const DocumentsHeader = () => {
   // --- Responds to the event when the close button of the tab is clicked
   const tabCloseClicked = (id: string) => {
     dispatch(closeDocumentAction(id));
-    documentService.closeDocument(id);
+    documentHubService.closeDocument(id);
   };
 
   return (docsToDisplay?.length ?? 0) > 0 ? (
@@ -307,19 +307,19 @@ export const DocumentsHeader = () => {
           title={"Move the active\ntab to left"}
           disabled={activeDocIndex === 0}
           useSpace={true}
-          clicked={() => documentService.moveActiveToLeft()}
+          clicked={() => documentHubService.moveActiveToLeft()}
         />
         <TabButton
           iconName='arrow-small-right'
           title={"Move the active\ntab to right"}
           disabled={activeDocIndex === (docsToDisplay?.length ?? 0) - 1}
           useSpace={true}
-          clicked={() => documentService.moveActiveToRight()}
+          clicked={() => documentHubService.moveActiveToRight()}
         />
         <TabButton
           iconName='close'
           useSpace={true}
-          clicked={() => documentService.closeAllDocuments()}
+          clicked={() => documentHubService.closeAllDocuments()}
         />
       </div>
     </div>

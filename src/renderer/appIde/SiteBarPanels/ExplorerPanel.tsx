@@ -29,10 +29,7 @@ import {
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
-import {
-  displayDialogAction,
-  setBuildRootAction
-} from "@state/actions";
+import { displayDialogAction, setBuildRootAction } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
@@ -40,7 +37,10 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
-import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import {
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  NEW_PROJECT_DIALOG
+} from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
@@ -50,8 +50,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { messenger, store } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, ideCommandsService, documentHubService } = useAppServices();
-  const documentService = documentHubService.getActiveDocumentService();
+  const { projectService, ideCommandsService } = useAppServices();
+  const documentHubService = projectService.getActiveDocumentHubService();
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
@@ -75,7 +75,9 @@ const ExplorerPanel = () => {
   }));
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
-  const hasExcludedItems = useSelector(s => s.project?.excludedItems?.length > 0);
+  const hasExcludedItems = useSelector(
+    s => s.project?.excludedItems?.length > 0
+  );
 
   // --- State and helpers for the selected node's context menu
   const [contextRef, setContextRef] = useState(null);
@@ -400,9 +402,9 @@ const ExplorerPanel = () => {
         }}
         onDoubleClick={() => {
           if (node.data.isFolder) return;
-          if (documentService.isOpen(node.data.fullPath)) {
-            documentService.setActiveDocument(node.data.fullPath);
-            documentService.setPermanent(node.data.fullPath);
+          if (documentHubService.isOpen(node.data.fullPath)) {
+            documentHubService.setActiveDocument(node.data.fullPath);
+            documentHubService.setPermanent(node.data.fullPath);
           } else {
             ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
@@ -440,21 +442,22 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
         <SpaceFiller />
-        {isRoot && isKliveProject &&
-          hasExcludedItems && (
-            <div className={styles.iconRight}
-              onClick={e => {
-                e.stopPropagation();
-                dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
-              }}>
-              <Icon
-                xclass={styles.actionButton}
-                iconName='exclude'
-                width={16}
-                height={16}
-              />
-            </div>
-          )}
+        {isRoot && isKliveProject && hasExcludedItems && (
+          <div
+            className={styles.iconRight}
+            onClick={e => {
+              e.stopPropagation();
+              dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+            }}
+          >
+            <Icon
+              xclass={styles.actionButton}
+              iconName='exclude'
+              width={16}
+              height={16}
+            />
+          </div>
+        )}
         {!node.data.isFolder &&
           buildRoots.indexOf(node.data.projectPath) >= 0 && (
             <div className={styles.iconRight}>

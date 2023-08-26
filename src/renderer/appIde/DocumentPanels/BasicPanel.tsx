@@ -26,7 +26,7 @@ import {
 import styles from "./BasicPanel.module.scss";
 import { ZxSpectrumChars } from "./char-codes";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type BasicViewState = {
   topIndex?: number;
@@ -45,7 +45,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -361,7 +361,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
       autoRefresh: useAutoRefresh.current,
       showCodes: useCodes.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (

@@ -5,11 +5,11 @@ import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import styles from "./DocumentArea.module.scss";
-import { DocumentServiceProvider } from "../services/DocumentServiceProvider";
+import { DocumentHubServiceProvider } from "../services/DocumentServiceProvider";
 
 export const DocumentArea = () => {
-  const { documentHubService } = useAppServices();
-  const documentService = documentHubService.getActiveDocumentService();
+  const { projectService } = useAppServices();
+  const documentHubService = projectService.getActiveDocumentHubService();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [activeDoc, setActiveDoc] = useState<DocumentInfo>(null);
@@ -33,10 +33,10 @@ export const DocumentArea = () => {
   }, [openDocs, activeDocIndex]);
 
   const data = activeDoc?.id
-    ? documentService.getDocumentData(activeDoc?.id)
+    ? documentHubService.getDocumentData(activeDoc?.id)
     : null;
   return (
-    <DocumentServiceProvider value={documentService}>
+    <DocumentHubServiceProvider value={documentHubService}>
       <div className={styles.documentArea} tabIndex={-1}>
         <DocumentsHeader />
         {activeDocIndex >= 0 && (
@@ -44,11 +44,11 @@ export const DocumentArea = () => {
             document={activeDoc}
             data={data}
             apiLoaded={api => {
-              documentService.setDocumentApi(activeDoc.id, api);
+              documentHubService.setDocumentApi(activeDoc.id, api);
             }}
           />
         )}
       </div>
-    </DocumentServiceProvider>
+    </DocumentHubServiceProvider>
   );
 };

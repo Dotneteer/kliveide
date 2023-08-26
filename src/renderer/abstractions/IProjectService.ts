@@ -2,6 +2,9 @@ import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
 import { ILiteEvent } from "@emu/utils/lite-event";
 import { ProjectNode } from "../appIde/project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { ProjectDocumentState } from "./ProjectDocumentState";
+import { VolatileDocumentInfo } from "./VolatileDocumentInfo";
+import { IDocumentHubService } from "./IDocumentHubService";
 
 /**
  * This service is responsible to manage the hierarchy and contents of project files
@@ -75,6 +78,35 @@ export type IProjectService = {
   getBreakpointAddressInfo(addr: string | number): BreakpointAddressInfo;
 
   /**
+   * Gets the available document service instances
+   */
+  getDocumentHubServiceInstances(): IDocumentHubService[];
+
+  /**
+   * Instantiates a new document service and registers it with the hub. The new document service 
+   * will be the active one.
+   */  
+  createDocumentHubService(): IDocumentHubService
+
+  /**
+   * Gets the active document service. Many project document related events are executed with the
+   * active document service.
+   */
+  getActiveDocumentHubService(): IDocumentHubService | undefined;
+
+  /**
+   * Sets the specified document service as the active one.
+   * @param instance The document service instance to activate
+   */
+  setActiveDocumentHubService(instance: IDocumentHubService): void;
+
+  /**
+   * Closes (and removes) the specified document service instance
+   * @param instance 
+   */
+  closeDocumentService(instance: IDocumentHubService): void;
+
+  /**
    * Reads the contents of the specified file from the file system and puts the content into the cache
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
@@ -100,4 +132,22 @@ export type IProjectService = {
    * @param file File to remove from the cache
    */
   forgetFile(file: string): void;
+
+  /**
+   * Tests if the document with the specified ID is open
+   * @param id Document ID
+   */
+  isDocumentOpen(id: string): boolean;
+
+  /**
+   * Gets the document for the specified project node
+   * @param node Project node to get
+   */
+  getDocumentForProjectNode(node: ProjectNode): Promise<ProjectDocumentState>;
+
+  /**
+   * Gets a volatile document according to the specified info
+   * @param docInfo 
+   */
+  getVolatileDocument(docInfo: VolatileDocumentInfo): Promise<ProjectDocumentState>;
 };

@@ -10,7 +10,7 @@ import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
-import { parseCommand, Token } from "./command-parser";
+import { parseCommand } from "./command-parser";
 import { IdeCommandBase } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 

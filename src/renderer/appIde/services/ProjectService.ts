@@ -6,6 +6,11 @@ import { IProjectService } from "../../abstractions/IProjectService";
 import { ProjectNode, getFileTypeEntry } from "../project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { VolatileDocumentInfo } from "@renderer/abstractions/VolatileDocumentInfo";
+import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
+import { createDocumentHubService } from "./DocumentHubService";
+import { incDocServiceVersionAction } from "@common/state/actions";
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
@@ -19,6 +24,10 @@ class ProjectService implements IProjectService {
   }>();
   private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>();
   private _fileCache = new Map<string, string | Uint8Array>();
+  private _projectItemCache = new Map<string, ProjectDocumentState>();
+  private _docServices: IDocumentHubService[] = [];
+  private _activations: IDocumentHubService[] = [];
+  private _active: IDocumentHubService | undefined;
 
   constructor (
     private readonly store: Store<AppState>,
@@ -136,6 +145,65 @@ class ProjectService implements IProjectService {
   }
 
   /**
+   * Gets the available document service instances
+   */
+  getDocumentHubServiceInstances (): IDocumentHubService[] {
+    return this._docServices.slice(0);
+  }
+
+  /**
+   * Instantiates a new document service and registers it with the hub. The new document service
+   * will be the active one.
+   */
+  createDocumentHubService (): IDocumentHubService {
+    const newDocService = createDocumentHubService(this.store, this);
+    this._docServices.push(newDocService);
+    this.setActiveDocumentHubService(newDocService);
+    return newDocService;
+  }
+
+  /**
+   * Gets the active document service. Many project document related events are executed with the
+   * active document service.
+   */
+  getActiveDocumentHubService (): IDocumentHubService | undefined {
+    return this._active;
+  }
+
+  /**
+   * Sets the specified document service as the active one.
+   * @param instance The document service instance to activate
+   */
+  setActiveDocumentHubService (instance: IDocumentHubService): void {
+    if (this._active === instance) return;
+    if (this._docServices.indexOf(instance) < 0) {
+      throw new Error("Cannot find document service instance");
+    }
+    this._active = instance;
+    this._activations = this._activations.filter(d => d !== instance);
+    this._activations.push(instance);
+    this.store.dispatch(incDocServiceVersionAction());
+  }
+
+  /**
+   * Closes (and removes) the specified document service instance
+   * @param instance
+   */
+  closeDocumentService (instance: IDocumentHubService): void {
+    if (this._docServices.indexOf(instance) < 0) {
+      throw new Error("Cannot find document service instance");
+    }
+    this._docServices = this._docServices.filter(d => d !== instance);
+    this._activations = this._activations.filter(d => d !== instance);
+    if (this._activations.length === 0) {
+      this._active = null;
+      this.store.dispatch(incDocServiceVersionAction());
+    } else {
+      this.setActiveDocumentHubService(this._activations.pop());
+    }
+  }
+
+  /**
    * Reads the contents of the specified file from the file system and puts the content into the cache
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
@@ -231,6 +299,68 @@ class ProjectService implements IProjectService {
    */
   forgetFile (file: string): void {
     this._fileCache.delete(file);
+  }
+
+  /**
+   * Tests if the document with the specified ID is open
+   * @param id Document ID
+   */
+  isDocumentOpen (id: string): boolean {
+    return this._projectItemCache.has(id);
+  }
+
+  /**
+   * Gets the document for the specified project node
+   * @param node Project node to get
+   */
+  async getDocumentForProjectNode (
+    node: ProjectNode
+  ): Promise<ProjectDocumentState> {
+    // --- Check the document cache
+    const documentState = this._projectItemCache.get(node.fullPath);
+    if (documentState) return documentState;
+
+    // --- Create the document's initial state
+    const projectDoc: ProjectDocumentState = {
+      id: node.fullPath,
+      name: node.name,
+      path: node.fullPath,
+      type: node.editor,
+      contents: await this.getFileContent(node.fullPath, node.isBinary),
+      language: node.subType,
+      iconName: node.icon,
+      isReadOnly: node.isReadOnly,
+      node,
+      editVersionCount: 1,
+      savedVersionCount: 1
+    };
+    this._projectItemCache.set(node.fullPath, projectDoc);
+    return projectDoc;
+  }
+
+  /**
+   * Gets a volatile document according to the specified info
+   * @param docInfo
+   */
+  async getVolatileDocument (
+    docInfo: VolatileDocumentInfo
+  ): Promise<ProjectDocumentState> {
+    // --- Check the document cache
+    const documentState = this._projectItemCache.get(docInfo.id);
+    if (documentState) return documentState;
+
+    // --- Create the document's initial state
+    const projectDoc: ProjectDocumentState = {
+      id: docInfo.id,
+      name: docInfo.name,
+      type: docInfo.type,
+      iconName: docInfo.iconName,
+      iconFill: docInfo.iconFill,
+      editVersionCount: 1,
+      savedVersionCount: 1
+    };
+    this._projectItemCache.set(docInfo.id, projectDoc);
+    return projectDoc;
   }
 }
 

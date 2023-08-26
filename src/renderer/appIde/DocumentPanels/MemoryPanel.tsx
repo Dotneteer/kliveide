@@ -24,7 +24,7 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -52,7 +52,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -252,7 +252,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
       romSelected: refRomPage.current,
       ramSelected: refRamBank.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (

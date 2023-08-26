@@ -24,9 +24,9 @@ import { Store } from "@state/redux-light";
 export async function processMainToIdeMessages (
   message: RequestMessage,
   store: Store<AppState>,
-  { outputPaneService, ideCommandsService, documentHubService }: AppServices
+  { outputPaneService, ideCommandsService, projectService }: AppServices
 ): Promise<ResponseMessage> {
-  const documentService = documentHubService.getActiveDocumentService();
+  const documentHubService = projectService.getActiveDocumentHubService();
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
@@ -54,7 +54,7 @@ export async function processMainToIdeMessages (
 
     case "IdeShowMemory": {
       if (message.show) {
-        documentService.openDocument(
+        documentHubService.openDocument(
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
@@ -65,14 +65,14 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentService.closeDocument(MEMORY_PANEL_ID);
+        documentHubService.closeDocument(MEMORY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowDisassembly": {
       if (message.show) {
-        documentService.openDocument(
+        documentHubService.openDocument(
           {
             id: DISASSEMBLY_PANEL_ID,
             name: "Z80 Disassembly",
@@ -83,14 +83,14 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentService.closeDocument(DISASSEMBLY_PANEL_ID);
+        documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowBasic": {
       if (message.show) {
-        documentService.openDocument(
+        documentHubService.openDocument(
           {
             id: BASIC_PANEL_ID,
             name: "BASIC Listing",
@@ -101,7 +101,7 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentService.closeDocument(BASIC_PANEL_ID);
+        documentHubService.closeDocument(BASIC_PANEL_ID);
       }
       break;
     }

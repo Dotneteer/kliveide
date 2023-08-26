@@ -34,7 +34,7 @@ import {
 } from "@renderer/reportError";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -60,7 +60,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
 
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -311,7 +311,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
       romSelected: refRomPage.current,
       ramSelected: refRamBank.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (

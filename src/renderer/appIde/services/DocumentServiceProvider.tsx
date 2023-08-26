@@ -1,21 +1,21 @@
-import { createContext, useContext, useRef } from "react";
-import { IDocumentService } from "@renderer/abstractions/IDocumentService";
+import { createContext, useContext } from "react";
+import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 
-const DocumentServiceContext = createContext<IDocumentService>(undefined);
+const DocumentHubServiceContext = createContext<IDocumentHubService>(undefined);
 
-export function useDocumentService (): IDocumentService {
-  return useContext(DocumentServiceContext)!;
+export function useDocumentHubService (): IDocumentHubService {
+  return useContext(DocumentHubServiceContext)!;
 }
 
 type Props = {
-  value: IDocumentService;
+  value: IDocumentHubService;
   children?: React.ReactNode;
 };
 
-export function DocumentServiceProvider ({ value, children }: Props) {
+export function DocumentHubServiceProvider ({ value, children }: Props) {
   return (
-    <DocumentServiceContext.Provider value={value}>
+    <DocumentHubServiceContext.Provider value={value}>
       {children}
-    </DocumentServiceContext.Provider>
+    </DocumentHubServiceContext.Provider>
   );
 }

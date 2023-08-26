@@ -230,10 +230,10 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
     }
   }
 
-  const documentService = context.service.documentHubService.getActiveDocumentService();
+  const documentHubService = context.service.projectService.getActiveDocumentHubService();
   state.ideView?.openDocuments
     ?.filter(doc => items.some(t => pathStartsWith(doc.id, t)))
-      .forEach(doc => documentService.closeDocument(doc.id));
+      .forEach(doc => documentHubService.closeDocument(doc.id));
 
   return result;
 }

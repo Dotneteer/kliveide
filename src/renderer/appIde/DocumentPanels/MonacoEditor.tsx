@@ -7,7 +7,6 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
@@ -27,8 +26,7 @@ import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
-import { delay } from "@renderer/utils/timing";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -37,6 +35,14 @@ let monacoInitialized = false;
 
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
+
+/**
+ * Represents the view state of a code document
+ */
+type CodeDocumentState = {
+  value: string;
+  viewState?: monacoEditor.editor.ICodeEditorViewState;
+};
 
 export async function initializeMonaco (appPath: string) {
   loader.config({
@@ -100,7 +106,7 @@ export async function initializeMonaco (appPath: string) {
 
 export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
-}
+};
 
 type EditorProps = {
   document: DocumentInfo;
@@ -118,7 +124,7 @@ export const MonacoEditor = ({
   const { theme } = useTheme();
   const { store, messenger } = useRendererContext();
   const { projectService } = useAppServices();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
   const [vsTheme, setVsTheme] = useState("");
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const monaco = useRef<typeof monacoEditor>(null);
@@ -245,7 +251,7 @@ export const MonacoEditor = ({
       value: editor.current.getValue(),
       viewState: editor.current.saveViewState()
     };
-    documentService.setDocumentData(document.id, data);
+    documentHubService.setDocumentData(document.id, data);
   };
 
   // Saves the document to its file
@@ -253,7 +259,10 @@ export const MonacoEditor = ({
     if (!editor.current) return;
     isBusy.current = true;
     try {
-      await projectService.saveFileContent(document.id, editor.current.getModel().getValue())
+      await projectService.saveFileContent(
+        document.id,
+        editor.current.getModel().getValue()
+      );
     } finally {
       isBusy.current = false;
     }
@@ -265,7 +274,7 @@ export const MonacoEditor = ({
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
     // --- Now, make this document permanent
-    documentService.setPermanent(document.id);
+    documentHubService.setPermanent(document.id);
 
     // --- Save the current value as the previous one
     previousContent.current = editor.current.getValue();

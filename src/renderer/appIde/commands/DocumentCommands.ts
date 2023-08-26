@@ -73,7 +73,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
 
     // --- Is the document open?
     const nodeData = projNode.data;
-    const docService = context.service.documentHubService.getActiveDocumentService();
+    const docService = context.service.projectService.getActiveDocumentHubService();
     const doc = docService.getDocument(projNode.data.fullPath);
     if (doc) {
       // --- Activate the open document

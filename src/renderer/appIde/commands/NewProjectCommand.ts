@@ -1,8 +1,6 @@
-import { MainCreateKliveProjectResponse } from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
 import {
   IdeCommandBase,
   validationError,
@@ -43,15 +41,13 @@ export class NewProjectCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
-    const response = (await context.messenger.sendMessage({
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const response = await context.messenger.sendMessage({
       type: "MainCreateKliveProject",
       machineId: this.machineId,
       projectName: this.projectName,
       projectFolder: this.projectFolder
-    }))
+    });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
     }

@@ -14,11 +14,11 @@ import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 const TapViewerPanel = ({ document, data }: DocumentProps) => {
   const dispatch = useDispatch();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
   const openDocs = useSelector(s => s.ideView?.openDocuments);
   const docIndex = useSelector(s => s.ideView?.activeDocumentIndex);
   const [docState, setDocState] = useState({});
@@ -26,7 +26,7 @@ const TapViewerPanel = ({ document, data }: DocumentProps) => {
   const fileInfo = readTapeFile(contents);
 
   useEffect(() => {
-    setDocState(documentService.getDocumentState(document.id));
+    setDocState(documentHubService.getDocumentState(document.id));
   }, [openDocs]);
 
   useEffect(() => {}, [docState]);

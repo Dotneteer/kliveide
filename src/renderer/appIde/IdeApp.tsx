@@ -87,8 +87,8 @@ const IdeApp = () => {
   const { store, messenger } = useRendererContext();
 
   // --- Default document service instance
-  if (!appServices.documentHubService.getActiveDocumentService()) {
-    appServices.documentHubService.createDocumentService();
+  if (!appServices.projectService.getActiveDocumentHubService()) {
+    appServices.projectService.createDocumentHubService();
   }
 
   // --- Visual state
