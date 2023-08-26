@@ -201,6 +201,8 @@ class DocumentHubService implements IDocumentHubService {
       this.setActiveDocument(this._openDocs[docIndex - 1].id);
     } else if (docIndex < this._openDocs.length) {
       this.setActiveDocument(this._openDocs[docIndex].id);
+    } else {
+      this._activeDocIndex = -1;
     }
     this.signHubStateChanged();
   }
@@ -277,7 +279,6 @@ class DocumentHubService implements IDocumentHubService {
    */
   setDocumentViewState (id: string, viewState: any): void {
     this._documentViewState.set(id, viewState);
-    this.signHubStateChanged();
   }
 
   /**

@@ -19,15 +19,11 @@ export const DocumentArea = () => {
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    const current = documentHubService?.getActiveDocument();
-    if (current) {
-      setActiveDoc(current);
-    }
+    setActiveDoc(documentHubService?.getActiveDocument());
   }, [hubVersion, projectViewStateVersion]);
 
-  const data = activeDoc?.id
-    ? documentHubService.getDocumentData(activeDoc?.id)
-    : null;
+  const data = activeDoc?.contents;
+  const viewState = documentHubService.getDocumentViewState(activeDoc?.id);
   return (
     <DocumentHubServiceProvider value={documentHubService}>
       <div className={styles.documentArea} tabIndex={-1}>
@@ -36,6 +32,7 @@ export const DocumentArea = () => {
           <DocumentsContainer
             document={activeDoc}
             data={data}
+            viewState={viewState}
             apiLoaded={api => {
               documentHubService.setDocumentApi(activeDoc.id, api);
             }}

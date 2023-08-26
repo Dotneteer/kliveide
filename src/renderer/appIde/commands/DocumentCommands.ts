@@ -79,7 +79,6 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       docService.setActiveDocument(doc.id);
     } else {
       const newDoc = await context.service.projectService.getDocumentForProjectNode(nodeData);
-
       // TODO: Allow the currently active document to save itself before opening the new one
 
       // --- Open it

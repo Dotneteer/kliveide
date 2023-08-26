@@ -10,7 +10,7 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
-import { delayAction } from "@renderer/utils/timing";
+import { delay, delayAction } from "@renderer/utils/timing";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -136,10 +136,11 @@ export const DocumentsHeader = () => {
   // --- document the active one
   const tabClicked = async (id: string) => {
     // --- Do not change, if clicking the active document tab
-    if (id === openDocs?.[activeDocIndex]?.id) return;
+    const activeDocId = openDocs?.[activeDocIndex]?.id;
+    if (!activeDocId || id === activeDocId) return;
 
     // --- Make sure to save the state of the active document gracefully
-    const docApi = documentHubService.getDocumentApi(id);
+    const docApi = documentHubService.getDocumentApi(activeDocId);
     try {
       await delayAction(
         async () => {

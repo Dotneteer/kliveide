@@ -25,7 +25,10 @@ import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
-import { useDocumentHubService, useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
+import {
+  useDocumentHubService,
+  useDocumentHubServiceVersion
+} from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 // --- Wait 1000 ms before saving the document being edited
@@ -40,7 +43,6 @@ type MarkdownString = monacoEditor.IMarkdownString;
  * Represents the view state of a code document
  */
 type CodeDocumentState = {
-  value: string;
   viewState?: monacoEditor.editor.ICodeEditorViewState;
 };
 
@@ -111,7 +113,7 @@ export type EditorApi = DocumentApi & {
 type EditorProps = {
   document: ProjectDocumentState;
   value: string;
-  viewState?: monacoEditor.editor.ICodeEditorViewState;
+  viewState?: CodeDocumentState;
   apiLoaded?: (api: EditorApi) => void;
 };
 
@@ -200,7 +202,9 @@ export const MonacoEditor = ({
     editor.current = ed;
     monaco.current = mon;
     if (viewState) {
-      ed.restoreViewState(viewState);
+      if (viewState.viewState) {
+        ed.restoreViewState(viewState.viewState);
+      }
     }
 
     // --- Mount events to save the view state
@@ -246,10 +250,9 @@ export const MonacoEditor = ({
   // --- Saves the document state
   const saveDocumentState = () => {
     const data: CodeDocumentState = {
-      value: editor.current.getValue(),
       viewState: editor.current.saveViewState()
     };
-    documentHubService.setDocumentData(document.id, data);
+    documentHubService.setDocumentViewState(document.id, data);
   };
 
   // Saves the document to its file
@@ -257,10 +260,14 @@ export const MonacoEditor = ({
     if (!editor.current) return;
     isBusy.current = true;
     try {
-      await projectService.saveFileContent(
-        document.id,
-        editor.current.getModel().getValue()
-      );
+      // --- Save the current viewstate
+      saveDocumentState();
+
+      // --- Save the contents back to the document instance
+      document.contents = editor.current.getModel().getValue();
+      
+      // --- Now, save it back to the file
+      await projectService.saveFileContent(document.id, document.contents);
     } finally {
       isBusy.current = false;
     }
@@ -390,7 +397,7 @@ export const MonacoEditor = ({
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
-    const editorLines = editor.current?.getModel().getLineCount() ?? 0;
+    const editorLines = editor.current?.getModel()?.getLineCount() ?? 0;
 
     // --- Iterate through all breakpoins
     bps.forEach(async bp => {
@@ -498,8 +505,7 @@ export const MonacoEditor = ({
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        bp =>
-          bp.resource === document.node?.projectPath && bp.line === lineNo
+        bp => bp.resource === document.node?.projectPath && bp.line === lineNo
       );
       (async () => {
         if (existingBp) {
