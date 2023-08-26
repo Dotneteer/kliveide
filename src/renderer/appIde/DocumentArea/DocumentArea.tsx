@@ -8,11 +8,13 @@ import {
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import styles from "./DocumentArea.module.scss";
+import { useSelector } from "@renderer/core/RendererProvider";
 
 export const DocumentArea = () => {
   const { projectService } = useAppServices();
   const documentHubService = projectService.getActiveDocumentHubService();
-  const hubVersion = useDocumentHubServiceVersion();
+  const hubVersion = useDocumentHubServiceVersion(documentHubService);
+  const projectViewStateVersion = useSelector(s => s.project?.projectViewStateVersion);
   const [activeDoc, setActiveDoc] = useState<ProjectDocumentState>(null);
 
   // --- Manage saving and restoring state when the active index changes
@@ -21,7 +23,7 @@ export const DocumentArea = () => {
     if (current) {
       setActiveDoc(current);
     }
-  }, [hubVersion]);
+  }, [hubVersion, projectViewStateVersion]);
 
   const data = activeDoc?.id
     ? documentHubService.getDocumentData(activeDoc?.id)

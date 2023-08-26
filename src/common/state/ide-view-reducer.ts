@@ -119,12 +119,6 @@ export function ideViewReducer (
         dialogToDisplay: payload.index
       };
 
-    case "INC_DOC_SERVICE_VERSION":
-      return {
-        ...state,
-        documentServiceVersion: (state.documentServiceVersion ?? 0) + 1
-      };
-
     case "INC_DOC_HUB_SERVICE_VERSION": {
       const versions = { ...state.documentHubState };
       versions[payload.index] = (versions[payload.index] ?? 0) + 1;

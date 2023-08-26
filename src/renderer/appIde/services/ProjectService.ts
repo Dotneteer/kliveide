@@ -364,6 +364,7 @@ class ProjectService implements IProjectService {
       iconName: node.icon ?? docRenderer?.icon,
       iconFill: docRenderer?.iconFill,
       isReadOnly: node.isReadOnly,
+      isTemporary: true,
       node,
       editVersionCount: 1,
       savedVersionCount: 1
@@ -390,6 +391,7 @@ class ProjectService implements IProjectService {
       type: docInfo.type,
       iconName: docInfo.iconName,
       iconFill: docInfo.iconFill,
+      isTemporary: false,
       editVersionCount: 1,
       savedVersionCount: 1
     };

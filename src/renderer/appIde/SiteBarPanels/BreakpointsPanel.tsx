@@ -1,4 +1,4 @@
-import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
+import { LabelSeparator, Label, Value } from "@controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import {
   useRendererContext,

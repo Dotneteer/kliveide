@@ -4,10 +4,6 @@ import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import {
-  MainShowOpenFileDialogResponse,
-  MainShowOpenFolderDialogResponse
-} from "@messaging/any-to-main";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";

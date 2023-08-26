@@ -36,11 +36,6 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
-import {
-  BASIC_PANEL_ID,
-  DISASSEMBLY_PANEL_ID,
-  MEMORY_PANEL_ID
-} from "../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -114,7 +109,6 @@ export function setupMenu (
   const appState = mainStore.getState();
   const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
-  const openDocs = appState?.ideView?.openDocuments;
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const buildRoot = appState?.project?.buildRoots?.[0];
@@ -614,11 +608,11 @@ export function setupMenu (
   }
 
   // --- Prepare the IDE menu
-  const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
-  const disassemblyDisplayed = !!openDocs.find(
-    d => d.id === DISASSEMBLY_PANEL_ID
-  );
-  const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
+  // const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
+  // const disassemblyDisplayed = !!openDocs.find(
+  //   d => d.id === DISASSEMBLY_PANEL_ID
+  // );
+  // const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
 
   // --- Font size option
   const editorFontOptions = [
@@ -667,11 +661,11 @@ export function setupMenu (
         id: IDE_SHOW_MEMORY,
         label: "Show Machine Memory",
         type: "checkbox",
-        checked: memoryDisplayed,
+        checked: false, // memoryDisplayed,
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowMemory",
-            show: !memoryDisplayed
+            show: true, //!memoryDisplayed
           });
         }
       },
@@ -679,11 +673,11 @@ export function setupMenu (
         id: IDE_SHOW_DISASSEMBLY,
         label: "Show Z80 Disassembly",
         type: "checkbox",
-        checked: disassemblyDisplayed,
+        checked: false, //disassemblyDisplayed,
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowDisassembly",
-            show: !disassemblyDisplayed
+            show: true, // !disassemblyDisplayed
           });
         }
       },
@@ -692,11 +686,11 @@ export function setupMenu (
         id: IDE_SHOW_BASIC,
         label: "Show BASIC Listing",
         type: "checkbox",
-        checked: basicDisplayed,
+        checked: false, // basicDisplayed,
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowBasic",
-            show: !basicDisplayed
+            show: true, // !basicDisplayed
           });
         }
       },

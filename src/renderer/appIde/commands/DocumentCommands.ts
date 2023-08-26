@@ -78,30 +78,12 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
       // --- Activate the open document
       docService.setActiveDocument(doc.id);
     } else {
-      // --- Load the document
-      const docContent = {
-        value: await context.service.projectService.getFileContent(
-          nodeData.fullPath
-        )
-      };
+      const newDoc = await context.service.projectService.getDocumentForProjectNode(nodeData);
 
       // TODO: Allow the currently active document to save itself before opening the new one
 
       // --- Open it
-      docService.openDocument(
-        {
-          id: nodeData.fullPath,
-          name: nodeData.name,
-          path: nodeData.fullPath,
-          type: nodeData.editor,
-          language: nodeData.subType,
-          iconName: nodeData.icon,
-          isReadOnly: nodeData.isReadOnly,
-          node: nodeData
-        },
-        docContent,
-        !nodeData.openPermanent
-      );
+      docService.openDocument(newDoc);
     }
 
     // --- The document should be open

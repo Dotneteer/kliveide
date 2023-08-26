@@ -8,18 +8,19 @@ export function useDocumentHubService (): IDocumentHubService {
   return useContext(DocumentHubServiceContext)!;
 }
 
-export function useDocumentHubServiceVersion(): number {
-  const hub = useContext(DocumentHubServiceContext)!;
+export function useDocumentHubServiceVersion(hub?: IDocumentHubService): number {
+  hub ??= useContext(DocumentHubServiceContext)!;
   const store = useStore();
   const storeState = store.getState();
-  const [state, setState] = useState(storeState.ideView?.documentHubState?.[hub.hubId]);
+  const [state, setState] = useState(storeState?.ideView?.documentHubState?.[hub?.hubId]);
 
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
       const storeState = store.getState();
       if (!storeState) return;
 
-      setState(storeState.ideView?.documentHubState?.[hub.hubId]);
+      const newVersion = storeState.ideView?.documentHubState?.[hub?.hubId];
+      setState(newVersion);
     });
 
     return () => unsubscribe();

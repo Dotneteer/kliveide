@@ -1,7 +1,4 @@
-import {
-  incDocHubServiceVersionAction,
-  incProjectViewStateVersionAction
-} from "@state/actions";
+import { incDocHubServiceVersionAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { PROJECT_FILE } from "@common/structs/project-const";
@@ -86,6 +83,10 @@ class DocumentHubService implements IDocumentHubService {
         if (tempIndex >= 0) {
           // --- Change the former temp document to this one
           this._openDocs[tempIndex] = document;
+          this.signHubStateChanged();
+        } else {
+          // --- Add as the last document
+          this._openDocs.push(document);
         }
       } else {
         // --- Add as the last document
@@ -173,7 +174,7 @@ class DocumentHubService implements IDocumentHubService {
    */
   closeDocument (id: string): void {
     const docIndex = this._openDocs.findIndex(d => d.id === id);
-    if (!docIndex) return;
+    if (docIndex < 0) return;
 
     // --- Remove the document
     this._openDocs.splice(docIndex, 1);
@@ -201,6 +202,7 @@ class DocumentHubService implements IDocumentHubService {
     } else if (docIndex < this._openDocs.length) {
       this.setActiveDocument(this._openDocs[docIndex].id);
     }
+    this.signHubStateChanged();
   }
 
   /**
@@ -243,6 +245,7 @@ class DocumentHubService implements IDocumentHubService {
     const tmp = this._openDocs[index - 1];
     this._openDocs[index - 1] = this._openDocs[index];
     this._openDocs[index] = tmp;
+    this._activeDocIndex--;
     this.signHubStateChanged();
   }
 
@@ -255,6 +258,7 @@ class DocumentHubService implements IDocumentHubService {
     const tmp = this._openDocs[index + 1];
     this._openDocs[index + 1] = this._openDocs[index];
     this._openDocs[index] = tmp;
+    this._activeDocIndex++;
     this.signHubStateChanged();
   }
 
@@ -281,7 +285,7 @@ class DocumentHubService implements IDocumentHubService {
    * @param viewState State to save
    */
   saveActiveDocumentState (viewState: any): void {
-    this.setDocumentViewState(this.getActiveDocumentId(), viewState);
+    this.setDocumentViewState(this.getActiveDocument()?.id, viewState);
   }
 
   /**
@@ -328,16 +332,6 @@ class DocumentHubService implements IDocumentHubService {
 
   private signHubStateChanged (): void {
     this.store.dispatch(incDocHubServiceVersionAction(this.hubId), "ide");
-  }
-
-  private signProjectViewstateChanged (): void {
-    this.store.dispatch(incProjectViewStateVersionAction(), "ide");
-  }
-
-  private getActiveDocumentId (): string {
-    const state = this.store.getState();
-    const docs = state?.ideView?.openDocuments ?? [];
-    return docs?.[state?.ideView?.activeDocumentIndex]?.id;
   }
 }
 

@@ -4,10 +4,6 @@ import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import {
-  MainCreateKliveProjectResponse,
-  MainShowOpenFolderDialogResponse
-} from "@messaging/any-to-main";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import {
   reportMessagingError,

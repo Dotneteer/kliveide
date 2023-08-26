@@ -299,10 +299,6 @@ export const incInjectionVersionAction: ActionCreator = () => ({
   type: "INC_INJECTION_VERSION"
 });
 
-export const incDocServiceVersionAction: ActionCreator = () => ({
-  type: "INC_DOC_SERVICE_VERSION"
-});
-
 export const incDocHubServiceVersionAction: ActionCreator = (index) => ({
   type: "INC_DOC_HUB_SERVICE_VERSION",
   payload: { index }

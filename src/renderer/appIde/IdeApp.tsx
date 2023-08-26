@@ -26,7 +26,6 @@ import {
   selectActivityAction,
   setToolsAction,
   activateToolAction,
-  closeAllDocumentsAction,
   displayDialogAction
 } from "@state/actions";
 import { AppState } from "@state/AppState";
@@ -146,7 +145,6 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
-    dispatch(closeAllDocumentsAction());
   }, [appServices, store, messenger]);
 
   useEffect(() => {

@@ -4,7 +4,6 @@ import {
   ResponseMessage,
   defaultResponse
 } from "@messaging/messages-core";
-import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import {
   MEMORY_PANEL_ID,
@@ -58,8 +57,7 @@ export async function processMainToIdeMessages (
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
-            type: MEMORY_EDITOR,
-            viewVersion: 0
+            type: MEMORY_EDITOR
           },
           undefined,
           false
@@ -76,8 +74,7 @@ export async function processMainToIdeMessages (
           {
             id: DISASSEMBLY_PANEL_ID,
             name: "Z80 Disassembly",
-            type: DISASSEMBLY_EDITOR,
-            viewVersion: 0
+            type: DISASSEMBLY_EDITOR
           },
           undefined,
           false
@@ -94,8 +91,7 @@ export async function processMainToIdeMessages (
           {
             id: BASIC_PANEL_ID,
             name: "BASIC Listing",
-            type: BASIC_EDITOR,
-            viewVersion: 0
+            type: BASIC_EDITOR
           },
           undefined,
           false
@@ -108,12 +104,15 @@ export async function processMainToIdeMessages (
 
     case "IdeExecuteCommand": {
       const pane = outputPaneService.getOutputPaneBuffer("build");
-      const response = await ideCommandsService.executeCommand(message.commandText, pane);
+      const response = await ideCommandsService.executeCommand(
+        message.commandText,
+        pane
+      );
       return {
         type: "IdeExecuteCommandResponse",
         success: response.success,
         finalMessage: response.finalMessage
-      }
+      };
     }
   }
   return defaultResponse();

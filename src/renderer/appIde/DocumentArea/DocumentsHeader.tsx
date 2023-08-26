@@ -4,7 +4,7 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@controls/TabButton";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentTab } from "./DocumentTab";
