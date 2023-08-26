@@ -32,7 +32,7 @@ import {
   unloadWindowsAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
 import { release } from "os";
 import { join } from "path";
 import { setupMenu } from "./app-menu";
@@ -194,6 +194,8 @@ async function createAppWindows () {
   registerMainToEmuMessenger(emuWindow);
   registerMainToIdeMessenger(ideWindow);
 
+  // Rather than setting up the application menu we'll configure it per window.
+  Menu.setApplicationMenu(null);
   // --- Prepare the main menu. Update items on application state change
   setupMenu(emuWindow, ideWindow);
 
