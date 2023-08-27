@@ -152,6 +152,7 @@ export class DebugSupport implements IDebugSupport {
     const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
+    console.log("BP: removeExecBreakpoint");
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return !!oldBp;
   }
@@ -199,7 +200,6 @@ export class DebugSupport implements IDebugSupport {
         bp.line += shift;
         this._execBps.set(getBreakpointKey(bp), bp);
         changed = true;
-        console.log("changed");
       }
     });
     if (changed) {

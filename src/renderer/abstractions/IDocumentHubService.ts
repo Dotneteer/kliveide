@@ -37,7 +37,7 @@ export interface IDocumentHubService {
    * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument(document: ProjectDocumentState, data?: any, temporary?: boolean): void;
+  openDocument(document: ProjectDocumentState, data?: any, temporary?: boolean): Promise<void>;
 
   /**
    * Tests if the specified document is open
@@ -65,18 +65,18 @@ export interface IDocumentHubService {
    * Sets the specified document as the active one
    * @param id The ID of the active document
    */
-  setActiveDocument(id: string): void;
+  setActiveDocument(id: string): Promise<void>;
 
   /**
    * Closes the specified document
    * @param id Document to close
    */
-  closeDocument(id: string): void;
+  closeDocument(id: string): Promise<void>;
 
   /**
    * Closes all open documents
    */
-  closeAllDocuments(): void;
+  closeAllDocuments(): Promise<void>;
 
   /**
    * Closes all open explorer documents

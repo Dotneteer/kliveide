@@ -30,7 +30,6 @@ export const DocumentsContainer = ({
     document.iconFill ||= docRenderer.iconFill;
   }
 
-  console.log ("vs rendering", !!viewState)
   return document ? (
     docRenderer ? (
       <div className={styles.documentContainer}>

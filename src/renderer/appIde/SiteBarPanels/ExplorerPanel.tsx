@@ -380,22 +380,22 @@ const ExplorerPanel = () => {
             setSelected(idx);
           }
         }}
-        onClick={() => {
+        onClick={async () => {
           node.isExpanded = !node.isExpanded;
           tree.buildIndex();
           setVisibleNodes(tree.getVisibleNodes());
 
           if (!node.data.isFolder) {
-            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
-        onDoubleClick={() => {
+        onDoubleClick={async () => {
           if (node.data.isFolder) return;
           if (documentHubService.isOpen(node.data.fullPath)) {
-            documentHubService.setActiveDocument(node.data.fullPath);
+            await documentHubService.setActiveDocument(node.data.fullPath);
             projectService.setPermanent(node.data.fullPath);
           } else {
-            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
           }
         }}
       >

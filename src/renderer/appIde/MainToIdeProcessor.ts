@@ -53,7 +53,7 @@ export async function processMainToIdeMessages (
 
     case "IdeShowMemory": {
       if (message.show) {
-        documentHubService.openDocument(
+        await documentHubService.openDocument(
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
@@ -63,14 +63,14 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentHubService.closeDocument(MEMORY_PANEL_ID);
+        await documentHubService.closeDocument(MEMORY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowDisassembly": {
       if (message.show) {
-        documentHubService.openDocument(
+        await documentHubService.openDocument(
           {
             id: DISASSEMBLY_PANEL_ID,
             name: "Z80 Disassembly",
@@ -80,14 +80,14 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
+        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowBasic": {
       if (message.show) {
-        documentHubService.openDocument(
+        await documentHubService.openDocument(
           {
             id: BASIC_PANEL_ID,
             name: "BASIC Listing",
@@ -97,7 +97,7 @@ export async function processMainToIdeMessages (
           false
         );
       } else {
-        documentHubService.closeDocument(BASIC_PANEL_ID);
+        await documentHubService.closeDocument(BASIC_PANEL_ID);
       }
       break;
     }

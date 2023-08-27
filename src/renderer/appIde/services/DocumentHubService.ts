@@ -64,11 +64,11 @@ class DocumentHubService implements IDocumentHubService {
    * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument (
+  async openDocument (
     document: ProjectDocumentState,
     data?: any,
     temporary = true
-  ): void {
+  ): Promise<void> {
     const docIndex = this._openDocs.findIndex(d => d.id === document.id);
     if (docIndex >= 0) {
       // --- A similar document exists with the same ID
@@ -103,7 +103,7 @@ class DocumentHubService implements IDocumentHubService {
 
     // --- Now, activate the newly opened document
     this.projectService.openInDocumentHub(document.id, this);
-    this.setActiveDocument(document.id);
+    await this.setActiveDocument(document.id);
   }
 
   /**
@@ -154,7 +154,7 @@ class DocumentHubService implements IDocumentHubService {
    * Sets the specified document as the active one
    * @param id The ID of the active document
    */
-  setActiveDocument (id: string): void {
+  async setActiveDocument (id: string): Promise<void> {
     const docIndex = this._openDocs.findIndex(d => d.id === id);
     if (docIndex < 0) {
       throw new Error(`Unknown document: ${id}`);
@@ -164,6 +164,9 @@ class DocumentHubService implements IDocumentHubService {
       return;
     }
 
+    // --- Make sure to save the state of the active document gracefully
+    await this.ensureActiveSaved();
+
     this._activeDocIndex = docIndex;
     this.signHubStateChanged();
   }
@@ -172,7 +175,7 @@ class DocumentHubService implements IDocumentHubService {
    * Closes the specified document
    * @param id Document to close
    */
-  closeDocument (id: string): void {
+  async closeDocument (id: string): Promise<void> {
     const docIndex = this._openDocs.findIndex(d => d.id === id);
     if (docIndex < 0) return;
 
@@ -198,9 +201,9 @@ class DocumentHubService implements IDocumentHubService {
 
     // --- Activate another document
     if (docIndex > 0) {
-      this.setActiveDocument(this._openDocs[docIndex - 1].id);
+      await this.setActiveDocument(this._openDocs[docIndex - 1].id);
     } else if (docIndex < this._openDocs.length) {
-      this.setActiveDocument(this._openDocs[docIndex].id);
+      await this.setActiveDocument(this._openDocs[docIndex].id);
     } else {
       this._activeDocIndex = -1;
     }
@@ -210,11 +213,11 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Closes all open documents
    */
-  closeAllDocuments (): void {
+  async closeAllDocuments (): Promise<void> {
     // --- Close the documents one-by-one
-    this._openDocs.slice(0).forEach(d => {
-      this.closeDocument(d.id);
-    });
+    for (const doc of this._openDocs.slice(0)) {
+      await this.closeDocument(doc.id);
+    }
 
     // --- Close the document hub service
     this.projectService.closeDocumentHubService(this);
@@ -331,8 +334,25 @@ class DocumentHubService implements IDocumentHubService {
 
   // --- Helper methods
 
+  // --- Increment the document hub service version number to sign a state change
   private signHubStateChanged (): void {
     this.store.dispatch(incDocHubServiceVersionAction(this.hubId), "ide");
+  }
+
+  // --- Ensure the active document is saved before navigating away
+  private async ensureActiveSaved(): Promise<void> {
+    const activeDocId = this._openDocs?.[this._activeDocIndex]?.id;
+    if (!activeDocId) return;
+
+    // --- Use the API to save the document
+    const docApi = this.getDocumentApi(activeDocId);
+    let ready = false;
+    if (docApi?.readyForDisposal) {
+      ready = await docApi.readyForDisposal();
+    }
+    if (!ready && docApi?.beforeDocumentDisposal) {
+      await docApi.beforeDocumentDisposal();
+    }
   }
 }
 

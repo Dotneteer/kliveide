@@ -48,7 +48,7 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     const bufferText = buffer.getBufferText();
     const title = `Result of running '${context.commandtext.trim()}'`;
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
-    documentHubService.openDocument(
+    await documentHubService.openDocument(
       {
         id: `disOutput-${disassemblyIndex++}`,
         name: `Disassembly ($${fromH}-$${toH})`,

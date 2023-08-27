@@ -136,6 +136,32 @@ export const DocumentsHeader = () => {
     }
   };
 
+  // --- This method unsures the document is saved before deactivating and disposing it
+  const ensureDocumentStateSaved = async () => {
+    // --- Make sure to save the state of the active document gracefully
+    const activeDocId = openDocs?.[activeDocIndex]?.id;
+    if (!activeDocId) return;
+
+    // --- Use the API to save the document
+    const docApi = documentHubService.getDocumentApi(activeDocId);
+    try {
+      await delayAction(
+        async () => {
+          let ready = false;
+          if (docApi?.readyForDisposal) {
+            ready = await docApi.readyForDisposal();
+          }
+          if (!ready && docApi?.beforeDocumentDisposal) {
+            await docApi.beforeDocumentDisposal();
+          }
+        },
+        () => setAwaiting(true)
+      );
+    } finally {
+      setAwaiting(false);
+    }
+  }
+
   // --- Stores the tab element reference, as later we'll need its dimensions to
   // --- ensure it is entirelly visible
   const tabDisplayed = (idx: number, el: HTMLDivElement) => {
@@ -153,23 +179,8 @@ export const DocumentsHeader = () => {
     const activeDocId = openDocs?.[activeDocIndex]?.id;
     if (!activeDocId || id === activeDocId) return;
 
-    // --- Make sure to save the state of the active document gracefully
-    const docApi = documentHubService.getDocumentApi(activeDocId);
-    try {
-      await delayAction(
-        async () => {
-          if (docApi?.saveDocumentState) {
-            await docApi.saveDocumentState();
-          }
-        },
-        () => setAwaiting(true)
-      );
-
-      // --- Now, activate the document
-      documentHubService.setActiveDocument(id);
-    } finally {
-      setAwaiting(false);
-    }
+    await ensureDocumentStateSaved();
+    await documentHubService.setActiveDocument(id);
   };
 
   // --- Responds to the event when a document tab was double clicked. Double clicking
@@ -179,8 +190,9 @@ export const DocumentsHeader = () => {
   };
 
   // --- Responds to the event when the close button of the tab is clicked
-  const tabCloseClicked = (id: string) => {
-    documentHubService.closeDocument(id);
+  const tabCloseClicked = async (id: string) => {
+    await ensureDocumentStateSaved();
+    await documentHubService.closeDocument(id);
   };
 
   return (openDocs?.length ?? 0) > 0 ? (
@@ -240,7 +252,7 @@ export const DocumentsHeader = () => {
         <TabButton
           iconName='close'
           useSpace={true}
-          clicked={() => documentHubService.closeAllDocuments()}
+          clicked={async () => await documentHubService.closeAllDocuments()}
         />
       </div>
     </div>
