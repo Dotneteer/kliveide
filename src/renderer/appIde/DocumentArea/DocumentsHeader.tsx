@@ -56,6 +56,20 @@ export const DocumentsHeader = () => {
     ensureTabVisible();
   }, [activeDocIndex, selectedIsBuildRoot]);
 
+  // --- Update the UI when the build root changes
+  useEffect(() => {
+    if (openDocs) {
+      setSelectedIsBuildRoot(
+        buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
+      );
+    }
+  }, [openDocs, buildRoots, activeDocIndex]);
+
+  // --- Make sure that the index is visible
+  useEffect(() => {
+    ensureTabVisible();
+  }, [activeDocIndex, selectedIsBuildRoot]);
+
   // --- Refresh the changed project document
   useEffect(() => {
     // --- Check if the project document is visible

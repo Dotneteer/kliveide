@@ -41,7 +41,7 @@ import { openFolder, saveKliveProject } from "./projects";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
-  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  EXCLUDED_PROJECT_ITEMS_DIALOG
 } from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
@@ -139,7 +139,7 @@ export function setupMenu (
    */
   template.push({
     label: "File",
-    submenu: [
+    submenu: filterVisibleItems([
       {
         id: NEW_PROJECT,
         label: "New project...",
@@ -173,7 +173,7 @@ export function setupMenu (
             { type: "separator" },
             { role: "quit" }
           ] as MenuItemConstructorOptions[]))
-    ]
+    ])
   });
 
   /**
@@ -202,7 +202,7 @@ export function setupMenu (
       label: `Show ${t.name} Panel`,
       type: "checkbox",
       checked: t.visible,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: mi => {
         const panelId = mi.id.substring(TOOL_PREFIX.length);
         mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked));
@@ -211,7 +211,7 @@ export function setupMenu (
   });
 
   // --- Prepare the view menu
-  const viewSubMenu: MenuItemConstructorOptions[] = [
+  const viewSubMenu: MenuItemConstructorOptions[] = filterVisibleItems([
     { role: "resetZoom" },
     { role: "zoomIn" },
     { role: "zoomOut" },
@@ -234,12 +234,15 @@ export function setupMenu (
         ensureIdeWindow();
       }
     },
-    { type: "separator" },
+    {
+      type: "separator",
+      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible()
+    },
     {
       id: TOGGLE_EMU_TOOLBAR,
       label: "Show the Toolbar",
       type: "checkbox",
-      visible: appState.emuFocused,
+      visible: emuWindow?.isFocused(),
       checked: appState.emuViewOptions.showToolbar,
       click: async mi => {
         mainStore.dispatch(showEmuToolbarAction(mi.checked));
@@ -250,7 +253,7 @@ export function setupMenu (
       id: TOGGLE_IDE_TOOLBAR,
       label: "Show the Toolbar",
       type: "checkbox",
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       checked: appState.ideViewOptions.showToolbar,
       click: async mi => {
         mainStore.dispatch(showIdeToolbarAction(mi.checked));
@@ -261,7 +264,7 @@ export function setupMenu (
       id: TOGGLE_EMU_STATUS_BAR,
       label: "Show the Status Bar",
       type: "checkbox",
-      visible: appState.emuFocused,
+      visible: emuWindow?.isFocused(),
       checked: appState.emuViewOptions.showStatusBar,
       click: async mi => {
         mainStore.dispatch(showEmuStatusBarAction(mi.checked));
@@ -272,20 +275,23 @@ export function setupMenu (
       id: TOGGLE_IDE_STATUS_BAR,
       label: "Show the Status Bar",
       type: "checkbox",
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       checked: appState.ideViewOptions.showStatusBar,
       click: async mi => {
         mainStore.dispatch(showIdeStatusBarAction(mi.checked));
         await saveKliveProject();
       }
     },
-    { type: "separator" },
+    {
+      type: "separator",
+      visible: emuWindow?.isFocused() || ideWindow?.isFocused()
+    },
     {
       id: TOGGLE_SIDE_BAR,
       label: "Show the Side Bar",
       type: "checkbox",
       checked: appState.ideViewOptions.showSidebar,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: async mi => {
         mainStore.dispatch(showSideBarAction(mi.checked));
         await saveKliveProject();
@@ -296,7 +302,7 @@ export function setupMenu (
       label: "Move Primary Side Bar Right",
       type: "checkbox",
       checked: appState.ideViewOptions.primaryBarOnRight,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: async mi => {
         mainStore.dispatch(primaryBarOnRightAction(mi.checked));
         await saveKliveProject();
@@ -307,7 +313,7 @@ export function setupMenu (
       label: "Show Tool Panels",
       type: "checkbox",
       checked: appState.ideViewOptions.showToolPanels,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: async mi => {
         const checked = mi.checked;
         mainStore.dispatch(showToolPanelsAction(checked));
@@ -322,7 +328,7 @@ export function setupMenu (
       label: "Move Tool Panels Top",
       type: "checkbox",
       checked: appState.ideViewOptions.toolPanelsOnTop,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: async mi => {
         mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
         await saveKliveProject();
@@ -333,7 +339,7 @@ export function setupMenu (
       label: "Maximize Tool Panels",
       type: "checkbox",
       checked: appState.ideViewOptions.maximizeTools,
-      visible: appState.ideFocused,
+      visible: ideWindow?.isFocused(),
       click: async mi => {
         const checked = mi.checked;
         if (checked) {
@@ -343,9 +349,12 @@ export function setupMenu (
         await saveKliveProject();
       }
     },
-    { type: "separator" },
+    {
+      type: "separator",
+      visible: ideWindow?.isFocused()
+    },
     ...toolMenus,
-    { type: "separator" },
+    { type: "separator", visible: toolMenus.some(i => i.visible) },
     {
       id: THEMES,
       label: "Themes",
@@ -372,7 +381,7 @@ export function setupMenu (
         }
       ]
     }
-  ];
+  ]);
 
   template.push({
     label: "View",
@@ -429,18 +438,20 @@ export function setupMenu (
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
 
-  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(mt => {
-    return {
-      id: `machine_${mt.id}`,
-      label: mt.displayName,
-      type: "checkbox",
-      checked: appState.emulatorState?.machineId === mt.id,
-      click: async () => {
-        await setMachineType(mt.id);
-        await saveKliveProject();
-      }
+  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(
+    mt => {
+      return {
+        id: `machine_${mt.id}`,
+        label: mt.displayName,
+        type: "checkbox",
+        checked: appState.emulatorState?.machineId === mt.id,
+        click: async () => {
+          await setMachineType(mt.id);
+          await saveKliveProject();
+        }
+      };
     }
-  })
+  );
 
   template.push({
     label: "Machine",
@@ -600,9 +611,11 @@ export function setupMenu (
           label: "Manage Excluded Items",
           enabled: true,
           click: () => {
-            mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+            mainStore.dispatch(
+              displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
+            );
           }
-        },
+        }
       ]
     });
   }
@@ -707,8 +720,28 @@ export function setupMenu (
   if (appState?.dimMenu) {
     disableAllMenuItems(template);
   }
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+
+  // Preserve the submenus as a dedicated array.
+  const submenus = template.map(i => i.submenu);
+  function templateTransform (wnd: BrowserWindow) {
+    return wnd.isFocused()
+      ? (i, idx) => (i.submenu = submenus[idx])
+      : i => (i.submenu = null);
+  }
+  if (__DARWIN__) {
+    const windowFocused = emuWindow.isFocused() ? emuWindow : ideWindow;
+    template.forEach(templateTransform(windowFocused));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+  } else {
+    if (emuWindow) {
+      template.forEach(templateTransform(emuWindow));
+      emuWindow.setMenu(Menu.buildFromTemplate(template));
+    }
+    if (ideWindow) {
+      template.forEach(templateTransform(ideWindow));
+      ideWindow.setMenu(Menu.buildFromTemplate(template));
+    }
+  }
 
   function ensureIdeWindow () {
     ideWindow.show();
@@ -888,5 +921,11 @@ const registeredMachines = [
   {
     id: "sp128",
     displayName: "ZX Spectrum 128K"
-  },
-]
+  }
+];
+
+function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem> (
+  items: T[]
+): T[] {
+  return items.filter(i => i.visible !== false);
+}
