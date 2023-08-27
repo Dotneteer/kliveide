@@ -46,7 +46,7 @@ import { openFolder, saveKliveProject } from "./projects";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
-  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  EXCLUDED_PROJECT_ITEMS_DIALOG
 } from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
@@ -203,7 +203,7 @@ export function setupMenu (
   }
 
   const toolMenus: MenuItemConstructorOptions[] = tools.map(t => {
-    return ({
+    return {
       id: `${TOOL_PREFIX}${t.id}`,
       label: `Show ${t.name} Panel`,
       type: "checkbox",
@@ -213,7 +213,7 @@ export function setupMenu (
         const panelId = mi.id.substring(TOOL_PREFIX.length);
         mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked));
       }
-    });
+    };
   });
 
   // --- Prepare the view menu
@@ -242,7 +242,7 @@ export function setupMenu (
     },
     {
       type: "separator",
-      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
+      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible()
     },
     {
       id: TOGGLE_EMU_TOOLBAR,
@@ -444,18 +444,20 @@ export function setupMenu (
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
 
-  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(mt => {
-    return {
-      id: `machine_${mt.id}`,
-      label: mt.displayName,
-      type: "checkbox",
-      checked: appState.emulatorState?.machineId === mt.id,
-      click: async () => {
-        await setMachineType(mt.id);
-        await saveKliveProject();
-      }
+  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(
+    mt => {
+      return {
+        id: `machine_${mt.id}`,
+        label: mt.displayName,
+        type: "checkbox",
+        checked: appState.emulatorState?.machineId === mt.id,
+        click: async () => {
+          await setMachineType(mt.id);
+          await saveKliveProject();
+        }
+      };
     }
-  })
+  );
 
   template.push({
     label: "Machine",
@@ -615,9 +617,11 @@ export function setupMenu (
           label: "Manage Excluded Items",
           enabled: true,
           click: () => {
-            mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+            mainStore.dispatch(
+              displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
+            );
           }
-        },
+        }
       ]
     });
   }
@@ -725,18 +729,24 @@ export function setupMenu (
 
   // Preserve the submenus as a dedicated array.
   const submenus = template.map(i => i.submenu);
-  function templateTransform(wnd: BrowserWindow) {
-    return wnd.isFocused() ?
-      (i, idx) => i.submenu = submenus[idx]
-      : (i) => i.submenu = null;
+  function templateTransform (wnd: BrowserWindow) {
+    return wnd.isFocused()
+      ? (i, idx) => (i.submenu = submenus[idx])
+      : i => (i.submenu = null);
   }
-  if (emuWindow) {
-    template.forEach(templateTransform(emuWindow));
-    emuWindow.setMenu(Menu.buildFromTemplate(template));
-  }
-  if (ideWindow) {
-    template.forEach(templateTransform(ideWindow));
-    ideWindow.setMenu(Menu.buildFromTemplate(template));
+  if (__DARWIN__) {
+    const windowFocused = emuWindow.isFocused() ? emuWindow : ideWindow;
+    template.forEach(templateTransform(windowFocused));
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+  } else {
+    if (emuWindow) {
+      template.forEach(templateTransform(emuWindow));
+      emuWindow.setMenu(Menu.buildFromTemplate(template));
+    }
+    if (ideWindow) {
+      template.forEach(templateTransform(ideWindow));
+      ideWindow.setMenu(Menu.buildFromTemplate(template));
+    }
   }
 
   function ensureIdeWindow () {
@@ -917,9 +927,11 @@ const registeredMachines = [
   {
     id: "sp128",
     displayName: "ZX Spectrum 128K"
-  },
-]
+  }
+];
 
-function filterVisibleItems<T extends (MenuItemConstructorOptions | MenuItem)>(items: T[]): T[] {
+function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem> (
+  items: T[]
+): T[] {
   return items.filter(i => i.visible !== false);
 }
