@@ -37,7 +37,11 @@ export interface IDocumentHubService {
    * @param data Arbitrary data assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
-  openDocument(document: ProjectDocumentState, data?: any, temporary?: boolean): Promise<void>;
+  openDocument(
+    document: ProjectDocumentState,
+    data?: any,
+    temporary?: boolean
+  ): Promise<void>;
 
   /**
    * Tests if the specified document is open
@@ -137,4 +141,9 @@ export interface IDocumentHubService {
    * @param api API instance
    */
   setDocumentApi(id: string, api: DocumentApi): void;
+
+  /**
+   * Disposes the resources held by the instance
+   */
+  dispose(): void;
 }

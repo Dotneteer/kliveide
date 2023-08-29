@@ -2,7 +2,6 @@
  * Available action types
  */
 export interface ActionTypes {
-  SET_APP_PATH: null;
   UNLOAD_WINDOWS: null;
   EMU_LOADED: null;
   EMU_STATE_SYNCHED: null,

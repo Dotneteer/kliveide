@@ -218,6 +218,7 @@ class ProjectService implements IProjectService {
 
     // --- Remove the doucment hub service gracefully
     delete this._docHubIdSlots[instance.hubId];
+    instance.dispose();
     this._docHubServices = this._docHubServices.filter(d => d !== instance);
     this._docHubActivations = this._docHubActivations.filter(
       d => d !== instance

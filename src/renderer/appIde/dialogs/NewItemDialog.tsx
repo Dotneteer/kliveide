@@ -19,7 +19,7 @@ export const NewItemDialog = ({
   path,
   itemNames,
   onClose,
-  onAdd: onRename
+  onAdd
 }: Props) => {
   const modalApi = useRef<ModalApi>(null);
   const [newItem, setNewItem] = useState("");
@@ -40,7 +40,7 @@ export const NewItemDialog = ({
       primaryEnabled={isValid}
       initialFocus='none'
       onPrimaryClicked={async result => {
-        await onRename?.(result ?? newItem);
+        await onAdd?.(result ?? newItem);
         return false;
       }}
       onClose={() => {

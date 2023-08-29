@@ -2,13 +2,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-
-export const setAppPathAction: ActionCreator = (file: string) => ({
-  type: "SET_APP_PATH",
-  payload: { file }
-});
 
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"

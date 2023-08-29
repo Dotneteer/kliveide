@@ -43,7 +43,7 @@ export const darkTheme: ThemeProperties = {
   // --- Context menu
   "--bgcolor-context-menu": "#282828",
   "--color-context-item": "#cccccc",
-  "--color-context-item-dangerous": "#c50f1f",
+  "--color-context-item-dangerous": "#f14c4c",
   "--color-context-item-disabled": "#606060",
   "--bgcolor-context-item-pointed": "#007acc",
   "--color-context-item-pointed": "#ffffff",

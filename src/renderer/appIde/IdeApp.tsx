@@ -91,7 +91,7 @@ const IdeApp = () => {
   }
 
   // --- Visual state
-  const appPath = useSelector(s => s.appPath);
+  const appPath = decodeURI(location.search.split("=")?.[1]);
   const dimmed = useSelector(s => s.dimMenu ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);

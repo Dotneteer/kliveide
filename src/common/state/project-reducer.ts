@@ -21,7 +21,8 @@ export function projectReducer (
     case "CLOSE_FOLDER":
       return {
         projectFileVersion: 1,
-        projectViewStateVersion: 1
+        projectViewStateVersion: 1,
+        folderPath: null
       };
 
     case "SET_BUILD_ROOT":

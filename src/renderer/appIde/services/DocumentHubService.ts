@@ -19,6 +19,10 @@ class DocumentHubService implements IDocumentHubService {
   private _openDocs: ProjectDocumentState[] = [];
   private _activeDocIndex = -1;
 
+  onProjectClosed = () => {
+    this._documentViewState.clear();
+  }
+
   /**
    * Initializes the service instance to use the specified store
    * @param store Store instance to use
@@ -27,7 +31,9 @@ class DocumentHubService implements IDocumentHubService {
     public readonly hubId: number,
     private readonly store: Store<AppState>,
     private readonly projectService: IProjectService
-  ) {}
+  ) {
+    projectService.projectClosed.on(this.onProjectClosed);
+  }
 
   /**
    * Gets the list of open documents
@@ -332,6 +338,13 @@ class DocumentHubService implements IDocumentHubService {
     }
   }
 
+  /**
+   * Disposes the resources held by the instance
+   */
+  dispose (): void {
+    this.onDispose();
+  }
+
   // --- Helper methods
 
   // --- Increment the document hub service version number to sign a state change
@@ -340,7 +353,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   // --- Ensure the active document is saved before navigating away
-  private async ensureActiveSaved(): Promise<void> {
+  private async ensureActiveSaved (): Promise<void> {
     const activeDocId = this._openDocs?.[this._activeDocIndex]?.id;
     if (!activeDocId) return;
 
@@ -353,6 +366,11 @@ class DocumentHubService implements IDocumentHubService {
     if (!ready && docApi?.beforeDocumentDisposal) {
       await docApi.beforeDocumentDisposal();
     }
+  }
+
+  // --- Removes event handlers attached to the project service
+  private onDispose (): void {
+    this.projectService.projectClosed.off(this.onProjectClosed);
   }
 }
 

@@ -42,13 +42,14 @@ import {
   NEW_PROJECT_DIALOG
 } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
+import { delay } from "@renderer/utils/timing";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   // --- Services used in this component
-  const { messenger, store } = useRendererContext();
+  const { messenger } = useRendererContext();
   const dispatch = useDispatch();
   const { projectService, ideCommandsService } = useAppServices();
   const documentHubService = projectService.getActiveDocumentHubService();
@@ -69,10 +70,8 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const { folderPath, excludedItems } = useSelector(s => ({
-    folderPath: s.project?.folderPath,
-    excludedItems: s.project?.excludedItems
-  }));
+  const folderPath = useSelector(s => s.project?.folderPath);
+  const excludedItems = useSelector(s => s.project?.excludedItems);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
   const hasExcludedItems = useSelector(
@@ -233,7 +232,10 @@ const ExplorerPanel = () => {
           }
         } else {
           // --- Succesfully renamed
-          projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
+          projectService.renameDocument(
+            selectedContextNode.data.fullPath,
+            newFullName
+          );
 
           // --- Refresh the tree and notify other objects listening to a rename
           refreshTree();
@@ -346,6 +348,14 @@ const ExplorerPanel = () => {
           if (newIndex >= 0) {
             setSelected(newIndex);
           }
+
+          setTimeout(async () => {
+            if (!newNode.data.isFolder) {
+              await ideCommandsService.executeCommand(
+                `nav ${newNode.data.fullPath}`
+              );
+            }
+          }, 0);
         }
       }}
       onClose={() => {
@@ -386,7 +396,9 @@ const ExplorerPanel = () => {
           setVisibleNodes(tree.getVisibleNodes());
 
           if (!node.data.isFolder) {
-            await ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(
+              `nav ${node.data.fullPath}`
+            );
           }
         }}
         onDoubleClick={async () => {
@@ -395,7 +407,9 @@ const ExplorerPanel = () => {
             await documentHubService.setActiveDocument(node.data.fullPath);
             projectService.setPermanent(node.data.fullPath);
           } else {
-            await ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(
+              `nav ${node.data.fullPath}`
+            );
           }
         }}
       >
