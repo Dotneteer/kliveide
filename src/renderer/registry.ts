@@ -40,6 +40,7 @@ import { ZxSpectrum48Machine } from "../emu/machines/zxSpectrum48/ZxSpectrum48Ma
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
+import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -194,7 +195,12 @@ export const machineRegistry: MachineInfo[] = [
     machineId: "sp128",
     displayName: "ZX Spectrum 128K",
     factory: () => new ZxSpectrum128Machine()
-  }
+  },
+  {
+    machineId: "spp3e",
+    displayName: "ZX Spectrum +3E",
+    factory: () => new ZxSpectrumP3eMachine()
+  },
 ];
 
 // --- The registry of ile types

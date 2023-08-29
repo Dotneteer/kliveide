@@ -927,6 +927,10 @@ const registeredMachines = [
   {
     id: "sp128",
     displayName: "ZX Spectrum 128K"
+  },
+  {
+    id: "spp3e",
+    displayName: "ZX Spectrum +3E"
   }
 ];
 
