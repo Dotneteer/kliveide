@@ -142,7 +142,7 @@ export class AssemblyModule implements ISymbolScope {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
-    return !!this.macros[name];
+    return !!this.macros[name] || this.parentModule?.containsMacro(name) === true;
   }
 
   /**
@@ -154,7 +154,7 @@ export class AssemblyModule implements ISymbolScope {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
-    return this.macros[name];
+    return this.macros[name] ?? this.parentModule?.getMacro(name);
   }
 
   /**
