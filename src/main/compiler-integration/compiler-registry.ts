@@ -16,6 +16,7 @@ export type SimpleAssemblerOutput = {
   failed?: string;
   errors?: AssemblerErrorInfo[];
   debugMessages?: string[];
+  traceOutput?: string[];
 };
 
 /**

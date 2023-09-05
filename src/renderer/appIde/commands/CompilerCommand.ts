@@ -1,5 +1,4 @@
 import {
-  BinaryContentsResponse,
   MainCompileResponse,
   MainSaveFileResponse
 } from "@messaging/any-to-main";
@@ -1072,6 +1071,12 @@ async function compileCode (
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
+  }
+
+  const traceOutput = result?.traceOutput;
+  if (traceOutput?.length > 0) {
+    out.resetStyle();
+    traceOutput.forEach(msg => out.writeLine(msg));
   }
 
   // --- Collect errors
