@@ -42,11 +42,6 @@ let monacoInitialized = false;
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
 
-// --- Represents the view state of a code document
-type CodeDocumentState = {
-  viewState?: monacoEditor.editor.ICodeEditorViewState;
-};
-
 // --- We need to invoke this function while initializing the app. This is required to
 // --- render the Monaco editor with the supported language syntax highlighting.
 export async function initializeMonaco (appPath: string) {
@@ -118,7 +113,6 @@ export type EditorApi = DocumentApi & {
 type EditorProps = {
   document: ProjectDocumentState;
   value: string;
-  viewState?: CodeDocumentState;
   apiLoaded?: (api: EditorApi) => void;
 };
 
@@ -126,7 +120,6 @@ type EditorProps = {
 export const MonacoEditor = ({
   document,
   value,
-  viewState,
   apiLoaded
 }: EditorProps) => {
   // --- Monaco editor instance and related state variables
@@ -232,22 +225,10 @@ export const MonacoEditor = ({
   ): void => {
     // --- Restore the view state to display the editor is it has been left
     editor.current = ed;
-    if (viewState) {
-      if (viewState.viewState) {
-        ed.restoreViewState(viewState.viewState);
-      }
-    }
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
     disposables.push(
-      ed.onDidBlurEditorText(saveDocumentState),
-      ed.onDidBlurEditorWidget(saveDocumentState),
-      ed.onDidChangeCursorPosition(saveDocumentState),
-      ed.onDidChangeCursorSelection(saveDocumentState),
-      ed.onDidChangeHiddenAreas(saveDocumentState),
-      ed.onDidFocusEditorText(saveDocumentState),
-      ed.onDidFocusEditorWidget(saveDocumentState),
       ed.onMouseDown(handleEditorMouseDown),
       ed.onMouseLeave(handleEditorMouseLeave),
       ed.onMouseMove(handleEditorMouseMove)
@@ -290,20 +271,9 @@ export const MonacoEditor = ({
     setActivationVersion(activationVersion + 1);
   };
 
-  // --- Saves the document state
-  const saveDocumentState = () => {
-    const data: CodeDocumentState = {
-      viewState: editor.current.saveViewState()
-    };
-    documentHubService.setDocumentViewState(document.id, data);
-  };
-
   // --- Saves the document to the project item cache and into its file
   const saveDocument = async (): Promise<void> => {
     if (!editor.current || readyForDeactivation.current) return;
-    
-    // --- Save the current viewstate
-    saveDocumentState();
 
     // --- Save the contents back to the document instance
     document.contents = editor.current.getModel().getValue();
@@ -426,6 +396,8 @@ export const MonacoEditor = ({
           language={document.language}
           theme={monacoTheme}
           value={value}
+          path={document.id}
+          keepCurrentModel={true}
           onMount={onMount}
           onChange={onValueChanged}
         />
