@@ -1073,6 +1073,12 @@ async function compileCode (
     context.store.dispatch(incBreakpointsVersionAction());
   }
 
+  const traceOutput = result?.traceOutput;
+  if (traceOutput?.length > 0) {
+    out.resetStyle();
+    traceOutput.forEach(msg => out.writeLine(msg));
+  }
+
   // --- Collect errors
   const errors = result?.errors;
 

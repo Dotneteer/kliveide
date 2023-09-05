@@ -1,4 +1,4 @@
-import { AssemblerErrorInfo, CompilerOptions } from "@/common/abstractions/IZ80CompilerService";
+import { AssemblerErrorInfo, CompilerOptions } from "@abstractions/IZ80CompilerService";
 import { KliveCompilerOutput, isAssemblerError } from "../compiler-integration/compiler-registry";
 import { Z80CompilerService } from "./z80-compiler-service";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
@@ -11,17 +11,17 @@ export class Z80Compiler extends CompilerBase {
      * The unique ID of the compiler
      */
     readonly id = "Z80Compiler";
-  
+
     /**
      * Compiled language
      */
     readonly language = "kz80-asm";
-  
+
     /**
      * Indicates if the compiler supports Klive compiler output
      */
     readonly providesKliveOutput = true;
-  
+
     /**
      * Compiles the Z80 Assembly code in the specified file into Z80
      * binary code.
@@ -39,7 +39,7 @@ export class Z80Compiler extends CompilerBase {
       );
       return output;
     }
-  
+
     /**
      * Processes a compiler error and turns it into an assembly error information
      * or plain string

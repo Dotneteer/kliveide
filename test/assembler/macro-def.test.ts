@@ -226,4 +226,28 @@ describe("Assembler - macro definition", async () => {
       );
     });
   });
+
+  it("macro defined in parent scope", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+        MyMacro: .macro()
+          nop
+          .endm
+
+        TheModule: .module
+          MyMacro()
+
+          TheInnerModule: .module
+            MyMacro()
+            .endmodule
+
+          .endmodule
+      `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.containsNestedModule("TheModule")).toBe(true);
+    expect(output.getNestedModule("TheModule").containsNestedModule("TheInnerModule")).toBe(true);
+  });
 });
