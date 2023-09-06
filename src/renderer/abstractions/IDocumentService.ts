@@ -86,7 +86,7 @@ export interface IDocumentService {
   /**
    * Closes all open documents
    */
-  closeAllDocuments(): void;
+  closeAllDocuments(...except: string[]): void;
 
   /**
    * Closes all open explorer documents

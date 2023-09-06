@@ -11,84 +11,6 @@ export type ContextMenuState = {
   contextY: number;
 };
 
-export interface IContextMenuApi {
-  show (e: MouseEvent): void;
-  conceal (): void;
-}
-
-// export class ContextMenuState implements ContextMenuStateInfo {
-
-//   public readonly contextRef: any;
-//   public readonly contextVisible: boolean;
-//   public readonly contextX: number;
-//   public readonly contextY: number;
-
-//   readonly setContextRef: React.Dispatch<any>;
-//   readonly setContextVisible: React.Dispatch<boolean>;
-//   readonly setContextX: React.Dispatch<number>;
-//   readonly setContextY: React.Dispatch<number>;
-
-//   constructor(
-//       contextRef: [any, React.Dispatch<any>],
-//       contextVisible: [boolean, React.Dispatch<boolean>],
-//       contextX: [number, React.Dispatch<number>],
-//       contextY: [number, React.Dispatch<number>],
-//     ) {
-//       [this.contextRef, this.setContextRef] = contextRef;
-//       [this.contextVisible, this.setContextVisible] = contextVisible;
-//       [this.contextX, this.setContextX] = contextX;
-//       [this.contextY, this.setContextY] = contextY;
-//     // [this.contextRef, this.setContextRef] = useState(null);
-//     // [this.contextVisible, this.setContextVisible] = useState(false);
-//     // [this.contextX, this.setContextX] = useState(0);
-//     // [this.contextY, this.setContextY] = useState(0);
-//   }
-
-//   public show (e: MouseEvent): void {
-//     const t = e.target as HTMLElement;
-//     this.setContextRef(t);
-//     const rc = t?.getBoundingClientRect();
-//     this.setContextX(rc ? e.clientX - rc.left : 0);
-//     this.setContextY(rc ? e.clientY - rc.bottom : 0);
-//     this.setContextVisible(true);
-//   }
-
-//   public conceal (): void {
-//     this.setContextVisible(false);
-//   }
-// }
-
-export const useContextMenuState = (): [ ContextMenuState, IContextMenuApi ]  => {
-  const [state, setState] = useState<ContextMenuState>({
-    contextVisible: false,
-    contextRef: null,
-    contextX: 0,
-    contextY: 0,
-  });
-
-  return [
-    state,
-    {
-      show: e => {
-        const t = e.target as HTMLElement;
-        const rc = t?.getBoundingClientRect();
-        setState({
-          contextVisible:true,
-          contextRef: t,
-          contextX: rc ? e.clientX - rc.left : 0,
-          contextY: rc ? e.clientY - rc.bottom : 0
-        })
-      },
-      conceal: () => {
-        setState({
-          ...state,
-          contextVisible: false
-        })
-      }
-    }
-  ];
-};
-
 type Props = {
   children: ReactNode;
   state: ContextMenuState;
@@ -171,4 +93,40 @@ export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextM
 
 export const ContextMenuSeparator = () => {
   return <div className={localStyles.separator}></div>;
+};
+
+export interface IContextMenuApi {
+  show (e: MouseEvent): void;
+  conceal (): void;
+}
+
+export const useContextMenuState = (): [ ContextMenuState, IContextMenuApi ]  => {
+  const [state, setState] = useState<ContextMenuState>({
+    contextVisible: false,
+    contextRef: null,
+    contextX: 0,
+    contextY: 0,
+  });
+
+  return [
+    state,
+    {
+      show: e => {
+        const t = e.target as HTMLElement;
+        const rc = t?.getBoundingClientRect();
+        setState({
+          contextVisible:true,
+          contextRef: t,
+          contextX: rc ? e.clientX - rc.left : 0,
+          contextY: rc ? e.clientY - rc.bottom : 0
+        })
+      },
+      conceal: () => {
+        setState({
+          ...state,
+          contextVisible: false
+        })
+      }
+    }
+  ];
 };

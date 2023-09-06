@@ -383,7 +383,7 @@ export const MonacoEditor = ({
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
-    const editorLines = editor.current?.getModel().getLineCount() ?? 0;
+    const editorLines = editor.current?.getModel()?.getLineCount() ?? 0;
 
     // --- Iterate through all breakpoins
     bps.forEach(async bp => {

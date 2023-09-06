@@ -170,8 +170,9 @@ export const closeDocumentAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const closeAllDocumentsAction: ActionCreator = () => ({
-  type: "CLOSE_ALL_DOCS"
+export const closeAllDocumentsAction: ActionCreator = (files?: string[]) => ({
+  type: "CLOSE_ALL_DOCS",
+  payload: { files }
 });
 
 export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({

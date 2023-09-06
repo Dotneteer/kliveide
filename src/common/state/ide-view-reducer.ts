@@ -84,27 +84,53 @@ export function ideViewReducer (
           }
         : state;
 
-    case "CLOSE_DOC":
+    case "CLOSE_DOC": {
       const closeIndex = state.openDocuments.findIndex(
         d => d.id === payload.id
       );
       if (closeIndex < 0) return state;
-      const docsAfterRemove = (state.openDocuments ?? []).slice(0);
+      const docsBeforeRemove = state.openDocuments ?? [];
+      const docsAfterRemove = docsBeforeRemove.slice(0);
       docsAfterRemove.splice(closeIndex, 1);
       const newActive =
-        docsAfterRemove.length === 0 ? -1 : Math.max(0, closeIndex - 1);
+        docsAfterRemove.length > 0 ?
+          closeIndex !== state.activeDocumentIndex ?
+            docsAfterRemove.indexOf(docsBeforeRemove[state.activeDocumentIndex])
+            : Math.max(0, closeIndex - 1)
+          : -1;
       return {
         ...state,
         openDocuments: docsAfterRemove,
         activeDocumentIndex: newActive
       };
+    }
 
-    case "CLOSE_ALL_DOCS":
+    case "CLOSE_ALL_DOCS": { // except payload.files
+      if (!payload.files || payload.files.length <= 0) {
+        return {
+          ...state,
+          openDocuments: [],
+          activeDocumentIndex: -1
+        };
+      }
+
+      const docsBeforeRemove = state.openDocuments ?? [];
+      const docsAfterRemove = docsBeforeRemove.filter(
+          doc => payload.files.some(f => f === doc.id)
+        );
+      let newActive = docsAfterRemove.indexOf(docsBeforeRemove[state.activeDocumentIndex]);
+      if (newActive < 0) {
+        const docIds = docsAfterRemove.map(doc => doc.id);
+        newActive = payload.files.map(f => docIds.indexOf(f)).filter(i => i >= 0)[0];
+      }
       return {
         ...state,
-        openDocuments: [],
-        activeDocumentIndex: -1
+        openDocuments: payload.files
+          ? docsAfterRemove
+          : [],
+        activeDocumentIndex: newActive
       };
+    }
 
     case "DOC_MOVE_LEFT": {
       const activeIndex = state.activeDocumentIndex;

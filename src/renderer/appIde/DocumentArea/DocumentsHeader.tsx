@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { ProjectNode } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
-import { DocumentTab } from "./DocumentTab";
+import { CloseMode, DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import styles from "./DocumentsHeader.module.scss";
@@ -257,9 +257,21 @@ export const DocumentsHeader = () => {
   };
 
   // --- Responds to the event when the close button of the tab is clicked
-  const tabCloseClicked = (id: string) => {
-    dispatch(closeDocumentAction(id));
-    documentService.closeDocument(id);
+  const tabCloseClicked = (mode: CloseMode, id: string) => {
+    // dispatch(closeDocumentAction(id));
+    switch (mode) {
+      case CloseMode.All:
+        documentService.closeAllDocuments();
+        break;
+      case CloseMode.Others:
+        documentService.closeAllDocuments(id);
+        // --- Now, activate the document
+        dispatch(activateDocumentAction(id));
+        break;
+      default:
+        documentService.closeDocument(id);
+        break;
+    }
   };
 
   return (docsToDisplay?.length ?? 0) > 0 ? (
@@ -292,7 +304,7 @@ export const DocumentsHeader = () => {
                 tabDisplayed={el => tabDisplayed(idx, el)}
                 tabClicked={() => tabClicked(d.id)}
                 tabDoubleClicked={() => tabDoubleClicked(d, idx)}
-                tabCloseClicked={() => tabCloseClicked(d.id)}
+                tabCloseClicked={(mode: CloseMode) => tabCloseClicked(mode, d.id)}
               />
             );
           })}

@@ -274,14 +274,37 @@ class DocumentService implements IDocumentService {
   /**
    * Closes all open documents
    */
-  closeAllDocuments (): void {
-    this.store.dispatch(closeAllDocumentsAction(), "ide");
+  closeAllDocuments (...except: string[]): void {
+    if (!except || except.length <= 0) {
+      this.store.dispatch(closeAllDocumentsAction(), "ide");
+      for (const doc of this.documentData) {
+        if (doc[1]?.dispose) {
+          doc[1].dispose();
+        }
+      }
+      this.documentData.clear();
+      return;
+    }
+
+    const toDelete = [];
+    const keptIds = [];
     for (const doc of this.documentData) {
+      if (except.some(id => id === doc[0])) {
+        keptIds.push(doc[0]);
+        continue;
+      }
+
+      toDelete.push(doc);
+    }
+
+    this.store.dispatch(closeAllDocumentsAction(keptIds), "ide");
+    for (const doc of toDelete) {
       if (doc[1]?.dispose) {
         doc[1].dispose();
       }
+
+      this.documentData.delete(doc[0]);
     }
-    this.documentData.clear();
   }
 
   /**
