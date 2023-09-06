@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, shell } from "electron";
 import {
   defaultResponse,
   errorResponse,
@@ -259,6 +259,10 @@ export async function processRendererToMainMessages (
           failed: err.toString()
         };
       }
+
+    case "MainShowItemInFolder":
+      shell.showItemInFolder(path.normalize(message.itemPath));
+      break;
 
     case "MainExitApp":
       app.quit();

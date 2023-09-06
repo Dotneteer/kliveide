@@ -44,7 +44,8 @@ import {
   MainSaveBinaryFileRequest,
   MainShowOpenFileDialogResponse,
   MainShowOpenFileDialogRequest,
-  MainSaveFileResponse
+  MainSaveFileResponse,
+  MainShowItemInFolderRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -183,6 +184,7 @@ export type RequestMessage =
   | MainSaveSettingsRequest
   | MainCompileFileRequest
   | MainExitAppRequest
+  | MainShowItemInFolderRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
