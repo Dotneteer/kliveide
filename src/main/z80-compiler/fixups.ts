@@ -8,9 +8,11 @@ import {
   FixupType,
   IEvaluationContext,
   IExpressionValue,
-  IValueInfo
+  IValueInfo,
+  SymbolType
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
+import { SymbolInfoMap } from "./assembly-symbols";
 import { ExpressionEvaluator } from "./expressions";
 
 /**
@@ -18,6 +20,9 @@ import { ExpressionEvaluator } from "./expressions";
  * unresolved symbol value at the end of the compilation
  */
 export class FixupEntry extends ExpressionEvaluator {
+
+  private readonly _symbols: Record<string, IValueInfo>;
+
   constructor (
     public readonly parentContext: IEvaluationContext,
     public readonly module: AssemblyModule,
@@ -30,6 +35,8 @@ export class FixupEntry extends ExpressionEvaluator {
     public readonly structBytes: Map<number, number> | null = null
   ) {
     super();
+    if (expression)
+      this._symbols = FixupEntry.snapshotVars(module);
   }
 
   /**
@@ -65,17 +72,19 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param startFromGlobal Should resolution start from global scope?
    */
   getSymbolValue (symbol: string, startFromGlobal?: boolean): IValueInfo | null {
-    let resolved: IValueInfo;
-    if (startFromGlobal) {
-      // --- Most be a compound symbol
-      resolved = this.module.resolveCompoundSymbol(symbol, true);
-    } else if (symbol.indexOf(".") >= 0) {
-      resolved = this.module.resolveCompoundSymbol(symbol, false);
-      if (resolved === null) {
+    let resolved = this._symbols?.[symbol]
+    if (!resolved) {
+      if (startFromGlobal) {
+        // --- Most be a compound symbol
+        resolved = this.module.resolveCompoundSymbol(symbol, true);
+      } else if (symbol.indexOf(".") >= 0) {
+        resolved = this.module.resolveCompoundSymbol(symbol, false);
+        if (resolved === null) {
+          resolved = this.module.resolveSimpleSymbol(symbol);
+        }
+      } else {
         resolved = this.module.resolveSimpleSymbol(symbol);
       }
-    } else {
-      resolved = this.module.resolveSimpleSymbol(symbol);
     }
     return resolved !== null
       ? resolved
@@ -107,5 +116,17 @@ export class FixupEntry extends ExpressionEvaluator {
       node,
       ...parameters
     );
+  }
+
+  private static snapshotVars(module: AssemblyModule): Record<string, IValueInfo> {
+    let snapshot = module.parentModule ? FixupEntry.snapshotVars(module.parentModule) : {};
+
+    const varsFilter = (s: SymbolInfoMap) => (k: string) => s[k].type === SymbolType.Var;
+    const vars = new Set(Object.keys(module.symbols).filter(varsFilter(module.symbols))
+      .concat(...module.localScopes.map(s => Object.keys(s.symbols).filter(varsFilter(s.symbols)))));
+    for (const v of vars)
+      snapshot[v] = module.resolveSimpleSymbol(v);
+
+    return snapshot;
   }
 }
