@@ -243,4 +243,45 @@ describe("Assembler - fixups", async () => {
       ExpressionValueType.String
     );
   });
+
+  it("val: fixup lifetime discrepancy #1", async () => {
+    await testCodeEmit(
+      `
+        TheProc:
+        .proc
+            value = 1
+            ld HL, fixupVar + value
+            value = value + 1
+            ld HL, fixupVar + value
+        .endp
+        fixupVar:
+        nop
+      `,
+      0x21, 0x07, 0x80, 0x21, 0x08, 0x80, 0x00);
+  });
+
+  it("val: fixup lifetime discrepancy #2", async () => {
+    await testCodeEmit(
+      `
+        TheStruct:
+        .struct
+          Foo: .db 0
+          Bar: .db 0
+        .ends
+        value: .equ 0
+        TheModule:
+        .module
+          TheProc:
+          .proc
+              value = TheStruct
+              ld HL, fixupVar + value
+              value = value + TheStruct
+              ld HL, fixupVar + value
+          .endp
+        .endmodule
+        fixupVar:
+          nop
+      `,
+      0x21, 0x08, 0x80, 0x21, 0x0a, 0x80, 0x00);
+  });
 });
