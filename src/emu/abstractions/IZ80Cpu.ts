@@ -283,6 +283,11 @@ export interface IZ80Cpu {
   tactsAtLastStart: number;
 
   /**
+   * The start address of the operation being executed;
+   */
+  opStartAddress: number;
+
+  /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
   hardReset(): void;

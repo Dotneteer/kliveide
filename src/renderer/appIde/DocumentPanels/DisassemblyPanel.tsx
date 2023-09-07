@@ -65,7 +65,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.
   const [followPc, refPc, setFollowPc] = useUncommittedState(
-    viewState.current.followPc ?? false
+    viewState.current.followPc ?? true
   );
   const [ram, refRam, setRam] = useUncommittedState(
     viewState.current.ram ?? true

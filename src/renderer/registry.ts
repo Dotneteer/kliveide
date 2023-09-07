@@ -41,6 +41,7 @@ import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -115,7 +116,16 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: psgPanelRenderer,
     initialSize: 500,
     restrictTo: ["sp128"]
+  },
+  {
+    id: "necUpd765Panel",
+    title: "NEC UPD 765 Log",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: necUpd765PanelRenderer,
+    initialSize: 500,
+    restrictTo: ["sp128", "spp3e"]
   }
+
 ];
 
 // --- Set up tool panels

@@ -125,7 +125,7 @@ export enum MainStatusRegister {
 
   // --- Data Input/Output
   // --- Indicates direction of data transfer between FDC and data register If DIO = 1, then transfer is from data register to
-  // --- the processor. If DIO = 0, then transfer is from the processor to data register
+  // --- the processor. If DIO = 0, then transfer is from the processor to data register  
   DIO = 0x40,
 
   // --- Request For Master
@@ -316,10 +316,10 @@ export type CommandConfiguration = {
   commandFlow: CommandFlow;
 
   // --- Command operation Read/Write
-  commandOperation: CommandOperation;
+  commandOperation?: CommandOperation;
 
   // --- Command flags
-  commandFlags: CommandFlags;
+  commandFlags? : CommandFlags;
 };
 
 // --- Command common flags

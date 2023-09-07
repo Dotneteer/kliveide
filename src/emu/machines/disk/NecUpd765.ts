@@ -8,6 +8,7 @@ import {
   CommandParameter,
   CommandResultParameter,
   ControllerCommandPhase,
+  DriveSeekState,
   MainStatusRegister,
   StatusRegister0,
   StatusRegister1,
@@ -118,8 +119,6 @@ export class NecUpd765 {
         commandFlow: CommandFlow.Out,
         parameterBytesCount: 0,
         resultBytesCount: 1,
-        commandOperation: CommandOperation.Read,
-        commandFlags: emptyCommandFlags
       },
       {
         commandHandler: this.readDataCommandHandler,
@@ -147,7 +146,23 @@ export class NecUpd765 {
         commandFlow: CommandFlow.Out,
         parameterBytesCount: 8,
         resultBytesCount: 7
-      }
+      },
+      {
+        commandHandler: this.readIdCommandHandler,
+        commandCode: CommandCode.ReadId,
+        commandFlags: { mf: true, mt: false, sk: false },
+        commandOperation: CommandOperation.Read,
+        commandFlow: CommandFlow.Out,
+        parameterBytesCount: 1,
+        resultBytesCount: 7
+      },
+      {
+        commandHandler: this.recalibrateCommandHandler,
+        commandCode: CommandCode.Recalibrate,
+        commandFlow: CommandFlow.Out,
+        parameterBytesCount: 1,
+        resultBytesCount: 0,
+    },
     ];
   }
 
@@ -221,6 +236,13 @@ export class NecUpd765 {
   private clearExecBuffer (): void {
     for (let i = 0; i < this._executionBuffer.length; i++) {
       this._executionBuffer[i] = 0;
+    }
+  }
+
+  // --- Clears the result buffer
+  private clearResultBuffer (): void {
+    for (let i = 0; i < this._resultBuffer.length; i++) {
+      this._resultBuffer[i] = 0;
     }
   }
 
@@ -905,6 +927,158 @@ export class NecUpd765 {
         this._overrunCounter--;
         this._executionBufferCounter--;
 
+        break;
+
+      case ControllerCommandPhase.Result:
+        break;
+    }
+  }
+
+  /// Read ID
+  /// COMMAND:    1 parameter byte
+  /// EXECUTION:  The first correct ID information on the cylinder is stored in the data register
+  /// RESULT:     7 result bytes
+  private readIdCommandHandler (): void {
+    if (!this.activeDrive) {
+      return;
+    }
+
+    switch (this._activePhase) {
+      case ControllerCommandPhase.Idle:
+        break;
+
+      case ControllerCommandPhase.Command:
+        this.pushCommandByteInBuffer();
+
+        // --- Was that the last parameter byte?
+        if (
+          this._commandParameterIndex ===
+          this._activeCommandConfiguration.parameterBytesCount
+        ) {
+          this.driveLightIsOn = true;
+
+          // --- All parameter bytes received
+          this.clearResultBuffer();
+          this.clearStatusRegisters();
+
+          // --- HD should always be 0
+          this.sr0Clear(StatusRegister0.HD);
+
+          if (!this.activeDrive.isReady) {
+            // --- No disk, no tracks, or motor is not on
+            // --- it is at this point the +3 detects whether a disk is present
+            // --- if not (and after another readid and SIS) it will eventually proceed to loading from tape
+            this.sr0Set(StatusRegister0.IC_D6 | StatusRegister0.NR);
+
+            // --- Setup the result buffer
+            this._resultBuffer[CommandResultParameter.ST0] = this._sr0;
+            for (let i = 1; i < 7; i++) {
+              this._resultBuffer[i] = 0;
+            }
+
+            // --- Move to result phase
+            this._activePhase = ControllerCommandPhase.Result;
+            break;
+          }
+
+          const track = this.activeDrive.disk.tracks.find(
+            a => a.trackNo === this.activeDrive.currentTrackId
+          );
+
+          if (track && track.numSectors > 0 && track.trackNo !== 0xff) {
+            // --- Formatted track
+
+            // --- Is the index out of bounds?
+            if (this.activeDrive.sectorIndex >= track.numSectors) {
+              // --- Reset the index
+              this.activeDrive.sectorIndex = 0;
+            }
+
+            if (
+              this.activeDrive.sectorIndex === 0 &&
+              this.activeDrive.disk.tracks[this.activeDrive.currentTrackId]
+                .sectors?.length > 1
+            ) {
+              // --- Looks like readid always skips the first sector on a track
+              this.activeDrive.sectorIndex++;
+            }
+
+            // --- Read the sector data
+            const data = track.sectors[this.activeDrive.sectorIndex];
+            this._resultBuffer[CommandResultParameter.C] = data.trackNo;
+            this._resultBuffer[CommandResultParameter.H] = data.sideNo;
+            this._resultBuffer[CommandResultParameter.R] = data.sectorId;
+            this._resultBuffer[CommandResultParameter.N] = data.sectorSize;
+            this._resultBuffer[CommandResultParameter.ST0] = this._sr0;
+
+            // --- Increment the current sector
+            this.activeDrive.sectorIndex++;
+
+            // --- Is the index out of bounds?
+            if (this.activeDrive.sectorIndex >= track.numSectors) {
+              // --- Reset the index
+              this.activeDrive.sectorIndex = 0;
+            }
+          } else {
+            // --- Unformatted track?
+            this.commitResultCHRN();
+
+            this.sr0Set(StatusRegister0.IC_D6);
+            this._resultBuffer[CommandResultParameter.ST0] = this._sr0;
+            this._resultBuffer[CommandResultParameter.ST1] = 0x01;
+          }
+
+          this._activePhase = ControllerCommandPhase.Result;
+        }
+
+        break;
+
+      case ControllerCommandPhase.Execution:
+        break;
+
+      case ControllerCommandPhase.Result:
+        break;
+    }
+  }
+
+  /// Recalibrate (seek track 0)
+  /// COMMAND:    1 parameter byte
+  /// EXECUTION:  Head retracted to track 0
+  /// RESULT:     NO result phase
+  private recalibrateCommandHandler (): void {
+    if (!this.activeDrive) {
+      return;
+    }
+
+    switch (this._activePhase) {
+      case ControllerCommandPhase.Idle:
+        break;
+
+      case ControllerCommandPhase.Command:
+        this.pushCommandByteInBuffer();
+
+        // --- Was that the last parameter byte?
+        if (
+          this._commandParameterIndex ===
+          this._activeCommandConfiguration.parameterBytesCount
+        ) {
+          // --- All parameter bytes received
+          this.driveLightIsOn = true;
+          this._activePhase = ControllerCommandPhase.Execution;
+          this._activeCommandConfiguration.commandHandler();
+        }
+        break;
+
+      case ControllerCommandPhase.Execution:
+        // --- Immediate recalibration
+        this.activeDrive.trackIndex = 0;
+        this.activeDrive.sectorIndex = 0;
+
+        // --- Set seek flag
+        this.activeDrive.seekStatus = DriveSeekState.Recalibrate;
+
+        // skip execution mode and go directly to idle result is determined by SIS command
+        this._activePhase = ControllerCommandPhase.Idle;
         break;
 
       case ControllerCommandPhase.Result:

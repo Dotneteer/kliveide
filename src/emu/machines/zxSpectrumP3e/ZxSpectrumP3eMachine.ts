@@ -18,6 +18,8 @@ import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrum128PsgDevice } from "../zxSpectrum128/ZxSpectrum128PsgDevice";
 import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
+import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -48,6 +50,11 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
    * Represents the PSG device of ZX Spectrum +3E
    */
   psgDevice: IPsgDevice;
+
+  /**
+   * Represents the floppy controller device
+   */
+  floppyDevice: IFloppyControllerDevice;
 
   /**
    * Initialize the machine
@@ -85,6 +92,7 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
     );
     this.beeperDevice = new BeeperDevice(this);
     this.psgDevice = new ZxSpectrum128PsgDevice(this);
+    this.floppyDevice = new FloppyControllerDevice(this);
     this.floatingBusDevice = new ZxSpectrumP3eFloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
     this.reset();
@@ -109,6 +117,7 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
     this.psgDevice?.dispose();
+    this.floppyDevice?.dispose();
     this.floatingBusDevice?.dispose();
     this.tapeDevice?.dispose();
   }
@@ -164,6 +173,7 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
       this.beeperDevice.setAudioSampleRate(audioRate);
       this.psgDevice.setAudioSampleRate(audioRate);
     }
+    this.floppyDevice.reset();
     this.floatingBusDevice.reset();
     this.tapeDevice.reset();
 
@@ -399,15 +409,15 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
     }
 
     // --- Handle reading the FDC main status register port
-    if ((address & 0xffff) === 0x2ffd) {
-      // TODO: Implement this port
-      return 0xff;
+    if ((address & 0xf002) === 0x2000) {
+      console.log(`READ MSR`, this.pc);
+      return this.floppyDevice.readMainStatusRegister();
     }
 
     // --- Handle reading the FDC data port
-    if ((address & 0xffff) === 0x3ffd) {
-      // TODO: Implement this port
-      return 0xff;
+    if ((address & 0xf002) === 0x3000) {
+      console.log(`READ DR`);
+      return this.floppyDevice.readDataRegister();
     }
 
     return this.floatingBusDevice.readFloatingBus();
@@ -493,8 +503,9 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
     }
 
     // --- Test for the floppy controller port
-    if ((address & 0xffff) == 0x3fff) {
-      // TODO:Implement write to the FDC port
+    if ((address & 0xf002) == 0x3000) {
+      this.floppyDevice.writeDataRegister(value);
+      console.log(this.floppyDevice.getLogEntries());
     }
   }
 
@@ -565,6 +576,9 @@ export class ZxSpectrumP3eMachine extends ZxSpectrumBase {
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
     this.psgDevice.onNewFrame();
+
+    // --- Handle floppy events
+    this.floppyDevice.onFrameCompleted();
   }
 
   /**
