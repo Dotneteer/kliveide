@@ -119,7 +119,6 @@ type EditorProps = {
 export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
-  const previousContent = useRef<string>();
   const unsavedChangeCounter = useRef(0);
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
@@ -291,12 +290,11 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     _: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
+    // -- Ignore any document changes if we are in deactivation state
+    if (deactivationStateRef.current) return;
+
     // --- Now, make this document permanent
     projectService.setPermanent(document.id);
-
-    // --- Save the current value as the previous one. We need it to detect line changes
-    // --- to update source code breakpoints
-    previousContent.current = editor.current.getValue();
 
     // --- Does the editor support breakpoints?
     if (languageInfo?.supportsBreakpoints) {
@@ -304,8 +302,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (e.changes.length > 0) {
         // --- Get the text that has been deleted
         const change = e.changes[0];
-        const deletedText = monacoEditor.editor
-          .createModel(previousContent.current)
+        const deletedText = editor.current
+          .getModel()
           .getValueInRange(change.range);
         const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || [])
           .length;
@@ -378,7 +376,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // --- document as a result of deactivating it
     if (
       unsavedChangeCounter.current === 1 &&
-      previousContent.current &&
       !deactivationStateRef.current
     ) {
       saveDocumentPromise.current = saveDocument();
