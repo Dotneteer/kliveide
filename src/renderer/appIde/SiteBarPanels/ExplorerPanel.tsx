@@ -30,10 +30,7 @@ import {
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
-import {
-  displayDialogAction,
-  setBuildRootAction
-} from "@state/actions";
+import { displayDialogAction, setBuildRootAction } from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
@@ -41,8 +38,12 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
-import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
+import {
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  NEW_PROJECT_DIALOG
+} from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
+import { delay } from "@renderer/utils/timing";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -51,8 +52,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { messenger } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, ideCommandsService, documentHubService } = useAppServices();
-  const documentService = documentHubService.getActiveDocumentService();
+  const { projectService, ideCommandsService } = useAppServices();
+  const documentHubService = projectService.getActiveDocumentHubService();
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
@@ -70,13 +71,13 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const { folderPath, excludedItems } = useSelector(s => ({
-    folderPath: s.project?.folderPath,
-    excludedItems: s.project?.excludedItems
-  }));
+  const folderPath = useSelector(s => s.project?.folderPath);
+  const excludedItems = useSelector(s => s.project?.excludedItems);
   const isKliveProject = useSelector(s => s.project?.isKliveProject);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
-  const hasExcludedItems = useSelector(s => s.project?.excludedItems?.length > 0);
+  const hasExcludedItems = useSelector(
+    s => s.project?.excludedItems?.length > 0
+  );
 
   // --- State and helpers for the selected node's context menu
   const [selectedContextNode, setSelectedContextNode] =
@@ -233,21 +234,13 @@ const ExplorerPanel = () => {
           }
         } else {
           // --- Succesfully renamed
-          const oldId = selectedContextNode.data.fullPath;
-          const fileTypeEntry = getFileTypeEntry(newFullName);
-          selectedContextNode.data.icon = fileTypeEntry?.icon;
-
-          // TODO: Manage editor type change
-          // --- Change the properties of the renamed node
-          selectedContextNode.data.fullPath = newFullName;
-          selectedContextNode.data.name = newName;
-          selectedContextNode.parentNode.sortChildren((a, b) =>
-            compareProjectNode(a.data, b.data)
+          projectService.renameDocument(
+            selectedContextNode.data.fullPath,
+            newFullName
           );
 
           // --- Refresh the tree and notify other objects listening to a rename
           refreshTree();
-          projectService.signItemRenamed(oldId, selectedContextNode);
 
           // --- Make sure the selected node is displayed
           const newIndex = tree.findIndex(selectedContextNode);
@@ -357,6 +350,14 @@ const ExplorerPanel = () => {
           if (newIndex >= 0) {
             setSelected(newIndex);
           }
+
+          setTimeout(async () => {
+            if (!newNode.data.isFolder) {
+              await ideCommandsService.executeCommand(
+                `nav ${newNode.data.fullPath}`
+              );
+            }
+          }, 0);
         }
       }}
       onClose={() => {
@@ -386,22 +387,26 @@ const ExplorerPanel = () => {
             setSelected(idx);
           }
         }}
-        onClick={() => {
+        onClick={async () => {
           node.isExpanded = !node.isExpanded;
           tree.buildIndex();
           setVisibleNodes(tree.getVisibleNodes());
 
           if (!node.data.isFolder) {
-            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(
+              `nav ${node.data.fullPath}`
+            );
           }
         }}
-        onDoubleClick={() => {
+        onDoubleClick={async () => {
           if (node.data.isFolder) return;
-          if (documentService.isOpen(node.data.fullPath)) {
-            documentService.setActiveDocument(node.data.fullPath);
-            documentService.setPermanent(node.data.fullPath);
+          if (documentHubService.isOpen(node.data.fullPath)) {
+            await documentHubService.setActiveDocument(node.data.fullPath);
+            projectService.setPermanent(node.data.fullPath);
           } else {
-            ideCommandsService.executeCommand(`nav ${node.data.fullPath}`);
+            await ideCommandsService.executeCommand(
+              `nav ${node.data.fullPath}`
+            );
           }
         }}
       >
@@ -437,21 +442,22 @@ const ExplorerPanel = () => {
         <span className={styles.name}>{node.data.name}</span>
         <div className={styles.indent} style={{ width: 8 }}></div>
         <SpaceFiller />
-        {isRoot && isKliveProject &&
-          hasExcludedItems && (
-            <div className={styles.iconRight}
-              onClick={e => {
-                e.stopPropagation();
-                dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
-              }}>
-              <Icon
-                xclass={styles.actionButton}
-                iconName='exclude'
-                width={16}
-                height={16}
-              />
-            </div>
-          )}
+        {isRoot && isKliveProject && hasExcludedItems && (
+          <div
+            className={styles.iconRight}
+            onClick={e => {
+              e.stopPropagation();
+              dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
+            }}
+          >
+            <Icon
+              xclass={styles.actionButton}
+              iconName='exclude'
+              width={16}
+              height={16}
+            />
+          </div>
+        )}
         {!node.data.isFolder &&
           buildRoots.indexOf(node.data.projectPath) >= 0 && (
             <div className={styles.iconRight}>
@@ -467,14 +473,43 @@ const ExplorerPanel = () => {
     );
   };
 
-  // --- Remove the last explorer tree from the cache when closing the folder
+  // --- Set up the project service to handle project events
   useEffect(() => {
+    // --- Remove the last explorer tree from the cache when closing the folder
     const projectClosed = () => {
       if (lastExplorerPath) folderCache.delete(lastExplorerPath);
     };
+
+    // --- Close deleted items in all document hubs
+    const itemDeleted = (node: ITreeNode<ProjectNode>) => {
+      const docId = node.data.fullPath;
+      const deletedDoc = projectService.getDocumentById(docId);
+      if (deletedDoc?.usedIn) {
+        deletedDoc.usedIn.forEach(docHub => docHub.closeDocument(docId));
+      }
+    };
+
+    // --- Rename the renamed item in all document hubs
+    const itemRenamed = (info: {
+      oldName: string;
+      node: ITreeNode<ProjectNode>;
+    }) => {
+      const docId = info.node.data.fullPath;
+      const renamedDoc = projectService.getDocumentById(docId);
+      if (renamedDoc?.usedIn) {
+        renamedDoc.usedIn.forEach(docHub =>
+          docHub.renameDocument(info.oldName, info.node.data.fullPath)
+        );
+      }
+    };
+
     projectService.projectClosed.on(projectClosed);
+    projectService.itemDeleted.on(itemDeleted);
+    projectService.itemRenamed.on(itemRenamed);
     return () => {
       projectService.projectClosed.off(projectClosed);
+      projectService.itemDeleted.off(itemDeleted);
+      projectService.itemRenamed.off(itemRenamed);
     };
   }, [projectService]);
 

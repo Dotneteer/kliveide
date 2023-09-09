@@ -28,7 +28,8 @@ import {
   closeFolderAction,
   displayDialogAction,
   setIdeFontSizeAction,
-  dimMenuAction
+  dimMenuAction,
+  setVolatileDocStateAction
 } from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -36,11 +37,6 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
-import {
-  BASIC_PANEL_ID,
-  DISASSEMBLY_PANEL_ID,
-  MEMORY_PANEL_ID
-} from "../common/state/common-ids";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -50,6 +46,7 @@ import {
 } from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
+import { BASIC_PANEL_ID, DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../common/state/common-ids";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -79,8 +76,6 @@ const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 const SHOW_IDE_WINDOW = "show_ide_window";
 
 const MACHINE_TYPES = "machine_types";
-const MACHINE_SP48 = "machine_sp48";
-const MACHINE_SP128 = "machine_sp128";
 const START_MACHINE = "start";
 const PAUSE_MACHINE = "pause";
 const STOP_MACHINE = "stop";
@@ -114,10 +109,10 @@ export function setupMenu (
   const appState = mainStore.getState();
   const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
-  const openDocs = appState?.ideView?.openDocuments;
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const buildRoot = appState?.project?.buildRoots?.[0];
+  const volatileDocs = appState?.ideView?.volatileDocs ?? {};
 
   /**
    * Application system menu on MacOS
@@ -626,13 +621,6 @@ export function setupMenu (
     });
   }
 
-  // --- Prepare the IDE menu
-  const memoryDisplayed = !!openDocs.find(d => d.id === MEMORY_PANEL_ID);
-  const disassemblyDisplayed = !!openDocs.find(
-    d => d.id === DISASSEMBLY_PANEL_ID
-  );
-  const basicDisplayed = !!openDocs.find(d => d.id === BASIC_PANEL_ID);
-
   // --- Font size option
   const editorFontOptions = [
     {
@@ -680,24 +668,36 @@ export function setupMenu (
         id: IDE_SHOW_MEMORY,
         label: "Show Machine Memory",
         type: "checkbox",
-        checked: memoryDisplayed,
+        checked: volatileDocs[MEMORY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowMemory",
-            show: !memoryDisplayed
+            show: !volatileDocs[MEMORY_PANEL_ID]
           });
+          mainStore.dispatch(
+            setVolatileDocStateAction(
+              MEMORY_PANEL_ID,
+              !volatileDocs[MEMORY_PANEL_ID]
+            )
+          );
         }
       },
       {
         id: IDE_SHOW_DISASSEMBLY,
         label: "Show Z80 Disassembly",
         type: "checkbox",
-        checked: disassemblyDisplayed,
+        checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowDisassembly",
-            show: !disassemblyDisplayed
+            show: !volatileDocs[DISASSEMBLY_PANEL_ID]
           });
+          mainStore.dispatch(
+            setVolatileDocStateAction(
+              DISASSEMBLY_PANEL_ID,
+              !volatileDocs[DISASSEMBLY_PANEL_ID]
+            )
+          );
         }
       },
       { type: "separator" },
@@ -705,12 +705,18 @@ export function setupMenu (
         id: IDE_SHOW_BASIC,
         label: "Show BASIC Listing",
         type: "checkbox",
-        checked: basicDisplayed,
+        checked: volatileDocs[BASIC_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
             type: "IdeShowBasic",
-            show: !basicDisplayed
+            show: !volatileDocs[BASIC_PANEL_ID]
           });
+          mainStore.dispatch(
+            setVolatileDocStateAction(
+              BASIC_PANEL_ID,
+              !volatileDocs[BASIC_PANEL_ID]
+            )
+          );
         }
       },
       { type: "separator" },
@@ -737,7 +743,7 @@ export function setupMenu (
   if (__DARWIN__) {
     const windowFocused = emuWindow.isFocused() ? emuWindow : ideWindow;
     template.forEach(templateTransform(windowFocused));
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   } else {
     if (emuWindow) {
       template.forEach(templateTransform(emuWindow));

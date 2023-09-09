@@ -1,7 +1,6 @@
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
-import { Token } from "../services/command-parser";
 import { IdeCommandBase } from "../services/ide-commands";
 
 /**

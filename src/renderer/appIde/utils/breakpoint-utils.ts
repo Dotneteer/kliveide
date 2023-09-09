@@ -3,10 +3,6 @@ import {
   BreakpointInfo
 } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import { MessageBase } from "@common/messaging/messages-core";
-import { Store } from "@common/state/redux-light";
-import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import {
   reportMessagingError,
   reportUnexpectedMessageType

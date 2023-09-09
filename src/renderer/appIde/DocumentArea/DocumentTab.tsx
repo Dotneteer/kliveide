@@ -23,6 +23,7 @@ type Props = {
   isReadOnly?: boolean;
   isTemporary?: boolean;
   awaiting?: boolean;
+  tabsCount?: number;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
   tabDoubleClicked?: () => void;
@@ -41,6 +42,7 @@ export const DocumentTab = ({
   iconFill = "--color-doc-icon",
   isActive = false,
   awaiting = false,
+  tabsCount,
   tabDisplayed,
   tabClicked,
   tabDoubleClicked,
@@ -77,6 +79,7 @@ export const DocumentTab = ({
       />
       <ContextMenuItem
         text='Close Others'
+        disabled={tabsCount < 2}
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.Others);
@@ -106,7 +109,10 @@ export const DocumentTab = ({
   return (
     <div
       ref={ref}
-      className={classnames(styles.documentTab, { [styles.active]: isActive, [styles.awaiting]: awaiting })}
+      className={classnames(styles.documentTab, {
+        [styles.active]: isActive,
+        [styles.awaiting]: awaiting
+      })}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onClick={e => { if (e.button === 0) tabClicked?.(); }}

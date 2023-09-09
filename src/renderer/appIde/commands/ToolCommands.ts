@@ -8,7 +8,6 @@ import {
   writeSuccessMessage
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
 import { outputPaneRegistry } from "@renderer/registry";
 import { activateOutputPaneAction, activateToolAction } from "@state/actions";
 

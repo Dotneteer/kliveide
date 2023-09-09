@@ -42,8 +42,9 @@ export function TabButton ({
         })}
         onMouseDown={() => setKeyDown(true)}
         onMouseLeave={() => setKeyDown(false)}
-        onClick={() => {
+        onClick={(e) => {
           if (!disabled) {
+            e.stopPropagation();
             clicked?.();
             setKeyDown(false);
           }

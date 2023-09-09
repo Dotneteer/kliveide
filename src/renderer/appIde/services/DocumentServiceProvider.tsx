@@ -1,21 +1,43 @@
-import { createContext, useContext, useRef } from "react";
-import { IDocumentService } from "@renderer/abstractions/IDocumentService";
+import { createContext, useContext, useEffect, useState } from "react";
+import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
+import { useStore } from "@renderer/core/RendererProvider";
 
-const DocumentServiceContext = createContext<IDocumentService>(undefined);
+const DocumentHubServiceContext = createContext<IDocumentHubService>(undefined);
 
-export function useDocumentService (): IDocumentService {
-  return useContext(DocumentServiceContext)!;
+export function useDocumentHubService (): IDocumentHubService {
+  return useContext(DocumentHubServiceContext)!;
+}
+
+export function useDocumentHubServiceVersion(hub?: IDocumentHubService): number {
+  hub ??= useContext(DocumentHubServiceContext)!;
+  const store = useStore();
+  const storeState = store.getState();
+  const [state, setState] = useState(storeState?.ideView?.documentHubState?.[hub?.hubId]);
+
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      const storeState = store.getState();
+      if (!storeState) return;
+
+      const newVersion = storeState.ideView?.documentHubState?.[hub?.hubId];
+      setState(newVersion);
+    });
+
+    return () => unsubscribe();
+  }, [store]);
+
+  return state;
 }
 
 type Props = {
-  value: IDocumentService;
+  value: IDocumentHubService;
   children?: React.ReactNode;
 };
 
-export function DocumentServiceProvider ({ value, children }: Props) {
+export function DocumentHubServiceProvider ({ value, children }: Props) {
   return (
-    <DocumentServiceContext.Provider value={value}>
+    <DocumentHubServiceContext.Provider value={value}>
       {children}
-    </DocumentServiceContext.Provider>
+    </DocumentHubServiceContext.Provider>
   );
 }

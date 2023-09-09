@@ -43,7 +43,7 @@ export const lightTheme: ThemeProperties = {
   // --- Context menu
   "--bgcolor-context-menu": "#d8d8d8",
   "--color-context-item": "#414141",
-  "--color-context-item-dangerous": "#c50f1f",
+  "--color-context-item-dangerous": "#cd3131",
   "--color-context-item-disabled": "#a0a0a0",
   "--bgcolor-context-item-pointed": "#007acc",
   "--color-context-item-pointed": "#ffffff",

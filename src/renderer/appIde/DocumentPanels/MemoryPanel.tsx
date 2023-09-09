@@ -24,7 +24,7 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -37,8 +37,16 @@ type MemoryViewState = {
 };
 
 const MemoryPanel = ({ document }: DocumentProps) => {
+  // --- Get the services used in this component
+  const dispatch = useDispatch();
+  const { messenger } = useRendererContext();
+  const documentHubService = useDocumentHubService();
+
   // --- Read the view state of the document
-  const viewState = useRef((document.stateValue as MemoryViewState) ?? {});
+  const viewState = useRef(
+    (documentHubService.getDocumentViewState(document.id) as MemoryViewState) ??
+      {}
+  );
   const topAddress = useRef(
     (viewState.current?.topAddress ?? 0) *
       (viewState.current?.twoColumns ?? true ? 2 : 1)
@@ -48,11 +56,6 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
-
-  // --- Get the services used in this component
-  const dispatch = useDispatch();
-  const { messenger } = useRendererContext();
-  const documentService = useDocumentService();
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -252,7 +255,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
       romSelected: refRomPage.current,
       ramSelected: refRamBank.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (
@@ -400,5 +403,5 @@ const MemoryPanel = ({ document }: DocumentProps) => {
 };
 
 export const createMemoryPanel = ({ document }: DocumentProps) => (
-  <MemoryPanel document={document} apiLoaded={() => {}}/>
+  <MemoryPanel document={document} apiLoaded={() => {}} />
 );

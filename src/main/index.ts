@@ -28,7 +28,6 @@ import {
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
-  setAppPathAction,
   unloadWindowsAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
@@ -206,29 +205,32 @@ async function createAppWindows () {
     if (loaded && !machineTypeInitialized) {
       // --- Set the default machine type to ZX Spectrum 48
       machineTypeInitialized = true;
-      await setMachineType("sp128");
+      await setMachineType("sp48");
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
-
-      // --- Sign the application path
-      mainStore.dispatch(setAppPathAction(app.getAppPath()));
     }
 
     // --- Adjust menu items whenever the app state changes
     setupMenu(emuWindow, ideWindow);
   });
 
-  // --- Load the contents of the browser windows
+  // --- We use a little hack here. We pass the application path value in the query parameter
+  // --- of the URL we pass to the browser windows. The IDE window will use this parameter to
+  // --- initialize the Monaco editor as soon as the IDE app starts.
+  const appPathParam = `&apppath=${encodeURI(app.getAppPath())}`;
+
+  // --- Load the contents of the browser windows. Observe, we pass the application path parameter
+  // --- to all URLs.
   if (process.env.VITE_DEV_SERVER_URL) {
-    emuWindow.loadURL(emuDevUrl);
-    ideWindow.loadURL(ideDevUrl);
+    emuWindow.loadURL(emuDevUrl + appPathParam);
+    ideWindow.loadURL(ideDevUrl + appPathParam);
   } else {
     emuWindow.loadFile(indexHtml, {
-      search: EMU_QP
+      search: EMU_QP + appPathParam
     });
     ideWindow.loadFile(indexHtml, {
-      search: IDE_QP
+      search: IDE_QP + appPathParam
     });
   }
   if (maximizeIde) {

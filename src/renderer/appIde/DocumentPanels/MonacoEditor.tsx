@@ -7,10 +7,8 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { CodeDocumentState } from "../services/DocumentService";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import {
   reportMessagingError,
   reportUnexpectedMessageType
@@ -27,17 +25,24 @@ import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { incBreakpointsVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
+import {
+  useDocumentHubServiceVersion
+} from "../services/DocumentServiceProvider";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { delay } from "@renderer/utils/timing";
-import { useDocumentService } from "../services/DocumentServiceProvider";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
+const DELAY_SLOT = 50;
 
 let monacoInitialized = false;
 
+// --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
 
+// --- We need to invoke this function while initializing the app. This is required to
+// --- render the Monaco editor with the supported language syntax highlighting.
 export async function initializeMonaco (appPath: string) {
   loader.config({
     paths: {
@@ -98,40 +103,42 @@ export async function initializeMonaco (appPath: string) {
   }
 }
 
+// --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
-}
+};
 
+// --- Monaco editor component properties
 type EditorProps = {
-  document: DocumentInfo;
+  document: ProjectDocumentState;
   value: string;
-  viewState?: monacoEditor.editor.ICodeEditorViewState;
   apiLoaded?: (api: EditorApi) => void;
 };
 
-export const MonacoEditor = ({
-  document,
-  value,
-  viewState,
-  apiLoaded
-}: EditorProps) => {
-  const { theme } = useTheme();
-  const { store, messenger } = useRendererContext();
-  const { projectService } = useAppServices();
-  const documentService = useDocumentService();
-  const [vsTheme, setVsTheme] = useState("");
+// --- This component wraps the Monaco editor
+export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
+  // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
-  const monaco = useRef<typeof monacoEditor>(null);
-  const isBusy = useRef(false);
-  const docActivationVersion = useSelector(
-    s => s.ideView?.documentActivationVersion
-  );
   const previousContent = useRef<string>();
   const unsavedChangeCounter = useRef(0);
+
+  // --- Recognize app theme changes and update Monaco editor theme accordingly
+  const { theme } = useTheme();
+  const [monacoTheme, setMonacoTheme] = useState("");
+
+  // --- Respond to editor font size change requests
   const editorFontSize = useSelector(
     s => s.ideViewOptions?.editorFontSize ?? 12
   );
 
+  // --- We use these services to respond to various IDE events
+  const { store, messenger } = useRendererContext();
+  const { projectService } = useAppServices();
+
+  // --- Recognize if something changed in the current document hub
+  const hubVersion = useDocumentHubServiceVersion();
+
+  // --- Use these state variables to manage breakpoinst and their changes
   const breakpointsVersion = useSelector(
     s => s.emulatorState.breakpointsVersion
   );
@@ -139,40 +146,58 @@ export const MonacoEditor = ({
   const compilation = useSelector(s => s.compilation);
   const execState = useSelector(s => s.emulatorState?.machineState);
 
+  // --- Store Monaco editor decorations to display breakpoint information
   const oldDecorations = useRef<string[]>([]);
   const oldHoverDecorations = useRef<string[]>([]);
   const oldExecPointDecoration = useRef<string[]>([]);
 
-  const resourceName = document.node?.data?.projectPath;
+  // --- The name of the resource this editor displays
+  const resourceName = document.node?.projectPath;
+
+  // --- The language to use with Monaco editor for syntax highlighting
   const languageInfo = customLanguagesRegistry.find(
     l => l.id === document.language
   );
 
-  // --- Set the editor focus, whenever the activation version changes
-  useLayoutEffect(() => {
+  // --- Recognize document actiovation to restore the previous document state
+  const [activationVersion, setActivationVersion] = useState(0);
+
+  // --- Sign that the editor is ready for deactivations or keep the deactivation promise
+  const deactivationStateRef = useRef(null);
+  const saveDocumentPromise = useRef<Promise<void>>(null);
+
+  // --- Focus on document activation
+  useEffect(() => {
     requestAnimationFrame(() => {
       editor.current?.focus();
     });
+  }, [activationVersion]);
+
+  // --- Refresh breakpoints whenever the documentation hub is refreshed
+  useLayoutEffect(() => {
     if (editor.current) {
       refreshBreakpoints();
       refreshCurrentBreakpoint();
     }
-  }, [docActivationVersion]);
+  }, [hubVersion]);
 
   // --- Respond to theme changes
   useEffect(() => {
-    // --- Set the theme according to the document language
+    // --- Set the Monaco editor theme according to the document language
     const languageInfo = customLanguagesRegistry.find(
       l => l.id === document.language
     );
+
+    // --- Default theme name according to the Klive theme's tone
     let themeName = theme.tone === "light" ? "vs" : "vs-dark";
     if (
       (languageInfo?.lightTheme && theme.tone === "light") ||
       (languageInfo?.darkTheme && theme.tone === "dark")
     ) {
+      // --- The custom language supports the current theme
       themeName = `${languageInfo.id}-${theme.tone}`;
     }
-    setVsTheme(themeName);
+    setMonacoTheme(themeName);
   }, [theme, document.language]);
 
   // --- Respond to editor font size changes
@@ -191,24 +216,14 @@ export const MonacoEditor = ({
   // --- Initializes the editor when mounted
   const onMount = (
     ed: monacoEditor.editor.IStandaloneCodeEditor,
-    mon: typeof monacoEditor
+    _: typeof monacoEditor
   ): void => {
+    // --- Restore the view state to display the editor is it has been left
     editor.current = ed;
-    monaco.current = mon;
-    if (viewState) {
-      ed.restoreViewState(viewState);
-    }
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
     disposables.push(
-      ed.onDidBlurEditorText(saveDocumentState),
-      ed.onDidBlurEditorWidget(saveDocumentState),
-      ed.onDidChangeCursorPosition(saveDocumentState),
-      ed.onDidChangeCursorSelection(saveDocumentState),
-      ed.onDidChangeHiddenAreas(saveDocumentState),
-      ed.onDidFocusEditorText(saveDocumentState),
-      ed.onDidFocusEditorWidget(saveDocumentState),
       ed.onMouseDown(handleEditorMouseDown),
       ed.onMouseLeave(handleEditorMouseLeave),
       ed.onMouseMove(handleEditorMouseMove)
@@ -216,8 +231,21 @@ export const MonacoEditor = ({
 
     // --- Create the API
     const editorApi: EditorApi = {
-      saveDocumentState: () => saveDocument(),
-      isBusy: () => isBusy.current,
+      // --- Sign the editor is ready for disposal when it already saved its state
+      readyForDisposal: () => deactivationStateRef.current?.ready === true,
+
+      // --- Before disposing the document, save its state
+      beforeDocumentDisposal: async () => {
+        let deactivationState = deactivationStateRef.current;
+        if (deactivationState?.ready) return;
+        // --- A cooperative saving approach
+        if (!deactivationState) {
+          deactivationState = (saveDocumentPromise.current ?? saveDocument())
+            .finally(() => (deactivationStateRef.current = { ready: true }));
+          deactivationStateRef.current = deactivationState;
+        }
+        await deactivationState;
+      },
 
       // --- Editor API specific
       setPosition: (lineNumber: number, column: number) => {
@@ -228,46 +256,46 @@ export const MonacoEditor = ({
         });
       }
     };
+
+    // --- Pass back the API so that the document ub service can use it
     apiLoaded?.(editorApi);
 
-    // --- Dispose event handlers
+    // --- Dispose event handlers when the editor is about to dispose
     editor.current.onDidDispose(() => {
       disposables.forEach(d => d.dispose());
     });
 
+    // --- Show breakpoinst and other decorations when initially displaying the editor
     refreshBreakpoints();
     refreshCurrentBreakpoint();
+
+    // --- Sign the document has been activated (again)
+    setActivationVersion(activationVersion + 1);
   };
 
-  // --- Saves the document state
-  const saveDocumentState = () => {
-    const data: CodeDocumentState = {
-      value: editor.current.getValue(),
-      viewState: editor.current.saveViewState()
-    };
-    documentService.setDocumentData(document.id, data);
-  };
-
-  // Saves the document to its file
+  // --- Saves the document to the project item cache and into its file
   const saveDocument = async (): Promise<void> => {
-    if (!editor.current) return;
-    isBusy.current = true;
-    try {
-      await projectService.saveFileContent(document.id, editor.current.getModel().getValue())
-    } finally {
-      isBusy.current = false;
-    }
+    if (!editor.current || document.isReadOnly
+      || document.savedVersionCount === document.editVersionCount) return;
+
+    // // --- Save the contents back to the document instance
+    document.contents = editor.current.getModel()?.getValue();
+
+    // // --- Now, save it back to the file
+    await projectService.saveFileContent(document.id, document.contents);
+    document.savedVersionCount = document.editVersionCount;
   };
 
   // --- Handle document changes
   const onValueChanged = async (
-    val: string,
+    _: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
     // --- Now, make this document permanent
-    documentService.setPermanent(document.id);
+    projectService.setPermanent(document.id);
 
-    // --- Save the current value as the previous one
+    // --- Save the current value as the previous one. We need it to detect line changes
+    // --- to update source code breakpoints
     previousContent.current = editor.current.getValue();
 
     // --- Does the editor support breakpoints?
@@ -326,7 +354,7 @@ export const MonacoEditor = ({
         const response = await messenger.sendMessage({
           type: "EmuNormalizeBreakpoints",
           resource: resourceName,
-          lineCount: editor.current.getModel().getLineCount()
+          lineCount: editor.current.getModel()?.getLineCount() ?? -1
         });
         if (response.type === "ErrorResponse") {
           reportMessagingError(
@@ -337,14 +365,32 @@ export const MonacoEditor = ({
     }
 
     // --- Save document after the change (with delay)
+    // --- Change reference counter to recognize new changes while we delay the save operation
     unsavedChangeCounter.current++;
-    await new Promise(r => setTimeout(r, SAVE_DEBOUNCE));
-    if (unsavedChangeCounter.current === 1 && previousContent.current) {
-      await saveDocument();
+    document.editVersionCount++;
+    let waiting = 0;
+    while (waiting < SAVE_DEBOUNCE && !deactivationStateRef.current) {
+      await delay(DELAY_SLOT);
+      waiting += DELAY_SLOT;
     }
+
+    // --- We have SAVE_DEBOUNCE milliseconds left after the last change and not saved the
+    // --- document as a result of deactivating it
+    if (
+      unsavedChangeCounter.current === 1 &&
+      previousContent.current &&
+      !deactivationStateRef.current
+    ) {
+      saveDocumentPromise.current = saveDocument();
+      await saveDocumentPromise.current;
+      saveDocumentPromise.current = null;
+    }
+
+    // --- Decrements the change reference counter indicating that we processed the last change
     unsavedChangeCounter.current--;
   };
 
+  // --- render the editor when monaco has been initialized
   return monacoInitialized ? (
     <AutoSizer>
       {({ width, height }) => (
@@ -359,8 +405,10 @@ export const MonacoEditor = ({
           height={height}
           key={document.id}
           language={document.language}
-          theme={vsTheme}
+          theme={monacoTheme}
           value={value}
+          path={document.id}
+          keepCurrentModel={true}
           onMount={onMount}
           onChange={onValueChanged}
         />
@@ -374,6 +422,9 @@ export const MonacoEditor = ({
    * @param compilation Current compilations
    */
   async function refreshBreakpoints (): Promise<void> {
+    // --- Do not execute it on a deactivated document
+    if (deactivationStateRef.current) return;
+
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
@@ -491,8 +542,7 @@ export const MonacoEditor = ({
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        bp =>
-          bp.resource === document.node?.data?.projectPath && bp.line === lineNo
+        bp => bp.resource === document.node?.projectPath && bp.line === lineNo
       );
       (async () => {
         if (existingBp) {

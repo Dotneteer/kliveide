@@ -86,41 +86,49 @@ const CpuPanel = () => {
               value={toFlag(cpuState?.af, 7)}
               width={FLAG_WIDTH}
               tooltip='Sign'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 6)}
               width={FLAG_WIDTH}
               tooltip='Zero'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 5)}
               width={FLAG_WIDTH}
               tooltip='Bit 5'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 4)}
               width={FLAG_WIDTH}
               tooltip='Half Carry'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 3)}
               width={FLAG_WIDTH}
               tooltip='Bit 3'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 2)}
               width={FLAG_WIDTH}
               tooltip='Parity/Overflow'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 1)}
               width={FLAG_WIDTH}
               tooltip='Subtract'
+              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 0)}
               width={FLAG_WIDTH}
               tooltip='Carry'
+              adjustLeft={false}
             />
           </div>
         </div>

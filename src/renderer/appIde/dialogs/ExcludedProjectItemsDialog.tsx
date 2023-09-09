@@ -1,5 +1,4 @@
 import * as path from "path";
-import * as fs from "fs";
 
 import styles from "./ExcludedProjectItemsDialog.module.scss";
 import { Modal } from "@controls/Modal";

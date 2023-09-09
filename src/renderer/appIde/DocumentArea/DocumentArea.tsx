@@ -1,54 +1,44 @@
-import { useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
+import {
+  DocumentHubServiceProvider,
+  useDocumentHubServiceVersion
+} from "../services/DocumentServiceProvider";
+import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import styles from "./DocumentArea.module.scss";
-import { DocumentServiceProvider } from "../services/DocumentServiceProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 
 export const DocumentArea = () => {
-  const { documentHubService } = useAppServices();
-  const documentService = documentHubService.getActiveDocumentService();
-  const openDocs = useSelector(s => s.ideView?.openDocuments);
-  const activeDocIndex = useSelector(s => s.ideView?.activeDocumentIndex);
-  const [activeDoc, setActiveDoc] = useState<DocumentInfo>(null);
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    if (mounted.current) return;
-    mounted.current = true;
-
-    return () => {
-      mounted.current = false;
-    };
-  });
+  const { projectService } = useAppServices();
+  const documentHubService = projectService.getActiveDocumentHubService();
+  const hubVersion = useDocumentHubServiceVersion(documentHubService);
+  const projectViewStateVersion = useSelector(s => s.project?.projectViewStateVersion);
+  const [activeDoc, setActiveDoc] = useState<ProjectDocumentState>(null);
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    const current = openDocs?.[activeDocIndex];
-    if (current) {
-      setActiveDoc(current);
-    }
-  }, [openDocs, activeDocIndex]);
+    setActiveDoc(documentHubService?.getActiveDocument());
+  }, [hubVersion, projectViewStateVersion]);
 
-  const data = activeDoc?.id
-    ? documentService.getDocumentData(activeDoc?.id)
-    : null;
+  const data = activeDoc?.contents;
+  const viewState = documentHubService.getDocumentViewState(activeDoc?.id);
   return (
-    <DocumentServiceProvider value={documentService}>
+    <DocumentHubServiceProvider value={documentHubService}>
       <div className={styles.documentArea} tabIndex={-1}>
         <DocumentsHeader />
-        {activeDocIndex >= 0 && (
+        {activeDoc && (
           <DocumentsContainer
             document={activeDoc}
-            data={data}
+            contents={data}
+            viewState={viewState}
             apiLoaded={api => {
-              documentService.setDocumentApi(activeDoc.id, api);
+              documentHubService.setDocumentApi(activeDoc.id, api);
             }}
           />
         )}
       </div>
-    </DocumentServiceProvider>
+    </DocumentHubServiceProvider>
   );
 };
