@@ -78,14 +78,10 @@ export const DocumentsHeader = () => {
 
     // --- Get the data of the document
     (async () => {
-      const data = documentHubService.getDocumentData(projectDoc.id);
-      const viewState = data?.viewState;
+      const viewState = documentHubService.getDocumentViewState(projectDoc.id);
       const contents = await projectService.readFileContent(projectDoc.path);
       // --- Refresh the contents of the document
-      documentHubService.setDocumentData(projectDoc.id, {
-        value: contents,
-        viewState
-      });
+      documentHubService.setDocumentViewState(projectDoc.id, viewState);
     })();
   }, [projectVersion]);
 

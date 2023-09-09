@@ -31,7 +31,7 @@ export const DocumentArea = () => {
         {activeDoc && (
           <DocumentsContainer
             document={activeDoc}
-            data={data}
+            contents={data}
             viewState={viewState}
             apiLoaded={api => {
               documentHubService.setDocumentApi(activeDoc.id, api);

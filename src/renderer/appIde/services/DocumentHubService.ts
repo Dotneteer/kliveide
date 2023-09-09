@@ -12,7 +12,6 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
  * This class provides the default implementation of the document service
  */
 class DocumentHubService implements IDocumentHubService {
-  private _documentData = new Map<string, any>();
   private _documentViewState = new Map<string, any>();
   private _documentApi = new Map<string, DocumentApi>();
 
@@ -67,12 +66,12 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Opens the specified document
    * @param document Document to open
-   * @param data Arbitrary data assigned to the document
+   * @param viewState Optional viewstate assigned to the document
    * @param temporary Open it as temporary documents? (Default: true)
    */
   async openDocument (
     document: ProjectDocumentState,
-    data?: any,
+    viewState?: any,
     temporary = true
   ): Promise<void> {
     const docIndex = this._openDocs.findIndex(d => d.id === document.id);
@@ -101,10 +100,10 @@ class DocumentHubService implements IDocumentHubService {
     }
 
     // --- Save (or remove) the document data
-    if (data) {
-      this._documentData.set(document.id, data);
+    if (viewState) {
+      this._documentViewState.set(document.id, viewState);
     } else {
-      this._documentData.delete(document.id);
+      this._documentViewState.delete(document.id);
     }
 
     // --- Now, activate the newly opened document
@@ -194,12 +193,9 @@ class DocumentHubService implements IDocumentHubService {
     }
 
     // --- Release the document view data
-    if (this._documentData.has(id)) {
-      const data = this._documentData.get(id);
-      if (data?.dispose) {
-        data.dispose();
-      }
-      this._documentData.delete(id);
+    if (this._documentViewState.has(id)) {
+      const data = this._documentViewState.get(id);
+      this._documentViewState.delete(id);
     }
 
     // --- Notify the project service about closing the document
@@ -296,23 +292,6 @@ class DocumentHubService implements IDocumentHubService {
    */
   saveActiveDocumentState (viewState: any): void {
     this.setDocumentViewState(this.getActiveDocument()?.id, viewState);
-  }
-
-  /**
-   * Sets the document data
-   * @param id Document ID
-   * @param data New data to set
-   */
-  setDocumentData (id: string, data: any): void {
-    this._documentData.set(id, data);
-  }
-
-  /**
-   * Gets the data of the document associated with the specified ID
-   * @param id
-   */
-  getDocumentData (id: string): any {
-    return this._documentData.get(id);
   }
 
   /**

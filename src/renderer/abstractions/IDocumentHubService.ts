@@ -117,19 +117,6 @@ export interface IDocumentHubService {
   saveActiveDocumentState(state: any): void;
 
   /**
-   * Sets the document data
-   * @param id Document ID
-   * @param data New data to set
-   */
-  setDocumentData(id: string, data: any): void;
-
-  /**
-   * Gets the data of the document associated with the specified ID
-   * @param id
-   */
-  getDocumentData(id: string): any;
-
-  /**
    * Gets the associated API of the specified document
    * @param id Document ID
    */

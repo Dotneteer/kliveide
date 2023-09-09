@@ -9,14 +9,14 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
  */
 export type DocumentProps = {
   document?: ProjectDocumentState;
-  data?: any;
+  contents?: any;
   viewState?: any;
   apiLoaded: (api: DocumentApi) => void;
 };
 
 export const DocumentsContainer = ({
   document,
-  data,
+  contents,
   viewState,
   apiLoaded
 }: DocumentProps) => {
@@ -35,7 +35,7 @@ export const DocumentsContainer = ({
       <div className={styles.documentContainer}>
         {createElement<DocumentProps>(docRenderer.renderer, {
           document,
-          data,
+          contents,
           viewState,
           apiLoaded
         })}

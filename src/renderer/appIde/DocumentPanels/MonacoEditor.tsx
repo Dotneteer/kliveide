@@ -117,11 +117,7 @@ type EditorProps = {
 };
 
 // --- This component wraps the Monaco editor
-export const MonacoEditor = ({
-  document,
-  value,
-  apiLoaded
-}: EditorProps) => {
+export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const previousContent = useRef<string>();
@@ -347,7 +343,6 @@ export const MonacoEditor = ({
         }
 
         // --- If changed, normalize breakpoints
-        console.log("normalizing breakpoints");
         const response = await messenger.sendMessage({
           type: "EmuNormalizeBreakpoints",
           resource: resourceName,
@@ -364,14 +359,20 @@ export const MonacoEditor = ({
     // --- Save document after the change (with delay)
     // --- Change reference counter to recognize new changes while we delay the save operation
     unsavedChangeCounter.current++;
-    const waiting = 0;
+
+    let waiting = 0;
     while (waiting < SAVE_DEBOUNCE && !readyForDeactivation.current) {
       await delay(DELAY_SLOT);
+      waiting += DELAY_SLOT;
     }
 
     // --- We have SAVE_DEBOUNCE milliseconds left after the last change and not saved the
     // --- document as a result of deactivating it
-    if (unsavedChangeCounter.current === 1 && previousContent.current && !readyForDeactivation.current) {
+    if (
+      unsavedChangeCounter.current === 1 &&
+      previousContent.current &&
+      !readyForDeactivation.current
+    ) {
       await saveDocument();
     }
 

@@ -7,7 +7,7 @@ import {
   ProjectNode,
   compareProjectNode,
   getFileTypeEntry,
-  getNodeDir
+  getNodeFile
 } from "../project/project-node";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
@@ -469,7 +469,7 @@ class ProjectService implements IProjectService {
 
     // --- Change the properties of the renamed node
     renamedNode.data.fullPath = newId;
-    renamedNode.data.name = getNodeDir(newId);
+    renamedNode.data.name = getNodeFile(newId);
     renamedNode.parentNode.sortChildren((a, b) =>
       compareProjectNode(a.data, b.data)
     );

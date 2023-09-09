@@ -17,7 +17,7 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 
-const TapViewerPanel = ({ document, data }: DocumentProps) => {
+const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
@@ -293,11 +293,11 @@ const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
   );
 };
 
-export const createTapViewerPanel = ({ document, data }: DocumentProps) => (
+export const createTapViewerPanel = ({ document, contents: data }: DocumentProps) => (
   <TapViewerPanel
     key={document.id}
     document={document}
-    data={data}
+    contents={data}
     apiLoaded={() => {}}
   />
 );

@@ -476,14 +476,26 @@ const ExplorerPanel = () => {
     );
   };
 
-  // --- Remove the last explorer tree from the cache when closing the folder
+  // --- Set up the project service to handle project events
   useEffect(() => {
+    // --- Remove the last explorer tree from the cache when closing the folder
     const projectClosed = () => {
       if (lastExplorerPath) folderCache.delete(lastExplorerPath);
     };
+
+    // --- Close deleted items in all document hubs
+    const itemDeleted = (node: ITreeNode<ProjectNode>) => {
+      const docId = node.data.fullPath;
+      const deletedDoc = projectService.getDocumentById(docId);
+      if (deletedDoc?.usedIn) {
+        deletedDoc.usedIn.forEach(docHub => docHub.closeDocument(docId));
+      }
+    };
     projectService.projectClosed.on(projectClosed);
+    projectService.itemDeleted.on(itemDeleted);
     return () => {
       projectService.projectClosed.off(projectClosed);
+      projectService.itemDeleted.off(itemDeleted);
     };
   }, [projectService]);
 
