@@ -7,6 +7,7 @@ import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { getFileTypeEntry, getNodeFile } from "../project/project-node";
 
 /**
  * This class provides the default implementation of the document service
@@ -176,6 +177,44 @@ class DocumentHubService implements IDocumentHubService {
     this.signHubStateChanged();
   }
 
+  /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   * @param newName New document name
+   * @param newIcon New document icon
+   */
+  renameDocument (
+    oldId: string,
+    newId: string,
+  ): void {
+    const docIndex = this._openDocs.findIndex(d => d.id === oldId);
+    if (docIndex < 0) return;
+
+    const document = this._openDocs[docIndex];
+
+    // --- Rename the document instance
+    document.id = newId,
+    document.name = getNodeFile(newId),
+    document.iconName = getFileTypeEntry(newId)?.icon;
+
+    // --- Re-index the document API
+    const oldApi = this._documentApi.get(oldId);
+    if (oldApi) {
+      this._documentApi.delete(oldId);
+      this._documentApi.set(newId, oldApi)
+    }
+
+    // --- Re-index the document viewstate
+    const oldVs = this._documentViewState.get(oldId);
+    if (oldVs) {
+      this._documentViewState.delete(oldId);
+      this._documentViewState.set(newId, oldVs);
+    }
+
+    // --- Done, refresh the UI
+    this.signHubStateChanged();
+  }
   /**
    * Closes the specified document
    * @param id Document to close

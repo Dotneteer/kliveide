@@ -491,11 +491,28 @@ const ExplorerPanel = () => {
         deletedDoc.usedIn.forEach(docHub => docHub.closeDocument(docId));
       }
     };
+
+    // --- Rename the renamed item in all document hubs
+    const itemRenamed = (info: {
+      oldName: string;
+      node: ITreeNode<ProjectNode>;
+    }) => {
+      const docId = info.node.data.fullPath;
+      const renamedDoc = projectService.getDocumentById(docId);
+      if (renamedDoc?.usedIn) {
+        renamedDoc.usedIn.forEach(docHub =>
+          docHub.renameDocument(info.oldName, info.node.data.fullPath)
+        );
+      }
+    };
+
     projectService.projectClosed.on(projectClosed);
     projectService.itemDeleted.on(itemDeleted);
+    projectService.itemRenamed.on(itemRenamed);
     return () => {
       projectService.projectClosed.off(projectClosed);
       projectService.itemDeleted.off(itemDeleted);
+      projectService.itemRenamed.off(itemRenamed);
     };
   }, [projectService]);
 

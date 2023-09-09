@@ -474,6 +474,20 @@ class ProjectService implements IProjectService {
       compareProjectNode(a.data, b.data)
     );
 
+    // --- Re-index the file cache
+    const oldContent = this._fileCache.get(oldId);
+    if (oldContent !== undefined) {
+      this._fileCache.delete(oldId);
+      this._fileCache.set(newId, oldContent);
+    }
+
+    // --- Re-index the project item cache
+    const oldItem = this._projectItemCache.get(oldId);
+    if (oldItem) {
+      this._projectItemCache.delete(oldId);
+      this._projectItemCache.set(newId, oldItem);
+    }
+
     // --- Sign the change
     this.signProjectViewstateVersionChanged();
     this.signItemRenamed(oldId, renamedNode);

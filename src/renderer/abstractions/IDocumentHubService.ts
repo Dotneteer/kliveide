@@ -72,6 +72,16 @@ export interface IDocumentHubService {
   setActiveDocument(id: string): Promise<void>;
 
   /**
+   * Renames the document and optionally changes its ID
+   * @param oldId Old document ID
+   * @param newId New document ID
+   */
+  renameDocument(
+    oldId: string,
+    newId: string,
+  ): void;
+
+  /**
    * Closes the specified document
    * @param id Document to close
    */
