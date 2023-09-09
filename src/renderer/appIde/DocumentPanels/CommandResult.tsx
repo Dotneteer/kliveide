@@ -11,25 +11,27 @@ import { CommandResultData } from "../../abstractions/CommandResultData";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { OutputLine } from "../ToolArea/OutputPanel";
 import styles from "./CommandResult.module.scss";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type CommandResultViewState = {
   topIndex?: number;
 };
 
-const CommandResultPanel = ({ document, data }: DocumentProps) => {
-  // --- Read the view state of the document
-  const viewState = useRef(
-    (document.stateValue as CommandResultViewState) ?? {}
-  );
-  const topIndex = useRef(viewState.current?.topIndex ?? 0);
-  const title = (data as CommandResultData)?.title;
-  const output = (data as CommandResultData)?.lines ?? [];
-  const bufferText = (data as CommandResultData)?.bufferText;
-
+const CommandResultPanel = ({ document, contents }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
-  const documentService = useDocumentService();
+  const documentHubService = useDocumentHubService();
+
+  // --- Read the view state of the document
+  const viewState = useRef(
+    (documentHubService.getDocumentViewState(
+      document.id
+    ) as CommandResultViewState) ?? {}
+  );
+  const topIndex = useRef(viewState.current?.topIndex ?? 0);
+  const title = (contents as CommandResultData)?.title;
+  const output = (contents as CommandResultData)?.lines ?? [];
+  const bufferText = (contents as CommandResultData)?.bufferText;
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -81,7 +83,7 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
     const mergedState: CommandResultViewState = {
       topIndex: topIndex.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (
@@ -125,6 +127,6 @@ const CommandResultPanel = ({ document, data }: DocumentProps) => {
   );
 };
 
-export const createCommandResultPanel = ({ document, data }: DocumentProps) => (
-  <CommandResultPanel document={document} data={data} apiLoaded={() => {}}/>
+export const createCommandResultPanel = ({ document, contents }: DocumentProps) => (
+  <CommandResultPanel document={document} contents={contents} apiLoaded={() => {}} />
 );

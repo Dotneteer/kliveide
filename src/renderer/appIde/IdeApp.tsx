@@ -26,7 +26,6 @@ import {
   selectActivityAction,
   setToolsAction,
   activateToolAction,
-  closeAllDocumentsAction,
   displayDialogAction
 } from "@state/actions";
 import { AppState } from "@state/AppState";
@@ -87,12 +86,12 @@ const IdeApp = () => {
   const { store, messenger } = useRendererContext();
 
   // --- Default document service instance
-  if (!appServices.documentHubService.getActiveDocumentService()) {
-    appServices.documentHubService.createDocumentService();
+  if (!appServices.projectService.getActiveDocumentHubService()) {
+    appServices.projectService.createDocumentHubService();
   }
 
   // --- Visual state
-  const appPath = useSelector(s => s.appPath);
+  const appPath = decodeURI(location.search.split("=")?.[1]);
   const dimmed = useSelector(s => s.dimMenu ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
@@ -146,7 +145,6 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
-    dispatch(closeAllDocumentsAction());
   }, [appServices, store, messenger]);
 
   useEffect(() => {

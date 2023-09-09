@@ -7,7 +7,6 @@ import { useContext, useRef, useEffect, createContext } from "react";
 import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
-import { createDocumentHubService } from "./DocumentHubService";
 
 // =====================================================================================================================
 /**
@@ -29,27 +28,24 @@ type Props = {
 };
 export function AppServicesProvider ({ children }: Props) {
   const { store, messenger, messageSource } = useRendererContext();
-  const interactiveCommandsService = createInteractiveCommandsService(
+  const ideCommandsService = createInteractiveCommandsService(
     store,
     messenger,
     messageSource
   );
-
-  const documentHubService = createDocumentHubService(store);
-
+  const projectService = createProjectService(store, messenger);
   const servicesRef = useRef<AppServices>({
     uiService: createUiService(),
-    documentHubService,
     machineService: createMachineService(store, messenger, messageSource),
     outputPaneService: createOutputPaneService(),
-    ideCommandsService: interactiveCommandsService,
-    projectService: createProjectService(store, messenger),
+    ideCommandsService,
+    projectService,
     validationService: createValidationService(),
   });
 
   // --- Set the app services instance whenever the provider's value changes
   useEffect(() => {
-    interactiveCommandsService.setAppServices(servicesRef.current);
+    ideCommandsService.setAppServices(servicesRef.current);
   }, [servicesRef.current]);
 
   return (

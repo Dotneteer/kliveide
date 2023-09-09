@@ -54,7 +54,10 @@ export const DocumentTab = ({
   return (
     <div
       ref={ref}
-      className={classnames(styles.documentTab, { [styles.active]: isActive, [styles.awaiting]: awaiting })}
+      className={classnames(styles.documentTab, {
+        [styles.active]: isActive,
+        [styles.awaiting]: awaiting
+      })}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onClick={() => tabClicked?.()}

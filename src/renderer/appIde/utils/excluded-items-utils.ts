@@ -11,10 +11,11 @@ export type ExcludedItemInfo = {
   missing?: boolean;
 };
 
-export function excludedItemsFromGlobalSettingsAsync(messenger: MessengerBase): Promise<ExcludedItemInfo[]> {
-  return messenger.sendMessage({
+export async function excludedItemsFromGlobalSettingsAsync(messenger: MessengerBase): Promise<ExcludedItemInfo[]> {
+  const response = await messenger.sendMessage({
     type: "MainGloballyExcludedProjectItems",
-  }).then(excludedItemsFromGlobalSettings);
+  });
+  return excludedItemsFromGlobalSettings(response);
 }
 
 export function excludedItemsFromGlobalSettings(response: ResponseMessage): ExcludedItemInfo[] {

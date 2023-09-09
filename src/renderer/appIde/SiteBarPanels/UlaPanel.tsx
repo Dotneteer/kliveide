@@ -12,7 +12,6 @@ import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 48;
-const R16_WIDTH = 48;
 
 const UlaPanel = () => {
   const { messenger } = useRendererContext();

@@ -8,26 +8,25 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
 import { Icon } from "@controls/Icon";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { changeDocumentAction } from "@state/actions";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import {
+  useDocumentHubService,
+  useDocumentHubServiceVersion
+} from "../services/DocumentServiceProvider";
 
-const TapViewerPanel = ({ document, data }: DocumentProps) => {
-  const dispatch = useDispatch();
-  const documentService = useDocumentService();
-  const openDocs = useSelector(s => s.ideView?.openDocuments);
-  const docIndex = useSelector(s => s.ideView?.activeDocumentIndex);
+const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
+  const documentHubService = useDocumentHubService();
+  const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
   const contents = data?.value as Uint8Array;
   const fileInfo = readTapeFile(contents);
 
   useEffect(() => {
-    setDocState(documentService.getDocumentState(document.id));
-  }, [openDocs]);
+    setDocState(documentHubService.getDocumentViewState(document.id));
+  }, [hubVersion]);
 
   useEffect(() => {}, [docState]);
 
@@ -84,13 +83,10 @@ const TapViewerPanel = ({ document, data }: DocumentProps) => {
                 title={title}
                 expanded={docState?.[idx] ?? true}
                 changed={exp => {
-                  const newState = { ...docState, [idx]: exp };
-                  dispatch(
-                    changeDocumentAction(
-                      { ...document, stateValue: newState },
-                      docIndex
-                    )
-                  );
+                  documentHubService.setDocumentViewState(document.id, {
+                    ...docState,
+                    [idx]: exp
+                  });
                 }}
               >
                 {fileInfo.type.toLowerCase() === "tap" && (
@@ -297,11 +293,11 @@ const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
   );
 };
 
-export const createTapViewerPanel = ({ document, data }: DocumentProps) => (
+export const createTapViewerPanel = ({ document, contents: data }: DocumentProps) => (
   <TapViewerPanel
     key={document.id}
     document={document}
-    data={data}
+    contents={data}
     apiLoaded={() => {}}
   />
 );
