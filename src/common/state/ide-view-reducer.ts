@@ -129,6 +129,16 @@ export function ideViewReducer (
       };
     }
 
+    case "SET_VOLATILE_DOC_STATE": {
+      return {
+        ...state,
+        volatileDocs: {
+          ...state.volatileDocs,
+          [payload.id]: payload.flag
+        }
+      };
+    }
+
     default:
       return state;
   }

@@ -1,4 +1,4 @@
-import { incDocHubServiceVersionAction } from "@state/actions";
+import { incDocHubServiceVersionAction, setVolatileDocStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { PROJECT_FILE } from "@common/structs/project-const";
@@ -224,7 +224,13 @@ class DocumentHubService implements IDocumentHubService {
     if (docIndex < 0) return;
 
     // --- Remove the document
+    const oldDocument = this._openDocs[docIndex];
     this._openDocs.splice(docIndex, 1);
+
+    // --- If volatile, sign its closed
+    if (!oldDocument.path) {
+      this.store.dispatch(setVolatileDocStateAction(id, false), "ide");
+    }
 
     // --- Release the document API
     if (this._documentApi.has(id)) {
@@ -233,7 +239,6 @@ class DocumentHubService implements IDocumentHubService {
 
     // --- Release the document view data
     if (this._documentViewState.has(id)) {
-      const data = this._documentViewState.get(id);
       this._documentViewState.delete(id);
     }
 

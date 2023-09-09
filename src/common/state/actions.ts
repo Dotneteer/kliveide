@@ -258,18 +258,22 @@ export const incProjectViewStateVersionAction: ActionCreator = () => ({
   type: "INC_PROJECT_VIEWSTATE_VERSION"
 });
 
-export const addExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
+export const addExcludedProjectItemsAction: ActionCreator = (
+  files: string[]
+) => ({
   type: "ADD_EXCLUDED_PROJECT_ITEMS",
   payload: { files }
 });
 
-export const setExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
+export const setExcludedProjectItemsAction: ActionCreator = (
+  files: string[]
+) => ({
   type: "SET_EXCLUDED_PROJECT_ITEMS",
   payload: { files }
 });
 
 export const refreshExcludedProjectItemsAction: ActionCreator = () => ({
-  type: "REFRESH_EXCLUDED_PROJECT_ITEMS",
+  type: "REFRESH_EXCLUDED_PROJECT_ITEMS"
 });
 
 export const resetCompileAction: ActionCreator = () => ({
@@ -293,7 +297,12 @@ export const incInjectionVersionAction: ActionCreator = () => ({
   type: "INC_INJECTION_VERSION"
 });
 
-export const incDocHubServiceVersionAction: ActionCreator = (index) => ({
+export const incDocHubServiceVersionAction: ActionCreator = index => ({
   type: "INC_DOC_HUB_SERVICE_VERSION",
   payload: { index }
+});
+
+export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
+  type: "SET_VOLATILE_DOC_STATE",
+  payload: { id, flag }
 });

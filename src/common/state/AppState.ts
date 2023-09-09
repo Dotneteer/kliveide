@@ -54,6 +54,7 @@ export type IdeView = {
   sideBarPanels?: Record<string, SideBarPanelState>;
   documentHubState?: Record<number, number>;
   documentServiceVersion?: number;
+  volatileDocs: Record<string, boolean>;
   tools?: ToolInfo[];
   activeTool?: string;
   activeOutputPane?: string;
@@ -129,10 +130,11 @@ export const initialAppState: AppState = {
     sideBarPanels: {},
     documentHubState: {},
     documentServiceVersion: 1,
+    volatileDocs: {},
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
-    toolCommandSeqNo: 0
+    toolCommandSeqNo: 0,
   },
   emuViewOptions: {
     showToolbar: true,

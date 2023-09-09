@@ -135,7 +135,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
   const { projectService } = useAppServices();
-  const documentHubService = useDocumentHubService();
 
   // --- Recognize if something changed in the current document hub
   const hubVersion = useDocumentHubServiceVersion();
@@ -359,7 +358,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // --- Save document after the change (with delay)
     // --- Change reference counter to recognize new changes while we delay the save operation
     unsavedChangeCounter.current++;
-
+    document.editVersionCount++;
     let waiting = 0;
     while (waiting < SAVE_DEBOUNCE && !readyForDeactivation.current) {
       await delay(DELAY_SLOT);
@@ -374,6 +373,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       !readyForDeactivation.current
     ) {
       await saveDocument();
+      document.savedVersionCount = document.editVersionCount;
     }
 
     // --- Decrements the change reference counter indicating that we processed the last change
