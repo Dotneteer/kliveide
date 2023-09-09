@@ -3,21 +3,16 @@
  */
 export type DocumentApi = {
   /**
-   * Signs that the document is doing some internal processing that should not be
-   * interrupted with tab changes.
+   * Tests if the document is ready for disposal (its state has already been saved). 
+   * @return True, the document is considered ready for disposal. Otherwise, the engine awaits 
+   * the `beforeDocumentDisposal` method.
    */
-  isBusy?: () => boolean;
+  readyForDisposal?: () => Promise<boolean>;
 
   /**
-   * The document should save its state
-   * @returns The state information to save into the document service cache
+   * This method is invoked before the document is disposed. This is the last opportunity to save its state.
    */
-  saveDocumentState?: () => Promise<any>;
-
-  /**
-   * Allows the component to prepare for getting closed
-   */
-  prepareForCompletion?: () => Promise<void>;
+  beforeDocumentDisposal?: () => Promise<void>;
 
   /**
    * Test of the current document's view can be closed

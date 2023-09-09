@@ -1,6 +1,5 @@
 import { ProjectNode } from "@renderer/appIde/project/project-node";
-import { ITreeNode } from "@renderer/core/tree-node";
-import { IDocumentService } from "./IDocumentService";
+import { IDocumentHubService } from "./IDocumentHubService";
 
 /**
  * This type describes the state information of a particular project document.
@@ -28,6 +27,11 @@ export type ProjectDocumentState = {
   type: string;
 
   /**
+   * The current contents of the document, provided it is associated with a project explorer file
+   */
+  contents?: string | Uint8Array;
+
+  /**
    * Optional programming language of the document
    */
   language?: string;
@@ -50,12 +54,7 @@ export type ProjectDocumentState = {
   /**
    * The optional tree node in the explorer
    */
-  node?: ITreeNode<ProjectNode>;
-
-  /**
-   * The optional view version of the document
-   */
-  viewVersion: number;
+  node?: ProjectNode;
 
   /**
    * Signs if the document is opened as temporary (the same slot can be used for another document)
@@ -63,23 +62,18 @@ export type ProjectDocumentState = {
   isTemporary?: boolean;
 
   /**
-   * Document state depending on the document type
-   */
-  stateValue?: any;
-
-  /**
    * A continuously changing version count that increments at every document edit.
    */
-  editVersionCount: number;
+  editVersionCount?: number;
 
   /**
    * A version count that is set to the corresponding editVersionCount. When a document is saved,
    * this value takes the editVersionCount of the document at the point of saving.
    */
-  savedVersionCount: number;
+  savedVersionCount?: number;
 
   /**
    * References to document services that use the particular project documents
    */
-  usedIn?: IDocumentService[]
+  usedIn?: IDocumentHubService[]
 };

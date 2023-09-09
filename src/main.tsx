@@ -12,7 +12,7 @@ import createAppStore from "./common/state/store";
 import { MessageSource } from "./common/messaging/messages-core";
 
 // --- Create the application messenger and the store according to the discriminator parameter
-const isEmu = location.search === "?emu";
+const isEmu = location.search.startsWith("?emu");
 
 // --- Create the appropriate messenger
 const messenger = isEmu ? new EmuToMainMessenger() : new IdeToMainMessenger();

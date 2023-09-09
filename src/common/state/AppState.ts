@@ -22,7 +22,7 @@ export type AppState = {
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   project?: IdeProject;
-  compilation?: CompilationState
+  compilation?: CompilationState;
 };
 
 /**
@@ -52,10 +52,9 @@ export type EmuViewOptions = {
 export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
+  documentHubState?: Record<number, number>;
   documentServiceVersion?: number;
-  openDocuments?: DocumentInfo[];
-  activeDocumentIndex?: number;
-  documentActivationVersion?: number;
+  volatileDocs: Record<string, boolean>;
   tools?: ToolInfo[];
   activeTool?: string;
   activeOutputPane?: string;
@@ -64,12 +63,6 @@ export type IdeView = {
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
 };
-
-export type DocumentHub = {
-  openDocuments?: DocumentInfo[];
-  activeDocumentIndex?: number;
-  documentActivationVersion?: number;
-}
 
 export type EmulatorState = {
   machineId?: string;
@@ -82,15 +75,16 @@ export type EmulatorState = {
   audioSampleRate?: number;
   tapeFile?: string;
   breakpointsVersion: number;
-}
+};
 
 export type IdeProject = {
   folderPath?: string;
   isKliveProject?: boolean;
   buildRoots?: string[];
-  projectVersion: number;
+  projectFileVersion: number;
+  projectViewStateVersion: number;
   excludedItems?: string[];
-}
+};
 
 /**
  * The state of a particular site bar panel
@@ -130,17 +124,17 @@ export const initialAppState: AppState = {
     maximizeTools: false,
     showFrameInfo: true,
     showSidebar: true,
-    editorFontSize: 16,
+    editorFontSize: 16
   },
   ideView: {
     sideBarPanels: {},
+    documentHubState: {},
     documentServiceVersion: 1,
-    openDocuments: [],
-    activeDocumentIndex: -1,
+    volatileDocs: {},
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
-    toolCommandSeqNo: 0
+    toolCommandSeqNo: 0,
   },
   emuViewOptions: {
     showToolbar: true,
@@ -156,7 +150,8 @@ export const initialAppState: AppState = {
     breakpointsVersion: 0
   },
   project: {
-    projectVersion: 0,
+    projectFileVersion: 1,
+    projectViewStateVersion: 1
   },
   compilation: {
     inProgress: false,

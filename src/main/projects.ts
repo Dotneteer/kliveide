@@ -1,7 +1,7 @@
 import {
   closeFolderAction,
   dimMenuAction,
-  incProjectVersionAction,
+  incProjectFileVersionAction,
   maximizeToolsAction,
   openFolderAction,
   primaryBarOnRightAction,
@@ -306,7 +306,7 @@ export async function saveKliveProject(): Promise<void> {
     const projectFile = path.join(projectState.folderPath, PROJECT_FILE);
     const project = await getKliveProjectStructure();
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
-    mainStore.dispatch(incProjectVersionAction());
+    mainStore.dispatch(incProjectFileVersionAction());
   } catch {
     // --- Intentionally ignored
   }

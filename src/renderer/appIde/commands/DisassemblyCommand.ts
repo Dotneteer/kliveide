@@ -1,4 +1,3 @@
-import { EmuGetMemoryResponse } from "@messaging/main-to-emu";
 import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
 import { CommandResultData } from "../../abstractions/CommandResultData";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
@@ -7,7 +6,6 @@ import {
   toHexa4,
   writeSuccessMessage,
   commandSuccess,
-  commandError
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import {
@@ -17,7 +15,6 @@ import {
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { Token } from "../services/command-parser";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 
 let disassemblyIndex = 1;
@@ -50,15 +47,14 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     const lines = buffer.getContents();
     const bufferText = buffer.getBufferText();
     const title = `Result of running '${context.commandtext.trim()}'`;
-    const documentService = context.service.documentHubService.getActiveDocumentService();
-    documentService.openDocument(
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.openDocument(
       {
         id: `disOutput-${disassemblyIndex++}`,
         name: `Disassembly ($${fromH}-$${toH})`,
         type: COMMAND_RESULT_EDITOR,
         iconName: "disassembly-icon",
-        iconFill: "--console-ansi-bright-green",
-        viewVersion: 0
+        iconFill: "--console-ansi-bright-green"
       },
       {
         title,

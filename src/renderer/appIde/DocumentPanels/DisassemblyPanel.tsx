@@ -34,7 +34,7 @@ import {
 } from "@renderer/reportError";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { useDocumentService } from "../services/DocumentServiceProvider";
+import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -47,8 +47,17 @@ type DisassemblyViewState = {
 };
 
 const DisassemblyPanel = ({ document }: DocumentProps) => {
+  // --- Get the services used in this component
+  const dispatch = useDispatch();
+  const { messenger } = useRendererContext();
+  const documentHubService = useDocumentHubService();
+
   // --- Read the view state of the document
-  const viewState = useRef((document.stateValue as DisassemblyViewState) ?? {});
+  const viewState = useRef(
+    (documentHubService.getDocumentViewState(
+      document.id
+    ) as DisassemblyViewState) ?? {}
+  );
   const topAddress = useRef(viewState.current?.topAddress ?? 0);
 
   // --- Use these app state variables
@@ -56,11 +65,6 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
   const machineId = useSelector(s => s.emulatorState.machineId);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
-
-  // --- Get the services used in this component
-  const dispatch = useDispatch();
-  const { messenger } = useRendererContext();
-  const documentService = useDocumentService();
 
   // --- Use these options to set disassembly options. As disassembly view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -311,7 +315,7 @@ const DisassemblyPanel = ({ document }: DocumentProps) => {
       romSelected: refRomPage.current,
       ramSelected: refRamBank.current
     };
-    documentService.saveActiveDocumentState(mergedState);
+    documentHubService.saveActiveDocumentState(mergedState);
   };
 
   return (
@@ -500,6 +504,6 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
-export const createDisassemblyPanel = ({ document, data }: DocumentProps) => (
-  <DisassemblyPanel document={document} data={data} apiLoaded={() => {}} />
+export const createDisassemblyPanel = ({ document, contents: data }: DocumentProps) => (
+  <DisassemblyPanel document={document} contents={data} apiLoaded={() => {}} />
 );

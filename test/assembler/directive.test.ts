@@ -311,7 +311,7 @@ describe("Assembler - directives", async () => {
       #endif
       nop ; 6
       nop ; 7
-      nop ; 8 
+      nop ; 8
       nop ; 9
       #endif
     `;
@@ -337,7 +337,7 @@ describe("Assembler - directives", async () => {
       #endif
       nop ; 3
       nop ; 4
-      nop ; 5 
+      nop ; 5
       nop ; 6
       #endif
     `;
@@ -354,8 +354,8 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
+      nop
+      nop
       #ifdef MySymbol2
       nop
       nop
@@ -363,7 +363,7 @@ describe("Assembler - directives", async () => {
       #endif
       nop
       nop
-      nop 
+      nop
       nop
       #endif
     `;
@@ -379,8 +379,8 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
+      nop
+      nop
       #ifdef MySymbol2
       nop
       nop
@@ -388,7 +388,7 @@ describe("Assembler - directives", async () => {
       #endif
       nop
       nop
-      nop 
+      nop
       nop
       #endif
     `;
@@ -481,7 +481,7 @@ describe("Assembler - directives", async () => {
       #endif
       nop ; 4
       nop ; 5
-      nop ; 6 
+      nop ; 6
       nop ; 7
       #endif
     `;
@@ -590,19 +590,19 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
       nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       nop ; 2
@@ -624,19 +624,19 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
       nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #endif
     `;
 
@@ -652,15 +652,15 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       nop ; 2
@@ -681,19 +681,19 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
       nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       nop ; 2
@@ -714,19 +714,19 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
       nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #endif
     `;
 
@@ -741,15 +741,15 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
+      nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #endif
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       nop ; 2
@@ -780,8 +780,8 @@ describe("Assembler - directives", async () => {
       #else
       nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
@@ -812,8 +812,8 @@ describe("Assembler - directives", async () => {
       #else
       nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #endif
       nop
       #endif
@@ -840,8 +840,8 @@ describe("Assembler - directives", async () => {
       #else
       nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop
       nop
@@ -872,8 +872,8 @@ describe("Assembler - directives", async () => {
       #else
       nop
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #endif
       nop
       #endif
@@ -891,11 +891,11 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       #ifdef MySymbol2
@@ -922,11 +922,11 @@ describe("Assembler - directives", async () => {
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       #ifdef MySymbol2
@@ -948,16 +948,16 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #else
       nop ; 2
       nop ; 3
@@ -978,16 +978,16 @@ describe("Assembler - directives", async () => {
     const options = new AssemblerOptions();
     const source = `
       #ifdef MySymbol
-      nop 
-      nop 
-      nop 
-      nop 
-      nop 
+      nop
+      nop
+      nop
+      nop
+      nop
       #else
       nop ; 1
       #ifdef MySymbol2
-      nop 
-      nop 
+      nop
+      nop
       #endif
       nop ; 2
       #endif
@@ -1199,5 +1199,46 @@ describe("Assembler - directives", async () => {
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0206").toBe(true);
+  });
+
+  it("#if false holds back an include", async () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if false
+      nop
+      nop
+      #include "/dev/null"
+      nop
+      #endif
+      nop ; 2
+    `;
+
+    const output = await compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(2);
+  });
+
+  it("#if true-else holds back an include", async () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if true
+      nop ; 2
+      nop ; 3
+      #else
+      #include "/dev/null"
+      nop
+      #endif
+      nop ; 4
+    `;
+
+    const output = await compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(4);
   });
 });

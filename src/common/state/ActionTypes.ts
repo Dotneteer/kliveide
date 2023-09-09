@@ -2,7 +2,6 @@
  * Available action types
  */
 export interface ActionTypes {
-  SET_APP_PATH: null;
   UNLOAD_WINDOWS: null;
   EMU_LOADED: null;
   EMU_STATE_SYNCHED: null,
@@ -33,15 +32,8 @@ export interface ActionTypes {
   SET_SIDEBAR_PANELS_STATE: null;
   SET_SIDEBAR_PANEL_SIZE: null;
 
-  ACTIVATE_DOC: null;
-  CHANGE_DOC: null;
-  CREATE_DOC: null;
-  CLOSE_DOC: null;
-  CLOSE_ALL_DOCS: null;
-  DOC_MOVE_LEFT: null;
-  DOC_MOVE_RIGHT: null;
-  INC_DOC_ACTIVATION_VERSION: null;
-  INC_DOC_SERVICE_VERSION: null;
+  INC_DOC_HUB_SERVICE_VERSION: null;
+  SET_VOLATILE_DOC_STATE: null;
 
   SET_TOOLS: null;
   ACTIVATE_TOOL: null;
@@ -65,7 +57,8 @@ export interface ActionTypes {
   OPEN_FOLDER: null;
   CLOSE_FOLDER: null;
   SET_BUILD_ROOT: null;
-  INC_PROJECT_VERSION: null;
+  INC_PROJECT_FILE_VERSION: null;
+  INC_PROJECT_VIEWSTATE_VERSION: null;
   ADD_EXCLUDED_PROJECT_ITEMS: null;
   SET_EXCLUDED_PROJECT_ITEMS: null;
   REFRESH_EXCLUDED_PROJECT_ITEMS: null;

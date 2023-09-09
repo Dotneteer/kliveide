@@ -378,47 +378,64 @@ export class Z80Assembler extends ExpressionEvaluator {
     while (currentLineIndex < visitedLines.length) {
       const line = visitedLines[currentLineIndex];
       this.setSourceLine(line);
-      switch (line.type) {
-        case "ModelPragma":
-          this.processModelPragma(line as unknown as ModelPragma);
-          break;
-        case "IncludeDirective": {
-          // --- Parse the included file
-          const includedLines = await this.applyIncludeDirective(
-            line as unknown as IncludeDirective,
-            sourceItem
-          );
-          if (includedLines.success && includedLines.parsedLines) {
-            // --- Add the parse result of the include file to the result
-            parsedLines.push(...includedLines.parsedLines);
-          }
+      if (processOps.ops) {
+        const typedLine = line as any;
+        switch (typedLine.type) {
+          case "ModelPragma":
+            this.processModelPragma(typedLine);
+            break;
 
-          break;
-        }
-        case "LineDirective":
-          // TODO: Process a #line directive
-          break;
-        default: {
-          if (
-            this.applyDirective(
-              line as unknown as Directive,
-              ifdefStack,
-              processOps
-            )
-          ) {
+          case "IncludeDirective": {
+            // --- Parse the included file
+            const includedLines = await this.applyIncludeDirective(
+              typedLine,
+              sourceItem
+            );
+            if (includedLines.success && includedLines.parsedLines) {
+              // --- Add the parse result of the include file to the result
+              parsedLines.push(...includedLines.parsedLines);
+            }
             break;
           }
-          if (processOps.ops) {
-            line.fileIndex = fileIndex;
-            line.sourceText = sourceText.substr(
-              line.startPosition,
-              line.endPosition - line.startPosition + 1
-            );
-            parsedLines.push(line);
-          }
 
-          break;
+          case "DefineDirective":
+            this.conditionSymbols[typedLine.identifier.name] =
+              new ExpressionValue(true);
+            break;
+
+          case "UndefDirective":
+            delete this.conditionSymbols[typedLine.identifier.name];
+            break;
+
+          case "LineDirective":
+            // TODO: Process a #line directive
+            break;
+
+          default: {
+            if (
+              !this.applyScopedDirective(
+                line as unknown as Directive,
+                ifdefStack,
+                processOps
+              )
+            ) {
+              line.fileIndex = fileIndex;
+              line.sourceText = sourceText.substr(
+                line.startPosition,
+                line.endPosition - line.startPosition + 1
+              );
+              parsedLines.push(line);
+            }
+            break;
+          }
         }
+      }
+      else {
+        this.applyScopedDirective(
+          line as unknown as Directive,
+          ifdefStack,
+          processOps
+        );
       }
       currentLineIndex++;
     }
@@ -712,38 +729,24 @@ export class Z80Assembler extends ExpressionEvaluator {
   }
 
   /**
-   * Apply the specified directive
+   * Apply the specified scoped directive
    * @param directive Directive to apply
    * @param ifdefStack Stack if conditional directives
    * @param processOps Object with the "process operation" flag
    * @returns True, if the directive has been processed successfully
    */
-  applyDirective (
+  applyScopedDirective (
     directive: Directive,
     ifdefStack: (boolean | null)[],
     processOps: ProcessOps
   ): boolean {
-    const doProc = processOps.ops;
     switch (directive.type) {
-      case "DefineDirective":
-        if (doProc) {
-          this.conditionSymbols[directive.identifier.name] =
-            new ExpressionValue(true);
-        }
-        break;
-
-      case "UndefDirective":
-        if (doProc) {
-          delete this.conditionSymbols[directive.identifier.name];
-        }
-        break;
-
       case "IfDefDirective":
       case "IfNDefDirective":
       case "IfModDirective":
       case "IfNModDirective":
       case "IfDirective":
-        if (doProc) {
+        if (processOps.ops) {
           if (directive.type === "IfDirective") {
             const value = this.evaluateExprImmediate(directive.condition);
             processOps.ops = value.isValid && value.value !== 0;
@@ -5369,8 +5372,8 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
     }
     this.reportAssemblyError(
-      "Z0604", 
-      op, 
+      "Z0604",
+      op,
       toPosition(issueWithOp1 ? op.operand1.startToken : op.operand2.startToken));
   }
 

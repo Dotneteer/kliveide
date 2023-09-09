@@ -4,7 +4,6 @@ import {
   ResponseMessage,
   defaultResponse
 } from "@messaging/messages-core";
-import { MessengerBase } from "@messaging/MessengerBase";
 import { AppState } from "@state/AppState";
 import {
   MEMORY_PANEL_ID,
@@ -24,9 +23,9 @@ import { Store } from "@state/redux-light";
 export async function processMainToIdeMessages (
   message: RequestMessage,
   store: Store<AppState>,
-  { outputPaneService, ideCommandsService, documentHubService }: AppServices
+  { outputPaneService, ideCommandsService, projectService }: AppServices
 ): Promise<ResponseMessage> {
-  const documentService = documentHubService.getActiveDocumentService();
+  const documentHubService = projectService.getActiveDocumentHubService();
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
@@ -54,66 +53,66 @@ export async function processMainToIdeMessages (
 
     case "IdeShowMemory": {
       if (message.show) {
-        documentService.openDocument(
+        await documentHubService.openDocument(
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
-            type: MEMORY_EDITOR,
-            viewVersion: 0
+            type: MEMORY_EDITOR
           },
           undefined,
           false
         );
       } else {
-        documentService.closeDocument(MEMORY_PANEL_ID);
+        await documentHubService.closeDocument(MEMORY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowDisassembly": {
       if (message.show) {
-        documentService.openDocument(
+        await documentHubService.openDocument(
           {
             id: DISASSEMBLY_PANEL_ID,
             name: "Z80 Disassembly",
-            type: DISASSEMBLY_EDITOR,
-            viewVersion: 0
+            type: DISASSEMBLY_EDITOR
           },
           undefined,
           false
         );
       } else {
-        documentService.closeDocument(DISASSEMBLY_PANEL_ID);
+        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }
       break;
     }
 
     case "IdeShowBasic": {
       if (message.show) {
-        documentService.openDocument(
+        await documentHubService.openDocument(
           {
             id: BASIC_PANEL_ID,
             name: "BASIC Listing",
-            type: BASIC_EDITOR,
-            viewVersion: 0
+            type: BASIC_EDITOR
           },
           undefined,
           false
         );
       } else {
-        documentService.closeDocument(BASIC_PANEL_ID);
+        await documentHubService.closeDocument(BASIC_PANEL_ID);
       }
       break;
     }
 
     case "IdeExecuteCommand": {
       const pane = outputPaneService.getOutputPaneBuffer("build");
-      const response = await ideCommandsService.executeCommand(message.commandText, pane);
+      const response = await ideCommandsService.executeCommand(
+        message.commandText,
+        pane
+      );
       return {
         type: "IdeExecuteCommandResponse",
         success: response.success,
         finalMessage: response.finalMessage
-      }
+      };
     }
   }
   return defaultResponse();

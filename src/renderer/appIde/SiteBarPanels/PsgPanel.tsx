@@ -1,8 +1,5 @@
 import { Separator } from "@controls/Labels";
-import {
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useRendererContext } from "@renderer/core/RendererProvider";
 import { EmuGetPsgStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
@@ -10,7 +7,6 @@ import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 import styles from "./PsgPanel.module.scss";
-import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 const PsgPanel = () => {
   const { messenger } = useRendererContext();

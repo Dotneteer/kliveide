@@ -1,9 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import {
-  createMachineCommand,
-  EmuGetCpuStateResponse,
-  MachineCommand
-} from "@messaging/main-to-emu";
+import { createMachineCommand, MachineCommand } from "@messaging/main-to-emu";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
