@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import styles from "./ExplorerPanel.module.scss";
 import {
   useDispatch,
@@ -209,9 +211,12 @@ const ExplorerPanel = () => {
       oldPath={selectedContextNode?.data?.name}
       onRename={async (newName: string) => {
         // --- Start renaming the item
-        const newFullName = `${getNodeDir(
-          selectedContextNode.data.fullPath
-        )}/${newName}`;
+        const newFullName = path.join(
+          getNodeDir(
+            selectedContextNode.data.fullPath
+          ),
+          newName
+        );
         const response = await messenger.sendMessage({
           type: "MainRenameFileEntry",
           oldName: selectedContextNode.data.fullPath,
