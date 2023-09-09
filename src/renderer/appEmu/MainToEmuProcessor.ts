@@ -366,7 +366,7 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const machine = controller.machine;
-      if (machine.machineId === "spp3e") {
+      if (machine.machineId.startsWith("spp3e")) {
         return {
           type: "EmuGetNecUpd765StateResponse",
           log: (machine as ZxSpectrumP3eMachine).floppyDevice.getLogEntries()

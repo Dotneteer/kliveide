@@ -1,5 +1,4 @@
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { Command } from "./NecUpd765-defs";
 
 // --- Headers used in a DSK file
 const NORMAL_DISK_HEADER = "MV - CPCEMU Disk-File\r\n"; // --- from 0x00-0x16, 23 bytes
@@ -372,19 +371,6 @@ export class Sector {
       res[i] = this.sectorData[i + step];
     }
     return res;
-  }
-
-  get sectorIdInfo (): Command {
-    return {
-      c: this.trackNo,
-      h: this.sideNo,
-      r: this.sectorId,
-      n: this.sectorSize,
-      st0: 0,
-      st1: this.fdcStatus1,
-      st2: this.fdcStatus2,
-      st3: 0
-    };
   }
 }
 

@@ -42,6 +42,8 @@ import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128M
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
+import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2EMachine";
+import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3EF2Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -115,7 +117,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: psgPanelRenderer,
     initialSize: 500,
-    restrictTo: ["sp128"]
+    restrictTo: ["sp128", "spp2e", "spp3e", "spp3ef2"]
   },
   {
     id: "necUpd765Panel",
@@ -123,7 +125,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: necUpd765PanelRenderer,
     initialSize: 500,
-    restrictTo: ["sp128", "spp3e"]
+    restrictTo: ["spp3e", "spp3ef2"]
   }
 
 ];
@@ -207,9 +209,19 @@ export const machineRegistry: MachineInfo[] = [
     factory: () => new ZxSpectrum128Machine()
   },
   {
+    machineId: "spp2e",
+    displayName: "ZX Spectrum +2E",
+    factory: () => new ZxSpectrumP2eMachine()
+  },
+  {
     machineId: "spp3e",
-    displayName: "ZX Spectrum +3E",
+    displayName: "ZX Spectrum +3E (1 FDD)",
     factory: () => new ZxSpectrumP3eMachine()
+  },
+  {
+    machineId: "spp3ef2",
+    displayName: "ZX Spectrum +3E (2 FDDs)",
+    factory: () => new ZxSpectrumP3eF2Machine()
   },
 ];
 

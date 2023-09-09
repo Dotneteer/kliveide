@@ -12,6 +12,11 @@ import { SysVar } from "@abstractions/SysVar";
  */
 export interface IZxSpectrumMachine extends IZ80Machine {
   /**
+   * Gets the ROM ID to load the ROM file
+   */
+  get romId(): string;
+
+  /**
    * Gets the ULA issue number of the ZX Spectrum model (2 or 3)
    */
   ulaIssue: number;

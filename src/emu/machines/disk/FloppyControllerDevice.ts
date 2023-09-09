@@ -6,6 +6,7 @@ import {
 } from "@abstractions/FloppyLogEntry";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { FloppyDiskDrive } from "./FloppyDiskDrive";
 
 // --- FDD0 Busy
 const MSR_D0 = 0x01;
@@ -106,17 +107,13 @@ const SR2_DD = 0x20;
 // --- which contains a deleted data address mark, this flag is set Also set if DAM is found during Read Deleted Data.
 const SR2_CM = 0x40;
 
-// --- Unit select 0
-// --- This bit is used to indicate the status of the unit select 0 signal to the FDD.
-const SR3_D0 = 0x01;
-
-// --- Unit select 1
-// --- This bit is used to Indicate the status of the unit select 1 signal to the FDD.
-const SR3_D1 = 0x02;
+// --- US0
+// --- This bit is used to indicate the status of the unit select signal 0 to the FDD.
+const SR3_US0 = 0x01;
 
 // --- Head address
 // --- This bit is used to indicate the status of the ide select signal to the FDD.
-const SR3_D2 = 0x04;
+const SR3_HD = 0x04;
 
 // --- Two Side (0 = yes, 1 = no)
 // --- This bit is used to indicate the status of the two-side signal from the FDD.
@@ -164,6 +161,15 @@ const MAX_LOG_ENTRIES = 1024;
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {
+  // --- Initializes the specified floppy
+  constructor (public readonly machine: IZxSpectrumMachine) {}
+
+  // --- The available floppy devices
+  private floppyDrives: FloppyDiskDrive[] = [];
+
+  // --- The currently selected drive index
+  private driveIndex = 0;
+
   // --- Main Status Register
   private msr = 0;
 
@@ -176,20 +182,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Status register 2
   private sr2 = 0;
 
-  // === Status register 3 flags
-
-  // --- Write protected signal from the FDD
-  // TODO: Use it later
-  private sr3Wp = false;
-
-  // --- Ready signal from the FDD
-  private sr3Ry = true;
-
-  // --- Status of Track 0 signal from FDD
-  private sr3T0 = true;
-
-  // --- Status of Two Side signal from FDD
-  private sr3Ts = false;
+  // --- Status register 3
+  private sr3 = 0;
 
   // --- Current operation phase
   private operationPhase = OperationPhase.Idle;
@@ -198,15 +192,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private commandReceived = 0;
 
   // === Command parameters
-  // --- Selected head number (0 or 1)
-  private parHd = false;
-
-  // --- Unit select 0
-  private parUs0 = false;
-
-  // --- Unit select 1
-  private parUs1 = false;
-
   // --- Cylinder number
   private parC = 0;
 
@@ -304,7 +289,22 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Floppy operation log
   private opLog: FloppyLogEntry[] = [];
 
-  constructor (public readonly machine: IZxSpectrumMachine) {}
+  // --- Retrieves the currently selected drive
+  private get selectedDrive (): FloppyDiskDrive {
+    return this.floppyDrives[this.driveIndex];
+  }
+
+  // --- Indicates if Drive #1 is present
+  isDriveAPresent: boolean;
+
+  // --- Indicates if Drive #2 is present
+  isDriveBPresent: boolean;
+
+  // --- Indicates if disk in Drive #1 is write protected
+  isDiskAWriteProtected: boolean;
+
+  // --- Indicates if disk in Drive #2 is write protected
+  isDiskBWriteProtected: boolean;
 
   // --- Resets the device
   reset (): void {
@@ -312,17 +312,20 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     this.operationPhase = OperationPhase.Command;
     this.paramIndex = 0;
     this.resultReadIndex = 0;
-    this.sr3Ry = true;
-    this.sr3T0 = false;
-    this.currentCylinder = 0;
+    this.sr0 = 0x00;
+    this.sr1 = 0x00;
+    this.sr2 = 0x00;
+    this.sr2 = 0x00;
     this.interruptPending = false;
     this.motorOn = false;
-    this.lastPhysicalSectorRead = -1;
-    this.lastPhysicalSectorWrite = -1;
-    this.resetSignalCounter();
-    this.seekWasRecalibrating = false;
-    this.resetresultBuffer();
 
+    this.floppyDrives = [];
+    for (let i = 0; i < 4; i++) {
+      this.floppyDrives[i] = new FloppyDiskDrive();
+    }
+
+    this.resetSignalCounter();
+    this.resetresultBuffer();
     this.clearLogEntries();
   }
 
@@ -340,7 +343,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         case CMD_SENSE_DRIVE_STATUS:
           if (this.resultReadIndex === 0) {
             result = this.sr3;
-            this.msr &= ~ MSR_DIO;
+            this.msr &= ~MSR_DIO;
             this.operationPhase = OperationPhase.Command;
           } else {
             result = 0xff;
@@ -566,17 +569,46 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             break;
           case CMD_SENSE_DRIVE_STATUS:
             if (this.paramIndex === 1) {
-              this.parHd = !!((value >> 2) & 0x01);
-              this.parUs1 = !!((value >> 1) & 0x01);
-              this.parUs0 = !!(value & 0x01);
+              // --- Select the specified drive
+              this.driveIndex = value & 0x03;
+              const hd = (value >> 2) & 0x01;
+              this.selectedDrive.headIndex = hd;
+              logEntry.comment = `HD: ${hd}, US1: ${
+                (this.driveIndex >> 1) & 0x01
+              }, US0: ${this.driveIndex & 0x01}`;
               this.paramIndex = 0;
-              logEntry.comment = `HD: ${this.parHd ? 1 : 0}, US1: ${
-                this.parUs1 ? 1 : 0
-              }, US0: ${this.parUs0 ? 1 : 0}`;
 
               // --- Execute the command
               this.operationPhase = OperationPhase.Result;
               this.msr |= MSR_DIO;
+
+              // --- Sense the status according to the current drive settings
+              // --- Ready, Track 0, and Two Sides flags set. Use the drives head index
+              if (this.driveIndex === 0 && this.isDriveAPresent) {
+                // --- Drive #1 (A) selected
+                this.sr3 =
+                  SR3_RD |
+                  SR3_TS |
+                  SR3_T0 |
+                  (this.floppyDrives[0].headIndex === 0 ? 0x00 : SR3_HD);
+              } else if (this.driveIndex === 1 && this.isDriveBPresent) {
+                // --- Drive #2 (B) selected
+                this.sr3 =
+                  SR3_RD |
+                  SR3_TS |
+                  SR3_T0 |
+                  (this.floppyDrives[0].headIndex === 0 ? 0x00 : SR3_HD) |
+                  SR3_US0;
+              } else {
+                // --- No drive present
+                this.sr3 = 0x00;
+              }
+              if (
+                this.selectedDrive.isDiskLoaded &&
+                this.selectedDrive.isWriteProtected
+              ) {
+                this.sr3 |= SR3_WP;
+              }
               this.resultReadIndex = 0;
               this.interruptPending = true;
             }
@@ -676,17 +708,17 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     // TODO: Implment this method
   }
 
-  // --- Status Register 3 value
-  private get sr3 (): number {
-    return (
-      (this.sr3Ry ? 1 : 0) << 5 |
-      (this.sr3T0 ? 1 : 0) << 4 |
-      (this.sr3Ts ? 1 : 0) << 3 |
-      (this.parHd ? 1 : 0) << 2 |
-      (this.parUs1 ? 1 : 0) << 1 |
-      (this.parUs0 ? 1 : 0)
-    );
-  }
+  // // --- Status Register 3 value
+  // private get sr3 (): number {
+  //   return (
+  //     ((this.sr3Ry ? 1 : 0) << 5) |
+  //     ((this.sr3T0 ? 1 : 0) << 4) |
+  //     ((this.sr3Ts ? 1 : 0) << 3) |
+  //     ((this.parHd ? 1 : 0) << 2) |
+  //     ((this.parUs1 ? 1 : 0) << 1) |
+  //     (this.parUs0 ? 1 : 0)
+  //   );
+  // }
 
   // --- Adds a new item to the operation log
   private log (entry: FloppyLogEntry): void {

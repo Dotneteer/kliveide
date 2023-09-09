@@ -4,6 +4,18 @@ import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
 export interface IFloppyControllerDevice
   extends IGenericDevice<IZxSpectrumMachine> {
+  // --- Indicates if Drive #1 is present
+  isDriveAPresent: boolean;
+
+  // --- Indicates if Drive #2 is present
+  isDriveBPresent: boolean;
+
+  // --- Indicates if disk in Drive #1 is write protected
+  isDiskAWriteProtected: boolean;
+
+  // --- Indicates if disk in Drive #2 is write protected
+  isDiskBWriteProtected: boolean;
+
   // --- Gets the value of the data register (8-bit)
   readDataRegister(): number;
 

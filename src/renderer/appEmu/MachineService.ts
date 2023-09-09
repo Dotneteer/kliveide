@@ -54,7 +54,7 @@ class MachineService implements IMachineService {
       this._oldDisposing.fire(this._controller.machine.machineId);
       await this._controller.stop();
       this._controller.dispose();
-      this._oldDisposed.fire(this._machineId);
+      this._oldDisposed.fire(machineId);
       this._controller = undefined;
     }
 

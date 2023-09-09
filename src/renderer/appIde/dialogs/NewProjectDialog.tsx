@@ -21,7 +21,19 @@ const machineIds = [
   {
     value: "sp128",
     label: "ZX Spectrum 128K"
-  }
+  },
+  {
+    value: "spp2e",
+    label: "ZX Spectrum +2E"
+  },
+  {
+    value: "spp3e",
+    label: "ZX Spectrum +3E (1 FDD)"
+  },
+  {
+    value: "spp3ef2",
+    label: "ZX Spectrum +3E (2 FDDs)"
+  },
 ];
 
 type Props = {

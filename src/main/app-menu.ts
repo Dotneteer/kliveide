@@ -935,9 +935,17 @@ const registeredMachines = [
     displayName: "ZX Spectrum 128K"
   },
   {
+    id: "spp2e",
+    displayName: "ZX Spectrum +2E"
+  },
+  {
     id: "spp3e",
-    displayName: "ZX Spectrum +3E"
-  }
+    displayName: "ZX Spectrum +3E (1 FDD)"
+  },
+  {
+    id: "spp3ef2",
+    displayName: "ZX Spectrum +3E (2 FDDs)"
+  },
 ];
 
 function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem> (
