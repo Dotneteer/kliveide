@@ -134,7 +134,9 @@ export type IProjectService = {
    * @param file File name
    * @param contents File contents to save
    */
-  saveFileContent(file: string, contents: string | Uint8Array): Promise<void>;
+  saveFileContent(file: string, contents: string | Uint8Array, asYouType?: boolean): Promise<void>;
+
+  performAllDelayedSavesNow(): Promise<void>;
 
   /**
    * Removes the specified file from the cache

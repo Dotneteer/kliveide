@@ -31,10 +31,6 @@ import {
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { delay } from "@renderer/utils/timing";
 
-// --- Wait 1000 ms before saving the document being edited
-const SAVE_DEBOUNCE = 1000;
-const DELAY_SLOT = 50;
-
 let monacoInitialized = false;
 
 // --- We use these shortcuts in this file for Monaco types
@@ -106,6 +102,7 @@ export async function initializeMonaco (appPath: string) {
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
+  debugTag: string;
 };
 
 // --- Monaco editor component properties
@@ -119,7 +116,6 @@ type EditorProps = {
 export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
-  const unsavedChangeCounter = useRef(0);
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
@@ -160,10 +156,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Recognize document actiovation to restore the previous document state
   const [activationVersion, setActivationVersion] = useState(0);
-
-  // --- Sign that the editor is ready for deactivations or keep the deactivation promise
-  const deactivationStateRef = useRef(null);
-  const saveDocumentPromise = useRef<Promise<void>>(null);
 
   // --- Focus on document activation
   useEffect(() => {
@@ -230,20 +222,16 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     // --- Create the API
     const editorApi: EditorApi = {
-      // --- Sign the editor is ready for disposal when it already saved its state
-      readyForDisposal: () => deactivationStateRef.current?.ready === true,
-
       // --- Before disposing the document, save its state
       beforeDocumentDisposal: async () => {
-        let deactivationState = deactivationStateRef.current;
-        if (deactivationState?.ready) return;
-        // --- A cooperative saving approach
-        if (!deactivationState) {
-          deactivationState = (saveDocumentPromise.current ?? saveDocument())
-            .finally(() => (deactivationStateRef.current = { ready: true }));
-          deactivationStateRef.current = deactivationState;
-        }
-        await deactivationState;
+        if (document.savedVersionCount === document.editVersionCount) return;
+
+        // --- Save the contents back to the document instance
+        document.contents = editor.current.getModel()?.getValue();
+
+        // --- Now, save it back to the file
+        await projectService.saveFileContent(document.id, document.contents)
+          .then(() => document.savedVersionCount = document.editVersionCount);
       },
 
       // --- Editor API specific
@@ -253,7 +241,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         requestAnimationFrame(() => {
           ed.focus();
         });
-      }
+      },
+
+      debugTag: document.id
     };
 
     // --- Pass back the API so that the document ub service can use it
@@ -272,27 +262,11 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     setActivationVersion(activationVersion + 1);
   };
 
-  // --- Saves the document to the project item cache and into its file
-  const saveDocument = async (): Promise<void> => {
-    if (!editor.current || document.isReadOnly
-      || document.savedVersionCount === document.editVersionCount) return;
-
-    // // --- Save the contents back to the document instance
-    document.contents = editor.current.getModel()?.getValue();
-
-    // // --- Now, save it back to the file
-    await projectService.saveFileContent(document.id, document.contents);
-    document.savedVersionCount = document.editVersionCount;
-  };
-
   // --- Handle document changes
   const onValueChanged = async (
     _: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
-    // -- Ignore any document changes if we are in deactivation state
-    if (deactivationStateRef.current) return;
-
     // --- Now, make this document permanent
     projectService.setPermanent(document.id);
 
@@ -362,29 +336,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       }
     }
 
-    // --- Save document after the change (with delay)
-    // --- Change reference counter to recognize new changes while we delay the save operation
-    unsavedChangeCounter.current++;
+    // --- Save the contents back to the document instance
+    document.contents = editor.current.getModel()?.getValue();
     document.editVersionCount++;
-    let waiting = 0;
-    while (waiting < SAVE_DEBOUNCE && !deactivationStateRef.current) {
-      await delay(DELAY_SLOT);
-      waiting += DELAY_SLOT;
-    }
 
-    // --- We have SAVE_DEBOUNCE milliseconds left after the last change and not saved the
-    // --- document as a result of deactivating it
-    if (
-      unsavedChangeCounter.current === 1 &&
-      !deactivationStateRef.current
-    ) {
-      saveDocumentPromise.current = saveDocument();
-      await saveDocumentPromise.current;
-      saveDocumentPromise.current = null;
-    }
-
-    // --- Decrements the change reference counter indicating that we processed the last change
-    unsavedChangeCounter.current--;
+    // --- Now, save it back to the file
+    await projectService.saveFileContent(document.id, document.contents, true)
+      .then(() => document.savedVersionCount = document.editVersionCount, _ => {});
   };
 
   // --- render the editor when monaco has been initialized
@@ -419,9 +377,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param compilation Current compilations
    */
   async function refreshBreakpoints (): Promise<void> {
-    // --- Do not execute it on a deactivated document
-    if (deactivationStateRef.current) return;
-
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));

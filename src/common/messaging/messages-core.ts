@@ -81,7 +81,8 @@ import {
   IdeShowDisassemblyRequest,
   IdeShowMemoryRequest,
   IdeExecuteCommandRequest,
-  IdeExecuteCommandResponse
+  IdeExecuteCommandResponse,
+  IdeSaveAllBeforeQuitRequest
 } from "./any-to-ide";
 
 /**
@@ -191,6 +192,7 @@ export type RequestMessage =
   | IdeShowBasicRequest
   | IdeShowDialogRequest
   | IdeExecuteCommandRequest
+  | IdeSaveAllBeforeQuitRequest;
 
 /**
  * All Response messages

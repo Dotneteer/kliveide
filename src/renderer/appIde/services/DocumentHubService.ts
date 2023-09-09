@@ -170,16 +170,8 @@ class DocumentHubService implements IDocumentHubService {
       return;
     }
 
-    let savingPromise: Promise<void> = null;
-    const activeDoc = this._openDocs[this._activeDocIndex];
-    if (activeDoc && activeDoc.id) {
-      savingPromise = this.ensureDocumentSaved(activeDoc.id);
-    }
-
     this._activeDocIndex = docIndex;
     this.signHubStateChanged();
-
-    await savingPromise;
   }
 
   /**
@@ -189,10 +181,10 @@ class DocumentHubService implements IDocumentHubService {
    * @param newName New document name
    * @param newIcon New document icon
    */
-  renameDocument (
+  async renameDocument (
     oldId: string,
     newId: string,
-  ): void {
+  ): Promise<void> {
     const docIndex = this._openDocs.findIndex(d => d.id === oldId);
     if (docIndex < 0) return;
 
@@ -388,7 +380,7 @@ class DocumentHubService implements IDocumentHubService {
     await Promise.all(
       ids.map(id => this.getDocumentApi(id))
         .filter(api => !!api.beforeDocumentDisposal)
-        .map((docApi) => docApi.beforeDocumentDisposal())
+        .map(api => api.beforeDocumentDisposal(false))
     )
   }
 

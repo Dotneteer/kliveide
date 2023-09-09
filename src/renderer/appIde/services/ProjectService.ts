@@ -288,12 +288,48 @@ class ProjectService implements IProjectService {
     return contents ?? (await this.readFileContent(file, isBinary));
   }
 
+  private _onDelayedSavesComplete = new LiteEvent<void>;
+  private _asYouTypeSavesCount = 0;
+
   /**
    * Saves the specified contents of the file to the file system, and then to the cache
    * @param file File name
    * @param contents File contents to save
    */
-  async saveFileContent (
+  saveFileContent (
+    file: string,
+    contents: string | Uint8Array,
+    asYouType?: boolean
+  ): Promise<void> {
+    if (asYouType) {
+      // -- An average typing speed of 190 chars per minute + 25%.
+      const TYPING_DELAY = 1.25 * 1000 * 60 / 190;
+      return new Promise<void>((resolve, reject) => {
+        ++this._asYouTypeSavesCount;
+        this.scheduleDelayedAction(file, TYPING_DELAY,
+          (canceled: boolean) => {
+            if (canceled) {
+              --this._asYouTypeSavesCount;
+              reject("canceled");
+              return;
+            }
+
+            this.saveFileContentInner(file, contents)
+              .then(resolve, reject)
+              .finally(() => {
+                if (--this._asYouTypeSavesCount <= 0) {
+                  this._onDelayedSavesComplete.fire();
+                  this._onDelayedSavesComplete.release();
+                }
+              });
+          })
+      });
+    }
+    this.cancelDelayedAction(file);
+    return this.saveFileContentInner(file, contents);
+  }
+
+  private async saveFileContentInner(
     file: string,
     contents: string | Uint8Array
   ): Promise<void> {
@@ -319,6 +355,15 @@ class ProjectService implements IProjectService {
 
     // --- Done.
     this._fileCache.set(file, contents);
+  }
+
+  performAllDelayedSavesNow(): Promise<void> {
+    return this._asYouTypeSavesCount > 0 ?
+      new Promise<void>((resolve, _) => {
+        this._onDelayedSavesComplete.on(resolve);
+        this.runAllDelayedActionsInstantly();
+      })
+      : Promise.resolve();
   }
 
   /**
@@ -516,6 +561,65 @@ class ProjectService implements IProjectService {
 
   private signDocServiceVersionChanged (hubId: number): void {
     this.store.dispatch(incDocHubServiceVersionAction(hubId), "ide");
+  }
+
+  private _delayedActions = new Map<string, any>();
+
+  private cancelDelayedAction(tag: string): void {
+    const job = this._delayedActions.get(tag);
+    if (!job) return;
+    this._delayedActions.delete(tag);
+
+    clearTimeout(job.timeoutId);
+    console.log(`CNCL: ${tag}`);
+    try {
+      job.action(true);
+    } catch (e) {
+      reportError(e);
+    }
+  }
+
+  private runAllDelayedActionsInstantly(): void {
+    const jobs = [...this._delayedActions.values()];
+    this._delayedActions.clear();
+    for (const job of jobs) {
+      clearTimeout(job.timeoutId);
+      try {
+        job.action(false);
+      } catch (e) {
+        reportError(e);
+      }
+    }
+  }
+
+  private scheduleDelayedAction(
+    tag: string,
+    delayMs: number,
+    action: (canceled: boolean) => void
+  ): void {
+    const job = this._delayedActions.get(tag);
+    if (job) {
+      clearTimeout(job.timeoutId);
+      console.log(`CNCL: ${tag}`);
+      try {
+        job.action(true);
+      } catch (e) {
+        reportError(e);
+      }
+    }
+
+    this._delayedActions.set(
+      tag,
+      {
+        timeoutId: setTimeout(() => {
+          if (this._delayedActions.delete(tag)) {
+            console.log(`EXEC: ${tag}`);
+            action(false);
+          }
+        }, delayMs),
+        action
+      }
+    );
   }
 }
 

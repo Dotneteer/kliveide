@@ -114,6 +114,11 @@ export async function processMainToIdeMessages (
         finalMessage: response.finalMessage
       };
     }
+
+    case "IdeSaveAllBeforeQuit": {
+      await projectService.performAllDelayedSavesNow();
+      break;
+    }
   }
   return defaultResponse();
 }

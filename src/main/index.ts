@@ -25,6 +25,7 @@ import {
   ResponseMessage
 } from "../common/messaging/messages-core";
 import {
+  dimMenuAction,
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
@@ -40,7 +41,7 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
-import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
+import { registerMainToIdeMessenger, sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
@@ -300,7 +301,27 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", () => {
+  let ensureSavedBeforeQuit = () => {
+    mainStore.dispatch(dimMenuAction(true));
+    const finallyFn = () => {
+      if (emuWindow?.isDestroyed() === false) {
+        emuWindow.close();
+      }
+    };
+    if (!ideWindow.isDestroyed()) {
+      sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
+        .finally(finallyFn);
+    } else {
+      finallyFn();
+    }
+  };
+  emuWindow.on("close", e => {
+    if (ensureSavedBeforeQuit) {
+      e.preventDefault();
+      ensureSavedBeforeQuit();
+      ensureSavedBeforeQuit = null;
+      return;
+    }
     allowCloseIde = true;
     ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
     if (!ideWindow.isDestroyed()) {
@@ -314,6 +335,8 @@ async function createAppWindows () {
 app.whenReady().then(() => {
   createAppWindows();
 });
+
+
 
 // --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
 // --- behavior prevents the app from quitting).
