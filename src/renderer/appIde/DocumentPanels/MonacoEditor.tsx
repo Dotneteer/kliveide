@@ -348,7 +348,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           document.savedVersionCount = document.editVersionCount;
           store.dispatch(incEditorVersionAction());
         },
-        _ => {}
+        reason => {
+          if (reason !== "canceled")
+            reportError(reason);
+        }
       );
   };
 

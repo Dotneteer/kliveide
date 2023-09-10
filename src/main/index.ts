@@ -336,8 +336,6 @@ app.whenReady().then(() => {
   createAppWindows();
 });
 
-
-
 // --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
 // --- behavior prevents the app from quitting).
 app.on("before-quit", () => {

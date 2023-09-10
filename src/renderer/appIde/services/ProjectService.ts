@@ -571,7 +571,6 @@ class ProjectService implements IProjectService {
     this._delayedActions.delete(tag);
 
     clearTimeout(job.timeoutId);
-    console.log(`CNCL: ${tag}`);
     try {
       job.action(true);
     } catch (e) {
@@ -600,7 +599,6 @@ class ProjectService implements IProjectService {
     const job = this._delayedActions.get(tag);
     if (job) {
       clearTimeout(job.timeoutId);
-      console.log(`CNCL: ${tag}`);
       try {
         job.action(true);
       } catch (e) {
@@ -613,7 +611,6 @@ class ProjectService implements IProjectService {
       {
         timeoutId: setTimeout(() => {
           if (this._delayedActions.delete(tag)) {
-            console.log(`EXEC: ${tag}`);
             action(false);
           }
         }, delayMs),

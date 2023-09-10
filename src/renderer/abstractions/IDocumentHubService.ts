@@ -79,7 +79,7 @@ export interface IDocumentHubService {
   renameDocument(
     oldId: string,
     newId: string,
-  ): Promise<void>;
+  ): void;
 
   /**
    * Closes the specified document

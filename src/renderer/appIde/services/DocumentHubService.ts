@@ -181,10 +181,10 @@ class DocumentHubService implements IDocumentHubService {
    * @param newName New document name
    * @param newIcon New document icon
    */
-  async renameDocument (
+  renameDocument (
     oldId: string,
     newId: string,
-  ): Promise<void> {
+  ): void {
     const docIndex = this._openDocs.findIndex(d => d.id === oldId);
     if (docIndex < 0) return;
 
