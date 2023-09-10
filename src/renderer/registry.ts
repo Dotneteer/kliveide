@@ -42,8 +42,8 @@ import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128M
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
-import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2EMachine";
-import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3EF2Machine";
+import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2eMachine";
+import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eF2Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
