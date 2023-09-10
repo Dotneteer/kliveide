@@ -293,6 +293,7 @@ export async function processRendererToMainMessages (
     case "EmuResolveBreakpoints":
     case "EmuScrollBreakpoints":
     case "EmuNormalizeBreakpoints":
+    case "EmuGetNecUpd765State":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();

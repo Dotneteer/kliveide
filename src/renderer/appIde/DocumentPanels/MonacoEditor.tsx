@@ -29,7 +29,6 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { delay } from "@renderer/utils/timing";
 
 let monacoInitialized = false;
 

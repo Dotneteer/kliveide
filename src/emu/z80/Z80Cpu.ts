@@ -547,6 +547,11 @@ export class Z80Cpu implements IZ80Cpu {
    */
   tactsAtLastStart: number;
 
+  /**
+   * The start address of the operation being executed;
+   */
+  opStartAddress: number;
+
   // ----------------------------------------------------------------------------------------------------------------
   // Z80 core methods
 
@@ -587,6 +592,7 @@ export class Z80Cpu implements IZ80Cpu {
 
     this.tacts = 0;
     this.tactsAtLastStart = 0;
+    this.opStartAddress = 0;
     this.frames = 0;
     this.frameTacts = 0;
     this.setTactsInFrame(1_000_000);
@@ -621,6 +627,7 @@ export class Z80Cpu implements IZ80Cpu {
 
     this.tacts = 0;
     this.tactsAtLastStart = 0;
+    this.opStartAddress = 0;
     this.frames = 0;
     this.frameTacts = 0;
     this.setTactsInFrame(1_000_000);
@@ -671,14 +678,14 @@ export class Z80Cpu implements IZ80Cpu {
       this.sigRST = false;
     }
     // --- The CPU does not test the NMI signal while an instruction is being executed
-    else if (this.sigNMI && this.prefix == OpCodePrefix.None) {
+    else if (this.sigNMI && this.prefix === OpCodePrefix.None) {
       // --- NMI is active. Process the non-maskable interrupt
       this.processNmi();
     }
     // --- The CPU does not test the INT signal while an instruction is being executed
-    else if (this.sigINT && this.prefix == OpCodePrefix.None) {
+    else if (this.sigINT && this.prefix === OpCodePrefix.None) {
       // --- NMI is active. Check, if the interrupt is enabled
-      if (this.iff1 && this.eiBacklog == 0) {
+      if (this.iff1 && this.eiBacklog === 0) {
         // --- Yes, INT is enabled, and the CPU has already executed the first instruction after EI.
         this.processInt();
       }
@@ -708,6 +715,7 @@ export class Z80Cpu implements IZ80Cpu {
     switch (this.prefix) {
       // --- Standard Z80 instructions
       case OpCodePrefix.None:
+        this.opStartAddress = this.pc - 1;
         switch (this.opCode) {
           case 0xcb:
             this.prefix = OpCodePrefix.CB;

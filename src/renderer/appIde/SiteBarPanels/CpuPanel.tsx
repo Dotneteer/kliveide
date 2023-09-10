@@ -84,51 +84,51 @@ const CpuPanel = () => {
           <div className={styles.cols}>
             <Flag
               value={toFlag(cpuState?.af, 7)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Sign'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 6)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Zero'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 5)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Bit 5'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 4)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Half Carry'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 3)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Bit 3'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 2)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Parity/Overflow'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 1)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Subtract'
-              adjustLeft={false}
             />
             <Flag
               value={toFlag(cpuState?.af, 0)}
+              adjustLeft={false}
               width={FLAG_WIDTH}
               tooltip='Carry'
-              adjustLeft={false}
             />
           </div>
         </div>

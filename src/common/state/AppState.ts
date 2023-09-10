@@ -75,6 +75,12 @@ export type EmulatorState = {
   audioSampleRate?: number;
   tapeFile?: string;
   breakpointsVersion: number;
+  floppyDisks?: FloppyDiskState[];
+};
+
+export type FloppyDiskState = {
+  diskFile?: string;
+  writeProtected?: boolean;
 };
 
 export type IdeProject = {
@@ -134,7 +140,7 @@ export const initialAppState: AppState = {
     tools: [],
     activeTool: "command",
     activeOutputPane: "emu",
-    toolCommandSeqNo: 0,
+    toolCommandSeqNo: 0
   },
   emuViewOptions: {
     showToolbar: true,
@@ -147,7 +153,8 @@ export const initialAppState: AppState = {
     savedSoundLevel: 0.8,
     fastLoad: true,
     clockMultiplier: 1,
-    breakpointsVersion: 0
+    breakpointsVersion: 0,
+    floppyDisks: []
   },
   project: {
     projectFileVersion: 1,

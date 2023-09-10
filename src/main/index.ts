@@ -206,7 +206,7 @@ async function createAppWindows () {
     if (loaded && !machineTypeInitialized) {
       // --- Set the default machine type to ZX Spectrum 48
       machineTypeInitialized = true;
-      await setMachineType("sp48");
+      await setMachineType("spp3e");
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));

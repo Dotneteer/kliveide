@@ -29,7 +29,9 @@ import {
   displayDialogAction,
   setIdeFontSizeAction,
   dimMenuAction,
-  setVolatileDocStateAction
+  setVolatileDocStateAction,
+  setDiskFileAction,
+  protectDiskAction
 } from "../common/state/actions";
 import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -46,7 +48,11 @@ import {
 } from "../common/messaging/dialog-ids";
 import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
-import { BASIC_PANEL_ID, DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "../common/state/common-ids";
+import {
+  BASIC_PANEL_ID,
+  DISASSEMBLY_PANEL_ID,
+  MEMORY_PANEL_ID
+} from "../common/state/common-ids";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -87,6 +93,11 @@ const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
 const SELECT_TAPE_FILE = "select_tape_file";
+const FLOPPY_MENU = "floppy_menu";
+const CREATE_DISK_FILE = "create_disk_file";
+const INSERT_DISK = "insert_disk";
+const PROTECT_DISK = "protect_disk";
+const EJECT_DISK = "eject_disk";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
@@ -105,18 +116,30 @@ export function setupMenu (
   emuWindow: BrowserWindow,
   ideWindow: BrowserWindow
 ): void {
+  // --- We'll put the entire menu here
   const template: (MenuItemConstructorOptions | MenuItem)[] = [];
+
+  // --- Extract values from the current state. We'll use it to assemble the menu according to the
+  // --- current state
   const appState = mainStore.getState();
   const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
+  const machineWaits =
+    execState === MachineControllerState.None ||
+    execState === MachineControllerState.Paused ||
+    execState === MachineControllerState.Stopped;
+  const machineRuns = execState === MachineControllerState.Running;
+  const machinePaused = execState === MachineControllerState.Paused;
+  const machineRestartable = machineRuns || machinePaused;
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const buildRoot = appState?.project?.buildRoots?.[0];
   const volatileDocs = appState?.ideView?.volatileDocs ?? {};
+  const machineId = appState?.emulatorState?.machineId;
+  const currentMachine = registeredMachines.find(m => m.id === machineId);
+  const disksState = appState?.emulatorState?.floppyDisks ?? [];
 
-  /**
-   * Application system menu on MacOS
-   */
+  // --- Application system menu on MacOS
   if (__DARWIN__) {
     template.push({
       label: app.name,
@@ -135,9 +158,7 @@ export function setupMenu (
     });
   }
 
-  /**
-   * File menu
-   */
+  // --- File menu
   template.push({
     label: "File",
     submenu: filterVisibleItems([
@@ -177,9 +198,7 @@ export function setupMenu (
     ])
   });
 
-  /**
-   * Edit menu on MacOS
-   */
+  // --- Edit menu on MacOS
   if (__DARWIN__) {
     template.push({
       label: "Edit",
@@ -197,6 +216,7 @@ export function setupMenu (
     });
   }
 
+  // --- Use the menu to put together tool-related menus
   const toolMenus: MenuItemConstructorOptions[] = tools.map(t => {
     return {
       id: `${TOOL_PREFIX}${t.id}`,
@@ -212,184 +232,182 @@ export function setupMenu (
   });
 
   // --- Prepare the view menu
-  const viewSubMenu: MenuItemConstructorOptions[] = filterVisibleItems([
-    { role: "resetZoom" },
-    { role: "zoomIn" },
-    { role: "zoomOut" },
-    { type: "separator" },
-    { role: "togglefullscreen" },
-    {
-      id: TOGGLE_DEVTOOLS,
-      label: "Toggle Developer Tools",
-      accelerator: "Ctrl+Shift+I",
-      click: () => {
-        BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
-      }
-    },
-    { type: "separator" },
-    {
-      id: SHOW_IDE_WINDOW,
-      label: "Show IDE",
-      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
-      click: () => {
-        ensureIdeWindow();
-      }
-    },
-    {
-      type: "separator",
-      visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible()
-    },
-    {
-      id: TOGGLE_EMU_TOOLBAR,
-      label: "Show the Toolbar",
-      type: "checkbox",
-      visible: emuWindow?.isFocused(),
-      checked: appState.emuViewOptions.showToolbar,
-      click: async mi => {
-        mainStore.dispatch(showEmuToolbarAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_IDE_TOOLBAR,
-      label: "Show the Toolbar",
-      type: "checkbox",
-      visible: ideWindow?.isFocused(),
-      checked: appState.ideViewOptions.showToolbar,
-      click: async mi => {
-        mainStore.dispatch(showIdeToolbarAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_EMU_STATUS_BAR,
-      label: "Show the Status Bar",
-      type: "checkbox",
-      visible: emuWindow?.isFocused(),
-      checked: appState.emuViewOptions.showStatusBar,
-      click: async mi => {
-        mainStore.dispatch(showEmuStatusBarAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_IDE_STATUS_BAR,
-      label: "Show the Status Bar",
-      type: "checkbox",
-      visible: ideWindow?.isFocused(),
-      checked: appState.ideViewOptions.showStatusBar,
-      click: async mi => {
-        mainStore.dispatch(showIdeStatusBarAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      type: "separator",
-      visible: emuWindow?.isFocused() || ideWindow?.isFocused()
-    },
-    {
-      id: TOGGLE_SIDE_BAR,
-      label: "Show the Side Bar",
-      type: "checkbox",
-      checked: appState.ideViewOptions.showSidebar,
-      visible: ideWindow?.isFocused(),
-      click: async mi => {
-        mainStore.dispatch(showSideBarAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_PRIMARY_BAR_RIGHT,
-      label: "Move Primary Side Bar Right",
-      type: "checkbox",
-      checked: appState.ideViewOptions.primaryBarOnRight,
-      visible: ideWindow?.isFocused(),
-      click: async mi => {
-        mainStore.dispatch(primaryBarOnRightAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_TOOL_PANELS,
-      label: "Show Tool Panels",
-      type: "checkbox",
-      checked: appState.ideViewOptions.showToolPanels,
-      visible: ideWindow?.isFocused(),
-      click: async mi => {
-        const checked = mi.checked;
-        mainStore.dispatch(showToolPanelsAction(checked));
-        if (checked) {
-          mainStore.dispatch(maximizeToolsAction(false));
-        }
-        await saveKliveProject();
-      }
-    },
-    {
-      id: TOGGLE_TOOLS_TOP,
-      label: "Move Tool Panels Top",
-      type: "checkbox",
-      checked: appState.ideViewOptions.toolPanelsOnTop,
-      visible: ideWindow?.isFocused(),
-      click: async mi => {
-        mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      id: MAXIMIZE_TOOLS,
-      label: "Maximize Tool Panels",
-      type: "checkbox",
-      checked: appState.ideViewOptions.maximizeTools,
-      visible: ideWindow?.isFocused(),
-      click: async mi => {
-        const checked = mi.checked;
-        if (checked) {
-          mainStore.dispatch(showToolPanelsAction(true));
-        }
-        mainStore.dispatch(maximizeToolsAction(checked));
-        await saveKliveProject();
-      }
-    },
-    {
-      type: "separator",
-      visible: ideWindow?.isFocused()
-    },
-    ...toolMenus,
-    { type: "separator", visible: toolMenus.some(i => i.visible) },
-    {
-      id: THEMES,
-      label: "Themes",
-      submenu: [
-        {
-          id: LIGHT_THEME,
-          label: "Light",
-          type: "checkbox",
-          checked: appState.theme === "light",
-          click: async () => {
-            mainStore.dispatch(setThemeAction("light"));
-            await saveKliveProject();
-          }
-        },
-        {
-          id: DARK_THEME,
-          label: "Dark",
-          type: "checkbox",
-          checked: appState.theme === "dark",
-          click: async () => {
-            mainStore.dispatch(setThemeAction("dark"));
-            await saveKliveProject();
-          }
-        }
-      ]
-    }
-  ]);
-
   template.push({
     label: "View",
-    submenu: viewSubMenu
+    submenu: filterVisibleItems([
+      { role: "resetZoom" },
+      { role: "zoomIn" },
+      { role: "zoomOut" },
+      { type: "separator" },
+      { role: "togglefullscreen" },
+      {
+        id: TOGGLE_DEVTOOLS,
+        label: "Toggle Developer Tools",
+        accelerator: "Ctrl+Shift+I",
+        click: () => {
+          BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
+        }
+      },
+      { type: "separator" },
+      {
+        id: SHOW_IDE_WINDOW,
+        label: "Show IDE",
+        visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
+        click: () => {
+          ensureIdeWindow();
+        }
+      },
+      {
+        type: "separator",
+        visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible()
+      },
+      {
+        id: TOGGLE_EMU_TOOLBAR,
+        label: "Show the Toolbar",
+        type: "checkbox",
+        visible: emuWindow?.isFocused(),
+        checked: appState.emuViewOptions.showToolbar,
+        click: async mi => {
+          mainStore.dispatch(showEmuToolbarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_IDE_TOOLBAR,
+        label: "Show the Toolbar",
+        type: "checkbox",
+        visible: ideWindow?.isFocused(),
+        checked: appState.ideViewOptions.showToolbar,
+        click: async mi => {
+          mainStore.dispatch(showIdeToolbarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_EMU_STATUS_BAR,
+        label: "Show the Status Bar",
+        type: "checkbox",
+        visible: emuWindow?.isFocused(),
+        checked: appState.emuViewOptions.showStatusBar,
+        click: async mi => {
+          mainStore.dispatch(showEmuStatusBarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_IDE_STATUS_BAR,
+        label: "Show the Status Bar",
+        type: "checkbox",
+        visible: ideWindow?.isFocused(),
+        checked: appState.ideViewOptions.showStatusBar,
+        click: async mi => {
+          mainStore.dispatch(showIdeStatusBarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        type: "separator",
+        visible: emuWindow?.isFocused() || ideWindow?.isFocused()
+      },
+      {
+        id: TOGGLE_SIDE_BAR,
+        label: "Show the Side Bar",
+        type: "checkbox",
+        checked: appState.ideViewOptions.showSidebar,
+        visible: ideWindow?.isFocused(),
+        click: async mi => {
+          mainStore.dispatch(showSideBarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_PRIMARY_BAR_RIGHT,
+        label: "Move Primary Side Bar Right",
+        type: "checkbox",
+        checked: appState.ideViewOptions.primaryBarOnRight,
+        visible: ideWindow?.isFocused(),
+        click: async mi => {
+          mainStore.dispatch(primaryBarOnRightAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_TOOL_PANELS,
+        label: "Show Tool Panels",
+        type: "checkbox",
+        checked: appState.ideViewOptions.showToolPanels,
+        visible: ideWindow?.isFocused(),
+        click: async mi => {
+          const checked = mi.checked;
+          mainStore.dispatch(showToolPanelsAction(checked));
+          if (checked) {
+            mainStore.dispatch(maximizeToolsAction(false));
+          }
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_TOOLS_TOP,
+        label: "Move Tool Panels Top",
+        type: "checkbox",
+        checked: appState.ideViewOptions.toolPanelsOnTop,
+        visible: ideWindow?.isFocused(),
+        click: async mi => {
+          mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: MAXIMIZE_TOOLS,
+        label: "Maximize Tool Panels",
+        type: "checkbox",
+        checked: appState.ideViewOptions.maximizeTools,
+        visible: ideWindow?.isFocused(),
+        click: async mi => {
+          const checked = mi.checked;
+          if (checked) {
+            mainStore.dispatch(showToolPanelsAction(true));
+          }
+          mainStore.dispatch(maximizeToolsAction(checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        type: "separator",
+        visible: ideWindow?.isFocused()
+      },
+      ...toolMenus,
+      { type: "separator", visible: toolMenus.some(i => i.visible) },
+      {
+        id: THEMES,
+        label: "Themes",
+        submenu: [
+          {
+            id: LIGHT_THEME,
+            label: "Light",
+            type: "checkbox",
+            checked: appState.theme === "light",
+            click: async () => {
+              mainStore.dispatch(setThemeAction("light"));
+              await saveKliveProject();
+            }
+          },
+          {
+            id: DARK_THEME,
+            label: "Dark",
+            type: "checkbox",
+            checked: appState.theme === "dark",
+            click: async () => {
+              mainStore.dispatch(setThemeAction("dark"));
+              await saveKliveProject();
+            }
+          }
+        ]
+      }
+    ])
   });
 
-  // --- Prepare the machine menu
+  // --- Prepare the clock multiplier submenu
   const multiplierValues = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
   const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map(
     v => {
@@ -407,6 +425,7 @@ export function setupMenu (
     }
   );
 
+  // --- Prepare the sound level submenus
   const soundLevelValues = [
     { value: 0.0, label: "Mute" },
     { value: 0.2, label: "Low" },
@@ -430,15 +449,7 @@ export function setupMenu (
     }
   );
 
-  // --- Calculate flags from the current machine's execution state
-  const machineWaits =
-    execState === MachineControllerState.None ||
-    execState === MachineControllerState.Paused ||
-    execState === MachineControllerState.Stopped;
-  const machineRuns = execState === MachineControllerState.Running;
-  const machinePaused = execState === MachineControllerState.Paused;
-  const machineRestartable = machineRuns || machinePaused;
-
+  // --- Machine types submenu (use the registered machines)
   const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(
     mt => {
       return {
@@ -454,102 +465,165 @@ export function setupMenu (
     }
   );
 
+  // --- All standard submenus under "Machine"
+  const machineSubMenu: MenuItemConstructorOptions[] = [
+    {
+      id: MACHINE_TYPES,
+      label: "Machine type",
+      submenu: machineTypesMenu
+    },
+    { type: "separator" },
+    {
+      id: START_MACHINE,
+      label: "Start",
+      enabled: machineWaits,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("start"));
+      }
+    },
+    {
+      id: PAUSE_MACHINE,
+      label: "Pause",
+      enabled: machineRuns,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("pause"));
+      }
+    },
+    {
+      id: STOP_MACHINE,
+      label: "Stop",
+      enabled: machineRestartable,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("stop"));
+      }
+    },
+    {
+      id: RESTART_MACHINE,
+      label: "Restart",
+      enabled: machineRestartable,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("restart"));
+      }
+    },
+    { type: "separator" },
+    {
+      id: DEBUG_MACHINE,
+      label: "Start with Debugging",
+      enabled: machineWaits,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("debug"));
+      }
+    },
+    {
+      id: STEP_INTO,
+      label: "Step Into",
+      enabled: machinePaused,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("stepInto"));
+      }
+    },
+    {
+      id: STEP_OVER,
+      label: "Step Over",
+      enabled: machinePaused,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("stepOver"));
+      }
+    },
+    {
+      id: STEP_OUT,
+      label: "Step Out",
+      enabled: machinePaused,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("stepOut"));
+      }
+    },
+    { type: "separator" },
+    {
+      id: CLOCK_MULT,
+      label: "Clock Multiplier",
+      submenu: multiplierMenu
+    },
+    { type: "separator" },
+    {
+      id: SOUND_LEVEL,
+      label: "Sound Level",
+      submenu: soundLeveMenu
+    },
+    { type: "separator" },
+    {
+      id: SELECT_TAPE_FILE,
+      label: "Select Tape File...",
+      click: async () => {
+        await setTapeFile(emuWindow);
+        await saveKliveProject();
+      }
+    }
+  ];
+
+  // --- Optional floppy menus
+  if (currentMachine?.supportedFdds) {
+    // --- Yes, it's a machine with FDDs!
+    const floppySubMenu: MenuItemConstructorOptions[] = [
+      {
+        id: CREATE_DISK_FILE,
+        label: "Create Disk File...",
+        click: () => {
+          console.log("Create Disk File");
+        }
+      },
+      { type: "separator" }
+    ];
+    createDiskMenu(0, "a");
+    if (currentMachine.supportedFdds > 1) {
+      createDiskMenu(1, "b");
+    }
+
+    const fddMenu: MenuItemConstructorOptions[] = [
+      { type: "separator" },
+      {
+        id: FLOPPY_MENU,
+        label: "Floppy Disks",
+        submenu: floppySubMenu
+      }
+    ];
+
+    machineSubMenu.push(...fddMenu);
+
+    function createDiskMenu (index: number, suffix: string): void {
+      const state = disksState[index];
+      floppySubMenu.push({ type: "separator" });
+      if (state?.diskFile) {
+        floppySubMenu.push({
+          id: `${EJECT_DISK}_${suffix}`,
+          label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
+          click: () => mainStore.dispatch(setDiskFileAction(index, null))
+        });
+        floppySubMenu.push({
+          id: `${PROTECT_DISK}_${suffix}`,
+          type: "checkbox",
+          checked: !!state.writeProtected,
+          label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
+          click: () => {
+            mainStore.dispatch(protectDiskAction(index, !state.writeProtected));
+          }
+        });
+      } else {
+        floppySubMenu.push({
+          id: `${INSERT_DISK}_${suffix}`,
+          label: `Insert Disk into Drive ${suffix.toUpperCase()}...`,
+          click: () => {
+            mainStore.dispatch(setDiskFileAction(index, "fakediskfile"));
+            console.log(`Insert disk into drive ${suffix.toUpperCase()}...`);
+          }
+        });
+      }
+    }
+  }
+
   template.push({
     label: "Machine",
-    submenu: [
-      {
-        id: MACHINE_TYPES,
-        label: "Machine type",
-        submenu: machineTypesMenu
-      },
-      { type: "separator" },
-      {
-        id: START_MACHINE,
-        label: "Start",
-        enabled: machineWaits,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("start"));
-        }
-      },
-      {
-        id: PAUSE_MACHINE,
-        label: "Pause",
-        enabled: machineRuns,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("pause"));
-        }
-      },
-      {
-        id: STOP_MACHINE,
-        label: "Stop",
-        enabled: machineRestartable,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("stop"));
-        }
-      },
-      {
-        id: RESTART_MACHINE,
-        label: "Restart",
-        enabled: machineRestartable,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("restart"));
-        }
-      },
-      { type: "separator" },
-      {
-        id: DEBUG_MACHINE,
-        label: "Start with Debugging",
-        enabled: machineWaits,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("debug"));
-        }
-      },
-      {
-        id: STEP_INTO,
-        label: "Step Into",
-        enabled: machinePaused,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("stepInto"));
-        }
-      },
-      {
-        id: STEP_OVER,
-        label: "Step Over",
-        enabled: machinePaused,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("stepOver"));
-        }
-      },
-      {
-        id: STEP_OUT,
-        label: "Step Out",
-        enabled: machinePaused,
-        click: async () => {
-          await sendFromMainToEmu(createMachineCommand("stepOut"));
-        }
-      },
-      { type: "separator" },
-      {
-        id: CLOCK_MULT,
-        label: "Clock Multiplier",
-        submenu: multiplierMenu
-      },
-      { type: "separator" },
-      {
-        id: SOUND_LEVEL,
-        label: "Sound Level",
-        submenu: soundLeveMenu
-      },
-      { type: "separator" },
-      {
-        id: SELECT_TAPE_FILE,
-        label: "Select Tape File...",
-        click: async () => {
-          await setTapeFile(emuWindow);
-          await saveKliveProject();
-        }
-      }
-    ]
+    submenu: machineSubMenu
   });
 
   // --- Prepare the Project Menu
@@ -933,6 +1007,20 @@ const registeredMachines = [
   {
     id: "sp128",
     displayName: "ZX Spectrum 128K"
+  },
+  {
+    id: "spp2e",
+    displayName: "ZX Spectrum +2E"
+  },
+  {
+    id: "spp3e",
+    displayName: "ZX Spectrum +3E (1 FDD)",
+    supportedFdds: 1
+  },
+  {
+    id: "spp3ef2",
+    displayName: "ZX Spectrum +3E (2 FDDs)",
+    supportedFdds: 2
   }
 ];
 
