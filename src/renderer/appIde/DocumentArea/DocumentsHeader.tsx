@@ -10,7 +10,6 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode, DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
-import { delay, delayAction } from "@renderer/utils/timing";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -31,6 +30,8 @@ export const DocumentsHeader = () => {
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
+  const editorVersion = useSelector(s => s.ideView?.editorVersion);
+  const [dirtyStates, setDirtyStates] = useState<boolean[]>();
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
@@ -42,6 +43,10 @@ export const DocumentsHeader = () => {
     setActiveDocIndex(documentHubService.getActiveDocumentIndex());
   }, [hubVersion]);
 
+  useEffect(() => {
+    setDirtyStates(openDocs?.map(d => d.editVersionCount !== d.savedVersionCount));
+  }, [editorVersion]);
+
   // --- Update the UI when the build root changes
   useEffect(() => {
     if (openDocs) {
@@ -50,11 +55,6 @@ export const DocumentsHeader = () => {
       );
     }
   }, [openDocs, buildRoots, activeDocIndex]);
-
-  // --- Make sure that the index is visible
-  useEffect(() => {
-    ensureTabVisible();
-  }, [activeDocIndex, selectedIsBuildRoot]);
 
   // --- Update the UI when the build root changes
   useEffect(() => {
@@ -205,6 +205,7 @@ export const DocumentsHeader = () => {
                 isTemporary={d.isTemporary}
                 isReadOnly={d.isReadOnly}
                 awaiting={awaiting}
+                hasChanges={dirtyStates?.[idx]}
                 tabsCount={tabsCount}
                 iconName={d.iconName}
                 iconFill={d.iconFill}

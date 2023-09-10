@@ -23,6 +23,7 @@ type Props = {
   isReadOnly?: boolean;
   isTemporary?: boolean;
   awaiting?: boolean;
+  hasChanges?: boolean;
   tabsCount?: number;
   tabDisplayed?: (el: HTMLDivElement) => void;
   tabClicked?: () => void;
@@ -42,6 +43,7 @@ export const DocumentTab = ({
   iconFill = "--color-doc-icon",
   isActive = false,
   awaiting = false,
+  hasChanges = false,
   tabsCount,
   tabDisplayed,
   tabClicked,
@@ -162,7 +164,7 @@ export const DocumentTab = ({
       {contextMenu}
 
       <TabButton
-        iconName='close'
+        iconName={hasChanges ? 'circle-filled' : 'close'}
         hide={!pointed && !isActive}
         fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
         clicked={() => tabCloseClicked?.(CloseMode.This)}

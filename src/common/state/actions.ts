@@ -306,3 +306,7 @@ export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
   type: "SET_VOLATILE_DOC_STATE",
   payload: { id, flag }
 });
+
+export const incEditorVersionAction: ActionCreator = () => ({
+  type: "INC_EDITOR_VERSION"
+});

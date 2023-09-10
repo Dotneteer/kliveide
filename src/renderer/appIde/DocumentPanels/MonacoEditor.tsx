@@ -23,7 +23,7 @@ import {
 } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import {
   useDocumentHubServiceVersion
@@ -102,7 +102,6 @@ export async function initializeMonaco (appPath: string) {
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
-  debugTag: string;
 };
 
 // --- Monaco editor component properties
@@ -231,7 +230,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
         // --- Now, save it back to the file
         await projectService.saveFileContent(document.id, document.contents)
-          .then(() => document.savedVersionCount = document.editVersionCount);
+          .then(() => {
+            document.savedVersionCount = document.editVersionCount;
+            store.dispatch(incEditorVersionAction());
+          });
       },
 
       // --- Editor API specific
@@ -241,9 +243,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         requestAnimationFrame(() => {
           ed.focus();
         });
-      },
-
-      debugTag: document.id
+      }
     };
 
     // --- Pass back the API so that the document ub service can use it
@@ -339,10 +339,17 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // --- Save the contents back to the document instance
     document.contents = editor.current.getModel()?.getValue();
     document.editVersionCount++;
+    store.dispatch(incEditorVersionAction());
 
     // --- Now, save it back to the file
     await projectService.saveFileContent(document.id, document.contents, true)
-      .then(() => document.savedVersionCount = document.editVersionCount, _ => {});
+      .then(
+        () => {
+          document.savedVersionCount = document.editVersionCount;
+          store.dispatch(incEditorVersionAction());
+        },
+        _ => {}
+      );
   };
 
   // --- render the editor when monaco has been initialized

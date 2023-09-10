@@ -53,7 +53,7 @@ export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
   documentHubState?: Record<number, number>;
-  documentServiceVersion?: number;
+  editorVersion?: number;
   volatileDocs: Record<string, boolean>;
   tools?: ToolInfo[];
   activeTool?: string;
@@ -129,7 +129,7 @@ export const initialAppState: AppState = {
   ideView: {
     sideBarPanels: {},
     documentHubState: {},
-    documentServiceVersion: 1,
+    editorVersion: 1,
     volatileDocs: {},
     tools: [],
     activeTool: "command",
