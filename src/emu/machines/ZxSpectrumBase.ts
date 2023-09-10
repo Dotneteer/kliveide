@@ -76,6 +76,13 @@ export abstract class ZxSpectrumBase
   tapeDevice: ITapeDevice;
 
   /**
+   * Gets the ROM ID to load the ROM file
+   */
+  get romId (): string {
+    return this.machineId;
+  }
+
+  /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
    */
   get isSpectrum48RomSelected (): boolean {

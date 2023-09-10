@@ -21,6 +21,7 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
+import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 
 const borderColors = [
   "Black",
@@ -286,7 +287,9 @@ export async function processMainToEmuMessages (
       if (message.partition === undefined) {
         memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
       } else {
-        memory = (controller.machine as IZxSpectrumMachine).get16KPartition(message.partition);
+        memory = (controller.machine as IZxSpectrumMachine).get16KPartition(
+          message.partition
+        );
       }
       return {
         type: "EmuGetMemoryResponse",
@@ -357,6 +360,18 @@ export async function processMainToEmuMessages (
         controller.normalizeBreakpoints(message.resource, message.lineCount);
       }
       break;
+    }
+
+    case "EmuGetNecUpd765State": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const machine = controller.machine;
+      if (machine.machineId.startsWith("spp3e")) {
+        return {
+          type: "EmuGetNecUpd765StateResponse",
+          log: (machine as ZxSpectrumP3eMachine).floppyDevice.getLogEntries()
+        };
+      }
     }
   }
   return defaultResponse();

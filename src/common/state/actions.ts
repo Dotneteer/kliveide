@@ -306,3 +306,13 @@ export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
   type: "SET_VOLATILE_DOC_STATE",
   payload: { id, flag }
 });
+
+export const setDiskFileAction: ActionCreator = (index, file) => ({
+  type: "SET_DISK_FILE",
+  payload: { index, file }
+});
+
+export const protectDiskAction: ActionCreator = (index, flag) => ({
+  type: "PROTECT_DISK",
+  payload: { index, flag }
+});

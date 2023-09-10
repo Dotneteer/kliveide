@@ -4,6 +4,7 @@ import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
+import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -109,6 +110,44 @@ export interface EmuGetSysVarsRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu to inject the specified code
+ */
+export interface EmuInjectCodeRequest extends MessageBase {
+  type: "EmuInjectCode";
+  codeToInject: CodeToInject;
+}
+
+export interface EmuRunCodeRequest extends MessageBase {
+  type: "EmuRunCode";
+  codeToInject: CodeToInject;
+  debug: boolean;
+}
+
+export interface EmuResolveBreakpointsRequest extends MessageBase {
+  type: "EmuResolveBreakpoints";
+  breakpoints: ResolvedBreakpoint[];
+}
+
+export interface EmuScrollBreakpointsRequest extends MessageBase {
+  type: "EmuScrollBreakpoints";
+  addr: BreakpointAddressInfo;
+  shift: number;
+}
+
+export interface EmuNormalizeBreakpointsRequest extends MessageBase {
+  type: "EmuNormalizeBreakpoints";
+  resource: string;
+  lineCount: number;
+}
+
+/**
+ * The Ide process asks the emu process for NEC UPD 765 state information
+ */
+export interface EmuGetNecUpd765Request extends MessageBase {
+  type: "EmuGetNecUpd765State";
+}
+
+/**
  * The Emu process sends back CPU state information
  */
 export interface EmuGetCpuStateResponse extends MessageBase {
@@ -201,34 +240,11 @@ export interface EmuGetSysVarsResponse extends MessageBase {
 }
 
 /**
- * The Ide asks Emu to inject the specified code
+ * The Ide process asks the emu process for NEC UPD 765 state information
  */
-export interface EmuInjectCodeRequest extends MessageBase {
-  type: "EmuInjectCode";
-  codeToInject: CodeToInject;
-}
-
-export interface EmuRunCodeRequest extends MessageBase {
-  type: "EmuRunCode";
-  codeToInject: CodeToInject;
-  debug: boolean;
-}
-
-export interface EmuResolveBreakpointsRequest extends MessageBase {
-  type: "EmuResolveBreakpoints";
-  breakpoints: ResolvedBreakpoint[];
-}
-
-export interface EmuScrollBreakpointsRequest extends MessageBase {
-  type: "EmuScrollBreakpoints";
-  addr: BreakpointAddressInfo;
-  shift: number;
-}
-
-export interface EmuNormalizeBreakpointsRequest extends MessageBase {
-  type: "EmuNormalizeBreakpoints";
-  resource: string;
-  lineCount: number;
+export interface EmuGetNecUpd765Response extends MessageBase {
+  type: "EmuGetNecUpd765StateResponse";
+  log: FloppyLogEntry[];
 }
 
 export function createMachineCommand (

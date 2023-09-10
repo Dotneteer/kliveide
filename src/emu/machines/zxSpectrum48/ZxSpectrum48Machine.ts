@@ -59,7 +59,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   async setup (): Promise<void> {
     // --- Get the ROM file
-    const romContents = await this.loadRomFromResource(this.machineId);
+    const romContents = await this.loadRomFromResource(this.romId);
 
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(romContents);
