@@ -44,7 +44,8 @@ import {
   MainSaveBinaryFileRequest,
   MainShowOpenFileDialogResponse,
   MainShowOpenFileDialogRequest,
-  MainSaveFileResponse
+  MainSaveFileResponse,
+  MainShowItemInFolderRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -82,7 +83,8 @@ import {
   IdeShowDisassemblyRequest,
   IdeShowMemoryRequest,
   IdeExecuteCommandRequest,
-  IdeExecuteCommandResponse
+  IdeExecuteCommandResponse,
+  IdeSaveAllBeforeQuitRequest
 } from "./any-to-ide";
 
 /**
@@ -186,12 +188,14 @@ export type RequestMessage =
   | MainSaveSettingsRequest
   | MainCompileFileRequest
   | MainExitAppRequest
+  | MainShowItemInFolderRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
   | IdeShowBasicRequest
   | IdeShowDialogRequest
   | IdeExecuteCommandRequest
+  | IdeSaveAllBeforeQuitRequest;
 
 /**
  * All Response messages

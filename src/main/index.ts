@@ -25,6 +25,7 @@ import {
   ResponseMessage
 } from "../common/messaging/messages-core";
 import {
+  dimMenuAction,
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
@@ -40,7 +41,7 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
-import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
+import { registerMainToIdeMessenger, sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
@@ -300,7 +301,19 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", () => {
+  let ensureAllSavedBeforeQuit = ((w: BrowserWindow, callback: (w: BrowserWindow) => void) => {
+    mainStore.dispatch(dimMenuAction(true));
+    sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
+      .finally(callback.bind(undefined, w));
+  }).bind(undefined, emuWindow);
+  emuWindow.on("close", e => {
+    if (ensureAllSavedBeforeQuit) {
+      e.preventDefault();
+      const fn = ensureAllSavedBeforeQuit;
+      ensureAllSavedBeforeQuit = null;
+      fn((w: BrowserWindow) => w.close());
+      return;
+    }
     allowCloseIde = true;
     ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
     if (!ideWindow.isDestroyed()) {

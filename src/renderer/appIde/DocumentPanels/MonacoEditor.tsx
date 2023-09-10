@@ -23,18 +23,12 @@ import {
 } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import {
-  useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { delay } from "@renderer/utils/timing";
-
-// --- Wait 1000 ms before saving the document being edited
-const SAVE_DEBOUNCE = 1000;
-const DELAY_SLOT = 50;
 
 let monacoInitialized = false;
 
@@ -120,8 +114,6 @@ type EditorProps = {
 export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
-  const previousContent = useRef<string>();
-  const unsavedChangeCounter = useRef(0);
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
@@ -162,9 +154,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Recognize document actiovation to restore the previous document state
   const [activationVersion, setActivationVersion] = useState(0);
-
-  // --- Sign that the editor is ready for deactivations
-  const readyForDeactivation = useRef(false);
 
   // --- Focus on document activation
   useEffect(() => {
@@ -216,7 +205,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Initializes the editor when mounted
   const onMount = (
     ed: monacoEditor.editor.IStandaloneCodeEditor,
-    mon: typeof monacoEditor
+    _: typeof monacoEditor
   ): void => {
     // --- Restore the view state to display the editor is it has been left
     editor.current = ed;
@@ -231,13 +220,19 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     // --- Create the API
     const editorApi: EditorApi = {
-      // --- Sign the editor is ready for disposal when it already saved its state
-      readyForDisposal: async () => readyForDeactivation.current,
-
       // --- Before disposing the document, save its state
       beforeDocumentDisposal: async () => {
-        await saveDocument();
-        readyForDeactivation.current = true;
+        if (document.savedVersionCount === document.editVersionCount) return;
+
+        // --- Save the contents back to the document instance
+        document.contents = editor.current.getModel()?.getValue();
+
+        // --- Now, save it back to the file
+        await projectService.saveFileContent(document.id, document.contents)
+          .then(() => {
+            document.savedVersionCount = document.editVersionCount;
+            store.dispatch(incEditorVersionAction());
+          });
       },
 
       // --- Editor API specific
@@ -266,28 +261,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     setActivationVersion(activationVersion + 1);
   };
 
-  // --- Saves the document to the project item cache and into its file
-  const saveDocument = async (): Promise<void> => {
-    if (!editor.current || readyForDeactivation.current) return;
-
-    // --- Save the contents back to the document instance
-    document.contents = editor.current.getModel().getValue();
-
-    // --- Now, save it back to the file
-    await projectService.saveFileContent(document.id, document.contents);
-  };
-
   // --- Handle document changes
   const onValueChanged = async (
-    val: string,
+    _: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) => {
     // --- Now, make this document permanent
     projectService.setPermanent(document.id);
-
-    // --- Save the current value as the previous one. We need it to detect line changes
-    // --- to update source code breakpoints
-    previousContent.current = editor.current.getValue();
 
     // --- Does the editor support breakpoints?
     if (languageInfo?.supportsBreakpoints) {
@@ -295,8 +275,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (e.changes.length > 0) {
         // --- Get the text that has been deleted
         const change = e.changes[0];
-        const deletedText = monacoEditor.editor
-          .createModel(previousContent.current)
+        const deletedText = editor.current
+          .getModel()
           .getValueInRange(change.range);
         const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || [])
           .length;
@@ -345,7 +325,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         const response = await messenger.sendMessage({
           type: "EmuNormalizeBreakpoints",
           resource: resourceName,
-          lineCount: editor.current.getModel().getLineCount()
+          lineCount: editor.current.getModel()?.getLineCount() ?? -1
         });
         if (response.type === "ErrorResponse") {
           reportMessagingError(
@@ -355,29 +335,23 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       }
     }
 
-    // --- Save document after the change (with delay)
-    // --- Change reference counter to recognize new changes while we delay the save operation
-    unsavedChangeCounter.current++;
+    // --- Save the contents back to the document instance
+    document.contents = editor.current.getModel()?.getValue();
     document.editVersionCount++;
-    let waiting = 0;
-    while (waiting < SAVE_DEBOUNCE && !readyForDeactivation.current) {
-      await delay(DELAY_SLOT);
-      waiting += DELAY_SLOT;
-    }
+    store.dispatch(incEditorVersionAction());
 
-    // --- We have SAVE_DEBOUNCE milliseconds left after the last change and not saved the
-    // --- document as a result of deactivating it
-    if (
-      unsavedChangeCounter.current === 1 &&
-      previousContent.current &&
-      !readyForDeactivation.current
-    ) {
-      await saveDocument();
-      document.savedVersionCount = document.editVersionCount;
-    }
-
-    // --- Decrements the change reference counter indicating that we processed the last change
-    unsavedChangeCounter.current--;
+    // --- Now, save it back to the file
+    await projectService.saveFileContent(document.id, document.contents, true)
+      .then(
+        () => {
+          document.savedVersionCount = document.editVersionCount;
+          store.dispatch(incEditorVersionAction());
+        },
+        reason => {
+          if (reason !== "canceled")
+            reportError(reason);
+        }
+      );
   };
 
   // --- render the editor when monaco has been initialized
@@ -412,9 +386,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param compilation Current compilations
    */
   async function refreshBreakpoints (): Promise<void> {
-    // --- Do not execute it on a deactivated document
-    if (readyForDeactivation.current) return;
-
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));

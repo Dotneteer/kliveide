@@ -139,6 +139,13 @@ export function ideViewReducer (
       };
     }
 
+    case "INC_EDITOR_VERSION": {
+      return {
+        ...state,
+        editorVersion: (state.editorVersion ??  0) + 1
+      }
+    }
+
     default:
       return state;
   }

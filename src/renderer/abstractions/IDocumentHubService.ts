@@ -90,12 +90,12 @@ export interface IDocumentHubService {
   /**
    * Closes all open documents
    */
-  closeAllDocuments(): Promise<void>;
+  closeAllDocuments(...exceptIds: string[]): Promise<void>;
 
   /**
    * Closes all open explorer documents
    */
-  closeAllExplorerDocuments(): void;
+  closeAllExplorerDocuments(): Promise<void>;
 
   /**
    * Moves the active tab to left

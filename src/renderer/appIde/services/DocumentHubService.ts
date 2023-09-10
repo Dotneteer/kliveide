@@ -170,9 +170,6 @@ class DocumentHubService implements IDocumentHubService {
       return;
     }
 
-    // --- Make sure to save the state of the active document gracefully
-    await this.ensureActiveSaved();
-
     this._activeDocIndex = docIndex;
     this.signHubStateChanged();
   }
@@ -198,6 +195,8 @@ class DocumentHubService implements IDocumentHubService {
     document.name = getNodeFile(newId),
     document.iconName = getFileTypeEntry(newId)?.icon;
 
+    // TODO: move file into new doc ID
+
     // --- Re-index the document API
     const oldApi = this._documentApi.get(oldId);
     if (oldApi) {
@@ -219,72 +218,77 @@ class DocumentHubService implements IDocumentHubService {
    * Closes the specified document
    * @param id Document to close
    */
-  async closeDocument (id: string): Promise<void> {
-    const docIndex = this._openDocs.findIndex(d => d.id === id);
-    if (docIndex < 0) return;
+  closeDocument (id: string): Promise<void> {
+    return this.closeDocuments(id);
+  }
 
-    // --- Remove the document
-    const oldDocument = this._openDocs[docIndex];
-    this._openDocs.splice(docIndex, 1);
+  private async closeDocuments(...ids: string[]) {
+    const indices = ids
+      .map(id => this._openDocs.findIndex(doc => doc.id === id))
+      .filter(i => i >= 0);
 
-    // --- If volatile, sign its closed
-    if (!oldDocument.path) {
-      this.store.dispatch(setVolatileDocStateAction(id, false), "ide");
+    if (indices.length <= 0) return;
+
+    const closedDocs = indices.map(i => this._openDocs[i]);
+    await this.ensureDocumentSaved(...closedDocs.map(doc => doc.id));
+
+    // --- This is needed when evaluating active document below.
+    const activeDoc = this._openDocs[this._activeDocIndex];
+
+    this._openDocs = this._openDocs.filter(doc => !closedDocs.includes(doc));
+    for (const doc of closedDocs) {
+      // --- If volatile, sign its closed
+      if (!doc.path) {
+        this.store.dispatch(setVolatileDocStateAction(doc.id, false), "ide");
+      }
+
+      // --- Release the document API
+      this._documentApi.delete(doc.id);
+
+      // --- Release the document view data
+      this._documentViewState.delete(doc.id);
+
+      // --- Notify the project service about closing the document
+      this.projectService.closeInDocumentHub(doc.id, this);
     }
-
-    // --- Release the document API
-    if (this._documentApi.has(id)) {
-      this._documentApi.delete(id);
-    }
-
-    // --- Release the document view data
-    if (this._documentViewState.has(id)) {
-      this._documentViewState.delete(id);
-    }
-
-    // --- Notify the project service about closing the document
-    this.projectService.closeInDocumentHub(id, this);
 
     // --- Activate another document
-    if (docIndex > 0) {
-      await this.setActiveDocument(this._openDocs[docIndex - 1].id);
-    } else if (docIndex < this._openDocs.length) {
-      await this.setActiveDocument(this._openDocs[docIndex].id);
-    } else {
-      this._activeDocIndex = -1;
+    this._activeDocIndex = this._openDocs.indexOf(activeDoc);
+    if (this._activeDocIndex < 0 && this._openDocs.length > 0) {
+      const docIndex = indices.sort()[0];
+      this._activeDocIndex = docIndex > 0 ? docIndex - 1 : docIndex;
     }
+
     this.signHubStateChanged();
+
+    // --- Close the document hub service
+    if (this._openDocs.length <= 0) {
+      this.projectService.closeDocumentHubService(this);
+    }
   }
 
   /**
    * Closes all open documents
    */
-  async closeAllDocuments (): Promise<void> {
-    // --- Close the documents one-by-one
-    for (const doc of this._openDocs.slice(0)) {
-      await this.closeDocument(doc.id);
-    }
-
-    // --- Close the document hub service
-    this.projectService.closeDocumentHubService(this);
+  async closeAllDocuments (...exceptIds: string[]): Promise<void> {
+    // --- Close the documents
+    await this.closeDocuments(
+      ...this._openDocs
+          .filter(d => exceptIds?.includes(d.id) !== true)
+          .map(d => d.id)
+    );
   }
 
   /**
    * Closes all open explorer documents
    */
-  closeAllExplorerDocuments (): void {
-    // --- Close the documents one-by-one
-    this._openDocs
-      .slice(0)
-      .filter(d => d.node)
-      .forEach(d => {
-        this.closeDocument(d.id);
-      });
-
-    // --- Close the document hub service
-    if (this._openDocs.length === 0) {
-      this.projectService.closeDocumentHubService(this);
-    }
+  async closeAllExplorerDocuments (): Promise<void> {
+    // --- Close the documents
+    await this.closeDocuments(
+      ...this._openDocs
+          .filter(d => d.node)
+          .map(d => d.id)
+    );
   }
 
   /**
@@ -370,25 +374,19 @@ class DocumentHubService implements IDocumentHubService {
 
   // --- Helper methods
 
+  // --- This method ensures the document is saved before deactivating and disposing it
+  private async ensureDocumentSaved (...ids: string[]): Promise<void> {
+    // --- Use the API to save the document
+    await Promise.all(
+      ids.map(id => this.getDocumentApi(id))
+        .filter(api => !!api.beforeDocumentDisposal)
+        .map(api => api.beforeDocumentDisposal(false))
+    )
+  }
+
   // --- Increment the document hub service version number to sign a state change
   private signHubStateChanged (): void {
     this.store.dispatch(incDocHubServiceVersionAction(this.hubId), "ide");
-  }
-
-  // --- Ensure the active document is saved before navigating away
-  private async ensureActiveSaved (): Promise<void> {
-    const activeDocId = this._openDocs?.[this._activeDocIndex]?.id;
-    if (!activeDocId) return;
-
-    // --- Use the API to save the document
-    const docApi = this.getDocumentApi(activeDocId);
-    let ready = false;
-    if (docApi?.readyForDisposal) {
-      ready = await docApi.readyForDisposal();
-    }
-    if (!ready && docApi?.beforeDocumentDisposal) {
-      await docApi.beforeDocumentDisposal();
-    }
   }
 
   // --- Removes event handlers attached to the project service

@@ -34,6 +34,7 @@ export interface ActionTypes {
 
   INC_DOC_HUB_SERVICE_VERSION: null;
   SET_VOLATILE_DOC_STATE: null;
+  INC_EDITOR_VERSION: null;
 
   SET_TOOLS: null;
   ACTIVATE_TOOL: null;

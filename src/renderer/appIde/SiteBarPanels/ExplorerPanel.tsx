@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import styles from "./ExplorerPanel.module.scss";
 import {
   useDispatch,
@@ -24,7 +26,8 @@ import { Button } from "@controls/Button";
 import {
   ContextMenu,
   ContextMenuItem,
-  ContextMenuSeparator
+  ContextMenuSeparator,
+  useContextMenuState
 } from "@controls/ContextMenu";
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
@@ -79,10 +82,6 @@ const ExplorerPanel = () => {
   );
 
   // --- State and helpers for the selected node's context menu
-  const [contextRef, setContextRef] = useState(null);
-  const [contextVisible, setContextVisible] = useState(false);
-  const [contextX, setContextX] = useState(0);
-  const [contextY, setContextY] = useState(0);
   const [selectedContextNode, setSelectedContextNode] =
     useState<ITreeNode<ProjectNode>>(null);
   const selectedContextNodeIsFolder =
@@ -112,15 +111,11 @@ const ExplorerPanel = () => {
   };
 
   // --- Let's use this context menu when clicking a project tree node
+  const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
     <ContextMenu
-      refElement={contextRef}
-      isVisible={contextVisible}
-      offsetX={contextX}
-      offsetY={contextY}
-      onClickAway={() => {
-        setContextVisible(false);
-      }}
+      state={contextMenuState}
+      onClickAway={contextMenuApi.conceal}
     >
       {selectedContextNodeIsFolder && (
         <>
@@ -156,6 +151,15 @@ const ExplorerPanel = () => {
           <ContextMenuSeparator />
         </>
       )}
+      <ContextMenuItem
+        text='Reveal in File Explorer'
+        disabled={!selectedContextNode?.data.fullPath}
+        clicked={() => messenger.postMessage({
+          type:"MainShowItemInFolder",
+          itemPath:selectedContextNode.data.fullPath
+        })}
+      />
+      <ContextMenuSeparator />
       <ContextMenuItem
         text='Rename...'
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
@@ -207,9 +211,12 @@ const ExplorerPanel = () => {
       oldPath={selectedContextNode?.data?.name}
       onRename={async (newName: string) => {
         // --- Start renaming the item
-        const newFullName = `${getNodeDir(
-          selectedContextNode.data.fullPath
-        )}/${newName}`;
+        const newFullName = path.join(
+          getNodeDir(
+            selectedContextNode.data.fullPath
+          ),
+          newName
+        );
         const response = await messenger.sendMessage({
           type: "MainRenameFileEntry",
           oldName: selectedContextNode.data.fullPath,
@@ -378,12 +385,7 @@ const ExplorerPanel = () => {
         tabIndex={idx}
         onContextMenu={(e: MouseEvent) => {
           setSelectedContextNode(node);
-          const t = e.target as HTMLElement;
-          setContextRef(t);
-          const rc = t?.getBoundingClientRect();
-          setContextX(rc ? e.clientX - rc.left : 0);
-          setContextY(rc ? e.clientY - rc.bottom : 0);
-          setContextVisible(true);
+          contextMenuApi.show(e);
         }}
         onMouseDown={e => {
           if (e.button === 0) {

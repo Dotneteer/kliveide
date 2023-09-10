@@ -7,10 +7,9 @@ import {
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
-import { DocumentTab } from "./DocumentTab";
+import { CloseMode, DocumentTab } from "./DocumentTab";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import styles from "./DocumentsHeader.module.scss";
-import { delay, delayAction } from "@renderer/utils/timing";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -31,6 +30,8 @@ export const DocumentsHeader = () => {
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
+  const editorVersion = useSelector(s => s.ideView?.editorVersion);
+  const [dirtyStates, setDirtyStates] = useState<boolean[]>();
 
   const svApi = useRef<ScrollViewerApi>();
   const tabDims = useRef<HTMLDivElement[]>([]);
@@ -42,6 +43,10 @@ export const DocumentsHeader = () => {
     setActiveDocIndex(documentHubService.getActiveDocumentIndex());
   }, [hubVersion]);
 
+  useEffect(() => {
+    setDirtyStates(openDocs?.map(d => d.editVersionCount !== d.savedVersionCount));
+  }, [editorVersion]);
+
   // --- Update the UI when the build root changes
   useEffect(() => {
     if (openDocs) {
@@ -50,11 +55,6 @@ export const DocumentsHeader = () => {
       );
     }
   }, [openDocs, buildRoots, activeDocIndex]);
-
-  // --- Make sure that the index is visible
-  useEffect(() => {
-    ensureTabVisible();
-  }, [activeDocIndex, selectedIsBuildRoot]);
 
   // --- Update the UI when the build root changes
   useEffect(() => {
@@ -79,7 +79,6 @@ export const DocumentsHeader = () => {
     // --- Get the data of the document
     (async () => {
       const viewState = documentHubService.getDocumentViewState(projectDoc.id);
-      const contents = await projectService.readFileContent(projectDoc.path);
       // --- Refresh the contents of the document
       documentHubService.setDocumentViewState(projectDoc.id, viewState);
     })();
@@ -132,32 +131,6 @@ export const DocumentsHeader = () => {
     }
   };
 
-  // --- This method unsures the document is saved before deactivating and disposing it
-  const ensureDocumentStateSaved = async () => {
-    // --- Make sure to save the state of the active document gracefully
-    const activeDocId = openDocs?.[activeDocIndex]?.id;
-    if (!activeDocId) return;
-
-    // --- Use the API to save the document
-    const docApi = documentHubService.getDocumentApi(activeDocId);
-    try {
-      await delayAction(
-        async () => {
-          let ready = false;
-          if (docApi?.readyForDisposal) {
-            ready = await docApi.readyForDisposal();
-          }
-          if (!ready && docApi?.beforeDocumentDisposal) {
-            await docApi.beforeDocumentDisposal();
-          }
-        },
-        () => setAwaiting(true)
-      );
-    } finally {
-      setAwaiting(false);
-    }
-  }
-
   // --- Stores the tab element reference, as later we'll need its dimensions to
   // --- ensure it is entirelly visible
   const tabDisplayed = (idx: number, el: HTMLDivElement) => {
@@ -175,8 +148,9 @@ export const DocumentsHeader = () => {
     const activeDocId = openDocs?.[activeDocIndex]?.id;
     if (!activeDocId || id === activeDocId) return;
 
-    await ensureDocumentStateSaved();
-    await documentHubService.setActiveDocument(id);
+    setAwaiting(true)
+    await documentHubService.setActiveDocument(id)
+      .finally(setAwaiting.bind(false));
   };
 
   // --- Responds to the event when a document tab was double clicked. Double clicking
@@ -186,12 +160,27 @@ export const DocumentsHeader = () => {
   };
 
   // --- Responds to the event when the close button of the tab is clicked
-  const tabCloseClicked = async (id: string) => {
-    await ensureDocumentStateSaved();
-    await documentHubService.closeDocument(id);
+  const tabCloseClicked = (mode: CloseMode, id: string) => {
+    async function onTabCloseAsync() {
+      switch (mode) {
+        case CloseMode.All:
+          await documentHubService.closeAllDocuments();
+          break;
+        case CloseMode.Others:
+          await documentHubService.closeAllDocuments(id);
+          break;
+        default:
+          await documentHubService.closeDocument(id);
+          break;
+      }
+    }
+    setAwaiting(true);
+    onTabCloseAsync()
+      .finally(setAwaiting.bind(false))
   };
 
-  return (openDocs?.length ?? 0) > 0 ? (
+  const tabsCount = openDocs?.length ?? 0;
+  return tabsCount > 0 ? (
     <div className={styles.documentsHeader}>
       <ScrollViewer
         allowHorizontal={true}
@@ -216,12 +205,14 @@ export const DocumentsHeader = () => {
                 isTemporary={d.isTemporary}
                 isReadOnly={d.isReadOnly}
                 awaiting={awaiting}
+                hasChanges={dirtyStates?.[idx]}
+                tabsCount={tabsCount}
                 iconName={d.iconName}
                 iconFill={d.iconFill}
                 tabDisplayed={el => tabDisplayed(idx, el)}
                 tabClicked={() => tabClicked(d.id)}
                 tabDoubleClicked={() => tabDoubleClicked(d)}
-                tabCloseClicked={() => tabCloseClicked(d.id)}
+                tabCloseClicked={(mode: CloseMode) => tabCloseClicked(mode, d.id)}
               />
             );
           })}
