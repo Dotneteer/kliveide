@@ -328,18 +328,11 @@ app.whenReady().then(() => {
   createAppWindows();
 });
 
-// --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
-// --- behavior prevents the app from quitting).
-app.on("before-quit", () => {
-  allowCloseIde = true;
-});
-
 // --- Close all windows when requested so
 app.on("window-all-closed", () => {
   storeUnsubscribe();
   ideWindow = null;
   emuWindow = null;
-  allowCloseIde = true;
   if (process.platform !== "darwin") app.quit();
 });
 
