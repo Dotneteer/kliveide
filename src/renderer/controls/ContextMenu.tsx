@@ -1,43 +1,44 @@
 import classnames from "@renderer/utils/classnames";
-import { ReactNode, useState } from "react";
+import { MouseEvent, ReactNode, useRef, useState } from "react";
 import { usePopper } from "react-popper";
 import { ClickAwayListener } from "./ClickAwayListener";
 import localStyles from "./ContextMenu.module.scss";
 
+export type ContextMenuState = {
+  contextVisible: boolean;
+  contextRef?: HTMLElement;
+  contextX: number;
+  contextY: number;
+};
+
 type Props = {
-  refElement: HTMLElement;
-  isVisible: boolean;
   children: ReactNode;
-  offsetX?: number;
-  offsetY?: number;
+  state: ContextMenuState;
   placement?: string;
   onClickAway?: () => void;
 };
 
 export const ContextMenu = ({
-  refElement,
-  isVisible,
   children,
-  offsetX,
-  offsetY,
+  state,
   placement = "bottom-start",
   onClickAway
 }: Props) => {
   const [popperElement, setPopperElement] = useState(null);
-  const { styles, attributes } = usePopper(refElement, popperElement, {
+  const { styles, attributes } = usePopper(state.contextRef, popperElement, {
     placement: placement as any,
     modifiers: [
       {
         name: "offset",
         options: {
-          offset: [offsetX, offsetY]
+          offset: [state.contextX, state.contextY]
         }
       }
     ]
   });
   return (
     <>
-      {isVisible && (
+      {state.contextVisible && (
         <ClickAwayListener mouseEvent="mousedown" onClickAway={() => onClickAway?.()}>
           <div
             ref={setPopperElement}
@@ -92,4 +93,40 @@ export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextM
 
 export const ContextMenuSeparator = () => {
   return <div className={localStyles.separator}></div>;
+};
+
+export interface IContextMenuApi {
+  show (e: MouseEvent): void;
+  conceal (): void;
+}
+
+export const useContextMenuState = (): [ ContextMenuState, IContextMenuApi ]  => {
+  const [state, setState] = useState<ContextMenuState>({
+    contextVisible: false,
+    contextRef: null,
+    contextX: 0,
+    contextY: 0,
+  });
+
+  return [
+    state,
+    {
+      show: e => {
+        const t = e.target as HTMLElement;
+        const rc = t?.getBoundingClientRect();
+        setState({
+          contextVisible:true,
+          contextRef: t,
+          contextX: rc ? e.clientX - rc.left : 0,
+          contextY: rc ? e.clientY - rc.bottom : 0
+        })
+      },
+      conceal: () => {
+        setState({
+          ...state,
+          contextVisible: false
+        })
+      }
+    }
+  ];
 };

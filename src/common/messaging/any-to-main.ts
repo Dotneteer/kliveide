@@ -181,6 +181,12 @@ export interface MainCompileFileRequest extends MessageBase {
   params?: any;
 }
 
+export interface MainShowItemInFolderRequest extends MessageBase {
+  type: "MainShowItemInFolder";
+
+  itemPath: string;
+}
+
 /**
  * The client wants to quit the app
  */

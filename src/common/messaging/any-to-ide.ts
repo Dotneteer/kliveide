@@ -49,3 +49,7 @@ export interface IdeExecuteCommandResponse extends MessageBase {
   success: boolean;
   finalMessage?: string;
 }
+
+export interface IdeSaveAllBeforeQuitRequest extends MessageBase {
+  type: "IdeSaveAllBeforeQuit";
+}

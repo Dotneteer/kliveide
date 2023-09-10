@@ -307,6 +307,10 @@ export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
   payload: { id, flag }
 });
 
+export const incEditorVersionAction: ActionCreator = () => ({
+  type: "INC_EDITOR_VERSION"
+});
+
 export const setDiskFileAction: ActionCreator = (index, file) => ({
   type: "SET_DISK_FILE",
   payload: { index, file }
