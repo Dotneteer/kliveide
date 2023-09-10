@@ -100,7 +100,7 @@ const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
 
 // --- Start watching file changes
-const homeDir = path.join(app.getPath("home"), "KliveProjects");
+// const homeDir = path.join(app.getPath("home"), "KliveProjects");
 //fileChangeWatcher.startWatching(homeDir);
 
 async function createAppWindows () {
@@ -359,6 +359,9 @@ app.on("activate", () => {
     createAppWindows();
   }
 });
+
+// https://www.electronjs.org/docs/latest/api/app#appsetaboutpaneloptionsoptions
+// app.setAboutPanelOptions(...);
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
