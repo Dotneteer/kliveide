@@ -67,7 +67,7 @@ export const IdeEventsHandler = () => {
       if (!fullFile) return;
 
       await ideCommandsService.executeCommand(
-        `nav ${fullFile} ${fileLine.line}`
+        `nav "${fullFile}" ${fileLine.line}`
       );
     }
   }

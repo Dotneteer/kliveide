@@ -52,7 +52,7 @@ export const BreakpointIndicator = ({
     fill = "--color-breakpoint-disabled";
   }
 
-  // --- Handle addong/removing a breakpoint
+  // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
     const command = `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`;
     console.log(command);
