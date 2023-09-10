@@ -8,15 +8,17 @@ import {
 export function testToken (
   tokenStr: string,
   type: TokenType,
-  errorToken?: string | null
+  errorToken?: string,
+  expectedStr?: string
 ): void {
   // --- Test for the single token
   const resultStr = errorToken ?? tokenStr;
+  expectedStr ??= resultStr;
   let ts = new CommandTokenStream(new CommandInputStream(tokenStr));
 
   let token = ts.get();
   expect(token.type).toBe(type);
-  expect(token.text).toBe(resultStr);
+  expect(token.text).toBe(expectedStr);
   expect(token.location.startPos).toBe(0);
   expect(token.location.endPos).toBe(resultStr.length);
   expect(token.location.line).toBe(1);
@@ -28,7 +30,7 @@ export function testToken (
     ts = new CommandTokenStream(new CommandInputStream(tokenStr + " /"));
     token = ts.get();
     expect(token.type).toBe(type);
-    expect(token.text).toBe(resultStr);
+    expect(token.text).toBe(expectedStr);
     expect(token.location.startPos).toBe(0);
     expect(token.location.endPos).toBe(resultStr.length);
     expect(token.location.line).toBe(1);
@@ -40,7 +42,7 @@ export function testToken (
   ts = new CommandTokenStream(new CommandInputStream("  " + tokenStr));
   token = ts.get();
   expect(token.type).toBe(type);
-  expect(token.text).toBe(resultStr);
+  expect(token.text).toBe(expectedStr);
   expect(token.location.startPos).toBe(2);
   expect(token.location.endPos).toBe(resultStr.length + 2);
   expect(token.location.line).toBe(1);
