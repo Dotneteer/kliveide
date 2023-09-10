@@ -301,25 +301,17 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  let ensureSavedBeforeQuit = () => {
+  let ensureAllSavedBeforeQuit = ((w: BrowserWindow, callback: (w: BrowserWindow) => void) => {
     mainStore.dispatch(dimMenuAction(true));
-    const finallyFn = () => {
-      if (emuWindow?.isDestroyed() === false) {
-        emuWindow.close();
-      }
-    };
-    if (!ideWindow.isDestroyed()) {
-      sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
-        .finally(finallyFn);
-    } else {
-      finallyFn();
-    }
-  };
+    sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
+      .finally(callback.bind(undefined, w));
+  }).bind(undefined, emuWindow);
   emuWindow.on("close", e => {
-    if (ensureSavedBeforeQuit) {
+    if (ensureAllSavedBeforeQuit) {
       e.preventDefault();
-      ensureSavedBeforeQuit();
-      ensureSavedBeforeQuit = null;
+      const fn = ensureAllSavedBeforeQuit;
+      ensureAllSavedBeforeQuit = null;
+      fn((w: BrowserWindow) => w.close());
       return;
     }
     allowCloseIde = true;
