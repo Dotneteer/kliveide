@@ -170,7 +170,7 @@ const ExplorerPanel = () => {
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={async () => {
           await ideCommandsService.executeCommand(
-            `p:x ${selectedContextNode.data.fullPath}`
+            `p:x "${selectedContextNode.data.fullPath}"`
           );
         }}
       />
@@ -359,7 +359,7 @@ const ExplorerPanel = () => {
           setTimeout(async () => {
             if (!newNode.data.isFolder) {
               await ideCommandsService.executeCommand(
-                `nav ${newNode.data.fullPath}`
+                `nav "${newNode.data.fullPath}"`
               );
             }
           }, 0);
@@ -399,7 +399,7 @@ const ExplorerPanel = () => {
 
           if (!node.data.isFolder) {
             await ideCommandsService.executeCommand(
-              `nav ${node.data.fullPath}`
+              `nav "${node.data.fullPath}"`
             );
           }
         }}
@@ -410,7 +410,7 @@ const ExplorerPanel = () => {
             projectService.setPermanent(node.data.fullPath);
           } else {
             await ideCommandsService.executeCommand(
-              `nav ${node.data.fullPath}`
+              `nav "${node.data.fullPath}"`
             );
           }
         }}
