@@ -847,7 +847,7 @@ export function setupMenu (
  */
 async function setTapeFile (
   browserWindow: BrowserWindow
-): Promise<TapeDataBlock[] | undefined> {
+): Promise<void> {
   const TAPE_FILE_FOLDER = "tapeFileFolder";
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
   const defaultPath =
@@ -890,6 +890,61 @@ async function setTapeFile (
       `Reading file ${filename} resulted in error: ${err.message}`
     );
   }
+}
+
+/**
+ * Sets the disk file to use with the machine
+ * @param browserWindow Host browser window
+ * @param index Disk drive index (0: A, 1: B)
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function setDiskFile (
+  browserWindow: BrowserWindow,
+  index: number,
+  suffix: string
+): Promise<void> {
+  const DISK_FILE_FOLDER = "diskFileFolder";
+  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const defaultPath =
+    appSettings?.folders?.[DISK_FILE_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select Disk File",
+    defaultPath,
+    filters: [
+      { name: "Disk Files", extensions: ["dsk"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  // --- Read the file
+  const filename = dialogResult.filePaths[0];
+  const diskFileFolder = path.dirname(filename);
+
+  // --- Store the last selected tape file
+  mainStore.dispatch(setDiskFileAction(index, filename));
+
+  // --- Save the folder into settings
+  appSettings.folders ??= {};
+  appSettings.folders[DISK_FILE_FOLDER] = diskFileFolder;
+  saveAppSettings();
+
+  // try {
+  //   const contents = fs.readFileSync(filename);
+  //   await sendFromMainToEmu({
+  //     type: "EmuSetTapeFile",
+  //     file: filename,
+  //     contents
+  //   });
+  //   logEmuEvent(`Tape file set to ${filename}`);
+  // } catch (err) {
+  //   dialog.showErrorBox(
+  //     "Error while reading tape file",
+  //     `Reading file ${filename} resulted in error: ${err.message}`
+  //   );
+  // }
 }
 
 /**
