@@ -301,19 +301,7 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  let ensureAllSavedBeforeQuit = ((w: BrowserWindow, callback: (w: BrowserWindow) => void) => {
-    mainStore.dispatch(dimMenuAction(true));
-    sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
-      .finally(callback.bind(undefined, w));
-  }).bind(undefined, emuWindow);
-  emuWindow.on("close", e => {
-    if (ensureAllSavedBeforeQuit) {
-      e.preventDefault();
-      const fn = ensureAllSavedBeforeQuit;
-      ensureAllSavedBeforeQuit = null;
-      fn((w: BrowserWindow) => w.close());
-      return;
-    }
+  emuWindow.on("close", () => {
     allowCloseIde = true;
     ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
     if (!ideWindow.isDestroyed()) {
@@ -328,12 +316,26 @@ app.whenReady().then(() => {
   createAppWindows();
 });
 
+// --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
+// --- behavior prevents the app from quitting).
+let saved = false;
+app.on("before-quit", async (e) => {
+  if (!saved) {
+    e.preventDefault();
+    mainStore.dispatch(dimMenuAction(true));
+    await sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
+    saved = true;
+    allowCloseIde = true;
+    app.quit();
+  }
+});
+
 // --- Close all windows when requested so
 app.on("window-all-closed", () => {
   storeUnsubscribe();
   ideWindow = null;
   emuWindow = null;
-  if (process.platform !== "darwin") app.quit();
+  app.quit();
 });
 
 // --- Focus on the main window if the user tried to open another
