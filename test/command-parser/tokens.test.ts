@@ -3,23 +3,28 @@ import { testToken } from "./token-stream-helper";
 
 describe("Command parser - tokens", () => {
   it("String literal #1", () => {
-    testToken('""', TokenType.String);
-    testToken('"a"', TokenType.String);
-    testToken('"abcd"', TokenType.String);
-    testToken('"\\b"', TokenType.String);
-    testToken('"\\f"', TokenType.String);
-    testToken('"\\n"', TokenType.String);
-    testToken('"\\r"', TokenType.String);
-    testToken('"\\t"', TokenType.String);
-    testToken('"\\v"', TokenType.String);
-    testToken('"\\0"', TokenType.String);
-    testToken('"\\\'"', TokenType.String);
-    testToken('"\\""', TokenType.String);
-    testToken('"\\\\"', TokenType.String);
+    const literals = [
+      '',
+      'a',
+      'abcd',
+      '\\b',
+      '\\f',
+      '\\n',
+      '\\r',
+      '\\t',
+      '\\v',
+      '\\0',
+      '\\\'',
+      '\\"',
+      '\\\\',
+      '\\x01',
+      '\\xa1',
+      '\\xBC',
+    ];
 
-    testToken('"\\x01"', TokenType.String);
-    testToken('"\\xa1"', TokenType.String);
-    testToken('"\\xBC"', TokenType.String);
+    for (const l of literals) {
+      testToken(`"${l}"`, TokenType.String, undefined, l);
+    }
   });
 
   it("String literal #2", () => {
