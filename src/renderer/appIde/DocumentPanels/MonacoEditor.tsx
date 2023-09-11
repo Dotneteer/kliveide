@@ -344,7 +344,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     // --- Now, save it back to the file
     await projectService
-      .saveFileContent(document.id, document.contents, true)
+      .saveFileContentAsYouType(document.id, document.contents)
       .then(
         () => {
           document.savedVersionCount = document.editVersionCount;
