@@ -269,26 +269,31 @@ async function createAppWindows () {
   // --- Do not close the IDE (unless exiting the app), only hide it
   let ideSaved = false;
   ideWindow.on("close", async e => {
-    console.log("close ide");
     if (!ideSaved) {
       // --- Make sure all edited documents are saved
       e.preventDefault();
-      console.log("saving ide");
       await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
-      console.log("ide saved");
       ideSaved = true;
+
+      // --- Try to close the IDE (provided, it's not disposed)
       ideWindow?.close();
     } else {
+      // --- The IDE is already saved.
       if (allowCloseIde) {
+        // --- The emu allows closing the IDE
         return;
       }
-      console.log("do not allow ide close")
+
+      // --- Do not allow the IDE close, instead, hide it.
       e.preventDefault();
       ideWindow.hide();
       if (appSettings.windowStates) {
+        // --- Make sure to save the last IDE settings
         appSettings.windowStates.showIdeOnStartup = false;
         saveAppSettings();
       }
+
+      // --- IDE id hidden, so it's not focused
       mainStore.dispatch(ideFocusedAction(false));
     }
   });
@@ -319,17 +324,22 @@ async function createAppWindows () {
 
   // --- Close the emu window with the IDE window
   emuWindow.on("close", async e => {
-    console.log("close emu");
     if (!ideSaved) {
+      // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
-      console.log("saving ide")
+
+      // --- Start saving the IDE and retunr back from event. The IDE will be still alive
       await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
-      console.log("ide saved")
+
+      // --- The IDE save was successful
       ideSaved = true;
+
+      // --- Close both renderer windows (unless already disposed)
       allowCloseIde = true;
       ideWindow?.close();
       emuWindow.close();
     } else {
+      // --- The IDE is saved, so the app can be closed.
       app.quit();
     }
   });
@@ -340,8 +350,7 @@ app.whenReady().then(() => {
   createAppWindows();
 });
 
-// --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
-// --- behavior prevents the app from quitting).
+// --- When the user is about to quit the app, allow closing the IDE window
 app.on("before-quit", async e => {
   allowCloseIde = true;
 });
