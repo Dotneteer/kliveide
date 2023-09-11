@@ -41,11 +41,15 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
-import { registerMainToIdeMessenger, sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import {
+  registerMainToIdeMessenger,
+  sendFromMainToIde
+} from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
+import { delay } from "@renderer/utils/timing";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -263,17 +267,30 @@ async function createAppWindows () {
   });
 
   // --- Do not close the IDE (unless exiting the app), only hide it
-  ideWindow.on("close", e => {
-    if (allowCloseIde) {
-      return;
+  let ideSaved = false;
+  ideWindow.on("close", async e => {
+    console.log("close ide");
+    if (!ideSaved) {
+      // --- Make sure all edited documents are saved
+      e.preventDefault();
+      console.log("saving ide");
+      await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
+      console.log("ide saved");
+      ideSaved = true;
+      ideWindow?.close();
+    } else {
+      if (allowCloseIde) {
+        return;
+      }
+      console.log("do not allow ide close")
+      e.preventDefault();
+      ideWindow.hide();
+      if (appSettings.windowStates) {
+        appSettings.windowStates.showIdeOnStartup = false;
+        saveAppSettings();
+      }
+      mainStore.dispatch(ideFocusedAction(false));
     }
-    e.preventDefault();
-    ideWindow.hide();
-    if (appSettings.windowStates) {
-      appSettings.windowStates.showIdeOnStartup = false;
-      saveAppSettings();
-    }
-    mainStore.dispatch(ideFocusedAction(false));
   });
 
   // --- Test actively push message to the Electron-Renderer
@@ -301,12 +318,19 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", () => {
-    allowCloseIde = true;
-    ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
-    if (!ideWindow.isDestroyed()) {
-      ideWindow.close();
-      ideWindow = null;
+  emuWindow.on("close", async e => {
+    console.log("close emu");
+    if (!ideSaved) {
+      e.preventDefault();
+      console.log("saving ide")
+      await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
+      console.log("ide saved")
+      ideSaved = true;
+      allowCloseIde = true;
+      ideWindow?.close();
+      emuWindow.close();
+    } else {
+      app.quit();
     }
   });
 }
@@ -318,16 +342,8 @@ app.whenReady().then(() => {
 
 // --- When the user is about to quit the app, allow closing the IDE window (otherwise, it gets only hidden and that
 // --- behavior prevents the app from quitting).
-let saved = false;
-app.on("before-quit", async (e) => {
-  if (!saved) {
-    e.preventDefault();
-    mainStore.dispatch(dimMenuAction(true));
-    await sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
-    saved = true;
-    allowCloseIde = true;
-    app.quit();
-  }
+app.on("before-quit", async e => {
+  allowCloseIde = true;
 });
 
 // --- Close all windows when requested so
