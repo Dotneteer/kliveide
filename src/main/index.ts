@@ -17,7 +17,6 @@
 // parameter).
 // ====================================================================================================================
 
-import * as path from "path";
 import {
   defaultResponse,
   errorResponse,
@@ -49,7 +48,6 @@ import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
-import { delay } from "@renderer/utils/timing";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -86,6 +84,7 @@ let emuWindow: BrowserWindow | null = null;
 
 // --- Sign if closing the IDE window is allowed
 let allowCloseIde: boolean;
+let ideSaved: boolean;
 
 // --- Flag indicating if any virtual machine has been initialized
 let machineTypeInitialized: boolean;
@@ -111,6 +110,7 @@ async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
   allowCloseIde = false;
+  ideSaved = false;
 
   // --- Create state manager for the EMU window
   const emuWindowStateManager = createWindowStateManager(
@@ -267,35 +267,32 @@ async function createAppWindows () {
   });
 
   // --- Do not close the IDE (unless exiting the app), only hide it
-  let ideSaved = false;
   ideWindow.on("close", async e => {
-    if (!ideSaved) {
-      // --- Make sure all edited documents are saved
-      e.preventDefault();
-      await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
-      ideSaved = true;
+    if (allowCloseIde) {
+      // --- The emu allows closing the IDE
+      if (!ideSaved) {
+        // --- Do not allow the ide close while IDE is not saved
+        e.preventDefault();
+        // --- Make sure all edited documents are saved
+        await saveOnClose();
 
-      // --- Try to close the IDE (provided, it's not disposed)
-      ideWindow?.close();
-    } else {
-      // --- The IDE is already saved.
-      if (allowCloseIde) {
-        // --- The emu allows closing the IDE
-        return;
+        // --- Try to close the IDE (provided, it's not disposed)
+        ideWindow?.close();
       }
-
-      // --- Do not allow the IDE close, instead, hide it.
-      e.preventDefault();
-      ideWindow.hide();
-      if (appSettings.windowStates) {
-        // --- Make sure to save the last IDE settings
-        appSettings.windowStates.showIdeOnStartup = false;
-        saveAppSettings();
-      }
-
-      // --- IDE id hidden, so it's not focused
-      mainStore.dispatch(ideFocusedAction(false));
+      return;
     }
+
+    // --- Do not allow the IDE close, instead, hide it.
+    e.preventDefault();
+    ideWindow.hide();
+    if (appSettings.windowStates) {
+      // --- Make sure to save the last IDE settings
+      appSettings.windowStates.showIdeOnStartup = false;
+      saveAppSettings();
+    }
+
+    // --- IDE id hidden, so it's not focused
+    mainStore.dispatch(ideFocusedAction(false));
   });
 
   // --- Test actively push message to the Electron-Renderer
@@ -327,12 +324,8 @@ async function createAppWindows () {
     if (!ideSaved) {
       // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
-
-      // --- Start saving the IDE and retunr back from event. The IDE will be still alive
-      await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
-
-      // --- The IDE save was successful
-      ideSaved = true;
+      // --- Start saving the IDE and return back from event. The IDE will be still alive
+      await saveOnClose();
 
       // --- Close both renderer windows (unless already disposed)
       allowCloseIde = true;
@@ -431,4 +424,10 @@ async function forwardActions (
   if (message.type !== "ForwardAction") return null;
   mainStore.dispatch(message.action, message.sourceId);
   return defaultResponse();
+}
+
+async function saveOnClose() {
+  mainStore.dispatch(dimMenuAction(true));
+  await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
+  ideSaved = true;
 }
