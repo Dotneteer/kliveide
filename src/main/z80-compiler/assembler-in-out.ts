@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { ErrorCodes } from "./assembler-errors";
 import {
@@ -216,7 +218,11 @@ export class AssemblerErrorInfo implements IAssemblerErrorInfo {
  * Describes a source file item
  */
 export class SourceFileItem implements ISourceFileItem {
-  constructor (public readonly filename: string) {}
+  public readonly filename: string;
+
+  constructor (filename: string) {
+    this.filename = path.normalize(filename);
+  }
 
   /**
    * Optional parent item
