@@ -311,7 +311,7 @@ class ProjectService implements IProjectService {
     contents: string | Uint8Array
   ): Promise<void> {
     const TYPING_DELAY = 1000;
-    return this._delayedJobs.schedule(TYPING_DELAY, file, JOB_KIND_SAVE_FILE,
+    return this._delayedJobs.schedule(TYPING_DELAY, JOB_KIND_SAVE_FILE, file,
       this.saveFileContentInner.bind(this, file, contents))
   }
 

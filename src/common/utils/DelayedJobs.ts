@@ -10,9 +10,9 @@ export class DelayedJobs {
     return true;
   }
 
-  public instantlyRunAllOf(kind?: number): Promise<any> {
+  public instantlyRunAllOf(kind?: number, tag?: string): Promise<any> {
     const promises = [];
-    const jobs = this.getJobsOfKind(kind);
+    const jobs = this.queryJobsOf(kind, tag);
     for (const job of jobs) {
       clearTimeout(job.timeoutId);
       promises.push(job.setComplete());
@@ -22,8 +22,8 @@ export class DelayedJobs {
 
   public schedule(
     delayMs: number,
-    tag: string,
     kind: number,
+    tag: string,
     action: () => Promise<void>
   ): Promise<void> {
     return new Promise<void>((resolve, reject) =>{
@@ -63,8 +63,14 @@ export class DelayedJobs {
     };
   }
 
-  private getJobsOfKind(kind?: number): any[] {
-    if (kind === undefined) return [...this._delayedJobs.values()];
-    return [...DelayedJobs.filter(this._delayedJobs.values(), job => job.kind === kind)];
+  private queryJobsOf(kind?: number, tag?: string): any[] {
+    if (tag === undefined) {
+      return kind !== undefined ?
+        [...DelayedJobs.filter(this._delayedJobs.values(), job => job.kind === kind)]
+        : [...this._delayedJobs.values()];
+    }
+
+    const job = this._delayedJobs.get(tag);
+    return kind !== undefined && job?.kind === kind || job ? [job] : [];
   }
 }
