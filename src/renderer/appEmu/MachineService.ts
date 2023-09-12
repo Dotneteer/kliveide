@@ -16,7 +16,7 @@ import {
   MachineTypeEventHandler,
   MachineInstanceEventHandler
 } from "../abstractions/IMachineService";
-import { delay } from "@renderer/utils/timing";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -24,7 +24,6 @@ class MachineService implements IMachineService {
   private _newInitializing = new LiteEvent<IZ80Machine>();
   private _newInitialized = new LiteEvent<IZ80Machine>();
   private _controller?: MachineController;
-  private _machineId?: string;
 
   /**
    * Initializes the machine service to use the specified store
@@ -50,7 +49,12 @@ class MachineService implements IMachineService {
     }
 
     // --- Ok, dismount the old machine type
+    let oldBps: BreakpointInfo[] | undefined;
     if (this._controller) {
+      if (this._controller.debugSupport) {
+        // --- We keep the old source code breakpoints, as we want to use them in the new machine.
+        oldBps = this._controller.debugSupport.execBreakpoints;
+      }
       this._oldDisposing.fire(this._controller.machine.machineId);
       await this._controller.stop();
       this._controller.dispose();
@@ -65,7 +69,9 @@ class MachineService implements IMachineService {
       this.messenger,
       machine
     );
-    this._controller.debugSupport = new DebugSupport(this.store);
+
+    // --- Restore the breakpoints from the old machine
+    this._controller.debugSupport = new DebugSupport(this.store, oldBps);
     this._newInitializing.fire(machine);
 
     // --- Seup the machine
