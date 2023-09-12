@@ -43,7 +43,7 @@ export async function refreshSourceCodeBreakpoints (
     for (const bp of bps) {
       if (!bp.resource) continue;
       const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
-        fi.filename.endsWith("/" + bp.resource)
+        fi.filename.endsWith(bp.resource)
       );
       if (fileIndex >= 0) {
         const lineInfo = compilation.result.listFileItems.find(

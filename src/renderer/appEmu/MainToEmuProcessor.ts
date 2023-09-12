@@ -218,6 +218,7 @@ export async function processMainToEmuMessages (
       for (let i = 0; i < execBreakpoints.length; i++) {
         const addr = execBreakpoints[i].address;
         segments[i] = [];
+        if (!addr) continue;
         for (let j = 0; j < 32; j++) {
           segments[i][j] = controller.machine.doReadMemory((addr + j) & 0xffff);
         }
