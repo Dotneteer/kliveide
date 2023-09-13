@@ -20,6 +20,9 @@ import {
   incProjectViewStateVersionAction
 } from "@common/state/actions";
 import { documentPanelRegistry } from "@renderer/registry";
+import { DelayedJobs } from "@common/utils/DelayedJobs";
+
+const JOB_KIND_SAVE_FILE = 21;
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
@@ -40,6 +43,8 @@ class ProjectService implements IProjectService {
   private _docHubServices: IDocumentHubService[] = [];
   private _docHubActivations: IDocumentHubService[] = [];
   private _activeDocHub: IDocumentHubService | undefined;
+
+  private _delayedJobs = new DelayedJobs();
 
   constructor (
     private readonly store: Store<AppState>,
@@ -288,9 +293,6 @@ class ProjectService implements IProjectService {
     return contents ?? (await this.readFileContent(file, isBinary));
   }
 
-  private _onDelayedSavesComplete = new LiteEvent<void>;
-  private _asYouTypeSavesCount = 0;
-
   /**
    * Saves the specified contents of the file to the file system, and then to the cache
    * @param file File name
@@ -298,35 +300,19 @@ class ProjectService implements IProjectService {
    */
   saveFileContent (
     file: string,
-    contents: string | Uint8Array,
-    asYouType?: boolean
+    contents: string | Uint8Array
   ): Promise<void> {
-    if (asYouType) {
-      // -- An average typing speed of 190 chars per minute + 25%.
-      const TYPING_DELAY = 1.25 * 1000 * 60 / 190;
-      return new Promise<void>((resolve, reject) => {
-        ++this._asYouTypeSavesCount;
-        this.scheduleDelayedAction(file, TYPING_DELAY,
-          (canceled: boolean) => {
-            if (canceled) {
-              --this._asYouTypeSavesCount;
-              reject("canceled");
-              return;
-            }
-
-            this.saveFileContentInner(file, contents)
-              .then(resolve, reject)
-              .finally(() => {
-                if (--this._asYouTypeSavesCount <= 0) {
-                  this._onDelayedSavesComplete.fire();
-                  this._onDelayedSavesComplete.release();
-                }
-              });
-          })
-      });
-    }
-    this.cancelDelayedAction(file);
+    this._delayedJobs.cancel(file);
     return this.saveFileContentInner(file, contents);
+  }
+
+  saveFileContentAsYouType (
+    file: string,
+    contents: string | Uint8Array
+  ): Promise<void> {
+    const TYPING_DELAY = 1000;
+    return this._delayedJobs.schedule(TYPING_DELAY, JOB_KIND_SAVE_FILE, file,
+      this.saveFileContentInner.bind(this, file, contents))
   }
 
   private async saveFileContentInner(
@@ -358,12 +344,7 @@ class ProjectService implements IProjectService {
   }
 
   performAllDelayedSavesNow(): Promise<void> {
-    return this._asYouTypeSavesCount > 0 ?
-      new Promise<void>((resolve, _) => {
-        this._onDelayedSavesComplete.on(resolve);
-        this.runAllDelayedActionsInstantly();
-      })
-      : Promise.resolve();
+    return this._delayedJobs.instantlyRunAllOf(JOB_KIND_SAVE_FILE);
   }
 
   /**
@@ -561,62 +542,6 @@ class ProjectService implements IProjectService {
 
   private signDocServiceVersionChanged (hubId: number): void {
     this.store.dispatch(incDocHubServiceVersionAction(hubId), "ide");
-  }
-
-  private _delayedActions = new Map<string, any>();
-
-  private cancelDelayedAction(tag: string): void {
-    const job = this._delayedActions.get(tag);
-    if (!job) return;
-    this._delayedActions.delete(tag);
-
-    clearTimeout(job.timeoutId);
-    try {
-      job.action(true);
-    } catch (e) {
-      reportError(e);
-    }
-  }
-
-  private runAllDelayedActionsInstantly(): void {
-    const jobs = [...this._delayedActions.values()];
-    this._delayedActions.clear();
-    for (const job of jobs) {
-      clearTimeout(job.timeoutId);
-      try {
-        job.action(false);
-      } catch (e) {
-        reportError(e);
-      }
-    }
-  }
-
-  private scheduleDelayedAction(
-    tag: string,
-    delayMs: number,
-    action: (canceled: boolean) => void
-  ): void {
-    const job = this._delayedActions.get(tag);
-    if (job) {
-      clearTimeout(job.timeoutId);
-      try {
-        job.action(true);
-      } catch (e) {
-        reportError(e);
-      }
-    }
-
-    this._delayedActions.set(
-      tag,
-      {
-        timeoutId: setTimeout(() => {
-          if (this._delayedActions.delete(tag)) {
-            action(false);
-          }
-        }, delayMs),
-        action
-      }
-    );
   }
 }
 

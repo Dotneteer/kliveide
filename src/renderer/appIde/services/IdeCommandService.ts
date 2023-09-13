@@ -229,7 +229,7 @@ class IdeCommandService implements IIdeCommandService {
       `${file}${line != undefined ?` (${line}:${column + 1})` : ""}`,
       async () => {
         await this.executeCommand(
-          `nav ${file} ${line != undefined ? line : ""} ${
+          `nav "${file}" ${line != undefined ? line : ""} ${
             column != undefined ? (column + 1).toString() : ""
           }`
         );

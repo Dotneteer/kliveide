@@ -4,7 +4,8 @@ import {
   dialog,
   Menu,
   MenuItem,
-  MenuItemConstructorOptions
+  MenuItemConstructorOptions,
+  shell
 } from "electron";
 import * as fs from "fs";
 import * as path from "path";
@@ -106,6 +107,10 @@ const IDE_SHOW_BASIC = "show_basic";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
+const HELP_MENU = "help_menu";
+const HELP_HOME_PAGE = "help_home_page";
+const HELP_ABOUT = "help_about";
+
 // --- The number of events logged with the emulator
 let loggedEmuOutputEvents = 0;
 
@@ -138,6 +143,16 @@ export function setupMenu (
   const machineId = appState?.emulatorState?.machineId;
   const currentMachine = registeredMachines.find(m => m.id === machineId);
   const disksState = appState?.emulatorState?.floppyDisks ?? [];
+
+  function getWindowTraits(w?: BrowserWindow): {isFocused:boolean, isVisible:boolean} {
+    return {
+      isFocused: w?.isDestroyed() === false && w.isFocused(),
+      isVisible: w?.isDestroyed() === false && w.isVisible()
+    };
+  }
+
+  const emuTraits = getWindowTraits(emuWindow);
+  const ideTraits = getWindowTraits(ideWindow);
 
   // --- Application system menu on MacOS
   if (__DARWIN__) {
@@ -223,7 +238,7 @@ export function setupMenu (
       label: `Show ${t.name} Panel`,
       type: "checkbox",
       checked: t.visible,
-      visible: ideWindow?.isFocused(),
+      visible: ideTraits.isFocused,
       click: mi => {
         const panelId = mi.id.substring(TOOL_PREFIX.length);
         mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked));
@@ -252,20 +267,20 @@ export function setupMenu (
       {
         id: SHOW_IDE_WINDOW,
         label: "Show IDE",
-        visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible(),
+        visible: !ideTraits.isVisible,
         click: () => {
           ensureIdeWindow();
         }
       },
       {
         type: "separator",
-        visible: ideWindow?.isDestroyed() || !ideWindow?.isVisible()
+        visible: !ideTraits.isVisible
       },
       {
         id: TOGGLE_EMU_TOOLBAR,
         label: "Show the Toolbar",
         type: "checkbox",
-        visible: emuWindow?.isFocused(),
+        visible: emuTraits.isFocused,
         checked: appState.emuViewOptions.showToolbar,
         click: async mi => {
           mainStore.dispatch(showEmuToolbarAction(mi.checked));
@@ -276,7 +291,7 @@ export function setupMenu (
         id: TOGGLE_IDE_TOOLBAR,
         label: "Show the Toolbar",
         type: "checkbox",
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         checked: appState.ideViewOptions.showToolbar,
         click: async mi => {
           mainStore.dispatch(showIdeToolbarAction(mi.checked));
@@ -287,7 +302,7 @@ export function setupMenu (
         id: TOGGLE_EMU_STATUS_BAR,
         label: "Show the Status Bar",
         type: "checkbox",
-        visible: emuWindow?.isFocused(),
+        visible: emuTraits.isFocused,
         checked: appState.emuViewOptions.showStatusBar,
         click: async mi => {
           mainStore.dispatch(showEmuStatusBarAction(mi.checked));
@@ -298,7 +313,7 @@ export function setupMenu (
         id: TOGGLE_IDE_STATUS_BAR,
         label: "Show the Status Bar",
         type: "checkbox",
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         checked: appState.ideViewOptions.showStatusBar,
         click: async mi => {
           mainStore.dispatch(showIdeStatusBarAction(mi.checked));
@@ -307,14 +322,14 @@ export function setupMenu (
       },
       {
         type: "separator",
-        visible: emuWindow?.isFocused() || ideWindow?.isFocused()
+        visible: emuTraits.isFocused || ideTraits.isFocused
       },
       {
         id: TOGGLE_SIDE_BAR,
         label: "Show the Side Bar",
         type: "checkbox",
         checked: appState.ideViewOptions.showSidebar,
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         click: async mi => {
           mainStore.dispatch(showSideBarAction(mi.checked));
           await saveKliveProject();
@@ -325,7 +340,7 @@ export function setupMenu (
         label: "Move Primary Side Bar Right",
         type: "checkbox",
         checked: appState.ideViewOptions.primaryBarOnRight,
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         click: async mi => {
           mainStore.dispatch(primaryBarOnRightAction(mi.checked));
           await saveKliveProject();
@@ -336,7 +351,7 @@ export function setupMenu (
         label: "Show Tool Panels",
         type: "checkbox",
         checked: appState.ideViewOptions.showToolPanels,
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         click: async mi => {
           const checked = mi.checked;
           mainStore.dispatch(showToolPanelsAction(checked));
@@ -351,7 +366,7 @@ export function setupMenu (
         label: "Move Tool Panels Top",
         type: "checkbox",
         checked: appState.ideViewOptions.toolPanelsOnTop,
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         click: async mi => {
           mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
           await saveKliveProject();
@@ -362,7 +377,7 @@ export function setupMenu (
         label: "Maximize Tool Panels",
         type: "checkbox",
         checked: appState.ideViewOptions.maximizeTools,
-        visible: ideWindow?.isFocused(),
+        visible: ideTraits.isFocused,
         click: async mi => {
           const checked = mi.checked;
           if (checked) {
@@ -374,7 +389,7 @@ export function setupMenu (
       },
       {
         type: "separator",
-        visible: ideWindow?.isFocused()
+        visible: ideTraits.isFocused
       },
       ...toolMenus,
       { type: "separator", visible: toolMenus.some(i => i.visible) },
@@ -735,7 +750,7 @@ export function setupMenu (
 
   template.push({
     id: IDE_MENU,
-    visible: !ideWindow?.isDestroyed() && ideWindow?.isVisible(),
+    visible: ideTraits.isVisible,
     label: "IDE",
     submenu: [
       {
@@ -802,6 +817,25 @@ export function setupMenu (
     ]
   });
 
+  template.push({
+    id: HELP_MENU,
+    visible: ideTraits.isVisible,
+    label: "Help",
+    submenu: [
+      {
+        id: HELP_HOME_PAGE,
+        label: "Klive IDE Home Page",
+        click: () => shell.openExternal("https://dotneteer.github.io/kliveide")
+      },
+      { type: "separator" },
+      {
+        id: HELP_ABOUT,
+        label: "About",
+        click: () => app.showAboutPanel()
+      }
+    ]
+  });
+
   // --- If we show dialogs, the all menu item should be disabled
   if (appState?.dimMenu) {
     disableAllMenuItems(template);
@@ -815,7 +849,7 @@ export function setupMenu (
       : i => (i.submenu = null);
   }
   if (__DARWIN__) {
-    const windowFocused = emuWindow.isFocused() ? emuWindow : ideWindow;
+    const windowFocused = emuTraits.isFocused ? emuWindow : ideWindow;
     template.forEach(templateTransform(windowFocused));
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   } else {

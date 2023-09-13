@@ -17,7 +17,6 @@
 // parameter).
 // ====================================================================================================================
 
-import * as path from "path";
 import {
   defaultResponse,
   errorResponse,
@@ -41,7 +40,10 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
-import { registerMainToIdeMessenger, sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import {
+  registerMainToIdeMessenger,
+  sendFromMainToIde
+} from "../common/messaging/MainToIdeMessenger";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
@@ -82,6 +84,7 @@ let emuWindow: BrowserWindow | null = null;
 
 // --- Sign if closing the IDE window is allowed
 let allowCloseIde: boolean;
+let ideSaved: boolean;
 
 // --- Flag indicating if any virtual machine has been initialized
 let machineTypeInitialized: boolean;
@@ -100,13 +103,14 @@ const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
 
 // --- Start watching file changes
-const homeDir = path.join(app.getPath("home"), "KliveProjects");
+// const homeDir = path.join(app.getPath("home"), "KliveProjects");
 //fileChangeWatcher.startWatching(homeDir);
 
 async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
   allowCloseIde = false;
+  ideSaved = false;
 
   // --- Create state manager for the EMU window
   const emuWindowStateManager = createWindowStateManager(
@@ -263,16 +267,31 @@ async function createAppWindows () {
   });
 
   // --- Do not close the IDE (unless exiting the app), only hide it
-  ideWindow.on("close", e => {
+  ideWindow.on("close", async e => {
     if (allowCloseIde) {
+      // --- The emu allows closing the IDE
+      if (!ideSaved) {
+        // --- Do not allow the ide close while IDE is not saved
+        e.preventDefault();
+        // --- Make sure all edited documents are saved
+        await saveOnClose();
+
+        // --- Try to close the IDE (provided, it's not disposed)
+        ideWindow?.close();
+      }
       return;
     }
+
+    // --- Do not allow the IDE close, instead, hide it.
     e.preventDefault();
     ideWindow.hide();
     if (appSettings.windowStates) {
+      // --- Make sure to save the last IDE settings
       appSettings.windowStates.showIdeOnStartup = false;
       saveAppSettings();
     }
+
+    // --- IDE id hidden, so it's not focused
     mainStore.dispatch(ideFocusedAction(false));
   });
 
@@ -301,24 +320,20 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  let ensureAllSavedBeforeQuit = ((w: BrowserWindow, callback: (w: BrowserWindow) => void) => {
-    mainStore.dispatch(dimMenuAction(true));
-    sendFromMainToIde({type: "IdeSaveAllBeforeQuit"})
-      .finally(callback.bind(undefined, w));
-  }).bind(undefined, emuWindow);
-  emuWindow.on("close", e => {
-    if (ensureAllSavedBeforeQuit) {
+  emuWindow.on("close", async e => {
+    if (!ideSaved) {
+      // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
-      const fn = ensureAllSavedBeforeQuit;
-      ensureAllSavedBeforeQuit = null;
-      fn((w: BrowserWindow) => w.close());
-      return;
-    }
-    allowCloseIde = true;
-    ideVisibleOnClose = !ideWindow.isDestroyed() && ideWindow.isVisible();
-    if (!ideWindow.isDestroyed()) {
-      ideWindow.close();
-      ideWindow = null;
+      // --- Start saving the IDE and return back from event. The IDE will be still alive
+      await saveOnClose();
+
+      // --- Close both renderer windows (unless already disposed)
+      allowCloseIde = true;
+      ideWindow?.close();
+      emuWindow.close();
+    } else {
+      // --- The IDE is saved, so the app can be closed.
+      app.quit();
     }
   });
 }
@@ -328,12 +343,17 @@ app.whenReady().then(() => {
   createAppWindows();
 });
 
+// --- When the user is about to quit the app, allow closing the IDE window
+app.on("before-quit", async e => {
+  allowCloseIde = true;
+});
+
 // --- Close all windows when requested so
 app.on("window-all-closed", () => {
   storeUnsubscribe();
   ideWindow = null;
   emuWindow = null;
-  if (process.platform !== "darwin") app.quit();
+  app.quit();
 });
 
 // --- Focus on the main window if the user tried to open another
@@ -359,6 +379,9 @@ app.on("activate", () => {
     createAppWindows();
   }
 });
+
+// https://www.electronjs.org/docs/latest/api/app#appsetaboutpaneloptionsoptions
+// app.setAboutPanelOptions(...);
 
 // --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
@@ -401,4 +424,10 @@ async function forwardActions (
   if (message.type !== "ForwardAction") return null;
   mainStore.dispatch(message.action, message.sourceId);
   return defaultResponse();
+}
+
+async function saveOnClose() {
+  mainStore.dispatch(dimMenuAction(true));
+  await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
+  ideSaved = true;
 }

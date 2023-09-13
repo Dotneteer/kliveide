@@ -722,7 +722,8 @@ export class CommandTokenStream {
      */
     function makeToken (): Token {
       return {
-        text,
+        text: tokenType === TokenType.String ?
+          text.substring(1, text.length - 1) : text,
         type: tokenType,
         location: {
           startPos,

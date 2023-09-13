@@ -52,6 +52,8 @@ export async function removeBreakpoint (
   messenger: MessengerBase,
   bp: BreakpointAddressInfo
 ): Promise<boolean> {
+  console.log("remove bp");
+  console.trace();
   // --- Get breakpoint information
   const response = await messenger.sendMessage({
     type: "EmuRemoveBreakpoint",

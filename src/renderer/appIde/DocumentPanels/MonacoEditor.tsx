@@ -23,11 +23,12 @@ import {
 } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
-import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import {
-  useDocumentHubServiceVersion
-} from "../services/DocumentServiceProvider";
+  incBreakpointsVersionAction,
+  incEditorVersionAction
+} from "@common/state/actions";
+import { DocumentApi } from "@renderer/abstractions/DocumentApi";
+import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 
 let monacoInitialized = false;
@@ -228,7 +229,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         document.contents = editor.current.getModel()?.getValue();
 
         // --- Now, save it back to the file
-        await projectService.saveFileContent(document.id, document.contents)
+        await projectService
+          .saveFileContent(document.id, document.contents)
           .then(() => {
             document.savedVersionCount = document.editVersionCount;
             store.dispatch(incEditorVersionAction());
@@ -341,15 +343,15 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     store.dispatch(incEditorVersionAction());
 
     // --- Now, save it back to the file
-    await projectService.saveFileContent(document.id, document.contents, true)
+    await projectService
+      .saveFileContentAsYouType(document.id, document.contents)
       .then(
         () => {
           document.savedVersionCount = document.editVersionCount;
           store.dispatch(incEditorVersionAction());
         },
         reason => {
-          if (reason !== "canceled")
-            reportError(reason);
+          if (reason !== "canceled") reportError(reason);
         }
       );
   };
@@ -395,7 +397,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
-    const editorLines = editor.current?.getModel()?.getLineCount() ?? 0;
+    const editorLines = editor.current?.getModel()?.getLineCount() ?? null;
 
     // --- Iterate through all breakpoins
     bps.forEach(async bp => {
@@ -433,23 +435,26 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       }
 
       // --- Render the breakpoint according to its type and reachability
-      if (bp.line <= editorLines) {
-        let decoration: monacoEditor.editor.IModelDeltaDecoration;
-        if (unreachable) {
-          decoration = createUnreachableBreakpointDecoration(bp.line);
-        } else {
-          // --- Check if there is a binary breakpoint
-          const binBp = bps.find(b => b.address === bp.resolvedAddress);
-          decoration = binBp
-            ? createMixedBreakpointDecoration(bp.line, bp.disabled)
-            : createCodeBreakpointDecoration(bp.line, bp.disabled);
+      if (editorLines !== null) {
+        if (bp.line <= editorLines) {
+          let decoration: monacoEditor.editor.IModelDeltaDecoration;
+          if (unreachable) {
+            decoration = createUnreachableBreakpointDecoration(bp.line);
+          } else {
+            // --- Check if there is a binary breakpoint
+            const binBp = bps.find(b => b.address === bp.resolvedAddress);
+            decoration = binBp
+              ? createMixedBreakpointDecoration(bp.line, bp.disabled)
+              : createCodeBreakpointDecoration(bp.line, bp.disabled);
+          }
+          decorations.push(decoration);
+        } else if (bp.resource && bp.resource === document.node.projectPath) {
+          // --- Remove the source code breakpoint exceeding the source code range
+          await removeBreakpoint(messenger, bp);
         }
-        decorations.push(decoration);
-      } else if (bp.resource) {
-        // --- Remove the source code breakpoint exceeding the source code range
-        await removeBreakpoint(messenger, bp);
       }
     });
+
     oldDecorations.current = editor.current.deltaDecorations(
       oldDecorations.current,
       decorations

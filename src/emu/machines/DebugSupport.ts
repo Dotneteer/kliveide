@@ -7,7 +7,6 @@ import {
 } from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import { getKliveProjectFolder } from "@main/projects";
 
 /**
  * This class implement support functions for debugging
@@ -29,7 +28,11 @@ export class DebugSupport implements IDebugSupport {
    * Initializes the service using the specified store
    * @param store Application state store
    */
-  constructor (private readonly store: Store<AppState>) {}
+  constructor (private readonly store: Store<AppState>, bps?: BreakpointInfo[]) {
+    if (bps) {
+      bps.forEach(bp => this.addExecBreakpoint(bp));
+    }
+  }
 
   /**
    * This member stores the last startup breakpoint to check. It allows setting a breakpoint to the first
@@ -152,7 +155,6 @@ export class DebugSupport implements IDebugSupport {
     const bpKey = getBreakpointKey(bp);
     const oldBp = this._execBps.get(bpKey);
     this._execBps.delete(bpKey);
-    console.log("BP: removeExecBreakpoint");
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return !!oldBp;
   }
@@ -237,7 +239,6 @@ export class DebugSupport implements IDebugSupport {
         for (const item of toDelete.values()) {
           this._execBps.delete(item);
         }
-        console.log(this._execBps);
         this.store.dispatch(incBreakpointsVersionAction(), "emu");
       }
     });
