@@ -34,7 +34,6 @@ import {
   setDiskFileAction,
   protectDiskAction
 } from "../common/state/actions";
-import { setMachineType } from "./machines";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
@@ -144,7 +143,10 @@ export function setupMenu (
   const currentMachine = registeredMachines.find(m => m.id === machineId);
   const disksState = appState?.emulatorState?.floppyDisks ?? [];
 
-  function getWindowTraits(w?: BrowserWindow): {isFocused:boolean, isVisible:boolean} {
+  function getWindowTraits (w?: BrowserWindow): {
+    isFocused: boolean;
+    isVisible: boolean;
+  } {
     return {
       isFocused: w?.isDestroyed() === false && w.isFocused(),
       isVisible: w?.isDestroyed() === false && w.isVisible()
@@ -433,7 +435,7 @@ export function setupMenu (
         checked: appState.emulatorState?.clockMultiplier === v,
         click: async () => {
           mainStore.dispatch(setClockMultiplierAction(v));
-          logEmuEvent(`Clock multiplier set to ${v}`);
+          await logEmuEvent(`Clock multiplier set to ${v}`);
           await saveKliveProject();
         }
       };
@@ -457,7 +459,7 @@ export function setupMenu (
         checked: appState.emulatorState?.soundLevel === v.value,
         click: async () => {
           mainStore.dispatch(setSoundLevelAction(v.value));
-          logEmuEvent(`Sound level set to ${v.label} (${v.value})`);
+          await logEmuEvent(`Sound level set to ${v.label} (${v.value})`);
           await saveKliveProject();
         }
       };
@@ -612,27 +614,35 @@ export function setupMenu (
         floppySubMenu.push({
           id: `${EJECT_DISK}_${suffix}`,
           label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
-          click: () => mainStore.dispatch(setDiskFileAction(index, null))
+          click: async () => {
+            await ejectDiskFile(index, suffix);
+          }
         });
         floppySubMenu.push({
           id: `${PROTECT_DISK}_${suffix}`,
           type: "checkbox",
           checked: !!state.writeProtected,
           label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
-          click: () => {
+          click: async () => {
             mainStore.dispatch(protectDiskAction(index, !state.writeProtected));
-          }
-        });
-      } else {
-        floppySubMenu.push({
-          id: `${INSERT_DISK}_${suffix}`,
-          label: `Insert Disk into Drive ${suffix.toUpperCase()}...`,
-          click: () => {
-            mainStore.dispatch(setDiskFileAction(index, "fakediskfile"));
-            console.log(`Insert disk into drive ${suffix.toUpperCase()}...`);
+            await logEmuEvent(
+              `Write protection turned ${
+                state.writeProtected ? "on" : "off"
+              } for drive ${suffix.toUpperCase()}`
+            );
           }
         });
       }
+      floppySubMenu.push({
+        id: `${INSERT_DISK}_${suffix}`,
+        label: state?.diskFile
+          ? `Change Disk in Drive ${suffix.toUpperCase()}...`
+          : `Insert Disk into Drive ${suffix.toUpperCase()}...`,
+        click: async () => {
+          await setDiskFile(emuWindow, index, suffix);
+          await saveKliveProject();
+        }
+      });
     }
   }
 
@@ -879,9 +889,7 @@ export function setupMenu (
  * @param browserWindow Host browser window
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function setTapeFile (
-  browserWindow: BrowserWindow
-): Promise<TapeDataBlock[] | undefined> {
+async function setTapeFile (browserWindow: BrowserWindow): Promise<void> {
   const TAPE_FILE_FOLDER = "tapeFileFolder";
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
   const defaultPath =
@@ -917,7 +925,7 @@ async function setTapeFile (
       file: filename,
       contents
     });
-    logEmuEvent(`Tape file set to ${filename}`);
+    await logEmuEvent(`Tape file set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
       "Error while reading tape file",
@@ -927,11 +935,112 @@ async function setTapeFile (
 }
 
 /**
+ * Sets the disk file to use with the machine
+ * @param browserWindow Host browser window
+ * @param index Disk drive index (0: A, 1: B)
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function setDiskFile (
+  browserWindow: BrowserWindow,
+  index: number,
+  suffix: string
+): Promise<void> {
+  const DISK_FILE_FOLDER = "diskFileFolder";
+  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const defaultPath =
+    appSettings?.folders?.[DISK_FILE_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select Disk File",
+    defaultPath,
+    filters: [
+      { name: "Disk Files", extensions: ["dsk"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  // --- Read the file
+  const filename = dialogResult.filePaths[0];
+  const diskFileFolder = path.dirname(filename);
+
+  // --- Store the last selected tape file
+  mainStore.dispatch(setDiskFileAction(index, filename));
+
+  // --- Save the folder into settings
+  appSettings.folders ??= {};
+  appSettings.folders[DISK_FILE_FOLDER] = diskFileFolder;
+  saveAppSettings();
+
+  try {
+    const contents = fs.readFileSync(filename);
+    await sendFromMainToEmu({
+      type: "EmuSetDiskFile",
+      file: filename,
+      contents,
+      diskIndex: index
+    });
+    await logEmuEvent(
+      `Disk file in drive ${suffix.toUpperCase()} set to ${filename}`
+    );
+  } catch (err) {
+    dialog.showErrorBox(
+      "Error while reading disk file",
+      `Reading file ${filename} resulted in error: ${err.message}`
+    );
+  }
+}
+
+/**
+ * Sets the disk file to use with the machine
+ * @param browserWindow Host browser window
+ * @param index Disk drive index (0: A, 1: B)
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function ejectDiskFile (index: number, suffix: string): Promise<void> {
+  mainStore.dispatch(setDiskFileAction(index, null));
+  try {
+    await sendFromMainToEmu({
+      type: "EmuSetDiskFile",
+      diskIndex: index
+    });
+    await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
+  } catch (err) {
+    dialog.showErrorBox(
+      "Error while ejecting disk file",
+      `Ejecting resulted in error: ${err.message}`
+    );
+  }
+}
+
+/**
+ * This function set the machine type to the specified one
+ * @param machineId
+ */
+export async function setMachineType (machineId: string): Promise<void> {
+  await sendFromMainToEmu({
+    type: "EmuSetMachineType",
+    machineId
+  });
+  const mt = registeredMachines.find(mt => mt.id === machineId);
+  if (mt) {
+    await logEmuEvent(
+      `Machine type set to ${mt.displayName} (${mt.id})`,
+      "bright-cyan"
+    );
+  }
+}
+
+/**
  * Log emulator events
  * @param text Log text
  * @param color Text color to use
  */
-async function logEmuEvent (text: string, color?: OutputColor): Promise<void> {
+export async function logEmuEvent (
+  text: string,
+  color?: OutputColor
+): Promise<void> {
   loggedEmuOutputEvents++;
   await sendFromMainToIde({
     type: "IdeDisplayOutput",

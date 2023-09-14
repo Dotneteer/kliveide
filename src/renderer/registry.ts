@@ -127,7 +127,6 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     initialSize: 500,
     restrictTo: ["spp3e", "spp3ef2"]
   }
-
 ];
 
 // --- Set up tool panels
@@ -211,18 +210,18 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: "spp2e",
     displayName: "ZX Spectrum +2E",
-    factory: () => new ZxSpectrumP2eMachine()
+    factory: store => new ZxSpectrumP2eMachine(store)
   },
   {
     machineId: "spp3e",
     displayName: "ZX Spectrum +3E (1 FDD)",
-    factory: () => new ZxSpectrumP3eMachine()
+    factory: (store) => new ZxSpectrumP3eMachine(store)
   },
   {
     machineId: "spp3ef2",
     displayName: "ZX Spectrum +3E (2 FDDs)",
-    factory: () => new ZxSpectrumP3eF2Machine()
-  },
+    factory: (store) => new ZxSpectrumP3eF2Machine(store)
+  }
 ];
 
 // --- The registry of ile types

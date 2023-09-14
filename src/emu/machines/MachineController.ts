@@ -158,15 +158,23 @@ export class MachineController implements IMachineController {
    */
   async stop (): Promise<void> {
     // --- Stop the machine
+    const beforeState = this.state;
     this.isDebugging = false;
     await this.finishExecutionLoop(
       MachineControllerState.Stopping,
       MachineControllerState.Stopped
     );
-    await this.sendOutput(
-      `Machine stopped (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
-      "red"
-    );
+    if (
+      beforeState !== MachineControllerState.Stopped &&
+      beforeState !== MachineControllerState.None
+    ) {
+      await this.sendOutput(
+        `Machine stopped (PC: $${this.machine.pc
+          .toString(16)
+          .padStart(4, "0")})`,
+        "red"
+      );
+    }
     this.machine.onStop();
 
     // --- Reset frame statistics
@@ -355,7 +363,10 @@ export class MachineController implements IMachineController {
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings
-    this.machine.setMachineProperty(FAST_LOAD, this.store.getState()?.emulatorState.fastLoad);
+    this.machine.setMachineProperty(
+      FAST_LOAD,
+      this.store.getState()?.emulatorState.fastLoad
+    );
 
     // --- Now, run!
     this.state = MachineControllerState.Running;
@@ -386,7 +397,7 @@ export class MachineController implements IMachineController {
         }
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
-          savedFileInfo: savedInfo,
+          savedFileInfo: savedInfo
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

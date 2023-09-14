@@ -20,6 +20,9 @@ import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128PsgDevice } from "../zxSpectrum128/ZxSpectrum128PsgDevice";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
+import { setDiskFileAction } from "@common/state/actions";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -61,8 +64,11 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor () {
+  constructor (store: Store<AppState>) {
     super();
+    store.dispatch(setDiskFileAction(0, null), "emu");
+    store.dispatch(setDiskFileAction(1, null), "emu");
+
     // --- Set up machine attributes
     this.baseClockFrequency = 3_546_900;
     this.clockMultiplier = 1;

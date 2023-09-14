@@ -34,10 +34,9 @@ import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setupMenu } from "./app-menu";
+import { setMachineType, setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron/electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
-import { setMachineType } from "./machines";
 import { mainStore } from "./main-store";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
 import {
@@ -210,7 +209,7 @@ async function createAppWindows () {
     if (loaded && !machineTypeInitialized) {
       // --- Set the default machine type to ZX Spectrum 48
       machineTypeInitialized = true;
-      await setMachineType("spp3e");
+      await setMachineType("sp48");
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
@@ -426,7 +425,7 @@ async function forwardActions (
   return defaultResponse();
 }
 
-async function saveOnClose() {
+async function saveOnClose () {
   mainStore.dispatch(dimMenuAction(true));
   await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
   ideSaved = true;

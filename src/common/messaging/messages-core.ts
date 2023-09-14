@@ -74,7 +74,8 @@ import {
   EmuGetPsgStateRequest,
   EmuGetPsgStateResponse,
   EmuGetNecUpd765Request,
-  EmuGetNecUpd765Response
+  EmuGetNecUpd765Response,
+  EmuSetDiskFileRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -152,6 +153,7 @@ export type RequestMessage =
   | EmuSetMachineTypeRequest
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
+  | EmuSetDiskFileRequest
   | EmuGetCpuStateRequest
   | EmuGetUlaStateRequest
   | EmuGetPsgStateRequest

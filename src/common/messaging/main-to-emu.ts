@@ -46,6 +46,16 @@ export interface EmuSetTapeFileRequest extends MessageBase {
 }
 
 /**
+ * The main process sends a disk file to the emulator
+ */
+export interface EmuSetDiskFileRequest extends MessageBase {
+  type: "EmuSetDiskFile";
+  diskIndex: number;
+  file?: string;
+  contents?: Uint8Array;
+}
+
+/**
  * The Ide process asks the emu process for CPU state information
  */
 export interface EmuGetCpuStateRequest extends MessageBase {

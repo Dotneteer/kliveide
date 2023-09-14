@@ -63,7 +63,7 @@ class MachineService implements IMachineService {
     }
 
     // --- Initialize the new machine
-    const machine = machineInfo.factory();
+    const machine = machineInfo.factory(this.store);
     this._controller = new MachineController(
       this.store,
       this.messenger,
