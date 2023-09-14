@@ -1,11 +1,18 @@
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import { REWIND_REQUESTED, TAPE_DATA } from "@emu/machines/machine-props";
+import {
+  DISK_DATA,
+  REWIND_REQUESTED,
+  TAPE_DATA
+} from "@emu/machines/machine-props";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
-import { EmuSetTapeFileRequest } from "@messaging/main-to-emu";
+import {
+  EmuSetDiskFileRequest,
+  EmuSetTapeFileRequest
+} from "@messaging/main-to-emu";
 import {
   RequestMessage,
   ResponseMessage,
@@ -22,6 +29,7 @@ import { BinaryReader } from "@common/utils/BinaryReader";
 import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 
 const borderColors = [
   "Black",
@@ -429,6 +437,51 @@ export async function processMainToEmuMessages (
       reportMessagingError(
         `Error displaying message dialog: ${response.message}`
       );
+    }
+  }
+
+  // --- Parses and sets the tape file
+  async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
+    // --- Try to parse the disk file
+    try {
+      const diskReader = new BinaryReader(message.contents);
+      const floppy = new FloppyDisk(diskReader);
+      // --- Pass the tape file data blocks to the machine
+      const controller = machineService.getMachineController();
+      let disk = controller.machine.getMachineProperty(
+        DISK_DATA
+      ) as FloppyDisk[];
+      if (!disk) {
+        disk = [];
+      }
+      disk[message.diskIndex] = floppy;
+      controller.machine.setMachineProperty(DISK_DATA, [...disk]);
+
+      // --- Done.
+      const response = await emuToMain.sendMessage({
+        type: "MainDisplayMessageBox",
+        messageType: "info",
+        title: "Disk file set",
+        message: `Disk file ${message.file} successfully set.`
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `Error displaying message dialog: ${response.message}`
+        );
+      }
+    } catch (err) {
+      const response = await emuToMain.sendMessage({
+        type: "MainDisplayMessageBox",
+        messageType: "error",
+        title: "Disk file error",
+        message: `Error while processing disk file ${message.file} (${err})`
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `Error displaying message dialog: ${response.message}`
+        );
+      }
+      return;
     }
   }
 }
