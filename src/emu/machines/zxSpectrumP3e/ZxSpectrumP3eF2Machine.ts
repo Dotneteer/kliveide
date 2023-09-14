@@ -16,7 +16,6 @@ export class ZxSpectrumP3eF2Machine extends ZxSpectrum2Or3Machine {
 
   // --- This machine has two FDDs
   protected hasFloppy (): boolean {
-    console.log("spp3ef2");
     return true;
   }
   protected hasDriveB (): boolean {

@@ -51,8 +51,8 @@ export interface EmuSetTapeFileRequest extends MessageBase {
 export interface EmuSetDiskFileRequest extends MessageBase {
   type: "EmuSetDiskFile";
   diskIndex: number;
-  file: string;
-  contents: Uint8Array;
+  file?: string;
+  contents?: Uint8Array;
 }
 
 /**

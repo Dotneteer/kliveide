@@ -615,10 +615,7 @@ export function setupMenu (
           id: `${EJECT_DISK}_${suffix}`,
           label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
           click: async () => {
-            mainStore.dispatch(setDiskFileAction(index, null));
-            await logEmuEvent(
-              `Disk ejected from drive ${suffix.toUpperCase()}`
-            );
+            await ejectDiskFile(index, suffix);
           }
         });
         floppySubMenu.push({
@@ -991,6 +988,28 @@ async function setDiskFile (
     dialog.showErrorBox(
       "Error while reading disk file",
       `Reading file ${filename} resulted in error: ${err.message}`
+    );
+  }
+}
+
+/**
+ * Sets the disk file to use with the machine
+ * @param browserWindow Host browser window
+ * @param index Disk drive index (0: A, 1: B)
+ * @returns The data blocks read from the tape, if successful; otherwise, undefined.
+ */
+async function ejectDiskFile (index: number, suffix: string): Promise<void> {
+  mainStore.dispatch(setDiskFileAction(index, null));
+  try {
+    await sendFromMainToEmu({
+      type: "EmuSetDiskFile",
+      diskIndex: index
+    });
+    await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
+  } catch (err) {
+    dialog.showErrorBox(
+      "Error while ejecting disk file",
+      `Ejecting resulted in error: ${err.message}`
     );
   }
 }

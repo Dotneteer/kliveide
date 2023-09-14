@@ -104,6 +104,10 @@ export async function processMainToEmuMessages (
       await setTapeFile(message);
       break;
 
+    case "EmuSetDiskFile":
+      await setDiskFile(message);
+      break;
+
     case "EmuGetCpuState": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
@@ -442,6 +446,20 @@ export async function processMainToEmuMessages (
 
   // --- Parses and sets the tape file
   async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
+    // --- Get disk information
+    const controller = machineService.getMachineController();
+    let disk = controller.machine.getMachineProperty(DISK_DATA) as FloppyDisk[];
+    if (!disk) {
+      disk = [];
+    }
+
+    if (!message.contents) {
+      // --- Eject the disk
+      delete disk[message.diskIndex];
+      controller.machine.setMachineProperty(DISK_DATA, [...disk]);
+      return;
+    }
+
     // --- Try to parse the disk file
     try {
       const diskReader = new BinaryReader(message.contents);

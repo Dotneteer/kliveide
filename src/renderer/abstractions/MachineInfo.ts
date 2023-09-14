@@ -1,3 +1,5 @@
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
@@ -18,5 +20,5 @@ export type MachineInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: () => IZ80Machine;
+  factory: (store: Store<AppState>) => IZ80Machine;
 };

@@ -20,7 +20,8 @@ import {
   TAPE_SAVER,
   TAPE_DATA,
   REWIND_REQUESTED,
-  TAPE_SAVED
+  TAPE_SAVED,
+  DISK_DATA
 } from "../machine-props";
 import { ITapeSaver } from "./ITapeSaver";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
@@ -536,7 +537,7 @@ export class TapeDevice implements ITapeDevice {
 
   /**
    * Emulates loading the current block in fast mode.
-   * @returns 
+   * @returns
    */
   fastLoad (): void {
     // --- Stop playing if no more blocks
@@ -695,7 +696,7 @@ export class TapeSaver implements ITapeSaver {
       block.writeTo(writer);
 
       // --- Store the last saved file
-      this.tapeDevice.machine.setMachineProperty(TAPE_SAVED ,{
+      this.tapeDevice.machine.setMachineProperty(TAPE_SAVED, {
         name: `${this._name}.tzx`,
         contents: writer.buffer
       });
