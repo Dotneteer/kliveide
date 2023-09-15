@@ -68,6 +68,7 @@ export type IdeView = {
 export type EmulatorState = {
   machineId?: string;
   machineState?: MachineControllerState;
+  isDebugging?: boolean;
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;

@@ -17,12 +17,11 @@ import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineStateAction } from "@state/actions";
+import { setDebuggingAction, setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
 
@@ -367,6 +366,9 @@ export class MachineController implements IMachineController {
       FAST_LOAD,
       this.store.getState()?.emulatorState.fastLoad
     );
+
+    // --- Sign if we are in debug mode
+    this.store.dispatch(setDebuggingAction(this.isDebugging), "emu");
 
     // --- Now, run!
     this.state = MachineControllerState.Running;

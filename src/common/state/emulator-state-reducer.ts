@@ -41,6 +41,12 @@ export function emulatorStateReducer (
         fastLoad: payload.flag
       };
 
+    case "SET_DEBUGGING":
+      return {
+        ...state,
+        isDebugging: payload.flag
+      };
+
     case "SET_CLOCK_MULTIPLIER":
       return {
         ...state,
