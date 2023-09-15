@@ -156,7 +156,7 @@ const IdeApp = () => {
   return (
     <div id='appMain' className={styles.app}>
       <IdeEventsHandler />
-      {showToolbar && <Toolbar />}
+      {showToolbar && <Toolbar ide={true} />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel

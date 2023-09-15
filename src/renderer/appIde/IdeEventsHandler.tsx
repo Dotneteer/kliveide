@@ -21,6 +21,9 @@ export const IdeEventsHandler = () => {
 
   const compilation = useSelector(s => s.compilation);
   const execState = useSelector(s => s.emulatorState?.machineState);
+  const syncBps = useSelector(
+    s => s.ideViewOptions.syncSourceBreakpoints ?? true
+  );
 
   useEffect(() => {
     (async () => {
@@ -37,6 +40,7 @@ export const IdeEventsHandler = () => {
   async function refreshCodeLocation (): Promise<void> {
     // --- No compilation, no code breakpoint to navigate to
     if (
+      !syncBps ||
       execState !== MachineControllerState.Paused ||
       !compilation.result ||
       compilation.failed ||

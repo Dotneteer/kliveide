@@ -7,7 +7,8 @@ import {
 import {
   muteSoundAction,
   setFastLoadAction,
-  showKeyboardAction
+  showKeyboardAction,
+  syncSourceBreakpointsAction
 } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
@@ -15,11 +16,18 @@ import styles from "./Toolbar.module.scss";
 import { createMachineCommand } from "@messaging/main-to-emu";
 import { reportMessagingError } from "@renderer/reportError";
 
-export const Toolbar = () => {
+type Props = {
+  ide?: boolean;
+};
+
+export const Toolbar = ({ ide = false }: Props) => {
   const dispatch = useDispatch();
   const state = useSelector(s => s.emulatorState?.machineState);
   const showKeyboard = useSelector(
     s => s.emuViewOptions?.showKeyboard ?? false
+  );
+  const syncSourceBps = useSelector(
+    s => s.ideViewOptions?.syncSourceBreakpoints ?? true
   );
   const muted = useSelector(s => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad ?? false);
@@ -247,6 +255,20 @@ export const Toolbar = () => {
           }
         }}
       />
+      {ide && (
+        <>
+          <ToolbarSeparator />
+          <IconButton
+            iconName='sync-ignored'
+            selected={syncSourceBps}
+            fill='orange'
+            title='Stop sync with current source code breakpoint'
+            clicked={() => {
+              dispatch(syncSourceBreakpointsAction(!syncSourceBps));
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

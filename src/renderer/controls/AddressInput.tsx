@@ -53,10 +53,15 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
         className={styles.radixLabel}
         onClick={() => {
           if (radix === 16) {
-            inputRef.current.value = (parseInt(inputRef.current.value.trim(), 16)).toString(10);
+            const value = parseInt(inputRef.current.value.trim(), 16);
+            if (!isNaN(value)) {
+              inputRef.current.value = value.toString(10);
+            }
             setRadix(10);
           } else {
-            inputRef.current.value = (parseInt(inputRef.current.value.trim(), 10)).toString(16);
+            const value = parseInt(inputRef.current.value.trim(), 10);
+            if (!isNaN(value))
+            inputRef.current.value = value.toString(16);
             setRadix(16);
           }
           inputRef.current.focus();

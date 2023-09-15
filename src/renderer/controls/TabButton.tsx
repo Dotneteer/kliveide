@@ -55,7 +55,7 @@ export function TabButton ({
             refElement={ref.current}
             placement='right'
             offsetX={8}
-            offsetY={16}
+            offsetY={32}
           >
             {toolTipLines.map((l, idx) => (
               <div key={idx}>{l}</div>

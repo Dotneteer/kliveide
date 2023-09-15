@@ -66,7 +66,7 @@ const EmuApp = () => {
 
   return (
     <div id='appMain' className={styles.app}>
-      {showToolbar && <Toolbar />}
+      {showToolbar && <Toolbar ide={false} />}
       <EmulatorArea />
       {showStatusBar && <EmuStatusBar />}
       <BackDrop visible={dimmed} />
