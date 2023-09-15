@@ -40,7 +40,7 @@ export const ActivityButton = ({
         refElement={ref.current}
         placement='right'
         offsetX={-8}
-        offsetY={0}
+        offsetY={16}
       >
         {activity.title}
       </TooltipFactory>

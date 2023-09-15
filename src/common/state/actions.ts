@@ -320,3 +320,8 @@ export const protectDiskAction: ActionCreator = (index, flag) => ({
   type: "PROTECT_DISK",
   payload: { index, flag }
 });
+
+export const syncSourceBreakpointsAction: ActionCreator = (flag) => ({
+  type: "SYNC_SOURCE_BREAKPOINTS",
+  payload: { flag }
+});

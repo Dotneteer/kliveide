@@ -38,6 +38,7 @@ export type IdeViewOptions = {
   showFrameInfo?: boolean;
   showSidebar?: boolean;
   editorFontSize?: number;
+  syncSourceBreakpoints?: boolean;
 };
 
 /**
@@ -130,7 +131,8 @@ export const initialAppState: AppState = {
     maximizeTools: false,
     showFrameInfo: true,
     showSidebar: true,
-    editorFontSize: 16
+    editorFontSize: 16,
+    syncSourceBreakpoints: true
   },
   ideView: {
     sideBarPanels: {},
@@ -145,7 +147,7 @@ export const initialAppState: AppState = {
   emuViewOptions: {
     showToolbar: true,
     showStatusBar: true,
-    showKeyboard: false
+    showKeyboard: false,
   },
   emulatorState: {
     soundLevel: 0.8,

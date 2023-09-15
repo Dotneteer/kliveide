@@ -63,7 +63,7 @@ export const IconButton = ({
         <TooltipFactory
           refElement={ref.current}
           placement='right'
-          offsetX={-16}
+          offsetX={-12}
           offsetY={28}
         >
           {title}

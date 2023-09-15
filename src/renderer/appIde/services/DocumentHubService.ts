@@ -379,8 +379,8 @@ class DocumentHubService implements IDocumentHubService {
     // --- Use the API to save the document
     await Promise.all(
       ids.map(id => this.getDocumentApi(id))
-        .filter(api => !!api.beforeDocumentDisposal)
-        .map(api => api.beforeDocumentDisposal(false))
+        .filter(api => !!api?.beforeDocumentDisposal)
+        .map(api => api?.beforeDocumentDisposal(false))
     )
   }
 

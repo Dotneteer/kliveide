@@ -27,6 +27,8 @@ export function ideViewOptionsReducer (
       return { ...state, showFrameInfo: payload?.flag };
     case "SET_IDE_FONT_SIZE":
       return { ...state, editorFontSize: payload?.numValue };
+    case "SYNC_SOURCE_BREAKPOINTS":
+      return { ...state, syncSourceBreakpoints: payload?.flag };
     default:
       return state;
   }
