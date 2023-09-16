@@ -13,7 +13,6 @@ import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CodeToInject } from "@abstractions/CodeToInject";
-import { NewItemDialog } from "@renderer/appIde/dialogs/NewItemDialog";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -127,7 +126,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     super.reset();
     this._frameCompleted = true;
     this._frameOverflow = 0;
-    delete this._queuedEvents;
+    this._queuedEvents = null;
   }
 
   /**
@@ -308,17 +307,17 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       } while (this.prefix !== OpCodePrefix.None);
 
       // --- Execute the queued event
-      // if (this._queuedEvents) {
-      //   const currentEvent = this._queuedEvents[0];
-      //   if (currentEvent.eventTact < this.tacts) {
-      //     // --- Time to execute the event
-      //     currentEvent.eventFn(currentEvent.data);
-      //     this._queuedEvents.shift();
-      //     if (this._queuedEvents.length === 0) {
-      //       delete this._queuedEvents;
-      //     }
-      //   }
-      // }
+      if (this._queuedEvents) {
+        const currentEvent = this._queuedEvents[0];
+        if (currentEvent.eventTact < this.tacts) {
+          // --- Time to execute the event
+          currentEvent.eventFn(currentEvent.data);
+          this._queuedEvents.shift();
+          if (this._queuedEvents.length === 0) {
+            this._queuedEvents = null;
+          }
+        }
+      }
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
@@ -410,17 +409,17 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       } while (this.prefix !== OpCodePrefix.None);
 
       // --- Execute the queued event
-      // if (this._queuedEvents) {
-      //   const currentEvent = this._queuedEvents[0];
-      //   if (currentEvent.eventTact < this.tacts) {
-      //     // --- Time to execute the event
-      //     currentEvent.eventFn(currentEvent.data);
-      //     this._queuedEvents.shift();
-      //     if (this._queuedEvents.length === 0) {
-      //       delete this._queuedEvents;
-      //     }
-      //   }
-      // }
+      if (this._queuedEvents) {
+        const currentEvent = this._queuedEvents[0];
+        if (currentEvent.eventTact < this.tacts) {
+          // --- Time to execute the event
+          currentEvent.eventFn(currentEvent.data);
+          this._queuedEvents.shift();
+          if (this._queuedEvents.length === 0) {
+            this._queuedEvents = null;
+          }
+        }
+      }
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();

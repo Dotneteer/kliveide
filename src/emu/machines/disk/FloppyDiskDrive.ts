@@ -13,12 +13,15 @@ export class FloppyDiskDrive {
   // --- Resets the drive
   reset(): void {
     this.isWriteProtected = false;
-    delete this.disk;
+    this.disk = undefined;
   }
   // --- Indicates if a disk is loaded into the device
   get isDiskLoaded (): boolean {
     return !!this.disk;
   }
+
+  // --- Read/write to data byte 0x00nn or 0xffnn
+  data: number;
 
   // --- Track to seek (used in seek operations)
   seekingTrack: number = 0;
