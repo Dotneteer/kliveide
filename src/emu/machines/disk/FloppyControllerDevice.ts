@@ -204,7 +204,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Resets the device
   reset (): void {
-    // TODO: Implement this method
+    console.log("Event registered");
+    this.registerEvent(10_000, () => console.log("Floppy Event happened"), null);
   }
 
   // Dispose the resources held by the device
@@ -299,6 +300,12 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.opLog.shift();
     }
     this.opLog.push(entry);
+  }
+
+  private registerEvent(ms: number, eventFn: (data: any) => void, data: any): void {
+    const machine = this.machine;
+    const eventTact = machine.tacts + machine.baseClockFrequency * machine.clockMultiplier / 1000 * ms;
+    machine.queueEvent(eventTact, eventFn, data);
   }
 }
 

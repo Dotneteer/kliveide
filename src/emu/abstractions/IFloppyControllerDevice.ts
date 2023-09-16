@@ -6,10 +6,10 @@ import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 export interface IFloppyControllerDevice
   extends IGenericDevice<IZxSpectrumMachine> {
   // --- Indicates if Drive #1 is present
-  readonly isDriveAPresent: boolean;
+  isDriveAPresent: boolean;
 
   // --- Indicates if Drive #2 is present
-  readonly isDriveBPresent: boolean;
+  isDriveBPresent: boolean;
 
   // --- Indicates if disk in Drive #1 is write protected
   readonly isDiskAWriteProtected: boolean;
