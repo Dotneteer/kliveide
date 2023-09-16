@@ -10,6 +10,11 @@ export class FloppyDiskDrive {
   // --- The contents of the loaded floppy disk
   disk: FloppyDisk | undefined;
 
+  // --- Resets the drive
+  reset(): void {
+    this.isWriteProtected = false;
+    delete this.disk;
+  }
   // --- Indicates if a disk is loaded into the device
   get isDiskLoaded (): boolean {
     return !!this.disk;
