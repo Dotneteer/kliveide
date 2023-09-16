@@ -54,16 +54,26 @@ const NecUpd765Panel = () => {
           fixItemHeight={false}
           itemRenderer={idx => {
             const item = log[idx];
-            const icon =
-              item.opType === PortOperationType.WriteData
-                ? "arrow-small-right"
-                : "arrow-small-left";
-            const iconColor =
-              item.opType === PortOperationType.ReadData
-                ? "--console-ansi-white"
-                : item.opType === PortOperationType.ReadMsr
-                ? "--console-ansi-bright-cyan"
-                : "--console-ansi-bright-magenta";
+            let icon: string;
+            let iconColor: string;
+            switch (item.opType) {
+              case PortOperationType.ReadData:
+                icon = "arrow-small-left";
+                iconColor = "--console-ansi-white";
+                break;
+              case PortOperationType.ReadMsr:
+                icon = "arrow-small-left";
+                iconColor = "--console-ansi-bright-cyan";
+                break;
+              case PortOperationType.WriteData:
+                icon = "arrow-small-right";
+                iconColor = "--console-ansi-bright-magenta";
+                break;
+              case PortOperationType.MotorEvent:
+                icon = "settings-gear";
+                iconColor = "--console-ansi-white";
+                break;
+            }
             return (
               <div className={styles.entry}>
                 <LabelSeparator width={4} />

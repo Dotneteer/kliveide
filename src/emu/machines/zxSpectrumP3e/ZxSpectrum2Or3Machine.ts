@@ -499,6 +499,11 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
       // --- Disk motor
       this.diskMotorOn = (value & 0x08) != 0;
+      if (this.diskMotorOn) {
+        this.floppyDevice?.turnOnMotor();
+      } else {
+        this.floppyDevice?.turnOffMotor();
+      }
       return;
     }
 
@@ -516,8 +521,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
     // --- Test for the floppy controller port
     if ((address & 0xf002) == 0x3000) {
-      this.floppyDevice.writeDataRegister(value);
-      console.log(this.floppyDevice.getLogEntries());
+      this.floppyDevice?.writeDataRegister(value);
     }
   }
 

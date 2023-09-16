@@ -16,16 +16,16 @@ export class FloppyDiskDrive {
   }
 
   // --- Track to seek (used in seek operations)
-  seekingTrack: number = -1;
+  seekingTrack: number = 0;
 
   // --- Current head index
-  headIndex: number = -1;
+  headIndex: number = 0;
 
   // --- Current track index in DiskTracks array
-  trackIndex: number = -1;
+  trackIndex: number = 0;
 
   // --- Sector index in the Sectors array
-  sectorIndex: number = -1;
+  sectorIndex: number = 0;
 
   // --- Ejects floppy disk
   ejectDisk (): void {

@@ -39,13 +39,26 @@ const MSR_DIO = 0x40;
 // --- Both bits DIO and RQM should be used to perform the hand-shaking functions of "ready" and "directron" to the processor
 const MSR_RQM = 0x80;
 
+// --- Head Address. This flag is used to indicate the state of the head at interrupt
+const SR0_HD = 0x04;
+
 // --- Not Ready
-// --- When the FDD is in the not-ready state and a Read or Write command is issued, this flag is set If a Read or Write
-// --- command is issued to side 1 of a single-sided drive, then this flag is set.
+// --- When the FDD is in the not-ready state and a Read or Write command is issued, this flag is set If a Read
+// --- or Write command is issued to side 1 of a single-sided drive, then this flag is set.
 const SR0_NR = 0x08;
+
+// --- Equipment Check. If a fault signal received from the FDD, or if the track 0 signal fails to occur after 77
+// --- step pulses, this flag is set.
+const SR0_EC = 0x10;
+
+// --- Seek End. When the FDC completes the Seek command, this flag is set to high.
+const SR0_SE = 0x20;
 
 // --- Abnormal termination of command, (AT) Execution of command was started but was not successfully completed.
 const SR0_AT = 0x40;
+
+// --- Abnormal termination of command, (IC)
+const SR0_IC = 0x80;
 
 // --- Missing Address Mark
 // --- This bit is set if the FDC does not detect the IDAM before 2 index pulses It is also set if
@@ -61,6 +74,11 @@ const SR1_NW = 0x02;
 // --- During execution of Read Data. Read Deleted Data Write Data. Write Deleted Data or Scan command,
 // --- if the FDC cannot find the sector specified in the IDR(2) Register, this flag is set.
 const SR1_ND = 0x04;
+
+// --- No Data
+// --- During execution of Read Data. Read Deleted Data Write Data. Write Deleted Data or Scan command,
+// --- if the FDC cannot find the sector specified in the IDR(2) Register, this flag is set.
+const SR1_NR = 0x08;
 
 // --- Over Run
 // --- If the FDC i s not serviced by the host system during data transfers within a certain time interval. this flaa i s set.
@@ -155,6 +173,7 @@ const CMD_SEEK = 0x0f;
 
 // --- Percentage of motor speed increment in a single complete frame
 const MOTOR_SPEED_INCREMENT = 2;
+const MOTOR_SPEED_DECREMENT = 2;
 
 // --- Maximum log entries preserved
 const MAX_LOG_ENTRIES = 1024;
@@ -226,7 +245,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private parNd = 0;
 
   // --- New cylinder number
-  private parNcn = 0;
+  private newCylinder = 0;
 
   // --- Number of sectors per cylinder
   private parSc = 0;
@@ -268,6 +287,9 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Is the floppy motor turned on?
   private motorOn = false;
 
+  // --- Is the motor accelerating or slowing down?
+  private motorAccelerating = false;
+
   // --- Relative motor speed: 0%: fully stopped, 100%: fully started
   private motorSpeed = 0;
 
@@ -292,6 +314,11 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Retrieves the currently selected drive
   private get selectedDrive (): FloppyDiskDrive {
     return this.floppyDrives[this.driveIndex];
+  }
+
+  // --- Tests if the drive is ready for operations
+  private isDriveReady (): boolean {
+    return this.selectedDrive.disk && this.motorSpeed === 100;
   }
 
   // --- Indicates if Drive #1 is present
@@ -350,13 +377,56 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           }
           break;
         case CMD_SENSE_INTERRUPT_STATE:
-          // TODO
-          result = 0xff;
+          if (this.resultReadIndex === 0) {
+            result = this.sr0;
+            this.resultReadIndex++;
+          } else if (this.resultReadIndex === 1) {
+            result = this.newCylinder;
+            this.msr &= ~(MSR_DIO | MSR_CB);
+            this.operationPhase = OperationPhase.Command;
+          } else {
+            result = 0xff;
+          }
           break;
         case CMD_READ_ID:
-          // TODO
-          result = 0xff;
+          switch (this.resultReadIndex) {
+            case 0:
+              result = this.sr0;
+              console.log("RES ST0", result);
+              break;
+            case 1:
+              result = this.sr1;
+              console.log("RES ST1", result);
+              break;
+            case 2:
+              result = this.sr2;
+              console.log("RES ST2", result);
+              break;
+            case 3:
+              result = this.selectedDrive.trackIndex;
+              console.log("RES C", result);
+              break;
+            case 4:
+              result = this.selectedDrive.headIndex;
+              console.log("RES H", result);
+              break;
+            case 5:
+              result = this.selectedDrive.sectorIndex;
+              console.log("RES R", result);
+              break;
+            case 6:
+              result = 0x02;
+              console.log("RES N", result);
+              this.msr &= ~MSR_DIO;
+              this.operationPhase = OperationPhase.Command;
+              break;
+            default:
+              result = 0x00;
+              break;
+          }
+          this.resultReadIndex++;
           break;
+
         case CMD_READ_DATA:
         case CMD_READ_DELETED_DATA:
         case CMD_READ_TRACK:
@@ -432,14 +502,22 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           case CMD_SENSE_INTERRUPT_STATE:
             if (this.interruptPending) {
               this.interruptPending = false;
-              this.operationPhase = OperationPhase.Result;
-              // --- Indicate data must be read
-              // --- While it lasts, indicate that FDC is busy
-              this.msr |= MSR_DIO | MSR_CB;
               logEntry.comment = `Sense Interrupt`;
+              this.msr |= MSR_DIO | MSR_CB;
 
-              // --- No result to retrieve
+              if (this.isDriveReady) {
+                this.sr0 |=
+                  (this.selectedDrive.headIndex === 0 ? 0x00 : SR0_HD) |
+                  (this.driveIndex & 0x03);
+                this.newCylinder = this.selectedDrive.trackIndex;
+              } else {
+                this.sr0 |= this.driveIndex & 0x03;
+                this.newCylinder = 0;
+              }
+
+              // --- Sign result is ready
               this.resultReadIndex = 0;
+              this.operationPhase = OperationPhase.Result;
             } else {
               this.commandReceived = CMD_INVALID;
               logEntry.comment = "Sense Interrupt (invalid)";
@@ -467,6 +545,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             break;
 
           case CMD_READ_ID:
+            logEntry.comment = "Read ID";
             if ((value & 0xbf) === CMD_READ_ID) {
               this.paramIndex++;
             } else {
@@ -567,6 +646,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               logEntry.comment = `HLT: ${this.parHlt}, ND: ${this.parNd}`;
             }
             break;
+
           case CMD_SENSE_DRIVE_STATUS:
             if (this.paramIndex === 1) {
               // --- Select the specified drive
@@ -613,15 +693,65 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               this.interruptPending = true;
             }
             break;
+
           case CMD_RECALIBRATE:
-            // TODO: Implement command parameter reader
+            if (this.paramIndex === 1) {
+              // --- Select the specified drive
+              this.driveIndex = value & 0x03;
+              logEntry.comment = `US1: ${(this.driveIndex >> 1) & 0x01}, US0: ${
+                this.driveIndex & 0x01
+              }`;
+              this.paramIndex = 0;
+
+              // --- Execute the command
+              this.msr |= MSR_EXM;
+              this.selectedDrive.trackIndex = 0;
+              if (this.isDriveReady) {
+                // --- We reached Track 0, seek ended
+                this.sr0 |= SR0_SE;
+                this.msr &= ~MSR_EXM;
+              } else {
+                // --- The drive is not ready yet, sign abnormal termination
+                this.sr0 |= SR0_IC | SR0_AT | SR0_NR;
+              }
+            }
             break;
+
           case CMD_SENSE_INTERRUPT_STATE:
             // TODO: Implement command parameter reader
             break;
+
           case CMD_READ_ID:
-            // TODO: Implement command parameter reader
+            if (this.paramIndex === 1) {
+              // --- Select the specified drive
+              this.driveIndex = value & 0x03;
+              const hd = (value >> 2) & 0x01;
+              this.selectedDrive.headIndex = hd;
+              logEntry.comment = `HD: ${hd}, US1: ${
+                (this.driveIndex >> 1) & 0x01
+              }, US0: ${this.driveIndex & 0x01}`;
+              this.paramIndex = 0;
+              
+              console.log("READ ID");
+              // --- Execute the command
+              if (this.isDriveReady) {
+                this.sr0 =
+                  (this.selectedDrive.headIndex === 0 ? 0x00 : SR0_HD) |
+                  (this.driveIndex & 0x03);
+                this.sr1 = this.selectedDrive.sectorIndex > 9 ? 0x80 : 0x00;
+              } else {
+                this.msr &= ~MSR_EXM;
+                this.sr0 |= SR0_NR;
+                this.sr1 |= SR1_ND;
+              }
+              this.msr |= MSR_DIO;
+              this.interruptPending = true;
+              this.sr2 = 0;
+              this.resultReadIndex = 0;
+              this.operationPhase = OperationPhase.Result;
+            }
             break;
+
           case CMD_READ_DATA:
           case CMD_READ_DELETED_DATA:
           case CMD_READ_TRACK:
@@ -662,25 +792,58 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     throw new Error("Not implemented yet");
   }
 
+  // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
-    throw new Error("Not implemented yet");
+    if (this.motorOn) return;
+    this.motorOn = true;
+    this.motorAccelerating = true;
+    this.log({
+      addr: this.machine.opStartAddress,
+      opType: PortOperationType.MotorEvent,
+      data: this.motorSpeed,
+      comment: "Motor on"
+    });
   }
 
+  // --- Turn off the floppy drive's motor
   turnOffMotor (): void {
-    throw new Error("Not implemented yet");
+    if (!this.motorOn) return;
+    this.motorOn = false;
+    this.motorAccelerating = false;
+    this.log({
+      addr: this.machine.opStartAddress,
+      opType: PortOperationType.MotorEvent,
+      data: this.motorSpeed,
+      comment: "Motor off"
+    });
   }
 
+  // --- Get the floppy drive's motor speed
   getMotorSpeed (): number {
-    throw new Error("Not implemented yet");
+    return this.motorSpeed;
   }
 
+  // --- Get the floppy drive's save light value
   getFloppySaveLight (): boolean {
-    throw new Error("Not implemented yet");
+    return this.floppySavingLight;
   }
 
   // --- Carry out chores when a machine frame has been completed
   onFrameCompleted (): void {
-    console.log("Frame");
+    if (this.motorAccelerating) {
+      // --- Handle acceleration
+      if (this.motorSpeed < 100) {
+        this.motorSpeed = Math.min(
+          100,
+          this.motorSpeed + MOTOR_SPEED_INCREMENT
+        );
+      }
+    } else {
+      // --- Handle slowing down
+      if (this.motorSpeed > 0) {
+        this.motorSpeed = Math.max(0, this.motorSpeed - MOTOR_SPEED_DECREMENT);
+      }
+    }
   }
 
   // --- Resets the result buffer
