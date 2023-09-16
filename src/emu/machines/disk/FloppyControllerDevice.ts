@@ -266,7 +266,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private paramIndex = 0;
 
   // --- The index of the currently returned result
-  private readonly resultBuffer: number[] = [];
+  private resultBuffer: number[] = [];
   private resultReadIndex = 0;
 
   // --- Indicates pending interupt
@@ -292,15 +292,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Relative motor speed: 0%: fully stopped, 100%: fully started
   private motorSpeed = 0;
-
-  // --- Signal counter information
-  private readonly signalCounter: SignalWithCounter = {
-    counter: 0,
-    value: 0,
-    isRunning: false,
-    max: 80,
-    triggered: this.signalTriggered
-  };
 
   // --- State of the floppy saving ligth
   private floppySavingLight = false;
@@ -351,8 +342,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.floppyDrives[i] = new FloppyDiskDrive();
     }
 
-    this.resetSignalCounter();
-    this.resetresultBuffer();
+    this.setResultBuffer();
     this.clearLogEntries();
   }
 
@@ -363,96 +353,21 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Gets the value of the data register (8-bit)
   readDataRegister (): number {
-    let result = 0xff;
     if (this.operationPhase === OperationPhase.Result) {
-      // --- Return the result of the last executed command
-      switch (this.commandReceived) {
-        case CMD_SENSE_DRIVE_STATUS:
-          if (this.resultReadIndex === 0) {
-            result = this.sr3;
-            this.msr &= ~MSR_DIO;
-            this.operationPhase = OperationPhase.Command;
-          } else {
-            result = 0xff;
-          }
-          break;
-        case CMD_SENSE_INTERRUPT_STATE:
-          if (this.resultReadIndex === 0) {
-            result = this.sr0;
-            this.resultReadIndex++;
-          } else if (this.resultReadIndex === 1) {
-            result = this.newCylinder;
-            this.msr &= ~(MSR_DIO | MSR_CB);
-            this.operationPhase = OperationPhase.Command;
-          } else {
-            result = 0xff;
-          }
-          break;
-        case CMD_READ_ID:
-          switch (this.resultReadIndex) {
-            case 0:
-              result = this.sr0;
-              console.log("RES ST0", result);
-              break;
-            case 1:
-              result = this.sr1;
-              console.log("RES ST1", result);
-              break;
-            case 2:
-              result = this.sr2;
-              console.log("RES ST2", result);
-              break;
-            case 3:
-              result = this.selectedDrive.trackIndex;
-              console.log("RES C", result);
-              break;
-            case 4:
-              result = this.selectedDrive.headIndex;
-              console.log("RES H", result);
-              break;
-            case 5:
-              result = this.selectedDrive.sectorIndex;
-              console.log("RES R", result);
-              break;
-            case 6:
-              result = 0x02;
-              console.log("RES N", result);
-              this.msr &= ~MSR_DIO;
-              this.operationPhase = OperationPhase.Command;
-              break;
-            default:
-              result = 0x00;
-              break;
-          }
-          this.resultReadIndex++;
-          break;
+      const value = this.resultBuffer[this.resultReadIndex++];
+      const result = value ?? 0xff;
+      if (this.resultReadIndex > this.resultBuffer.length - 1) {
+        this.setResultBuffer();
+        this.msr &= ~MSR_DIO;
+        this.operationPhase = OperationPhase.Command;
+        this.paramIndex = 0;
 
-        case CMD_READ_DATA:
-        case CMD_READ_DELETED_DATA:
-        case CMD_READ_TRACK:
-          // TODO
-          result = 0xff;
-          break;
-        case CMD_WRITE_DATA:
-          // TODO
-          return 0xff;
-        case CMD_FORMAT_TRACK:
-          // TODO
-          return 0xff;
-        case CMD_INVALID:
-          if (this.resultReadIndex) {
-            result = 0xff;
+        // --- After-result settings
+        switch (this.commandReceived) {
+          case CMD_SENSE_INTERRUPT_STATE:
+            this.msr &= ~MSR_CB;
             break;
-          } else {
-            // --- No need to return more data
-            this.msr &= ~MSR_DIO;
-            this.operationPhase = OperationPhase.Command;
-
-            // --- If an invalid command is sent to the FDC (a commend not defined above), then the FDC will terminate the
-            // --- command after bits 7 and 6 of Status Register 0 are set to 1 and 0 respectively.
-            result = 0x80;
-            break;
-          }
+        }
       }
 
       // --- The other commands do not support result value
@@ -506,18 +421,15 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               this.msr |= MSR_DIO | MSR_CB;
 
               if (this.isDriveReady) {
-                this.sr0 |=
+                this.sr0 =
                   (this.selectedDrive.headIndex === 0 ? 0x00 : SR0_HD) |
                   (this.driveIndex & 0x03);
                 this.newCylinder = this.selectedDrive.trackIndex;
               } else {
-                this.sr0 |= this.driveIndex & 0x03;
+                this.sr0 = this.driveIndex & 0x03;
                 this.newCylinder = 0;
               }
-
-              // --- Sign result is ready
-              this.resultReadIndex = 0;
-              this.operationPhase = OperationPhase.Result;
+              this.setResultBuffer([this.sr0, this.newCylinder]);
             } else {
               this.commandReceived = CMD_INVALID;
               logEntry.comment = "Sense Interrupt (invalid)";
@@ -624,10 +536,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
         // --- If the command is invalid, handle it
         if (this.commandReceived === CMD_INVALID) {
-          this.operationPhase = OperationPhase.Result;
-          this.msr |= MSR_DIO;
-          this.resultReadIndex = 0;
-          this.interruptPending = true;
+          this.setResultBuffer([0x80]);
         }
       } else {
         // --- This write specifies the subsequent command parameter
@@ -639,7 +548,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               this.paramIndex++;
               logEntry.comment = `SRT: ${this.parSrt}, HUT: ${this.parHut}`;
             } else if (this.paramIndex === 2) {
-              console.log("SPECIFY HLT/ND");
               this.parHlt = (value >> 4) & 0x0f;
               this.parNd = value & 0x0f;
               this.paramIndex = 0;
@@ -656,11 +564,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               logEntry.comment = `HD: ${hd}, US1: ${
                 (this.driveIndex >> 1) & 0x01
               }, US0: ${this.driveIndex & 0x01}`;
-              this.paramIndex = 0;
-
-              // --- Execute the command
-              this.operationPhase = OperationPhase.Result;
-              this.msr |= MSR_DIO;
 
               // --- Sense the status according to the current drive settings
               // --- Ready, Track 0, and Two Sides flags set. Use the drives head index
@@ -689,8 +592,9 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               ) {
                 this.sr3 |= SR3_WP;
               }
-              this.resultReadIndex = 0;
-              this.interruptPending = true;
+
+              // --- Done
+              this.setResultBuffer([this.sr3]);
             }
             break;
 
@@ -702,6 +606,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
                 this.driveIndex & 0x01
               }`;
               this.paramIndex = 0;
+              console.log("RECALIBRATE");
+              this.interruptPending = true;
 
               // --- Execute the command
               this.msr |= MSR_EXM;
@@ -717,10 +623,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             }
             break;
 
-          case CMD_SENSE_INTERRUPT_STATE:
-            // TODO: Implement command parameter reader
-            break;
-
           case CMD_READ_ID:
             if (this.paramIndex === 1) {
               // --- Select the specified drive
@@ -731,7 +633,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
                 (this.driveIndex >> 1) & 0x01
               }, US0: ${this.driveIndex & 0x01}`;
               this.paramIndex = 0;
-              
+
               console.log("READ ID");
               // --- Execute the command
               if (this.isDriveReady) {
@@ -747,8 +649,17 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               this.msr |= MSR_DIO;
               this.interruptPending = true;
               this.sr2 = 0;
-              this.resultReadIndex = 0;
-              this.operationPhase = OperationPhase.Result;
+
+              // --- Done
+              this.setResultBuffer([
+                this.sr0,
+                this.sr1,
+                this.sr2,
+                this.selectedDrive.trackIndex,
+                this.selectedDrive.headIndex,
+                this.selectedDrive.sectorIndex,
+                0x02
+              ]);
             }
             break;
 
@@ -847,45 +758,19 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   }
 
   // --- Resets the result buffer
-  private resetresultBuffer (): void {
-    this.resultBuffer.length = 0;
+  private setResultBuffer (result?: number[]): void {
+    this.resultBuffer = result ?? [];
     this.resultReadIndex = 0;
+    if (result) {
+      // --- Move to result phase
+      this.operationPhase = OperationPhase.Result;
+      this.msr |= MSR_DIO;
+      this.interruptPending = true;
+    }
   }
-
-  // --- Resets the current signal counter;
-  private resetSignalCounter (): void {
-    this.signalCounter.counter = 0;
-    this.signalCounter.value = 0;
-    this.signalCounter.isRunning = false;
-  }
-
-  // --- Sets the current signal counter;
-  private setSignalCounter (): void {
-    this.signalCounter.counter = 0;
-    this.signalCounter.value = 1;
-    this.signalCounter.isRunning = false;
-  }
-
-  // --- Execute when a timed signal is triggered
-  private signalTriggered (): void {
-    // TODO: Implment this method
-  }
-
-  // // --- Status Register 3 value
-  // private get sr3 (): number {
-  //   return (
-  //     ((this.sr3Ry ? 1 : 0) << 5) |
-  //     ((this.sr3T0 ? 1 : 0) << 4) |
-  //     ((this.sr3Ts ? 1 : 0) << 3) |
-  //     ((this.parHd ? 1 : 0) << 2) |
-  //     ((this.parUs1 ? 1 : 0) << 1) |
-  //     (this.parUs0 ? 1 : 0)
-  //   );
-  // }
 
   // --- Adds a new item to the operation log
   private log (entry: FloppyLogEntry): void {
-    //if (entry.opType !== PortOperationType.WriteData) return;
     if (this.opLog.length >= MAX_LOG_ENTRIES) {
       this.opLog.shift();
     }
@@ -905,13 +790,3 @@ enum OperationPhase {
   // --- available to the processor.
   Result
 }
-
-// --- Represents a signal with counter
-type SignalWithCounter = {
-  // ---
-  counter: number;
-  value: number;
-  isRunning: boolean;
-  max: number;
-  triggered: () => void;
-};
