@@ -70,7 +70,7 @@ const NecUpd765Panel = () => {
                 iconColor = "--console-ansi-bright-magenta";
                 break;
               case PortOperationType.MotorEvent:
-                icon = "settings-gear";
+                icon = "gear";
                 iconColor = "--console-ansi-white";
                 break;
             }

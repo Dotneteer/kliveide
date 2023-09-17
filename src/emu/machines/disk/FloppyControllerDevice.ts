@@ -6,6 +6,7 @@ import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevi
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { FloppyDisk } from "./FloppyDisk";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {
@@ -243,7 +244,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     }
 
     if (this.phase == OperationPhase.Execution) {
-      // --- READ_DATA/READ_DIAG 
+      // --- READ_DATA
       this.dataOffset++; // --- count read bytes
       d.readData();
       this.crcAdd();
@@ -275,7 +276,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         }
       }
       if (
-        (this.cmd.id == Command.ReadDiag || this.cmd.id == Command.ReadData) &&
+        this.cmd.id == Command.ReadData &&
         this.dataOffset === this.sectorLength
       ) {
         // --- Read the CRC
@@ -286,39 +287,23 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         if (this.crc !== 0x000) {
           this.sr2 |= SR2_DD;
           this.sr1 |= SR1_DE;
-          if (this.cmd.id == Command.ReadData) {
-            // --- READ DIAG not aborted!
-            this.sr0 |= SR0_AT;
-            this.cmdResult(); /* set up result phase */
-            return r;
-          }
+          this.sr0 |= SR0_AT;
+          this.cmdResult(); /* set up result phase */
+          return r;
         }
 
-        if (this.cmd.id == Command.ReadData) {
-          if (this.ddam !== this.delData) {
-            // --- we read a not 'wanted' sector... so
-            if (this.dataRegister[5] > this.dataRegister[3]) {
-              // --- if we want to read more...
-              this.sr0 |= SR0_AT;
-            }
-            this.cmdResult();
-            return r;
+        if (this.ddam !== this.delData) {
+          // --- we read a not 'wanted' sector... so
+          if (this.dataRegister[5] > this.dataRegister[3]) {
+            // --- if we want to read more...
+            this.sr0 |= SR0_AT;
           }
-          this.rev = 2;
-          this.msr &= ~MSR_RQM;
-          this.startReadData();
-        } else {
-          // --- READ DIAG
-          this.dataRegister[3]++; /*FIXME ??? */
-          this.dataRegister[5]--;
-          if (this.dataRegister[5] === 0) {
-            /* no more */
-            this.cmdResult(); /* set up result phase */
-            return r;
-          }
-          this.msr &= ~MSR_RQM;
-          this.startReadDiag();
+          this.cmdResult();
+          return r;
         }
+        this.rev = 2;
+        this.msr &= ~MSR_RQM;
+        this.startReadData();
       }
       return r;
     }
@@ -357,13 +342,47 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.msr |= MSR_RQM;
       this.msr &= ~MSR_DIO;
       this.msr &= ~MSR_CB;
-      if (this.intReq < IntRequest.Ready) this.intReq = IntRequest.None;
+      if (this.intReq < IntRequest.Ready) {
+        this.intReq = IntRequest.None;
+      }
     }
+
+    this.log({
+      opType: PortOperationType.ReadData,
+      addr: this.machine.opStartAddress,
+      phase: "R",
+      data: r
+    });
     return r;
   }
 
   // --- Gets the value of the Main Status Register
   readMainStatusRegister (): number {
+    const flags: string[] = [];
+    const data = this.msr;
+    if (data & MSR_RQM) {
+      flags.push("RQM");
+    }
+    if (data & MSR_DIO) {
+      flags.push("DIO");
+    }
+    if (data & MSR_EXM) {
+      flags.push("EXM");
+    }
+    if (data & MSR_CB) {
+      flags.push("CB");
+    }
+    const busy = data & 0x0f;
+    if (busy) {
+      flags.push(`$${toHexa2(data & 0x0f)}`);
+    }
+    this.log({
+      opType: PortOperationType.ReadMsr,
+      addr: this.machine.opStartAddress,
+      data,
+      phase: "S",
+      comment: flags.join(" | ")
+    });
     return this.msr;
   }
 
@@ -379,130 +398,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     if (this.msr & MSR_CB && this.phase === OperationPhase.Execution) {
       // --- Execution phase Write/Format
       const d = this.currentDrive;
-      if (this.cmd.id === Command.WriteId) {
-        // --- Format
-        this.dataRegister[this.dataOffset + 5] = value; /* read id fields */
-        this.dataOffset++;
-        if (this.dataOffset === 4) {
-          // --- C, H, R, N done => format track
-          // TODO: event_remove_type( timeout_event );
-
-          // --- Write 6/12 zero
-          d.data = 0x00;
-          for (let i = this.mf ? 12 : 6; i > 0; i--) {
-            d.writeData();
-          }
-          this.crcPreset();
-          if (this.mf) {
-            // --- MFM
-            d.data = 0xffa1;
-
-            // --- Write 3 0xa1 with clock mark
-            for (let i = 3; i > 0; i--) {
-              d.writeData();
-              this.crcAdd();
-            }
-          }
-
-          // --- Write id mark
-          d.data = 0x00fe | (this.mf ? 0x0000 : 0xff00);
-          d.writeData();
-          this.crcAdd();
-          for (let i = 0; i < 4; i++) {
-            // --- Write id fields
-            d.data = this.dataRegister[i + 5];
-            d.writeData();
-            this.crcAdd();
-          }
-
-          // --- Write CRC MSB
-          d.data = this.crc >> 8;
-          d.writeData();
-
-          // --- Write CRC LSB
-          d.data = this.crc & 0xff;
-          d.writeData();
-
-          d.data = this.mf ? 0x4e : 0xff;
-          for (let i = 11; i > 0; i--) {
-            // --- Write 11 GAP byte
-            d.writeData();
-          }
-
-          if (this.mf) {
-            // --- MFM, write another 11 GAP byte
-            for (let i = 11; i > 0; i--) {
-              d.writeData();
-            }
-          }
-
-          // --- Write 6/12 zero
-          d.data = 0x00;
-          for (let i = this.mf ? 12 : 6; i > 0; i--) {
-            d.writeData();
-          }
-          this.crcPreset();
-
-          if (this.mf) {
-            // --- MFM, Write 3 0xa1 with clock mark
-            d.data = 0xffa1;
-            for (let i = 3; i > 0; i--) {
-              d.writeData();
-              this.crcAdd();
-            }
-          }
-
-          // --- Write data mark
-          d.data = 0x00fb | (this.mf ? 0x0000 : 0xff00);
-          d.writeData();
-          this.crcAdd();
-
-          // --- Write filler byte
-          d.data = this.dataRegister[4];
-          for (let i = this.rlen; i > 0; i--) {
-            d.writeData();
-            this.crcAdd();
-          }
-
-          // --- Write CRC MSB
-          d.data = this.crc >> 8;
-          d.writeData();
-
-          // --- Write CRC LSB
-          d.data = this.crc & 0xff;
-          d.writeData();
-
-          // --- Write GAP
-          d.data = this.mf ? 0x4e : 0xff;
-          for (let i = this.dataRegister[3]; i > 0; i--) {
-            d.writeData();
-          }
-          this.dataOffset = 0;
-          // --- Prepare next sector
-          this.dataRegister[2]--;
-        }
-
-        // --- Finish all sector
-        if (this.dataRegister[2] === 0) {
-          // --- GAP3 as Intel call this GAP
-          d.data = this.mf ? 0x4e : 0xff;
-          while (!d.atIndexWhole) {
-            d.writeData();
-          }
-
-          // --- End of execution phase
-          this.phase = OperationPhase.Result;
-          this.cycle = this.cmd.reslength;
-          this.msr &= ~MSR_EXM;
-          this.intReq = IntRequest.Result;
-          this.cmdResult();
-          return;
-        }
-
-        // 1/10 revolution in 20 ms
-        this.registerEvent(20, this.timeoutEventHandler);
-        return;
-      } else if (this.cmd.id === Command.WriteData) {
+      if (this.cmd.id === Command.WriteData) {
         // --- Write data
         this.dataOffset++;
         d.data = value;
@@ -597,6 +493,15 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       // --- First byte -> command
       this.commandRegister = value;
       this.cmdIdentify();
+
+      // --- Log the command
+      this.log({
+        opType: PortOperationType.WriteData,
+        addr: this.machine.opStartAddress,
+        phase: "C",
+        data: value,
+        comment: this.cmd.name
+      });
       this.msr |= MSR_CB;
 
       // --- A Sense Interrupt Status Command must be sent after a Seek or Recalibrate interrupt;
@@ -613,6 +518,13 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     } else {
       // --- Store data register bytes
       this.dataRegister[this.cycle - 1] = value;
+      this.log({
+        opType: PortOperationType.WriteData,
+        addr: this.machine.opStartAddress,
+        phase: "P",
+        data: value,
+        comment: this.cmd.pars[this.cycle - 1]
+      });
     }
 
     if (this.cycle >= this.cmd.cmdLength) {
@@ -695,12 +607,14 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           this.phase = OperationPhase.Command;
           break;
         case Command.SenseDrive:
-          this.sr3 = this.us | (this.hd ? 0x04 : 0x00);
+          let driveBEnabled = (this.us & 0x01) === 0x01 && this.isDriveBPresent;
+          this.sr3 = (driveBEnabled ? SR3_US0 : 0x00) | (this.hd ? 0x04 : 0x00);
           // --- The plus3 wiring cause that the double side signal is the same as
           // --- the write protect signal
           this.sr3 |= d.isWriteProtected ? SR3_WP : 0x00;
           this.sr3 |= d.tr00 ? SR3_T0 : 0x00;
-          this.sr3 |= this.isDriveReady() ? SR3_RD : 0x00;
+          this.sr3 |= d.twoHeads ? SR3_TS : 0x00;
+          this.sr3 |= driveBEnabled ? SR3_RD : 0x00;
           break;
         case Command.SenseInt:
           for (let i = 0; i < 4; i++) {
@@ -794,17 +708,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           this.firstRw = true;
           this.loadHead();
           return;
-        case Command.ReadDiag:
-          this.rlen =
-            0x80 <<
-            (this.dataRegister[4] > MAX_SIZE_CODE
-              ? MAX_SIZE_CODE
-              : this.dataRegister[4]);
-          if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
-            this.rlen = this.dataRegister[7];
-          }
-          this.loadHead();
-          return;
 
         case Command.WriteData:
           if (d.isWriteProtected) {
@@ -825,21 +728,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           this.firstRw = true;
           this.loadHead();
           return;
-        case Command.WriteId:
-          if (d.isWriteProtected) {
-            this.sr1 |= SR1_NW;
-            this.sr0 |= SR0_AT;
-            terminated = 1;
-            break;
-          }
-          // --- Max 8192 byte/sector
-          this.rlen =
-            0x80 <<
-            (this.dataRegister[1] > MAX_SIZE_CODE
-              ? MAX_SIZE_CODE
-              : this.dataRegister[1]);
-          this.loadHead();
-          return;
+
         case Command.Scan:
           // --- & 0x0c >> 2 == 00 - equal, 10 - low, 11 - high
           this.scan =
@@ -945,8 +834,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   }
 
   private isDriveReady (): boolean {
-    // TODO: Implement this
-    return true;
+    return this.currentDrive.disk && this.motorSpeed === 100;
   }
 
   // --- Registers an event
@@ -1013,8 +901,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private startWriteData (): void {}
 
   private startReadData (): void {}
-
-  private startReadDiag (): void {}
 
   private seekStep (isStart: boolean): void {}
 
@@ -1121,6 +1007,13 @@ const SR2_DD = 0x20;
 // --- which contains a deleted data address mark, this flag is set Also set if DAM is found during Read Deleted Data.
 const SR2_CM = 0x40;
 
+// --- US 0: Indicates the status of the Unit Select 0 signal
+const SR3_US0 = 0x01;
+
+// --- Two Side
+// --- This bit is used to indicate the status of the two side signal from the FDD.
+const SR3_TS = 0x08;
+
 // --- Track 0
 // --- This bit is used to indicate the status of the track 0 signal from the FDD.
 const SR3_T0 = 0x10;
@@ -1155,12 +1048,10 @@ enum Command {
   // --- | Computer READ at execution phase
   //     V
   ReadData = 0,
-  ReadDiag,
 
   // --- | Computer WRITE at execution phase
   //     V
   WriteData,
-  WriteId,
   Scan,
 
   // --- | No data transfer at execution phase
@@ -1190,6 +1081,8 @@ enum IntRequest {
 type CommandDescriptor = {
   // --- Command ID
   id: Command;
+  // --- Display name
+  name: string;
   // --- Mask to use
   mask: number;
   // --- Value to test with mask
@@ -1198,6 +1091,8 @@ type CommandDescriptor = {
   cmdLength: number;
   // --- Result length
   reslength: number;
+  // --- Parameter names
+  pars: string[];
 };
 
 // --- Represents the execution phases of the controller
@@ -1215,120 +1110,134 @@ enum OperationPhase {
 const commandTable: CommandDescriptor[] = [
   {
     id: Command.ReadData,
+    name: "Read Data",
     mask: 0x1f,
     value: 0x06,
     cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
   },
   // --- Deleted data
   {
     id: Command.ReadData,
+    name: "Read Deleted Data",
     mask: 0x1f,
     value: 0x0c,
     cmdLength: 0x08,
-    reslength: 0x07
-  },
-  {
-    id: Command.ReadDiag,
-    mask: 0x9f,
-    value: 0x02,
-    cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
   },
   {
     id: Command.Recalibrate,
+    name: "Recalibrate",
     mask: 0xff,
     value: 0x07,
     cmdLength: 0x01,
-    reslength: 0x00
+    reslength: 0x00,
+    pars: []
   },
   {
     id: Command.Seek,
+    name: "Seek",
     mask: 0xff,
     value: 0x0f,
     cmdLength: 0x02,
-    reslength: 0x00
+    reslength: 0x00,
+    pars: ["NCN"]
   },
   {
     id: Command.WriteData,
+    name: "Write Data",
     mask: 0x3f,
     value: 0x05,
     cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
   },
   // --- Deleted data
   {
     id: Command.WriteData,
+    name: "Write Deleted Data",
     mask: 0x3f,
     value: 0x09,
     cmdLength: 0x08,
-    reslength: 0x07
-  },
-  {
-    id: Command.WriteId,
-    mask: 0xbf,
-    value: 0x0d,
-    cmdLength: 0x05,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
   },
   // --- Equal
   {
     id: Command.Scan,
+    name: "Scan Equal",
     mask: 0x1f,
     value: 0x11,
     cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
   },
   // --- Low or Equal
   {
     id: Command.Scan,
+    name: "Scan Low or Equal",
     mask: 0x1f,
     value: 0x19,
     cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
   },
   // --- High or Equal
   {
     id: Command.Scan,
+    name: "Scan High or Equal",
     mask: 0x1f,
     value: 0x1d,
     cmdLength: 0x08,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
   },
   {
     id: Command.ReadId,
+    name: "Read Id",
     mask: 0xbf,
     value: 0x0a,
     cmdLength: 0x01,
-    reslength: 0x07
+    reslength: 0x07,
+    pars: []
   },
   {
     id: Command.SenseInt,
+    name: "Sense Interrupt",
     mask: 0xff,
     value: 0x08,
     cmdLength: 0x00,
-    reslength: 0x02
+    reslength: 0x02,
+    pars: []
   },
   {
     id: Command.Specify,
+    name: "Specify",
     mask: 0xff,
     value: 0x03,
     cmdLength: 0x02,
-    reslength: 0x00
+    reslength: 0x00,
+    pars: ["SRT/HUT", "HLT/ND"]
   },
   {
     id: Command.SenseDrive,
+    name: "Sense Drive",
     mask: 0xff,
     value: 0x04,
     cmdLength: 0x01,
-    reslength: 0x01
+    reslength: 0x01,
+    pars: ["HD/US"]
   },
   {
     id: Command.Invalid,
+    name: "Invalid",
     mask: 0x00,
     value: 0x00,
     cmdLength: 0x00,
-    reslength: 0x01
+    reslength: 0x01,
+    pars: []
   }
 ];
 
