@@ -35,8 +35,30 @@ export class FloppyDiskDrive {
   // --- Sector index in the Sectors array
   sectorIndex: number = 0;
 
+  // --- Has two heads?
+  twoHeads = true;
+
+  // --- Is at the index hole?
+  atIndexWhole = false;
+
+  // --- Track 0 mark
+  tr00 = false;
+
+  // --- Does this drive weak read?
+  doReadWeak = false;
+
   // --- Ejects floppy disk
   ejectDisk (): void {
     this.disk = null;
+  }
+
+  // --- Writes the data to the disk
+  writeData(): void {
+    // TODO: Implement this method
+  }
+
+  // --- Reads the data from the disk
+  readData(): void {
+    // TODO: Implement this method
   }
 }

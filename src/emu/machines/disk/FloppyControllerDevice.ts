@@ -1,5 +1,3 @@
-// --- If any of the Dn bits Iis set FDC will not accept read or write command.
-
 import {
   FloppyLogEntry,
   PortOperationType
@@ -96,19 +94,19 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private us: number;
 
   // --- Present cylinder numbers
-  private pcn: number[];
+  private pcn: number[] = [];
 
   // --- New cylinder numbers
-  private ncn: number[];
+  private ncn: number[] = [];
 
   // --- Recalibrate stored PCN values
-  private rec: number[];
+  private rec: number[] = [];
 
   // --- Seek status for the drives
-  private seek: number[];
+  private seek: number[] = [];
 
   // --- order of overlapped seeks for 4 drive
-  private seekAge: number[];
+  private seekAge: number[] = [];
 
   // --- Expected record length
   private rlen: number;
@@ -123,7 +121,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private commandRegister: number;
 
   // --- Data registers
-  private dataRegister: number[];
+  private dataRegister: number[] = [];
 
   // --- Main status register
   private msr: number;
@@ -141,7 +139,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private sr3: number;
 
   // --- Result bytes for SENSE INTERRUPT
-  private senseIntRes: number[];
+  private senseIntRes: number[] = [];
 
   // --- Hold CRC
   private crc: number;
@@ -237,19 +235,641 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Gets the value of the data register (8-bit)
   readDataRegister (): number {
-    // TODO: Implement this method
-    return 0xff;
+    let r = 0;
+    const d = this.currentDrive;
+
+    if (!(this.msr & MSR_RQM) || !(this.msr & MSR_DIO)) {
+      return 0xff;
+    }
+
+    if (this.phase == OperationPhase.Execution) {
+      // --- READ_DATA/READ_DIAG 
+      this.dataOffset++; // --- count read bytes
+      d.readData();
+      this.crcAdd();
+
+      // --- Speedlock hack
+      if (this.speedlock > 0 && !d.doReadWeak) {
+        if (this.dataOffset < 64 && d.data !== 0xe5) {
+          // --- W.E.C Le Mans type
+          this.speedlock = 2;
+        } else if (
+          (this.speedlock > 1 || this.dataOffset < 64) &&
+          !(this.dataOffset % 29)
+        ) {
+          // --- Mess up data
+          d.data ^= this.dataOffset;
+          // --- Mess up CRC
+          this.crcAdd();
+        }
+      }
+      // --- End of Speedlock hack
+
+      r = d.data & 0xff;
+      if (this.dataOffset === this.rlen) {
+        // --- Send only rlen byte to host
+        while (this.dataOffset < this.sectorLength) {
+          d.readData();
+          this.crcAdd();
+          this.dataOffset++;
+        }
+      }
+      if (
+        (this.cmd.id == Command.ReadDiag || this.cmd.id == Command.ReadData) &&
+        this.dataOffset === this.sectorLength
+      ) {
+        // --- Read the CRC
+        d.readData();
+        this.crcAdd();
+        d.readData();
+        this.crcAdd();
+        if (this.crc !== 0x000) {
+          this.sr2 |= SR2_DD;
+          this.sr1 |= SR1_DE;
+          if (this.cmd.id == Command.ReadData) {
+            // --- READ DIAG not aborted!
+            this.sr0 |= SR0_AT;
+            this.cmdResult(); /* set up result phase */
+            return r;
+          }
+        }
+
+        if (this.cmd.id == Command.ReadData) {
+          if (this.ddam !== this.delData) {
+            // --- we read a not 'wanted' sector... so
+            if (this.dataRegister[5] > this.dataRegister[3]) {
+              // --- if we want to read more...
+              this.sr0 |= SR0_AT;
+            }
+            this.cmdResult();
+            return r;
+          }
+          this.rev = 2;
+          this.msr &= ~MSR_RQM;
+          this.startReadData();
+        } else {
+          // --- READ DIAG
+          this.dataRegister[3]++; /*FIXME ??? */
+          this.dataRegister[5]--;
+          if (this.dataRegister[5] === 0) {
+            /* no more */
+            this.cmdResult(); /* set up result phase */
+            return r;
+          }
+          this.msr &= ~MSR_RQM;
+          this.startReadDiag();
+        }
+      }
+      return r;
+    }
+
+    if (this.phase != OperationPhase.Result) {
+      return 0xff;
+    }
+
+    if (this.cmd.id === Command.SenseDrive) {
+      // --- Result byte 1
+      r = this.sr3;
+    } else if (this.cmd.id === Command.SenseInt) {
+      // --- Result byte 2
+      r = this.senseIntRes[this.cmd.reslength - this.cycle];
+    } else if (this.cmd.reslength - this.cycle < 3) {
+      switch (this.cmd.reslength - this.cycle) {
+        case 0:
+          r = this.sr0;
+          break;
+        case 1:
+          r = this.sr1;
+          break;
+        case 2:
+          r = this.sr2;
+          break;
+        default:
+          r = this.sr3;
+          break;
+      }
+    } else {
+      r = this.dataRegister[this.cmd.reslength - this.cycle - 2];
+    }
+    this.cycle--;
+    if (this.cycle === 0) {
+      this.phase = OperationPhase.Command;
+      this.msr |= MSR_RQM;
+      this.msr &= ~MSR_DIO;
+      this.msr &= ~MSR_CB;
+      if (this.intReq < IntRequest.Ready) this.intReq = IntRequest.None;
+    }
+    return r;
   }
 
   // --- Gets the value of the Main Status Register
   readMainStatusRegister (): number {
-    // TODO: Implement this method
-    return 0xff;
+    return this.msr;
   }
 
   // --- Writes the value of the data register (8-bit)
   writeDataRegister (value: number): void {
-    // TODO: Implement this method
+    // --- Split to a byte
+    value &= 0xff;
+    let terminated = 0;
+
+    // --- Done, if the controller does not accept data
+    if (!(this.msr & MSR_RQM) || this.msr & MSR_DIO) return;
+
+    if (this.msr & MSR_CB && this.phase === OperationPhase.Execution) {
+      // --- Execution phase Write/Format
+      const d = this.currentDrive;
+      if (this.cmd.id === Command.WriteId) {
+        // --- Format
+        this.dataRegister[this.dataOffset + 5] = value; /* read id fields */
+        this.dataOffset++;
+        if (this.dataOffset === 4) {
+          // --- C, H, R, N done => format track
+          // TODO: event_remove_type( timeout_event );
+
+          // --- Write 6/12 zero
+          d.data = 0x00;
+          for (let i = this.mf ? 12 : 6; i > 0; i--) {
+            d.writeData();
+          }
+          this.crcPreset();
+          if (this.mf) {
+            // --- MFM
+            d.data = 0xffa1;
+
+            // --- Write 3 0xa1 with clock mark
+            for (let i = 3; i > 0; i--) {
+              d.writeData();
+              this.crcAdd();
+            }
+          }
+
+          // --- Write id mark
+          d.data = 0x00fe | (this.mf ? 0x0000 : 0xff00);
+          d.writeData();
+          this.crcAdd();
+          for (let i = 0; i < 4; i++) {
+            // --- Write id fields
+            d.data = this.dataRegister[i + 5];
+            d.writeData();
+            this.crcAdd();
+          }
+
+          // --- Write CRC MSB
+          d.data = this.crc >> 8;
+          d.writeData();
+
+          // --- Write CRC LSB
+          d.data = this.crc & 0xff;
+          d.writeData();
+
+          d.data = this.mf ? 0x4e : 0xff;
+          for (let i = 11; i > 0; i--) {
+            // --- Write 11 GAP byte
+            d.writeData();
+          }
+
+          if (this.mf) {
+            // --- MFM, write another 11 GAP byte
+            for (let i = 11; i > 0; i--) {
+              d.writeData();
+            }
+          }
+
+          // --- Write 6/12 zero
+          d.data = 0x00;
+          for (let i = this.mf ? 12 : 6; i > 0; i--) {
+            d.writeData();
+          }
+          this.crcPreset();
+
+          if (this.mf) {
+            // --- MFM, Write 3 0xa1 with clock mark
+            d.data = 0xffa1;
+            for (let i = 3; i > 0; i--) {
+              d.writeData();
+              this.crcAdd();
+            }
+          }
+
+          // --- Write data mark
+          d.data = 0x00fb | (this.mf ? 0x0000 : 0xff00);
+          d.writeData();
+          this.crcAdd();
+
+          // --- Write filler byte
+          d.data = this.dataRegister[4];
+          for (let i = this.rlen; i > 0; i--) {
+            d.writeData();
+            this.crcAdd();
+          }
+
+          // --- Write CRC MSB
+          d.data = this.crc >> 8;
+          d.writeData();
+
+          // --- Write CRC LSB
+          d.data = this.crc & 0xff;
+          d.writeData();
+
+          // --- Write GAP
+          d.data = this.mf ? 0x4e : 0xff;
+          for (let i = this.dataRegister[3]; i > 0; i--) {
+            d.writeData();
+          }
+          this.dataOffset = 0;
+          // --- Prepare next sector
+          this.dataRegister[2]--;
+        }
+
+        // --- Finish all sector
+        if (this.dataRegister[2] === 0) {
+          // --- GAP3 as Intel call this GAP
+          d.data = this.mf ? 0x4e : 0xff;
+          while (!d.atIndexWhole) {
+            d.writeData();
+          }
+
+          // --- End of execution phase
+          this.phase = OperationPhase.Result;
+          this.cycle = this.cmd.reslength;
+          this.msr &= ~MSR_EXM;
+          this.intReq = IntRequest.Result;
+          this.cmdResult();
+          return;
+        }
+
+        // 1/10 revolution in 20 ms
+        this.registerEvent(20, this.timeoutEventHandler);
+        return;
+      } else if (this.cmd.id === Command.WriteData) {
+        // --- Write data
+        this.dataOffset++;
+        d.data = value;
+        d.writeData();
+        this.crcAdd();
+
+        if (this.dataOffset === this.rlen) {
+          // --- Read only rlen byte from host
+          d.data = 0x00;
+          while (this.dataOffset < this.sectorLength) {
+            // --- Fill with 0x00
+            d.readData();
+            this.crcAdd();
+            this.dataOffset++;
+          }
+        }
+
+        // --- Write the CRC
+        if (this.dataOffset === this.sectorLength) {
+          // --- Write CRC MSB
+          d.data = this.crc >> 8;
+          d.writeData();
+
+          // --- Write CRC LSB
+          d.data = this.crc & 0xff;
+          d.writeData();
+
+          this.msr &= ~MSR_RQM;
+          this.startWriteData();
+        }
+        return;
+      } else {
+        // --- SCAN
+        this.dataOffset++;
+        d.readData();
+        this.crcAdd();
+        if (this.dataOffset === 0 && d.data === value) {
+          // --- "Scan hit"
+          this.sr2 |= SR2_SH;
+        }
+        if (d.data !== value) {
+          // --- "Scan not hit"
+          this.sr2 &= ~SR2_SH;
+        }
+
+        if (
+          (this.scan === ScanType.Eq && d.data !== value) ||
+          (this.scan === ScanType.Lo && d.data > value) ||
+          (this.scan === ScanType.Hi && d.data < value)
+        ) {
+          // --- Scan not satisfied
+          this.sr2 |= SR2_SN;
+        }
+
+        if (this.dataOffset === this.sectorLength) {
+          // --- Read the CRC
+          d.readData();
+          this.crcAdd();
+          d.readData();
+          this.crcAdd();
+          if (this.crc !== 0x0000) {
+            this.sr2 |= SR2_DD;
+            this.sr1 |= SR1_DE;
+          }
+
+          this.dataRegister[3] += this.dataRegister[7]; // --- FIXME: what about STP>2 or STP<1
+          if (this.ddam != this.delData) {
+            // --- We read a not 'wanted' sector... so
+            if (this.dataRegister[5] >= this.dataRegister[3]) {
+              // --- If we want to read more...
+              this.sr0 |= SR0_AT;
+            }
+            this.cmdResult();
+            return;
+          }
+
+          if (this.sr2 & SR2_SH || (this.sr2 & SR2_SN) === 0x00) {
+            // --- FIXME sure?
+            this.cmdResult();
+            return;
+          }
+          this.rev = 2;
+          this.msr &= ~MSR_RQM;
+          this.startReadData();
+        }
+        return;
+      }
+    }
+
+    // === Command Phase
+    if (this.cycle === 0) {
+      // --- First byte -> command
+      this.commandRegister = value;
+      this.cmdIdentify();
+      this.msr |= MSR_CB;
+
+      // --- A Sense Interrupt Status Command must be sent after a Seek or Recalibrate interrupt;
+      // --- otherwise the FDC will consider the next Command to be an invalid Command
+      // --- Note: looks uPD765 should NOT, because The New Zealand Story does not work with this stuff
+      //
+      // --- If a SENSE INTERRUPT STATUS command is issued when no active interrupt condition is present,
+      // --- the status register ST0 will return a value of $80 (invalid command) ... (82078 44pin)
+      if (this.intReq === IntRequest.None && this.cmd.id == Command.SenseInt) {
+        // --- This command will be INVALID
+        this.commandRegister = 0x00;
+        this.cmdIdentify();
+      }
+    } else {
+      // --- Store data register bytes
+      this.dataRegister[this.cycle - 1] = value;
+    }
+
+    if (this.cycle >= this.cmd.cmdLength) {
+      // --- We already read all neccessery byte, start executing the command
+      this.phase = OperationPhase.Execution;
+      this.msr &= ~MSR_RQM;
+      if (this.nonDma) {
+        // --- Only NON-DMA mode emulated
+        this.msr |= MSR_EXM;
+      }
+
+      // --- Select current drive and head if needed
+      if (
+        this.cmd.id !== Command.SenseInt &&
+        this.cmd.id !== Command.Specify &&
+        this.cmd.id !== Command.Invalid
+      ) {
+        this.us = this.dataRegister[0] & 0x03;
+        const d = (this.currentDrive =
+          this.us & 0x01 ? this.driveB : this.driveA);
+
+        // --- Set the current drive's head
+        this.hd = !!((this.dataRegister[0] & 0x04) >> 2);
+        if (!d.twoHeads) {
+          d.headIndex = 0;
+        } else {
+          d.headIndex = this.hd ? 1 : 0;
+        }
+
+        // --- Identify READ_DELETED_DATA/WRITE_DELETED_DATA
+        if (
+          this.cmd.id === Command.ReadData ||
+          this.cmd.id === Command.WriteData
+        ) {
+          this.delData = !!((this.commandRegister & 0x08) >> 3);
+          this.sk = !!((this.dataRegister[0] & 0x20) >> 5);
+        }
+      }
+      // --- During the Command Phase of the SEEK operation the FDC in the FDC BUSY state,
+      // --- but during the Execution Phase it is in the NON BUSY state. While the FDC is
+      // --- in the NON BUSY state, another Seek Command may be issued, and in this manner
+      // --- paralell seek operation may be done on up to 4 Drives at once.
+      //
+      // --- The ability to overlap RECALIBRATE Commands to Multiple FDDs, and the loss of
+      // --- the READY signal, as described in the SEEK Command, also applies to the
+      // --- RECALIBRATE Command.
+      //
+      // --- Note:
+      // --- For overlapped seeks, only one step pulse per drive section is issued.
+      // --- Non-overlapped seeks will issue all programmed step pulses.
+      if (
+        this.cmd.id === Command.Recalibrate ||
+        this.cmd.id === Command.Seek ||
+        this.cmd.id === Command.Specify
+      ) {
+        this.msr &= ~MSR_CB;
+      }
+
+      if (this.cmd.id < Command.SenseInt) {
+        if (this.cmd.id < Command.Recalibrate)
+          // --- Reset status registers
+          this.sr0 = this.sr1 = this.sr2 = 0x00;
+
+        // --- Set ST0 device/head
+        this.sr0 = this.us | (this.hd ? 0x04 : 0x00);
+      }
+
+      const d = this.currentDrive;
+      switch (this.cmd.id) {
+        case Command.Invalid:
+          this.sr0 = 0x80;
+          break;
+        case Command.Specify:
+          this.stepRate = 0x10 - (this.dataRegister[0] >> 4);
+          this.hut = (this.dataRegister[0] & 0x0f) << 4;
+          if (this.hut === 0) this.hut = 128;
+          this.hld = this.dataRegister[1] & 0xfe;
+          if (this.hld === 0) this.hld = 256;
+          this.nonDma = !!(this.dataRegister[1] & 0x01);
+          this.phase = OperationPhase.Command;
+          break;
+        case Command.SenseDrive:
+          this.sr3 = this.us | (this.hd ? 0x04 : 0x00);
+          // --- The plus3 wiring cause that the double side signal is the same as
+          // --- the write protect signal
+          this.sr3 |= d.isWriteProtected ? SR3_WP : 0x00;
+          this.sr3 |= d.tr00 ? SR3_T0 : 0x00;
+          this.sr3 |= this.isDriveReady() ? SR3_RD : 0x00;
+          break;
+        case Command.SenseInt:
+          for (let i = 0; i < 4; i++) {
+            if (this.seek[i] >= 4) {
+              // --- Seek interrupt, normal termination
+              this.msr &= ~0xc0;
+              this.sr0 |= SR0_SE;
+              if (this.seek[i] === 5) {
+                this.sr0 |= SR0_AT;
+              } else if (this.seek[i] === 6) {
+                this.sr0 |= SR0_IC | SR0_AT | SR0_NR;
+              }
+              // --- End of seek
+              this.seek[i] = this.seekAge[i] = 0;
+              // --- Return head always 0 (11111011)
+              this.senseIntRes[0] = this.sr0 & 0xfb;
+              this.senseIntRes[1] = this.pcn[i];
+              // // one interrupt ok.
+              i = 4;
+            }
+          }
+          if (
+            this.seek[0] < 4 &&
+            this.seek[1] < 4 &&
+            this.seek[2] < 4 &&
+            this.seek[3] < 4
+          ) {
+            // --- Delete INTRQ state
+            this.intReq = IntRequest.None;
+          }
+          break;
+        case Command.Recalibrate:
+          // --- Previous seek in progress?
+          if (this.msr & (1 << this.us)) {
+            break;
+          }
+          // --- Save PCN
+          this.rec[this.us] = this.pcn[this.us];
+          this.pcn[this.us] = 77;
+          // --- To Track 0
+          this.dataRegister[1] = 0x00;
+          // --- save new cylinder number
+          this.ncn[this.us] = this.dataRegister[1];
+          // --- Recalibrate started
+          this.seek[this.us] = 2;
+          this.seekStep(true);
+          break;
+        case Command.Seek:
+          // --- Previous seek in progress?
+          if (this.msr & (1 << this.us)) {
+            break;
+          }
+          // --- Save new cylinder number
+          this.ncn[this.us] = this.dataRegister[1];
+          // --- Seek started
+          this.seek[this.us] = 1;
+          this.seekStep(true);
+          break;
+        case Command.ReadId:
+          this.loadHead();
+          return;
+        case Command.ReadData:
+          // --- Speedlock
+          if (this.speedlock !== -1 && !d.doReadWeak) {
+            let u =
+              (this.dataRegister[2] & 0x01) +
+              (this.dataRegister[1] << 1) +
+              (this.dataRegister[3] << 8);
+            if (this.dataRegister[3] === this.dataRegister[5] && u == 0x200) {
+              if (u === this.lastSectorRead) {
+                this.speedlock++;
+              } else {
+                this.speedlock = 0;
+                this.lastSectorRead = u;
+              }
+            } else {
+              this.lastSectorRead = this.speedlock = 0;
+            }
+          }
+          // --- End of speedlock hack
+
+          this.rlen =
+            0x80 <<
+            (this.dataRegister[4] > MAX_SIZE_CODE
+              ? MAX_SIZE_CODE
+              : this.dataRegister[4]);
+          if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
+            this.rlen = this.dataRegister[7];
+          }
+          // --- Always read at least one sector
+          this.firstRw = true;
+          this.loadHead();
+          return;
+        case Command.ReadDiag:
+          this.rlen =
+            0x80 <<
+            (this.dataRegister[4] > MAX_SIZE_CODE
+              ? MAX_SIZE_CODE
+              : this.dataRegister[4]);
+          if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
+            this.rlen = this.dataRegister[7];
+          }
+          this.loadHead();
+          return;
+
+        case Command.WriteData:
+          if (d.isWriteProtected) {
+            this.sr1 |= SR1_NW;
+            this.sr0 |= SR0_AT;
+            terminated = 1;
+            break;
+          }
+          this.rlen =
+            0x80 <<
+            (this.dataRegister[4] > MAX_SIZE_CODE
+              ? MAX_SIZE_CODE
+              : this.dataRegister[4]);
+          if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
+            this.rlen = this.dataRegister[7];
+          }
+          // --- Always write at least one sector */
+          this.firstRw = true;
+          this.loadHead();
+          return;
+        case Command.WriteId:
+          if (d.isWriteProtected) {
+            this.sr1 |= SR1_NW;
+            this.sr0 |= SR0_AT;
+            terminated = 1;
+            break;
+          }
+          // --- Max 8192 byte/sector
+          this.rlen =
+            0x80 <<
+            (this.dataRegister[1] > MAX_SIZE_CODE
+              ? MAX_SIZE_CODE
+              : this.dataRegister[1]);
+          this.loadHead();
+          return;
+        case Command.Scan:
+          // --- & 0x0c >> 2 == 00 - equal, 10 - low, 11 - high
+          this.scan =
+            (this.commandRegister & 0x0c) >> 2 === 0
+              ? ScanType.Eq
+              : (this.commandRegister & 0x0c) >> 2 === 0x03
+              ? ScanType.Hi
+              : ScanType.Lo;
+
+          this.rlen =
+            0x80 <<
+            (this.dataRegister[4] > MAX_SIZE_CODE
+              ? MAX_SIZE_CODE
+              : this.dataRegister[4]);
+          this.loadHead();
+          return;
+      }
+
+      if (this.cmd.id < Command.ReadId && !terminated) {
+        // --- We have execution phase
+        this.msr |= MSR_RQM;
+        if (this.cmd.id < Command.WriteData) {
+          this.msr |= MSR_DIO;
+        }
+      } else {
+        this.cmdResult(); /* set up result phase */
+      }
+    } else {
+      this.cycle++;
+    }
   }
 
   // --- Gets the log entries
@@ -324,11 +944,16 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     this.opLog.push(entry);
   }
 
+  private isDriveReady (): boolean {
+    // TODO: Implement this
+    return true;
+  }
+
   // --- Registers an event
   private registerEvent (
     ms: number,
     eventFn: (data: any) => void,
-    data: any
+    data?: any
   ): void {
     const machine = this.machine;
     const eventTact =
@@ -363,6 +988,41 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         crcFdcTable[(this.crc >> 8) ^ (this.currentDrive.data & 0xff)]) &
       0xffff;
   }
+
+  private cmdResult (): void {
+    this.cycle = this.cmd.reslength;
+    this.msr &= ~MSR_EXM;
+    this.msr |= MSR_RQM;
+    if (this.cycle > 0) {
+      // --- result state
+      this.phase = OperationPhase.Result;
+      this.intReq = IntRequest.Result;
+      this.msr |= MSR_DIO;
+    } else {
+      // --- No result state
+      this.phase = OperationPhase.Command;
+      this.msr &= ~MSR_DIO;
+      this.msr &= ~MSR_CB;
+    }
+    // TODO: event_remove_type( timeout_event );		/* remove timeouts... */
+    if (this.headLoad && this.cmd.id <= Command.ReadId) {
+      this.registerEvent(this.hut, this.headEventHandler);
+    }
+  }
+
+  private startWriteData (): void {}
+
+  private startReadData (): void {}
+
+  private startReadDiag (): void {}
+
+  private seekStep (isStart: boolean): void {}
+
+  private loadHead (): void {}
+
+  private timeoutEventHandler (): void {}
+
+  private headEventHandler (): void {}
 }
 
 // --- FDC Busy. A Read or Write command is in process.FDC will not accept any other command.
@@ -480,6 +1140,9 @@ const MOTOR_SPEED_DECREMENT = 2;
 // --- Maximum log entries preserved
 const MAX_LOG_ENTRIES = 1024;
 
+// ???
+const MAX_SIZE_CODE = 8;
+
 // --- Available scan types
 enum ScanType {
   Eq,
@@ -489,12 +1152,23 @@ enum ScanType {
 
 // --- UPD Commands
 enum Command {
+  // --- | Computer READ at execution phase
+  //     V
   ReadData = 0,
   ReadDiag,
+
+  // --- | Computer WRITE at execution phase
+  //     V
   WriteData,
   WriteId,
   Scan,
+
+  // --- | No data transfer at execution phase
+  //     V
   ReadId,
+
+  // --- | No read/write head contact
+  //     V
   Recalibrate,
   SenseInt,
   Specify,
