@@ -11,5 +11,6 @@ export type FloppyLogEntry = {
 export enum PortOperationType {
   ReadData = 0,
   ReadMsr = 1,
-  WriteData = 2
+  WriteData = 2,
+  MotorEvent = 3
 }

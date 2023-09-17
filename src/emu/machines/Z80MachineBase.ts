@@ -2,7 +2,10 @@ import { IFileProvider } from "@renderer/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { IZ80Machine, MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
+import {
+  IZ80Machine,
+  MainExecPointInfo
+} from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { TapeMode } from "../abstractions/TapeMode";
@@ -26,6 +29,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   // --- Shows the number of frame tacts that overflow to the subsequent machine frame.
   private _frameOverflow = 0;
+
+  // --- Events queued for execution
+  private _queuedEvents?: QueuedEvent[];
 
   /**
    * The unique identifier of the machine type
@@ -120,6 +126,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     super.reset();
     this._frameCompleted = true;
     this._frameOverflow = 0;
+    this._queuedEvents = null;
   }
 
   /**
@@ -224,6 +231,36 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract injectCodeToRun(codeToInject: CodeToInject): number;
 
   /**
+   * Registers and event to execute at the specified tact
+   * @param eventTact Tact when the event should be executed
+   * @param eventFn Event function with event data passed
+   * @param data Data to pass to the event function
+   */
+  queueEvent (eventTact: number, eventFn: (data: any) => void, data: any): void {
+    const newEvent = {
+      eventTact,
+      eventFn,
+      data
+    };
+    if (!this._queuedEvents) {
+      this._queuedEvents = [newEvent];
+    } else {
+      let idx = 0;
+      while (
+        idx < this._queuedEvents.length &&
+        this._queuedEvents[idx].eventTact <= eventTact
+      ) {
+        idx++;
+      }
+      if (idx >= this._queuedEvents.length) {
+        this._queuedEvents.push(newEvent);
+      } else {
+        this._queuedEvents.splice(idx, 0, newEvent);
+      }
+    }
+  }
+
+  /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop.
    */
@@ -268,6 +305,19 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       do {
         this.executeCpuCycle();
       } while (this.prefix !== OpCodePrefix.None);
+
+      // --- Execute the queued event
+      if (this._queuedEvents) {
+        const currentEvent = this._queuedEvents[0];
+        if (currentEvent.eventTact < this.tacts) {
+          // --- Time to execute the event
+          currentEvent.eventFn(currentEvent.data);
+          this._queuedEvents.shift();
+          if (this._queuedEvents.length === 0) {
+            this._queuedEvents = null;
+          }
+        }
+      }
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
@@ -357,6 +407,19 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         this.executeCpuCycle();
         instructionsExecuted++;
       } while (this.prefix !== OpCodePrefix.None);
+
+      // --- Execute the queued event
+      if (this._queuedEvents) {
+        const currentEvent = this._queuedEvents[0];
+        if (currentEvent.eventTact < this.tacts) {
+          // --- Time to execute the event
+          currentEvent.eventFn(currentEvent.data);
+          this._queuedEvents.shift();
+          if (this._queuedEvents.length === 0) {
+            this._queuedEvents = null;
+          }
+        }
+      }
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
@@ -501,3 +564,10 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     // --- Override this method in derived classes.
   }
 }
+
+// --- Represents a queued event
+type QueuedEvent = {
+  eventTact: number;
+  eventFn: (data: any) => void;
+  data: any;
+};

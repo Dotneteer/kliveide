@@ -65,49 +65,53 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * Initialize the machine
    */
   constructor (store: Store<AppState>) {
-    super();
-    store.dispatch(setDiskFileAction(0, null), "emu");
-    store.dispatch(setDiskFileAction(1, null), "emu");
+    try {
+      super();
+      store.dispatch(setDiskFileAction(0, null), "emu");
+      store.dispatch(setDiskFileAction(1, null), "emu");
 
-    // --- Set up machine attributes
-    this.baseClockFrequency = 3_546_900;
-    this.clockMultiplier = 1;
-    this.delayedAddressBus = true;
+      // --- Set up machine attributes
+      this.baseClockFrequency = 3_546_900;
+      this.clockMultiplier = 1;
+      this.delayedAddressBus = true;
 
-    // --- Initialize the memory contents
-    this.romPages = [
-      new Uint8Array(0x4000), // ROM 0
-      new Uint8Array(0x4000), // ROM 1
-      new Uint8Array(0x4000), // ROM 2
-      new Uint8Array(0x4000) // ROM 3
-    ];
-    this.ramBanks = [
-      new Uint8Array(0x4000), // Bank 0
-      new Uint8Array(0x4000), // Bank 1
-      new Uint8Array(0x4000), // Bank 2
-      new Uint8Array(0x4000), // Bank 3
-      new Uint8Array(0x4000), // Bank 4
-      new Uint8Array(0x4000), // Bank 5
-      new Uint8Array(0x4000), // Bank 7
-      new Uint8Array(0x4000) // Bank 8
-    ];
+      // --- Initialize the memory contents
+      this.romPages = [
+        new Uint8Array(0x4000), // ROM 0
+        new Uint8Array(0x4000), // ROM 1
+        new Uint8Array(0x4000), // ROM 2
+        new Uint8Array(0x4000) // ROM 3
+      ];
+      this.ramBanks = [
+        new Uint8Array(0x4000), // Bank 0
+        new Uint8Array(0x4000), // Bank 1
+        new Uint8Array(0x4000), // Bank 2
+        new Uint8Array(0x4000), // Bank 3
+        new Uint8Array(0x4000), // Bank 4
+        new Uint8Array(0x4000), // Bank 5
+        new Uint8Array(0x4000), // Bank 7
+        new Uint8Array(0x4000) // Bank 8
+      ];
 
-    // --- Create and initialize devices
-    this.keyboardDevice = new KeyboardDevice(this);
-    this.screenDevice = new CommonScreenDevice(
-      this,
-      CommonScreenDevice.ZxSpectrumP3EScreenConfiguration
-    );
-    this.beeperDevice = new BeeperDevice(this);
-    this.psgDevice = new ZxSpectrum128PsgDevice(this);
-    if (this.hasFloppy()) {
-      this.floppyDevice = new FloppyControllerDevice(this);
-      this.floppyDevice.isDriveAPresent = true;
-      this.floppyDevice.isDriveBPresent = this.hasDriveB();
+      // --- Create and initialize devices
+      this.keyboardDevice = new KeyboardDevice(this);
+      this.screenDevice = new CommonScreenDevice(
+        this,
+        CommonScreenDevice.ZxSpectrumP3EScreenConfiguration
+      );
+      this.beeperDevice = new BeeperDevice(this);
+      this.psgDevice = new ZxSpectrum128PsgDevice(this);
+      if (this.hasFloppy()) {
+        this.floppyDevice = new FloppyControllerDevice(this);
+        this.floppyDevice.isDriveAPresent = true;
+        this.floppyDevice.isDriveBPresent = this.hasDriveB();
+      }
+      this.floatingBusDevice = new ZxSpectrumP3eFloatingBusDevice(this);
+      this.tapeDevice = new TapeDevice(this);
+      this.reset();
+    } catch (err) {
+      console.log(err);
     }
-    this.floatingBusDevice = new ZxSpectrumP3eFloatingBusDevice(this);
-    this.tapeDevice = new TapeDevice(this);
-    this.reset();
   }
 
   /**
@@ -499,6 +503,11 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
       // --- Disk motor
       this.diskMotorOn = (value & 0x08) != 0;
+      if (this.diskMotorOn) {
+        this.floppyDevice?.turnOnMotor();
+      } else {
+        this.floppyDevice?.turnOffMotor();
+      }
       return;
     }
 
@@ -516,8 +525,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
     // --- Test for the floppy controller port
     if ((address & 0xf002) == 0x3000) {
-      this.floppyDevice.writeDataRegister(value);
-      console.log(this.floppyDevice.getLogEntries());
+      this.floppyDevice?.writeDataRegister(value);
     }
   }
 

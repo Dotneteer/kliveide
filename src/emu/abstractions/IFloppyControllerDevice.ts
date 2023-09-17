@@ -1,6 +1,7 @@
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { IGenericDevice } from "./IGenericDevice";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 
 export interface IFloppyControllerDevice
   extends IGenericDevice<IZxSpectrumMachine> {
@@ -11,10 +12,22 @@ export interface IFloppyControllerDevice
   isDriveBPresent: boolean;
 
   // --- Indicates if disk in Drive #1 is write protected
-  isDiskAWriteProtected: boolean;
+  readonly isDiskAWriteProtected: boolean;
 
   // --- Indicates if disk in Drive #2 is write protected
-  isDiskBWriteProtected: boolean;
+  readonly isDiskBWriteProtected: boolean;
+
+  // --- Loads the specified floppy disk into drive A
+  loadDiskA(disk: FloppyDisk): void;
+
+  // --- Ejects disk from drive A
+  ejectDiskA(): void;
+
+  // --- Loads the specified floppy disk into drive B
+  loadDiskB(disk: FloppyDisk): void;
+
+  // --- Ejects disk from drive B
+  ejectDiskB(): void;
 
   // --- Gets the value of the data register (8-bit)
   readDataRegister(): number;
@@ -27,12 +40,6 @@ export interface IFloppyControllerDevice
 
   // --- Resets the device
   reset(): void;
-
-  // --- Adjust the current motor speed
-  handleMotorSpeed(): void;
-
-  // --- Executes the floppy event handler
-  onFloppyEvent(): void;
 
   // --- Turn on the floppy drive's motor
   turnOnMotor(): void;

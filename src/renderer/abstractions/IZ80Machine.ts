@@ -132,6 +132,14 @@ export interface IZ80Machine extends IZ80Cpu {
    * @param codeToInject Code to inject into the machine
    */
   injectCodeToRun(codeToInject: CodeToInject): number;
+
+  /**
+   * Registers and event to execute at the specified tact
+   * @param eventTact Tact when the event should be executed
+   * @param eventFn Event function with event data passed
+   * @param data Data to pass to the event function
+   */
+  queueEvent(eventTact: number, eventFn: (data: any) => void, data: any): void;
 }
 
 /**
