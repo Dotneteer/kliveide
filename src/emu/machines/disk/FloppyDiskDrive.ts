@@ -5,35 +5,16 @@ import { FloppyDisk } from "./FloppyDisk";
  */
 export class FloppyDiskDrive {
   // --- Signs wether the currently loaded disk is write protected
-  isWriteProtected: boolean;
+  isWriteProtected = false;
 
   // --- The contents of the loaded floppy disk
   disk: FloppyDisk | undefined;
 
-  // --- Resets the drive
-  reset(): void {
-    this.isWriteProtected = false;
-    this.disk = undefined;
-  }
-  // --- Indicates if a disk is loaded into the device
-  get isDiskLoaded (): boolean {
-    return !!this.disk;
-  }
-
   // --- Read/write to data byte 0x00nn or 0xffnn
-  data: number;
-
-  // --- Track to seek (used in seek operations)
-  seekingTrack: number = 0;
+  data = 0;
 
   // --- Current head index
-  headIndex: number = 0;
-
-  // --- Current track index in DiskTracks array
-  trackIndex: number = 0;
-
-  // --- Sector index in the Sectors array
-  sectorIndex: number = 0;
+  headIndex = 0;
 
   // --- Has two heads?
   twoHeads = true;
@@ -46,6 +27,11 @@ export class FloppyDiskDrive {
 
   // --- Does this drive weak read?
   doReadWeak = false;
+
+  // --- Indicates that the drive is ready
+  get ready(): boolean {
+    return !!this.disk
+  }
 
   // --- Ejects floppy disk
   ejectDisk (): void {
@@ -60,5 +46,14 @@ export class FloppyDiskDrive {
   // --- Reads the data from the disk
   readData(): void {
     // TODO: Implement this method
+  }
+
+  // --- Step one cylinder into the specified direction
+  step(out: boolean): void {
+    // TODO: Implement this method
+  }
+
+  loadHead(headNo: number): void {
+    // TODO: Implement this method void fdd_head_load( fdd_t *d, int load )
   }
 }

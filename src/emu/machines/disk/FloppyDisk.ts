@@ -5,12 +5,20 @@ const NORMAL_DISK_HEADER = "MV - CPCEMU Disk-File\r\n"; // --- from 0x00-0x16, 2
 const EXTENDED_DISK_HEADER = "EXTENDED CPC DSK File\r\n"; // --- from 0x00-0x16, 23 bytes
 const ADDITIONAL_HEADER = "Disk-Info\r\n"; // --- from 0x17-0x21, 11 bytes
 const TRACK_HEADER = "Track-Info\r\n"; // --- from 0x00-0x0b, 12 bytes
+const GAP_MINIMAL_FM = 0;
+const GAP_MINIMAL_MFM = 1;
 
 // --- Constant values used for disk file index calculations
 const SECTOR_HEADER_SIZE = 8;
 const TRACK_HEADER_SIZE = 24;
 const START_DISK_TRACK_POINTER = 0x100;
 const StartDiskSectorPointer = 0x100;
+const CPC_ISSUE_NONE = 0;
+const CPC_ISSUE_1 = 1;
+const CPC_ISSUE_2 = 2;
+const CPC_ISSUE_3 = 3;
+const CPC_ISSUE_4 = 4;
+const CPC_ISSUE_5 = 5;
 
 // --- This class describes a logical floppy disk
 export class FloppyDisk {
@@ -23,11 +31,11 @@ export class FloppyDisk {
   // --- Disk format
   diskFormat: FloppyDiskFormat;
 
-  // --- Disk information header
-  header: DiskHeader;
+  // --- Binary disk data (physical surface)
+  data: Uint8Array;
 
-  // --- Tracks
-  tracks: TrackHeader[];
+  // --- The number of physical sides
+  sides: number;
 
   // --- Number of tracks per side
   tracksPerSide: number;
@@ -35,11 +43,362 @@ export class FloppyDisk {
   // --- Number of bytes per track
   bytesPerTrack: number;
 
-  // --- The number of physical sides
-  sideCount: number;
-
   // --- Signs whether is write-protect tab on the disk
   isWriteProtected: boolean;
+
+  // --- Disk changed
+  dirty = false;
+
+  // --- Disk status
+  status: DiskError;
+
+  // --- ???
+  flag = false;
+
+  // --- Disk density
+  density: DiskDensity;
+
+  // --- Length of a track with clock and other marks (bpt + 3/8bpt)
+  tlen: number;			
+
+  // --- Current track position within the disk surface data
+  trackPos: number;
+
+  // --- Current clock mark bits position
+  clockPos: number;
+
+  // --- Current MF/MFM mark bits position
+  fmPos: number;
+
+  // --- Current weak marks bits/weak data position
+  weakPos: number;
+
+  // --- Disk information header
+  header: DiskHeader;
+
+  // --- Tracks
+  tracks: TrackHeader[];
+
+  // --- Index for track and clocks
+  index: number;
+
+  // ========================================================================================================
+  // New implementation
+
+  // --- Allocates the data for the physical surface of the disk
+private allocate(): number
+{
+  if( this.density != DiskDensity.Auto) {
+    this.bytesPerTrack = disk_bpt[ this.density ];
+  } else if( this.bytesPerTrack > disk_bpt[DiskDensity.DISK_HD] ) {
+    return this.status = DiskError.DISK_UNSUP;
+  } else if( this.bytesPerTrack > disk_bpt[DiskDensity.DISK_8_DD] ) {
+    this.density = DiskDensity.DISK_HD;
+    this.bytesPerTrack = disk_bpt[ DiskDensity.DISK_HD ];
+  } else if( this.bytesPerTrack > disk_bpt[ DiskDensity.DISK_DD_PLUS ] ) {
+    this.density = DiskDensity.DISK_8_DD;
+    this.bytesPerTrack = disk_bpt[DiskDensity.DISK_8_DD ];
+  } else if( this.bytesPerTrack > disk_bpt[DiskDensity.DISK_DD] ) {
+    this.density = DiskDensity.DISK_DD_PLUS;
+    this.bytesPerTrack = disk_bpt[ DiskDensity.DISK_DD_PLUS ];
+  } else if( this.bytesPerTrack > disk_bpt[ DiskDensity.DISK_8_SD ] ) {
+    this.density = DiskDensity.DISK_DD;
+    this.bytesPerTrack = disk_bpt[ DiskDensity.DISK_DD ];
+  } else if( this.bytesPerTrack > disk_bpt[ DiskDensity.DISK_SD ] ) {
+    this.density = DiskDensity.DISK_8_SD;
+    this.bytesPerTrack = disk_bpt[DiskDensity.DISK_8_SD ];
+  } else if( this.bytesPerTrack > 0 ) {
+    this.density = DiskDensity.DISK_SD;
+    this.bytesPerTrack = disk_bpt[DiskDensity.DISK_SD ];
+  }
+
+  if( this.bytesPerTrack > 0 )
+    this.tlen = 4 + this.bytesPerTrack + 3 * diskTrackLength(this.bytesPerTrack);
+
+  // --- Disk length
+  const diskLength = this.sides * this.tracksPerSide * this.tlen;	
+  if( diskLength === 0 ) return this.status = DiskError.DISK_GEOM;
+  this.data = new Uint8Array(diskLength);
+
+  return this.status = DiskError.DISK_OK;
+}
+
+// --- Sets the track index positions to the specified track number
+private setTrackIdx(trackNo: number ): void {
+  this.trackPos = 3 + trackNo * this.tlen;
+  this.clockPos = this.bytesPerTrack;
+  this.fmPos = diskTrackLength(this.bytesPerTrack);
+  this.weakPos = this.fmPos + diskTrackLength(this.bytesPerTrack);
+}
+
+  open(buffer: Uint8Array): DiskError {
+    let bufferPos = 0;
+    let i: number;
+    let j: number;
+    let seclen: number;
+    let idlen: number;
+    let gap: number;
+    let sector_pad: number;
+    let idx: number;
+    let bpt: number;
+    let max_bpt = 0
+    let trlen: number;
+    let fix: number[];
+    let plus3_fix: number;
+    let hdrbPos: number;
+
+    // TODO: Obtain the disk format
+    
+    // --- Helper functions
+    const buff = (idx: number) => buffer[bufferPos + idx];
+
+    const buffavail = () => buffer.length - bufferPos;
+
+    const memcmp = (header: string) => {
+      for (let i = 0; i < header.length; i++) {
+        if (buff(i) !== header.charCodeAt(i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    const postindex_len = (gaptype: number) => gaps[ gaptype ].len[1];
+
+    const calc_sectorlen =(sectorLength: number, gaptype: number ) =>
+    {
+      let len = 0;
+      const gap = gaps[gaptype];
+      
+      // --- ID
+      len += gap.sync_len + (gap.mark >= 0 ? 3 : 0 ) + 7;
+      // --- GAP II
+      len += gap.len[2];
+      // --- data
+      len += gap.sync_len + (gap.mark >= 0 ? 3 : 0 ) + 1;		// + 1: Data Access Mark
+      len += sectorLength;
+      len += 2;	// --- CRC bytes
+      // --- GAP III
+      len += gap.len[3];
+      return len;
+    }
+
+    // --- Obtain the basic disk geometry from the DSK stream
+    this.sides = buff(0x31);
+    this.tracksPerSide = buff(0x30);
+    if( this.sides < 1 || this.sides > 2 || 
+      this.tracksPerSide < 1 || this.tracksPerSide > 85 ) {
+        return this.status = DiskError.DISK_GEOM;
+    }
+
+    // --- Skip the first 0x100 boundary to reach the actual data part
+    bufferPos = 0x100;
+
+    // --- First scan for the longest track
+    for(i = 0; i < this.sides * this.tracksPerSide; i++ ) {
+      // --- Ignore Sector Offset block
+      if( buffavail() >= 13 && !memcmp("Offset-Info\r\n") ) {
+        bufferPos = buffer.length;
+      }
+  
+      // --- Sometimes in the header there are more track than in the file */
+      if( buffavail() === 0 ) {
+        // --- No more data, this is the real cylinder number
+        this.tracksPerSide = Math.floor(i / this.sides) + i % this.sides;
+        break;
+      }
+
+      // --- Check track header
+      if( buffavail() < 256 || memcmp("Track-Info")) {
+        return this.status = DiskError.DISK_OPEN;
+      }
+  
+      // --- ZX Spectrum +3 fix
+      gap = buff(0x16) === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM;
+      plus3_fix = trlen = 0;
+      while( i < buff(0x10) * this.sides + buff(0x11) ) {
+        if( i < 84 ) fix[i] = 0;
+        i++;
+      }
+
+      // --- Problem with track index
+      if( i >= this.sides * this.tracksPerSide || 
+        i != buff(0x10) * this.sides + buff(0x11))	
+        return this.status = DiskError.DISK_OPEN;
+  
+      bpt = postindex_len(gap) + (gap === GAP_MINIMAL_MFM ? 6 : 3 );
+      sector_pad = 0;
+      for( j = 0; j < buff(0x15); j++ ) {			
+        // --- Each sector
+        seclen = this.diskFormat === FloppyDiskFormat.CpcExtended ? buff(0x1e + 8 * j) +
+                256 * buff(0x1f + 8 * j)
+              : 0x80 << buff(0x1b + 8 * j);
+        // --- Sector length from ID     
+        idlen = 0x80 << buff(0x1b + 8 * j);
+        if( idlen !== 0 && idlen <= ( 0x80 << 0x08 ) && 
+            seclen > idlen && seclen % idlen ) {
+            return this.status = DiskError.DISK_OPEN;
+        }
+  
+        bpt += calc_sectorlen(seclen > idlen ? idlen : seclen, gap );
+
+        // --- Check which ZX Spectrum +3 fix to apply
+        if( i < 84) {
+          if( j === 0 && buff(0x1b + 8 * j) === 6 && seclen > 6144)
+            {
+              plus3_fix = CPC_ISSUE_4;
+            }
+    else if(j === 0 && buff(0x1b + 8 * j) === 6 )
+      plus3_fix = CPC_ISSUE_1;
+    else if( j === 0 &&
+       buff(0x18) === 0 && buff(0x19) === 0 &&
+       buff(0x1a) === 0 && buff(0x1b) === 0 ) 
+      plus3_fix = CPC_ISSUE_3;
+    else if( j === 1 && plus3_fix === CPC_ISSUE_1 &&
+                   buff(0x1b + 8 * j) === 2 )
+      plus3_fix = CPC_ISSUE_2;
+    else if( i === 38 && j === 0 && buff(0x1b) === 2 )
+      plus3_fix = CPC_ISSUE_5;
+    else if( j > 1 && plus3_fix === CPC_ISSUE_2 && buff(0x1b + 8 * j) !== 2 )
+      plus3_fix = CPC_ISSUE_NONE;
+    else if( j > 0 && plus3_fix === CPC_ISSUE_3 &&
+       ( buff(0x18 + 8 * j) !== j || buff(0x19 + 8 * j) !== j ||
+         buff(0x1a + 8 * j) !== j || buff(0x1b + 8 * j) !== j ) )
+      plus3_fix = CPC_ISSUE_NONE;
+    else if( j > 10 && plus3_fix === CPC_ISSUE_2 )
+      plus3_fix = CPC_ISSUE_NONE;
+    else if( i === 38 && j > 0 && plus3_fix === CPC_ISSUE_5 &&
+       buff(0x1b + 8 * j) !== 2 - (j & 1) )
+      plus3_fix = CPC_ISSUE_NONE;
+        }
+        trlen += seclen;
+        if( seclen % 0x100 )	{
+          // --- Every? 128/384/...byte length sector padded
+          sector_pad++;
+        }	
+      }
+      if( i < 84 ) {
+        fix[i] = plus3_fix;
+        if( fix[i] === CPC_ISSUE_4 ) {
+          // Type 1 variant DD+ (e.g. Coin Op Hits) */
+          bpt = 6500;
+        }        
+        else if( fix[i] != CPC_ISSUE_NONE ) {
+          // --- We assume a standard DD track */
+           bpt = 6250;
+        }
+      }
+      bufferPos += trlen + sector_pad * 128 + 256;
+      if( bpt > max_bpt )
+        max_bpt = bpt;
+    }
+    if( max_bpt == 0 )
+      return this.status = DiskError.DISK_GEOM;
+  
+    this.density = DiskDensity.Auto;
+    this.bytesPerTrack = max_bpt;
+    if(this.allocate() !== DiskError.DISK_OK ) {
+      return this.status;
+    }
+  
+    this.setTrackIdx(0);
+
+    // --- Rewind to first track
+    bufferPos = 0x100;
+    for( i = 0; i < this.sides * this.tracksPerSide; i++ ) {
+      hdrbPos = bufferPos;
+      // --- Skip to data
+      bufferPos += 0x100;
+      gap = buffer[hdrbPos + 0x16] === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM;
+      
+      // --- Adjust track number
+      i = buffer[hdrbPos + 0x10] * this.sides + buffer[hdrbPos + 0x11];
+      this.setTrackIdx(i);
+      this.index = 0;
+      postindex_add( d, gap );
+  
+      sector_pad = 0;
+      for( j = 0; j < buffer[hdrbPos + 0x15]; j++ ) {
+        // --- Each sector
+        seclen = this.diskFormat == FloppyDiskFormat.CpcExtended ? buffer[hdrbPos + 0x1e + 8 * j ] +	/* data length in sector */
+                256 * buffer[hdrbPos + 0x1f + 8 * j ]
+              : 0x80 << buffer[hdrbPos + 0x1b + 8 * j ];
+        idlen = 0x80 << buffer[hdrbPos + 0x1b + 8 * j ];		/* sector length from ID */
+  
+        if( idlen === 0 || idlen > ( 0x80 << 0x08 ) ) {
+          // --- Error in sector length code -> ignore
+          idlen = seclen;
+        }    
+  
+        if( i < 84 && fix[i] == 2 && j == 0 ) {	/* repositionate the dummy track  */
+          d->i = 8;
+        }
+        id_add( d, hdrb[ 0x19 + 8 * j ], hdrb[ 0x18 + 8 * j ],
+       hdrb[ 0x1a + 8 * j ], hdrb[ 0x1b + 8 * j ], gap,
+                   hdrb[ 0x1c + 8 * j ] & 0x20 && !( hdrb[ 0x1d + 8 * j ] & 0x20 ) ? 
+                   CRC_ERROR : CRC_OK );
+  
+        if( i < 84 && fix[i] == CPC_ISSUE_1 && j == 0 ) {	/* 6144 */
+          data_add( d, buffer, NULL, seclen, 
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap, 
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, NULL );
+        } else if( i < 84 && fix[i] == CPC_ISSUE_2 && j == 0 ) {	/* 6144, 10x512 */
+          datamark_add( d, hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap );
+          gap_add( d, 2, gap );
+          buffer->index += seclen;
+        } else if( i < 84 && fix[i] == CPC_ISSUE_3 ) {	/* 128, 256, 512, ... 4096k */
+          data_add( d, buffer, NULL, 128, 
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap, 
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, NULL );
+          buffer->index += seclen - 128;
+        } else if( i < 84 && fix[i] == CPC_ISSUE_4 ) {	/* Nx8192 (max 6384 byte ) */
+          data_add( d, buffer, NULL, 6384,
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap, 
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, NULL );
+          buffer->index += seclen - 6384;
+        } else if( i < 84 && fix[i] == CPC_ISSUE_5 ) {	/* 9x512 */
+        /* 512 256 512 256 512 256 512 256 512 */
+          if( idlen == 256 ) {
+            data_add( d, NULL, buff, 512,
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, NULL );
+      buffer->index += idlen;
+          } else {
+            data_add( d, buffer, NULL, idlen,
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, NULL );
+    }
+        } else {
+          data_add( d, buffer, NULL, seclen > idlen ? idlen : seclen,
+      hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
+      hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
+      CRC_ERROR : CRC_OK, 0x00, &idx );
+          if( seclen > idlen ) {		/* weak sector with multiple copy  */
+            cpc_set_weak_range( d, idx, buffer, seclen / idlen, idlen );
+            buffer->index += ( seclen / idlen - 1 ) * idlen;
+            /* ( ( N * len ) / len - 1 ) * len */
+          }
+        }
+        if( seclen % 0x100 )		/* every? 128/384/...byte length sector padded */
+    sector_pad++;
+      }
+      gap4_add( d, gap );
+      buffer->index += sector_pad * 0x80;
+    }
+    return this.status = DiskError.DISK_OK;
+  }
+
+
+
+
+
+  // ========================================================================================================
+  // Old implementation
 
   // --- Gets the stream index to the beginning of the specified track's data
   private getTrackPointer (trackIndex: number): number {
@@ -294,6 +653,62 @@ export enum FloppyDiskFormat {
   CpcExtended
 }
 
+// --- Available disk error types
+export enum DiskError {
+  DISK_OK = 0,
+  DISK_IMPL,
+  DISK_MEM,
+  DISK_GEOM,
+  DISK_OPEN,
+  DISK_UNSUP,
+  DISK_RDONLY,
+  DISK_CLOSE,
+  DISK_WRFILE,
+  DISK_WRPART,
+
+  DISK_LAST_ERROR,
+}
+
+export enum DiskDensity {
+  Auto = 0,
+  DISK_8_SD,		/* 8" SD floppy 5208 MF */
+  DISK_8_DD,		/* 8" DD floppy 10416 */
+  DISK_SD,		/* 3125 bpt MF */
+  DISK_DD,		/* 6250 bpt */
+  DISK_DD_PLUS,		/* 6500 bpt e.g. Coin Op Hits */
+  DISK_HD,		/* 12500 bpt*/
+}
+
+const disk_bpt: number[] = [
+  6250,				/* AUTO assumes DD */
+  5208,				/* 8" SD */
+  10416,			/* 8" DD */
+  3125,				/* SD */
+  6250,				/* DD */
+  6500,				/* DD+ e.g. Coin Op Hits */
+  12500,			/* HD */
+];
+
+
+type DiskGap = {
+  // --- Gap byte
+  gap: number;
+  // --- Sync byte
+  sync: number;
+  // --- Sync length
+  sync_len: number;
+  // --- Byte 0xa1 for MFM 0xff for MF
+  mark: number;
+  len: number[];
+};
+
+const gaps: DiskGap[] = [
+  // --- MINIMAL_FM
+  { gap: 0xff, sync: 0x00, sync_len: 6, mark: 0xff, len: [ 0, 16, 11, 10 ] },
+  // --- MINIMAL MFM
+  { gap: 0x4e, sync: 0x00, sync_len: 12, mark: 0xa1, len: [ 0, 32, 22, 24 ] },
+];
+
 // --- Describes the disk header information
 export type DiskHeader = {
   creator: string;
@@ -381,4 +796,8 @@ function compareHeader (input: number[], header: string): boolean {
     }
   }
   return true;
+}
+
+function diskTrackLength(bpt: number): number {
+  return Math.floor(bpt/8) + (bpt % 8 ? 1 : 0 )
 }

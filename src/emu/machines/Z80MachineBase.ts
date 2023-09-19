@@ -261,6 +261,19 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * Removes the specified event handler from the event queue
+   * @param eventFn Event function to remove
+   */
+  removeEvent (eventFn: (data: any) => void): void {
+    if (!this._queuedEvents) return;
+    const idx = this._queuedEvents.findIndex(item => item.eventFn === eventFn);
+    if (idx < 0) return;
+
+    // --- Event found, remove it
+    this._queuedEvents.splice(idx, 1);
+  }
+
+  /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop.
    */
