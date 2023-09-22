@@ -80,7 +80,7 @@ export class FloppyDisk {
     let idlen: number;
     let gap: number;
     let sector_pad: number;
-    let idx: number;
+    let idx: { value: number };
     let bpt: number;
     let max_bpt = 0;
     let trlen: number;
@@ -314,9 +314,9 @@ export class FloppyDisk {
 
     // --- Iterate through all tracks
     for (i = 0; i < this.sides * this.tracksPerSide; i++) {
-      // --- Point to the track data 
+      // --- Point to the track data
       hdrb = new BufferWithPosition(buffer.data, buffer.index);
-      
+
       // --- Skip to data
       buffer.index += 0x100;
 
@@ -330,72 +330,110 @@ export class FloppyDisk {
       this.setTrackIndex(i);
       this.indexPos = 0;
       this.gapAdd(1, gap);
-      //     sector_pad = 0;
-      //     for( j = 0; j < hdrb[0x15]; j++ ) {			/* each sector */
-      //       seclen = d->type == DISK_ECPC ? hdrb[ 0x1e + 8 * j ] +	/* data length in sector */
-      //               256 * hdrb[ 0x1f + 8 * j ]
-      //             : 0x80 << hdrb[ 0x1b + 8 * j ];
-      //       idlen = 0x80 << hdrb[ 0x1b + 8 * j ];		/* sector length from ID */
-      //       if( idlen == 0 || idlen > ( 0x80 << 0x08 ) )      /* error in sector length code -> ignore */
-      //         idlen = seclen;
-      //       if( i < 84 && fix[i] == 2 && j == 0 ) {	/* repositionate the dummy track  */
-      //         d->i = 8;
-      //       }
-      //       id_add( d, hdrb[ 0x19 + 8 * j ], hdrb[ 0x18 + 8 * j ],
-      //      hdrb[ 0x1a + 8 * j ], hdrb[ 0x1b + 8 * j ], gap,
-      //                  hdrb[ 0x1c + 8 * j ] & 0x20 && !( hdrb[ 0x1d + 8 * j ] & 0x20 ) ?
-      //                  CRC_ERROR : CRC_OK );
-      //       if( i < 84 && fix[i] == CPC_ISSUE_1 && j == 0 ) {	/* 6144 */
-      //         data_add( d, buffer, NULL, seclen,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, NULL );
-      //       } else if( i < 84 && fix[i] == CPC_ISSUE_2 && j == 0 ) {	/* 6144, 10x512 */
-      //         datamark_add( d, hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap );
-      //         gap_add( d, 2, gap );
-      //         buffer->index += seclen;
-      //       } else if( i < 84 && fix[i] == CPC_ISSUE_3 ) {	/* 128, 256, 512, ... 4096k */
-      //         data_add( d, buffer, NULL, 128,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, NULL );
-      //         buffer->index += seclen - 128;
-      //       } else if( i < 84 && fix[i] == CPC_ISSUE_4 ) {	/* Nx8192 (max 6384 byte ) */
-      //         data_add( d, buffer, NULL, 6384,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, NULL );
-      //         buffer->index += seclen - 6384;
-      //       } else if( i < 84 && fix[i] == CPC_ISSUE_5 ) {	/* 9x512 */
-      //       /* 512 256 512 256 512 256 512 256 512 */
-      //         if( idlen == 256 ) {
-      //           data_add( d, NULL, buff, 512,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, NULL );
-      //     buffer->index += idlen;
-      //         } else {
-      //           data_add( d, buffer, NULL, idlen,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, NULL );
-      //   }
-      //       } else {
-      //         data_add( d, buffer, NULL, seclen > idlen ? idlen : seclen,
-      //     hdrb[ 0x1d + 8 * j ] & 0x40 ? DDAM : NO_DDAM, gap,
-      //     hdrb[ 0x1c + 8 * j ] & 0x20 && hdrb[ 0x1d + 8 * j ] & 0x20 ?
-      //     CRC_ERROR : CRC_OK, 0x00, &idx );
-      //         if( seclen > idlen ) {		/* weak sector with multiple copy  */
-      //           cpc_set_weak_range( d, idx, buffer, seclen / idlen, idlen );
-      //           buffer->index += ( seclen / idlen - 1 ) * idlen;
-      //           /* ( ( N * len ) / len - 1 ) * len */
-      //         }
-      //       }
-      //       if( seclen % 0x100 )		/* every? 128/384/...byte length sector padded */
-      //   sector_pad++;
-      //     }
-      //     gap4_add( d, gap );
-      //     buffer->index += sector_pad * 0x80;
+
+      // --- Reset sector padding
+      sector_pad = 0;
+
+      // --- Iterate through all tracks
+      for (j = 0; j < hdrb.get(0x15); j++) {
+        seclen =
+          this.diskFormat === FloppyDiskFormat.CpcExtended
+            ? // --- Data length in Extended CPC format
+              hdrb.get(0x1e + 8 * j) + 256 * hdrb.get(0x1f + 8 * j)
+            : // --- Sector length from the ID
+              0x80 << hdrb.get(0x1b + 8 * j);
+
+        // --- Sector length from the ID
+        idlen = 0x80 << hdrb.get(0x1b + 8 * j);
+        if (idlen === 0 || idlen > 0x80 << 0x08) {
+          // There is an error in sector length code, ignore it
+          idlen = seclen;
+        }
+
+        if (i < 84 && fix[i] === CPC_ISSUE_2 && j === 0) {
+          // --- Reposition the dummy track
+          this.indexPos = 8;
+        }
+
+        // --- Add CHRN information with gap, and sign CRC error, if the FDC register status requires
+        this.idAdd(
+          hdrb.get(0x19 + 8 * j),
+          hdrb.get(0x18 + 8 * j),
+          hdrb.get(0x1a + 8 * j),
+          hdrb.get(0x1b + 8 * j),
+          gap,
+          !!(hdrb.get(0x1c + 8 * j) & 0x20) && !(hdrb.get(0x1d + 8 * j) & 0x20)
+        );
+
+        // --- Calculate flag values
+        const ddam = !!(hdrb.get(0x1d + 8 * j) & 0x40);
+        const crcError =
+          !!(hdrb.get(0x1c + 8 * j) & 0x20) &&
+          !!(hdrb.get(0x1d + 8 * j) & 0x20);
+
+        // --- Add data, data marks, and gaps according to the ZX Spectrum +3 issue to fix
+        if (i < 84 && fix[i] === CPC_ISSUE_1 && j === 0) {
+          // --- 6144
+          this.dataAdd(buffer, null, seclen, ddam, gap, crcError, 0x00);
+        } else if (i < 84 && fix[i] === CPC_ISSUE_2 && j === 0) {
+          // --- 6144, 10x512
+          this.dataMarkAdd(ddam, gap);
+          this.gapAdd(2, gap);
+          buffer.index += seclen;
+        } else if (i < 84 && fix[i] === CPC_ISSUE_3) {
+          // --- 128, 256, 512, ... 4096k
+          this.dataAdd(buffer, null, 128, ddam, gap, crcError, 0x00);
+          buffer.index += seclen - 128;
+        } else if (i < 84 && fix[i] === CPC_ISSUE_4) {
+          // --- Nx8192 (max 6384 byte )
+          this.dataAdd(buffer, null, 6384, ddam, gap, crcError, 0x00);
+          buffer.index += seclen - 6384;
+        } else if (i < 84 && fix[i] === CPC_ISSUE_5) {
+          // --- 9x512
+          // ---  512 256 512 256 512 256 512 256 512 */
+          if (idlen === 256) {
+            this.dataAdd(
+              null,
+              new BufferWithPosition(buffer.data, buffer.index),
+              512,
+              ddam,
+              gap,
+              crcError,
+              0x00
+            );
+            buffer.index += idlen;
+          } else {
+            this.dataAdd(buffer, null, idlen, ddam, gap, crcError, 0x00);
+          }
+        } else {
+          this.dataAdd(
+            buffer,
+            null,
+            seclen > idlen ? idlen : seclen,
+            ddam,
+            gap,
+            crcError,
+            0x00,
+            idx
+          );
+          if (seclen > idlen) {
+            // --- A weak sector with multiple copy
+            this.cpcSetWeakRange(
+              idx,
+              buffer,
+              Math.floor(seclen / idlen),
+              idlen
+            );
+            buffer.index += (Math.floor(seclen / idlen) - 1) * idlen;
+          }
+        }
+        if (seclen % 0x100) {
+          // --- Add sector padding
+          sector_pad++;
+        }
+      }
+      this.gap4Add(gap);
+      buffer.index += sector_pad * 0x80;
     }
 
     return (this.status = DiskError.DISK_OK);
@@ -479,9 +517,63 @@ export class FloppyDisk {
     }
   }
 
-  private gapAdd(gap: number, gapType: number): number {
+  private gapAdd (gap: number, gapType: number): number {
     // TODO: Implement this method
-    return 0
+    return 0;
+  }
+
+  private idAdd (
+    h: number,
+    t: number,
+    s: number,
+    l: number,
+    gaptype: number,
+    crc_error: boolean
+  ): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  private dataAdd (
+    buffer: BufferWithPosition,
+    data: BufferWithPosition | null,
+    len: number,
+    ddam: boolean,
+    gaptype: number,
+    crc_error: boolean,
+    autofill: number,
+    start_data?: { value: number }
+  ): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  private dataMarkAdd (ddam: boolean, gaptype: number) {
+    // TODO: Implement this method
+  }
+
+  private cpcSetWeakRange (
+    idx: { value: number },
+    buffer: BufferWithPosition,
+    n: number,
+    len: number
+  ): void {
+    // TODO: Implement this method
+  }
+
+  private gap4Add (gaptype: number): boolean {
+    // TODO: Implement this method
+    // int len = d->bpt - d->i;
+    // disk_gap_t *g = &gaps[gaptype];
+
+    // if (len < 0)
+    // {
+    //   return 1;
+    // }
+    // /*------------------------------     GAP IV     ------------------------------*/
+    // memset(d->track + d->i, g->gap, len); /* GAP IV fill until end of track */
+    // d->i = d->bpt;
+    return false;
   }
 }
 
