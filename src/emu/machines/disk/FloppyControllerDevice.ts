@@ -5,7 +5,7 @@ import {
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
-import { FloppyDisk } from "./FloppyDisk";
+import { FloppyDisk, crcFdcTable } from "./FloppyDisk";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 // --- Implements the NEC UPD 765 chip emulation
@@ -229,9 +229,11 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     this.readId = false;
   }
 
-  // Dispose the resources held by the device
+  // --- Dispose the resources held by the device
   dispose (): void {
-    // TODO: Implement this method
+    this.driveA = undefined;
+    this.driveB = undefined;
+    this.currentDrive = undefined;
   }
 
   // --- Gets the value of the data register (8-bit)
@@ -833,21 +835,22 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     this.opLog.push(entry);
   }
 
-  private isDriveReady (): boolean {
-    return this.currentDrive.disk && this.motorSpeed === 100;
-  }
-
   // --- Registers an event
   private registerEvent (
     ms: number,
     eventFn: (data: any) => void,
-    data?: any
+    data: any
   ): void {
     const machine = this.machine;
     const eventTact =
       machine.tacts +
       ((machine.baseClockFrequency * machine.clockMultiplier) / 1000) * ms;
     machine.queueEvent(eventTact, eventFn, data);
+  }
+
+  // --- Unregisters an event
+  private removeEvent (eventFn: (data: any) => void): void {
+    this.machine.removeEvent(eventFn);
   }
 
   // --- Identifies the command to execute
@@ -877,6 +880,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       0xffff;
   }
 
+  // --- Prepares for returning result bytes
   private cmdResult (): void {
     this.cycle = this.cmd.reslength;
     this.msr &= ~MSR_EXM;
@@ -892,23 +896,633 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.msr &= ~MSR_DIO;
       this.msr &= ~MSR_CB;
     }
-    // TODO: event_remove_type( timeout_event );		/* remove timeouts... */
+    this.removeEvent(this.timeoutEventHandler);
     if (this.headLoad && this.cmd.id <= Command.ReadId) {
-      this.registerEvent(this.hut, this.headEventHandler);
+      this.registerEvent(this.hut, this.headEventHandler, this);
     }
   }
 
-  private startWriteData (): void {}
+  // --- Reads the next ID structure
+  // --- Return: 0 = ID found, 1 = ID found with CRC error, 2 = not found
+  private readNextId (): number {
+    let i = 0;
+    const d = this.currentDrive;
 
-  private startReadData (): void {}
+    this.sr1 &= ~(SR1_DE | SR1_MA | SR1_ND);
+    this.idMark = false;
+    i = this.rev;
+    while (i === this.rev && d.ready) {
+      d.readData();
+      if (d.atIndexWhole) this.rev--;
+      this.crcPreset();
+      if (this.mf) {
+        // --- Double density (MFM)
+        if (d.data === 0xffa1) {
+          this.crcAdd();
+          d.readData();
+          this.crcAdd();
+          if (d.atIndexWhole) this.rev--;
+          if (d.data != 0xffa1) continue;
+          d.readData();
+          this.crcAdd();
+          if (d.atIndexWhole) this.rev--;
+          if (d.data !== 0xffa1) continue;
+        } else {
+          // --- No 0xa1 with missing clock...
+          continue;
+        }
+      }
+      d.readData();
+      if (d.atIndexWhole) this.rev--;
+      if (this.mf) {
+        // --- double density (MFM)
+        if (d.data !== 0x00fe) continue;
+      } else {
+        // --- single density (FM)
+        if (d.data !== 0xfffe) continue;
+      }
+      this.crcAdd();
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
+      this.idTrack = d.data;
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
+      this.idHead = d.data;
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
+      this.idSector = d.data;
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
+      this.idLength = d.data > MAX_SIZE_CODE ? MAX_SIZE_CODE : d.data;
+      this.sectorLength = 0x80 << this.idLength;
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
+      d.readData();
+      this.crcAdd();
+      if (d.atIndexWhole) this.rev--;
 
-  private seekStep (isStart: boolean): void {}
+      if (this.crc !== 0x0000) {
+        this.sr1 |= SR1_DE | SR1_ND;
+        this.idMark = true;
+        // --- Found CRC error
+        return 1;
+      } else {
+        this.idMark = true;
+        // --- Found and OK
+        return 0;
+      }
+    }
+    if (!d.ready) {
+      this.rev = 0;
+    }
 
-  private loadHead (): void {}
+    // --- FIXME NO_DATA?
+    this.sr1 |= SR1_MA | SR1_ND;
+    // --- Not found
+    return 2;
+  }
 
-  private timeoutEventHandler (): void {}
+  // --- Reads the DAM (Data Address Mark)
+  // --- Return: false = found, true = not found
+  private readDataAddressMark (): boolean {
+    const d = this.currentDrive;
+    let i = 0;
 
-  private headEventHandler (): void {}
+    if (this.mf) {
+      // --- Double density (MFM)
+      for (i = 40; i > 0; i--) {
+        d.readData();
+        // --- Read next?
+        if (d.data === 0x4e) continue;
+        // --- Go to PLL sync
+        if (d.data == 0x00) break;
+
+        this.sr2 |= SR2_MD;
+        // --- Something wrong
+        return true;
+      }
+
+      for (; i > 0; i--) {
+        this.crcPreset();
+        d.readData();
+        this.crcAdd();
+        if (d.data === 0x00) continue;
+        // --- Got to 0xA1 mark
+        if (d.data === 0xffa1) break;
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      for (i = d.data === 0xffa1 ? 2 : 3; i > 0; i--) {
+        d.readData();
+        this.crcAdd();
+        if (d.data !== 0xffa1) {
+          this.sr2 |= SR2_MD;
+          return true;
+        }
+      }
+
+      d.readData();
+      this.crcAdd();
+      if (d.data < 0x00f8 || d.data > 0x00fb) {
+        // !fb deleted mark
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      // --- DAM found
+      this.ddam = d.data !== 0x00fb;
+      return false;
+    } else {
+      // --- SD -> FM
+      for (i = 30; i > 0; i--) {
+        d.readData();
+        // --- Read next?
+        if (d.data === 0xff) continue;
+        // --- Go to PLL sync?
+        if (d.data === 0x00) break;
+        this.sr2 |= SR2_MD;
+        // --- Something wrond
+        return true;
+      }
+
+      for (; i > 0; i--) {
+        this.crcPreset();
+        d.readData();
+        this.crcAdd();
+        if (d.data === 0x00) continue;
+        // --- !fb deleted mark
+        if (d.data >= 0xfff8 && d.data <= 0xfffb) break;
+
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      if (i === 0) {
+        d.readData();
+        this.crcAdd();
+        if (d.data < 0xfff8 || d.data > 0xfffb) {
+          // --- !fb deleted mark
+          this.sr2 |= SR2_MD;
+          return true;
+        }
+      }
+
+      // --- Found
+      this.ddam = d.data !== 0x00fb;
+      return false;
+    }
+  }
+
+  // --- Seek to a specified id
+  // --- Return: 0 = found, 1 = id with CRC error, 2 = not found any id, 3 = not found the specified id
+  private seekId (): number {
+    let r = 0;
+
+    this.sr2 &= ~(SR2_WC | SR2_BC);
+    r = this.readNextId();
+    // --- Not found any good ID
+    if (r !== 0) return r;
+
+    if (this.idTrack != this.dataRegister[1]) {
+      this.sr2 |= SR2_WC;
+      if (this.idTrack === 0xff) this.sr2 |= SR2_BC;
+      return 3;
+    }
+
+    if (
+      this.idSector === this.dataRegister[3] &&
+      this.idHead === this.dataRegister[2]
+    ) {
+      if (this.idLength !== this.dataRegister[4]) {
+        this.sr1 |= SR1_ND;
+        return 3;
+      }
+
+      return 0;
+    }
+    this.sr1 |= SR1_ND;
+    return 3;
+  }
+
+  // --- Makes a seek step
+  private seekStep (isStart: boolean): void {
+    let i = 0;
+    if (isStart) {
+      i = this.us;
+
+      // --- Drive already in seek state?
+      if (this.msr & (1 << i)) {
+        return;
+      }
+
+      // --- Mark seek mode for fdd. It will be cleared by Sense Interrupt command
+      this.msr |= 1 << i;
+    } else {
+      // --- Get drive in seek state that has completed the positioning
+      i = 0;
+      for (let j = 1; j < 4; j++) {
+        if (this.seekAge[j] > this.seekAge[i]) i = j;
+      }
+
+      if (this.seek[i] === 0 || this.seek[i] >= 4) {
+        return;
+      }
+    }
+
+    // --- Select the drive used in the seek operation
+    const d = i ? this.driveB : this.driveA;
+
+    // --- There is need to seek?
+    if (this.pcn[i] === this.ncn[i] && this.seek[i] === 2 && !d.tr00) {
+      // --- Recalibrate fail, abnormal termination
+      this.seek[i] = 5;
+      this.seekAge[i] = 0;
+      this.intReq = IntRequest.Seek;
+      this.sr0 |= SR0_EC;
+      this.msr &= ~(1 << i);
+      return;
+    }
+
+    // --- There is need to seek?
+    if (this.pcn[i] === this.ncn[i] || (this.seek[i] === 2 && d.tr00)) {
+      // --- Correct position
+      if (this.seek[i] === 2)
+        // --- Recalibrate, normal termination
+        this.pcn[i] = 0;
+      this.seek[i] = 4;
+      this.seekAge[i] = 0;
+      this.intReq = IntRequest.Seek;
+      this.msr &= ~(1 << i);
+      return;
+    }
+
+    // --- Drive not ready
+    if (!d.ready) {
+      if (this.seek[i] === 2)
+        // --- recalibrate
+        this.pcn[i] = this.rec[i] - (77 - this.pcn[i]);
+      // --- restore PCN, drive not readey termination
+      this.seek[i] = 6;
+      this.seekAge[i] = 0;
+      this.intReq = IntRequest.Ready;
+      // --- doesn't matter
+      this.msr &= ~(1 << i);
+      return;
+    }
+
+    // --- Send step
+    if (this.pcn[i] !== this.ncn[i]) {
+      // --- FIXME if d->tr00 == 1 ???
+      d.step(this.pcn[i] > this.ncn[i]);
+      this.pcn[i] += this.pcn[i] > this.ncn[i] ? -1 : 1;
+
+      // --- Update age for active seek operations
+      for (let j = 0; j < 4; j++) {
+        if (this.seekAge[j] > 0) {
+          this.seekAge[j]++;
+        }
+      }
+      this.seekAge[i] = 1;
+
+      // --- Wait step completion
+      this.registerEvent(this.stepRate, this.fdcEventHandler, this);
+    }
+
+    return;
+  }
+
+  // --- Starts reading the ID
+  private startReadId (): void {
+    let i = 0;
+    if (!this.readId) {
+      this.rev = 2;
+      this.readId = true;
+    }
+    if (this.rev) {
+      // --- Start position
+      i =
+        this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
+          ? 0
+          : this.currentDrive.disk.indexPos;
+      if (this.readNextId() !== 2) {
+        this.rev = 0;
+      }
+      i = this.currentDrive.disk.bytesPerTrack
+        ? ((this.currentDrive.disk.indexPos - i) * 200) /
+          this.currentDrive.disk.bytesPerTrack
+        : 200;
+      if (i > 0) {
+        // --- i * 1/20 revolution
+        this.registerEvent(i, this.fdcEventHandler, this);
+        return;
+      }
+    }
+    this.readId = false;
+    if (this.idMark) {
+      // --- ID mark found
+      this.dataRegister[1] = this.idTrack;
+      this.dataRegister[2] = this.idHead;
+      this.dataRegister[3] = this.idSector;
+      this.dataRegister[4] = this.idLength;
+    }
+    if (!this.idMark || this.sr1 & SR1_DE) {
+      // --- Not found/crc error id mark */
+      this.sr0 |= SR0_AT;
+    }
+    this.intReq = IntRequest.Result;
+    this.cmdResult();
+  }
+
+  // --- Starts reading data
+  private startReadData (): void {
+    let i = 0;
+    const fdc = this;
+
+    while (true) {
+      if (
+        this.firstRw ||
+        this.readId ||
+        this.dataRegister[5] > this.dataRegister[3]
+      ) {
+        if (!this.readId) {
+          if (!this.firstRw) {
+            this.dataRegister[3]++;
+          }
+          this.firstRw = false;
+
+          this.rev = 2;
+          this.readId = true;
+        }
+        while (this.rev) {
+          // --- Start position
+          i =
+            this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
+              ? 0
+              : this.currentDrive.disk.indexPos;
+          if (this.seekId() === 0) {
+            this.rev = 0;
+          } else {
+            this.idMark = false;
+          }
+          i = this.currentDrive.disk.bytesPerTrack
+            ? ((this.currentDrive.disk.indexPos - i) * 200) /
+              this.currentDrive.disk.bytesPerTrack
+            : 200;
+          if (i > 0) {
+            this.registerEvent(i, this.fdcEventHandler, this);
+            return;
+          }
+        }
+
+        this.readId = false;
+        if (!this.idMark) {
+          // --- Not found/crc error
+          this.sr0 |= SR0_AT;
+          abortReadData();
+          return;
+        }
+
+        if (this.readDataAddressMark()) {
+          // --- not found
+          this.sr0 |= SR0_AT;
+          abortReadData();
+          return;
+        }
+
+        if (this.ddam !== this.delData) {
+          this.sr2 |= SR2_CM;
+          if (this.sk) {
+            this.dataRegister[3]++;
+            // --- Not deleted but we want to read deleted
+            continue; // Goto skip_deleted_sector;
+          }
+        }
+      } else {
+        if (this.mt) {
+          // --- Next track
+          this.dataRegister[1]++;
+          // --- First sector
+          this.dataRegister[3] = 1;
+          continue; // Goto multi_track_next;
+        }
+
+        // LABEL: abort_read_data:
+        abortReadData();
+        return;
+      }
+
+      this.msr |= MSR_RQM;
+      if (this.cmd.id !== Command.Scan) this.msr |= MSR_DIO;
+      this.dataOffset = 0;
+      this.removeEvent(this.timeoutEventHandler);
+      // --- 2 revolutions
+      this.registerEvent(400, this.timeoutEventHandler, this);
+      return;
+    }
+
+    function abortReadData (): void {
+      // --- End of execution phase
+      fdc.phase = OperationPhase.Result;
+      fdc.cycle = this.cmd.reslength;
+
+      // --- End of cylinder is set if:
+      // --- 1: sector data is read completely (i.e. no other errors occur like no data.)
+      // --- 2: sector being read is same specified by EOT
+      // --- 3: terminal count is not received
+      // --- Note: in +3 uPD765 never got TC
+      if (!fdc.sr0 && !fdc.sr1) {
+        fdc.sr0 |= SR0_AT;
+        fdc.sr1 |= SR1_EN;
+      }
+
+      if (!(fdc.sr0 & (SR0_AT | SR0_IC))) {
+        // --- Next track
+        fdc.dataRegister[1]++;
+        // --- First sector
+        fdc.dataRegister[3] = 1;
+      }
+
+      fdc.msr &= ~MSR_EXM;
+      fdc.intReq = IntRequest.Result;
+      fdc.cmdResult();
+    }
+  }
+
+  // --- Starts writing data
+  private startWriteData (): void {
+    let i = 0;
+    const d = this.currentDrive;
+    const fdc = this;
+
+    while (true) {
+      if (
+        this.firstRw ||
+        this.readId ||
+        this.dataRegister[5] > this.dataRegister[3]
+      ) {
+        if (!this.readId) {
+          if (!this.firstRw) {
+            this.dataRegister[3]++;
+          }
+          this.firstRw = false;
+
+          this.rev = 2;
+          this.readId = true;
+        }
+        while (this.rev) {
+          // --- Start position
+          i =
+            this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
+              ? 0
+              : this.currentDrive.disk.indexPos;
+          if (this.seekId() === 0) {
+            this.rev = 0;
+          } else {
+            this.idMark = false;
+          }
+          i = this.currentDrive.disk.bytesPerTrack
+            ? ((this.currentDrive.disk.indexPos - i) * 200) /
+              this.currentDrive.disk.bytesPerTrack
+            : 200;
+          if (i > 0) {
+            this.registerEvent(i, this.fdcEventHandler, this);
+            return;
+          }
+        }
+
+        this.readId = false;
+        if (!this.idMark) {
+          // --- not found/crc error
+          this.sr0 |= SR0_AT;
+          abortWriteData();
+          return;
+        }
+
+        // --- "delay" 11 GAP bytes
+        for (i = 11; i > 0; i--) {
+          d.readData();
+        }
+        if (this.mf) {
+          // --- MFM, "delay" another 11 GAP byte
+          for (i = 11; i > 0; i--) {
+            d.readData();
+          }
+        }
+
+        d.data = 0x00;
+        // -- Write 6/12 zero
+        for (i = this.mf ? 12 : 6; i > 0; i--) {
+          d.writeData();
+        }
+        this.crcPreset();
+        if (this.mf) {
+          // --- MFM
+          d.data = 0xffa1;
+          // --- Write 3 0xa1 with clock mark */
+          for (i = 3; i > 0; i--) {
+            d.writeData();
+            this.crcAdd();
+          }
+        }
+        d.data = (this.delData ? 0x00f8 : 0x00fb) | (this.mf ? 0x0000 : 0xff00);
+        // --- Write data mark */
+        d.writeData();
+        this.crcAdd();
+      } else {
+        // --- Next track
+        this.dataRegister[1]++;
+        // --- First sector
+        this.dataRegister[3] = 1;
+        if (this.mt) continue;
+        abortWriteData();
+        return;
+      }
+
+      this.msr |= MSR_RQM;
+      this.dataOffset = 0;
+      this.removeEvent(this.timeoutEventHandler);
+      this.registerEvent(400, this.timeoutEventHandler, this);
+    }
+
+    function abortWriteData (): void {
+      // LABEL: abort_write_data:
+      fdc.phase = OperationPhase.Result;
+      fdc.cycle = this.cmd.reslength;
+      // --- End of cylinder is set if:
+      // --- 1: sector data is read completely (i.e. no other errors occur like no data).
+      // --- 2: sector being read is same specified by EOT
+      // --- 3: terminal count is not received
+      // --- Note: in +3 uPD765 never got TC
+      fdc.sr0 |= SR0_AT;
+      fdc.sr1 |= SR1_EN;
+      fdc.msr &= ~MSR_RQM;
+      fdc.intReq = IntRequest.Result;
+      fdc.cmdResult();
+    }
+  }
+
+  // --- Loads the head
+  private loadHead (): void {
+    this.removeEvent(this.headEventHandler);
+    if (this.headLoad) {
+      // --- Head already loaded
+      if (this.cmd.id === Command.ReadData || this.cmd.id === Command.Scan) {
+        this.startReadData();
+      } else if (this.cmd.id === Command.ReadId) {
+        this.startReadId();
+      } else if (this.cmd.id == Command.WriteData) {
+        this.startWriteData();
+      }
+    } else {
+      this.currentDrive.loadHead(1);
+      this.headLoad = true;
+      this.registerEvent(this.hld, this.fdcEventHandler, this);
+    }
+  }
+
+  // --- Handles the timeout event
+  private timeoutEventHandler (data: any): void {
+    const fdc = data as FloppyControllerDevice;
+    fdc.sr0 |= SR0_AT;
+    fdc.sr1 |= SR1_OR;
+    fdc.cmdResult();
+  }
+
+  // --- Handles the head event
+  private headEventHandler (data: any): void {
+    const fdc = data as FloppyControllerDevice;
+    fdc.currentDrive.loadHead(0);
+    fdc.headLoad = false;
+  }
+
+  private fdcEventHandler (data: any): void {
+    const fdc = data as FloppyControllerDevice;
+
+    if (fdc.readId) {
+      if (fdc.cmd.id === Command.ReadData) {
+        fdc.startReadData();
+      } else if (fdc.cmd.id === Command.ReadId) {
+        fdc.startReadId();
+      } else if (fdc.cmd.id === Command.WriteData) {
+        fdc.startWriteData();
+      }
+    } else if (fdc.msr & 0x03) {
+      /* seek/recalibrate active */
+      fdc.seekStep(false);
+    } else if (fdc.cmd.id === Command.ReadData || fdc.cmd.id === Command.Scan) {
+      fdc.startReadData();
+    } else if (fdc.cmd.id === Command.ReadId) {
+      fdc.startReadId();
+    } else if (fdc.cmd.id === Command.WriteData) {
+      fdc.startWriteData();
+    }
+  }
 }
 
 // --- FDC Busy. A Read or Write command is in process.FDC will not accept any other command.
@@ -1239,36 +1853,4 @@ const commandTable: CommandDescriptor[] = [
     reslength: 0x01,
     pars: []
   }
-];
-
-const crcFdcTable = [
-  0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108,
-  0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
-  0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6, 0x9339, 0x8318, 0xb37b,
-  0xa35a, 0xd3bd, 0xc39c, 0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401,
-  0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b, 0x8528, 0x9509, 0xe5ee,
-  0xf5cf, 0xc5ac, 0xd58d, 0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6,
-  0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719, 0x8738, 0xf7df, 0xe7fe, 0xd79d,
-  0xc7bc, 0x48c4, 0x58e5, 0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823,
-  0xc9cc, 0xd9ed, 0xe98e, 0xf9af, 0x8948, 0x9969, 0xa90a, 0xb92b, 0x5af5,
-  0x4ad4, 0x7ab7, 0x6a96, 0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc,
-  0xfbbf, 0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a, 0x6ca6, 0x7c87, 0x4ce4,
-  0x5cc5, 0x2c22, 0x3c03, 0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec, 0xddcd,
-  0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6, 0x5ed5, 0x4ef4, 0x3e13,
-  0x2e32, 0x1e51, 0x0e70, 0xff9f, 0xefbe, 0xdfdd, 0xcffc, 0xbf1b, 0xaf3a,
-  0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb, 0xd10c, 0xc12d, 0xf14e,
-  0xe16f, 0x1080, 0x00a1, 0x30c2, 0x20e3, 0x5004, 0x4025, 0x7046, 0x6067,
-  0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c, 0xe37f, 0xf35e, 0x02b1,
-  0x1290, 0x22f3, 0x32d2, 0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb,
-  0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d, 0x34e2, 0x24c3, 0x14a0,
-  0x0481, 0x7466, 0x6447, 0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8,
-  0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2, 0x0691, 0x16b0, 0x6657,
-  0x7676, 0x4615, 0x5634, 0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9,
-  0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806, 0x6827, 0x18c0, 0x08e1, 0x3882,
-  0x28a3, 0xcb7d, 0xdb5c, 0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a,
-  0x4a75, 0x5a54, 0x6a37, 0x7a16, 0x0af1, 0x1ad0, 0x2ab3, 0x3a92, 0xfd2e,
-  0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07,
-  0x5c64, 0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1, 0xef1f, 0xff3e, 0xcf5d,
-  0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55, 0x5e74,
-  0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 ];

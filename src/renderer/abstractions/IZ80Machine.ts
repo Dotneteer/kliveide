@@ -140,6 +140,12 @@ export interface IZ80Machine extends IZ80Cpu {
    * @param data Data to pass to the event function
    */
   queueEvent(eventTact: number, eventFn: (data: any) => void, data: any): void;
+
+  /**
+   * Removes the specified event handler from the event queue
+   * @param eventFn Event function to remove
+   */
+  removeEvent(eventFn: (data: any) => void): void;
 }
 
 /**
