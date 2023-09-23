@@ -1,12 +1,11 @@
 import { Label, LabelSeparator, Secondary } from "@controls/Labels";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import styles from "./TapViewerPanel.module.scss";
-import { readTapeFile } from "@renderer/utils/tape-utils";
-import { ToolbarSeparator } from "@controls/ToolbarSeparator";
+import styles from "./DskViewerPanel.module.scss";
 import classnames from "@renderer/utils/classnames";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
+import { Icon } from "@controls/Icon";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
@@ -15,102 +14,104 @@ import {
   useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
-import { DataSection } from "@renderer/controls/DataSection";
-import { toHexa2 } from "../services/ide-commands";
+import { DskDiskReader } from "@emu/machines/disk/DskDiskReader";
+import { FloppyDiskFormat } from "@emu/machines/disk/FloppyDisk";
+import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 
-const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
+const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
   const contents = data as Uint8Array;
-  const fileInfo = readTapeFile(contents);
-  console.log("fi", fileInfo);
+  let fileInfo: DskDiskReader | undefined;
+  try {
+    fileInfo = new DskDiskReader(contents);
+  } catch {
+    // --- Intentionally ignored
+  }
 
   useEffect(() => {
     setDocState(documentHubService.getDocumentViewState(document.id));
   }, [hubVersion]);
 
-  if (!fileInfo.data) {
+  useEffect(() => {}, [docState]);
+
+  if (!fileInfo) {
     return (
-      <div className={styles.tapViewerPanel}>
+      <div className={styles.dskViewerPanel}>
         <div className={classnames(styles.header, styles.error)}>
-          Invalid tape file format
+          Invalid disk file format
         </div>
       </div>
     );
   }
   return (
     <ScrollViewer allowHorizontal={false}>
-      <div className={styles.tapViewerPanel}>
+      <div className={styles.dskViewerPanel}>
         <div className={styles.header}>
           <LabelSeparator width={4} />
-          <Label text='Format:' />
-          <ValueLabel text={fileInfo.type?.toUpperCase()} />
-          <LabelSeparator width={4} />
-          <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
-          <Label text='Length:' />
-          <ValueLabel text={contents.length.toString()} />
-          <LabelSeparator width={4} />
-          <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
-          <Label text='#of sections:' />
-          <ValueLabel text={fileInfo.data.length.toString()} />
-          <LabelSeparator width={4} />
-          <ToolbarSeparator small={true} />
-        </div>
-        <div className={styles.tapViewerWrapper}>
-          {fileInfo.data.map((ds, idx) => {
-            let title: string;
-            if (fileInfo.type.toLowerCase() === "tap") {
-              const data = (ds as TapeDataBlock).data;
-              if (isHeaderBlock(data)) {
-                title = "Header block";
-              } else if (isDataBlock(data)) {
-                title = `Data block (length: ${data.length})`;
-              } else {
-                title = `Unknown block`;
-              }
-              title = `#${idx}: ${title}`;
-            } else {
-              title = `#${idx}: ${
-                tzxSections[(ds as TzxBlockBase).blockId] ??
-                `(unknown section 0x${toHexa2((ds as TzxBlockBase).blockId)})`
-              }`;
+          <Label text='Disk Format:' />
+          <ValueLabel
+            text={
+              fileInfo.diskFormat === FloppyDiskFormat.Cpc
+                ? "CPC"
+                : "Extended CPC"
             }
-            return (
-              <DataSection
-                key={`${document.id}${idx}`}
-                title={title}
-                expanded={docState?.[idx] ?? true}
-                changed={exp => {
-                  documentHubService.setDocumentViewState(document.id, {
-                    ...docState,
-                    [idx]: exp
-                  });
-                  documentHubService.signHubStateChanged();
-                }}
-              >
-                {fileInfo.type.toLowerCase() === "tap" && (
-                  <TapSection
-                    key={idx}
-                    block={ds as TapeDataBlock}
-                    index={idx}
-                  />
-                )}
-                {fileInfo.type.toLowerCase() === "tzx" && (
-                  <TzxSection
-                    key={idx}
-                    block={ds as TzxBlockBase}
-                    index={idx}
-                  />
-                )}
-              </DataSection>
-            );
-          })}
+          />
+          <LabelSeparator width={4} />
+          <ToolbarSeparator small={true} />
+          <LabelSeparator width={4} />
+          <Label text='Sides:' />
+          <ValueLabel text={fileInfo.header.numSides.toString()} />
+          <LabelSeparator width={4} />
+          <ToolbarSeparator small={true} />
+          <LabelSeparator width={4} />
+          <Label text='Tracks:' />
+          <ValueLabel text={fileInfo.header.numTracks.toString()} />
         </div>
+        <div className={styles.dskViewerWrapper}></div>
       </div>
     </ScrollViewer>
+  );
+};
+
+type DataSectionProps = {
+  title: string;
+  expanded: boolean;
+  children?: ReactNode;
+  changed?: (expanded: boolean) => void;
+};
+
+const DataSection = ({
+  title,
+  expanded,
+  children,
+  changed
+}: DataSectionProps) => {
+  return (
+    <div
+      className={classnames(
+        styles.dataSectionPanel,
+        expanded ? styles.expanded : styles.collapsed
+      )}
+    >
+      <div
+        className={styles.sectionHeader}
+        onClick={() => {
+          changed?.(!expanded);
+        }}
+      >
+        <Icon
+          iconName='chevron-right'
+          width={16}
+          height={16}
+          fill='--color-chevron'
+          rotate={expanded ? 90 : 0}
+        />
+        <span className={styles.headerText}>{title}</span>
+      </div>
+      {expanded && children}
+    </div>
   );
 };
 
@@ -291,8 +292,8 @@ const tzxSections = {
   [0x4a]: "'Glue' block"
 };
 
-export const createTapViewerPanel = ({ document, contents }: DocumentProps) => (
-  <TapViewerPanel
+export const createDskViewerPanel = ({ document, contents }: DocumentProps) => (
+  <DskViewerPanel
     key={document.id}
     document={document}
     contents={contents}

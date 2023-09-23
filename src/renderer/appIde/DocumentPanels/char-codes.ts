@@ -103,7 +103,7 @@ export const ZxSpectrumChars: Record<number, CharDescriptor> = {
   0x57: { v: "W" },
   0x58: { v: "X" },
   0x59: { v: "Y" },
-  0x5a: { v: "X" },
+  0x5a: { v: "Z" },
   0x5b: { v: "[" },
   0x5c: { v: "\\" },
   0x5d: { v: "]" },

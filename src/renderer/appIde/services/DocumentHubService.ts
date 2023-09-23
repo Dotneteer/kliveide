@@ -385,7 +385,7 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   // --- Increment the document hub service version number to sign a state change
-  private signHubStateChanged (): void {
+  signHubStateChanged (): void {
     this.store.dispatch(incDocHubServiceVersionAction(this.hubId), "ide");
   }
 

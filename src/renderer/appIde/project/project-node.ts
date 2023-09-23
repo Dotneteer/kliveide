@@ -35,6 +35,11 @@ export type ProjectNode = {
   icon?: string;
 
   /**
+   * The optional icon fill color
+   */
+  iconFill?: string;
+
+  /**
    * Node editor
    */
   editor?: string;
@@ -135,6 +140,7 @@ export function buildProjectTree (
     const fileTypeEntry = getFileTypeEntry(node.name);
     if (fileTypeEntry) {
       node.icon = fileTypeEntry.icon;
+      node.iconFill = fileTypeEntry.iconFill;
       node.editor = fileTypeEntry.editor;
       node.subType = fileTypeEntry.subType;
       node.isReadOnly = fileTypeEntry.isReadOnly;
@@ -216,13 +222,4 @@ export function getFileTypeEntry(filename: string): FileTypeEditor | null {
     if (match) return typeEntry;
   }
   return null;
-}
-
-/**
- * Gets the icon for the specified filename
- * @param filename Filename to get the file type entry for
- */
-export function getFileTypeIcon(filename: string): string | null {
-  const typeEnty = getFileTypeEntry(filename);
-  return typeEnty ? typeEnty.icon : null;
 }
