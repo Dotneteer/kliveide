@@ -73,7 +73,7 @@
 .dataSection {
   display: flex;
   flex-direction: column;
-  padding-left: 8px;
+  padding-left: 16px;
 }
 
 .blockHeader {
@@ -83,4 +83,19 @@
   padding: 4px 8px 8px 8px;
   flex-shrink: 0;
   flex-grow: 0;
+}
+
+.sectorSection {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  padding-top: 4px;
+}
+
+.sectorHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 18px;
+  padding-top: 4px;
 }

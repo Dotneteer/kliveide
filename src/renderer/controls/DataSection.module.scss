@@ -3,6 +3,10 @@
   flex-direction: column;
   overflow: hidden;
   padding-bottom: 8px;
+
+  &.expandable {
+    cursor: pointer
+  }
 }
 
 .sectionHeader {
@@ -35,4 +39,8 @@
   display: flex;
   flex-direction: column;
   padding-left: 8px;
+}
+
+.sectionBody {
+  cursor: default;
 }

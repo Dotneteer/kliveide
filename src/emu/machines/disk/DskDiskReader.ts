@@ -130,9 +130,6 @@ export class DskDiskReader {
     }
 
     this.readTracks(reader);
-
-    // protection scheme detector
-    // TODO: implement
   }
 
   // --- Reads the track header from the specified position of the stream
@@ -153,13 +150,14 @@ export class DskDiskReader {
     const sectorSize = reader.readByte();
     const numberOfSectors = reader.readByte();
     const gap3Length = reader.readByte();
-    reader.readByte();
+    const filler = reader.readByte();
     return {
       trackNo: trackNumber,
       sideNo: sideNumber,
       sectorSize: sectorSize,
       numSectors: numberOfSectors,
       gap3Length: gap3Length,
+      filler,
       sectors: []
     };
   }
@@ -180,6 +178,7 @@ export class DskDiskReader {
           sectorSize: 0,
           numSectors: 0,
           gap3Length: 0,
+          filler: 0,
           sectors: []
         });
         continue;
@@ -189,7 +188,7 @@ export class DskDiskReader {
 
       this.tracks.push(this.readTrackHeader(reader, trackPointer));
 
-      // add sectors
+      // ---- Add sectors
       for (
         let sectorIndex = 0;
         sectorIndex < this.tracks[trackIndex].numSectors;
@@ -231,6 +230,7 @@ export class DskDiskReader {
     }
 
     const sector = new Sector();
+    reader.seek(sectorPointer);
     sector.trackNo = reader.readByte();
     sector.sideNo = reader.readByte();
     sector.sectorId = reader.readByte();
@@ -260,7 +260,7 @@ export class DskDiskReader {
 
     sector.containsMultipleWeakSectors = multipleWeakSectors;
 
-    // copy the data
+    // --- Copy the data
     const sectorDataPointer = this.getSectorDataPointer(
       trackIndex,
       sectorIndex
@@ -290,6 +290,7 @@ export type TrackHeader = {
   sectorSize: number;
   numSectors: number;
   gap3Length: number;
+  filler: number;
   sectors: Sector[];
 };
 
