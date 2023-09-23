@@ -121,7 +121,7 @@ export class FloppyDisk {
     // --- First scan for the longest track
     for (let i = 0; i < this.sides * this.tracksPerSide; i++) {
       // --- Ignore Sector Offset block
-      if (bufferAvailable() >= 13 && !compareData(0, "Offset-Info\r\n")) {
+      if (bufferAvailable() >= 12 && !compareData(0, "Track-Info\r\n")) {
         buffer.index = buffer.data.length;
       }
 
@@ -135,7 +135,7 @@ export class FloppyDisk {
       }
 
       // --- Is the current data valid track information?
-      if (bufferAvailable() < 256 || compareData(0, "Track-Info")) {
+      if (bufferAvailable() < 256 || !compareData(0, "Track-Info")) {
         // --- Track header does not match
         return (this.status = DiskError.DISK_OPEN);
       }

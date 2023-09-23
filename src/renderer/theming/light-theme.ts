@@ -146,6 +146,7 @@ export const lightTheme: ThemeProperties = {
   "--color-doc-border": "#e8e8e8",
   "--color-doc-activeText": "#000000",
   "--color-doc-inactiveText": "#404040",
+  "--btopcolor-doc-activeTab": "#007acc",
   "--bgcolor-doc-activeTab": "#e8e8e8",
   "--bgcolor-doc-inactiveTab": "#c8c8c8",
   "--bgcolor-docscontainer": "#e8e8e8",
@@ -159,6 +160,7 @@ export const lightTheme: ThemeProperties = {
 
   // --- Tool area
   "--bgcolor-toolarea": "#e8e8e8",
+  "--btopcolor-tooltab-activeTab": "#007acc",
   "--color-tooltab-active": "#000000",
   "--color-tooltab-inactive": "#404040",
   "--color-prompt": "#00BC00",

@@ -9,27 +9,38 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { DskDiskReader, Sector } from "@emu/machines/disk/DskDiskReader";
-import { FloppyDiskFormat } from "@emu/machines/disk/FloppyDisk";
+import { FloppyDisk, FloppyDiskFormat } from "@emu/machines/disk/FloppyDisk";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
+import { useUncommittedState } from "@renderer/core/useUncommittedState";
+import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
+  const [showPhysical, refPhysical, setShowPhysical] = useUncommittedState(
+    (docState as any)?.showPhysical ?? false
+  );
+
   const contents = data as Uint8Array;
   let fileInfo: DskDiskReader | undefined;
+  let floppyInfo: FloppyDisk | undefined;
   try {
     fileInfo = new DskDiskReader(contents);
-  } catch {
+    floppyInfo = new FloppyDisk(contents);
+  } catch (err) {
     // --- Intentionally ignored
+    console.log(err);
   }
 
   useEffect(() => {
-    setDocState(documentHubService.getDocumentViewState(document.id));
+    const state = documentHubService.getDocumentViewState(document.id);
+    setDocState(state);
+    setShowPhysical((state as any)?.showPhysical ?? false);
   }, [hubVersion]);
 
   if (!fileInfo) {
@@ -45,6 +56,20 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.dskViewerPanel}>
         <div className={styles.header}>
+          <LabeledSwitch
+            value={showPhysical}
+            setterFn={setShowPhysical}
+            label='Surface view'
+            title='Floppy physical surface view'
+            clicked={() => {
+              documentHubService.setDocumentViewState(document.id, {
+                ...docState,
+                ["showPhysical"]: refPhysical.current
+              });
+              documentHubService.signHubStateChanged();
+            }}
+          />
+          <ToolbarSeparator small={true} />
           <HeaderLabel
             label='Sides:'
             value={fileInfo.header.numSides.toString()}
@@ -55,7 +80,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             value={fileInfo.header.numTracks.toString()}
           />
           <ToolbarSeparator small={true} />
-          <LabelSeparator width={4} />
           <HeaderLabel
             label='Disk format:'
             value={
@@ -66,75 +90,76 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           />
         </div>
         <div className={styles.dskViewerWrapper}></div>
-        <DataSection
-          key='DIB'
-          title='Disk Information Block'
-          expanded={docState?.["DIB"] ?? true}
-          changed={exp => {
-            documentHubService.setDocumentViewState(document.id, {
-              ...docState,
-              ["DIB"]: exp
-            });
-            documentHubService.signHubStateChanged();
-          }}
-        >
-          <div className={styles.dataSection}>
-            <div className={styles.blockHeader}>
-              <Secondary text={`Creator: ${fileInfo.header.creator}`} />
-            </div>
-            <StaticMemoryView memory={fileInfo.contents.slice(0, 0x100)} />
+        {showPhysical && (
+          <div>
+            Len: {123} {floppyInfo.data.length}, TLen: {floppyInfo.tlen}
           </div>
-        </DataSection>
-        {fileInfo.tracks.map((t, idx) => {
-          const selectedSectorIdx = docState?.[`TS${idx}`] ?? 0;
-          if (!t.sectors.length) {
-            return (
-              <DataSection
-                key={`T${idx}`}
-                title={`Empty track (Side #${t.sideNo}, Index: ${idx})`}
-                expandable={false}
-                expanded={false}
-              ></DataSection>
-            );
-          } else {
-            return (
-              <DataSection
-                key={`T${idx}`}
-                title={`Track #${t.trackNo} | Side #${t.sideNo} | ${
-                  t.sectors.length
-                } sector${t.sectors.length > 1 ? "s" : ""} | GAP3: ${toHexa2(
-                  t.gap3Length
-                )} | Filler: ${toHexa2(t.filler)}`}
-                expanded={docState?.[`T${idx}`] ?? false}
-                changed={exp => {
-                  documentHubService.setDocumentViewState(document.id, {
-                    ...docState,
-                    [`T${idx}`]: exp
-                  });
-                  documentHubService.signHubStateChanged();
-                }}
-              >
-                <div className={styles.sectorSection}>
-                  <LabeledGroup
-                    label='Sectors:'
-                    title=''
-                    values={t.sectors.map((_, sIdx) => sIdx + 1)}
-                    marked={-1}
-                    selected={selectedSectorIdx}
-                    clicked={v => {
-                      documentHubService.setDocumentViewState(document.id, {
-                        ...docState,
-                        [`TS${idx}`]: v - 1
-                      });
-                      documentHubService.signHubStateChanged();
-                    }}
-                  />
-                </div>
-                <SectorPanel sector={t.sectors[selectedSectorIdx]} />
-              </DataSection>
-            );
-          }
-        })}
+        )}
+        {!showPhysical && (
+          <DataSection
+            key='DIB'
+            title='Disk Information Block'
+            expanded={docState?.["DIB"] ?? true}
+            changed={exp => {
+              documentHubService.setDocumentViewState(document.id, {
+                ...docState,
+                ["DIB"]: exp
+              });
+              documentHubService.signHubStateChanged();
+            }}
+          >
+            <div className={styles.dataSection}>
+              <div className={styles.blockHeader}>
+                <Secondary text={`Creator: ${fileInfo.header.creator}`} />
+              </div>
+              <StaticMemoryView memory={fileInfo.contents.slice(0, 0x100)} />
+            </div>
+          </DataSection>
+        )}
+        {!showPhysical &&
+          fileInfo.tracks.map((t, idx) => {
+            const selectedSectorIdx = docState?.[`TS${idx}`] ?? 0;
+            if (!t.sectors.length) {
+              return null;
+            } else {
+              return (
+                <DataSection
+                  key={`T${idx}`}
+                  title={`Track #${t.trackNo} | Side #${t.sideNo} | ${
+                    t.sectors.length
+                  } sector${t.sectors.length > 1 ? "s" : ""} | GAP3: ${toHexa2(
+                    t.gap3Length
+                  )} | Filler: ${toHexa2(t.filler)}`}
+                  expanded={docState?.[`T${idx}`] ?? false}
+                  changed={exp => {
+                    documentHubService.setDocumentViewState(document.id, {
+                      ...docState,
+                      [`T${idx}`]: exp
+                    });
+                    documentHubService.signHubStateChanged();
+                  }}
+                >
+                  <div className={styles.sectorSection}>
+                    <LabeledGroup
+                      label='Sectors:'
+                      title=''
+                      values={t.sectors.map((_, sIdx) => sIdx + 1)}
+                      marked={-1}
+                      selected={selectedSectorIdx}
+                      clicked={v => {
+                        documentHubService.setDocumentViewState(document.id, {
+                          ...docState,
+                          [`TS${idx}`]: v - 1
+                        });
+                        documentHubService.signHubStateChanged();
+                      }}
+                    />
+                  </div>
+                  <SectorPanel sector={t.sectors[selectedSectorIdx]} />
+                </DataSection>
+              );
+            }
+          })}
       </div>
     </ScrollViewer>
   );
