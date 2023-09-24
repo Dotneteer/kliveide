@@ -150,6 +150,7 @@ export type ThemeProperties = {
   "--color-doc-activeText"?: string;
   "--color-doc-inactiveText"?: string;
   "--bgcolor-doc-activeTab"?: string;
+  "--btopcolor-doc-activeTab"?: string;
   "--bgcolor-doc-inactiveTab"?: string;
   "--bgcolor-docscontainer"?: string;
   "--color-tabbutton-fill-inactive"?: string;
@@ -162,6 +163,7 @@ export type ThemeProperties = {
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;
+  "--btopcolor-tooltab-activeTab"?: string;
   "--color-tooltab-active"?: string;
   "--color-tooltab-inactive"?: string;
   "--color-prompt"?: string;

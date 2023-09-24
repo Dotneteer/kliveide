@@ -17,6 +17,7 @@
 .active {
   background: var(--bgcolor-doc-activeTab);
   color: var(--color-doc-activeText);
+  border-top: 1px solid var(--btopcolor-doc-activeTab);
   border-bottom: 1px solid transparent;
 }
 

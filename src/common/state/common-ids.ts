@@ -7,3 +7,4 @@ export const BASIC_PANEL_ID = "$basic";
 export const BASIC_EDITOR = "Basic";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
 export const TAP_EDITOR = "TapEditor";
+export const DSK_EDITOR = "DskEditor";

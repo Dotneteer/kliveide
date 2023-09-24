@@ -149,6 +149,7 @@ export const darkTheme: ThemeProperties = {
   "--color-doc-border": "#181818",
   "--color-doc-activeText": "#ffffff",
   "--color-doc-inactiveText": "#a0a0a0",
+  "--btopcolor-doc-activeTab": "#007acc",
   "--bgcolor-doc-activeTab": "#181818",
   "--bgcolor-doc-inactiveTab": "#282828",
   "--bgcolor-docscontainer": "#181818",
@@ -162,6 +163,7 @@ export const darkTheme: ThemeProperties = {
 
   // --- Tool area
   "--bgcolor-toolarea": "#181818",
+  "--btopcolor-tooltab-activeTab": "#007acc",
   "--color-tooltab-active": "#ffffff",
   "--color-tooltab-inactive": "#a0a0a0",
   "--color-prompt": "#23d18b",

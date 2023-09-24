@@ -4,6 +4,7 @@ export type FileTypePattern = {
   matchType?: PatternMatchType;
   pattern: string;
   icon?: string;
+  iconFill?: string;
 };
 
 export type FileTypeEditor = FileTypePattern & {

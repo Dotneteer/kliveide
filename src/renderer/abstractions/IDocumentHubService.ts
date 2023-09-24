@@ -11,6 +11,11 @@ export interface IDocumentHubService {
   readonly hubId: number;
 
   /**
+   * Sign that the document hub chanded and should be refreshed
+   */
+  signHubStateChanged (): void;
+
+  /**
    * Gets the list of open documents
    */
   getOpenDocuments(): ProjectDocumentState[];

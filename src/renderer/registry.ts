@@ -4,7 +4,8 @@ import {
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
-  TAP_EDITOR
+  TAP_EDITOR,
+  DSK_EDITOR
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { MachineInfo } from "./abstractions/MachineInfo";
@@ -44,6 +45,7 @@ import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eM
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2eMachine";
 import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eF2Machine";
+import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -192,6 +194,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createTapViewerPanel,
     icon: "@file-tap-tzx",
     iconFill: "--console-ansi-bright-cyan"
+  },
+  {
+    id: DSK_EDITOR,
+    renderer: createDskViewerPanel,
+    icon: "floppy",
+    iconFill: "--console-ansi-bright-blue"
   }
 ];
 
@@ -277,7 +285,16 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "@file-tap-tzx",
     isBinary: true,
     openPermanent: true
-  }
+  },
+  {
+    matchType: "ends",
+    pattern: ".dsk",
+    editor: DSK_EDITOR,
+    icon: "floppy",
+    iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    openPermanent: true
+  },
 ];
 
 // --- Supported custom languages

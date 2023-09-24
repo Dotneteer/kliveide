@@ -7,7 +7,6 @@ import classnames from "@renderer/utils/classnames";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
-import { Icon } from "@controls/Icon";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
@@ -16,19 +15,20 @@ import {
   useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
+import { DataSection } from "@renderer/controls/DataSection";
+import { toHexa2 } from "../services/ide-commands";
 
 const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
-  const contents = data?.value as Uint8Array;
+  const contents = data as Uint8Array;
   const fileInfo = readTapeFile(contents);
+  console.log("fi", fileInfo);
 
   useEffect(() => {
     setDocState(documentHubService.getDocumentViewState(document.id));
   }, [hubVersion]);
-
-  useEffect(() => {}, [docState]);
 
   if (!fileInfo.data) {
     return (
@@ -69,12 +69,13 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
               } else if (isDataBlock(data)) {
                 title = `Data block (length: ${data.length})`;
               } else {
-                title = "Unknown block";
+                title = `Unknown block`;
               }
               title = `#${idx}: ${title}`;
             } else {
               title = `#${idx}: ${
-                tzxSections[(ds as TzxBlockBase).blockId] ?? "(unknown section)"
+                tzxSections[(ds as TzxBlockBase).blockId] ??
+                `(unknown section 0x${toHexa2((ds as TzxBlockBase).blockId)})`
               }`;
             }
             return (
@@ -87,6 +88,7 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     ...docState,
                     [idx]: exp
                   });
+                  documentHubService.signHubStateChanged();
                 }}
               >
                 {fileInfo.type.toLowerCase() === "tap" && (
@@ -109,46 +111,6 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
         </div>
       </div>
     </ScrollViewer>
-  );
-};
-
-type DataSectionProps = {
-  title: string;
-  expanded: boolean;
-  children?: ReactNode;
-  changed?: (expanded: boolean) => void;
-};
-
-const DataSection = ({
-  title,
-  expanded,
-  children,
-  changed
-}: DataSectionProps) => {
-  return (
-    <div
-      className={classnames(
-        styles.dataSectionPanel,
-        expanded ? styles.expanded : styles.collapsed
-      )}
-    >
-      <div
-        className={styles.sectionHeader}
-        onClick={() => {
-          changed?.(!expanded);
-        }}
-      >
-        <Icon
-          iconName='chevron-right'
-          width={16}
-          height={16}
-          fill='--color-chevron'
-          rotate={expanded ? 90 : 0}
-        />
-        <span className={styles.headerText}>{title}</span>
-      </div>
-      {expanded && children}
-    </div>
   );
 };
 
@@ -293,15 +255,6 @@ const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
   );
 };
 
-export const createTapViewerPanel = ({ document, contents: data }: DocumentProps) => (
-  <TapViewerPanel
-    key={document.id}
-    document={document}
-    contents={data}
-    apiLoaded={() => {}}
-  />
-);
-
 function isHeaderBlock (data: Uint8Array): boolean {
   return data.length === 19 && data[0] === 0x00;
 }
@@ -337,3 +290,12 @@ const tzxSections = {
   [0x35]: "Custom info block",
   [0x4a]: "'Glue' block"
 };
+
+export const createTapViewerPanel = ({ document, contents }: DocumentProps) => (
+  <TapViewerPanel
+    key={document.id}
+    document={document}
+    contents={contents}
+    apiLoaded={() => {}}
+  />
+);

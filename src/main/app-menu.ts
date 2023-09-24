@@ -46,7 +46,6 @@ import {
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG
 } from "../common/messaging/dialog-ids";
-import { TapeDataBlock } from "../common/structs/TapeDataBlock";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
 import {
   BASIC_PANEL_ID,
