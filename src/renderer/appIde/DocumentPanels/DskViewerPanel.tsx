@@ -1,4 +1,4 @@
-import { Label, LabelSeparator, Secondary } from "@controls/Labels";
+import { Flag, Label, LabelSeparator, Secondary } from "@controls/Labels";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
 import classnames from "@renderer/utils/classnames";
@@ -9,7 +9,12 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { DskDiskReader, Sector } from "@emu/machines/disk/DskDiskReader";
-import { FloppyDisk, FloppyDiskFormat } from "@emu/machines/disk/FloppyDisk";
+import {
+  DiskDensity,
+  DiskError,
+  FloppyDisk,
+  FloppyDiskFormat
+} from "@emu/machines/disk/FloppyDisk";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
@@ -70,17 +75,11 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             }}
           />
           <ToolbarSeparator small={true} />
-          <HeaderLabel
-            label='Sides:'
-            value={fileInfo.header.numSides.toString()}
-          />
+          <LabeledValue label='Sides:' value={fileInfo.header.numSides} />
           <ToolbarSeparator small={true} />
-          <HeaderLabel
-            label='Tracks:'
-            value={fileInfo.header.numTracks.toString()}
-          />
+          <LabeledValue label='Tracks:' value={fileInfo.header.numTracks} />
           <ToolbarSeparator small={true} />
-          <HeaderLabel
+          <LabeledValue
             label='Disk format:'
             value={
               fileInfo.diskFormat === FloppyDiskFormat.Cpc
@@ -91,9 +90,146 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
         </div>
         <div className={styles.dskViewerWrapper}></div>
         {showPhysical && (
-          <div>
-            Len: {123} {floppyInfo.data.length}, TLen: {floppyInfo.tlen}
-          </div>
+          <>
+            <DataSection
+              key='GDI'
+              title='Generic Disk Info'
+              expanded={docState?.["GDI"] ?? true}
+              changed={exp => {
+                documentHubService.setDocumentViewState(document.id, {
+                  ...docState,
+                  ["GDI"]: exp
+                });
+                documentHubService.signHubStateChanged();
+              }}
+            >
+              <div className={styles.dataSection}>
+                <div className={styles.header}>
+                  <LabeledValue
+                    label='Status:'
+                    value={DiskError[floppyInfo.status]}
+                  />
+                  <ToolbarSeparator small={true} />
+                  <LabeledFlag
+                    label='Write protected'
+                    value={floppyInfo.isWriteProtected ?? false}
+                  />
+                  <ToolbarSeparator small={true} />
+                  <LabeledValue
+                    label='Density:'
+                    value={DiskDensity[floppyInfo.density]}
+                  />
+                </div>
+                <div className={styles.header}>
+                  <LabeledValue
+                    label='Total:'
+                    title='Total physical size in bytes'
+                    value={floppyInfo.data?.length}
+                  />
+                  <ToolbarSeparator small={true} />
+                  <LabeledValue
+                    label='B/T:'
+                    title='Bytes per track'
+                    value={floppyInfo.bytesPerTrack}
+                  />
+                  <ToolbarSeparator small={true} />
+                  <LabeledValue
+                    label='TLen:'
+                    title='Track length in bytes'
+                    value={floppyInfo.tlen}
+                  />
+                </div>
+              </div>
+            </DataSection>
+            {floppyInfo.trackInfo.map((ti, idx) => {
+              const stateId = `TI${idx}`;
+              const startIndex = idx * floppyInfo.tlen;
+              const tdataStart = startIndex + ti.headerLen;
+              const selectedSectorIdx = docState?.[`TIS${idx}`] ?? 1;
+              const sectorOffset =
+                tdataStart +
+                (selectedSectorIdx - 1) *
+                  ti.sectorLengths[selectedSectorIdx - 1];
+              const clockData = tdataStart + floppyInfo.bytesPerTrack;
+              return (
+                <DataSection
+                  key={stateId}
+                  title={`Track #${idx}`}
+                  expanded={docState?.[stateId] ?? false}
+                  changed={exp => {
+                    documentHubService.setDocumentViewState(document.id, {
+                      ...docState,
+                      [stateId]: exp
+                    });
+                    documentHubService.signHubStateChanged();
+                  }}
+                >
+                  <div className={styles.dataSection}>
+                    <div className={styles.blockHeader}>
+                      <Secondary
+                        text={`Track header (GAP0 + Sync + Index + GAP1, ${ti.headerLen} bytes)`}
+                      />
+                    </div>
+                    <StaticMemoryView
+                      key={stateId}
+                      memory={floppyInfo.data.slice(
+                        startIndex,
+                        startIndex + ti.headerLen
+                      )}
+                    />
+                  </div>
+
+                  <div className={styles.sectorSection}>
+                    <LabeledGroup
+                      label='Sectors:'
+                      title=''
+                      values={ti.sectorLengths.map((_, sIdx) => sIdx + 1)}
+                      marked={-1}
+                      selected={selectedSectorIdx}
+                      clicked={v => {
+                        documentHubService.setDocumentViewState(document.id, {
+                          ...docState,
+                          [`TIS${idx}`]: v
+                        });
+                        documentHubService.signHubStateChanged();
+                      }}
+                    />
+                  </div>
+
+                  <div className={styles.dataSection}>
+                    <div className={styles.blockHeader}>
+                      <Secondary
+                        text={`Sector #${selectedSectorIdx} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, ${
+                          ti.sectorLengths[selectedSectorIdx - 1]
+                        } bytes) `}
+                      />
+                    </div>
+                    <StaticMemoryView
+                      key={stateId}
+                      initialShowAll={true}
+                      memory={floppyInfo.data.slice(
+                        sectorOffset,
+                        sectorOffset + ti.sectorLengths[selectedSectorIdx - 1]
+                      )}
+                    />
+                  </div>
+
+                  <div className={styles.dataSection}>
+                    <div className={styles.blockHeader}>
+                      <Secondary text={`Clock data (${ti.gap4Len} bytes)`} />
+                    </div>
+                    <StaticMemoryView
+                      key={stateId}
+                      memory={floppyInfo.data.slice(
+                        clockData,
+                        clockData + 1000
+                      )}
+                    />
+                  </div>
+                </DataSection>
+              );
+            })}
+          </>
         )}
         {!showPhysical && (
           <DataSection
@@ -173,60 +309,64 @@ const ValueLabel = ({ text }: LabelProps) => {
   return <div className={styles.valueLabel}>{text}</div>;
 };
 
-type SectorProps = {
-  sector: Sector;
-};
-
-type HeaderLabelProps = {
+type LabeledValueProps = {
   label: string;
   title?: string;
-  value: string;
+  value: number | string;
 };
 
-const HeaderLabel = ({ label, title, value }: HeaderLabelProps) => (
+const LabeledValue = ({ label, title, value }: LabeledValueProps) => (
   <>
     <LabelSeparator width={6} />
     <Label text={label} tooltip={title} />
-    <ValueLabel text={value} />
+    <ValueLabel text={value.toString()} />
     <LabelSeparator width={4} />
   </>
 );
+
+type LabeledFlagProps = {
+  label: string;
+  title?: string;
+  value: boolean;
+};
+
+const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
+  <>
+    <LabelSeparator width={6} />
+    <Label text={label} tooltip={title} />
+    <LabelSeparator width={8} />
+    <Flag value={value} />
+    <LabelSeparator width={4} />
+  </>
+);
+
+type SectorProps = {
+  sector: Sector;
+};
 
 const SectorPanel = ({ sector }: SectorProps) => {
   return (
     <>
       <div className={styles.sectorHeader}>
-        <HeaderLabel
+        <LabeledValue
           label='C:'
           title='Cylinder (Track)'
-          value={sector.trackNo.toString()}
+          value={sector.trackNo}
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel
-          label='H:'
-          title='Head (Side)'
-          value={sector.sideNo.toString()}
-        />
+        <LabeledValue label='H:' title='Head (Side)' value={sector.sideNo} />
         <ToolbarSeparator small={true} />
-        <HeaderLabel
-          label='R:'
-          title='Sector ID'
-          value={sector.sectorId.toString()}
-        />
+        <LabeledValue label='R:' title='Sector ID' value={sector.sectorId} />
         <ToolbarSeparator small={true} />
-        <HeaderLabel
-          label='N:'
-          title='Sector size'
-          value={sector.dataLen.toString()}
-        />
+        <LabeledValue label='N:' title='Sector size' value={sector.dataLen} />
         <ToolbarSeparator small={true} />
-        <HeaderLabel
+        <LabeledValue
           label='SR1:'
           title='FDD SR1 value'
           value={`${toHexa2(sector.fdcStatus1)}`}
         />
         <ToolbarSeparator small={true} />
-        <HeaderLabel
+        <LabeledValue
           label='SR2:'
           title='FDD SR2 value'
           value={`${toHexa2(sector.fdcStatus2)}`}
