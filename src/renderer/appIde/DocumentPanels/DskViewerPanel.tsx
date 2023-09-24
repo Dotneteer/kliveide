@@ -61,20 +61,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.dskViewerPanel}>
         <div className={styles.header}>
-          <LabeledSwitch
-            value={showPhysical}
-            setterFn={setShowPhysical}
-            label='Surface view'
-            title='Floppy physical surface view'
-            clicked={() => {
-              documentHubService.setDocumentViewState(document.id, {
-                ...docState,
-                ["showPhysical"]: refPhysical.current
-              });
-              documentHubService.signHubStateChanged();
-            }}
-          />
-          <ToolbarSeparator small={true} />
           <LabeledValue label='Sides:' value={fileInfo.header.numSides} />
           <ToolbarSeparator small={true} />
           <LabeledValue label='Tracks:' value={fileInfo.header.numTracks} />
@@ -86,6 +72,20 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 ? "CPC"
                 : "Extended CPC"
             }
+          />
+          <ToolbarSeparator small={true} />
+          <LabeledSwitch
+            value={showPhysical}
+            setterFn={setShowPhysical}
+            label='Show surface view'
+            title='Floppy physical surface view'
+            clicked={() => {
+              documentHubService.setDocumentViewState(document.id, {
+                ...docState,
+                ["showPhysical"]: refPhysical.current
+              });
+              documentHubService.signHubStateChanged();
+            }}
           />
         </div>
         <div className={styles.dskViewerWrapper}></div>
@@ -110,14 +110,19 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     value={DiskError[floppyInfo.status]}
                   />
                   <ToolbarSeparator small={true} />
+                  <LabeledValue
+                    label='Density:'
+                    value={DiskDensity[floppyInfo.density]}
+                  />
+                  <ToolbarSeparator small={true} />
                   <LabeledFlag
                     label='Write protected'
                     value={floppyInfo.isWriteProtected ?? false}
                   />
                   <ToolbarSeparator small={true} />
-                  <LabeledValue
-                    label='Density:'
-                    value={DiskDensity[floppyInfo.density]}
+                  <LabeledFlag
+                    label='Has weak sectors'
+                    value={floppyInfo.hasWeakSectors ?? false}
                   />
                 </div>
                 <div className={styles.header}>
@@ -152,9 +157,9 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   ti.sectorLengths[selectedSectorIdx - 1];
               const cDataStart = tDataStart + floppyInfo.bytesPerTrack;
               const cDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
-              const mfDataStart = cDataStart + floppyInfo.bytesPerTrack;
+              const mfDataStart = cDataStart + cDataLen;
               const mfDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
-              const wDataStart = mfDataStart + floppyInfo.bytesPerTrack;
+              const wDataStart = mfDataStart + mfDataLen;
               const wDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
               return (
                 <DataSection

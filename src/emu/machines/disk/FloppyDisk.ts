@@ -4,14 +4,6 @@ const EXTENDED_DISK_HEADER = "EXTENDED CPC DSK File\r\n"; // --- from 0x00-0x16,
 const GAP_MINIMAL_FM = 0;
 const GAP_MINIMAL_MFM = 1;
 
-// --- Constant values used for disk file index calculations
-const CPC_ISSUE_NONE = 0;
-const CPC_ISSUE_1 = 1;
-const CPC_ISSUE_2 = 2;
-const CPC_ISSUE_3 = 3;
-const CPC_ISSUE_4 = 4;
-const CPC_ISSUE_5 = 5;
-
 // --- This class describes a logical floppy disk
 export class FloppyDisk {
   // --- Initialize this disk contents from the specified stream
@@ -44,7 +36,7 @@ export class FloppyDisk {
   status: DiskError;
 
   // --- The disk contains week sectors
-  hasWeak = false;
+  hasWeakSectors = false;
 
   // --- Disk density
   density: DiskDensity;
@@ -81,8 +73,6 @@ export class FloppyDisk {
     let bpt: number;
     let max_bpt = 0;
     let trlen: number;
-    let fix: number[] = [];
-    let plus3_fix: number;
     let hdrb: BufferWithPosition;
     let buffer = new BufferWithPosition(diskData, 0);
 
@@ -147,19 +137,11 @@ export class FloppyDisk {
       gap = buff(0x16) === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM;
 
       // --- Check which ZX Spectrum +3 fix should be used
-      plus3_fix = trlen = 0;
+      trlen = 0;
 
       // --- Calculate the number of tracks
       const numTracks = buff(0x10) * this.sides + buff(0x11);
-
-      // --- Iterate though all tracks (on both sides)
-      while (i < numTracks) {
-        if (i < 84) {
-          // --- No ZX Spectrum +3 fix to use for that particular track
-          fix[i] = 0;
-        }
-        i++;
-      }
+      i = numTracks;
 
       // --- Check track number health
       if (i >= this.sides * this.tracksPerSide || i !== numTracks) {
@@ -198,81 +180,11 @@ export class FloppyDisk {
         // --- Add sector length
         bpt += this.calcSectorLen(seclen > idlen ? idlen : seclen, gap);
 
-        // --- Apply ZX Spectrum +3 optional fixes
-        // if (i < 84) {
-        //   if (j === 0 && buff(0x1b + 8 * j) === 6 && seclen > 6144) {
-        //     // --- Sector #0: Sector lengtt is set to 8192 bytes in the track header
-        //     // --- and length is over 6144 byte
-        //     plus3_fix = CPC_ISSUE_4;
-        //   } else if (j === 0 && buff(0x1b + 8 * j) === 6) {
-        //     // --- Sector #0: Sector lenght is set to 8192 bytes in the track header
-        //     plus3_fix = CPC_ISSUE_1;
-        //   } else if (
-        //     j === 0 &&
-        //     // --- Sector 0: CHRN = 0 (all)
-        //     buff(0x18) === 0 &&
-        //     buff(0x19) === 0 &&
-        //     buff(0x1a) === 0 &&
-        //     buff(0x1b) === 0
-        //   ) {
-        //     plus3_fix = CPC_ISSUE_3;
-        //   } else if (
-        //     j === 1 &&
-        //     plus3_fix === CPC_ISSUE_1 &&
-        //     // --- Sector #1: sector length is 512
-        //     buff(0x1b + 8 * j) === 2
-        //   ) {
-        //     plus3_fix = CPC_ISSUE_2;
-        //   } else if (i === 38 && j === 0 && buff(0x1b + 8 * j) === 2) {
-        //     // --- Track #38, Sector #0: sector length is 512
-        //     plus3_fix = CPC_ISSUE_5;
-        //   } else if (
-        //     j > 1 &&
-        //     plus3_fix == CPC_ISSUE_2 &&
-        //     buff(0x1b + 8 * j) !== 2
-        //   ) {
-        //     // --- Sectors above #1 where sector length is not 512
-        //     plus3_fix = CPC_ISSUE_NONE;
-        //   } else if (
-        //     j > 0 &&
-        //     plus3_fix == CPC_ISSUE_3 &&
-        //     (buff(0x18 + 8 * j) !== j ||
-        //       buff(0x19 + 8 * j) !== j ||
-        //       buff(0x1a + 8 * j) !== j ||
-        //       buff(0x1b + 8 * j) !== j)
-        //   ) {
-        //     // --- Sector above #0 where nonoe of CHRN is the sector number
-        //     plus3_fix = CPC_ISSUE_NONE;
-        //   } else if (j > 10 && plus3_fix === CPC_ISSUE_2) {
-        //     plus3_fix = CPC_ISSUE_NONE;
-        //   } else if (
-        //     i === 38 &&
-        //     j > 0 &&
-        //     plus3_fix === CPC_ISSUE_5 &&
-        //     buff(0x1b + 8 * j) !== 2 - (j & 1)
-        //   ) {
-        //     plus3_fix = CPC_ISSUE_NONE;
-        //   }
-        // }
-
         // --- Increment track length
         trlen += seclen;
         if (seclen % 0x100) {
           // --- Add sector padding, if the sector length is not a multiple of 256
           sector_pad++;
-        }
-
-        // --- Adjust bytes per track according to the specific issue found for this track
-        if (i < 84) {
-          // --- Mark the fix for the current track
-          fix[i] = plus3_fix;
-          if (fix[i] === CPC_ISSUE_4) {
-            // --- Type 1 variant DD+ (e.g. Coin Op Hits)
-            bpt = 6500;
-          } else if (fix[i] !== CPC_ISSUE_NONE) {
-            // --- we assume a standard DD track
-            bpt = 6250;
-          }
         }
       }
 
@@ -296,7 +208,11 @@ export class FloppyDisk {
     this.bytesPerTrack = max_bpt;
 
     // --- Allocate memory for the disk surface data
-    if (this.allocate() !== DiskError.OK) {
+    if (
+      this.allocate(
+        buffer.data[0x16] === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM
+      ) !== DiskError.OK
+    ) {
       return this.status;
     }
 
@@ -325,7 +241,7 @@ export class FloppyDisk {
       this.setTrackIndex(i);
       this.indexPos = 0;
 
-      const headerLen = this.preindexAdd(gap) + this.gapAdd(1, gap);
+      const headerLen = this.preIndexAdd(gap) + this.gapAdd(1, gap);
 
       // --- Reset sector padding
       sector_pad = 0;
@@ -348,11 +264,6 @@ export class FloppyDisk {
           idlen = seclen;
         }
 
-        if (i < 84 && fix[i] === CPC_ISSUE_2 && j === 0) {
-          // --- Reposition the dummy track
-          this.indexPos = 8;
-        }
-
         // --- Add CHRN information with gap, and sign CRC error, if the FDC register status requires
         let sectorLength = this.idAdd(
           hdrb.get(0x19 + 8 * j),
@@ -369,86 +280,23 @@ export class FloppyDisk {
           !!(hdrb.get(0x1c + 8 * j) & 0x20) &&
           !!(hdrb.get(0x1d + 8 * j) & 0x20);
 
-        // --- Add data, data marks, and gaps according to the ZX Spectrum +3 issue to fix
-        if (i < 84 && fix[i] === CPC_ISSUE_1 && j === 0) {
-          // --- 6144
-          this.dataAdd(buffer, null, seclen, ddam, gap, crcError, 0x00);
-        } else if (i < 84 && fix[i] === CPC_ISSUE_2 && j === 0) {
-          // --- 6144, 10x512
-          sectorLength += this.dataMarkAdd(ddam, gap);
-          sectorLength += this.gapAdd(2, gap);
-          buffer.index += seclen;
-        } else if (i < 84 && fix[i] === CPC_ISSUE_3) {
-          // --- 128, 256, 512, ... 4096k
-          sectorLength += this.dataAdd(
-            buffer,
-            null,
-            128,
-            ddam,
-            gap,
-            crcError,
-            0x00
-          );
-          buffer.index += seclen - 128;
-        } else if (i < 84 && fix[i] === CPC_ISSUE_4) {
-          // --- Nx8192 (max 6384 byte )
-          sectorLength += this.dataAdd(
-            buffer,
-            null,
-            6384,
-            ddam,
-            gap,
-            crcError,
-            0x00
-          );
-          buffer.index += seclen - 6384;
-        } else if (i < 84 && fix[i] === CPC_ISSUE_5) {
-          // --- 9x512
-          // ---  512 256 512 256 512 256 512 256 512 */
-          if (idlen === 256) {
-            sectorLength += this.dataAdd(
-              null,
-              new BufferWithPosition(buffer.data, buffer.index),
-              512,
-              ddam,
-              gap,
-              crcError,
-              0x00
-            );
-            buffer.index += idlen;
-          } else {
-            sectorLength += this.dataAdd(
-              buffer,
-              null,
-              idlen,
-              ddam,
-              gap,
-              crcError,
-              0x00
-            );
-          }
-        } else {
-          sectorLength += this.dataAdd(
-            buffer,
-            null,
-            seclen > idlen ? idlen : seclen,
-            ddam,
-            gap,
-            crcError,
-            0x00,
-            idx
-          );
-          if (seclen > idlen) {
-            // --- A weak sector with multiple copy
-            this.cpcSetWeakRange(
-              idx,
-              buffer,
-              Math.floor(seclen / idlen),
-              idlen
-            );
-            buffer.index += (Math.floor(seclen / idlen) - 1) * idlen;
-          }
+        // --- Add data, data marks, and gaps
+        sectorLength += this.dataAdd(
+          buffer,
+          null,
+          seclen > idlen ? idlen : seclen,
+          ddam,
+          gap,
+          crcError,
+          0x00,
+          idx
+        );
+        if (seclen > idlen) {
+          // --- A weak sector with multiple copy
+          this.cpcSetWeakRange(idx, buffer, Math.floor(seclen / idlen), idlen);
+          buffer.index += (Math.floor(seclen / idlen) - 1) * idlen;
         }
+
         if (seclen % 0x100) {
           // --- Add sector padding
           sector_pad++;
@@ -472,8 +320,7 @@ export class FloppyDisk {
   }
 
   // --- Allocates the data for the physical surface of the disk
-  private allocate (): number {
-    console.log("alloc", this.bytesPerTrack);
+  private allocate (gaptype: number): number {
     if (this.density != DiskDensity.Auto) {
       this.bytesPerTrack = disk_bpt[this.density];
     } else if (this.bytesPerTrack > 12500) {
@@ -500,10 +347,10 @@ export class FloppyDisk {
 
     if (this.bytesPerTrack > 0) {
       this.tlen =
-        this.bytesPerTrack + 3 * Math.ceil(this.bytesPerTrack/8);
+        this.calcTrackHeaderLength(gaptype) +
+        this.bytesPerTrack +
+        3 * Math.ceil(this.bytesPerTrack / 8);
     }
-
-    console.log("alloc2", this.bytesPerTrack);
 
     // --- Disk length
     const diskLength = this.sides * this.tracksPerSide * this.tlen;
@@ -547,7 +394,12 @@ export class FloppyDisk {
     );
   }
 
-  private preindexAdd (gaptype: number): number {
+  private calcTrackHeaderLength (gaptype: number): number {
+    const g = gaps[gaptype];
+    return g.len[0] + g.len[1] + g.sync_len + (g.mark >= 0 ? 3 : 0) + 1;
+  }
+
+  private preIndexAdd (gaptype: number): number {
     const g = gaps[gaptype];
     const len = g.len[0] + g.sync_len + (g.mark >= 0 ? 3 : 0) + 1;
     if (this.indexPos + len >= this.bytesPerTrack) {
