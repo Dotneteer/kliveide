@@ -314,13 +314,6 @@ export class Sector {
     }
   }
 
-  get dataLen (): number {
-    return this.containsMultipleWeakSectors
-      ? this.actualDataLength /
-          (this.actualDataLength / (0x80 << this.sectorSize))
-      : this.actualDataLength;
-  }
-
   get actualData (): Uint8Array {
     if (!this.containsMultipleWeakSectors) {
       // check whether filler bytes are needed

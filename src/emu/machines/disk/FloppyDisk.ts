@@ -122,7 +122,7 @@ export class FloppyDisk {
     buffer.index = 256;
 
     // --- First scan for the longest track
-    for (let i = 0; i < this.sides * this.tracksPerSide; i++) {
+    for (i = 0; i < this.sides * this.tracksPerSide; i++) {
       // --- Ignore Sector Offset block
       if (bufferAvailable() >= 12 && !compareData(0, "Track-Info\r\n")) {
         buffer.index = buffer.data.length;
@@ -131,7 +131,7 @@ export class FloppyDisk {
       // --- Sometimes in the header there are more track than in the file
       if (bufferAvailable() === 0) {
         // --- No more data, calculate the real track number
-        this.tracksPerSide = Math.floor(i / this.sides) + (i % this.sides);
+        this.tracksPerSide = Math.ceil(i / this.sides);
 
         // --- Now, we now the longest track, abort the search
         break;
@@ -199,61 +199,61 @@ export class FloppyDisk {
         bpt += this.calcSectorLen(seclen > idlen ? idlen : seclen, gap);
 
         // --- Apply ZX Spectrum +3 optional fixes
-        if (i < 84) {
-          if (j === 0 && buff(0x1b + 8 * j) === 6 && seclen > 6144) {
-            // --- Sector #0: Sector lenght is set to 8192 bytes in the track header
-            // --- and langth is over 6144 byte
-            plus3_fix = CPC_ISSUE_4;
-          } else if (j === 0 && buff(0x1b + 8 * j) === 6) {
-            // --- Sector #0: Sector lenght is set to 8192 bytes in the track header
-            plus3_fix = CPC_ISSUE_1;
-          } else if (
-            j === 0 &&
-            // --- Sector 0: CHRN = 0 (all)
-            buff(0x18) === 0 &&
-            buff(0x19) === 0 &&
-            buff(0x1a) === 0 &&
-            buff(0x1b) === 0
-          ) {
-            plus3_fix = CPC_ISSUE_3;
-          } else if (
-            j === 1 &&
-            plus3_fix === CPC_ISSUE_1 &&
-            // --- Sector #1: sector length is 512
-            buff(0x1b + 8 * j) === 2
-          ) {
-            plus3_fix = CPC_ISSUE_2;
-          } else if (i === 38 && j === 0 && buff(0x1b + 8 * j) === 2) {
-            // --- Track #38, Sector #0: sector length is 512
-            plus3_fix = CPC_ISSUE_5;
-          } else if (
-            j > 1 &&
-            plus3_fix == CPC_ISSUE_2 &&
-            buff(0x1b + 8 * j) !== 2
-          ) {
-            // --- Sectors above #1 where sector length is not 512
-            plus3_fix = CPC_ISSUE_NONE;
-          } else if (
-            j > 0 &&
-            plus3_fix == CPC_ISSUE_3 &&
-            (buff(0x18 + 8 * j) !== j ||
-              buff(0x19 + 8 * j) !== j ||
-              buff(0x1a + 8 * j) !== j ||
-              buff(0x1b + 8 * j) !== j)
-          ) {
-            // --- Sector above #0 where nonoe of CHRN is the sector number
-            plus3_fix = CPC_ISSUE_NONE;
-          } else if (j > 10 && plus3_fix === CPC_ISSUE_2) {
-            plus3_fix = CPC_ISSUE_NONE;
-          } else if (
-            i === 38 &&
-            j > 0 &&
-            plus3_fix === CPC_ISSUE_5 &&
-            buff(0x1b + 8 * j) !== 2 - (j & 1)
-          ) {
-            plus3_fix = CPC_ISSUE_NONE;
-          }
-        }
+        // if (i < 84) {
+        //   if (j === 0 && buff(0x1b + 8 * j) === 6 && seclen > 6144) {
+        //     // --- Sector #0: Sector lengtt is set to 8192 bytes in the track header
+        //     // --- and length is over 6144 byte
+        //     plus3_fix = CPC_ISSUE_4;
+        //   } else if (j === 0 && buff(0x1b + 8 * j) === 6) {
+        //     // --- Sector #0: Sector lenght is set to 8192 bytes in the track header
+        //     plus3_fix = CPC_ISSUE_1;
+        //   } else if (
+        //     j === 0 &&
+        //     // --- Sector 0: CHRN = 0 (all)
+        //     buff(0x18) === 0 &&
+        //     buff(0x19) === 0 &&
+        //     buff(0x1a) === 0 &&
+        //     buff(0x1b) === 0
+        //   ) {
+        //     plus3_fix = CPC_ISSUE_3;
+        //   } else if (
+        //     j === 1 &&
+        //     plus3_fix === CPC_ISSUE_1 &&
+        //     // --- Sector #1: sector length is 512
+        //     buff(0x1b + 8 * j) === 2
+        //   ) {
+        //     plus3_fix = CPC_ISSUE_2;
+        //   } else if (i === 38 && j === 0 && buff(0x1b + 8 * j) === 2) {
+        //     // --- Track #38, Sector #0: sector length is 512
+        //     plus3_fix = CPC_ISSUE_5;
+        //   } else if (
+        //     j > 1 &&
+        //     plus3_fix == CPC_ISSUE_2 &&
+        //     buff(0x1b + 8 * j) !== 2
+        //   ) {
+        //     // --- Sectors above #1 where sector length is not 512
+        //     plus3_fix = CPC_ISSUE_NONE;
+        //   } else if (
+        //     j > 0 &&
+        //     plus3_fix == CPC_ISSUE_3 &&
+        //     (buff(0x18 + 8 * j) !== j ||
+        //       buff(0x19 + 8 * j) !== j ||
+        //       buff(0x1a + 8 * j) !== j ||
+        //       buff(0x1b + 8 * j) !== j)
+        //   ) {
+        //     // --- Sector above #0 where nonoe of CHRN is the sector number
+        //     plus3_fix = CPC_ISSUE_NONE;
+        //   } else if (j > 10 && plus3_fix === CPC_ISSUE_2) {
+        //     plus3_fix = CPC_ISSUE_NONE;
+        //   } else if (
+        //     i === 38 &&
+        //     j > 0 &&
+        //     plus3_fix === CPC_ISSUE_5 &&
+        //     buff(0x1b + 8 * j) !== 2 - (j & 1)
+        //   ) {
+        //     plus3_fix = CPC_ISSUE_NONE;
+        //   }
+        // }
 
         // --- Increment track length
         trlen += seclen;
@@ -275,6 +275,7 @@ export class FloppyDisk {
           }
         }
       }
+
       // --- Skip paddings, position to the next track
       buffer.index += trlen + sector_pad * 128 + 256;
       if (bpt > max_bpt) {
@@ -379,11 +380,27 @@ export class FloppyDisk {
           buffer.index += seclen;
         } else if (i < 84 && fix[i] === CPC_ISSUE_3) {
           // --- 128, 256, 512, ... 4096k
-          sectorLength += this.dataAdd(buffer, null, 128, ddam, gap, crcError, 0x00);
+          sectorLength += this.dataAdd(
+            buffer,
+            null,
+            128,
+            ddam,
+            gap,
+            crcError,
+            0x00
+          );
           buffer.index += seclen - 128;
         } else if (i < 84 && fix[i] === CPC_ISSUE_4) {
           // --- Nx8192 (max 6384 byte )
-          sectorLength += this.dataAdd(buffer, null, 6384, ddam, gap, crcError, 0x00);
+          sectorLength += this.dataAdd(
+            buffer,
+            null,
+            6384,
+            ddam,
+            gap,
+            crcError,
+            0x00
+          );
           buffer.index += seclen - 6384;
         } else if (i < 84 && fix[i] === CPC_ISSUE_5) {
           // --- 9x512
@@ -400,7 +417,15 @@ export class FloppyDisk {
             );
             buffer.index += idlen;
           } else {
-            sectorLength += this.dataAdd(buffer, null, idlen, ddam, gap, crcError, 0x00);
+            sectorLength += this.dataAdd(
+              buffer,
+              null,
+              idlen,
+              ddam,
+              gap,
+              crcError,
+              0x00
+            );
           }
         } else {
           sectorLength += this.dataAdd(
@@ -448,23 +473,24 @@ export class FloppyDisk {
 
   // --- Allocates the data for the physical surface of the disk
   private allocate (): number {
+    console.log("alloc", this.bytesPerTrack);
     if (this.density != DiskDensity.Auto) {
       this.bytesPerTrack = disk_bpt[this.density];
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.HD]) {
+    } else if (this.bytesPerTrack > 12500) {
       return (this.status = DiskError.UNSUPPORTED);
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.DD_8]) {
+    } else if (this.bytesPerTrack > 10416) {
       this.density = DiskDensity.HD;
       this.bytesPerTrack = disk_bpt[DiskDensity.HD];
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.DD_PLUS]) {
+    } else if (this.bytesPerTrack > 6500) {
       this.density = DiskDensity.DD_8;
       this.bytesPerTrack = disk_bpt[DiskDensity.DD_8];
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.DD]) {
+    } else if (this.bytesPerTrack > 6250) {
       this.density = DiskDensity.DD_PLUS;
       this.bytesPerTrack = disk_bpt[DiskDensity.DD_PLUS];
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.SD_8]) {
+    } else if (this.bytesPerTrack > 5208) {
       this.density = DiskDensity.DD;
       this.bytesPerTrack = disk_bpt[DiskDensity.DD];
-    } else if (this.bytesPerTrack > disk_bpt[DiskDensity.SD]) {
+    } else if (this.bytesPerTrack > 3125) {
       this.density = DiskDensity.SD_8;
       this.bytesPerTrack = disk_bpt[DiskDensity.SD_8];
     } else if (this.bytesPerTrack > 0) {
@@ -472,9 +498,12 @@ export class FloppyDisk {
       this.bytesPerTrack = disk_bpt[DiskDensity.SD];
     }
 
-    if (this.bytesPerTrack > 0)
+    if (this.bytesPerTrack > 0) {
       this.tlen =
-        4 + this.bytesPerTrack + 3 * this.diskTrackLength(this.bytesPerTrack);
+        this.bytesPerTrack + 3 * Math.ceil(this.bytesPerTrack/8);
+    }
+
+    console.log("alloc2", this.bytesPerTrack);
 
     // --- Disk length
     const diskLength = this.sides * this.tracksPerSide * this.tlen;
@@ -482,10 +511,6 @@ export class FloppyDisk {
     this.data = new Uint8Array(diskLength);
 
     return (this.status = DiskError.OK);
-  }
-
-  private diskTrackLength (bpt: number): number {
-    return Math.floor(bpt / 8) + (bpt % 8 ? 1 : 0);
   }
 
   // --- Calculates the number of bytes for the physical sector length
@@ -514,16 +539,12 @@ export class FloppyDisk {
     this.clockData = new BufferWithPosition(this.data, this.bytesPerTrack);
     this.fmData = new BufferWithPosition(
       this.data,
-      this.clockData.index + marksLength(this.bytesPerTrack)
+      this.clockData.index + Math.ceil(this.bytesPerTrack / 8)
     );
     this.weakData = new BufferWithPosition(
       this.data,
-      this.fmData.index + marksLength(this.bytesPerTrack)
+      this.fmData.index + Math.ceil(this.bytesPerTrack / 8)
     );
-
-    function marksLength (bpt: number): number {
-      return Math.floor(bpt / 8) + (bpt % 8 ? 1 : 0);
-    }
   }
 
   private preindexAdd (gaptype: number): number {

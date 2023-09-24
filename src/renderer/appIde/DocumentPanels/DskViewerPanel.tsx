@@ -144,13 +144,18 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             {floppyInfo.trackInfo.map((ti, idx) => {
               const stateId = `TI${idx}`;
               const startIndex = idx * floppyInfo.tlen;
-              const tdataStart = startIndex + ti.headerLen;
+              const tDataStart = startIndex + ti.headerLen;
               const selectedSectorIdx = docState?.[`TIS${idx}`] ?? 1;
               const sectorOffset =
-                tdataStart +
+                tDataStart +
                 (selectedSectorIdx - 1) *
                   ti.sectorLengths[selectedSectorIdx - 1];
-              const clockData = tdataStart + floppyInfo.bytesPerTrack;
+              const cDataStart = tDataStart + floppyInfo.bytesPerTrack;
+              const cDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
+              const mfDataStart = cDataStart + floppyInfo.bytesPerTrack;
+              const mfDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
+              const wDataStart = mfDataStart + floppyInfo.bytesPerTrack;
+              const wDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
               return (
                 <DataSection
                   key={stateId}
@@ -213,16 +218,39 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                       )}
                     />
                   </div>
-
                   <div className={styles.dataSection}>
                     <div className={styles.blockHeader}>
-                      <Secondary text={`Clock data (${ti.gap4Len} bytes)`} />
+                      <Secondary text={`Clock data (${cDataLen} bytes)`} />
                     </div>
                     <StaticMemoryView
                       key={stateId}
                       memory={floppyInfo.data.slice(
-                        clockData,
-                        clockData + 1000
+                        cDataStart,
+                        cDataStart + cDataLen
+                      )}
+                    />
+                  </div>
+                  <div className={styles.dataSection}>
+                    <div className={styles.blockHeader}>
+                      <Secondary text={`MF data (${mfDataLen} bytes)`} />
+                    </div>
+                    <StaticMemoryView
+                      key={stateId}
+                      memory={floppyInfo.data.slice(
+                        mfDataStart,
+                        mfDataStart + mfDataLen
+                      )}
+                    />
+                  </div>
+                  <div className={styles.dataSection}>
+                    <div className={styles.blockHeader}>
+                      <Secondary text={`Weak sector data (${wDataLen} bytes)`} />
+                    </div>
+                    <StaticMemoryView
+                      key={stateId}
+                      memory={floppyInfo.data.slice(
+                        wDataStart,
+                        wDataStart + wDataLen
                       )}
                     />
                   </div>
@@ -254,7 +282,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
         )}
         {!showPhysical &&
           fileInfo.tracks.map((t, idx) => {
-            const selectedSectorIdx = docState?.[`TS${idx}`] ?? 0;
+            const selectedSectorIdx = docState?.[`TS${idx}`] ?? 1;
             if (!t.sectors.length) {
               return null;
             } else {
@@ -285,13 +313,13 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                       clicked={v => {
                         documentHubService.setDocumentViewState(document.id, {
                           ...docState,
-                          [`TS${idx}`]: v - 1
+                          [`TS${idx}`]: v
                         });
                         documentHubService.signHubStateChanged();
                       }}
                     />
                   </div>
-                  <SectorPanel sector={t.sectors[selectedSectorIdx]} />
+                  <SectorPanel sector={t.sectors[selectedSectorIdx - 1]} />
                 </DataSection>
               );
             }
@@ -358,7 +386,7 @@ const SectorPanel = ({ sector }: SectorProps) => {
         <ToolbarSeparator small={true} />
         <LabeledValue label='R:' title='Sector ID' value={sector.sectorId} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='N:' title='Sector size' value={sector.dataLen} />
+        <LabeledValue label='N:' title='Sector size' value={sector.actualData.length} />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR1:'
