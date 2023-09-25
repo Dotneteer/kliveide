@@ -141,14 +141,14 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <LabeledValue
                     label='TLen:'
                     title='Track length in bytes'
-                    value={floppyInfo.tlen}
+                    value={floppyInfo.trackLength}
                   />
                 </div>
               </div>
             </DataSection>
             {floppyInfo.trackInfo.map((ti, idx) => {
               const stateId = `TI${idx}`;
-              const startIndex = idx * floppyInfo.tlen;
+              const startIndex = idx * floppyInfo.trackLength;
               const tDataStart = startIndex + ti.headerLen;
               const selectedSectorIdx = docState?.[`TIS${idx}`] ?? 1;
               const sectorOffset =

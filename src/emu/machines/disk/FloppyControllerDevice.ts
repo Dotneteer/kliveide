@@ -7,11 +7,43 @@ import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { FloppyDisk, crcFdcTable } from "./FloppyDisk";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { DISK_A_DATA, DISK_B_DATA } from "../machine-props";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Initializes the specified floppy
-  constructor (public readonly machine: IZxSpectrumMachine) {}
+  constructor (public readonly machine: IZxSpectrumMachine) {
+    const device = this;
+    machine.machinePropertyChanged.on(args =>
+      this.onMachinePropertiesChanged(device, args)
+    );
+  }
+
+  // --- Respond to floppy file changes
+  onMachinePropertiesChanged (
+    device: any,
+    args: { propertyName: string; newValue?: any }
+  ): void {
+    if (args.propertyName === DISK_A_DATA) {
+      if (!(args.newValue instanceof FloppyDisk)) return;
+
+      const newDiskA = args.newValue;
+      if (newDiskA === undefined) {
+        this.driveA?.ejectDisk();
+      } else {
+        this.driveA.insertDisk(newDiskA);
+      }
+    } else if (args.propertyName === DISK_B_DATA) {
+      if (!(args.newValue instanceof FloppyDisk)) return;
+
+      const newDiskB = args.newValue;
+      if (newDiskB === undefined) {
+        this.driveB?.ejectDisk();
+      } else {
+        this.driveB.insertDisk(newDiskB);
+      }
+    }
+  }
 
   // --- The available floppy devices
   private driveA?: FloppyDiskDrive;
@@ -179,7 +211,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Loads the specified floppy disk into drive A
   loadDiskA (disk: FloppyDisk): void {
     if (this.isDriveAPresent) {
-      this.driveA.disk = disk;
+      this.driveA.insertDisk(disk);
     }
   }
 
@@ -193,7 +225,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Loads the specified floppy disk into drive B
   loadDiskB (disk: FloppyDisk): void {
     if (this.isDriveBPresent) {
-      this.driveB.disk = disk;
+      this.driveB.insertDisk(disk);
     }
   }
 
@@ -545,8 +577,16 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         this.cmd.id !== Command.Invalid
       ) {
         this.us = this.dataRegister[0] & 0x03;
-        const d = (this.currentDrive =
-          this.us & 0x01 ? this.driveB : this.driveA);
+        if (this.us & 0x01) {
+          this.currentDrive = this.driveB;
+          this.driveA.selected = false;
+          this.driveB.selected = true;
+        } else {
+          this.currentDrive = this.driveA;
+          this.driveA.selected = true;
+          this.driveB.selected = false;
+        }
+        const d = this.currentDrive;
 
         // --- Set the current drive's head
         this.hd = !!((this.dataRegister[0] & 0x04) >> 2);
@@ -1262,7 +1302,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         while (this.rev) {
           // --- Start position
           i =
-            this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
+            this.currentDrive.disk.indexPos >=
+            this.currentDrive.disk.bytesPerTrack
               ? 0
               : this.currentDrive.disk.indexPos;
           if (this.seekId() === 0) {
@@ -1378,7 +1419,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         while (this.rev) {
           // --- Start position
           i =
-            this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
+            this.currentDrive.disk.indexPos >=
+            this.currentDrive.disk.bytesPerTrack
               ? 0
               : this.currentDrive.disk.indexPos;
           if (this.seekId() === 0) {
