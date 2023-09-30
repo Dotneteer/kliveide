@@ -8,7 +8,7 @@
     background: var(--bg-color-dropdown-input);
     width: 200px;
 }
-  
+
 .dropdownInput {
     padding: 0px 8px;
     display: flex;
@@ -37,6 +37,12 @@
     &:hover {
         background: var(--bg-color-dropdown-menu-pointed);
     }
+}
+
+.dropdownSelectedValue {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .selected {

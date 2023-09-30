@@ -75,4 +75,6 @@ export interface ActionTypes {
   END_COMPILE: null;
   INC_INJECTION_VERSION: null;
   SYNC_SOURCE_BREAKPOINTS: null;
+
+  SET_RESTART_TARGET: null;
 }

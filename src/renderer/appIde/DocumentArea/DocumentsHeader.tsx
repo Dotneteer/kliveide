@@ -4,7 +4,7 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@controls/TabButton";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode, DocumentTab } from "./DocumentTab";
@@ -15,6 +15,7 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { setRestartTarget } from "@common/state/actions";
 
 /**
  * This component represents the header of a document hub
@@ -249,6 +250,7 @@ export const DocumentsHeader = () => {
 // --- Encapsulates the command bar to use with the build root document
 const BuildRootCommandBar = () => {
   const { outputPaneService, ideCommandsService } = useAppServices();
+  const storeDispatch = useDispatch();
   return (
     <>
       <TabButtonSeparator />
@@ -276,6 +278,7 @@ const BuildRootCommandBar = () => {
         iconName='play'
         title={"Inject code and start\nthe virtual machine"}
         clicked={async () => {
+          storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer("build");
           await ideCommandsService.executeCommand("run", buildPane);
           await ideCommandsService.executeCommand("outp build");
@@ -286,6 +289,7 @@ const BuildRootCommandBar = () => {
         iconName='debug'
         title={"Inject code and start\ndebugging"}
         clicked={async () => {
+          storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer("build");
           await ideCommandsService.executeCommand("debug", buildPane);
           await ideCommandsService.executeCommand("outp build");

@@ -5,3 +5,9 @@
     padding: 2px 4px;
     background: var(--bgcolor-toolbar);
 }
+
+.toolbarDropdownContainer {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
