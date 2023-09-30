@@ -249,6 +249,8 @@ export class MachineController implements IMachineController {
     // --- Start the machine and wait while it reaches the execution point
     const execInfo = this.machine.getMainExecPoint(codeToInject.model);
     await this.sendOutput("Initialize the machine", "blue");
+
+    this.isDebugging = debug;
     this.run(
       FrameTerminationMode.UntilExecutionPoint,
       debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,

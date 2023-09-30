@@ -7,6 +7,7 @@ import {
 import {
   muteSoundAction,
   setFastLoadAction,
+  setRestartTarget,
   showKeyboardAction,
   syncSourceBreakpointsAction
 } from "@state/actions";
@@ -15,10 +16,47 @@ import { ToolbarSeparator } from "./ToolbarSeparator";
 import styles from "./Toolbar.module.scss";
 import { createMachineCommand } from "@messaging/main-to-emu";
 import { reportMessagingError } from "@renderer/reportError";
+import { Dropdown } from "./Dropdown";
+import { useState } from "react";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 type Props = {
   ide?: boolean;
 };
+
+const emuStartOptions = [
+  {
+    value: 'debug',
+    label: 'Start Machine with Debugging',
+    labelCont: 'Continue Debugging',
+    iconName: 'debug',
+    cmd: null
+  },
+  {
+    value: 'start',
+    label: 'Start Machine',
+    labelCont: 'Continue',
+    iconName: 'play',
+    cmd: null
+  },
+]
+
+const ideStartOptions = [
+  {
+    value: 'debug',
+    label: 'Debug Project',
+    labelCont: 'Continue Debugging',
+    iconName: 'debug',
+    cmd: 'debug'
+  },
+  {
+    value: 'start',
+    label: 'Run Project',
+    labelCont: 'Continue',
+    iconName: 'play',
+    cmd: 'run'
+  },
+];
 
 export const Toolbar = ({ ide = false }: Props) => {
   const dispatch = useDispatch();
@@ -32,10 +70,24 @@ export const Toolbar = ({ ide = false }: Props) => {
   const muted = useSelector(s => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad ?? false);
   const isDebugging = useSelector(s => s.emulatorState?.isDebugging ?? false);
-  const debugContinue =
-    isDebugging &&
+  const isKliveProject = useSelector(s => s.project?.isKliveProject ?? false);
+  const isCompiling = useSelector(s => s.compilation?.inProgress ?? false);
+  const isRunning =
     state !== MachineControllerState.None &&
     state !== MachineControllerState.Stopped;
+  const canStart = !isCompiling && !isRunning;
+  const mayInjectCode = ide && isKliveProject;
+  const [ startMode, setStartMode ] = useState("debug");
+
+  const storeDispatch = useDispatch();
+  const restartTarget = useSelector(s => s.ideView?.restartTarget ?? 'machine');
+
+  const startOptions = ide ? ideStartOptions : emuStartOptions;
+  const startOpt = !isRunning
+    ? startOptions.find(v => v.value === startMode)
+    : startOptions[isDebugging ? 0 : 1];
+
+  const { outputPaneService, ideCommandsService } = useAppServices();
   const { messenger } = useRendererContext();
   const saveProject = async () => {
     await new Promise(r => setTimeout(r, 100));
@@ -48,38 +100,65 @@ export const Toolbar = ({ ide = false }: Props) => {
   return (
     <div className={styles.toolbar}>
       <IconButton
-        iconName='play'
+        iconName={startOpt.iconName}
         fill='--color-toolbarbutton-green'
-        title={
-          state === MachineControllerState.Paused
-            ? "Continue without debugging"
-            : "Start without debugging"
-        }
-        enable={
-          state === MachineControllerState.None ||
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused ||
-          state === MachineControllerState.Stopped
-        }
+        title={startOpt.label}
+        enable={canStart}
         clicked={async () => {
-          const response = await messenger.sendMessage(
-            createMachineCommand("start")
-          );
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `Starting machine failed: ${response.message}`
+          if (mayInjectCode && !!startOpt.cmd) {
+            storeDispatch(setRestartTarget("project"));
+            const buildPane = outputPaneService.getOutputPaneBuffer("build");
+            await ideCommandsService.executeCommand(startOpt.cmd, buildPane);
+            await ideCommandsService.executeCommand("outp build");
+          }
+          else {
+            storeDispatch(setRestartTarget("machine"));
+            const response = await messenger.sendMessage(
+              createMachineCommand(startOpt.value as any)
             );
+            if (response.type === "ErrorResponse") {
+              reportMessagingError(
+                `Starting machine failed: ${response.message}`
+              );
+            }
           }
         }}
       />
+      <div
+          className={styles.toolbarDropdownContainer}
+          style={isRunning ? { pointerEvents: 'none', opacity: '.4' } : {}}>
+        <Dropdown
+          placeholder={undefined}
+          options={startOptions}
+          value={startMode}
+          onSelectionChanged={option => setStartMode(option)}
+        />
+      </div>
       <IconButton
-        iconName='pause'
+        iconName={
+          state === MachineControllerState.Paused
+            ? 'debug-continue'
+            : 'pause'
+        }
         fill='--color-toolbarbutton-blue'
-        title='Pause'
-        enable={state === MachineControllerState.Running}
+        title={
+          state === MachineControllerState.Running
+            ? 'Pause'
+            : startOpt.labelCont
+        }
+        enable={
+          !isCompiling && (
+            state === MachineControllerState.Running ||
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
+        }
         clicked={async () => {
+          const cmd = state !== MachineControllerState.Running
+            ? startOpt.value
+            : 'pause';
           const response = await messenger.sendMessage(
-            createMachineCommand("pause")
+            createMachineCommand(cmd as any)
           );
           if (response.type === "ErrorResponse") {
             reportMessagingError(`Pausing machine failed: ${response.message}`);
@@ -91,9 +170,11 @@ export const Toolbar = ({ ide = false }: Props) => {
         fill='--color-toolbarbutton-red'
         title='Stop'
         enable={
-          state === MachineControllerState.Running ||
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused
+          !isCompiling && (
+            state === MachineControllerState.Running ||
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -111,14 +192,38 @@ export const Toolbar = ({ ide = false }: Props) => {
         fill='--color-toolbarbutton-green'
         title='Restart'
         enable={
-          state === MachineControllerState.Running ||
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused
+          !isCompiling && (
+            state === MachineControllerState.Running ||
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
         }
         clicked={async () => {
-          const response = await messenger.sendMessage(
-            createMachineCommand("restart")
-          );
+          var response: any;
+          switch (restartTarget) {
+            case 'project': {
+              if (isKliveProject) {
+                messenger.postMessage({
+                  type: "IdeExecuteCommand",
+                  commandText: "outp build"
+                });
+                response = await messenger.sendMessage({
+                  type: "IdeExecuteCommand",
+                  commandText: isDebugging ? 'debug' : 'run'
+                });
+                break;
+              }
+            }
+
+            // case 'machine':
+            default: {
+              response = await messenger.sendMessage(
+                createMachineCommand("restart")
+              );
+              break;
+            }
+          }
+
           if (response.type === "ErrorResponse") {
             reportMessagingError(
               `Restarting machine failed: ${response.message}`
@@ -128,37 +233,14 @@ export const Toolbar = ({ ide = false }: Props) => {
       />
       <ToolbarSeparator />
       <IconButton
-        iconName={debugContinue ? "debug-continue" : "debug"}
-        fill={
-          debugContinue
-            ? "--color-toolbarbutton-blue"
-            : "--color-toolbarbutton-green"
-        }
-        title={debugContinue ? "Continue debugging" : "Start with debugging"}
-        enable={
-          state === MachineControllerState.None ||
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused ||
-          state === MachineControllerState.Stopped
-        }
-        clicked={async () => {
-          const response = await messenger.sendMessage(
-            createMachineCommand("debug")
-          );
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `Starting machine failed: ${response.message}`
-            );
-          }
-        }}
-      />
-      <IconButton
         iconName='step-into'
         fill='--color-toolbarbutton-blue'
         title='Step Into'
         enable={
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused
+          !isCompiling && (
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -176,8 +258,10 @@ export const Toolbar = ({ ide = false }: Props) => {
         fill='--color-toolbarbutton-blue'
         title='Step Over'
         enable={
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused
+          !isCompiling && (
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -195,8 +279,10 @@ export const Toolbar = ({ ide = false }: Props) => {
         fill='--color-toolbarbutton-blue'
         title='Step Out'
         enable={
-          state === MachineControllerState.Pausing ||
-          state === MachineControllerState.Paused
+          !isCompiling && (
+            state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused
+          )
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -281,6 +367,7 @@ export const Toolbar = ({ ide = false }: Props) => {
             selected={syncSourceBps}
             fill='orange'
             title='Stop sync with current source code breakpoint'
+            enable={isKliveProject}
             clicked={() => {
               dispatch(syncSourceBreakpointsAction(!syncSourceBps));
             }}

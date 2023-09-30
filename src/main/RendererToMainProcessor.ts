@@ -274,6 +274,7 @@ export async function processRendererToMainMessages (
       return await sendFromMainToEmu(message);
 
     case "IdeDisplayOutput":
+    case "IdeExecuteCommand":
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
 

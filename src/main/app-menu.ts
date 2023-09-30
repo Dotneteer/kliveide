@@ -32,7 +32,8 @@ import {
   dimMenuAction,
   setVolatileDocStateAction,
   setDiskFileAction,
-  protectDiskAction
+  protectDiskAction,
+  setRestartTarget
 } from "../common/state/actions";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
@@ -494,6 +495,7 @@ export function setupMenu (
       label: "Start",
       enabled: machineWaits,
       click: async () => {
+        mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("start"));
       }
     },
@@ -518,6 +520,7 @@ export function setupMenu (
       label: "Restart",
       enabled: machineRestartable,
       click: async () => {
+        mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("restart"));
       }
     },
@@ -527,6 +530,7 @@ export function setupMenu (
       label: "Start with Debugging",
       enabled: machineWaits,
       click: async () => {
+        mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("debug"));
       }
     },
@@ -682,6 +686,7 @@ export function setupMenu (
           label: "Run",
           enabled: !!buildRoot,
           click: async () => {
+            mainStore.dispatch(setRestartTarget("project"));
             await executeIdeCommand(ideWindow, "outp build", undefined, true);
             await executeIdeCommand(ideWindow, "run", "Run Code", true);
           }
@@ -691,6 +696,7 @@ export function setupMenu (
           label: "Debug",
           enabled: !!buildRoot,
           click: async () => {
+            mainStore.dispatch(setRestartTarget("project"));
             await executeIdeCommand(ideWindow, "outp build", undefined, true);
             await executeIdeCommand(ideWindow, "debug", "Debug Code", true);
           }

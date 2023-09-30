@@ -63,6 +63,7 @@ export type IdeView = {
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
+  restartTarget?: string;
 };
 
 export type EmulatorState = {
