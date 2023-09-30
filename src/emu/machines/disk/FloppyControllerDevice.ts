@@ -569,7 +569,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       // --- the status register ST0 will return a value of $80 (invalid command) ... (82078 44pin)
       if (this.intReq === IntRequest.None && this.cmd.id == Command.SenseInt) {
         // --- This command will be INVALID
-        console.log("Should be invalid")
         this.commandRegister = 0x00;
         this.cmdIdentify();
       }
@@ -709,7 +708,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             this.seek[3] < 4
           ) {
             // --- Delete INTRQ state
-            console.log("reset INTRQ")
             this.intReq = IntRequest.None;
           }
           break;
@@ -923,11 +921,12 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private cmdIdentify (): void {
     // --- invalid by default
     let cmd = commandTable[commandTable.length - 1];
-    commandTable.forEach(c => {
-      if ((this.commandRegister & c.mask) === c.value) {
-        cmd = c;
-      }
-    })
+    const tableCmd = commandTable.find(
+      c => (this.commandRegister & c.mask) === c.value
+    );
+    if (tableCmd) {
+      cmd = tableCmd;
+    }
     this.mt = !!((this.commandRegister >> 7) & 0x01);
     this.mf = !!((this.commandRegister >> 6) & 0x01);
     this.sk = !!((this.commandRegister >> 5) & 0x01);
@@ -1274,19 +1273,15 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.rev = 2;
       this.readId = true;
     }
+    const indexPos = this.currentDrive.disk?.indexPos ?? 0;
+    const bytesPerTrack = this.currentDrive.disk?.bytesPerTrack ?? 0;
     if (this.rev) {
       // --- Start position
-      i =
-        this.currentDrive.disk.indexPos >= this.currentDrive.disk.bytesPerTrack
-          ? 0
-          : this.currentDrive.disk.indexPos;
+      i = indexPos >= bytesPerTrack ? 0 : indexPos;
       if (this.readNextId() !== 2) {
         this.rev = 0;
       }
-      i = this.currentDrive.disk.bytesPerTrack
-        ? ((this.currentDrive.disk.indexPos - i) * 200) /
-          this.currentDrive.disk.bytesPerTrack
-        : 200;
+      i = bytesPerTrack ? ((indexPos - i) * 200) / bytesPerTrack : 200;
       if (i > 0) {
         // --- i * 1/20 revolution
         this.registerEvent(i, this.fdcEventHandler, this);
@@ -1400,7 +1395,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     function abortReadData (): void {
       // --- End of execution phase
       fdc.phase = OperationPhase.Result;
-      fdc.cycle = this.cmd.reslength;
+      fdc.cycle = fdc.cmd.reslength;
 
       // --- End of cylinder is set if:
       // --- 1: sector data is read completely (i.e. no other errors occur like no data.)
@@ -1574,7 +1569,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   }
 
   private fdcEventHandler (data: any): void {
-    console.log("EH runs", (data as any)?.machine?.tacts);
     const fdc = data as FloppyControllerDevice;
 
     if (fdc.readId) {

@@ -53,6 +53,9 @@ export class FloppyDiskDrive {
   // --- Is the head loaded?
   loadhead = false;
 
+  // --- Marks
+  marks: number;
+
   // --- Indicates that the drive is ready
   get ready (): boolean {
     return this.controller.getMotorSpeed() === 100 && !!this.disk;
@@ -124,13 +127,12 @@ export class FloppyDiskDrive {
 
   // --- Writes the data to the disk
   writeData (): void {
-    // TODO: Implement this method
+    this.readOrWriteData(true);
   }
 
   // --- Reads the data from the disk
   readData (): void {
-    console.log("readData called");
-    // TODO: Implement this method
+    this.readOrWriteData(false);
   }
 
   // --- Step one cylinder into the specified direction
@@ -152,7 +154,6 @@ export class FloppyDiskDrive {
 
   // --- Loads or unloads the drive's head
   loadHead (load: boolean): void {
-    console.log("loadeHead called");
     if (!this.disk) {
       return;
     }
@@ -199,5 +200,71 @@ export class FloppyDiskDrive {
       while (this.disk.indexPos >= tlen) this.disk.indexPos -= tlen;
     }
     this.atIndexWhole = !this.disk.indexPos;
+  }
+
+  private readOrWriteData (write: boolean): void {
+    // --- Is there anything to read or write?
+    if (!this.selected || !this.ready || !this.loadhead || !this.disk) {
+      // --- Nothing to read or write
+      if (this.disk && this.controller.getMotorSpeed() > 0) {
+        // --- Spin the disk
+        if (this.disk.indexPos >= this.disk.trackLength) {
+          // --- Next data byte
+          this.disk.indexPos = 0;
+        }
+        if (!write) {
+          // --- No data
+          this.data = 0x100;
+        }
+        this.disk.indexPos++;
+        this.atIndexWhole = this.disk.indexPos >= this.disk.trackLength;
+      }
+      return;
+    }
+
+    // --- There is data that can be read
+    if (this.disk.indexPos >= this.disk.trackLength) {
+      // --- Next data byte
+      this.disk.indexPos = 0;
+    }
+    if (write) {
+      // --- This is a write operation
+      if (this.disk.isWriteProtected) {
+        this.disk.indexPos++;
+        this.atIndexWhole = this.disk.indexPos >= this.disk.trackLength;
+        return;
+      }
+      this.disk.trackData.set(this.disk.indexPos, this.data & 0x00ff);
+      if (this.data & 0xff00) {
+        this.disk.bitmapSet(this.disk.clockData, this.disk.indexPos);
+      } else {
+        this.disk.bitmapReset(this.disk.clockData, this.disk.indexPos);
+      }
+      if (this.marks & 0x01) {
+        this.disk.bitmapSet(this.disk.fmData, this.disk.indexPos);
+      } else {
+        this.disk.bitmapReset(this.disk.fmData, this.disk.indexPos);
+      }
+      this.disk.bitmapReset(this.disk.weakData, this.disk.indexPos);
+      this.disk.dirty = true;
+    } else {
+      // --- This is a read operation
+      this.data = this.disk.trackData.get(this.disk.indexPos);
+      if (this.disk.bitmapTest(this.disk.clockData, this.disk.indexPos)) {
+        this.data |= 0xff00;
+      }
+      this.marks = 0;
+      if (this.disk.bitmapTest(this.disk.fmData, this.disk.indexPos)) {
+        this.marks |= 0x01;
+      }
+      if (this.disk.bitmapTest(this.disk.weakData, this.disk.indexPos)) {
+        this.marks |= 0x02;
+        // --- mess up data byte
+        this.data &= Math.floor(Math.random() * 256) % 0xff;
+        this.data |= Math.floor(Math.random() * 256) % 0xff;
+      }
+    }
+    this.disk.indexPos++;
+    this.atIndexWhole = this.disk.indexPos >= this.disk.trackLength;
   }
 }

@@ -57,7 +57,7 @@ export class FloppyDisk {
   weakData: BufferWithPosition;
 
   // --- Interim index position while processing disk data
-  indexPos: number;
+  indexPos = 0;
 
   // --- Extra physical info about a track
   trackInfo: TrackInfo[];
@@ -544,9 +544,21 @@ export class FloppyDisk {
   }
 
   // --- Sets a bit in a bitmap stream
-  private bitmapSet (stream: BufferWithPosition, n: number): void {
+  bitmapSet (stream: BufferWithPosition, n: number): void {
     const offset = Math.floor(n / 8);
     stream.set(offset, stream.get(offset) | (1 << n % 8));
+  }
+
+  // --- Resets a bit in a bitmap stream
+  bitmapReset (stream: BufferWithPosition, n: number): void {
+    const offset = Math.floor(n / 8);
+    stream.set(offset, stream.get(offset) & ~(1 << n % 8));
+  }
+
+  // --- Resets a bit in a bitmap stream
+  bitmapTest (stream: BufferWithPosition, n: number): boolean {
+    const offset = Math.floor(n / 8);
+    return !!(stream.get(offset) & (1 << n % 8));
   }
 
   // --- Calculates new CRC value
