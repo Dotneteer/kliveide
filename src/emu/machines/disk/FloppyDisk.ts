@@ -42,7 +42,7 @@ export class FloppyDisk {
   density: DiskDensity;
 
   // --- Track length
-  tlen: number;
+  trackLength: number;
 
   // --- Buffer to track data
   trackData: BufferWithPosition;
@@ -57,7 +57,7 @@ export class FloppyDisk {
   weakData: BufferWithPosition;
 
   // --- Interim index position while processing disk data
-  indexPos: number;
+  indexPos = 0;
 
   // --- Extra physical info about a track
   trackInfo: TrackInfo[];
@@ -319,6 +319,23 @@ export class FloppyDisk {
     return (this.status = DiskError.OK);
   }
 
+  // --- Sets the index structures to the specified track index
+  setTrackIndex (trackNo: number): void {
+    this.trackData = new BufferWithPosition(
+      this.data,
+      trackNo * this.trackLength
+    );
+    this.clockData = new BufferWithPosition(this.data, this.bytesPerTrack);
+    this.fmData = new BufferWithPosition(
+      this.data,
+      this.clockData.index + Math.ceil(this.bytesPerTrack / 8)
+    );
+    this.weakData = new BufferWithPosition(
+      this.data,
+      this.fmData.index + Math.ceil(this.bytesPerTrack / 8)
+    );
+  }
+
   // --- Allocates the data for the physical surface of the disk
   private allocate (gaptype: number): number {
     if (this.density != DiskDensity.Auto) {
@@ -346,14 +363,14 @@ export class FloppyDisk {
     }
 
     if (this.bytesPerTrack > 0) {
-      this.tlen =
+      this.trackLength =
         this.calcTrackHeaderLength(gaptype) +
         this.bytesPerTrack +
         3 * Math.ceil(this.bytesPerTrack / 8);
     }
 
     // --- Disk length
-    const diskLength = this.sides * this.tracksPerSide * this.tlen;
+    const diskLength = this.sides * this.tracksPerSide * this.trackLength;
     if (diskLength === 0) return (this.status = DiskError.GEOMETRY_ISSUE);
     this.data = new Uint8Array(diskLength);
 
@@ -378,20 +395,6 @@ export class FloppyDisk {
     // --- GAP III
     len += g.len[3];
     return len;
-  }
-
-  // --- Sets the index structures to the specified track index
-  private setTrackIndex (trackNo: number): void {
-    this.trackData = new BufferWithPosition(this.data, trackNo * this.tlen);
-    this.clockData = new BufferWithPosition(this.data, this.bytesPerTrack);
-    this.fmData = new BufferWithPosition(
-      this.data,
-      this.clockData.index + Math.ceil(this.bytesPerTrack / 8)
-    );
-    this.weakData = new BufferWithPosition(
-      this.data,
-      this.fmData.index + Math.ceil(this.bytesPerTrack / 8)
-    );
   }
 
   private calcTrackHeaderLength (gaptype: number): number {
@@ -541,9 +544,21 @@ export class FloppyDisk {
   }
 
   // --- Sets a bit in a bitmap stream
-  private bitmapSet (stream: BufferWithPosition, n: number): void {
+  bitmapSet (stream: BufferWithPosition, n: number): void {
     const offset = Math.floor(n / 8);
     stream.set(offset, stream.get(offset) | (1 << n % 8));
+  }
+
+  // --- Resets a bit in a bitmap stream
+  bitmapReset (stream: BufferWithPosition, n: number): void {
+    const offset = Math.floor(n / 8);
+    stream.set(offset, stream.get(offset) & ~(1 << n % 8));
+  }
+
+  // --- Resets a bit in a bitmap stream
+  bitmapTest (stream: BufferWithPosition, n: number): boolean {
+    const offset = Math.floor(n / 8);
+    return !!(stream.get(offset) & (1 << n % 8));
   }
 
   // --- Calculates new CRC value

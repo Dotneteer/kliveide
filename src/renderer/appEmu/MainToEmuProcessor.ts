@@ -2,7 +2,8 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import {
-  DISK_DATA,
+  DISK_A_DATA,
+  DISK_B_DATA,
   REWIND_REQUESTED,
   TAPE_DATA
 } from "@emu/machines/machine-props";
@@ -449,39 +450,23 @@ export async function processMainToEmuMessages (
   async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
     // --- Get disk information
     const controller = machineService.getMachineController();
-    let disk = controller.machine.getMachineProperty(DISK_DATA) as FloppyDisk[];
-    if (!disk) {
-      disk = [];
-    }
-
-    if (!message.contents) {
-      // --- Eject the disk
-      delete disk[message.diskIndex];
-      controller.machine.setMachineProperty(DISK_DATA, [...disk]);
-      return;
-    }
-
+    const propName = message.diskIndex ? DISK_B_DATA : DISK_A_DATA;
+    const drive = message.diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
-      const diskReader = new BinaryReader(message.contents);
-      const floppy = new FloppyDisk(diskReader);
+      const floppy = message.contents ? new FloppyDisk(message.contents) : null;
+
       // --- Pass the tape file data blocks to the machine
-      const controller = machineService.getMachineController();
-      let disk = controller.machine.getMachineProperty(
-        DISK_DATA
-      ) as FloppyDisk[];
-      if (!disk) {
-        disk = [];
-      }
-      disk[message.diskIndex] = floppy;
-      controller.machine.setMachineProperty(DISK_DATA, [...disk]);
+      controller.machine.setMachineProperty(propName, floppy);
 
       // --- Done.
       const response = await emuToMain.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "info",
-        title: "Disk file set",
-        message: `Disk file ${message.file} successfully set.`
+        title: floppy ? "Disk inserted" : "Disk ejected",
+        message: floppy
+          ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
+          : `Disk successfully ejected from drive ${drive}`
       });
       if (response.type === "ErrorResponse") {
         reportMessagingError(

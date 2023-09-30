@@ -4,7 +4,8 @@ export const TAPE_SAVER = "TapeSaver";
 export const TAPE_DATA = "TapeData";
 export const TAPE_SAVED = "SavedToTape";
 export const TAPE_MODE = "TapeMode";
-export const DISK_DATA = "DiskData";
+export const DISK_A_DATA = "DiskAData";
+export const DISK_B_DATA = "DiskAData";
 export const KBTYPE_48 = "Keyboard48";
 
 export const FILE_PROVIDER = "FileProvider";

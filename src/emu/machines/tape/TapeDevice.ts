@@ -20,8 +20,7 @@ import {
   TAPE_SAVER,
   TAPE_DATA,
   REWIND_REQUESTED,
-  TAPE_SAVED,
-  DISK_DATA
+  TAPE_SAVED
 } from "../machine-props";
 import { ITapeSaver } from "./ITapeSaver";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
