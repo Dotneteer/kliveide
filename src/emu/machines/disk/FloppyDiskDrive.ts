@@ -1,3 +1,4 @@
+import { FloppyControllerDevice } from "./FloppyControllerDevice";
 import { FloppyDisk } from "./FloppyDisk";
 
 const FDD_LOAD_FACT = 0x02;
@@ -8,6 +9,11 @@ const FDD_STEP_FACT = 0x22;
  * This class represents a single floppy disk device
  */
 export class FloppyDiskDrive {
+  constructor (private readonly controller: FloppyControllerDevice) {}
+
+  // --- Indicates if this drive is enabled
+  enabled = false;
+
   // --- Signs wether the currently loaded disk is write protected
   isWriteProtected = false;
 
@@ -15,7 +21,7 @@ export class FloppyDiskDrive {
   disk: FloppyDisk | undefined;
 
   // --- Indicates if this drive is selected
-  selected: boolean;
+  selected = false;
 
   // --- Read/write to data byte 0x00nn or 0xffnn
   data = 0;
@@ -39,66 +45,134 @@ export class FloppyDiskDrive {
   doReadWeak = false;
 
   // --- Current cylinder
-  c_cylinder: number;
+  c_cylinder = 0;
 
   // --- Maximum number of cylinders managed by the drive
-  fdd_cylinders: number;
+  fdd_cylinders = 0;
+
+  // --- Is the head loaded?
+  loadhead = false;
 
   // --- Indicates that the drive is ready
-  get ready(): boolean {
-    return !!this.disk
+  get ready (): boolean {
+    return this.controller.getMotorSpeed() === 100 && !!this.disk;
+  }
+
+  reset (reinit: boolean): void {
+    const loaded = !!this.disk;
+    const selected = this.selected;
+    const doReadWeak = this.doReadWeak;
+    const currentDisk = this.disk;
+
+    this.twoHeads = false;
+    this.fdd_cylinders = 0;
+    this.c_cylinder = 0;
+    this.headIndex = 0;
+    this.unreadable = false;
+    this.doReadWeak = false;
+    if (this.enabled) {
+      this.twoHeads = true;
+      this.fdd_cylinders = 42;
+      this.atIndexWhole = true;
+      this.tr00 = true;
+      this.isWriteProtected = true;
+    } else {
+      this.atIndexWhole = false;
+      this.tr00 = false;
+      this.isWriteProtected = false;
+    }
+
+    if (reinit) {
+      this.selected = selected;
+      this.doReadWeak = doReadWeak;
+    } else {
+      this.ejectDisk();
+    }
+    if (reinit && loaded) {
+      this.ejectDisk();
+      this.insertDisk(currentDisk);
+    } else {
+      this.disk = null;
+    }
   }
 
   insertDisk (disk: FloppyDisk): void {
     // TODO: Other task to manage an inserted disk
     this.disk = disk;
+    if (!this.enabled) {
+      return;
+    }
+
+    this.isWriteProtected = this.disk.isWriteProtected;
+    if (this.selected) {
+      this.loadHead(true);
+    }
+
+    this.doReadWeak = this.disk.hasWeakSectors;
+    this.setData(FDD_LOAD_FACT);
   }
 
   // --- Ejects floppy disk
   ejectDisk (): void {
     this.disk = null;
+    this.atIndexWhole = true;
+    this.isWriteProtected = true;
+    if (this.enabled && this.selected) {
+      this.loadHead(false);
+    }
   }
 
   // --- Writes the data to the disk
-  writeData(): void {
+  writeData (): void {
     // TODO: Implement this method
   }
 
   // --- Reads the data from the disk
-  readData(): void {
+  readData (): void {
     console.log("readData called");
     // TODO: Implement this method
   }
 
   // --- Step one cylinder into the specified direction
-  step(out: boolean): void {
-    console.log("step called");
-    if(out) {
+  step (out: boolean): void {
+    if (out) {
       // --- Direction out
-      if(this.c_cylinder > 0 ) {
+      if (this.c_cylinder > 0) {
         this.c_cylinder--;
       }
     } else {
       // --- Direction in
-      if(this.c_cylinder < this.fdd_cylinders - 1 )
+      if (this.c_cylinder < this.fdd_cylinders - 1) {
         this.c_cylinder++;
+      }
     }
     this.tr00 = this.c_cylinder === 0;
     this.setData(FDD_STEP_FACT);
   }
 
-  loadHead(headNo: number): void {
+  // --- Loads or unloads the drive's head
+  loadHead (load: boolean): void {
     console.log("loadeHead called");
-    // TODO: Implement this method void fdd_head_load( fdd_t *d, int load )
+    if (!this.disk) {
+      return;
+    }
+    if (this.loadhead == load) {
+      return;
+    }
+    this.loadhead = load;
+    this.setData(FDD_HEAD_FACT);
   }
 
-  private setData(fact: number): void {
-    if(!this.disk) return;
+  private setData (fact: number): void {
+    if (!this.disk) return;
 
     const head = this.headIndex;
-    if(this.unreadable || ( this.disk.sides === 1 && head === 1 ) ||
-        this.c_cylinder >= this.disk.tracksPerSide) {
-      // --- No data available for the disk    
+    if (
+      this.unreadable ||
+      (this.disk.sides === 1 && head === 1) ||
+      this.c_cylinder >= this.disk.tracksPerSide
+    ) {
+      // --- No data available for the disk
       this.disk.trackData = null;
       this.disk.clockData = null;
       this.disk.fmData = null;
@@ -107,8 +181,8 @@ export class FloppyDiskDrive {
     }
 
     // --- Set the index to the specified track
-    this.disk.setTrackIndex(this.disk.sides * this.c_cylinder + head )
-    if( fact > 0 ) {
+    this.disk.setTrackIndex(this.disk.sides * this.c_cylinder + head);
+    if (fact > 0) {
       /* this generate a bpt/fact +-10% triangular distribution skip in bytes 
          i know, we should use the higher bits of rand(), but we not
          keen on _real_ (pseudo)random numbers... ;)
@@ -116,10 +190,13 @@ export class FloppyDiskDrive {
       const tlen = this.disk.trackLength;
 
       // --- Random number between -9 and 9
-      const rand = (Math.floor(Math.random() * 10) % 10 + Math.floor(Math.random() * 10) % 10 - 9 )
-      this.disk.indexPos += Math.floor(tlen / fact) + tlen * Math.floor(rand/fact/100);
-      while(this.disk.indexPos >= tlen)
-        this.disk.indexPos -= tlen;
+      const rand =
+        (Math.floor(Math.random() * 10) % 10) +
+        (Math.floor(Math.random() * 10) % 10) -
+        9;
+      this.disk.indexPos +=
+        Math.floor(tlen / fact) + tlen * Math.floor(rand / fact / 100);
+      while (this.disk.indexPos >= tlen) this.disk.indexPos -= tlen;
     }
     this.atIndexWhole = !this.disk.indexPos;
   }

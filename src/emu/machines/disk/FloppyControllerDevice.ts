@@ -11,40 +11,6 @@ import { DISK_A_DATA, DISK_B_DATA } from "../machine-props";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {
-  // --- Initializes the specified floppy
-  constructor (public readonly machine: IZxSpectrumMachine) {
-    const device = this;
-    machine.machinePropertyChanged.on(args =>
-      this.onMachinePropertiesChanged(device, args)
-    );
-  }
-
-  // --- Respond to floppy file changes
-  onMachinePropertiesChanged (
-    device: any,
-    args: { propertyName: string; newValue?: any }
-  ): void {
-    if (args.propertyName === DISK_A_DATA) {
-      if (!(args.newValue instanceof FloppyDisk)) return;
-
-      const newDiskA = args.newValue;
-      if (newDiskA === undefined) {
-        this.driveA?.ejectDisk();
-      } else {
-        this.driveA.insertDisk(newDiskA);
-      }
-    } else if (args.propertyName === DISK_B_DATA) {
-      if (!(args.newValue instanceof FloppyDisk)) return;
-
-      const newDiskB = args.newValue;
-      if (newDiskB === undefined) {
-        this.driveB?.ejectDisk();
-      } else {
-        this.driveB.insertDisk(newDiskB);
-      }
-    }
-  }
-
   // --- The available floppy devices
   private driveA?: FloppyDiskDrive;
   private driveB?: FloppyDiskDrive;
@@ -192,11 +158,93 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Floppy operation log
   private opLog: FloppyLogEntry[] = [];
 
+  // --- Initializes the specified floppy
+  constructor (public readonly machine: IZxSpectrumMachine) {
+    this.driveA = new FloppyDiskDrive(this);
+    this.driveA.reset(false);
+    this.driveB = new FloppyDiskDrive(this);
+    this.driveB.reset(false);
+    const device = this;
+    machine.machinePropertyChanged.on(args =>
+      this.onMachinePropertiesChanged(device, args)
+    );
+    this.reset();
+  }
+
+  // --- Resets the device
+  reset (): void {
+    this.driveA.reset(true);
+    this.driveB.reset(true);
+    this.currentDrive = this.driveA;
+    this.speedlock = 0;
+
+    this.msr = MSR_RQM;
+    this.sr0 = this.sr1 = this.sr2 = this.sr3 = 0x00;
+
+    for (let i = 0; i < 4; i++) {
+      this.pcn[i] = this.seek[i] = this.seekAge[i] = 0;
+    }
+    this.stepRate = 16;
+    this.hut = 240;
+    this.hld = 254;
+    this.nonDma = true;
+    this.headLoad = false;
+    this.intReq = IntRequest.None;
+    this.phase = OperationPhase.Command;
+    this.cycle = 0;
+    this.lastSectorRead = 0;
+    this.readId = false;
+  }
+
+  // --- Respond to floppy file changes
+  onMachinePropertiesChanged (
+    device: any,
+    args: { propertyName: string; newValue?: any }
+  ): void {
+    if (args.propertyName === DISK_A_DATA) {
+      if (!(args.newValue instanceof FloppyDisk)) return;
+
+      const newDiskA = args.newValue;
+      if (newDiskA === undefined) {
+        this.driveA?.ejectDisk();
+      } else {
+        this.driveA.insertDisk(newDiskA);
+      }
+    } else if (args.propertyName === DISK_B_DATA) {
+      if (!(args.newValue instanceof FloppyDisk)) return;
+
+      const newDiskB = args.newValue;
+      if (newDiskB === undefined) {
+        this.driveB?.ejectDisk();
+      } else {
+        this.driveB.insertDisk(newDiskB);
+      }
+    }
+  }
+
   // --- Indicates if Drive #1 is present
-  isDriveAPresent: boolean;
+  private _driveAPresent = false;
+  get isDriveAPresent (): boolean {
+    return this._driveAPresent;
+  }
+  set isDriveAPresent (value: boolean) {
+    this._driveAPresent = value;
+    if (this.driveA) {
+      this.driveA.enabled = value;
+    }
+  }
 
   // --- Indicates if Drive #2 is present
-  isDriveBPresent: boolean;
+  private _driveBPresent = false;
+  get isDriveBPresent (): boolean {
+    return this._driveBPresent;
+  }
+  set isDriveBPresent (value: boolean) {
+    this._driveBPresent = value;
+    if (this.driveB) {
+      this.driveB.enabled = value;
+    }
+  }
 
   // --- Indicates if disk in Drive #1 is write protected
   get isDiskAWriteProtected (): boolean {
@@ -234,31 +282,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     if (this.isDriveAPresent) {
       this.driveA.ejectDisk();
     }
-  }
-
-  // --- Resets the device
-  reset (): void {
-    this.driveA = new FloppyDiskDrive();
-    this.driveB = new FloppyDiskDrive();
-    this.currentDrive = this.driveA;
-    this.speedlock = 0;
-
-    this.msr = MSR_RQM;
-    this.sr0 = this.sr1 = this.sr2 = this.sr3 = 0x00;
-
-    for (let i = 0; i < 4; i++) {
-      this.pcn[i] = this.seek[i] = this.seekAge[i] = 0;
-    }
-    this.stepRate = 16;
-    this.hut = 240;
-    this.hld = 254;
-    this.nonDma = true;
-    this.headLoad = false;
-    this.intReq = IntRequest.None;
-    this.phase = OperationPhase.Command;
-    this.cycle = 0;
-    this.lastSectorRead = 0;
-    this.readId = false;
   }
 
   // --- Dispose the resources held by the device
@@ -546,6 +569,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       // --- the status register ST0 will return a value of $80 (invalid command) ... (82078 44pin)
       if (this.intReq === IntRequest.None && this.cmd.id == Command.SenseInt) {
         // --- This command will be INVALID
+        console.log("Should be invalid")
         this.commandRegister = 0x00;
         this.cmdIdentify();
       }
@@ -626,9 +650,10 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       }
 
       if (this.cmd.id < Command.SenseInt) {
-        if (this.cmd.id < Command.Recalibrate)
+        if (this.cmd.id < Command.Recalibrate) {
           // --- Reset status registers
           this.sr0 = this.sr1 = this.sr2 = 0x00;
+        }
 
         // --- Set ST0 device/head
         this.sr0 = this.us | (this.hd ? 0x04 : 0x00);
@@ -662,7 +687,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           for (let i = 0; i < 4; i++) {
             if (this.seek[i] >= 4) {
               // --- Seek interrupt, normal termination
-              this.msr &= ~0xc0;
+              this.sr0 &= ~0xc0;
               this.sr0 |= SR0_SE;
               if (this.seek[i] === 5) {
                 this.sr0 |= SR0_AT;
@@ -674,7 +699,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               // --- Return head always 0 (11111011)
               this.senseIntRes[0] = this.sr0 & 0xfb;
               this.senseIntRes[1] = this.pcn[i];
-              // // one interrupt ok.
               i = 4;
             }
           }
@@ -685,6 +709,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             this.seek[3] < 4
           ) {
             // --- Delete INTRQ state
+            console.log("reset INTRQ")
             this.intReq = IntRequest.None;
           }
           break;
@@ -873,6 +898,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.opLog.shift();
     }
     this.opLog.push(entry);
+    console.log(entry);
   }
 
   // --- Registers an event
@@ -895,16 +921,17 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Identifies the command to execute
   private cmdIdentify (): void {
-    const cmd = commandTable.find(
-      c =>
-        c.id !== Command.Invalid && (this.commandRegister & c.mask) === c.value
-    );
-    if (cmd) {
-      this.mt = !!((this.commandRegister >> 7) & 0x01);
-      this.mf = !!((this.commandRegister >> 6) & 0x01);
-      this.sk = !!((this.commandRegister >> 5) & 0x01);
-      this.cmd = cmd;
-    }
+    // --- invalid by default
+    let cmd = commandTable[commandTable.length - 1];
+    commandTable.forEach(c => {
+      if ((this.commandRegister & c.mask) === c.value) {
+        cmd = c;
+      }
+    })
+    this.mt = !!((this.commandRegister >> 7) & 0x01);
+    this.mf = !!((this.commandRegister >> 6) & 0x01);
+    this.sk = !!((this.commandRegister >> 5) & 0x01);
+    this.cmd = cmd;
   }
 
   // --- Preset the CRC value to its default
@@ -1176,7 +1203,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     }
 
     // --- Select the drive used in the seek operation
-    const d = i ? this.driveB : this.driveA;
+    const d = i % 1 ? this.driveB : this.driveA;
 
     // --- There is need to seek?
     if (this.pcn[i] === this.ncn[i] && this.seek[i] === 2 && !d.tr00) {
@@ -1192,9 +1219,10 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     // --- There is need to seek?
     if (this.pcn[i] === this.ncn[i] || (this.seek[i] === 2 && d.tr00)) {
       // --- Correct position
-      if (this.seek[i] === 2)
+      if (this.seek[i] === 2) {
         // --- Recalibrate, normal termination
         this.pcn[i] = 0;
+      }
       this.seek[i] = 4;
       this.seekAge[i] = 0;
       this.intReq = IntRequest.Seek;
@@ -1204,10 +1232,12 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
     // --- Drive not ready
     if (!d.ready) {
-      if (this.seek[i] === 2)
+      if (this.seek[i] === 2) {
         // --- recalibrate
         this.pcn[i] = this.rec[i] - (77 - this.pcn[i]);
-      // --- restore PCN, drive not readey termination
+      }
+
+      // --- restore PCN, drive not ready termination
       this.seek[i] = 6;
       this.seekAge[i] = 0;
       this.intReq = IntRequest.Ready;
@@ -1522,7 +1552,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         this.startWriteData();
       }
     } else {
-      this.currentDrive.loadHead(1);
+      this.currentDrive.loadHead(true);
       this.headLoad = true;
       this.registerEvent(this.hld, this.fdcEventHandler, this);
     }
@@ -1539,11 +1569,12 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Handles the head event
   private headEventHandler (data: any): void {
     const fdc = data as FloppyControllerDevice;
-    fdc.currentDrive.loadHead(0);
+    fdc.currentDrive.loadHead(false);
     fdc.headLoad = false;
   }
 
   private fdcEventHandler (data: any): void {
+    console.log("EH runs", (data as any)?.machine?.tacts);
     const fdc = data as FloppyControllerDevice;
 
     if (fdc.readId) {
@@ -1790,7 +1821,7 @@ const commandTable: CommandDescriptor[] = [
     value: 0x07,
     cmdLength: 0x01,
     reslength: 0x00,
-    pars: []
+    pars: ["US"]
   },
   {
     id: Command.Seek,
