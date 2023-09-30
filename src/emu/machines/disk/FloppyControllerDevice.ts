@@ -37,11 +37,16 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- The current operation phase
   private phase: OperationPhase;
 
+  // --- Current track of read/write operation
   private idTrack: number;
+
+  // --- Current head of read/write operation
   private idHead: number;
+
+  // --- Current sector of read/write operation
   private idSector: number;
 
-  // --- Sector length code 0, 1, 2, 3
+  // --- Sector length code 0, 1, 2, 3 (128 << length code)
   private idLength: number;
 
   // --- Sector length from length code
@@ -51,7 +56,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private ddam: boolean;
 
   // --- Revolution counter
-  private rev: number;
+  private revCounter: number;
 
   // --- Head state
   private headLoad: boolean;
@@ -358,7 +363,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           this.cmdResult();
           return r;
         }
-        this.rev = 2;
+        this.revCounter = 2;
         this.msr &= ~MSR_RQM;
         this.startReadData();
       }
@@ -537,7 +542,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             this.cmdResult();
             return;
           }
-          this.rev = 2;
+          this.revCounter = 2;
           this.msr &= ~MSR_RQM;
           this.startReadData();
         }
@@ -896,7 +901,6 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.opLog.shift();
     }
     this.opLog.push(entry);
-    console.log(entry);
   }
 
   // --- Registers an event
@@ -971,27 +975,22 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Reads the next ID structure
   // --- Return: 0 = ID found, 1 = ID found with CRC error, 2 = not found
   private readNextId (): number {
-    let i = 0;
+    const fdc = this;
     const d = this.currentDrive;
 
     this.sr1 &= ~(SR1_DE | SR1_MA | SR1_ND);
     this.idMark = false;
-    i = this.rev;
-    while (i === this.rev && d.ready) {
-      d.readData();
-      if (d.atIndexWhole) this.rev--;
+    let i = this.revCounter;
+    while (i === this.revCounter && d.ready) {
+      readNextDataByte(false);
       this.crcPreset();
       if (this.mf) {
         // --- Double density (MFM)
         if (d.data === 0xffa1) {
           this.crcAdd();
-          d.readData();
-          this.crcAdd();
-          if (d.atIndexWhole) this.rev--;
+          readNextDataByte();
           if (d.data != 0xffa1) continue;
-          d.readData();
-          this.crcAdd();
-          if (d.atIndexWhole) this.rev--;
+          readNextDataByte();
           if (d.data !== 0xffa1) continue;
         } else {
           // --- No 0xa1 with missing clock...
@@ -999,38 +998,30 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
         }
       }
       d.readData();
-      if (d.atIndexWhole) this.rev--;
-      if (this.mf) {
-        // --- double density (MFM)
-        if (d.data !== 0x00fe) continue;
-      } else {
-        // --- single density (FM)
-        if (d.data !== 0xfffe) continue;
+      if (d.atIndexWhole) {
+        this.revCounter--;
+      }
+
+      // --- Read the address end mark
+      if ((this.mf && d.data !== 0x00fe) || !this.mf && d.data !== 0xfffe) {
+        continue;
       }
       this.crcAdd();
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
+
+      // --- Read track, head, and sector IDs
+      readNextDataByte();
       this.idTrack = d.data;
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
+      readNextDataByte();
       this.idHead = d.data;
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
+      readNextDataByte();
       this.idSector = d.data;
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
+      readNextDataByte();
       this.idLength = d.data > MAX_SIZE_CODE ? MAX_SIZE_CODE : d.data;
       this.sectorLength = 0x80 << this.idLength;
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
-      d.readData();
-      this.crcAdd();
-      if (d.atIndexWhole) this.rev--;
+
+      // --- Read CRC bytes
+      readNextDataByte();
+      readNextDataByte();
 
       if (this.crc !== 0x0000) {
         this.sr1 |= SR1_DE | SR1_ND;
@@ -1044,13 +1035,24 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       }
     }
     if (!d.ready) {
-      this.rev = 0;
+      this.revCounter = 0;
     }
 
     // --- FIXME NO_DATA?
     this.sr1 |= SR1_MA | SR1_ND;
     // --- Not found
     return 2;
+
+    // --- Helper for reading a byte (and calculating CRC)
+    function readNextDataByte (addCrc = true): void {
+      d.readData();
+      if (addCrc) {
+        fdc.crcAdd();
+      }
+      if (d.atIndexWhole) {
+        fdc.revCounter--;
+      }
+    }
   }
 
   // --- Reads the DAM (Data Address Mark)
@@ -1270,16 +1272,16 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   private startReadId (): void {
     let i = 0;
     if (!this.readId) {
-      this.rev = 2;
+      this.revCounter = 2;
       this.readId = true;
     }
     const indexPos = this.currentDrive.disk?.indexPos ?? 0;
     const bytesPerTrack = this.currentDrive.disk?.bytesPerTrack ?? 0;
-    if (this.rev) {
+    if (this.revCounter) {
       // --- Start position
       i = indexPos >= bytesPerTrack ? 0 : indexPos;
       if (this.readNextId() !== 2) {
-        this.rev = 0;
+        this.revCounter = 0;
       }
       i = bytesPerTrack ? ((indexPos - i) * 200) / bytesPerTrack : 200;
       if (i > 0) {
@@ -1321,10 +1323,10 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           }
           this.firstRw = false;
 
-          this.rev = 2;
+          this.revCounter = 2;
           this.readId = true;
         }
-        while (this.rev) {
+        while (this.revCounter) {
           // --- Start position
           i =
             this.currentDrive.disk.indexPos >=
@@ -1332,7 +1334,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               ? 0
               : this.currentDrive.disk.indexPos;
           if (this.seekId() === 0) {
-            this.rev = 0;
+            this.revCounter = 0;
           } else {
             this.idMark = false;
           }
@@ -1438,10 +1440,10 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           }
           this.firstRw = false;
 
-          this.rev = 2;
+          this.revCounter = 2;
           this.readId = true;
         }
-        while (this.rev) {
+        while (this.revCounter) {
           // --- Start position
           i =
             this.currentDrive.disk.indexPos >=
@@ -1449,7 +1451,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
               ? 0
               : this.currentDrive.disk.indexPos;
           if (this.seekId() === 0) {
-            this.rev = 0;
+            this.revCounter = 0;
           } else {
             this.idMark = false;
           }

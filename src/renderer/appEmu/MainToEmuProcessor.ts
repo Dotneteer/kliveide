@@ -451,20 +451,22 @@ export async function processMainToEmuMessages (
     // --- Get disk information
     const controller = machineService.getMachineController();
     const propName = message.diskIndex ? DISK_B_DATA : DISK_A_DATA;
-
+    const drive = message.diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
-      const floppy = new FloppyDisk(message.contents);
+      const floppy = message.contents ? new FloppyDisk(message.contents) : null;
 
       // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(propName, floppy ?? null);
+      controller.machine.setMachineProperty(propName, floppy);
 
       // --- Done.
       const response = await emuToMain.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "info",
-        title: "Disk file set",
-        message: `Disk file ${message.file} successfully set.`
+        title: floppy ? "Disk inserted" : "Disk ejected",
+        message: floppy
+          ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
+          : `Disk successfully ejected from drive ${drive}`
       });
       if (response.type === "ErrorResponse") {
         reportMessagingError(
