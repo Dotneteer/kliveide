@@ -5,23 +5,11 @@ import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 
 export type ViewMode = "full" | "rom" | "ram";
 
-type MemoryBankViewChangedArgs = {
+export type CachedRefreshState = {
+  autoRefresh: boolean;
   viewMode: ViewMode;
-  prevViewMode: ViewMode;
   romPage: number;
   ramBank: number;
-};
-
-type MemoryBankPanelProps = {
-  viewMode: ViewMode;
-  prevViewMode: ViewMode;
-  romPages: number;
-  ramBanks: number;
-  selectedRomPage: number;
-  selectedRamBank: number;
-  currentRomPage: number;
-  currentRamBank: number;
-  changed?: (newView: MemoryBankViewChangedArgs) => void;
 };
 
 export const MemoryBankBar = ({
@@ -92,6 +80,23 @@ export const MemoryBankBar = ({
       />
     </div>
   );
+};
 
-  return null;
+type MemoryBankViewChangedArgs = {
+  viewMode: ViewMode;
+  prevViewMode: ViewMode;
+  romPage: number;
+  ramBank: number;
+};
+
+type MemoryBankPanelProps = {
+  viewMode: ViewMode;
+  prevViewMode: ViewMode;
+  romPages: number;
+  ramBanks: number;
+  selectedRomPage: number;
+  selectedRamBank: number;
+  currentRomPage: number;
+  currentRamBank: number;
+  changed?: (newView: MemoryBankViewChangedArgs) => void;
 };

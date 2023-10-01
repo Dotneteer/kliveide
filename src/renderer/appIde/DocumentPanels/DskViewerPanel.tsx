@@ -20,14 +20,13 @@ import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
-import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const [docState, setDocState] = useState({});
-  const [showPhysical, refPhysical, setShowPhysical] = useUncommittedState(
+  const [showPhysical, setShowPhysical] = useState(
     (docState as any)?.showPhysical ?? false
   );
 
@@ -76,13 +75,13 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           <ToolbarSeparator small={true} />
           <LabeledSwitch
             value={showPhysical}
-            setterFn={setShowPhysical}
             label='Show surface view'
             title='Floppy physical surface view'
-            clicked={() => {
+            clicked={(v) => {
+              setShowPhysical(v)
               documentHubService.setDocumentViewState(document.id, {
                 ...docState,
-                ["showPhysical"]: refPhysical.current
+                ["showPhysical"]: v
               });
               documentHubService.signHubStateChanged();
             }}
@@ -412,10 +411,11 @@ const SectorPanel = ({ sector }: SectorProps) => {
   );
 };
 
-export const createDskViewerPanel = ({ document, contents }: DocumentProps) => (
+export const createDskViewerPanel = ({ document, viewState, contents }: DocumentProps) => (
   <DskViewerPanel
     key={document.id}
     document={document}
+    viewState={viewState}
     contents={contents}
     apiLoaded={() => {}}
   />

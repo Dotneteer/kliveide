@@ -36,8 +36,8 @@ export const StaticMemoryView = ({ memory, initialShowAll = false }: MemoryViewP
           <div className={styles.header}>
             <LabeledSwitch
               value={showAll}
-              setterFn={setShowAll}
               label='Show all'
+              clicked={v => setShowAll(v)}
             />
             {needsLabel && !showAll && (
               <Label text={`(Showing only the leading ${MAX_BYTES} bytes)`} />

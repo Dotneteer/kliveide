@@ -24,7 +24,7 @@ import {
 } from "@renderer/reportError";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { machineRegistry } from "@renderer/registry";
-import { MemoryBankBar, ViewMode } from "./MemoryBankBar";
+import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -36,12 +36,6 @@ type MemoryViewState = {
   ramBank?: number;
 };
 
-type CachedRefreshState = {
-  autoRefresh: boolean;
-  viewMode: ViewMode;
-  romPage: number;
-  ramBank: number;
-};
 const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
@@ -182,8 +176,14 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
     }
   };
 
-  // --- Save the current view state
-  const saveViewState = () => {
+  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
+  useInitializeAsync(async () => {
+    await refreshMemoryView();
+    setScrollVersion(scrollVersion + 1);
+  });
+
+  // --- Save view state whenever view parameters change
+  useEffect(() => {
     const mergedState: MemoryViewState = {
       topAddress,
       twoColumns,
@@ -194,17 +194,6 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
       ramBank
     };
     documentHubService.saveActiveDocumentState(mergedState);
-  };
-
-  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
-  useInitializeAsync(async () => {
-    await refreshMemoryView();
-    setScrollVersion(scrollVersion + 1);
-  });
-
-  // --- Save view state whenever view parameters change
-  useEffect(() => {
-    saveViewState();
   }, [
     topAddress,
     twoColumns,
@@ -278,11 +267,6 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Take care of refreshing the screen
   useStateRefresh(500, refreshView);
 
-  // --- Create a list of number range
-  const range = (start: number, end: number) => {
-    return [...Array(end - start + 1).keys()].map(i => i + start);
-  };
-
   return (
     <div className={styles.memoryPanel}>
       <div className={styles.header}>
@@ -334,7 +318,6 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         selectedRomPage={romPage}
         selectedRamBank={ramBank}
         changed={args => {
-          console.log("changed", args);
           setViewMode(args.viewMode);
           setPrevViewMode(args.prevViewMode);
           setRomPage(args.romPage);
