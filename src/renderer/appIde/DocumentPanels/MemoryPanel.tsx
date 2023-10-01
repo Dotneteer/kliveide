@@ -22,11 +22,10 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
-import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { machineRegistry } from "@renderer/registry";
+import { MemoryBankBar, ViewMode } from "./MemoryBankBar";
 
-type ViewMode = "full" | "rom" | "ram";
 type MemoryViewState = {
   topAddress?: number;
   twoColumns?: boolean;
@@ -37,15 +36,43 @@ type MemoryViewState = {
   ramBank?: number;
 };
 
+type CachedRefreshState = {
+  autoRefresh: boolean;
+  viewMode: ViewMode;
+  romPage: number;
+  ramBank: number;
+};
 const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
 
+  // --- These states are part of the viewState
   const [topAddress, setTopAddress] = useState(
     (viewState?.topAddress ?? 0) * (viewState?.twoColumns ?? true ? 2 : 1)
   );
+  const [twoColumns, setTwoColumns] = useState(viewState?.twoColumns ?? true);
+  const [charDump, setCharDump] = useState(viewState?.charDump ?? true);
+  const [autoRefresh, setAutoRefresh] = useState(
+    viewState?.autoRefresh ?? false
+  );
+  const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
+  const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
+  const [ramBank, setRamBank] = useState(viewState?.ramBank ?? 0);
+
+  // --- These state variables store values for "rom" and "ram" views
+  const [prevViewMode, setPrevViewMode] = useState<ViewMode>("rom");
+  const [currentRomPage, setCurrentRomPage] = useState<number>();
+  const [currentRamBank, setCurrentRamBank] = useState<number>();
+
+  // --- We need to use a reference to autorefresh, as we pass this info to another trhead
+  const cachedRefreshState = useRef<CachedRefreshState>({
+    autoRefresh,
+    viewMode,
+    romPage,
+    ramBank
+  });
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
@@ -55,29 +82,11 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const banksNum = machineInfo.banks ?? 0;
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
-  // --- Use these options to set memory options. As memory view is async, we sometimes
-  // --- need to use state changes not yet committed by React.
-  const [autoRefresh, setAutoRefresh] = useState(
-    viewState?.autoRefresh ?? false
-  );
-  const [twoColumns, setTwoColumns] = useState(viewState?.twoColumns ?? true);
-  const [charDump, setCharDump] = useState(viewState?.charDump ?? true);
-
-  // --- Use these options to set memory options. As memory view is async, we sometimes
-  // --- need to use state changes not yet committed by React.
-  const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
-  const [prevViewMode, setPrevViewMode] = useState<ViewMode>("rom");
-  const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
-  const [ramBank, setRamBank] = useState(viewState?.ramBank ?? 0);
-  const [currentRomPage, setCurrentRomPage] = useState<number>();
-  const [currentRamBank, setCurrentRamBank] = useState<number>();
-
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
   const cachedItems = useRef<number[]>([]);
   const vlApi = useRef<VirtualizedListApi>(null);
-  const refreshedOnStateChange = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
   const pointedRegs = useRef<Record<number, string>>({});
 
@@ -100,12 +109,10 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
       let partition: number | undefined;
 
       // --- Use partitions when multiple ROMs or Banks available
-      if (romsNum > 1 || banksNum > 0) {
-        if (viewMode === "rom") {
-          partition = -(romPage + 1);
-        } else if (viewMode === "ram") {
-          partition = ramBank ?? 0;
-        }
+      if (cachedRefreshState.current.viewMode === "rom") {
+        partition = -(cachedRefreshState.current.romPage + 1);
+      } else if (cachedRefreshState.current.viewMode === "ram") {
+        partition = cachedRefreshState.current.ramBank ?? 0;
       }
 
       // --- Get memory information
@@ -125,7 +132,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         // --- Calculate tooltips for pointed addresses
         pointedRegs.current = {};
         if (
-          autoRefresh ||
+          cachedRefreshState.current.autoRefresh ||
           machineState === MachineControllerState.Paused ||
           machineState === MachineControllerState.Stopped
         ) {
@@ -223,10 +230,15 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
           await refreshMemoryView();
-          refreshedOnStateChange.current = true;
       }
     })();
   }, [machineState]);
+
+  // --- Change the length of the current dump section according to the view mode
+  useEffect(
+    () => createDumpSections(viewMode === "full" ? 0x1_0000 : 0x4000),
+    [viewMode]
+  );
 
   // --- Apply column number changes
   useEffect(() => {
@@ -239,6 +251,12 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
 
   // --- Whenever the state of view options change
   useEffect(() => {
+    cachedRefreshState.current = {
+      autoRefresh,
+      viewMode,
+      romPage,
+      ramBank
+    }
     refreshMemoryView();
   }, [
     autoRefresh,
@@ -250,13 +268,19 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
     ramBank
   ]);
 
-  // --- Take care of refreshing the screen
-  useStateRefresh(500, () => {
-    if (autoRefresh || refreshedOnStateChange.current) {
+  const refreshView = () => {
+    if (cachedRefreshState.current.autoRefresh) {
       refreshMemoryView();
-      refreshedOnStateChange.current = false;
     }
-  });
+  };
+
+  // --- Take care of refreshing the screen
+  useStateRefresh(500, refreshView);
+
+  // --- Create a list of number range
+  const range = (start: number, end: number) => {
+    return [...Array(end - start + 1).keys()].map(i => i + start);
+  };
 
   return (
     <div className={styles.memoryPanel}>
@@ -299,47 +323,23 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
           }}
         />
       </div>
-      {(romsNum > 1 || banksNum > 0) && (
-        <div className={styles.header}>
-          <LabeledSwitch
-            value={viewMode === "full"}
-            label='Full View:'
-            title='Show the full 64K memory'
-            clicked={v => {
-              if (v) {
-                setPrevViewMode(viewMode);
-                setViewMode("full");
-              } else {
-                setViewMode(prevViewMode);
-              }
-            }}
-          />
-          <ToolbarSeparator small={true} />
-          <LabeledGroup
-            label='ROM: '
-            title='Select the ROM to display'
-            values={range(0, romsNum - 1)}
-            marked={currentRomPage}
-            selected={viewMode === "rom" ? romPage : -1}
-            clicked={v => {
-              setRomPage(v);
-              setViewMode("rom");
-            }}
-          />
-          <ToolbarSeparator small={true} />
-          <LabeledGroup
-            label='RAM Bank: '
-            title='Select the RAM Bank to display'
-            values={range(0, banksNum - 1)}
-            marked={currentRamBank}
-            selected={viewMode === "ram" ? ramBank : -1}
-            clicked={v => {
-              setRamBank(v);
-              setViewMode("ram");
-            }}
-          />
-        </div>
-      )}
+      <MemoryBankBar
+        viewMode={viewMode}
+        prevViewMode={prevViewMode}
+        romPages={romsNum}
+        ramBanks={banksNum}
+        currentRomPage={currentRomPage}
+        currentRamBank={currentRamBank}
+        selectedRomPage={romPage}
+        selectedRamBank={ramBank}
+        changed={args => {
+          console.log("changed", args);
+          setViewMode(args.viewMode);
+          setPrevViewMode(args.prevViewMode);
+          setRomPage(args.romPage);
+          setRamBank(args.ramBank);
+        }}
+      />
       <div className={styles.memoryWrapper}>
         <VirtualizedListView
           items={memoryItems}
@@ -382,15 +382,6 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
     </div>
   );
 };
-
-// --- Create a list of number range
-function range (start: number, end: number): number[] {
-  const result: number[] = [];
-  for (let i = start; i <= end; i++) {
-    result[i - start] = i;
-  }
-  return result;
-}
 
 export const createMemoryPanel = ({ document, viewState }: DocumentProps) => (
   <MemoryPanel document={document} viewState={viewState} apiLoaded={() => {}} />
