@@ -7,10 +7,10 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
 /**
  * Properties to pass to a document renderer
  */
-export type DocumentProps = {
+export type DocumentProps<T = any> = {
   document?: ProjectDocumentState;
   contents?: any;
-  viewState?: any;
+  viewState?: T;
   apiLoaded: (api: DocumentApi) => void;
 };
 

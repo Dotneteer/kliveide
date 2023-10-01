@@ -10,7 +10,6 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import classnames from "@renderer/utils/classnames";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -25,6 +24,7 @@ import {
 } from "@renderer/reportError";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import { machineRegistry } from "@renderer/registry";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -36,50 +36,37 @@ type MemoryViewState = {
   ramSelected?: number;
 };
 
-const MemoryPanel = ({ document }: DocumentProps) => {
+const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
 
-  // --- Read the view state of the document
-  const viewState = useRef(
-    (documentHubService.getDocumentViewState(document.id) as MemoryViewState) ??
-      {}
-  );
   const topAddress = useRef(
-    (viewState.current?.topAddress ?? 0) *
-      (viewState.current?.twoColumns ?? true ? 2 : 1)
+    (viewState?.topAddress ?? 0) * (viewState?.twoColumns ?? true ? 2 : 1)
   );
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
+  const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
+  const romsNum = machineInfo.roms ?? 1;
+  const banksNum = machineInfo.banks ?? 0;
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [autoRefresh, refAutoRefresh, setAutoRefresh] = useUncommittedState(
-    viewState.current?.autoRefresh ?? false
+  const [autoRefresh, setAutoRefresh] = useState(
+    viewState?.autoRefresh ?? false
   );
-  const [twoColumns, refTwoColumns, setTwoColumns] = useUncommittedState(
-    viewState.current?.twoColumns ?? true
-  );
-  const [charDump, refCharDump, setCharDump] = useUncommittedState(
-    viewState.current?.charDump ?? true
-  );
+  const [twoColumns, setTwoColumns] = useState(viewState?.twoColumns ?? true);
+  const [charDump, setCharDump] = useState(viewState?.charDump ?? true);
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [fullView, refFullView, setFullView] = useUncommittedState(
-    viewState.current?.fullView ?? true
-  );
-  const [romPage, refRomPage, setRomPage] = useUncommittedState(
-    viewState.current?.romSelected ?? null
-  );
-  const [ramBank, refRamBank, setRamBank] = useUncommittedState(
-    viewState.current?.ramSelected ?? null
-  );
+  const [fullView, setFullView] = useState(viewState?.fullView ?? true);
+  const [romPage, setRomPage] = useState(viewState?.romSelected ?? null);
+  const [ramBank, setRamBank] = useState(viewState?.ramSelected ?? null);
   const [currentRomPage, setCurrentRomPage] = useState<number>();
   const [currentRamBank, setCurrentRamBank] = useState<number>();
   const [lastRomPage, setLastRomPage] = useState<number>(null);
@@ -111,13 +98,19 @@ const MemoryPanel = ({ document }: DocumentProps) => {
     try {
       // --- Obtain the memory contents
       let partition: number | undefined;
-      if (!fullView) {
-        if (romPage != undefined) {
-          partition = -(romPage + 1);
-        } else {
-          partition = ramBank ?? 0;
+
+      // --- Use partitions when multiple ROMs or Banks available
+      if (romsNum > 1 || banksNum > 0) {
+        if (!fullView) {
+          if (romPage != undefined) {
+            partition = -(romPage + 1);
+          } else {
+            partition = ramBank ?? 0;
+          }
         }
       }
+
+      // --- Get memory information
       const response = await messenger.sendMessage({
         type: "EmuGetMemory",
         partition
@@ -134,7 +127,7 @@ const MemoryPanel = ({ document }: DocumentProps) => {
         // --- Calculate tooltips for pointed addresses
         pointedRegs.current = {};
         if (
-          refAutoRefresh.current ||
+          autoRefresh ||
           machineState === MachineControllerState.Paused ||
           machineState === MachineControllerState.Stopped
         ) {
@@ -183,18 +176,43 @@ const MemoryPanel = ({ document }: DocumentProps) => {
     }
   };
 
+  // --- Save the current view state
+  const saveViewState = () => {
+    const mergedState: MemoryViewState = {
+      topAddress: topAddress.current,
+      twoColumns: twoColumns,
+      charDump: charDump,
+      autoRefresh: autoRefresh,
+      fullView: fullView,
+      romSelected: romPage,
+      ramSelected: ramBank
+    };
+    documentHubService.saveActiveDocumentState(mergedState);
+  };
+
   // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
   useInitializeAsync(async () => {
     await refreshMemoryView();
     setScrollVersion(scrollVersion + 1);
   });
 
+  // --- Save view state whenever view parameters change
+  useEffect(() => {
+    saveViewState();
+  }, [
+    topAddress.current,
+    twoColumns,
+    charDump,
+    autoRefresh,
+    fullView,
+    romPage,
+    ramBank
+  ]);
+
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
     if (!memoryItems.length) return;
-    const idx = Math.floor(
-      topAddress.current / (refTwoColumns.current ? 2 : 1)
-    );
+    const idx = Math.floor(topAddress.current / (twoColumns ? 2 : 1));
     vlApi.current?.scrollToIndex(idx, {
       align: "start"
     });
@@ -212,51 +230,67 @@ const MemoryPanel = ({ document }: DocumentProps) => {
     })();
   }, [machineState]);
 
+  // --- Apply column number changes
+  useEffect(() => {
+    if (!twoColumns) {
+      topAddress.current *= 2;
+    }
+    createDumpSections(memory.current.length);
+    setScrollVersion(scrollVersion + 1);
+  }, [twoColumns]);
+
+  // --- Apply changes of full view
+  useEffect(() => {
+    if (fullView) {
+      setRomPage(null);
+      setRamBank(null);
+    } else {
+      if (lastRomPage === null && lastRamBank === null) {
+        setRomPage(0);
+      } else {
+        setRomPage(lastRomPage);
+        setRamBank(lastRamBank);
+      }
+    }
+  }, [fullView]);
+
+  // --- Apply changes of ROM view
+  useEffect(() => {
+    setLastRomPage(romPage);
+    setRamBank(null);
+    setLastRamBank(null);
+    setFullView(false);
+  }, [romPage]);
+
+  // --- Apply change of RAM bank view
+  useEffect(() => {
+    setLastRamBank(ramBank);
+    setRomPage(null);
+    setLastRomPage(null);
+    setFullView(false);
+    saveViewState();
+  }, [ramBank]);
+
   // --- Whenever the state of view options change
   useEffect(() => {
     refreshMemoryView();
-  }, [autoRefresh, charDump, injectionVersion, fullView, romPage, ramBank]);
+  }, [
+    autoRefresh,
+    twoColumns,
+    charDump,
+    injectionVersion,
+    fullView,
+    romPage,
+    ramBank
+  ]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
-    if (refAutoRefresh.current || refreshedOnStateChange.current) {
+    if (autoRefresh || refreshedOnStateChange.current) {
       refreshMemoryView();
       refreshedOnStateChange.current = false;
     }
   });
-
-  // --- Whenever two-section mode changes, refresh sections
-  useEffect(() => {
-    createDumpSections(memory.current.length);
-  }, [twoColumns]);
-
-  // --- Save the current top addresds
-  const storeTopAddress = () => {
-    const range = vlApi.current.getRange();
-    topAddress.current = range.startIndex;
-  };
-
-  // --- Save the new view state whenever the view is scrolled
-  const scrolled = () => {
-    if (!vlApi.current || cachedItems.current.length === 0) return;
-
-    storeTopAddress();
-    saveViewState();
-  };
-
-  // --- Save the current view state
-  const saveViewState = () => {
-    const mergedState: MemoryViewState = {
-      topAddress: topAddress.current,
-      twoColumns: refTwoColumns.current,
-      charDump: refCharDump.current,
-      autoRefresh: refAutoRefresh.current,
-      fullView: refFullView.current,
-      romSelected: refRomPage.current,
-      ramSelected: refRamBank.current
-    };
-    documentHubService.saveActiveDocumentState(mergedState);
-  };
 
   return (
     <div className={styles.memoryPanel}>
@@ -272,32 +306,23 @@ const MemoryPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          setterFn={setAutoRefresh}
           label='Auto Refresh:'
           title='Refresh the memory view periodically'
-          clicked={() => saveViewState()}
+          clicked={setAutoRefresh}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={twoColumns}
-          setterFn={setTwoColumns}
           label='Two Columns:'
           title='Use two-column layout?'
-          clicked={() => {
-            if (!refTwoColumns.current) {
-              topAddress.current *= 2;
-            }
-            saveViewState();
-            setScrollVersion(scrollVersion + 1);
-          }}
+          clicked={setTwoColumns}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={charDump}
-          setterFn={setCharDump}
           label='Char Dump:'
           title='Show characters dump?'
-          clicked={() => saveViewState()}
+          clicked={setCharDump}
         />
         <ToolbarSeparator small={true} />
         <AddressInput
@@ -308,59 +333,31 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           }}
         />
       </div>
-      {machineId === "sp128" && (
+      {(romsNum > 1 || banksNum > 0) && (
         <div className={styles.header}>
           <LabeledSwitch
             value={fullView}
-            setterFn={setFullView}
             label='Full View:'
             title='Show the full 64K memory'
-            clicked={() => {
-              if (refFullView.current) {
-                setRomPage(null);
-                setRamBank(null);
-              } else {
-                if (lastRomPage === null && lastRamBank === null) {
-                  setRomPage(0);
-                } else {
-                  setRomPage(lastRomPage);
-                  setRamBank(lastRamBank);
-                }
-              }
-              saveViewState();
-            }}
+            clicked={setFullView}
           />
           <ToolbarSeparator small={true} />
           <LabeledGroup
             label='ROM: '
             title='Select the ROM to display'
-            values={[0, 1]}
+            values={range(0, romsNum - 1)}
             marked={currentRomPage}
             selected={romPage}
-            clicked={v => {
-              setRomPage(v);
-              setLastRomPage(v);
-              setRamBank(null);
-              setLastRamBank(null);
-              setFullView(false);
-              saveViewState();
-            }}
+            clicked={setRomPage}
           />
           <ToolbarSeparator small={true} />
           <LabeledGroup
             label='RAM Bank: '
             title='Select the RAM Bank to display'
-            values={[0, 1, 2, 3, 4, 5, 6, 7]}
+            values={range(0, banksNum - 1)}
             marked={currentRamBank}
             selected={ramBank}
-            clicked={v => {
-              setRamBank(v);
-              setLastRamBank(v);
-              setRomPage(null);
-              setLastRomPage(null);
-              setFullView(false);
-              saveViewState();
-            }}
+            clicked={setRamBank}
           />
         </div>
       )}
@@ -369,7 +366,13 @@ const MemoryPanel = ({ document }: DocumentProps) => {
           items={memoryItems}
           approxSize={20}
           fixItemHeight={false}
-          scrolled={scrolled}
+          scrolled={() => {
+            if (!vlApi.current || cachedItems.current.length === 0) return;
+
+            const range = vlApi.current.getRange();
+            topAddress.current = range.startIndex;
+            saveViewState();
+          }}
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
             return (
@@ -402,6 +405,14 @@ const MemoryPanel = ({ document }: DocumentProps) => {
   );
 };
 
-export const createMemoryPanel = ({ document }: DocumentProps) => (
-  <MemoryPanel document={document} apiLoaded={() => {}} />
+function range (start: number, end: number): number[] {
+  const result: number[] = [];
+  for (let i = start; i <= end; i++) {
+    result[i - start] = i;
+  }
+  return result;
+}
+
+export const createMemoryPanel = ({ document, viewState }: DocumentProps) => (
+  <MemoryPanel document={document} viewState={viewState} apiLoaded={() => {}} />
 );

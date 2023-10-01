@@ -7,7 +7,6 @@ type Props = {
   label: string;
   title?: string;
   value: boolean;
-  setterFn: (val: boolean) => void;
   clicked?: (val: boolean) => void;
 };
 
@@ -15,7 +14,6 @@ export const LabeledSwitch = ({
   label,
   title,
   value,
-  setterFn,
   clicked
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -24,7 +22,6 @@ export const LabeledSwitch = ({
       ref={ref}
       className={styles.labeledSwitch}
       onClick={() => {
-        setterFn(!value);
         clicked?.(!value);
       }}
     >
