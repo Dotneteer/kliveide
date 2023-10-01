@@ -213,20 +213,28 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: "sp128",
     displayName: "ZX Spectrum 128K",
+    roms: 2,
+    banks: 8,
     factory: () => new ZxSpectrum128Machine()
   },
   {
     machineId: "spp2e",
     displayName: "ZX Spectrum +2E",
+    roms: 4,
+    banks: 8,
     factory: store => new ZxSpectrumP2eMachine(store)
   },
   {
     machineId: "spp3e",
     displayName: "ZX Spectrum +3E (1 FDD)",
+    roms: 4,
+    banks: 8,
     factory: (store) => new ZxSpectrumP3eMachine(store)
   },
   {
     machineId: "spp3ef2",
+    roms: 4,
+    banks: 8,
     displayName: "ZX Spectrum +3E (2 FDDs)",
     factory: (store) => new ZxSpectrumP3eF2Machine(store)
   }

@@ -16,6 +16,12 @@ export type MachineInfo = {
    */
   displayName: string;
 
+  // --- Number of ROMS available
+  roms?: number;
+
+  // --- Number of memory banks available
+  banks?: number;
+
   /**
    * Creates the emulate machine instance
    * @returns The emulated machine instance

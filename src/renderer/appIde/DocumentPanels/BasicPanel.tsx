@@ -9,7 +9,6 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { useUncommittedState } from "@renderer/core/useUncommittedState";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -25,7 +24,10 @@ import {
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
 import { ZxSpectrumChars } from "./char-codes";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 
 type BasicViewState = {
@@ -34,27 +36,24 @@ type BasicViewState = {
   showCodes?: boolean;
 };
 
-const BasicPanel = ({ document }: DocumentProps) => {
+const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
 
   // --- Read the view state of the document
-  const viewState = useRef((documentHubService.getDocumentViewState(document.id) as BasicViewState) ?? {});
-  const topIndex = useRef(viewState.current?.topIndex ?? 0);
+  const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? 0);
 
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [autoRefresh, useAutoRefresh, setAutoRefresh] = useUncommittedState(
-    viewState.current?.autoRefresh ?? true
+  const [autoRefresh, setAutoRefresh] = useState(
+    viewState?.autoRefresh ?? true
   );
-  const [showCodes, useCodes, setShowCodes] = useUncommittedState(
-    viewState.current?.showCodes ?? false
-  );
+  const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -63,8 +62,10 @@ const BasicPanel = ({ document }: DocumentProps) => {
   const showListing = useRef(false);
   const cachedLines = useRef<BasicLine[]>([]);
   const vlApi = useRef<VirtualizedListApi>(null);
-  const refreshedOnStateChange = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
+
+  const useCodes = useRef(false);
+  const useAutoRefresh = useRef(autoRefresh);
 
   // --- Creates the addresses to represent dump sections
   const createListing = () => {
@@ -112,7 +113,7 @@ const BasicPanel = ({ document }: DocumentProps) => {
 
       // --- Iterate through the line
       while (currentPos < nextLine) {
-        if (useCodes.current) {
+        if (showCodes) {
           buffer.resetColor();
         }
 
@@ -309,10 +310,20 @@ const BasicPanel = ({ document }: DocumentProps) => {
     setScrollVersion(scrollVersion + 1);
   });
 
+  useEffect(() => {
+    useAutoRefresh.current = autoRefresh;
+    useCodes.current = showCodes;
+    const mergedState: BasicViewState = {
+      topIndex,
+      autoRefresh,
+      showCodes
+    };
+    documentHubService.saveActiveDocumentState(mergedState);
+  }, [topIndex, autoRefresh, showCodes]);
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
     if (!basicLines.length) return;
-    vlApi.current?.scrollToIndex(topIndex.current, {
+    vlApi.current?.scrollToIndex(topIndex, {
       align: "start"
     });
   }, [scrollVersion]);
@@ -324,7 +335,6 @@ const BasicPanel = ({ document }: DocumentProps) => {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
           await refreshMemoryView();
-          refreshedOnStateChange.current = true;
       }
     })();
   }, [machineState]);
@@ -336,32 +346,13 @@ const BasicPanel = ({ document }: DocumentProps) => {
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
-    refreshMemoryView(useAutoRefresh.current || refreshedOnStateChange.current);
-    refreshedOnStateChange.current = false;
+    refreshMemoryView(useAutoRefresh.current);
   });
 
   // --- Save the current top addresds
   const storeTopAddress = () => {
     const range = vlApi.current.getRange();
-    topIndex.current = range.startIndex;
-  };
-
-  // --- Save the new view state whenever the view is scrolled
-  const scrolled = () => {
-    if (!vlApi.current || cachedLines.current.length === 0) return;
-
-    storeTopAddress();
-    saveViewState();
-  };
-
-  // --- Save the current view state
-  const saveViewState = () => {
-    const mergedState: BasicViewState = {
-      topIndex: topIndex.current,
-      autoRefresh: useAutoRefresh.current,
-      showCodes: useCodes.current
-    };
-    documentHubService.saveActiveDocumentState(mergedState);
+    setTopIndex(range.startIndex);
   };
 
   return (
@@ -396,18 +387,16 @@ const BasicPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          setterFn={setAutoRefresh}
           label='Auto Refresh:'
           title='Refresh the BASIC listing periodically'
-          clicked={() => saveViewState()}
+          clicked={setAutoRefresh}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showCodes}
-          setterFn={setShowCodes}
           label='Show Non-Printable:'
           title='Display the non-printable codes'
-          clicked={() => saveViewState()}
+          clicked={setShowCodes}
         />
       </div>
       {!showListing.current && (
@@ -424,7 +413,11 @@ const BasicPanel = ({ document }: DocumentProps) => {
             items={basicLines}
             approxSize={20}
             fixItemHeight={false}
-            scrolled={scrolled}
+            scrolled={() => {
+              if (!vlApi.current || cachedLines.current.length === 0) return;
+
+              storeTopAddress();
+            }}
             vlApiLoaded={api => (vlApi.current = api)}
             itemRenderer={idx => {
               return (
@@ -496,6 +489,6 @@ function getColorCode (code: number): SpectrumColor {
   return colorCodes[code & 0x07];
 }
 
-export const createBasicPanel = ({ document }: DocumentProps) => (
-  <BasicPanel document={document} apiLoaded={() => {}} />
+export const createBasicPanel = ({ viewState }: DocumentProps) => (
+  <BasicPanel viewState={viewState} apiLoaded={() => {}} />
 );
