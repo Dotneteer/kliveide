@@ -26,14 +26,15 @@ import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { machineRegistry } from "@renderer/registry";
 
+type ViewMode = "full" | "rom" | "ram";
 type MemoryViewState = {
   topAddress?: number;
   twoColumns?: boolean;
   charDump?: boolean;
   autoRefresh?: boolean;
-  fullView?: boolean;
-  romSelected?: number;
-  ramSelected?: number;
+  viewMode?: ViewMode;
+  romPage?: number;
+  ramBank?: number;
 };
 
 const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
@@ -42,7 +43,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
 
-  const topAddress = useRef(
+  const [topAddress, setTopAddress] = useState(
     (viewState?.topAddress ?? 0) * (viewState?.twoColumns ?? true ? 2 : 1)
   );
 
@@ -64,13 +65,12 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [fullView, setFullView] = useState(viewState?.fullView ?? true);
-  const [romPage, setRomPage] = useState(viewState?.romSelected ?? null);
-  const [ramBank, setRamBank] = useState(viewState?.ramSelected ?? null);
+  const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
+  const [prevViewMode, setPrevViewMode] = useState<ViewMode>("rom");
+  const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
+  const [ramBank, setRamBank] = useState(viewState?.ramBank ?? 0);
   const [currentRomPage, setCurrentRomPage] = useState<number>();
   const [currentRamBank, setCurrentRamBank] = useState<number>();
-  const [lastRomPage, setLastRomPage] = useState<number>(null);
-  const [lastRamBank, setLastRamBank] = useState<number>(null);
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -101,12 +101,10 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
 
       // --- Use partitions when multiple ROMs or Banks available
       if (romsNum > 1 || banksNum > 0) {
-        if (!fullView) {
-          if (romPage != undefined) {
-            partition = -(romPage + 1);
-          } else {
-            partition = ramBank ?? 0;
-          }
+        if (viewMode === "rom") {
+          partition = -(romPage + 1);
+        } else if (viewMode === "ram") {
+          partition = ramBank ?? 0;
         }
       }
 
@@ -179,13 +177,13 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: MemoryViewState = {
-      topAddress: topAddress.current,
-      twoColumns: twoColumns,
-      charDump: charDump,
-      autoRefresh: autoRefresh,
-      fullView: fullView,
-      romSelected: romPage,
-      ramSelected: ramBank
+      topAddress,
+      twoColumns,
+      charDump,
+      autoRefresh,
+      viewMode,
+      romPage,
+      ramBank
     };
     documentHubService.saveActiveDocumentState(mergedState);
   };
@@ -200,11 +198,11 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   useEffect(() => {
     saveViewState();
   }, [
-    topAddress.current,
+    topAddress,
     twoColumns,
     charDump,
     autoRefresh,
-    fullView,
+    viewMode,
     romPage,
     ramBank
   ]);
@@ -212,7 +210,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
     if (!memoryItems.length) return;
-    const idx = Math.floor(topAddress.current / (twoColumns ? 2 : 1));
+    const idx = Math.floor(topAddress / (twoColumns ? 2 : 1));
     vlApi.current?.scrollToIndex(idx, {
       align: "start"
     });
@@ -233,43 +231,11 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Apply column number changes
   useEffect(() => {
     if (!twoColumns) {
-      topAddress.current *= 2;
+      setTopAddress(topAddress * 2);
     }
     createDumpSections(memory.current.length);
     setScrollVersion(scrollVersion + 1);
   }, [twoColumns]);
-
-  // --- Apply changes of full view
-  useEffect(() => {
-    if (fullView) {
-      setRomPage(null);
-      setRamBank(null);
-    } else {
-      if (lastRomPage === null && lastRamBank === null) {
-        setRomPage(0);
-      } else {
-        setRomPage(lastRomPage);
-        setRamBank(lastRamBank);
-      }
-    }
-  }, [fullView]);
-
-  // --- Apply changes of ROM view
-  useEffect(() => {
-    setLastRomPage(romPage);
-    setRamBank(null);
-    setLastRamBank(null);
-    setFullView(false);
-  }, [romPage]);
-
-  // --- Apply change of RAM bank view
-  useEffect(() => {
-    setLastRamBank(ramBank);
-    setRomPage(null);
-    setLastRomPage(null);
-    setFullView(false);
-    saveViewState();
-  }, [ramBank]);
 
   // --- Whenever the state of view options change
   useEffect(() => {
@@ -279,7 +245,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
     twoColumns,
     charDump,
     injectionVersion,
-    fullView,
+    viewMode,
     romPage,
     ramBank
   ]);
@@ -328,7 +294,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         <AddressInput
           label='Go To:'
           onAddressSent={async address => {
-            topAddress.current = Math.floor(address / 8);
+            setTopAddress(Math.floor(address / 8));
             setScrollVersion(scrollVersion + 1);
           }}
         />
@@ -336,10 +302,17 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
       {(romsNum > 1 || banksNum > 0) && (
         <div className={styles.header}>
           <LabeledSwitch
-            value={fullView}
+            value={viewMode === "full"}
             label='Full View:'
             title='Show the full 64K memory'
-            clicked={setFullView}
+            clicked={v => {
+              if (v) {
+                setPrevViewMode(viewMode);
+                setViewMode("full");
+              } else {
+                setViewMode(prevViewMode);
+              }
+            }}
           />
           <ToolbarSeparator small={true} />
           <LabeledGroup
@@ -347,8 +320,11 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
             title='Select the ROM to display'
             values={range(0, romsNum - 1)}
             marked={currentRomPage}
-            selected={romPage}
-            clicked={setRomPage}
+            selected={viewMode === "rom" ? romPage : -1}
+            clicked={v => {
+              setRomPage(v);
+              setViewMode("rom");
+            }}
           />
           <ToolbarSeparator small={true} />
           <LabeledGroup
@@ -356,8 +332,11 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
             title='Select the RAM Bank to display'
             values={range(0, banksNum - 1)}
             marked={currentRamBank}
-            selected={ramBank}
-            clicked={setRamBank}
+            selected={viewMode === "ram" ? ramBank : -1}
+            clicked={v => {
+              setRamBank(v);
+              setViewMode("ram");
+            }}
           />
         </div>
       )}
@@ -370,8 +349,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
             if (!vlApi.current || cachedItems.current.length === 0) return;
 
             const range = vlApi.current.getRange();
-            topAddress.current = range.startIndex;
-            saveViewState();
+            setTopAddress(range.startIndex);
           }}
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {
@@ -405,6 +383,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   );
 };
 
+// --- Create a list of number range
 function range (start: number, end: number): number[] {
   const result: number[] = [];
   for (let i = start; i <= end; i++) {
