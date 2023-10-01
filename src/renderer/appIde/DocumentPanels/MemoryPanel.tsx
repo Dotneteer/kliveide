@@ -132,9 +132,10 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         // --- Calculate tooltips for pointed addresses
         pointedRegs.current = {};
         if (
-          cachedRefreshState.current.autoRefresh ||
-          machineState === MachineControllerState.Paused ||
-          machineState === MachineControllerState.Stopped
+          cachedRefreshState.current.viewMode !== "ram" &&
+          (cachedRefreshState.current.autoRefresh ||
+            machineState === MachineControllerState.Paused ||
+            machineState === MachineControllerState.Stopped)
         ) {
           extendPointedAddress("AF", response.af);
           extendPointedAddress("BC", response.bc);
@@ -256,7 +257,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
       viewMode,
       romPage,
       ramBank
-    }
+    };
     refreshMemoryView();
   }, [
     autoRefresh,
