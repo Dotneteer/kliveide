@@ -29,11 +29,13 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
+import classnames from "@renderer/utils/classnames";
 
 type BasicViewState = {
   topIndex?: number;
   autoRefresh?: boolean;
   showCodes?: boolean;
+  showSpectrumFont?: boolean;
 };
 
 const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
@@ -54,6 +56,9 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     viewState?.autoRefresh ?? true
   );
   const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
+  const [showSpectrumFont, setShowSpectrumFont] = useState(
+    viewState?.showSpectrumFont ?? true
+  );
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -275,8 +280,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     setBasicLines(lines);
   };
 
-  // --- This function refreshes the memory
-  const refreshMemoryView = async (toRefresh = true) => {
+  // --- This function refreshes the BASIC list
+  const refreshBasicView = async (toRefresh = true) => {
     if (refreshInProgress.current) return;
     refreshInProgress.current = true;
     try {
@@ -304,9 +309,9 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     }
   };
 
-  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
+  // --- Initial view: refresh the BASIC list and scroll to the last saved top position
   useInitializeAsync(async () => {
-    await refreshMemoryView();
+    await refreshBasicView();
     setScrollVersion(scrollVersion + 1);
   });
 
@@ -316,10 +321,11 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     const mergedState: BasicViewState = {
       topIndex,
       autoRefresh,
-      showCodes
+      showCodes,
+      showSpectrumFont
     };
     documentHubService.saveActiveDocumentState(mergedState);
-  }, [topIndex, autoRefresh, showCodes]);
+  }, [topIndex, autoRefresh, showCodes, showSpectrumFont]);
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
     if (!basicLines.length) return;
@@ -334,19 +340,19 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          await refreshMemoryView();
+          await refreshBasicView();
       }
     })();
   }, [machineState]);
 
   // --- Whenever the state of view options change
   useEffect(() => {
-    refreshMemoryView();
-  }, [autoRefresh, showCodes]);
+    refreshBasicView();
+  }, [autoRefresh, showCodes, showSpectrumFont]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, () => {
-    refreshMemoryView(useAutoRefresh.current);
+    refreshBasicView(useAutoRefresh.current);
   });
 
   // --- Save the current top addresds
@@ -362,7 +368,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           iconName='refresh'
           title={"Refresh now"}
           clicked={async () => {
-            refreshMemoryView();
+            refreshBasicView();
             dispatch(
               setIdeStatusMessageAction("BASIC listing refreshed", true)
             );
@@ -398,6 +404,13 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           title='Display the non-printable codes'
           clicked={setShowCodes}
         />
+        <ToolbarSeparator small={true} />
+        <LabeledSwitch
+          value={showSpectrumFont}
+          label='Use ZX Spectrum font:'
+          title='Use ZX Spectrum font to display the list'
+          clicked={setShowSpectrumFont}
+        />
       </div>
       {!showListing.current && (
         <div className={styles.center}>
@@ -422,7 +435,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
             itemRenderer={idx => {
               return (
                 <div className={styles.item}>
-                  <BasicLineDisplay spans={basicLines[idx].spans} />
+                  <BasicLineDisplay spans={basicLines[idx].spans} showSpectrumFont={showSpectrumFont} />
                 </div>
               );
             }}
@@ -435,11 +448,12 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
 type LineProps = {
   spans: BasicLineSpan[];
+  showSpectrumFont?: boolean;
 };
 
 let runningIndex = 0;
 
-export const BasicLineDisplay = ({ spans }: LineProps) => {
+export const BasicLineDisplay = ({ spans, showSpectrumFont }: LineProps) => {
   const segments = (spans ?? []).map((s, idx) => {
     const inkColor = s.inverse ? s.paper : s.ink;
     const ink =
@@ -463,7 +477,9 @@ export const BasicLineDisplay = ({ spans }: LineProps) => {
     const style: CSSProperties = {
       backgroundColor: `var(${paper})`,
       color: `var(${ink})`,
-      textDecoration: `${s.flash ? "underline" : ""}`
+      textDecoration: `${s.flash ? "underline" : ""}`,
+      paddingTop: showSpectrumFont ? 2 : undefined,
+      paddingBottom: showSpectrumFont ? 2 : undefined,
     };
     return (
       <span key={runningIndex++} style={style}>
@@ -471,7 +487,15 @@ export const BasicLineDisplay = ({ spans }: LineProps) => {
       </span>
     );
   });
-  return <div className={styles.outputLine}>{[...segments]}</div>;
+  return (
+    <div
+      className={classnames({
+        [styles.spectrum]: showSpectrumFont
+      })}
+    >
+      {[...segments]}
+    </div>
+  );
 };
 
 const colorCodes: SpectrumColor[] = [
