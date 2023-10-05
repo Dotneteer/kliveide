@@ -24,6 +24,7 @@ import {
   IMachineController
 } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -186,12 +187,12 @@ export const EmulatorPanel = () => {
             break;
 
           case MachineControllerState.Paused:
-            setOverlay("Paused");
+            setOverlay(`Paused (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
             break;
 
           case MachineControllerState.Stopped:
-            setOverlay("Stopped");
+            setOverlay(`Stopped (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
             machineStateHandlerQueue.length = 0;
             break;
