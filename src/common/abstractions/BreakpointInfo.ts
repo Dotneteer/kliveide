@@ -33,6 +33,11 @@ export type BreakpointInfo = {
   resolvedAddress?: number;
 
   /**
+   * Indicates that a source-bound breakpoint is at this partition
+   */
+  resolvedPartition?: number;
+
+  /**
    * Optional mask for I/O addresses
    */
   mask?: number;

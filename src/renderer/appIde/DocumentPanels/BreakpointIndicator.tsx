@@ -7,6 +7,7 @@ import { useAppServices } from "../services/AppServicesProvider";
 
 type Props = {
   address: number | string;
+  partition?: number;
   hasBreakpoint: boolean;
   disabled: boolean;
   current: boolean;
@@ -14,6 +15,7 @@ type Props = {
 
 export const BreakpointIndicator = ({
   address,
+  partition,
   hasBreakpoint,
   disabled,
   current
@@ -24,7 +26,13 @@ export const BreakpointIndicator = ({
 
   // --- Calculate tooltip text
   const addrLabel =
-    typeof address === "number" ? `$${toHexa4(address)} (${address})` : address;
+    typeof address === "number"
+      ? partition !== undefined
+        ? `${partition < 0 ? `R${-(partition + 1)}` : partition}:$${toHexa4(
+            address
+          )}`
+        : `$${toHexa4(address)}`
+      : address;
   const tooltip =
     `${addrLabel}\n` +
     (hasBreakpoint
@@ -54,17 +62,17 @@ export const BreakpointIndicator = ({
 
   // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
-    const command = `${hasBreakpoint ? "bp-del" : "bp-set"} ${address}`;
+    const command = `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel}`;
     console.log(command);
     await ideCommandsService.executeCommand(command);
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
+    const command = `bp-en ${addrLabel} ${disabled ? "" : "-d"}`;
+    console.log(command);
     if (hasBreakpoint) {
-      await ideCommandsService.executeCommand(
-        `bp-en ${address} ${disabled ? "" : "-d"}`
-      );
+      await ideCommandsService.executeCommand(command);
     }
   };
 

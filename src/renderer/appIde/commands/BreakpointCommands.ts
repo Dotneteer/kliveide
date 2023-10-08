@@ -9,7 +9,7 @@ import {
   validationError,
   commandError,
   IdeCommandBase,
-  getNumericTokenValue
+  getPartitionedValue
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import { getBreakpointKey } from "@common/utils/breakpoints";
@@ -96,6 +96,7 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
 
 abstract class BreakpointWithAddressCommand extends IdeCommandBase {
   protected address?: number;
+  protected partition?: number;
   protected resource?: string;
   protected line?: number;
 
@@ -123,7 +124,8 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
       this.line = addrInfo.line;
     } else {
       // --- Address resource
-      const { value, messages } = getNumericTokenValue(token);
+      const { value, partition, partitionType, messages } =
+        getPartitionedValue(token);
       if (value === null) {
         return messages;
       }
@@ -132,7 +134,30 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
           `Argument value must be between ${0} and ${0x1_0000}`
         );
       }
+
+      // --- Test partition validity
       this.address = value;
+      this.partition = partitionType === "R" ? -(partition + 1) : partition;
+      if (partition !== undefined) {
+        const roms = context.machineInfo.roms ?? 0;
+        const banks = context.machineInfo.banks ?? 0;
+        if (
+          (roms === 0 && this.partition < 0) ||
+          (banks === 0 && this.partition >= 0)
+        ) {
+          return validationError(
+            `The current machine (${context.machineInfo.machineId}) does not support memory pages`
+          );
+        }
+        if (
+          (this.partition < 0 && this.partition < -roms) ||
+          (this.partition >= 0 && this.partition > banks)
+        ) {
+          return validationError(
+            `Invalid partition (${partitionType === "R" ? "R" : ""}${partition}) for the current machine (${context.machineInfo.machineId})`
+          );
+        }
+      }
     }
     return [];
   }
@@ -149,6 +174,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       type: "EmuSetBreakpoint",
       address: this.address,
       resource: this.resource,
+      partition: this.partition,
       line: this.line
     });
     if (response.type === "ErrorResponse") {
@@ -159,12 +185,10 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     }
     let addrKey = getBreakpointKey({
       address: this.address,
+      partition: this.partition,
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) {
-      addrKey = "$" + addrKey;
-    }
     writeSuccessMessage(
       context.output,
       `Breakpoint at address ${addrKey} ${response.flag ? "set" : "updated"}`
@@ -183,6 +207,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     const response = await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
       address: this.address,
+      partition: this.partition,
       resource: this.resource,
       line: this.line
     });
@@ -194,12 +219,10 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     }
     let addrKey = getBreakpointKey({
       address: this.address,
+      partition: this.partition,
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) {
-      addrKey = "$" + addrKey;
-    }
     if (response.flag) {
       writeSuccessMessage(
         context.output,
@@ -208,7 +231,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     } else {
       writeSuccessMessage(
         context.output,
-        `No breakpoint has been set at address $${toHexa4(this.address)}`
+        `No breakpoint has been set at address ${addrKey}`
       );
     }
     return commandSuccess;
@@ -247,6 +270,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
     const response = await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
       address: this.address,
+      partition: this.partition,
       resource: this.resource,
       line: this.line,
       enable: this.enable
@@ -259,12 +283,10 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
     }
     let addrKey = getBreakpointKey({
       address: this.address,
+      partition: this.partition,
       resource: this.resource,
       line: this.line
     });
-    if (!addrKey.startsWith("[")) {
-      addrKey = "$" + addrKey;
-    }
     if (response.flag) {
       writeSuccessMessage(
         context.output,

@@ -1,4 +1,7 @@
-import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  BreakpointAddressInfo,
+  BreakpointInfo
+} from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
@@ -6,21 +9,24 @@ import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import { reportMessagingError } from "@renderer/reportError";
 
-export function getBreakpointKey (bp: BreakpointInfo | BreakpointAddressInfo): string {
+export function getBreakpointKey (
+  bp: BreakpointInfo | BreakpointAddressInfo
+): string {
   if (bp.address !== undefined) {
     // --- Breakpoint defined with address
-    return bp.partition !== undefined
-      ? `${bp.partition.toString(16)}:${bp.address
+    if (bp.partition === undefined) {
+      return `$${bp.address.toString(16).padStart(4, "0")}`;
+    }
+    return bp.partition < 0
+      ? `R${(-(bp.partition + 1)).toString(16)}:$${bp.address
           .toString(16)
           .padStart(4, "0")}`
-      : `${bp.address.toString(16).padStart(4, "0")}`;
-  }
-  if (bp.resource && bp.line !== undefined) {
+      : `${bp.partition.toString(16)}:$${bp.address.toString(16)}`;
+  } else if (bp.resource && bp.line !== undefined) {
     return `[${bp.resource}]:${bp.line}`;
   }
   throw new Error("Breakpoint info does not have key information.");
 }
-
 
 // --- Sends all resolved source code breakpoints to the emulator
 export async function refreshSourceCodeBreakpoints (
@@ -69,4 +75,3 @@ export async function refreshSourceCodeBreakpoints (
     );
   }
 }
-
