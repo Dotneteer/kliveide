@@ -14,6 +14,7 @@ import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
 import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
+import { PagedMemory } from "../memory/PagedMemory";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -25,7 +26,7 @@ export const SP48_MAIN_ENTRY = 0x12ac;
  */
 export class ZxSpectrum48Machine extends ZxSpectrumBase {
   // --- This byte array represents the 64K memory, including the 16K ROM and 48K RAM.
-  private readonly _memory = new Uint8Array(0x1_0000);
+  private readonly _memory: PagedMemory;
 
   /**
    * The unique identifier of the machine type
@@ -41,6 +42,18 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     this.baseClockFrequency = 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
+
+    // --- Create memory
+    const pm = new PagedMemory(1, 3);
+    pm.setPageInfo(0, pm.getPartitionOffset(-1), undefined, true);
+    pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(-1), undefined, true);
+    pm.setPageInfo(2, pm.getPartitionOffset(0), undefined, false);
+    pm.setPageInfo(3, 0x2000 + pm.getPartitionOffset(0), undefined, false);
+    pm.setPageInfo(4, pm.getPartitionOffset(1), undefined, false);
+    pm.setPageInfo(5, 0x2000 + pm.getPartitionOffset(1), undefined, false);
+    pm.setPageInfo(6, pm.getPartitionOffset(2), undefined, false);
+    pm.setPageInfo(7, 0x2000 + pm.getPartitionOffset(2), undefined, false);
+    this._memory = pm;
 
     // --- Create and initialize devices
     this.keyboardDevice = new KeyboardDevice(this);
@@ -86,7 +99,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   hardReset (): void {
     super.hardReset();
-    for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
+    this._memory.resetPartition(0);
+    this._memory.resetPartition(1);
+    this._memory.resetPartition(2);
     this.reset();
   }
 
@@ -135,7 +150,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory (offset: number): number {
-    return this._memory[0x4000 + (offset & 0x3fff)];
+    return this._memory.readMemory(0x4000 + (offset & 0x3fff));
   }
 
   /**
@@ -143,7 +158,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    return this._memory;
+    return this._memory.get64KFlatMemory();
   }
 
   /**
@@ -177,7 +192,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this._memory[address];
+    return this._memory.readMemory(address);
   }
 
   /**
@@ -186,9 +201,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    if ((address & 0xc000) !== 0x0000) {
-      this._memory[address] = value;
-    }
+    this._memory.writeMemory(address, value);
   }
 
   /**
@@ -265,9 +278,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param data ROM contents
    */
   uploadRomBytes (data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      this._memory[i] = data[i];
-    }
+    this._memory.rawCopy(this._memory.getPartitionOffset(-1), data);
   }
 
   /**
