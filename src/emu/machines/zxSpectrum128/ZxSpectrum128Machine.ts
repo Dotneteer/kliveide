@@ -28,7 +28,7 @@ export const SP48_MAIN_ENTRY = 0x12ac;
  * This class represents the emulator of a ZX Spectrum 48 machine.
  */
 export class ZxSpectrum128Machine extends ZxSpectrumBase {
-  // --- This array represents the storage for ROM pages
+  // --- Memory-related fields
   private memory: PagedMemory;
   private previousRom = 0;
   private previousBank = 0;
@@ -119,7 +119,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     // --- Reset the CPU
     super.reset();
 
-    // --- Reset the ROM page and the RAM bank
+    // --- Reset the ROM pages and the RAM banks
     const pm = this.memory;
     pm.setPageInfo(0, pm.getPartitionOffset(-1), -1, true);
     pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(-1), -1, true);
@@ -330,7 +330,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
       // --- Choose the RAM bank for Slot 3 (0xc000-0xffff)
       this.selectedBank = value & 0x07;
-      if (this.selectedBank !== this.previousBank) {
+      if (this.selectedBank !== this.previousBank ) {
         // --- Update the bank page
         this.previousBank = this.selectedBank;
         const pm = this.memory;
@@ -393,15 +393,17 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     return this.screenDevice.screenLines;
   }
 
-  /// <summary>
-  /// Gets the buffer that stores the rendered pixels
-  /// </summary>
+  /**
+   * Gets the buffer that stores the rendered pixels
+   * @returns 
+   */
   getPixelBuffer (): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
   /**
-   * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
+   * Uploades the specified ROM information to the ZX Spectrum ROM memory
+   * @param partition Partition to upload the ROM contents to
    * @param data ROM contents
    */
   uploadRomBytes (partition: number, data: Uint8Array): void {

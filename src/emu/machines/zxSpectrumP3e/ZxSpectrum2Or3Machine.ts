@@ -23,6 +23,7 @@ import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { setDiskFileAction } from "@common/state/actions";
+import { PagedMemory } from "../memory/PagedMemory";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -33,16 +34,17 @@ export const SP48_MAIN_ENTRY = 0x12ac;
  * This class represents the emulator of a ZX Spectrum 48 machine.
  */
 export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
-  // --- This array represents the storage for ROM pages
-  private readonly romPages: Uint8Array[] = [];
-  private readonly ramBanks: Uint8Array[] = [];
-
   // --- Override to sign if this model handles floppy disks.
   protected abstract hasFloppy(): boolean;
 
   // --- Override to sign that the second floppy drive is present.
   protected abstract hasDriveB(): boolean;
 
+  // --- Memory-related fields
+  private memory: PagedMemory;
+  private previousRom = 0;
+  private previousBank = 0;
+  private screenStartOffset = 0;
   selectedRom = 0;
   selectedBank = 0;
   pagingEnabled = true;
@@ -76,22 +78,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
       this.delayedAddressBus = true;
 
       // --- Initialize the memory contents
-      this.romPages = [
-        new Uint8Array(0x4000), // ROM 0
-        new Uint8Array(0x4000), // ROM 1
-        new Uint8Array(0x4000), // ROM 2
-        new Uint8Array(0x4000) // ROM 3
-      ];
-      this.ramBanks = [
-        new Uint8Array(0x4000), // Bank 0
-        new Uint8Array(0x4000), // Bank 1
-        new Uint8Array(0x4000), // Bank 2
-        new Uint8Array(0x4000), // Bank 3
-        new Uint8Array(0x4000), // Bank 4
-        new Uint8Array(0x4000), // Bank 5
-        new Uint8Array(0x4000), // Bank 7
-        new Uint8Array(0x4000) // Bank 8
-      ];
+      this.memory = new PagedMemory(4, 8);
 
       // --- Create and initialize devices
       this.keyboardDevice = new KeyboardDevice(this);
@@ -119,10 +106,10 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    */
   async setup (): Promise<void> {
     // --- Initialize the machine's ROM (roms/sp48.rom)
-    this.uploadRomBytes(0, await this.loadRomFromResource(this.romId, 0));
-    this.uploadRomBytes(1, await this.loadRomFromResource(this.romId, 1));
-    this.uploadRomBytes(2, await this.loadRomFromResource(this.romId, 2));
-    this.uploadRomBytes(3, await this.loadRomFromResource(this.romId, 3));
+    this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
+    this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
+    this.uploadRomBytes(-3, await this.loadRomFromResource(this.romId, 2));
+    this.uploadRomBytes(-4, await this.loadRomFromResource(this.romId, 3));
   }
 
   /**
@@ -148,9 +135,8 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    */
   hardReset (): void {
     super.hardReset();
-    for (let b = 0; b < this.ramBanks.length; b++) {
-      const bank = this.ramBanks[b];
-      for (let i = 0; i < bank.length; i++) bank[i] = 0;
+    for (let i = 0; i < 8; i++) {
+      this.memory.resetPartition(i);
     }
     this.reset();
   }
@@ -162,8 +148,20 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
     // --- Reset the CPU
     super.reset();
 
-    // --- Reset the ROM page and the RAM bank
+    // --- Reset the ROM pages and the RAM banks
+    const pm = this.memory;
+    pm.setPageInfo(0, pm.getPartitionOffset(-1), -1, true);
+    pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(-1), -1, true);
+    pm.setPageInfo(2, pm.getPartitionOffset(5), 5, false);
+    pm.setPageInfo(3, 0x2000 + pm.getPartitionOffset(5), 5, false);
+    pm.setPageInfo(4, pm.getPartitionOffset(2), 2, false);
+    pm.setPageInfo(5, 0x2000 + pm.getPartitionOffset(2), 2, false);
+    pm.setPageInfo(6, pm.getPartitionOffset(0), 0, false);
+    pm.setPageInfo(7, 0x2000 + pm.getPartitionOffset(0), 0, false);
+
+    this.previousRom = 0;
     this.selectedRom = 0;
+    this.previousBank = 0;
     this.selectedBank = 0;
 
     // --- Enable memory paging
@@ -171,6 +169,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
     // --- Shadow screen is disabled
     this.useShadowScreen = false;
+    this.screenStartOffset = pm.getPartitionOffset(5);
 
     // --- Special mode is off
     this.inSpecialPagingMode = false;
@@ -227,45 +226,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory (offset: number): number {
-    return this.ramBanks[this.useShadowScreen ? 7 : 5][offset & 0x3fff];
-  }
-
-  // --- Page 0 with the current configuration
-  private getPage0 (): Uint8Array {
-    return this.inSpecialPagingMode
-      ? this.ramBanks[this.specialConfigMode ? 4 : 0]
-      : this.romPages[this.selectedRom];
-  }
-
-  // --- Page 1 with the current configuration
-  private getPage1 (): Uint8Array {
-    return this.ramBanks[
-      this.inSpecialPagingMode
-        ? this.specialConfigMode === 0
-          ? 1
-          : this.specialConfigMode === 3
-          ? 7
-          : 5
-        : 5
-    ];
-  }
-
-  // --- Page 2 with the current configuration
-  private getPage2 (): Uint8Array {
-    return this.ramBanks[
-      this.inSpecialPagingMode ? (this.specialConfigMode ? 6 : 2) : 2
-    ];
-  }
-
-  // --- Page 2 with the current configuration
-  private getPage3 (): Uint8Array {
-    return this.ramBanks[
-      this.inSpecialPagingMode
-        ? this.specialConfigMode === 1
-          ? 7
-          : 3
-        : this.selectedBank
-    ];
+    return this.memory.memory[this.screenStartOffset + (offset & 0x3fff)];
   }
 
   /**
@@ -273,19 +234,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    const memory = new Uint8Array(0x01_0000);
-    let page0 = this.getPage0();
-    let page1 = this.getPage1();
-    let page2 = this.getPage2();
-    let page3 = this.getPage3();
-
-    for (let i = 0; i < 0x4000; i++) {
-      memory[i] = page0[i];
-      memory[i + 0x4000] = page1[i];
-      memory[i + 0x8000] = page2[i];
-      memory[i + 0xc000] = page3[i];
-    }
-    return memory;
+    return this.memory.get64KFlatMemory();
   }
 
   /**
@@ -293,18 +242,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @param index Partition index
    */
   get16KPartition (index: number): Uint8Array {
-    switch (index) {
-      case -1:
-        return this.romPages[0];
-      case -2:
-        return this.romPages[1];
-      case -3:
-        return this.romPages[2];
-      case -4:
-        return this.romPages[3];
-      default:
-        return this.ramBanks[index & 0x07];
-    }
+    return this.memory.get16KPartition(index);
   }
 
   /**
@@ -335,17 +273,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    const memIndex = address & 0x3fff;
-    switch (address & 0xc000) {
-      case 0x0000:
-        return this.getPage0()[memIndex];
-      case 0x4000:
-        return this.getPage1()[memIndex];
-      case 0x8000:
-        return this.getPage2()[memIndex];
-      default:
-        return this.getPage3()[memIndex];
-    }
+    return this.memory.readMemory(address);
   }
 
   /**
@@ -354,23 +282,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    const memIndex = address & 0x3fff;
-    switch (address & 0xc000) {
-      case 0x0000:
-        if (this.inSpecialPagingMode) {
-          this.ramBanks[this.specialConfigMode ? 4 : 0][memIndex] = value;
-        }
-        return;
-      case 0x4000:
-        this.getPage1()[memIndex] = value;
-        return;
-      case 0x8000:
-        this.getPage2()[memIndex] = value;
-        return;
-      default:
-        this.getPage3()[memIndex] = value;
-        return;
-    }
+    this.memory.writeMemory(address, value);
   }
 
   /**
@@ -480,13 +392,38 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
       // --- Choose the RAM bank for Slot 3 (0xc000-0xffff)
       this.selectedBank = value & 0x07;
+      if (this.selectedBank !== this.previousBank) {
+        // --- Update the bank page
+        this.previousBank = this.selectedBank;
+        const pm = this.memory;
+        if (this.inSpecialPagingMode) {
+          this.setupSpecialMemoryConfig();
+        } else {
+          pm.setPageInfo(
+            6,
+            pm.getPartitionOffset(this.selectedBank),
+            this.selectedBank,
+            false
+          );
+          pm.setPageInfo(
+            7,
+            0x2000 + pm.getPartitionOffset(this.selectedBank),
+            this.selectedBank,
+            false
+          );
+        }
+      }
 
       // --- Choose screen (Bank 5 or 7)
       this.useShadowScreen = ((value >> 3) & 0x01) === 0x01;
+      this.screenStartOffset = this.memory.getPartitionOffset(
+        this.useShadowScreen ? 7 : 5
+      );
 
       // --- Choose ROM bank for Slot 0 (0x0000-0x3fff)
       this.selectedRom =
         ((value >> 4) & 0x01) | (this.specialConfigMode & 0x02);
+      this.setupSelectedRom();
 
       // --- Enable/disable paging
       this.pagingEnabled = (value & 0x20) === 0x00;
@@ -500,6 +437,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
       this.specialConfigMode = (value >> 1) & 0x03;
       this.selectedRom =
         (this.selectedRom & 0x01) | (this.specialConfigMode & 0x02);
+      this.setupSelectedRom();
 
       // --- Disk motor
       this.diskMotorOn = (value & 0x08) != 0;
@@ -543,21 +481,21 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
     return this.screenDevice.screenLines;
   }
 
-  /// <summary>
-  /// Gets the buffer that stores the rendered pixels
-  /// </summary>
+  /**
+   * Gets the buffer that stores the rendered pixels
+   * @returns
+   */
   getPixelBuffer (): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
   /**
-   * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
+   * Uploades the specified ROM information to the ZX Spectrum ROM memory
+   * @param partition Partition to upload the ROM contents to
    * @param data ROM contents
    */
-  uploadRomBytes (pageIndex: number, data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      this.romPages[pageIndex][i] = data[i];
-    }
+  uploadRomBytes (partition: number, data: Uint8Array): void {
+    this.memory.rawCopy(this.memory.getPartitionOffset(partition), data);
   }
 
   /**
@@ -623,5 +561,55 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    */
   get sysVars (): SysVar[] {
     return [...zxSpectrum128SysVars, ...zxSpectrum48SysVars];
+  }
+
+  /**
+   * Sets up the special memory configuration mode
+   */
+  private setupSpecialMemoryConfig (): void {
+    const pm = this.memory;
+    const part0 = this.specialConfigMode ? 4 : 0;
+    pm.setPageInfo(0, pm.getPartitionOffset(part0), part0, false);
+    pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(part0), part0, false);
+    const part1 = this.specialConfigMode
+      ? this.specialConfigMode === 3
+        ? 7
+        : 5
+      : 1;
+    pm.setPageInfo(2, pm.getPartitionOffset(part1), part1, false);
+    pm.setPageInfo(3, 0x2000 + pm.getPartitionOffset(part1), part1, false);
+    const part2 = this.specialConfigMode ? 6 : 2;
+    pm.setPageInfo(4, pm.getPartitionOffset(part2), part2, false);
+    pm.setPageInfo(5, 0x2000 + pm.getPartitionOffset(part2), part2, false);
+    const part3 = this.specialConfigMode === 1 ? 7 : 3;
+    pm.setPageInfo(6, pm.getPartitionOffset(part3), part3, false);
+    pm.setPageInfo(7, 0x2000 + pm.getPartitionOffset(part3), part3, false);
+  }
+
+  /**
+   * Sets the memory configuration when the selected ROM index changes
+   */
+  private setupSelectedRom () {
+    if (this.selectedRom !== this.previousRom) {
+      this.previousRom = this.selectedRom;
+      const pm = this.memory;
+      if (this.inSpecialPagingMode) {
+        this.setupSpecialMemoryConfig();
+      } else {
+        const romPartition = -this.selectedRom - 1;
+        pm.setPageInfo(
+          0,
+          pm.getPartitionOffset(romPartition),
+          romPartition,
+          true
+        );
+        pm.setPageInfo(
+          1,
+          0x2000 + pm.getPartitionOffset(romPartition),
+          romPartition,
+          true
+        );
+      }
+    }
   }
 }
