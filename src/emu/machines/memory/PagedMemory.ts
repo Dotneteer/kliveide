@@ -65,7 +65,7 @@ export class PagedMemory {
   readMemory (address: number): number {
     address &= 0xffff;
     const pageOffset = address & 0x1fff;
-    const pageInfo = this.bankData[address >> 13];
+    const pageInfo = this.bankData[address >>> 13];
     return this.memory[pageInfo.offset + pageOffset];
   }
 
@@ -77,7 +77,7 @@ export class PagedMemory {
   writeMemory (address: number, data: number): void {
     address &= 0xffff;
     const pageOffset = address & 0x1fff;
-    const pageInfo = this.bankData[address >> 13];
+    const pageInfo = this.bankData[address >>> 13];
     if (!pageInfo.isReadOnly) {
       this.memory[pageInfo.offset + pageOffset] = data;
     }
