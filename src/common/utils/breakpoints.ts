@@ -1,7 +1,4 @@
-import {
-  BreakpointAddressInfo,
-  BreakpointInfo
-} from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
@@ -9,9 +6,7 @@ import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import { reportMessagingError } from "@renderer/reportError";
 
-export function getBreakpointKey (
-  bp: BreakpointInfo | BreakpointAddressInfo
-): string {
+export function getBreakpointKey (bp: BreakpointInfo): string {
   if (bp.address !== undefined) {
     // --- Breakpoint defined with address
     if (bp.partition === undefined) {

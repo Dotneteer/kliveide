@@ -1,7 +1,7 @@
 import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
 import { ILiteEvent } from "@emu/utils/lite-event";
 import { ProjectNode } from "../appIde/project/project-node";
-import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { ProjectDocumentState } from "./ProjectDocumentState";
 import { VolatileDocumentInfo } from "./VolatileDocumentInfo";
 import { IDocumentHubService } from "./IDocumentHubService";
@@ -78,7 +78,7 @@ export type IProjectService = {
    * Gets breakpoint information according to the address.
    * @param addr Binary address or a "[<projectFile>]:<lineNo>" format for source code address
    */
-  getBreakpointAddressInfo(addr: string | number): BreakpointAddressInfo;
+  getBreakpointAddressInfo(addr: string | number): BreakpointInfo;
 
   /**
    * Gets the available document service instances
@@ -135,7 +135,10 @@ export type IProjectService = {
    * @param contents File contents to save
    */
   saveFileContent(file: string, contents: string | Uint8Array): Promise<void>;
-  saveFileContentAsYouType(file: string, contents: string | Uint8Array): Promise<void>;
+  saveFileContentAsYouType(
+    file: string,
+    contents: string | Uint8Array
+  ): Promise<void>;
 
   performAllDelayedSavesNow(): Promise<void>;
 
@@ -196,8 +199,5 @@ export type IProjectService = {
    * @param oldId Old document ID
    * @param newId New document ID
    */
-  renameDocument(
-    oldId: string,
-    newId: string,
-  ): void;
+  renameDocument(oldId: string, newId: string): void;
 };

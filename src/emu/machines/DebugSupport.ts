@@ -1,28 +1,44 @@
 import { incBreakpointsVersionAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
-import {
-  BreakpointAddressInfo,
-  BreakpointInfo
-} from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+
+// --- Breakpoint flags
+// --- Execution breakpoint
+const EXEC_BP = 0x01;
+// --- Has partition information
+const PART_BP = 0x02;
+// --- Has hit count information
+const HIT_BP = 0x04;
+// --- Memory read breakpoint
+const MEM_READ_BP = 0x08;
+// --- Memory write breakpoint
+const MEM_WRITE_BP = 0x10;
+// --- I/O read breakpoint
+const IO_READ_BP = 0x20;
+// --- I/O write breakpoint
+const IO_WRITE_BP = 0x40;
+// --- Execution breakpoint disabled?
+const DIS_EXEC_BP = 0x80;
+// --- Memory read breakpoint disabled?
+const DIS_MR_BP = 0x100;
+// --- Memory write breakpoint disabled?
+const DIS_MW_BP = 0x200;
+// --- I/O read breakpoint disabled?
+const DIS_IOR_BP = 0x400;
+// --- I/O write breakpoint disabled?
+const DIS_IOW_BP = 0x400;
 
 /**
  * This class implement support functions for debugging
  */
 export class DebugSupport implements IDebugSupport {
-  // --- Execution breakpoint definitions
-  private _execBps = new Map<string, BreakpointInfo>();
-
-  // --- Memory breakpoint definitions
-  private _memoryBps = new Map<string, BreakpointInfo>();
-
-  // --- I/O breakpoint definitions
-  private _ioBps: BreakpointInfo[] = [];
-
-  // --- I/O breakpoints
-  private _ioBpsMap = new Map<number, BreakpointInfo>();
+  // --- Breakpoint definitions
+  private _bpDefs = new Map<string, BreakpointInfo>();
+  private _breakpoints = new Uint16Array(0x1_0000);
+  private _bpData = new Map<number, BreakpointData>();
 
   /**
    * Initializes the service using the specified store
@@ -43,8 +59,8 @@ export class DebugSupport implements IDebugSupport {
   /**
    * The list of current execution breakpoints
    */
-  get execBreakpoints (): BreakpointInfo[] {
-    return Array.from(this._execBps.values());
+  get breakpoints (): BreakpointInfo[] {
+    return Array.from(this._bpDefs.values());
   }
 
   /**
@@ -56,49 +72,15 @@ export class DebugSupport implements IDebugSupport {
     address: number,
     partition?: number
   ): BreakpointInfo | undefined {
-    const binaryBp = this._execBps.get(
-      getBreakpointKey({ address, partition })
-    );
+    const binaryBp = this._bpDefs.get(getBreakpointKey({ address, partition }));
     if (binaryBp) {
       return binaryBp;
     }
-    for (const bpInfo of this._execBps.values()) {
+    for (const bpInfo of this._bpDefs.values()) {
       if (bpInfo.resolvedAddress === address) {
         return bpInfo;
       }
     }
-  }
-
-  /**
-   * The list of current memory operation breakpoints
-   */
-  get memoryBreakpoints (): BreakpointInfo[] {
-    return Array.from(this._memoryBps.values());
-  }
-
-  /**
-   * Gets memory breakpoint information for the specified address/partition
-   * @param address Breakpoint address
-   * @param partition Breakpoint partition
-   */
-  getMemoryBreakpoint (address: number, partition?: number): BreakpointInfo {
-    return this._memoryBps.get(getBreakpointKey({ address, partition }));
-  }
-
-  /**
-   * The list of current I/O operation breakpoints
-   */
-  get ioBreakpoints (): BreakpointInfo[] {
-    return Array.from(this._ioBps);
-  }
-
-  /**
-   * Gets I/O breakpoint information for the specified port address
-   * @param address Breakpoint address
-   * @param partition Breakpoint partition
-   */
-  getIoBreakpoint (address: number): BreakpointInfo {
-    return this._ioBpsMap.get(address);
   }
 
   /**
@@ -115,27 +97,62 @@ export class DebugSupport implements IDebugSupport {
    * Erases all breakpoints
    */
   eraseAllBreakpoints (): void {
-    this._execBps.clear();
-    this._memoryBps.clear();
-    this._ioBps.length = 0;
-    this._ioBpsMap.clear();
+    this._bpDefs.clear();
+    this._breakpoints = new Uint16Array(0x1_0000);
+    this._bpData.clear();
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
   }
 
   /**
    * Adds a breakpoint to the list of existing ones
-   * @param breakpoint Breakpoint information
+   * @param bp Breakpoint information
    * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
    */
-  addExecBreakpoint (breakpoint: BreakpointInfo): boolean {
-    const bpKey = getBreakpointKey(breakpoint);
-    const oldBp = this._execBps.get(bpKey);
+  addExecBreakpoint (bp: BreakpointInfo): boolean {
+    // --- Extract used address and partition
+    const address = bp.address ?? bp.resolvedAddress;
+    const partition = bp.partition ?? bp.resolvedPartition;
+
+    // --- Update breakpoint flags
+    const bpFlags = this.collectBpFlags(bp);
+    if (bpFlags & (IO_READ_BP | IO_WRITE_BP)) {
+      // --- Update I/O breakpoints
+      for (let i = 0; i < 0x1_0000; i++) {
+        if ((i & bp.mask) === bp.address) {
+          this._breakpoints[i] |= bpFlags;
+        }
+      }
+    } else {
+      this._breakpoints[address] = bpFlags;
+      if (partition !== undefined || bp.hitCount !== undefined) {
+        // --- We have extra breakpoint data
+        let bpData = this._bpData.get(address);
+        if (!bpData) {
+          bpData = {};
+          this._bpData.set(address, bpData);
+        }
+        if (partition) {
+          bpData.partitions ??= [];
+          if (!bpData.partitions.some(p => p[0] === partition)) {
+            bpData.partitions.push([partition, true]);
+          }
+          if (bp.hitCount !== undefined) {
+            bpData.currentHitCount = 0;
+            bpData.targetHitCount = bp.hitCount;
+          }
+        }
+      }
+    }
+
+    // --- Store the breakpoint definition
+    const bpKey = getBreakpointKey(bp);
+    const oldBp = this._bpDefs.get(bpKey);
     try {
-      this._execBps.set(bpKey, {
-        address: breakpoint.address,
-        partition: breakpoint.partition,
-        resource: breakpoint.resource,
-        line: breakpoint.line,
+      this._bpDefs.set(bpKey, {
+        address: bp.address,
+        partition: bp.partition,
+        resource: bp.resource,
+        line: bp.line,
         exec: true
       });
     } catch (err) {
@@ -151,10 +168,32 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @returns True, if the breakpoint has just been removed; otherwise, false
    */
-  removeExecBreakpoint (bp: BreakpointAddressInfo): boolean {
+  removeBreakpoint (bp: BreakpointInfo): boolean {
+    // --- Remove definition
     const bpKey = getBreakpointKey(bp);
-    const oldBp = this._execBps.get(bpKey);
-    this._execBps.delete(bpKey);
+    const oldBp = this._bpDefs.get(bpKey);
+    this._bpDefs.delete(bpKey);
+
+    // --- Remove breakpoint flags
+    const bpFlags = this.collectBpFlags(bp);
+    const address = bp.address ?? bp.resolvedAddress;
+    const partition = bp.partition ?? bp.resolvedPartition;
+    this._breakpoints[address] &= bpFlags | PART_BP;
+    if (partition !== undefined && this._bpData.has(address)) {
+      // --- Remove partition info
+      const prevData = this._bpData.get(address);
+      prevData.partitions = prevData.partitions.filter(p => p[0] !== partition);
+      if (prevData.partitions.length === 0) {
+        // --- No more partition breakpoint for the address
+        this._breakpoints[address] &= ~PART_BP;
+        if (!(this._breakpoints[address] & HIT_BP)) {
+          // --- No partition, no hit count
+          this._bpData.delete(address);
+        }
+      }
+    }
+
+    // --- Done
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
     return !!oldBp;
   }
@@ -164,9 +203,9 @@ export class DebugSupport implements IDebugSupport {
    * @param address Breakpoint address
    * @param enabled Is the breakpoint enabled?
    */
-  enableExecBreakpoint (bp: BreakpointAddressInfo, enabled: boolean): boolean {
+  enableBreakpoint (bp: BreakpointInfo, enabled: boolean): boolean {
     const bpKey = getBreakpointKey(bp);
-    const oldBp = this._execBps.get(bpKey);
+    const oldBp = this._bpDefs.get(bpKey);
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
     this.store.dispatch(incBreakpointsVersionAction(), "emu");
@@ -174,33 +213,22 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
-   * Finds the specified breakpoint
-   * @param address Breakpoint address
-   * @returns True, if the breakpoint has just been removed; otherwise, false
-   */
-  findBreakpoint (
-    breakpoint: BreakpointAddressInfo
-  ): BreakpointInfo | undefined {
-    return this._execBps.get(getBreakpointKey(breakpoint));
-  }
-
-  /**
    * Scrolls down breakpoints
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
    */
-  scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
+  scrollBreakpoints (def: BreakpointInfo, shift: number): void {
     let changed = false;
     const values: BreakpointInfo[] = [];
-    for (const value of this._execBps.values()) {
+    for (const value of this._bpDefs.values()) {
       values.push(value);
     }
     values.forEach(bp => {
       if (bp.resource === def.resource && bp.line >= def.line) {
         const oldKey = getBreakpointKey(bp);
-        this._execBps.delete(oldKey);
+        this._bpDefs.delete(oldKey);
         bp.line += shift;
-        this._execBps.set(getBreakpointKey(bp), bp);
+        this._bpDefs.set(getBreakpointKey(bp), bp);
         changed = true;
       }
     });
@@ -220,7 +248,7 @@ export class DebugSupport implements IDebugSupport {
     const toDelete = new Set<string>();
 
     // --- Iterate through the breakpoints to find the ones to delete
-    this._execBps.forEach(bp => {
+    this._bpDefs.forEach(bp => {
       const bpKey = getBreakpointKey(bp);
       if (bp.resource === resource) {
         if (bp.line > lineCount) {
@@ -237,7 +265,7 @@ export class DebugSupport implements IDebugSupport {
 
       if (toDelete.size > 0) {
         for (const item of toDelete.values()) {
-          this._execBps.delete(item);
+          this._bpDefs.delete(item);
         }
         this.store.dispatch(incBreakpointsVersionAction(), "emu");
       }
@@ -248,7 +276,7 @@ export class DebugSupport implements IDebugSupport {
    * Resets the resolution of breakpoints
    */
   resetBreakpointResolution (): void {
-    for (const bp of this._execBps.values()) {
+    for (const bp of this._bpDefs.values()) {
       delete bp.resolvedAddress;
     }
   }
@@ -258,9 +286,60 @@ export class DebugSupport implements IDebugSupport {
    */
   resolveBreakpoint (resource: string, line: number, address: number): void {
     const bpKey = getBreakpointKey({ resource, line });
-    const bp = this._execBps.get(bpKey);
+    const bp = this._bpDefs.get(bpKey);
     if (bp) {
       bp.resolvedAddress = address;
     }
   }
+
+  // --- Get the breakpoint flags from the definition
+  private collectBpFlags (bp: BreakpointInfo): number {
+    // --- Collect breakpoint flags
+    let bpFlags = 0x00;
+    if (bp.exec) {
+      bpFlags |= EXEC_BP;
+      if (bp.disabled) {
+        bpFlags |= DIS_EXEC_BP;
+      }
+    }
+    if (bp.partition !== undefined) {
+      bpFlags |= PART_BP;
+    }
+    if (bp.memoryRead) {
+      bpFlags |= MEM_READ_BP;
+      if (bp.disabled) {
+        bpFlags |= DIS_MR_BP;
+      }
+    }
+    if (bp.memoryWrite) {
+      bpFlags |= MEM_WRITE_BP;
+      if (bp.disabled) {
+        bpFlags |= DIS_MW_BP;
+      }
+    }
+    if (bp.ioRead) {
+      bpFlags |= IO_READ_BP;
+      if (bp.disabled) {
+        bpFlags |= DIS_IOR_BP;
+      }
+    }
+    if (bp.ioWrite) {
+      bpFlags |= IO_WRITE_BP;
+      if (bp.disabled) {
+        bpFlags |= DIS_IOW_BP;
+      }
+    }
+    if (bp.hitCount !== undefined) {
+      bpFlags |= HIT_BP;
+    }
+
+    return bpFlags;
+  }
 }
+
+// --- Extra data assigned to a particular breakpoint
+type BreakpointData = {
+  targetHitCount?: number;
+  currentHitCount?: number;
+  partitions?: [number, boolean][];
+};

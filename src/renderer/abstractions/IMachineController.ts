@@ -10,7 +10,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -133,7 +133,7 @@ export interface IMachineController {
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
    */
-  scrollBreakpoints(def: BreakpointAddressInfo, shift: number): void;
+  scrollBreakpoints(def: BreakpointInfo, shift: number): void;
 
   /**
    * Normalizes source code breakpoint. Removes the ones that overflow the

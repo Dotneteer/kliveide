@@ -66,12 +66,9 @@ export type BreakpointInfo = {
    * Indicates an I/O write breakpoint
    */
   ioWrite?: boolean;
-};
 
-export type BreakpointAddressInfo = {
-  address?: number;
-  partition?: number;
-  resource?: string;
-  line?: number;
+  /**
+   * Memory breakpoint target hit counter
+   */
+  hitCount?: number;
 };
-
