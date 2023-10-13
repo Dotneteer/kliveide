@@ -45,7 +45,7 @@ export interface IDebugSupport {
    * @param breakpoint Breakpoint information
    * @returns True, if a new breakpoint was added; otherwise, if an existing breakpoint was updated, false
    */
-  addExecBreakpoint(breakpoint: BreakpointInfo): boolean;
+  addBreakpoint(breakpoint: BreakpointInfo): boolean;
 
   /**
    * Removes a breakpoint

@@ -254,7 +254,7 @@ export async function processMainToEmuMessages (
     case "EmuSetBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.addExecBreakpoint({
+      const status = controller.debugSupport.addBreakpoint({
         address: message.address,
         partition: message.partition,
         resource: message.resource,
