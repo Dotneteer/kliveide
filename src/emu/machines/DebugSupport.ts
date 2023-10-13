@@ -69,23 +69,30 @@ export class DebugSupport implements IDebugSupport {
   /**
    * Gets execution breakpoint information for the specified address/partition
    * @param address Breakpoint address
-   * @param partition Breakpoint partition
    */
-  getExecBreakpoint (
-    address: number,
-    partition?: number
-  ): BreakpointInfo | undefined {
-    const binaryBp = this.breakpointDefs.get(
-      getBreakpointKey({ address, partition })
-    );
-    if (binaryBp) {
-      return binaryBp;
-    }
-    for (const bpInfo of this.breakpointDefs.values()) {
-      if (bpInfo.resolvedAddress === address) {
-        return bpInfo;
-      }
-    }
+  shouldStopAt (address: number): boolean {
+    // --- Check breakpoint flags
+    const flags = this.breakpointFlags[address];
+    // --- Is there a breakpoint for this address?
+    if (!(flags & EXEC_BP)) return false;
+
+    // --- Is the breakpoint enabled?
+    if ((flags & DIS_EXEC_BP)) return false;
+
+    // --- If no partition, stop here!
+    if (!(flags & PART_BP)) return true;
+    // const binaryBp = this.breakpointDefs.get(
+    //   getBreakpointKey({ address, partition })
+    // );
+    // if (binaryBp) {
+    //   return binaryBp;
+    // }
+    // for (const bpInfo of this.breakpointDefs.values()) {
+    //   if (bpInfo.resolvedAddress === address) {
+    //     return bpInfo;
+    //   }
+    // }
+    return false;
   }
 
   /**

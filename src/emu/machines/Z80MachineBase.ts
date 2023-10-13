@@ -482,10 +482,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
           return instructionsExecuted > 0;
 
         case DebugStepMode.StopAtBreakpoint:
-          const breakpoint = debugSupport.getExecBreakpoint(z80Machine.pc);
+          const stopAt = debugSupport.shouldStopAt(z80Machine.pc);
           if (
-            breakpoint &&
-            !breakpoint.disabled &&
+            stopAt &&
             (instructionsExecuted > 0 ||
               debugSupport.lastBreakpoint === undefined ||
               debugSupport.lastBreakpoint !== z80Machine.pc)

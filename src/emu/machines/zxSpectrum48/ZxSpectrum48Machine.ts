@@ -158,6 +158,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
+    console.log(this._memory.get64KFlatMemory())
     return this._memory.get64KFlatMemory();
   }
 

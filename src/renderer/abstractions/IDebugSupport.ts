@@ -20,10 +20,7 @@ export interface IDebugSupport {
    * @param address Breakpoint address
    * @param partition Breakpoint partition
    */
-  getExecBreakpoint(
-    address: number,
-    partition?: number
-  ): BreakpointInfo | undefined;
+  shouldStopAt(address: number): boolean;
 
   /**
    * The last breakpoint we stopped in the frame
