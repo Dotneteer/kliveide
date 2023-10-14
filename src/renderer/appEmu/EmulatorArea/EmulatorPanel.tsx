@@ -158,8 +158,7 @@ export const EmulatorPanel = () => {
     if (audioSampleRate) {
       const samplesPerFrame =
         (controller.machine.tactsInFrame * audioSampleRate) /
-        controller.machine.baseClockFrequency /
-        controller.machine.clockMultiplier;
+        controller.machine.baseClockFrequency;
       await releaseBeeperContext();
       beeperRenderer.current = new AudioRenderer(
         await getBeeperContext(samplesPerFrame)
