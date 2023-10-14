@@ -18,9 +18,9 @@ export interface IDebugSupport {
   /**
    * Gets execution breakpoint information for the specified address/partition
    * @param address Breakpoint address
-   * @param partition Breakpoint partition
+   * @param partitionResolver A function to resolve the current partition
    */
-  shouldStopAt(address: number): boolean;
+  shouldStopAt(address: number, partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
    * The last breakpoint we stopped in the frame

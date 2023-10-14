@@ -38,7 +38,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   pagingEnabled = true;
   useShadowScreen = false;
 
-
   /**
    * The unique identifier of the machine type
    */
@@ -193,6 +192,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the partition in which the specified address is paged in
+   * @param address Address to get the partition for
+   */
+  getPartition(address: number): number | undefined {
+    return this.memory.getAddressPartition(address);
+  }
+
+  /**
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */
@@ -330,17 +337,29 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
       // --- Choose the RAM bank for Slot 3 (0xc000-0xffff)
       this.selectedBank = value & 0x07;
-      if (this.selectedBank !== this.previousBank ) {
+      if (this.selectedBank !== this.previousBank) {
         // --- Update the bank page
         this.previousBank = this.selectedBank;
         const pm = this.memory;
-        pm.setPageInfo(6, pm.getPartitionOffset(this.selectedBank), this.selectedBank, false);
-        pm.setPageInfo(7, 0x2000 + pm.getPartitionOffset(this.selectedBank), this.selectedBank, false);
+        pm.setPageInfo(
+          6,
+          pm.getPartitionOffset(this.selectedBank),
+          this.selectedBank,
+          false
+        );
+        pm.setPageInfo(
+          7,
+          0x2000 + pm.getPartitionOffset(this.selectedBank),
+          this.selectedBank,
+          false
+        );
       }
 
       // --- Choose screen (Bank 5 or 7)
       this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
-      this.screenStartOffset = this.memory.getPartitionOffset(this.useShadowScreen ? 7 : 5);
+      this.screenStartOffset = this.memory.getPartitionOffset(
+        this.useShadowScreen ? 7 : 5
+      );
 
       // --- Choose ROM bank for Slot 0 (0x0000-0x3fff)
       this.selectedRom = (value >> 4) & 0x01;
@@ -349,8 +368,18 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         this.previousRom = this.selectedRom;
         const romPartition = -this.selectedRom - 1;
         const pm = this.memory;
-        pm.setPageInfo(0, pm.getPartitionOffset(romPartition), romPartition, true);
-        pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(romPartition), romPartition, true);
+        pm.setPageInfo(
+          0,
+          pm.getPartitionOffset(romPartition),
+          romPartition,
+          true
+        );
+        pm.setPageInfo(
+          1,
+          0x2000 + pm.getPartitionOffset(romPartition),
+          romPartition,
+          true
+        );
       }
 
       // --- Enable/disable paging
@@ -395,7 +424,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
   /**
    * Gets the buffer that stores the rendered pixels
-   * @returns 
+   * @returns
    */
   getPixelBuffer (): Uint32Array {
     return this.screenDevice.getPixelBuffer();

@@ -88,7 +88,7 @@ describe("DebugSupport", () => {
     expect(bpDef.exec).toEqual(bp.exec);
     expect(ds.breakpointFlags.length).toEqual(0x01_0000);
     const flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(1);
     const data = ds.breakpointData.get(1234);
@@ -123,7 +123,7 @@ describe("DebugSupport", () => {
     expect(bpDef.exec).toEqual(bp.exec);
     expect(ds.breakpointFlags.length).toEqual(0x01_0000);
     const flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(1);
     const data = ds.breakpointData.get(1234);
@@ -153,7 +153,7 @@ describe("DebugSupport", () => {
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(2);
     const flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(1);
     const data = ds.breakpointData.get(1234);
@@ -185,10 +185,10 @@ describe("DebugSupport", () => {
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(2);
     let flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     flag = ds.breakpointFlags[1240];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(2);
     let data = ds.breakpointData.get(1234);
@@ -586,7 +586,7 @@ describe("DebugSupport", () => {
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(2);
     const flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(1);
     const data = ds.breakpointData.get(1234);
@@ -619,7 +619,7 @@ describe("DebugSupport", () => {
     // --- Assert
     expect(ds.breakpointDefs.size).toEqual(2);
     const flag = ds.breakpointFlags[1234];
-    expect(!!(flag & EXEC_BP)).toEqual(true);
+    expect(!!(flag & EXEC_BP)).toEqual(false);
     expect(!!(flag & PART_BP)).toEqual(true);
     expect(ds.breakpointData.size).toEqual(1);
     const data = ds.breakpointData.get(1234);

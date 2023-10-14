@@ -146,6 +146,12 @@ export interface IZ80Machine extends IZ80Cpu {
    * @param eventFn Event function to remove
    */
   removeEvent(eventFn: (data: any) => void): void;
+
+  /**
+   * Gets the partition in which the specified address is paged in
+   * @param address Address to get the partition for
+   */
+  getPartition(address: number): number | undefined;
 }
 
 /**
@@ -154,4 +160,4 @@ export interface IZ80Machine extends IZ80Cpu {
 export type MainExecPointInfo = {
   romIndex?: number;
   entryPoint: number;
-}
+};

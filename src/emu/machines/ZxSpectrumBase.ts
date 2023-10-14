@@ -12,9 +12,6 @@ import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
-import { Store } from "@common/state/redux-light";
-import { AppState } from "@common/state/AppState";
-import { setDiskFileAction } from "@common/state/actions";
 
 /**
  * The common core functionality for all ZX Spectrum machines

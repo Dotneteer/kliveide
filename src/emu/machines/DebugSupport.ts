@@ -70,29 +70,34 @@ export class DebugSupport implements IDebugSupport {
    * Gets execution breakpoint information for the specified address/partition
    * @param address Breakpoint address
    */
-  shouldStopAt (address: number): boolean {
+  shouldStopAt (
+    address: number,
+    partitionResolver: (address: number) => number | undefined
+  ): boolean {
     // --- Check breakpoint flags
     const flags = this.breakpointFlags[address];
-    // --- Is there a breakpoint for this address?
-    if (!(flags & EXEC_BP)) return false;
+    // --- Any execution breakpoint?
+    if (!(flags & (EXEC_BP | PART_BP))) {
+      // --- No execution breakpoint
+      return false;
+    }
+    // --- Is there a partitionless breakpoint for this address?
+    if (flags & EXEC_BP) {
+      // --- Yes, though it may be disabled
+      return !(flags & DIS_EXEC_BP);
+    }
 
-    // --- Is the breakpoint enabled?
-    if ((flags & DIS_EXEC_BP)) return false;
+    // --- Is there any partition breakpoint?
+    const bpData = this.breakpointData.get(address);
+    if (!bpData?.partitions || bpData.partitions.length === 0) {
+      // --- No partition breakpoint
+      return false;
+    }
 
-    // --- If no partition, stop here!
-    if (!(flags & PART_BP)) return true;
-    // const binaryBp = this.breakpointDefs.get(
-    //   getBreakpointKey({ address, partition })
-    // );
-    // if (binaryBp) {
-    //   return binaryBp;
-    // }
-    // for (const bpInfo of this.breakpointDefs.values()) {
-    //   if (bpInfo.resolvedAddress === address) {
-    //     return bpInfo;
-    //   }
-    // }
-    return false;
+    // --- Get the current partition and test if it has a breakpoint
+    const partition = partitionResolver(address);
+    const partitionEntry = bpData.partitions.find(p => p[0] === partition);
+    return !!partitionEntry && !partitionEntry[1];
   }
 
   /**
@@ -375,7 +380,11 @@ export class DebugSupport implements IDebugSupport {
   private collectBpFlags (bp: BreakpointInfo): number {
     // --- Collect breakpoint flags
     let bpFlags = 0x00;
-    if (bp.exec) {
+    if (
+      bp.exec &&
+      bp.partition === undefined &&
+      bp.resolvedPartition === undefined
+    ) {
       bpFlags |= EXEC_BP;
       if (bp.disabled) {
         bpFlags |= DIS_EXEC_BP;
