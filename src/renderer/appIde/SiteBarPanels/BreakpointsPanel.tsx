@@ -135,6 +135,7 @@ const BreakpointsPanel = () => {
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
+                  partition={bp?.partition}
                   address={addr ?? addrKey}
                   current={isCurrent}
                   hasBreakpoint={true}
@@ -142,20 +143,13 @@ const BreakpointsPanel = () => {
                 />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
-                  <Value
-                    text={`${toHexa4(bp.resolvedAddress)} (${
-                      bp.resolvedAddress
-                    })`}
-                    width={104}
-                  />
+                  <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
                 )}
                 <Label
                   text={addrKey}
                   width={addr !== undefined ? 40 : undefined}
                 />
-                {bp.address !== undefined && (
-                  <Label text={`(${addr})`} width={64} />
-                )}
+                {bp.address !== undefined && <Label text='' width={32} />}
 
                 <Value text={disassLines.current[idx] ?? "???"} width='auto' />
               </div>

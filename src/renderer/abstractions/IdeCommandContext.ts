@@ -5,6 +5,7 @@ import { Store } from "@state/redux-light";
 import { Token } from "@appIde/services/command-parser";
 import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import { MessageSource } from "@common/messaging/messages-core";
+import { MachineInfo } from "./MachineInfo";
 
 /**
  * Describes the execution context of a command
@@ -29,6 +30,11 @@ export type IdeCommandContext = {
    * The store managing the state
    */
   store: Store<AppState>;
+
+  /**
+   * Information about the current machine
+   */
+  machineInfo: MachineInfo;
 
   /**
    * The command service instance

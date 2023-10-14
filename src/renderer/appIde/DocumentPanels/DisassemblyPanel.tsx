@@ -416,6 +416,7 @@ const DisassemblyPanel = ({
               >
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
+                  partition={breakpoint?.partition}
                   address={
                     breakpoint?.resource
                       ? getBreakpointKey(breakpoint)

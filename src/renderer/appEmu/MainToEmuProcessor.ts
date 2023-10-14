@@ -201,7 +201,7 @@ export async function processMainToEmuMessages (
     case "EmuListBreakpoints": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const execBreakpoints = controller.debugSupport.execBreakpoints
+      const execBreakpoints = controller.debugSupport.breakpoints
         .map(bp => ({
           ...bp
         }))
@@ -254,7 +254,7 @@ export async function processMainToEmuMessages (
     case "EmuSetBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.addExecBreakpoint({
+      const status = controller.debugSupport.addBreakpoint({
         address: message.address,
         partition: message.partition,
         resource: message.resource,
@@ -269,7 +269,7 @@ export async function processMainToEmuMessages (
       if (!controller) return noControllerResponse();
       console.log("EmuRemoveBreakpoint");
       console.log(message);
-      const status = controller.debugSupport.removeExecBreakpoint({
+      const status = controller.debugSupport.removeBreakpoint({
         address: message.address,
         partition: message.partition,
         resource: message.resource,
@@ -281,7 +281,7 @@ export async function processMainToEmuMessages (
     case "EmuEnableBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.enableExecBreakpoint(
+      const status = controller.debugSupport.enableBreakpoint(
         {
           address: message.address,
           partition: message.partition,
@@ -322,7 +322,7 @@ export async function processMainToEmuMessages (
         iy: m.iy,
         ir: m.ir,
         wz: m.wz,
-        memBreakpoints: controller.debugSupport.execBreakpoints,
+        memBreakpoints: controller.debugSupport.breakpoints,
         osInitialized:
           (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
       };

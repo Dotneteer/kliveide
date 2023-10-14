@@ -13,6 +13,7 @@ import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand } from "./command-parser";
 import { IdeCommandBase } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
+import { machineRegistry } from "@renderer/registry";
 
 const MAX_HISTORY = 1024;
 
@@ -151,8 +152,11 @@ class IdeCommandService implements IIdeCommandService {
     }
 
     // --- Execute the registered command
+    const machineId = this.store.getState().emulatorState?.machineId;
+    const machineInfo = machineRegistry.find(m => m.machineId === machineId);
     const context: IdeCommandContext = {
       commandtext: command,
+      machineInfo,
       store: this.store,
       argTokens: tokens.slice(1),
       output: buffer,

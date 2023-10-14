@@ -1,4 +1,4 @@
-import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -140,7 +140,7 @@ export interface EmuResolveBreakpointsRequest extends MessageBase {
 
 export interface EmuScrollBreakpointsRequest extends MessageBase {
   type: "EmuScrollBreakpoints";
-  addr: BreakpointAddressInfo;
+  addr: BreakpointInfo;
   shift: number;
 }
 

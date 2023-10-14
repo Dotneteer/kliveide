@@ -9,7 +9,7 @@ import {
   getFileTypeEntry,
   getNodeFile
 } from "../project/project-node";
-import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { VolatileDocumentInfo } from "@renderer/abstractions/VolatileDocumentInfo";
@@ -127,9 +127,7 @@ class ProjectService implements IProjectService {
     }
   }
 
-  getBreakpointAddressInfo (
-    addr: string | number
-  ): BreakpointAddressInfo | undefined {
+  getBreakpointAddressInfo (addr: string | number): BreakpointInfo | undefined {
     if (typeof addr === "number") {
       return {
         address: addr & 0xffff
@@ -298,10 +296,7 @@ class ProjectService implements IProjectService {
    * @param file File name
    * @param contents File contents to save
    */
-  saveFileContent (
-    file: string,
-    contents: string | Uint8Array
-  ): Promise<void> {
+  saveFileContent (file: string, contents: string | Uint8Array): Promise<void> {
     this._delayedJobs.cancel(file);
     return this.saveFileContentInner(file, contents);
   }
@@ -311,11 +306,15 @@ class ProjectService implements IProjectService {
     contents: string | Uint8Array
   ): Promise<void> {
     const TYPING_DELAY = 1000;
-    return this._delayedJobs.schedule(TYPING_DELAY, JOB_KIND_SAVE_FILE, file,
-      this.saveFileContentInner.bind(this, file, contents))
+    return this._delayedJobs.schedule(
+      TYPING_DELAY,
+      JOB_KIND_SAVE_FILE,
+      file,
+      this.saveFileContentInner.bind(this, file, contents)
+    );
   }
 
-  private async saveFileContentInner(
+  private async saveFileContentInner (
     file: string,
     contents: string | Uint8Array
   ): Promise<void> {
@@ -343,7 +342,7 @@ class ProjectService implements IProjectService {
     this._fileCache.set(file, contents);
   }
 
-  performAllDelayedSavesNow(): Promise<void> {
+  performAllDelayedSavesNow (): Promise<void> {
     return this._delayedJobs.instantlyRunAllOf(JOB_KIND_SAVE_FILE);
   }
 

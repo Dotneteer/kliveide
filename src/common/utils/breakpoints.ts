@@ -1,30 +1,43 @@
-import { BreakpointAddressInfo, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
+import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import { reportMessagingError } from "@renderer/reportError";
 
-export function getBreakpointKey (bp: BreakpointInfo | BreakpointAddressInfo): string {
+export function getBreakpointKey (bp: BreakpointInfo): string {
+  // --- Collect memory/IO breakpoint suffix
+  let suffix = "";
+  if (bp.memoryRead) {
+    suffix = ":MR";
+  } else if (bp.memoryWrite) {
+    suffix = ":MW";
+  } else if (bp.ioRead) {
+    suffix = ":IOR";
+  } else if (bp.ioWrite) {
+    suffix = ":IOW";
+  }
   if (bp.address !== undefined) {
     // --- Breakpoint defined with address
-    return bp.partition !== undefined
-      ? `${bp.partition.toString(16)}:${bp.address
+    if (bp.partition === undefined) {
+      return `$${bp.address.toString(16).padStart(4, "0")}${suffix}`;
+    }
+    return bp.partition < 0
+      ? `R${(-(bp.partition + 1)).toString(16)}:$${bp.address
           .toString(16)
-          .padStart(4, "0")}`
-      : `${bp.address.toString(16).padStart(4, "0")}`;
-  }
-  if (bp.resource && bp.line !== undefined) {
+          .padStart(4, "0")}${suffix}`
+      : `${bp.partition.toString(16)}:$${bp.address.toString(16)}${suffix}`;
+  } else if (bp.resource && bp.line !== undefined) {
     return `[${bp.resource}]:${bp.line}`;
   }
   throw new Error("Breakpoint info does not have key information.");
 }
 
-
 // --- Sends all resolved source code breakpoints to the emulator
 export async function refreshSourceCodeBreakpoints (
-  store: Store,
+  store: Store<AppState>,
   messenger: MessengerBase
 ): Promise<void> {
   const compilation = store.getState().compilation;
@@ -69,4 +82,3 @@ export async function refreshSourceCodeBreakpoints (
     );
   }
 }
-

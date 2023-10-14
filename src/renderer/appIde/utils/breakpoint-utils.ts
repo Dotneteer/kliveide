@@ -1,7 +1,4 @@
-import {
-  BreakpointAddressInfo,
-  BreakpointInfo
-} from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import {
   reportMessagingError,
@@ -50,7 +47,7 @@ export async function addBreakpoint (
 
 export async function removeBreakpoint (
   messenger: MessengerBase,
-  bp: BreakpointAddressInfo
+  bp: BreakpointInfo
 ): Promise<boolean> {
   console.log("remove bp");
   console.trace();

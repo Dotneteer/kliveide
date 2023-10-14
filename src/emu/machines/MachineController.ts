@@ -23,7 +23,7 @@ import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { BreakpointAddressInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -315,7 +315,7 @@ export class MachineController implements IMachineController {
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
    */
-  scrollBreakpoints (def: BreakpointAddressInfo, shift: number): void {
+  scrollBreakpoints (def: BreakpointInfo, shift: number): void {
     if (!this.debugSupport) return;
     this.debugSupport.scrollBreakpoints(def, shift);
   }

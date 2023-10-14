@@ -53,7 +53,7 @@ class MachineService implements IMachineService {
     if (this._controller) {
       if (this._controller.debugSupport) {
         // --- We keep the old source code breakpoints, as we want to use them in the new machine.
-        oldBps = this._controller.debugSupport.execBreakpoints;
+        oldBps = this._controller.debugSupport.breakpoints;
       }
       this._oldDisposing.fire(this._controller.machine.machineId);
       await this._controller.stop();
