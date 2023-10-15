@@ -474,9 +474,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Get the current frame tact within the machine frame being executed.
    */
-  get currentFrameTact (): number {
-    return Math.floor(this.frameTacts / this.clockMultiplier);
-  }
+  currentFrameTact: number;
 
   /**
    * Get the number of T-states in the current machine frame, which have a higher
@@ -1560,6 +1558,7 @@ export class Z80Cpu implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
     this.onTactIncremented();
   }
 
