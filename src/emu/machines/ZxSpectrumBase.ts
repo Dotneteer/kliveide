@@ -420,7 +420,7 @@ export abstract class ZxSpectrumBase
 
   /**
    * Adds an emulated keypress to the queue of the provider.
-   * @param startFrame Frame count to start the emulation
+   * @param frameOffset Number of frames to start the keypress emulation
    * @param frames Number of frames to hold the emulation
    * @param primary Primary key code
    * @param secondary Optional secondary key code
@@ -428,12 +428,13 @@ export abstract class ZxSpectrumBase
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke (
-    startFrame: number,
+    frameOffset: number,
     frames: number,
     primary: SpectrumKeyCode,
     secondary?: SpectrumKeyCode
   ): void {
-    const startTact = startFrame * this.tactsInFrame * this.clockMultiplier;
+    const startTact =
+      this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
     const endTact =
       startTact + frames * this.tactsInFrame * this.clockMultiplier;
     const keypress = new EmulatedKeyStroke(

@@ -249,7 +249,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyword='NEW'
           symbolWord='STOP'
           above='READ'
-          below={'\xa0\xa0~\xa0\xa0'}
+          below={"\xa0\xa0~\xa0\xa0"}
         />
         <Key
           zoom={zoom}
@@ -259,7 +259,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyword='SAVE'
           symbolWord='NOT'
           above='RESTORE'
-          below={'\xa0\xa0|\xa0\xa0'}
+          below={"\xa0\xa0|\xa0\xa0"}
         />
         <Key
           zoom={zoom}
@@ -269,7 +269,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyword='DIM'
           symbolWord='STEP'
           above='DATA'
-          below={'\xa0\xa0\\\xa0\xa0'}
+          below={"\xa0\xa0\\\xa0\xa0"}
         />
         <Key
           zoom={zoom}
@@ -289,7 +289,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyword='GOTO'
           symbolWord='THEN'
           above='ABS'
-          below={'\xa0\xa0}\xa0\xa0'}
+          below={"\xa0\xa0}\xa0\xa0"}
         />
         <Key
           zoom={zoom}
@@ -327,7 +327,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='L'
           keyword='LET'
-          symbol={'\xa0=\xa0'}
+          symbol={"\xa0=\xa0"}
           above='USR'
           below='ATTR'
         />
@@ -348,7 +348,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='Z'
           keyword='COPY'
-          symbol={'\xa0\xa0:\xa0\xa0'}
+          symbol={"\xa0\xa0:\xa0\xa0"}
           above='LN'
           below='BEEP'
         />
@@ -368,7 +368,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='C'
           keyword='CONT'
-          symbol={'\xa0?\xa0'}
+          symbol={"\xa0?\xa0"}
           above='LPRINT'
           below='PAPER'
         />
@@ -378,7 +378,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='V'
           keyword='CLS'
-          symbol={'\xa0/\xa0'}
+          symbol={"\xa0/\xa0"}
           above='LLIST'
           below='FLASH'
         />
@@ -388,7 +388,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='B'
           keyword='BORDER'
-          symbol={'\xa0*\xa0'}
+          symbol={"\xa0*\xa0"}
           above='BIN'
           below='BRIGHT'
         />
@@ -398,7 +398,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='N'
           keyword='NEXT'
-          symbol={'\xa0\xa0,\xa0\xa0'}
+          symbol={"\xa0\xa0,\xa0\xa0"}
           above='INKEY$'
           below='OVER'
         />
@@ -408,7 +408,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           main='M'
           keyword='PAUSE'
-          symbol={'\xa0\xa0.\xa0\xa0'}
+          symbol={"\xa0\xa0.\xa0\xa0"}
           above='INVERSE'
           below='PI'
         />
@@ -451,14 +451,9 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
         break;
       case "above":
         if (e.down) {
+          machine.queueKeystroke(0, 2, 0 /* CShift */, 36 /* SShift */);
           machine.queueKeystroke(
-            frameCount,
-            2,
-            0 /* CShift */,
-            36 /* SShift */
-          );
-          machine.queueKeystroke(
-            frameCount + 3,
+            3,
             2,
             e.code,
             e.button === 0 ? undefined : 0 /* CShift */
@@ -467,13 +462,8 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
         break;
       case "below":
         if (e.down) {
-          machine.queueKeystroke(
-            frameCount,
-            2,
-            0 /* CShift */,
-            36 /* SShift */
-          );
-          machine.queueKeystroke(frameCount + 3, 2, e.code, 36 /* SShift */);
+          machine.queueKeystroke(0, 2, 0 /* CShift */, 36 /* SShift */);
+          machine.queueKeystroke(3, 2, e.code, 36 /* SShift */);
         }
         break;
       case "topNum":
@@ -482,19 +472,14 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
       case "glyph":
         if (((machine as ZxSpectrumBase).getCursorMode() & 0x02) !== 0) return;
         if (e.down) {
-          machine.queueKeystroke(frameCount, 2, 21 /* N9 */, 0 /* CShift */);
+          machine.queueKeystroke(0, 2, 21 /* N9 */, 0 /* CShift */);
           machine.queueKeystroke(
-            frameCount + 3,
+            3,
             2,
             e.code,
             e.button === 0 ? undefined : 0 /* CShift */
           );
-          machine.queueKeystroke(
-            frameCount + 6,
-            2,
-            21 /* N9 */,
-            0 /* CShift */
-          );
+          machine.queueKeystroke(6, 2, 21 /* N9 */, 0 /* CShift */);
         }
         break;
     }

@@ -98,11 +98,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
-   * Get the duration of a machine frame in milliseconds.
-   */
-  frameTimeInMs: number;
-
-  /**
    * This property gets or sets the value of the target clock multiplier to set when the next machine frame starts.
    *
    * By default, the CPU works with its regular (base) clock frequency; however, you can use an integer clock
@@ -116,7 +111,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   setTactsInFrame (tacts: number): void {
     super.setTactsInFrame(tacts);
-    this.frameTimeInMs = (tacts * 1000.0) / this.baseClockFrequency;
   }
 
   /**
@@ -199,7 +193,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   /**
    * Adds an emulated keypress to the queue of the provider.
-   * @param startFrame Frame count to start the emulation
+   * @param frameOffset Number of frames to start the keypress emulation
    * @param frames Number of frames to hold the emulation
    * @param primary Primary key code
    * @param secondary Optional secondary key code
@@ -207,7 +201,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * The keyboard provider can play back emulated key strokes
    */
   abstract queueKeystroke(
-    startFrame: number,
+    frameOffset: number,
     frames: number,
     primary: SpectrumKeyCode,
     secondary?: SpectrumKeyCode
