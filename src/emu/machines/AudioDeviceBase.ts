@@ -78,7 +78,8 @@ export class AudioDeviceBase implements IAudioDevice {
     if (this.machine.tacts <= this._audioNextSampleTact) return;
 
     this._audioSamples.push(this.getCurrentSampleValue());
-    this._audioNextSampleTact += this._audioSampleLength;
+    this._audioNextSampleTact +=
+      this._audioSampleLength * this.machine.clockMultiplier;
   }
 
   /**

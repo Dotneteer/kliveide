@@ -41,11 +41,6 @@ export abstract class ZxSpectrumBase
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
-   * The clock multiplier value used in the previous machine frame
-   */
-  protected oldClockMultiplier: number;
-
-  /**
    * Stores the last rendered machine frame tact.
    */
   protected lastRenderedFrameTact: number;
@@ -420,7 +415,7 @@ export abstract class ZxSpectrumBase
 
   /**
    * Adds an emulated keypress to the queue of the provider.
-   * @param startFrame Frame count to start the emulation
+   * @param frameOffset Number of frames to start the keypress emulation
    * @param frames Number of frames to hold the emulation
    * @param primary Primary key code
    * @param secondary Optional secondary key code
@@ -428,12 +423,13 @@ export abstract class ZxSpectrumBase
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke (
-    startFrame: number,
+    frameOffset: number,
     frames: number,
     primary: SpectrumKeyCode,
     secondary?: SpectrumKeyCode
   ): void {
-    const startTact = startFrame * this.tactsInFrame * this.clockMultiplier;
+    const startTact =
+      this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
     const endTact =
       startTact + frames * this.tactsInFrame * this.clockMultiplier;
     const keypress = new EmulatedKeyStroke(
@@ -531,15 +527,6 @@ export abstract class ZxSpectrumBase
 
     // --- Prepare the screen device for the new machine frame
     this.screenDevice.onNewFrame();
-
-    // --- Handle audio sample recalculations when the actual clock frequency changes
-    if (this.oldClockMultiplier !== this.clockMultiplier) {
-      const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
-      if (typeof audioRate === "number") {
-        this.beeperDevice.setAudioSampleRate(audioRate);
-      }
-      this.oldClockMultiplier = this.clockMultiplier;
-    }
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();

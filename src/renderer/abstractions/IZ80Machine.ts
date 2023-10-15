@@ -50,11 +50,6 @@ export interface IZ80Machine extends IZ80Cpu {
   machinePropertyChanged?: ILiteEvent<{ propertyName: string; newValue?: any }>;
 
   /**
-   * Get the duration of a machine frame in milliseconds.
-   */
-  frameTimeInMs: number;
-
-  /**
    * This property gets or sets the value of the target clock multiplier to set when the next machine frame starts.
    *
    * By default, the CPU works with its regular (base) clock frequency; however, you can use an integer clock
@@ -102,7 +97,7 @@ export interface IZ80Machine extends IZ80Cpu {
 
   /**
    * Adds an emulated keypress to the queue of the provider.
-   * @param startFrame Frame count to start the emulation
+   * @param frameOffset Number of frames to start the keypress emulation
    * @param frames Number of frames to hold the emulation
    * @param primary Primary key code
    * @param secondary Optional secondary key code
@@ -110,7 +105,7 @@ export interface IZ80Machine extends IZ80Cpu {
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke(
-    startFrame: number,
+    frameOffset: number,
     frames: number,
     primary: SpectrumKeyCode,
     secondary?: SpectrumKeyCode

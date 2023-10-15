@@ -201,9 +201,6 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
     this.setMachineProperty(REWIND_REQUESTED);
     this.setMachineProperty(KBTYPE_48, true);
 
-    // --- Unknown clock multiplier in the previous frame
-    this.oldClockMultiplier = -1;
-
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;
     this.executionContext.lastTerminationReason = null;
@@ -520,16 +517,6 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
 
     // --- Prepare the screen device for the new machine frame
     this.screenDevice.onNewFrame();
-
-    // --- Handle audio sample recalculations when the actual clock frequency changes
-    if (this.oldClockMultiplier !== this.clockMultiplier) {
-      const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
-      if (typeof audioRate === "number") {
-        this.beeperDevice.setAudioSampleRate(audioRate);
-        this.psgDevice.setAudioSampleRate(audioRate);
-      }
-      this.oldClockMultiplier = this.clockMultiplier;
-    }
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();

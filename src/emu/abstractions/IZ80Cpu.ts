@@ -200,32 +200,38 @@ export interface IZ80Cpu {
    * By default, the CPU works with its regular (base) clock frequency; however, you can use an integer clock
    * frequency multiplier to emulate a faster CPU.
    */
-  clockMultiplier: number;
+  readonly clockMultiplier: number;
 
   /**
    * The number of T-states (clock cycles) elapsed since the last reset
    */
-  tacts: number;
+  readonly tacts: number;
 
   /**
    * Show the number of machine frames completed since the CPU started.
    */
-  frames: number;
+  readonly frames: number;
 
   /**
    * The number of T-states within the current frame
    */
-  frameTacts: number;
+  readonly frameTacts: number;
 
   /**
    * Get the current frame tact within the machine frame being executed.
    */
-  currentFrameTact: number;
+  readonly currentFrameTact: number;
 
   /**
-   * Get the number of T-states in a machine frame.
+   * Get the number of T-states in a machine frame with clock multiplier of 1
    */
   readonly tactsInFrame: number;
+
+  /**
+   * Get the number of T-states in the current machine frame, which have a higher
+   * clock multiplier than 1.
+   */
+  readonly tactsInCurrentFrame: number;
 
   /**
    * Sets the number of tacts within a single machine frame
