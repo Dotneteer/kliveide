@@ -29,7 +29,7 @@ export class Z80Cpu implements IZ80Cpu {
   private _sp: number;
   private _wh: number;
   private _wl: number;
-  private _tacts: number;
+  private _tactsInFrame: number;
   private _tactsInDisplayLine: number;
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -479,10 +479,16 @@ export class Z80Cpu implements IZ80Cpu {
   }
 
   /**
+   * Get the number of T-states in the current machine frame, which have a higher
+   * clock multiplier than 1.
+   */
+  tactsInCurrentFrame: number;
+
+  /**
    * Get the number of T-states in a machine frame.
    */
   get tactsInFrame (): number {
-    return this._tacts;
+    return this._tactsInFrame;
   }
 
   /**
@@ -490,7 +496,8 @@ export class Z80Cpu implements IZ80Cpu {
    * @param tacts Tacts to set
    */
   setTactsInFrame (tacts: number): void {
-    this._tacts = tacts;
+    this._tactsInFrame = tacts;
+    this.tactsInCurrentFrame = tacts * this.clockMultiplier;
   }
 
   /**
@@ -1432,11 +1439,10 @@ export class Z80Cpu implements IZ80Cpu {
 
   /**
    * Every time the CPU clock is incremented with a single T-state, this function is executed.
-   * @param increment The tact increment value
    * With this function, you can emulate hardware activities running simultaneously with the CPU. For example,
    * rendering the screen or sound,  handling peripheral devices, and so on.
    */
-  onTactIncremented (increment: number): void {
+  onTactIncremented (): void {
     // --- Override this method in derived classes
   }
 
@@ -1453,14 +1459,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by one.
    */
   tactPlus1 (): void {
-    this.tacts += 1;
-    this.frameTacts += 1;
-    var totalTacts = this.tactsInFrame * this.clockMultiplier;
-    if (this.frameTacts >= totalTacts) {
-      this.frames++;
-      this.frameTacts -= totalTacts;
-    }
-    this.onTactIncremented(1);
+    this.tactPlusN(1);
   }
 
   /**
@@ -1487,28 +1486,14 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by three.
    */
   tactPlus3 (): void {
-    this.tacts += 3;
-    this.frameTacts += 3;
-    var totalTacts = this.tactsInFrame * this.clockMultiplier;
-    if (this.frameTacts >= totalTacts) {
-      this.frames++;
-      this.frameTacts -= totalTacts;
-    }
-    this.onTactIncremented(3);
+    this.tactPlusN(3);
   }
 
   /**
    * This method increments the current CPU tacts by four.
    */
   tactPlus4 (): void {
-    this.tacts += 4;
-    this.frameTacts += 4;
-    var totalTacts = this.tactsInFrame * this.clockMultiplier;
-    if (this.frameTacts >= totalTacts) {
-      this.frames++;
-      this.frameTacts -= totalTacts;
-    }
-    this.onTactIncremented(4);
+    this.tactPlusN(4);
   }
 
   /**
@@ -1571,12 +1556,11 @@ export class Z80Cpu implements IZ80Cpu {
   tactPlusN (n: number): void {
     this.tacts += n;
     this.frameTacts += n;
-    var totalTacts = this.tactsInFrame * this.clockMultiplier;
-    if (this.frameTacts >= totalTacts) {
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
       this.frames++;
-      this.frameTacts -= totalTacts;
+      this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.onTactIncremented(n);
+    this.onTactIncremented();
   }
 
   // ----------------------------------------------------------------------------------------------------------------

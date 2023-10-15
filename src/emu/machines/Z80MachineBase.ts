@@ -106,14 +106,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   targetClockMultiplier = 1;
 
   /**
-   * Set the number of tacts in a machine frame.
-   * @param tacts Number of tacts in a machine frame
-   */
-  setTactsInFrame (tacts: number): void {
-    super.setTactsInFrame(tacts);
-  }
-
-  /**
    * This method emulates resetting a machine with a hardware reset button.
    */
   reset (): void {
@@ -298,6 +290,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         ) {
           // --- Use the current clock multiplier
           this.clockMultiplier = this.targetClockMultiplier;
+          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
           clockMultiplierChanged = true;
         }
 
@@ -402,6 +395,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         ) {
           // --- Use the current clock multiplier
           this.clockMultiplier = this.targetClockMultiplier;
+          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
           clockMultiplierChanged = true;
         }
 
