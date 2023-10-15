@@ -436,8 +436,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
     const machine = machineService.getMachineController().machine;
     if (!machine || machine.getKeyQueueLength() > 0) return;
 
-    const frameCount = machine.frames;
-
     switch (e.keyCategory) {
       case "main":
         setKeyStatus(

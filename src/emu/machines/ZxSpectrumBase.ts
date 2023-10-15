@@ -41,11 +41,6 @@ export abstract class ZxSpectrumBase
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
-   * The clock multiplier value used in the previous machine frame
-   */
-  protected oldClockMultiplier: number;
-
-  /**
    * Stores the last rendered machine frame tact.
    */
   protected lastRenderedFrameTact: number;
@@ -532,15 +527,6 @@ export abstract class ZxSpectrumBase
 
     // --- Prepare the screen device for the new machine frame
     this.screenDevice.onNewFrame();
-
-    // --- Handle audio sample recalculations when the actual clock frequency changes
-    if (this.oldClockMultiplier !== this.clockMultiplier) {
-      const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
-      if (typeof audioRate === "number") {
-        this.beeperDevice.setAudioSampleRate(audioRate);
-      }
-      this.oldClockMultiplier = this.clockMultiplier;
-    }
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
