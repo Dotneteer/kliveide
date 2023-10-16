@@ -7,28 +7,38 @@ import { OpCodePrefix } from "../abstractions/OpCodePrefix";
  */
 export class Z80Cpu implements IZ80Cpu {
   // --- Register variable
-  private _a: number;
-  private _f: number;
-  private _b: number;
-  private _c: number;
-  private _d: number;
-  private _e: number;
-  private _h: number;
-  private _l: number;
+  private _regBuffer = new ArrayBuffer(16);
+  private _viewA = new DataView(this._regBuffer, 0, 1);
+  private _viewF = new DataView(this._regBuffer, 1, 1);
+  private _viewAF = new DataView(this._regBuffer, 0, 2);
+  private _viewB = new DataView(this._regBuffer, 2, 1);
+  private _viewC = new DataView(this._regBuffer, 3, 1);
+  private _viewBC = new DataView(this._regBuffer, 2, 2);
+  private _viewD = new DataView(this._regBuffer, 4, 1);
+  private _viewE = new DataView(this._regBuffer, 5, 1);
+  private _viewDE = new DataView(this._regBuffer, 4, 2);
+  private _viewH = new DataView(this._regBuffer, 6, 1);
+  private _viewL = new DataView(this._regBuffer, 7, 1);
+  private _viewHL = new DataView(this._regBuffer, 6, 2);
+  private _viewXH = new DataView(this._regBuffer, 8, 1);
+  private _viewXL = new DataView(this._regBuffer, 9, 1);
+  private _viewIX = new DataView(this._regBuffer, 8, 2);
+  private _viewYH = new DataView(this._regBuffer, 10, 1);
+  private _viewYL = new DataView(this._regBuffer, 11, 1);
+  private _viewIY = new DataView(this._regBuffer, 10, 2);
+  private _viewI = new DataView(this._regBuffer, 12, 1);
+  private _viewR = new DataView(this._regBuffer, 13, 1);
+  private _viewIR = new DataView(this._regBuffer, 12, 2);
+  private _viewWH = new DataView(this._regBuffer, 14, 1);
+  private _viewWL = new DataView(this._regBuffer, 15, 1);
+  private _viewWZ = new DataView(this._regBuffer, 14, 2);
+
   private _af_: number;
   private _bc_ = 0xffff;
   private _de_ = 0xffff;
   private _hl_ = 0xffff;
-  private _xh: number;
-  private _xl: number;
-  private _yh: number;
-  private _yl: number;
-  private _i = 0x00;
-  private _r = 0x00;
   private _pc: number;
   private _sp: number;
-  private _wh: number;
-  private _wl: number;
   private _tactsInFrame: number;
   private _tactsInDisplayLine: number;
 
@@ -39,124 +49,120 @@ export class Z80Cpu implements IZ80Cpu {
    * The A register
    */
   get a (): number {
-    return this._a;
+    return this._viewA.getUint8(0);
   }
   set a (value: number) {
-    this._a = value & 0xff;
+    this._viewA.setUint8(0, value);
   }
 
   /**
    * The F register
    */
   get f (): number {
-    return this._f;
+    return this._viewF.getUint8(0);
   }
   set f (value: number) {
-    this._f = value & 0xff;
+    this._viewF.setUint8(0, value);
   }
 
   /**
    * The AF register pair
    */
   get af (): number {
-    return (this._a << 8) | this._f;
+    return this._viewAF.getUint16(0);
   }
   set af (value: number) {
-    this._a = (value & 0xff00) >>> 8;
-    this._f = value & 0xff;
+    this._viewAF.setUint16(0, value);
   }
 
   /**
    * The B register
    */
   get b (): number {
-    return this._b;
+    return this._viewB.getUint8(0);
   }
   set b (value: number) {
-    this._b = value & 0xff;
+    this._viewB.setUint8(0, value);
   }
 
   /**
    * The C register
    */
   get c (): number {
-    return this._c;
+    return this._viewC.getUint8(0);
   }
   set c (value: number) {
-    this._c = value & 0xff;
+    this._viewC.setUint8(0, value);
   }
 
   /**
    * The BC register pair
    */
   get bc (): number {
-    return (this._b << 8) | this._c;
+    return this._viewBC.getUint16(0);
   }
   set bc (value: number) {
-    this._b = (value & 0xff00) >>> 8;
-    this._c = value & 0xff;
+    this._viewBC.setUint16(0, value);
   }
 
   /**
    * The D register
    */
   get d (): number {
-    return this._d;
+    return this._viewD.getUint8(0);
   }
   set d (value: number) {
-    this._d = value & 0xff;
+    this._viewD.setUint8(0, value);
   }
 
   /**
    * The E register
    */
   get e (): number {
-    return this._e;
+    return this._viewE.getUint8(0);
   }
   set e (value: number) {
-    this._e = value & 0xff;
+    this._viewE.setUint8(0, value);
   }
 
   /**
    * The DE register pair
    */
   get de (): number {
-    return (this._d << 8) | this._e;
+    return this._viewDE.getUint16(0);
   }
   set de (value: number) {
-    this._d = (value & 0xff00) >>> 8;
-    this._e = value & 0xff;
+    this._viewDE.setUint16(0, value);
   }
 
   /**
    * The H register
    */
   get h (): number {
-    return this._h;
+    return this._viewH.getUint8(0);
   }
   set h (value: number) {
-    this._h = value & 0xff;
+    this._viewH.setUint8(0, value);
   }
 
   /**
    * The L register
    */
   get l (): number {
-    return this._l;
+    return this._viewL.getUint8(0);
   }
   set l (value: number) {
-    this._l = value & 0xff;
+    this._viewL.setUint8(0, value);
   }
 
   /**
    * The HL register pair
    */
   get hl (): number {
-    return (this._h << 8) | this._l;
+    return this._viewHL.getUint16(0);
   }
   set hl (value: number) {
-    this._h = (value & 0xff00) >>> 8;
-    this._l = value & 0xff;
+    this._viewHL.setUint16(0, value);
   }
 
   /**
@@ -203,93 +209,90 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the IX register pair
    */
   get xh (): number {
-    return this._xh;
+    return this._viewXH.getUint8(0);
   }
   set xh (value: number) {
-    this._xh = value & 0xff;
+    this._viewXH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
   get xl (): number {
-    return this._xl;
+    return this._viewXL.getUint8(0);
   }
   set xl (value: number) {
-    this._xl = value & 0xff;
+    this._viewXL.setUint8(0, value);
   }
 
   /**
    * The IX register pair
    */
   get ix (): number {
-    return (this._xh << 8) | this._xl;
+    return this._viewIX.getUint16(0);
   }
   set ix (value: number) {
-    this._xh = (value & 0xff00) >>> 8;
-    this._xl = value & 0xff;
+    this._viewIX.setUint16(0, value);
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
   get yh (): number {
-    return this._yh;
+    return this._viewYH.getUint8(0);
   }
   set yh (value: number) {
-    this._yh = value & 0xff;
+    this._viewYH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
   get yl (): number {
-    return this._yl;
+    return this._viewYL.getUint8(0);
   }
   set yl (value: number) {
-    this._yl = value & 0xff;
+    this._viewYL.setUint8(0, value);
   }
 
   /**
    * The IY register pair
    */
   get iy (): number {
-    return (this._yh << 8) | this._yl;
+    return this._viewIY.getUint16(0);
   }
   set iy (value: number) {
-    this._yh = (value & 0xff00) >>> 8;
-    this._yl = value & 0xff;
+    this._viewIY.setUint16(0, value);
   }
 
   /**
    * The I (interrupt vector) register
    */
   get i (): number {
-    return this._i;
+    return this._viewI.getUint8(0);
   }
   set i (value: number) {
-    this._i = value & 0xff;
+    this._viewI.setUint8(0, value);
   }
 
   /**
    * The R (refresh) register
    */
   get r (): number {
-    return this._r;
+    return this._viewR.getUint8(0);
   }
   set r (value: number) {
-    this._r = value & 0xff;
+    this._viewR.setUint8(0, value);
   }
 
   /**
    * The IR register pair
    */
   get ir (): number {
-    return (this._i << 8) | this._r;
+    return this._viewIR.getUint16(0);
   }
   set ir (value: number) {
-    this._i = (value & 0xff00) >>> 8;
-    this._r = value & 0xff;
+    this._viewIR.setUint16(0, value);
   }
 
   /**
@@ -316,31 +319,30 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the WZ register pair
    */
   get wh (): number {
-    return this._wh;
+    return this._viewWH.getUint8(0);
   }
   set wh (value: number) {
-    this._wh = value & 0xff;
+    this._viewWH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
   get wl (): number {
-    return this._wl;
+    return this._viewWL.getUint8(0);
   }
   set wl (value: number) {
-    this._wl = value & 0xff;
+    this._viewWL.setUint8(0, value);
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
   get wz (): number {
-    return (this._wh << 8) | this._wl;
+    return this._viewWZ.getUint16(0)
   }
   set wz (value: number) {
-    this._wh = (value & 0xff00) >>> 8;
-    this._wl = value & 0xff;
+    this._viewWZ.setUint16(0, value);
   }
 
   /**
