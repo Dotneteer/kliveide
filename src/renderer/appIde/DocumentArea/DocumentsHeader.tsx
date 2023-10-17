@@ -57,7 +57,6 @@ export const DocumentsHeader = () => {
 
   // --- Update the UI when the build root changes
   useEffect(() => {
-    console.log("docs changed")
     if (openDocs) {
       setSelectedIsBuildRoot(
         buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
