@@ -120,7 +120,7 @@ export async function processRendererToMainMessages (
 
     case "MainOpenFolder":
       if (message.folder) {
-        const openError = openFolderByPath(message.folder);
+        const openError = await openFolderByPath(message.folder);
         if (openError) {
           return errorResponse(openError);
         }

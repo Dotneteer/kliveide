@@ -31,9 +31,11 @@ export async function addBreakpoint (
   // --- Get breakpoint information
   const response = await messenger.sendMessage({
     type: "EmuSetBreakpoint",
-    address: bp.address,
-    resource: bp.resource,
-    line: bp.line
+    breakpoint: {
+      address: bp.address,
+      resource: bp.resource,
+      line: bp.line
+    }
   });
   if (response.type === "ErrorResponse") {
     reportMessagingError(`EmuSetBreakpoint call failed: ${response.message}`);
@@ -49,14 +51,14 @@ export async function removeBreakpoint (
   messenger: MessengerBase,
   bp: BreakpointInfo
 ): Promise<boolean> {
-  console.log("remove bp");
-  console.trace();
   // --- Get breakpoint information
   const response = await messenger.sendMessage({
     type: "EmuRemoveBreakpoint",
-    address: bp.address,
+    breakpoint: {address: bp.address,
     resource: bp.resource,
-    line: bp.line
+    line: bp.line,
+    exec: true
+    }
   });
   if (response.type === "ErrorResponse") {
     reportMessagingError(

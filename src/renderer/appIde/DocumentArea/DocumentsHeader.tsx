@@ -4,7 +4,11 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@controls/TabButton";
-import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useSelector,
+  useStore
+} from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode, DocumentTab } from "./DocumentTab";
@@ -15,12 +19,13 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { setRestartTarget } from "@common/state/actions";
+import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
 
 /**
  * This component represents the header of a document hub
  */
 export const DocumentsHeader = () => {
+  const dispatch = useDispatch();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
@@ -45,7 +50,9 @@ export const DocumentsHeader = () => {
   }, [hubVersion]);
 
   useEffect(() => {
-    setDirtyStates(openDocs?.map(d => d.editVersionCount !== d.savedVersionCount));
+    setDirtyStates(
+      openDocs?.map(d => d.editVersionCount !== d.savedVersionCount)
+    );
   }, [editorVersion]);
 
   // --- Update the UI when the build root changes
@@ -73,15 +80,17 @@ export const DocumentsHeader = () => {
 
   // --- Refresh the changed project document
   useEffect(() => {
-    // --- Check if the project document is visible
-    const projectDoc = documentHubService.getOpenProjectFileDocument();
-    if (!projectDoc) return;
-
     // --- Get the data of the document
     (async () => {
-      const viewState = documentHubService.getDocumentViewState(projectDoc.id);
+      // --- Check if the project document is visible
+      const projectDoc = await documentHubService.getOpenProjectFileDocument();
+      if (!projectDoc) return;
+
       // --- Refresh the contents of the document
+      const viewState = documentHubService.getDocumentViewState(projectDoc.id);
       documentHubService.setDocumentViewState(projectDoc.id, viewState);
+      
+      dispatch(incProjectViewStateVersionAction());
     })();
   }, [projectVersion]);
 
@@ -149,8 +158,9 @@ export const DocumentsHeader = () => {
     const activeDocId = openDocs?.[activeDocIndex]?.id;
     if (!activeDocId || id === activeDocId) return;
 
-    setAwaiting(true)
-    await documentHubService.setActiveDocument(id)
+    setAwaiting(true);
+    await documentHubService
+      .setActiveDocument(id)
       .finally(setAwaiting.bind(false));
   };
 
@@ -162,7 +172,7 @@ export const DocumentsHeader = () => {
 
   // --- Responds to the event when the close button of the tab is clicked
   const tabCloseClicked = (mode: CloseMode, id: string) => {
-    async function onTabCloseAsync() {
+    async function onTabCloseAsync () {
       switch (mode) {
         case CloseMode.All:
           await documentHubService.closeAllDocuments();
@@ -176,8 +186,7 @@ export const DocumentsHeader = () => {
       }
     }
     setAwaiting(true);
-    onTabCloseAsync()
-      .finally(setAwaiting.bind(false))
+    onTabCloseAsync().finally(setAwaiting.bind(false));
   };
 
   const tabsCount = openDocs?.length ?? 0;
@@ -213,7 +222,9 @@ export const DocumentsHeader = () => {
                 tabDisplayed={el => tabDisplayed(idx, el)}
                 tabClicked={() => tabClicked(d.id)}
                 tabDoubleClicked={() => tabDoubleClicked(d)}
-                tabCloseClicked={(mode: CloseMode) => tabCloseClicked(mode, d.id)}
+                tabCloseClicked={(mode: CloseMode) =>
+                  tabCloseClicked(mode, d.id)
+                }
               />
             );
           })}

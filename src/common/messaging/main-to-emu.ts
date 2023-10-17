@@ -83,18 +83,12 @@ export interface EmuEraseAllBreakpointsRequest extends MessageBase {
 
 export interface EmuSetBreakpointRequest extends MessageBase {
   type: "EmuSetBreakpoint";
-  address?: number;
-  partition?: number; 
-  resource?: string;
-  line?: number;
+  breakpoint: BreakpointInfo;
 }
 
 export interface EmuRemoveBreakpointRequest extends MessageBase {
   type: "EmuRemoveBreakpoint";
-  address?: number;
-  partition?: number; 
-  resource?: string;
-  line?: number;
+  breakpoint: BreakpointInfo;
 }
 
 export interface EmuListBreakpointsRequest extends MessageBase {
@@ -103,10 +97,7 @@ export interface EmuListBreakpointsRequest extends MessageBase {
 
 export interface EmuEnableBreakpointRequest extends MessageBase {
   type: "EmuEnableBreakpoint";
-  address?: number;
-  partition?: number; 
-  resource?: string;
-  line?: number;
+  breakpoint: BreakpointInfo;
   enable: boolean;
 }
 

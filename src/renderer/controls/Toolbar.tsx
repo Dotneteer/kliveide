@@ -77,7 +77,7 @@ export const Toolbar = ({ ide = false }: Props) => {
     state !== MachineControllerState.Stopped;
   const canStart = !isCompiling && !isRunning;
   const mayInjectCode = ide && isKliveProject;
-  const [ startMode, setStartMode ] = useState("debug");
+  const [ startMode, setStartMode ] = useState(ide ? "debug" : "start");
 
   const storeDispatch = useDispatch();
   const restartTarget = useSelector(s => s.ideView?.restartTarget ?? 'machine');

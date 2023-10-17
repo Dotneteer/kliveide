@@ -68,7 +68,7 @@ export interface IDocumentHubService {
   /**
    * Tests if the project file is open
    */
-  getOpenProjectFileDocument(): ProjectDocumentState;
+  getOpenProjectFileDocument(): Promise<ProjectDocumentState | undefined>;
 
   /**
    * Sets the specified document as the active one

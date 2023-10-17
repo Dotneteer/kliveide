@@ -11,6 +11,7 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { useAppServices } from "./services/AppServicesProvider";
+import { saveProject } from "./utils/save-project";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -21,10 +22,12 @@ export const IdeEventsHandler = () => {
 
   const compilation = useSelector(s => s.compilation);
   const execState = useSelector(s => s.emulatorState?.machineState);
+  const breakpointsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
   const syncBps = useSelector(
     s => s.ideViewOptions.syncSourceBreakpoints ?? true
   );
 
+  // --- Refresh the code location whenever the machine is paused
   useEffect(() => {
     (async () => {
       if (execState === MachineControllerState.Paused) {
@@ -32,6 +35,13 @@ export const IdeEventsHandler = () => {
       }
     })();
   }, [execState]);
+
+  // --- Save any breakpoint changes to the project file
+  useEffect(() => {
+    (async () => {
+      await saveProject(messenger, 0);
+    })();
+  }, [breakpointsVersion]);
 
   // --- Do not render any visual elements
   return null;
