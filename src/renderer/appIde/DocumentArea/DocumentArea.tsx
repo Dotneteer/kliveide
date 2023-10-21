@@ -24,6 +24,7 @@ export const DocumentArea = () => {
 
   const data = activeDoc?.contents;
   const viewState = documentHubService.getDocumentViewState(activeDoc?.id);
+
   return (
     <DocumentHubServiceProvider value={documentHubService}>
       <div className={styles.documentArea} tabIndex={-1}>

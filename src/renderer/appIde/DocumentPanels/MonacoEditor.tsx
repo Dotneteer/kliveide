@@ -210,6 +210,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   ): void => {
     // --- Restore the view state to display the editor is it has been left
     editor.current = ed;
+    ed.setValue(value);
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];

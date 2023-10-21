@@ -7,7 +7,6 @@ import {
 import {
   useDispatch,
   useSelector,
-  useStore
 } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -19,7 +18,7 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
+import { incDocHubServiceVersionAction, incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
 
 /**
  * This component represents the header of a document hub
@@ -89,7 +88,6 @@ export const DocumentsHeader = () => {
       // --- Refresh the contents of the document
       const viewState = documentHubService.getDocumentViewState(projectDoc.id);
       documentHubService.setDocumentViewState(projectDoc.id, viewState);
-      
       dispatch(incProjectViewStateVersionAction());
     })();
   }, [projectVersion]);
