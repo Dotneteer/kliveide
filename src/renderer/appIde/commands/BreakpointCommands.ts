@@ -154,7 +154,11 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
           (this.partition >= 0 && this.partition > banks)
         ) {
           return validationError(
-            `Invalid partition (${partitionType === "R" ? "R" : ""}${partition}) for the current machine (${context.machineInfo.machineId})`
+            `Invalid partition (${
+              partitionType === "R" ? "R" : ""
+            }${partition}) for the current machine (${
+              context.machineInfo.machineId
+            })`
           );
         }
       }
@@ -172,10 +176,13 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = await context.messenger.sendMessage({
       type: "EmuSetBreakpoint",
-      address: this.address,
-      resource: this.resource,
-      partition: this.partition,
-      line: this.line
+      breakpoint: {
+        address: this.address,
+        resource: this.resource,
+        partition: this.partition,
+        line: this.line,
+        exec: true
+      }
     });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
@@ -206,10 +213,13 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = await context.messenger.sendMessage({
       type: "EmuRemoveBreakpoint",
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line
+      breakpoint: {
+        address: this.address,
+        partition: this.partition,
+        resource: this.resource,
+        line: this.line,
+        exec: true
+      }
     });
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
@@ -269,10 +279,13 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const response = await context.messenger.sendMessage({
       type: "EmuEnableBreakpoint",
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line,
+      breakpoint: {
+        address: this.address,
+        partition: this.partition,
+        resource: this.resource,
+        line: this.line,
+        exec: true
+      },
       enable: this.enable
     });
     if (response.type === "ErrorResponse") {

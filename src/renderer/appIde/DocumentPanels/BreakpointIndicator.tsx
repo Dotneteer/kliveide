@@ -63,7 +63,6 @@ export const BreakpointIndicator = ({
   // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
     const command = `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel}`;
-    console.log(command);
     await ideCommandsService.executeCommand(command);
   };
 

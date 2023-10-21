@@ -254,27 +254,16 @@ export async function processMainToEmuMessages (
     case "EmuSetBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.addBreakpoint({
-        address: message.address,
-        partition: message.partition,
-        resource: message.resource,
-        line: message.line,
-        exec: true
-      });
+      const status = controller.debugSupport.addBreakpoint(message.breakpoint);
       return flagResponse(status);
     }
 
     case "EmuRemoveBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      console.log("EmuRemoveBreakpoint");
-      console.log(message);
-      const status = controller.debugSupport.removeBreakpoint({
-        address: message.address,
-        partition: message.partition,
-        resource: message.resource,
-        line: message.line
-      });
+      const status = controller.debugSupport.removeBreakpoint(
+        message.breakpoint
+      );
       return flagResponse(status);
     }
 
@@ -282,12 +271,7 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const status = controller.debugSupport.enableBreakpoint(
-        {
-          address: message.address,
-          partition: message.partition,
-          resource: message.resource,
-          line: message.line
-        },
+        message.breakpoint,
         message.enable
       );
       return flagResponse(status);

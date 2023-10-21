@@ -1,4 +1,7 @@
-import { incDocHubServiceVersionAction, setVolatileDocStateAction } from "@state/actions";
+import {
+  incDocHubServiceVersionAction,
+  setVolatileDocStateAction
+} from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { PROJECT_FILE } from "@common/structs/project-const";
@@ -21,7 +24,7 @@ class DocumentHubService implements IDocumentHubService {
 
   onProjectClosed = () => {
     this._documentViewState.clear();
-  }
+  };
 
   /**
    * Initializes the service instance to use the specified store
@@ -146,14 +149,22 @@ class DocumentHubService implements IDocumentHubService {
   /**
    * Gets the project file is open
    */
-  getOpenProjectFileDocument (): ProjectDocumentState | undefined {
+  async getOpenProjectFileDocument (): Promise<
+    ProjectDocumentState | undefined
+  > {
     const state = this.store.getState();
     var projectInfo = state?.project;
-    return projectInfo?.isKliveProject
-      ? this._openDocs.find(
-          d => d.path === `${projectInfo.folderPath}/${PROJECT_FILE}`
-        )
-      : undefined;
+    if (projectInfo?.isKliveProject) {
+      const projectDoc = this._openDocs.find(
+        d => d.path === `${projectInfo.folderPath}/${PROJECT_FILE}`
+      );
+      if (projectDoc) {
+        projectDoc.contents = await this.projectService.readFileContent(
+          projectDoc.id
+        );
+      }
+      return projectDoc;
+    }
   }
 
   /**
@@ -181,19 +192,16 @@ class DocumentHubService implements IDocumentHubService {
    * @param newName New document name
    * @param newIcon New document icon
    */
-  renameDocument (
-    oldId: string,
-    newId: string,
-  ): void {
+  renameDocument (oldId: string, newId: string): void {
     const docIndex = this._openDocs.findIndex(d => d.id === oldId);
     if (docIndex < 0) return;
 
     const document = this._openDocs[docIndex];
 
     // --- Rename the document instance
-    document.id = newId,
-    document.name = getNodeFile(newId),
-    document.iconName = getFileTypeEntry(newId)?.icon;
+    (document.id = newId),
+      (document.name = getNodeFile(newId)),
+      (document.iconName = getFileTypeEntry(newId)?.icon);
 
     // TODO: move file into new doc ID
 
@@ -201,7 +209,7 @@ class DocumentHubService implements IDocumentHubService {
     const oldApi = this._documentApi.get(oldId);
     if (oldApi) {
       this._documentApi.delete(oldId);
-      this._documentApi.set(newId, oldApi)
+      this._documentApi.set(newId, oldApi);
     }
 
     // --- Re-index the document viewstate
@@ -222,7 +230,7 @@ class DocumentHubService implements IDocumentHubService {
     return this.closeDocuments(id);
   }
 
-  private async closeDocuments(...ids: string[]) {
+  private async closeDocuments (...ids: string[]) {
     const indices = ids
       .map(id => this._openDocs.findIndex(doc => doc.id === id))
       .filter(i => i >= 0);
@@ -274,8 +282,8 @@ class DocumentHubService implements IDocumentHubService {
     // --- Close the documents
     await this.closeDocuments(
       ...this._openDocs
-          .filter(d => exceptIds?.includes(d.id) !== true)
-          .map(d => d.id)
+        .filter(d => exceptIds?.includes(d.id) !== true)
+        .map(d => d.id)
     );
   }
 
@@ -285,9 +293,7 @@ class DocumentHubService implements IDocumentHubService {
   async closeAllExplorerDocuments (): Promise<void> {
     // --- Close the documents
     await this.closeDocuments(
-      ...this._openDocs
-          .filter(d => d.node)
-          .map(d => d.id)
+      ...this._openDocs.filter(d => d.node).map(d => d.id)
     );
   }
 
@@ -378,10 +384,11 @@ class DocumentHubService implements IDocumentHubService {
   private async ensureDocumentSaved (...ids: string[]): Promise<void> {
     // --- Use the API to save the document
     await Promise.all(
-      ids.map(id => this.getDocumentApi(id))
+      ids
+        .map(id => this.getDocumentApi(id))
         .filter(api => !!api?.beforeDocumentDisposal)
         .map(api => api?.beforeDocumentDisposal(false))
-    )
+    );
   }
 
   // --- Increment the document hub service version number to sign a state change

@@ -81,6 +81,7 @@ export class DebugSupport implements IDebugSupport {
       // --- No execution breakpoint
       return false;
     }
+
     // --- Is there a partitionless breakpoint for this address?
     if (flags & EXEC_BP) {
       // --- Yes, though it may be disabled
@@ -195,10 +196,13 @@ export class DebugSupport implements IDebugSupport {
     // --- Remove definition
     const bpKey = getBreakpointKey(bp);
     const oldBp = this.breakpointDefs.get(bpKey);
+    if (!oldBp) {
+      return false;
+    }
     this.breakpointDefs.delete(bpKey);
 
     // --- Remove breakpoint flags
-    const address = bp.address ?? bp.resolvedAddress;
+    const address = oldBp.address ?? oldBp.resolvedAddress;
 
     // --- Do we have a breakpoint address at all?
     if (address !== undefined) {
@@ -227,7 +231,7 @@ export class DebugSupport implements IDebugSupport {
 
     // --- Done, sign the change
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
-    return !!oldBp;
+    return true;
   }
 
   /**
@@ -242,7 +246,7 @@ export class DebugSupport implements IDebugSupport {
     if (!oldBp) return false;
     oldBp.disabled = !enabled;
 
-    const address = bp.address ?? bp.resolvedAddress;
+    const address = oldBp.address ?? oldBp.resolvedAddress;
 
     // --- Do we have a breakpoint address at all?
     if (address !== undefined) {
@@ -371,9 +375,11 @@ export class DebugSupport implements IDebugSupport {
   resolveBreakpoint (resource: string, line: number, address: number): void {
     const bpKey = getBreakpointKey({ resource, line });
     const bp = this.breakpointDefs.get(bpKey);
-    if (bp) {
-      bp.resolvedAddress = address;
+    if (!bp) {
+      return;
     }
+    bp.resolvedAddress = address;
+    this.breakpointFlags[address] = EXEC_BP;
   }
 
   // --- Get the breakpoint flags from the definition

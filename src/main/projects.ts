@@ -16,7 +16,7 @@ import {
   showKeyboardAction,
   showSideBarAction,
   showToolPanelsAction,
-  toolPanelsOnTopAction,
+  toolPanelsOnTopAction
 } from "../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
@@ -27,7 +27,7 @@ import {
   TEMPLATES,
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
-  KLIVE_PROJECT_ROOT,
+  KLIVE_PROJECT_ROOT
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -74,8 +74,8 @@ export async function createKliveProject (
     const project = await getKliveProjectStructure();
     project.machineType = machineId;
     project.builder = {
-      roots: [ "code/code.kz80.asm" ]
-    }
+      roots: ["code/code.kz80.asm"]
+    };
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {
@@ -105,8 +105,8 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
       properties: ["openDirectory"]
     });
     if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-    openFolderByPath(dialogResult.filePaths[0]);
-    mainStore.dispatch(resetCompileAction())
+    await openFolderByPath(dialogResult.filePaths[0]);
+    mainStore.dispatch(resetCompileAction());
   } finally {
     mainStore.dispatch(dimMenuAction(false));
   }
@@ -117,7 +117,9 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
  * @param projectFolder Folder to open
  * @returns null, if the operation is successful; otherwise, the error message
  */
-export function openFolderByPath (projectFolder: string): string | null {
+export async function openFolderByPath (
+  projectFolder: string
+): Promise<string | null> {
   // --- Check if project files exists
   projectFolder = getKliveProjectFolder(projectFolder);
   if (!fs.existsSync(projectFolder)) {
@@ -131,24 +133,50 @@ export function openFolderByPath (projectFolder: string): string | null {
   if (fs.existsSync(projectFile)) {
     const projectContents = fs.readFileSync(projectFile, "utf8");
     try {
-      const projectStruct = JSON.parse(projectContents) as KliveProjectStructure;
-      isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
+      const projectStruct = JSON.parse(
+        projectContents
+      ) as KliveProjectStructure;
+      isValidProject = !!(
+        projectStruct.kliveVersion && projectStruct.machineType
+      );
 
       // --- Apply settings if the project is valid
-      disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
+      disp(
+        setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems)
+      );
       disp(showEmuToolbarAction(projectStruct.viewOptions.showEmuToolbar));
       disp(showEmuStatusBarAction(projectStruct.viewOptions.showEmuStatusbar));
       disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
       disp(showIdeStatusBarAction(projectStruct.viewOptions.showIdeStatusbar));
       disp(showKeyboardAction(projectStruct.viewOptions.showKeyboard));
       disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
-      disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
+      disp(
+        primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight)
+      );
       disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
       disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
       disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
-      disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
+      disp(
+        setBuildRootAction(
+          projectStruct.builder?.roots,
+          !!projectStruct.builder?.roots
+        )
+      );
 
+      // --- Restore breakpoints
+      await sendFromMainToEmu({
+        type: "EmuEraseAllBreakpoints"
+      });
+
+      if (projectStruct.debugger?.breakpoints) {
+        for(const bp of projectStruct.debugger.breakpoints) {
+          await sendFromMainToEmu({
+            type: "EmuSetBreakpoint",
+            breakpoint: bp
+          });
+        }
+      }
     } catch {
       // --- Intentionally ingored
     }
@@ -254,7 +282,7 @@ export function getKliveProjectFolder (projectFolder: string): string {
 }
 
 // --- Get the current klive project structure to save
-export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
+export async function getKliveProjectStructure (): Promise<KliveProjectStructure> {
   const state = mainStore.getState();
   const bpResponse = (await sendFromMainToEmu({
     type: "EmuListBreakpoints"
@@ -294,11 +322,11 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     builder: {
       roots: state.project?.buildRoots ?? []
     }
-  }
+  };
 }
 
 // --- Saves the current Klive project
-export async function saveKliveProject(): Promise<void> {
+export async function saveKliveProject (): Promise<void> {
   const projectState = mainStore.getState().project;
   if (!projectState.folderPath) return;
 
