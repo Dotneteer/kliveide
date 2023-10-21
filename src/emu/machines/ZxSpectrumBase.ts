@@ -8,10 +8,39 @@ import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { SysVar } from "@abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
-import { AUDIO_SAMPLE_RATE } from "./machine-props";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { CodeToInject } from "@abstractions/CodeToInject";
-import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+
+/**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+export const SP48_MAIN_ENTRY = 0x12ac;
+
+/**
+ * ZX Spectrum 128 main waiting loop (Spectrum 128 ROM 0)
+ */
+export const SP128_MAIN_WAITING_LOOP = 0x2653;
+
+/**
+ * Return to Editor entry point in Spectrum 128 ROM-0
+ */
+export const SP128_RETURN_TO_EDITOR = 0x2604;
+
+/**
+ * ZX Spectrum 128/+2E/+3E main waiting loop (Spectrum +3E ROM 0)
+ */
+export const SPP3_MAIN_WAITING_LOOP = 0x0706;
+
+/**
+ * Return to Editor entry point in Spectrum +3E ROM 0
+ */
+export const SPP3_RETURN_TO_EDITOR = 0x0937;
+
+/**
+ * Wait between menu keys
+ */
+export const SP_KEY_WAIT = 250;
 
 /**
  * The common core functionality for all ZX Spectrum machines
@@ -395,6 +424,7 @@ export abstract class ZxSpectrumBase
     if (keyStroke.startTact > this.tacts) return;
 
     if (keyStroke.endTact < this.tacts) {
+      console.log("end keystroke", this.tacts)
       // --- End emulation of this very keystroke
       this.keyboardDevice.setStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
@@ -407,6 +437,7 @@ export abstract class ZxSpectrumBase
     }
 
     // --- Emulate this very keystroke, and leave it in the queue
+    console.log("start keystroke", this.tacts)
     this.keyboardDevice.setStatus(keyStroke.primaryCode, true);
     if (keyStroke.secondaryCode !== undefined) {
       this.keyboardDevice.setStatus(keyStroke.secondaryCode, true);
@@ -438,27 +469,8 @@ export abstract class ZxSpectrumBase
       primary,
       secondary
     );
-    if (this.emulatedKeyStrokes.length === 0) {
-      this.emulatedKeyStrokes.push(keypress);
-      return;
-    }
-
-    const last = this.emulatedKeyStrokes[0];
-    if (
-      last.primaryCode === keypress.primaryCode &&
-      last.secondaryCode === keypress.secondaryCode
-    ) {
-      // --- The same key has been clicked
-      if (
-        keypress.startTact >= last.startTact &&
-        keypress.startTact <= last.endTact
-      ) {
-        // --- Old and new click ranges overlap, lengthen the old click
-        last.endTact = keypress.endTact;
-        return;
-      }
-    }
     this.emulatedKeyStrokes.push(keypress);
+    console.log(keypress);
   }
 
   /**
@@ -479,7 +491,7 @@ export abstract class ZxSpectrumBase
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  abstract getMainExecPoint(model: string): MainExecPointInfo;
+  abstract getCodeInjectionFlow(model: string): CodeInjectionFlow;
 
   /**
    * Injects the specified code into the ZX Spectrum machine
@@ -551,7 +563,7 @@ export abstract class ZxSpectrumBase
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (increment: number): void {
+  onTactIncremented (): void {
     const machineTact = this.currentFrameTact;
     while (this.lastRenderedFrameTact <= machineTact) {
       this.screenDevice.renderTact(this.lastRenderedFrameTact++);

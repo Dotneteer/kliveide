@@ -11,18 +11,21 @@ import {
   TAPE_SAVER
 } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
-import { ZxSpectrumBase } from "../ZxSpectrumBase";
-import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
+import {
+  SP128_MAIN_WAITING_LOOP,
+  SP128_RETURN_TO_EDITOR,
+  SP48_MAIN_ENTRY,
+  SP_KEY_WAIT,
+  ZxSpectrumBase
+} from "../ZxSpectrumBase";
 import { ZxSpectrum128FloatingBusDevice } from "./ZxSpectrum128FloatingBusDevice";
 import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
 import { ZxSpectrum128PsgDevice } from "./ZxSpectrum128PsgDevice";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { PagedMemory } from "../memory/PagedMemory";
-
-/**
- * ZX Spectrum 48 main execution cycle entry point
- */
-export const SP48_MAIN_ENTRY = 0x12ac;
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -192,7 +195,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
    */
-  getPartition(address: number): number | undefined {
+  getPartition (address: number): number | undefined {
     return this.memory.getAddressPartition(address);
   }
 
@@ -440,11 +443,107 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getMainExecPoint (model: string): MainExecPointInfo {
-    return {
-      romIndex: 0,
-      entryPoint: SP48_MAIN_ENTRY
-    };
+  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+    if (model === "48") {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SP128_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SP128_MAIN_WAITING_LOOP
+          )})`
+        },
+        {
+          type: "Start"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Enter,
+          wait: 0,
+          message: "Enter"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 1,
+          execPoint: SP48_MAIN_ENTRY,
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(
+            SP48_MAIN_ENTRY
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SP48_MAIN_ENTRY
+        }
+      ];
+    }
+    if (model === "128") {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SP128_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SP128_MAIN_WAITING_LOOP
+          )})`
+        },
+        {
+          type: "Start"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Enter,
+          wait: 0,
+          message: "Enter"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 1,
+          execPoint: SP128_RETURN_TO_EDITOR,
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(
+            SP128_RETURN_TO_EDITOR
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SP48_MAIN_ENTRY
+        }
+      ];
+    }
   }
 
   /**
@@ -452,7 +551,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (clockMultiplierChanged: boolean): void {
+  onInitNewFrame (): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 
@@ -476,8 +575,8 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (increment: number): void {
-    super.onTactIncremented(increment);
+  onTactIncremented (): void {
+    super.onTactIncremented();
     this.psgDevice.setNextAudioSample();
   }
 

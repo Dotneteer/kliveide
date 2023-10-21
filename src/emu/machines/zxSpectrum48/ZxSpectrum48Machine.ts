@@ -11,14 +11,10 @@ import {
   TAPE_SAVER
 } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
-import { ZxSpectrumBase } from "../ZxSpectrumBase";
+import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
-import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
-
-/**
- * ZX Spectrum 48 main execution cycle entry point
- */
-export const SP48_MAIN_ENTRY = 0x12ac;
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -271,11 +267,24 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getMainExecPoint (model: string): MainExecPointInfo {
-    return {
-      romIndex: 0,
-      entryPoint: SP48_MAIN_ENTRY
-    };
+  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+    return [
+      {
+        type: "ReachExecPoint",
+        rom: 0,
+        execPoint: SP48_MAIN_ENTRY,
+        message: `Main execution cycle point reached (ROM0/$${toHexa4(
+          SP48_MAIN_ENTRY
+        )})`
+      },
+      {
+        type: "Inject"
+      },
+      {
+        type: "SetReturn",
+        returnPoint: SP48_MAIN_ENTRY
+      }
+    ];
   }
 
   /**
