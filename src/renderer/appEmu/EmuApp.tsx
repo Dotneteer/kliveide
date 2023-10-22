@@ -33,6 +33,7 @@ const EmuApp = () => {
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
+  const kliveProjectLoaded = useSelector(s => s.project?.isKliveProject ?? false);
   const dimmed = useSelector(s => s.dimMenu ?? false);
 
   // --- Use the current instance of the app services
@@ -66,7 +67,7 @@ const EmuApp = () => {
 
   return (
     <div id='appMain' className={styles.app}>
-      {showToolbar && <Toolbar ide={false} />}
+      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />}
       <EmulatorArea />
       {showStatusBar && <EmuStatusBar />}
       <BackDrop visible={dimmed} />
