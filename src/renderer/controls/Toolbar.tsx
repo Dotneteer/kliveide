@@ -17,11 +17,12 @@ import styles from "./Toolbar.module.scss";
 import { createMachineCommand } from "@messaging/main-to-emu";
 import { reportMessagingError } from "@renderer/reportError";
 import { Dropdown } from "./Dropdown";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 type Props = {
-  ide?: boolean;
+  ide: boolean;
+  kliveProjectLoaded: boolean;
 };
 
 const emuStartOptions = [
@@ -58,7 +59,7 @@ const ideStartOptions = [
   },
 ];
 
-export const Toolbar = ({ ide = false }: Props) => {
+export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
   const state = useSelector(s => s.emulatorState?.machineState);
   const showKeyboard = useSelector(
@@ -77,12 +78,12 @@ export const Toolbar = ({ ide = false }: Props) => {
     state !== MachineControllerState.Stopped;
   const canStart = !isCompiling && !isRunning;
   const mayInjectCode = ide && isKliveProject;
-  const [ startMode, setStartMode ] = useState(ide ? "debug" : "start");
+  const [ startMode, setStartMode ] = useState(ide && kliveProjectLoaded ? "debug" : "start");
 
   const storeDispatch = useDispatch();
   const restartTarget = useSelector(s => s.ideView?.restartTarget ?? 'machine');
 
-  const startOptions = ide ? ideStartOptions : emuStartOptions;
+  const startOptions = ide && kliveProjectLoaded ? ideStartOptions : emuStartOptions;
   const startOpt = !isRunning
     ? startOptions.find(v => v.value === startMode)
     : startOptions[isDebugging ? 0 : 1];
@@ -96,6 +97,10 @@ export const Toolbar = ({ ide = false }: Props) => {
       reportMessagingError(`MainSaveProject call failed: ${response.message}`);
     }
   };
+
+  useEffect(() => {
+    setStartMode(ide && kliveProjectLoaded ? "debug" : "start")
+  }, [ide, kliveProjectLoaded])
 
   return (
     <div className={styles.toolbar}>
@@ -129,7 +134,7 @@ export const Toolbar = ({ ide = false }: Props) => {
           style={isRunning ? { pointerEvents: 'none', opacity: '.4' } : {}}>
         <Dropdown
           placeholder={undefined}
-          options={startOptions}
+          options={[...startOptions]}
           value={startMode}
           onSelectionChanged={option => setStartMode(option)}
         />

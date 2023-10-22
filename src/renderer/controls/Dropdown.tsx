@@ -22,9 +22,14 @@ export const Dropdown = ({
   onSelectionChanged
 }: Props) => {
   const [showMenu, setShowMenu] = useState(false);
-  const [selectedValue, setSelectedValue] = useState<OptionProps>(
+  const [selectedOption, setSelectedOption] = useState<OptionProps>(
     options.find(o => o.value === value)
   );
+  const [selectedLabel, setSelectedLabel] = useState<string>(
+    options.find(o => o.value === value)?.label
+  );
+
+  // TODO: Align selected label
 
   useEffect(() => {
     const handler = () => setShowMenu(false);
@@ -36,29 +41,30 @@ export const Dropdown = ({
   });
 
   useEffect(() => {
-    setSelectedValue(options.find(o => o.value === value));
-  }, [value])
+    setSelectedOption(options.find(o => o.value === value));
+    setSelectedLabel(options.find(o => o.value === value)?.label)
+  }, [value, options]);
 
   const handleInputClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(!showMenu);
   };
 
-  const getDisplay = () => selectedValue?.label ?? placeholder;
-
   const onItemClick = (option: OptionProps) => {
-    setSelectedValue(option);
+    setSelectedOption(option);
+    setSelectedLabel(option.label);
     onSelectionChanged?.(option.value);
     setShowMenu(false);
   };
 
   const isSelected = (option: OptionProps) =>
-    !selectedValue ? false : selectedValue.value === option.value;
+    !selectedOption ? false : selectedOption.value === option.value;
 
+  console.log("render", selectedLabel, options);
   return (
     <div className={styles.dropdownContainer}>
       <div className={styles.dropdownInput} onClick={handleInputClick}>
-        <div className={styles.dropdownSelectedValue}>{getDisplay()}</div>
+        <div className={styles.dropdownSelectedValue}>{selectedLabel ?? placeholder}</div>
         <div className={styles.dropdownTools}>
           <div className={styles.dropdownTool}>
             <Icon iconName='chevron-down' fill='--color-command-icon' />
@@ -69,7 +75,7 @@ export const Dropdown = ({
         <div className={styles.dropdownMenu}>
           {options.map(option => (
             <div
-              key={option.value}
+              key={`${option.value}|${option.label}`}
               className={classnames(styles.dropdownItem, {
                 [styles.selected]: isSelected(option)
               })}

@@ -99,6 +99,7 @@ const IdeApp = () => {
   const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
   const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
+  const kliveProjectLoaded = useSelector(s => s.project?.isKliveProject ?? false);
 
   const activityOrder = useSelector(s => s.ideViewOptions.primaryBarOnRight)
     ? 3
@@ -156,7 +157,7 @@ const IdeApp = () => {
   return (
     <div id='appMain' className={styles.app}>
       <IdeEventsHandler />
-      {showToolbar && <Toolbar ide={true} />}
+      {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
