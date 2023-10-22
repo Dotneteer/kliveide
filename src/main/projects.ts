@@ -39,7 +39,6 @@ type ProjectCreationResult = {
   errorMessage?: string;
 };
 
-
 /**
  * Creates a new project in the specified folder
  * @param machineId Machine ID of the project
@@ -175,7 +174,7 @@ export async function openFolderByPath (
       });
 
       if (projectStruct.debugger?.breakpoints) {
-        for(const bp of projectStruct.debugger.breakpoints) {
+        for (const bp of projectStruct.debugger.breakpoints) {
           await sendFromMainToEmu({
             type: "EmuSetBreakpoint",
             breakpoint: bp
@@ -326,7 +325,8 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
     },
     builder: {
       roots: state.project?.buildRoots ?? []
-    }
+    },
+    settings: state.settings
   };
 }
 

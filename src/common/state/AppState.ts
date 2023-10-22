@@ -1,5 +1,4 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 
@@ -23,6 +22,7 @@ export type AppState = {
   emulatorState?: EmulatorState;
   project?: IdeProject;
   compilation?: CompilationState;
+  settings?: Record<string, any>;
 };
 
 /**
