@@ -248,12 +248,12 @@ export class MachineController implements IMachineController {
     await this.stop();
 
     // --- Execute the code injection flow
-    console.log("model", codeToInject.model);
-    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model);
+    const m = this.machine;
+    console.log()
+    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId);
     await this.sendOutput("Initialize the machine", "blue");
     this.isDebugging = debug;
 
-    const m = this.machine;
     let entryPoint = 0;
     for (const step of injectionFlow) {
       switch (step.type) {

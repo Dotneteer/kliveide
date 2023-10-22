@@ -8,6 +8,7 @@ import { KeyboardDevice } from "../KeyboardDevice";
 import {
   SP48_MAIN_ENTRY,
   SPP3_MAIN_WAITING_LOOP,
+  SPP3_RETURN_TO_EDITOR,
   SP_KEY_WAIT,
   ZxSpectrumBase
 } from "../ZxSpectrumBase";
@@ -502,7 +503,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * @param model Machine model to use for code execution
    */
   getCodeInjectionFlow (model: string): CodeInjectionFlow {
-    if (model === "48") {
+    if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
@@ -544,9 +545,9 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
         },
         {
           type: "ReachExecPoint",
-          rom: 1,
+          rom: 3,
           execPoint: SP48_MAIN_ENTRY,
-          message: `Main execution cycle point reached (ROM1/$${toHexa4(
+          message: `Main execution cycle point reached (ROM3/$${toHexa4(
             SP48_MAIN_ENTRY
           )})`
         },
@@ -559,6 +560,50 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
         }
       ];
     }
+    if (model === "spp3e") {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SPP3_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SPP3_MAIN_WAITING_LOOP
+          )})`
+        },
+        {
+          type: "Start"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Enter,
+          wait: 0,
+          message: "Enter"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 1,
+          execPoint: SPP3_RETURN_TO_EDITOR,
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(
+            SPP3_RETURN_TO_EDITOR
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SPP3_RETURN_TO_EDITOR
+        }
+      ];
+    }
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
   }
 
   /**

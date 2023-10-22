@@ -444,7 +444,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param model Machine model to use for code execution
    */
   getCodeInjectionFlow (model: string): CodeInjectionFlow {
-    if (model === "48") {
+    if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
@@ -501,7 +501,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         }
       ];
     }
-    if (model === "128") {
+    if (model === "sp128") {
       return [
         {
           type: "ReachExecPoint",
@@ -540,10 +540,11 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         },
         {
           type: "SetReturn",
-          returnPoint: SP48_MAIN_ENTRY
+          returnPoint: SP128_RETURN_TO_EDITOR
         }
       ];
     }
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
   }
 
   /**

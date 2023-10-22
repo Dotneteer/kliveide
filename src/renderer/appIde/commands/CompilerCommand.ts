@@ -1013,18 +1013,18 @@ export class ExportCodeCommand extends IdeCommandBase {
 }
 
 // --- Gets the model code according to machine type
-function modelTypeToMachineType (model: SpectrumModelType): string {
+function modelTypeToMachineType (model: SpectrumModelType): string | null {
   switch (model) {
     case SpectrumModelType.Spectrum48:
-      return "48";
+      return "sp48";
     case SpectrumModelType.Spectrum128:
-      return "128";
+      return "sp128";
     case SpectrumModelType.SpectrumP3:
-      return "p3";
+      return "spp3e";
     case SpectrumModelType.Next:
       return "next";
     default:
-      return "";
+      return null;
   }
 }
 

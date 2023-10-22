@@ -268,23 +268,26 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param model Machine model to use for code execution
    */
   getCodeInjectionFlow (model: string): CodeInjectionFlow {
-    return [
-      {
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: SP48_MAIN_ENTRY,
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(
-          SP48_MAIN_ENTRY
-        )})`
-      },
-      {
-        type: "Inject"
-      },
-      {
-        type: "SetReturn",
-        returnPoint: SP48_MAIN_ENTRY
-      }
-    ];
+    if ((model === "sp48")) {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SP48_MAIN_ENTRY,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SP48_MAIN_ENTRY
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SP48_MAIN_ENTRY
+        }
+      ];
+    }
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
   }
 
   /**
