@@ -53,6 +53,7 @@ import {
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "../common/state/common-ids";
+import { logEmuEvent, registeredMachines, setMachineType } from "./registeredMachines";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -109,9 +110,6 @@ const EDITOR_FONT_SIZE = "editor_font_size";
 const HELP_MENU = "help_menu";
 const HELP_HOME_PAGE = "help_home_page";
 const HELP_ABOUT = "help_about";
-
-// --- The number of events logged with the emulator
-let loggedEmuOutputEvents = 0;
 
 /**
  * Creates and sets the main menu of the app
@@ -1019,50 +1017,6 @@ async function ejectDiskFile (index: number, suffix: string): Promise<void> {
   }
 }
 
-/**
- * This function set the machine type to the specified one
- * @param machineId
- */
-export async function setMachineType (machineId: string): Promise<void> {
-  await sendFromMainToEmu({
-    type: "EmuSetMachineType",
-    machineId
-  });
-  const mt = registeredMachines.find(mt => mt.id === machineId);
-  if (mt) {
-    await logEmuEvent(
-      `Machine type set to ${mt.displayName} (${mt.id})`,
-      "bright-cyan"
-    );
-  }
-}
-
-/**
- * Log emulator events
- * @param text Log text
- * @param color Text color to use
- */
-export async function logEmuEvent (
-  text: string,
-  color?: OutputColor
-): Promise<void> {
-  loggedEmuOutputEvents++;
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
-    pane: "emu",
-    text: `[${loggedEmuOutputEvents}] `,
-    color: "yellow",
-    writeLine: false
-  });
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
-    pane: "emu",
-    text,
-    color,
-    writeLine: true
-  });
-}
-
 // --- Disable all menu items (except the system menu)
 function disableAllMenuItems (
   items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[]
@@ -1146,31 +1100,6 @@ async function showMessage (
     mainStore.dispatch(dimMenuAction(false));
   }
 }
-
-const registeredMachines = [
-  {
-    id: "sp48",
-    displayName: "ZX Spectrum 48K"
-  },
-  {
-    id: "sp128",
-    displayName: "ZX Spectrum 128K"
-  },
-  {
-    id: "spp2e",
-    displayName: "ZX Spectrum +2E"
-  },
-  {
-    id: "spp3e",
-    displayName: "ZX Spectrum +3E (1 FDD)",
-    supportedFdds: 1
-  },
-  {
-    id: "spp3ef2",
-    displayName: "ZX Spectrum +3E (2 FDDs)",
-    supportedFdds: 2
-  }
-];
 
 function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem> (
   items: T[]

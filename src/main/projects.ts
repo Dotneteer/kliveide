@@ -32,11 +32,13 @@ import {
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
 import { KliveProjectStructure } from "../common/abstractions/KliveProjectStructure";
+import { setMachineType } from "./registeredMachines";
 
 type ProjectCreationResult = {
   path?: string;
   errorMessage?: string;
 };
+
 
 /**
  * Creates a new project in the specified folder
@@ -139,6 +141,9 @@ export async function openFolderByPath (
       isValidProject = !!(
         projectStruct.kliveVersion && projectStruct.machineType
       );
+
+      // --- Apply the machine type saved in the project
+      await setMachineType(projectStruct.machineType);
 
       // --- Apply settings if the project is valid
       disp(

@@ -34,7 +34,7 @@ import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setMachineType, setupMenu } from "./app-menu";
+import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron/electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
@@ -47,6 +47,7 @@ import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
+import { setMachineType } from "./registeredMachines";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
