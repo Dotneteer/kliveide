@@ -24,6 +24,7 @@ import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { delay } from "@renderer/utils/timing";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -246,51 +247,74 @@ export class MachineController implements IMachineController {
     // --- Stop the machine
     await this.stop();
 
-    // --- Start the machine and wait while it reaches the execution point
-    const execInfo = this.machine.getMainExecPoint(codeToInject.model);
-    await this.sendOutput("Initialize the machine", "blue");
-
-    this.isDebugging = debug;
-    this.run(
-      FrameTerminationMode.UntilExecutionPoint,
-      debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
-      execInfo.romIndex,
-      execInfo.entryPoint
-    );
-
-    await this._machineTask;
-    await this.sendOutput(
-      `Main execution cycle point reached (ROM${execInfo.romIndex}/$${toHexa4(
-        execInfo.entryPoint
-      )})`,
-      "blue"
-    );
-
-    // --- Inject the code ans set up the machine to run the code
-    const startPoint = this.machine.injectCodeToRun(codeToInject);
-    await this.sendOutput(
-      `Code injected and ready to start at $${toHexa4(startPoint)}})`,
-      "blue"
-    );
-
-    // --- Set the continuation point
+    // --- Execute the code injection flow
     const m = this.machine;
-    m.pc = startPoint;
+    console.log()
+    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId);
+    await this.sendOutput("Initialize the machine", "blue");
+    this.isDebugging = debug;
 
-    // --- Handle subroutine calls
-    if (codeToInject.subroutine) {
-      const spValue = m.sp;
-      m.doWriteMemory(spValue - 1, execInfo.entryPoint >> 8);
-      m.doWriteMemory(spValue - 2, execInfo.entryPoint & 0xff);
-      m.sp = spValue - 2;
-      await this.sendOutput(
-        `Code will start as a subroutine to return to $${toHexa4(
-          execInfo.entryPoint
-        )}`,
-        "blue"
-      );
+    let entryPoint = 0;
+    for (const step of injectionFlow) {
+      switch (step.type) {
+        case "ReachExecPoint":
+          // --- Run while a particular entry point is reached
+          if (this._machineState === MachineControllerState.Running) {
+            await this.pause();
+          }
+          this.run(
+            FrameTerminationMode.UntilExecutionPoint,
+            debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
+            step.rom,
+            step.execPoint
+          );
+          await this._machineTask;
+          break;
+
+        case "Start":
+          await this.start();
+          break;
+
+        case "QueueKey":
+          m.queueKeystroke(0, 5, step.primary, step.secondary);
+          if ((step.wait ?? 100) > 0) {
+            await delay(step.wait);
+          }
+          break;
+
+        case "Inject":
+          // --- Inject the code and set up the machine to run the code
+          entryPoint = this.machine.injectCodeToRun(codeToInject);
+          await this.sendOutput(
+            `Code injected and ready to start at $${toHexa4(entryPoint)}})`,
+            "blue"
+          );
+          break;
+
+        case "SetReturn":
+          if (codeToInject.subroutine) {
+            const spValue = m.sp;
+            m.doWriteMemory(spValue - 1, step.returnPoint >> 8);
+            m.doWriteMemory(spValue - 2, step.returnPoint & 0xff);
+            m.sp = spValue - 2;
+            await this.sendOutput(
+              `Code will start as a subroutine to return to $${toHexa4(
+                step.returnPoint
+              )}`,
+              "blue"
+            );
+          }
+          break;
+      }
+      if (step.message) {
+        await this.sendOutput(step.message, "blue");
+      }
     }
 
+    // --- Set the continuation point
+    m.pc = entryPoint;
+
+    // --- Start the machine
     if (debug) {
       await this.startDebug();
     } else {

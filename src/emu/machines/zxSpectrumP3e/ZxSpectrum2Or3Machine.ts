@@ -2,11 +2,16 @@ import { SysVar } from "@abstractions/SysVar";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { MainExecPointInfo } from "@renderer/abstractions/IZ80Machine";
 import { BeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../KeyboardDevice";
-import { ZxSpectrumBase } from "../ZxSpectrumBase";
+import {
+  SP48_MAIN_ENTRY,
+  SPP3_MAIN_WAITING_LOOP,
+  SPP3_RETURN_TO_EDITOR,
+  SP_KEY_WAIT,
+  ZxSpectrumBase
+} from "../ZxSpectrumBase";
 import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import {
   AUDIO_SAMPLE_RATE,
@@ -24,11 +29,9 @@ import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { setDiskFileAction } from "@common/state/actions";
 import { PagedMemory } from "../memory/PagedMemory";
-
-/**
- * ZX Spectrum 48 main execution cycle entry point
- */
-export const SP48_MAIN_ENTRY = 0x12ac;
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -499,11 +502,108 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getMainExecPoint (model: string): MainExecPointInfo {
-    return {
-      romIndex: 0,
-      entryPoint: SP48_MAIN_ENTRY
-    };
+  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+    if (model === "sp48") {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SPP3_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SPP3_MAIN_WAITING_LOOP
+          )})`
+        },
+        {
+          type: "Start"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Enter,
+          wait: 0,
+          message: "Enter"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 3,
+          execPoint: SP48_MAIN_ENTRY,
+          message: `Main execution cycle point reached (ROM3/$${toHexa4(
+            SP48_MAIN_ENTRY
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SP48_MAIN_ENTRY
+        }
+      ];
+    }
+    if (model === "spp3e") {
+      return [
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: SPP3_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(
+            SPP3_MAIN_WAITING_LOOP
+          )})`
+        },
+        {
+          type: "Start"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.N6,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT,
+          message: "Arrow down"
+        },
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Enter,
+          wait: 0,
+          message: "Enter"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 1,
+          execPoint: SPP3_RETURN_TO_EDITOR,
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(
+            SPP3_RETURN_TO_EDITOR
+          )})`
+        },
+        {
+          type: "Inject"
+        },
+        {
+          type: "SetReturn",
+          returnPoint: SPP3_RETURN_TO_EDITOR
+        }
+      ];
+    }
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
   }
 
   /**
@@ -538,8 +638,8 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (increment: number): void {
-    super.onTactIncremented(increment);
+  onTactIncremented (): void {
+    super.onTactIncremented();
     this.psgDevice.setNextAudioSample();
   }
 

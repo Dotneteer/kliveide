@@ -4,7 +4,6 @@ import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
 import {
   IZ80Machine,
-  MainExecPointInfo
 } from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
@@ -13,6 +12,7 @@ import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CodeToInject } from "@abstractions/CodeToInject";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -203,7 +203,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  abstract getMainExecPoint(model: string): MainExecPointInfo;
+  abstract getCodeInjectionFlow(model: string): CodeInjectionFlow;
 
   /**
    * Gets the length of the key emulation queue
