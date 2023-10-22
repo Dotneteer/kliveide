@@ -171,6 +171,24 @@ export interface MainSaveSettingsRequest extends MessageBase {
 }
 
 /**
+ * The client wants to apply and save a user setting
+ */
+export interface MainApplyUserSettingsRequest extends MessageBase {
+  type: "MainApplyUserSettings";
+  key: string;
+  value?: any;
+}
+
+/**
+ * The client wants to apply and save a project setting
+ */
+export interface MainApplyProjectSettingsRequest extends MessageBase {
+  type: "MainApplyProjectSettings";
+  key: string;
+  value?: any;
+}
+
+/**
  * The client wants to compile a particular file
  */
 export interface MainCompileFileRequest extends MessageBase {

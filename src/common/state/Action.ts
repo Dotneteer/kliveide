@@ -40,7 +40,8 @@ export type Payload = {
   files: string[];
   text: string;
   compileResult: KliveCompilerOutput;
-  failed: string
+  failed: string;
+  value: any;
 };
 
 /**

@@ -8,12 +8,13 @@ const SETTINGS_FOLDER = "Klive";
 
 export type AppSettings = {
   windowStates?: {
-    emuWindow?: WindowState,
-    ideWindow?: WindowState,
+    emuWindow?: WindowState;
+    ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
   },
-  folders?: Record<string, string>,
-  excludedProjectItems?: string[]
+  folders?: Record<string, string>;
+  excludedProjectItems?: string[];
+  userSettings?: Record<string, any>;
 };
 
 export let appSettings: AppSettings = {};

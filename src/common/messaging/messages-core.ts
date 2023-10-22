@@ -45,7 +45,9 @@ import {
   MainShowOpenFileDialogResponse,
   MainShowOpenFileDialogRequest,
   MainSaveFileResponse,
-  MainShowItemInFolderRequest
+  MainShowItemInFolderRequest,
+  MainApplyUserSettingsRequest,
+  MainApplyProjectSettingsRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -188,6 +190,8 @@ export type RequestMessage =
   | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
   | MainSaveSettingsRequest
+  | MainApplyUserSettingsRequest
+  | MainApplyProjectSettingsRequest
   | MainCompileFileRequest
   | MainExitAppRequest
   | MainShowItemInFolderRequest

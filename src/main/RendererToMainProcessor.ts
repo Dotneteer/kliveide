@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
+import _ from "lodash";
 
 import { app, BrowserWindow, dialog, shell } from "electron";
 import {
@@ -29,6 +30,7 @@ import {
 import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
+  applyProjectSettingAction,
   dimMenuAction,
   refreshExcludedProjectItemsAction
 } from "../common/state/actions";
@@ -241,7 +243,26 @@ export async function processRendererToMainMessages (
       saveAppSettings();
       break;
 
-    case "MainCompileFile":
+    case "MainApplyUserSettings":
+      if (message.key) {
+        appSettings.userSettings ??= {};
+        if (message.value === undefined) {
+          _.unset(appSettings.userSettings, message.key);
+        } else {
+          _.set(appSettings.userSettings, message.key, message.value);
+        }
+        saveAppSettings();
+      }
+      break;
+
+      case "MainApplyProjectSettings":
+        if (message.key) {
+          dispatch(applyProjectSettingAction(message.key, message.value));
+          await saveKliveProject();
+        }
+        break;
+  
+      case "MainCompileFile":
       const compiler = getCompiler(message.language);
       try {
         const result = (await compiler.compileFile(

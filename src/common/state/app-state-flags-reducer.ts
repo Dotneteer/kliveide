@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { Action } from "./Action";
 import { AppState } from "./AppState";
 
@@ -29,6 +30,16 @@ export function appStateFlagsReducer (
       return { ...state, ideFocused: payload.flag };
     case "DIM_MENU":
       return { ...state, dimMenu: payload.flag };
+    case "APPLY_SETTING":
+      let newSetting = {...state?.settings}
+      if (payload.id) {
+        if (payload.value === undefined) {
+          _.unset(newSetting, payload.id);
+        } else {
+          _.set(newSetting, payload.id, payload.value);
+        }
+      }
+      return { ...state, settings: newSetting}
     default:
       return state;
   }

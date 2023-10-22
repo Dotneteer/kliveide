@@ -14,6 +14,7 @@ export type KliveProjectStructure = {
   ide?: Record<string, any>;
   debugger?: DebuggerState;
   builder?: BuilderState;
+  settings?: Record<string, any>;
 };
 
 interface ViewOptions {
