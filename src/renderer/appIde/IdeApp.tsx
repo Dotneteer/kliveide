@@ -67,14 +67,27 @@ import { useAppServices } from "./services/AppServicesProvider";
 import { SiteBar } from "./SideBar/SideBar";
 import { IdeStatusBar } from "./StatusBar/IdeStatusBar";
 import { ToolArea } from "./ToolArea/ToolArea";
-import { CompileCommand, DebugCodeCommand, ExportCodeCommand, InjectCodeCommand, RunCodeCommand } from "./commands/CompilerCommand";
+import {
+  CompileCommand,
+  DebugCodeCommand,
+  ExportCodeCommand,
+  InjectCodeCommand,
+  RunCodeCommand
+} from "./commands/CompilerCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import { SelectOutputPaneCommand } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
 import { IdeEventsHandler } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
-import { ProjectExcludeItemsCommand, ProjectListExcludedItemsCommand } from "./commands/ProjectExcludedItemsCommand";
-import { SettingCommand } from "./commands/SettingCommands";
+import {
+  ProjectExcludeItemsCommand,
+  ProjectListExcludedItemsCommand
+} from "./commands/ProjectExcludedItemsCommand";
+import {
+  ListSettingsCommand,
+  MoveSettingsCommand,
+  SettingCommand
+} from "./commands/SettingCommands";
 import { ResetZxbCommand } from "./commands/ZxbCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
@@ -101,7 +114,9 @@ const IdeApp = () => {
   const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
   const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
-  const kliveProjectLoaded = useSelector(s => s.project?.isKliveProject ?? false);
+  const kliveProjectLoaded = useSelector(
+    s => s.project?.isKliveProject ?? false
+  );
 
   const activityOrder = useSelector(s => s.ideViewOptions.primaryBarOnRight)
     ? 3
@@ -159,7 +174,9 @@ const IdeApp = () => {
   return (
     <div id='appMain' className={styles.app}>
       <IdeEventsHandler />
-      {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
+      {showToolbar && (
+        <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />
+      )}
       <div className={styles.mainContent}>
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
@@ -285,5 +302,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ProjectListExcludedItemsCommand());
   cmdSrv.registerCommand(new ProjectExcludeItemsCommand());
   cmdSrv.registerCommand(new SettingCommand());
+  cmdSrv.registerCommand(new ListSettingsCommand());
+  cmdSrv.registerCommand(new MoveSettingsCommand());
   cmdSrv.registerCommand(new ResetZxbCommand());
 }
