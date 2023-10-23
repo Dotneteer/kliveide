@@ -5,7 +5,7 @@ import {
 } from "../../common/abstractions/IZ80CompilerService";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
-import { KliveCompilerOutput } from "../compiler-integration/compiler-registry";
+import { InjectableOutput, KliveCompilerOutput } from "../compiler-integration/compiler-registry";
 import { mainStore } from "../main-store";
 import * as fs from "fs";
 import {
@@ -52,9 +52,6 @@ export class ZxBasicCompiler extends CompilerBase {
    */
   async compileFile (
     filename: string,
-    beforeTraces?: string[],
-    aftertraces?: string[],
-    options?: Record<string, any>
   ): Promise<KliveCompilerOutput> {
     const settingsReader = createSettingsReader(mainStore);
     try {
@@ -75,15 +72,14 @@ export class ZxBasicCompiler extends CompilerBase {
         outFilename,
         null
       );
-      beforeTraces.push("Invoking ZX BASIC compiler");
-      beforeTraces.push(cmdLine);
+      const traceOutput = [`Executing ${cmdLine}`];
 
       // --- Run the compiler
       const compileOut = await this.executeCommandLine(execPath, cmdLine);
       if (compileOut) {
         if (typeof compileOut === "string") {
-          console.log("here", compileOut);
           return {
+            traceOutput,
             failed: compileOut
           };
         }
@@ -93,6 +89,7 @@ export class ZxBasicCompiler extends CompilerBase {
         ) as AssemblerErrorInfo[];
         if (errors?.length > 0) {
           return {
+            traceOutput,
             errors,
             debugMessages: compileOut.filter(
               i => typeof i === "string"
@@ -114,11 +111,12 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Done.
       return {
+        traceOutput,
         errors: [],
         injectOptions: { subroutine: true },
         segments: [segment],
         modelType: SpectrumModelType.Spectrum48
-      };
+      } as InjectableOutput;
     } catch (err) {
       throw err;
     }

@@ -1067,20 +1067,13 @@ async function compileCode (
     if (response.type === "MainCompileFileResponse") {
       result = response.result;
     }
-    if (response.beforeTraces?.length > 0) {
-      for (const msg of response.beforeTraces) {
-        out.color("white");
-        out.write(msg);
-        out.writeLine();
-        out.resetStyle();
-      }
-    }
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
   }
 
+  // --- Display optional trace output
   const traceOutput = result?.traceOutput;
   if (traceOutput?.length > 0) {
     out.resetStyle();
@@ -1088,22 +1081,22 @@ async function compileCode (
   }
 
   // --- Collect errors
-  const errors = result?.errors;
+  const errorCount = result?.errors.filter(m => !m.isWarning).length ?? 0;
 
   if (response.failed) {
-    if (!result || (errors?.length ?? 0) === 0) {
+    if (!result || errorCount === 0) {
       // --- Some unexpected error with the compilation
       return { message: response.failed };
     }
   }
 
   // --- Display the errors
-  if ((errors?.length ?? 0) > 0) {
-    for (let i = 0; i < response.result.errors.length; i++) {
-      const err = response.result.errors[i];
-      out.color("bright-red");
+  if ((result.errors?.length ?? 0) > 0) {
+    for (let i = 0; i < result.errors.length; i++) {
+      const err = result.errors[i];
+      out.color(err.isWarning ? "yellow" : "bright-red");
       out.bold(true);
-      out.write(`Error ${err.errorCode}: ${err.message}`);
+      out.write(`${err.errorCode}: ${err.message}`);
       out.write(" - ");
       out.bold(false);
       out.color("bright-cyan");
@@ -1116,16 +1109,17 @@ async function compileCode (
       out.writeLine();
       out.resetStyle();
     }
-    return {
-      result,
-      message: `Compilation failed with ${errors.length} error${
-        errors.length > 1 ? "s" : ""
-      }.`
-    };
   }
 
-  // --- Compilation ok.
-  return { result };
+  // --- Done.
+  return errorCount > 0
+    ? {
+        result,
+        message: `Compilation failed with ${errorCount} error${
+          errorCount > 1 ? "s" : ""
+        }.`
+      }
+    : { result };
 }
 
 async function injectCode (

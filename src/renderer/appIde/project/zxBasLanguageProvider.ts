@@ -33,6 +33,7 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       "DIM",
       "DRAW",
       "ERASE",
+      "END",
       "FLASH",
       "FORMAT",
       "FOR",
@@ -305,7 +306,7 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       },
       {
         token: "directive",
-        foreground: "c0c0c0",
+        foreground: "a0a0a0",
       },
       {
         token: "statement",
