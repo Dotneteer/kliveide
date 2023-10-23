@@ -4,7 +4,6 @@ import { IKliveCompiler, KliveCompilerOutput } from "./compiler-registry";
 import { AssemblerErrorInfo } from "@abstractions/IZ80CompilerService";
 import { __DARWIN__, __LINUX__ } from "../../electron/electron-utils";
 
-
 /**
  * Helper class to invoke compilers and communicate with the IDE
  */
@@ -40,7 +39,7 @@ export abstract class CompilerBase implements IKliveCompiler {
    * Processes the message data and returns as a string
    * @param data
    */
-  processMessage(data: string): string {
+  processMessage (data: string): string {
     return data;
   }
 
@@ -56,29 +55,38 @@ export abstract class CompilerBase implements IKliveCompiler {
    * @param cmdArgs Commad-line arguments
    * @param outChannel Output channel
    */
-  async executeCommandLine(
+  async executeCommandLine (
     execPath: string,
     cmdArgs: string,
     _options?: any
   ): Promise<(AssemblerErrorInfo | string)[] | string | null> {
     const workdir = path.dirname(execPath);
     const filename = path.basename(execPath);
-    const args = cmdArgs.split("\\").join("/")
+    const args = cmdArgs.split("\\").join("/");
     const cmd = `${__DARWIN__ || __LINUX__ ? execPath : filename} ${args}`;
     return new Promise<(AssemblerErrorInfo | string)[] | string | null>(
-      (resolve, reject) => {
+      resolve => {
         const process = exec(
           cmd,
           {
-            cwd: workdir,
+            cwd: workdir
           },
-          (error, _stdout, stderr) => {
+          (error, stdout, stderr) => {
+            let processedMessages: (AssemblerErrorInfo | string)[] = [];
             if (process.exitCode !== 0) {
-              const errorText = `The process exited with code ${process.exitCode}. ${error || stderr}`;
-              resolve(errorText);
+              processedMessages.push(
+                `The process exited with code ${process.exitCode}.`
+              );
             }
-            const processedMessages = this.processErrorString(error ? error.toString() : stderr);
-            if (error || processedMessages.length > 0) {
+            processedMessages.push(
+              ...this.processErrorString(
+                stdout + (error ? error.toString() : stderr)
+              )
+            );
+            const errorCount = processedMessages.filter(
+              msg => typeof msg !== "string" && !msg.isWarning
+            ).length;
+            if (error || errorCount > 0) {
               resolve(processedMessages);
               return;
             }
@@ -94,11 +102,11 @@ export abstract class CompilerBase implements IKliveCompiler {
     );
   }
 
-  private processErrorString(data: string): (AssemblerErrorInfo | string)[] {
+  private processErrorString (data: string): (AssemblerErrorInfo | string)[] {
     // --- String for further processing
     return data
       .toString()
       .split(/\r?\n/)
-      .map((s) => this.processErrorMessage(s));
+      .map(s => this.processErrorMessage(s));
   }
 }

@@ -47,7 +47,8 @@ import {
   MainSaveFileResponse,
   MainShowItemInFolderRequest,
   MainApplyUserSettingsRequest,
-  MainApplyProjectSettingsRequest
+  MainApplyProjectSettingsRequest,
+  MainPathExistsRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -195,6 +196,7 @@ export type RequestMessage =
   | MainCompileFileRequest
   | MainExitAppRequest
   | MainShowItemInFolderRequest
+  | MainPathExistsRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

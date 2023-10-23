@@ -326,7 +326,7 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
     builder: {
       roots: state.project?.buildRoots ?? []
     },
-    settings: state.settings
+    settings: state.projectSettings
   };
 }
 

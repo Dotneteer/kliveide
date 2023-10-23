@@ -12,26 +12,36 @@ export function appStateFlagsReducer (
   switch (type) {
     case "UNLOAD_WINDOWS":
       return { ...state, emuLoaded: false, ideLoaded: false };
+
     case "EMU_LOADED":
       return { ...state, emuLoaded: true, emuStateSynched: false };
+
     case "EMU_STATE_SYNCHED":
       return { ...state, emuStateSynched: true };
+
     case "IDE_LOADED":
       return { ...state, ideLoaded: true, ideStateSynched: false };
+
     case "IDE_STATE_SYNCHED":
       return { ...state, ideStateSynched: true };
+
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };
+
     case "SET_THEME":
       return { ...state, theme: payload?.id };
+
     case "EMU_FOCUSED":
       return { ...state, emuFocused: payload.flag };
+
     case "IDE_FOCUSED":
       return { ...state, ideFocused: payload.flag };
+
     case "DIM_MENU":
       return { ...state, dimMenu: payload.flag };
-    case "APPLY_SETTING":
-      let newSetting = {...state?.settings}
+
+    case "APPLY_PROJECT_SETTING": {
+      let newSetting = { ...state?.projectSettings };
       if (payload.id) {
         if (payload.value === undefined) {
           _.unset(newSetting, payload.id);
@@ -39,7 +49,23 @@ export function appStateFlagsReducer (
           _.set(newSetting, payload.id, payload.value);
         }
       }
-      return { ...state, settings: newSetting}
+      return { ...state, projectSettings: newSetting };
+    }
+
+    case "APPLY_USER_SETTING": {
+      let newSetting = { ...state?.userSettings };
+      if (payload.id) {
+        if (payload.value === undefined) {
+          _.unset(newSetting, payload.id);
+        } else {
+          _.set(newSetting, payload.id, payload.value);
+        }
+      }
+      return { ...state, userSettings: newSetting };
+    }
+    case "INIT_USER_SETTINGS":
+      return { ...state, userSettings: payload.value };
+
     default:
       return state;
   }

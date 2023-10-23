@@ -77,5 +77,7 @@ export interface ActionTypes {
   SYNC_SOURCE_BREAKPOINTS: null;
 
   SET_RESTART_TARGET: null;
-  APPLY_SETTING: null;
+  APPLY_PROJECT_SETTING: null;
+  INIT_USER_SETTINGS: null;
+  APPLY_USER_SETTING: null;
 }

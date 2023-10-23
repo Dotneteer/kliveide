@@ -6,6 +6,7 @@ import { app, BrowserWindow, dialog, shell } from "electron";
 import {
   defaultResponse,
   errorResponse,
+  flagResponse,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
@@ -31,6 +32,7 @@ import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
+  applyUserSettingAction,
   dimMenuAction,
   refreshExcludedProjectItemsAction
 } from "../common/state/actions";
@@ -95,29 +97,38 @@ export async function processRendererToMainMessages (
     case "MainGetDirectoryContent":
       const filter = await getProjectDirectoryContentFilter();
       const folderContent = await getDirectoryContent(
-        message.directory, filter);
+        message.directory,
+        filter
+      );
       return {
         type: "MainGetDirectoryContentResponse",
         contents: folderContent
       };
 
     case "MainGloballyExcludedProjectItems":
-      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
+      return textContentsResponse(
+        appSettings.excludedProjectItems?.join(path.delimiter)
+      );
 
     case "MainAddGloballyExcludedProjectItems": {
-      const excludedItems = message.files.map(p => p.trim().replace(path.sep, "/"));
+      const excludedItems = message.files.map(p =>
+        p.trim().replace(path.sep, "/")
+      );
       appSettings.excludedProjectItems = (
-          appSettings.excludedProjectItems?.concat(excludedItems)
-            ?? excludedItems
-        ).filter((v,i,a) => a.indexOf(v) === i)
+        appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
+      ).filter((v, i, a) => a.indexOf(v) === i);
       mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(appSettings.excludedProjectItems.join(path.delimiter));
+      return textContentsResponse(
+        appSettings.excludedProjectItems.join(path.delimiter)
+      );
     }
 
     case "MainSetGloballyExcludedProjectItems": {
       appSettings.excludedProjectItems = message.files;
       mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
+      return textContentsResponse(
+        appSettings.excludedProjectItems?.join(path.delimiter)
+      );
     }
 
     case "MainOpenFolder":
@@ -252,21 +263,23 @@ export async function processRendererToMainMessages (
           _.set(appSettings.userSettings, message.key, message.value);
         }
         saveAppSettings();
+        dispatch(applyUserSettingAction(message.key, message.value));
       }
       break;
 
-      case "MainApplyProjectSettings":
-        if (message.key) {
-          dispatch(applyProjectSettingAction(message.key, message.value));
-          await saveKliveProject();
-        }
-        break;
-  
-      case "MainCompileFile":
+    case "MainApplyProjectSettings":
+      if (message.key) {
+        dispatch(applyProjectSettingAction(message.key, message.value));
+        await saveKliveProject();
+      }
+      break;
+
+    case "MainCompileFile":
       const compiler = getCompiler(message.language);
       try {
         const result = (await compiler.compileFile(
-          message.filename
+          message.filename,
+          message.options
         )) as KliveCompilerOutput;
         return {
           type: "MainCompileFileResponse",
@@ -288,6 +301,18 @@ export async function processRendererToMainMessages (
     case "MainExitApp":
       app.quit();
       break;
+
+    case "MainPathExists":
+      if (!fs.existsSync(message.path)) {
+        return flagResponse(false);
+      }
+      const stat = fs.lstatSync(message.path);
+      if (message.isFolder === false) {
+        return flagResponse(stat.isFile());
+      } else if (message.isFolder === true) {
+        return flagResponse(stat.isDirectory());
+      }
+      return flagResponse(true);
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
