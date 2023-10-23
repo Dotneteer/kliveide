@@ -33,6 +33,8 @@ export abstract class CompilerBase implements IKliveCompiler {
    */
   abstract compileFile(
     filename: string,
+    beforeTraces?: string[],
+    aftertraces?: string[],
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput>;
 

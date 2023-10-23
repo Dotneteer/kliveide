@@ -272,8 +272,10 @@ export interface MainShowOpenFileDialogResponse extends MessageBase {
 
 export interface MainCompileResponse extends MessageBase {
   type: "MainCompileFileResponse";
+  beforeTraces?: string[];
   result: KliveCompilerOutput;
   failed?: string;
+  afterTraces?: string[];
 }
 
 /**

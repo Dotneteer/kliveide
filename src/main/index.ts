@@ -27,6 +27,7 @@ import {
   dimMenuAction,
   emuFocusedAction,
   ideFocusedAction,
+  initUserSettingAction,
   isWindowsAction,
   unloadWindowsAction
 } from "../common/state/actions";
@@ -48,6 +49,7 @@ import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { setMachineType } from "./registeredMachines";
+import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -75,6 +77,7 @@ if (!app.requestSingleInstanceLock()) {
 
 // --- Register available compilers
 registerCompiler(new Z80Compiler());
+registerCompiler(new ZxBasicCompiler());
 
 loadAppSettings();
 
@@ -198,9 +201,11 @@ async function createAppWindows () {
   registerMainToEmuMessenger(emuWindow);
   registerMainToIdeMessenger(ideWindow);
 
-  // Rather than setting up the application menu we'll configure it per window.
-  Menu.setApplicationMenu(null);
+  // --- Store initial user settings
+  mainStore.dispatch(initUserSettingAction(appSettings.userSettings));
+
   // --- Prepare the main menu. Update items on application state change
+  Menu.setApplicationMenu(null);
   setupMenu(emuWindow, ideWindow);
 
   // --- Respond to state changes

@@ -45,7 +45,7 @@ export async function refreshSourceCodeBreakpoints (
   if (
     compilation.result &&
     !compilation.failed &&
-    compilation.result.errors.length === 0
+    compilation.result.errors?.length === 0
   ) {
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;

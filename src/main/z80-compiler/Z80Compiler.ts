@@ -31,6 +31,8 @@ export class Z80Compiler extends CompilerBase {
      */
     async compileFile(
       filename: string,
+      beforeTraces?: string[],
+      aftertraces?: string[],
       options?: Record<string, any>
     ): Promise<KliveCompilerOutput> {
       const output = await new Z80CompilerService().compileFile(

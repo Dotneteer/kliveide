@@ -1067,6 +1067,14 @@ async function compileCode (
     if (response.type === "MainCompileFileResponse") {
       result = response.result;
     }
+    if (response.beforeTraces?.length > 0) {
+      for (const msg of response.beforeTraces) {
+        out.color("white");
+        out.write(msg);
+        out.writeLine();
+        out.resetStyle();
+      }
+    }
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);

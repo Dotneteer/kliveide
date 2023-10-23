@@ -173,9 +173,12 @@ class IdeCommandService implements IIdeCommandService {
       }
     } else {
       buffer.color("bright-red");
-      buffer.writeLine(
+      const lines = (
         commandResult.finalMessage ?? "Command execution failed."
-      );
+      ).split("\n");
+      for (const line of lines) {
+        buffer.writeLine(line);
+      }
       buffer.resetStyle();
     }
     return commandResult;
@@ -228,9 +231,14 @@ class IdeCommandService implements IIdeCommandService {
    * @param line Optional line number
    * @param column Optional column number
    */
-  writeNavigationAction (context: IdeCommandContext, file: string, line?: number, column?: number): void {
+  writeNavigationAction (
+    context: IdeCommandContext,
+    file: string,
+    line?: number,
+    column?: number
+  ): void {
     context.output.write(
-      `${file}${line != undefined ?` (${line}:${column + 1})` : ""}`,
+      `${file}${line != undefined ? ` (${line}:${column + 1})` : ""}`,
       async () => {
         await this.executeCommand(
           `nav "${file}" ${line != undefined ? line : ""} ${
@@ -323,8 +331,8 @@ class ExitCommand extends IdeCommandBase {
   readonly usage = "exit";
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    context.messenger.postMessage({type: "MainExitApp"});
-    return {success: true, finalMessage: "Farewell!"};
+    context.messenger.postMessage({ type: "MainExitApp" });
+    return { success: true, finalMessage: "Farewell!" };
   }
 }
 

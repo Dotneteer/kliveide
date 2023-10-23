@@ -64,6 +64,8 @@ export interface IKliveCompiler {
    */
   compileFile(
     filename: string,
+    beforeTraces?: string[],
+    aftertraces?: string[],
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput>;
 }

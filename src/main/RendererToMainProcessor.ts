@@ -277,12 +277,19 @@ export async function processRendererToMainMessages (
     case "MainCompileFile":
       const compiler = getCompiler(message.language);
       try {
+        const beforeTraces: string[] = [];
+        const afterTraces: string[] = [];
         const result = (await compiler.compileFile(
-          message.filename
+          message.filename,
+          beforeTraces,
+          afterTraces,
+          message.options
         )) as KliveCompilerOutput;
         return {
           type: "MainCompileFileResponse",
           result,
+          beforeTraces,
+          afterTraces,
           failed: (result as SimpleAssemblerOutput).failed
         };
       } catch (err) {
