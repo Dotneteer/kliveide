@@ -22,7 +22,8 @@ export type AppState = {
   emulatorState?: EmulatorState;
   project?: IdeProject;
   compilation?: CompilationState;
-  settings?: Record<string, any>;
+  projectSettings?: Record<string, any>;
+  userSettings?: Record<string, any>;
 };
 
 /**

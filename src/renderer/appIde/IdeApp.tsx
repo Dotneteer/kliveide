@@ -75,6 +75,7 @@ import { IdeEventsHandler } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
 import { ProjectExcludeItemsCommand, ProjectListExcludedItemsCommand } from "./commands/ProjectExcludedItemsCommand";
 import { SettingCommand } from "./commands/SettingCommands";
+import { ResetZxbCommand } from "./commands/ZxbCommands";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -284,4 +285,5 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ProjectListExcludedItemsCommand());
   cmdSrv.registerCommand(new ProjectExcludeItemsCommand());
   cmdSrv.registerCommand(new SettingCommand());
+  cmdSrv.registerCommand(new ResetZxbCommand());
 }

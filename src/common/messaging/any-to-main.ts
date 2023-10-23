@@ -213,6 +213,15 @@ export interface MainExitAppRequest extends MessageBase {
 }
 
 /**
+ * The client wants to check the existence of a particular file
+ */
+export interface MainPathExistsRequest extends MessageBase {
+  type: "MainPathExists";
+  path: string;
+  isFolder?: boolean;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {

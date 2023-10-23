@@ -30,8 +30,8 @@ export function appStateFlagsReducer (
       return { ...state, ideFocused: payload.flag };
     case "DIM_MENU":
       return { ...state, dimMenu: payload.flag };
-    case "APPLY_SETTING":
-      let newSetting = {...state?.settings}
+    case "APPLY_PROJECT_SETTING": {
+      let newSetting = { ...state?.projectSettings };
       if (payload.id) {
         if (payload.value === undefined) {
           _.unset(newSetting, payload.id);
@@ -39,7 +39,19 @@ export function appStateFlagsReducer (
           _.set(newSetting, payload.id, payload.value);
         }
       }
-      return { ...state, settings: newSetting}
+      return { ...state, projectSettings: newSetting };
+    }
+    case "APPLY_USER_SETTING": {
+      let newSetting = { ...state?.userSettings };
+      if (payload.id) {
+        if (payload.value === undefined) {
+          _.unset(newSetting, payload.id);
+        } else {
+          _.set(newSetting, payload.id, payload.value);
+        }
+      }
+      return { ...state, userSettings: newSetting };
+    }
     default:
       return state;
   }
