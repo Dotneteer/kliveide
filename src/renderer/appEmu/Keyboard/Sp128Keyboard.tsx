@@ -5,7 +5,7 @@ import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 
 const DEFAULT_WIDTH = 14 * 75 + 20;
-const DEFAULT_HEIGHT = 5 * 73 + 16;
+const DEFAULT_HEIGHT = 5 * 77 + 32;
 
 type Props = {
   width: number;
@@ -15,19 +15,33 @@ type Props = {
 export const Sp128Keyboard = ({ width, height }: Props) => {
   const { machineService } = useAppServices();
   const zoom = calculateZoom(width, height);
-  const row1Shift = 80 * zoom;
-  const row2Shift = 110 * zoom;
   return (
     <Column width='auto' style={rootStyle}>
       <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
+          code={18}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='INV'
+          symbolWord='VIDEO'
+        />
+        <Key
+          zoom={zoom}
+          code={17}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='TRUE'
+          symbolWord='VIDEO'
+        />
+        <Key
+          zoom={zoom}
           code={15}
           keyAction={handleClick}
-          topNum='BLUE'
+          numMode={true}
           main='1'
-          symbol={"\xa0\xa0!\xa0\xa0"}
-          above='EDIT'
+          symbol={"\xa0!\xa0"}
+          above='BLUE'
           below='DEF FN'
           glyph={1}
         />
@@ -35,32 +49,10 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={16}
           keyAction={handleClick}
-          topNum='RED'
+          numMode={true}
           main='2'
           symbol={"\xa0@\xa0"}
-          above='CAPS! LOCK'
-          below='FN'
-          glyph={2}
-        />
-        <Key
-          zoom={zoom}
-          code={15}
-          keyAction={handleClick}
-          topNum='BLUE'
-          main='1'
-          symbol={"\xa0\xa0!\xa0\xa0"}
-          above='EDIT'
-          below='DEF FN'
-          glyph={1}
-        />
-        <Key
-          zoom={zoom}
-          code={16}
-          keyAction={handleClick}
-          topNum='RED'
-          main='2'
-          symbol={"\xa0@\xa0"}
-          above='CAPS! LOCK'
+          above='RED'
           below='FN'
           glyph={2}
         />
@@ -68,10 +60,10 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={17}
           keyAction={handleClick}
-          topNum='MAGENTA'
+          numMode={true}
           main='3'
           symbol={"\xa0#\xa0"}
-          above='TRUE VID'
+          above='MAGENTA'
           below='LINE'
           glyph={3}
         />
@@ -79,32 +71,32 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={18}
           keyAction={handleClick}
-          topNum='GREEN'
+          numMode={true}
           main='4'
           symbol={"\xa0$\xa0"}
-          above='INV.VIDEO'
-          below='OPEN'
+          above='GREEN'
+          below='OPEN #'
           glyph={4}
         />
         <Key
           zoom={zoom}
           code={19}
           keyAction={handleClick}
-          topNum='CYAN'
+          numMode={true}
           main='5'
           symbol={"\xa0%\xa0"}
-          above={"\u140a"}
-          below='CLOSE'
+          above='CYAN'
+          below='CLOSE #'
           glyph={5}
         />
         <Key
           zoom={zoom}
           code={24}
           keyAction={handleClick}
-          topNum='YELLOW'
+          numMode={true}
           main='6'
           symbol={"\xa0&\xa0"}
-          above={"\u1401"}
+          above='YELLOW'
           below='MOVE'
           glyph={6}
         />
@@ -112,10 +104,10 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={23}
           keyAction={handleClick}
-          topNum='WHITE'
+          numMode={true}
           main='7'
           symbol={"\xa0\xa0'\xa0\xa0"}
-          above={"\u1403"}
+          above='WHITE'
           below='ERASE'
           glyph={7}
         />
@@ -123,10 +115,9 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={22}
           keyAction={handleClick}
-          topNum='UNBRIGHT'
           main='8'
+          numMode={true}
           symbol={"\xa0\xa0(\xa0\xa0"}
-          above={"\u1405"}
           below='POINT'
           glyph={16}
         />
@@ -134,31 +125,40 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={21}
           keyAction={handleClick}
-          topNum='BRIGHT'
+          numMode={true}
           main='9'
           symbol={"\xa0\xa0)\xa0\xa0"}
-          above='GRAPHICS'
           below='CAT'
         />
         <Key
           zoom={zoom}
           code={20}
           keyAction={handleClick}
-          topNum='BLACK'
+          numMode={true}
           main='0'
           symbol={"\uff3f"}
-          above='DELETE'
+          above='BLACK'
           below='FORMAT'
         />
         <Key
           zoom={zoom}
           xwidth={110}
-          code={20}
+          code={35}
+          secondaryCode={0}
           keyAction={handleClick}
           center='BREAK'
         />
       </Row>
       <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={20}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='DELETE'
+        />
+        <Key zoom={zoom} code={21} secondaryCode={0} keyAction={handleClick} center='GRAPH' />
         <Key
           zoom={zoom}
           code={10}
@@ -187,7 +187,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyword='REM'
           symbol='>='
           above='TAN'
-          below='ATB'
+          below='ATN'
         />
         <Key
           zoom={zoom}
@@ -261,6 +261,23 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
         />
       </Row>
       <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={36}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='EXTEND'
+          symbolWord='MODE'
+        />
+        <Key
+          zoom={zoom}
+          xwidth={95}
+          code={15}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='EDIT'
+        />
         <Key
           zoom={zoom}
           code={5}
@@ -351,16 +368,23 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           above='USR'
           below='ATTR'
         />
-        <Key zoom={zoom} code={30} keyAction={handleClick} center='ENTER' />
       </Row>
       <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
+          xwidth={168}
           code={0}
           keyAction={handleClick}
-          xwidth={130}
-          top='CAPS'
-          bottom='SHIFT'
+          keyword='CAPS'
+          symbolWord='SHIFT'
+        />
+        <Key
+          zoom={zoom}
+          code={16}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='CAPS'
+          symbolWord='LOCK'
         />
         <Key
           zoom={zoom}
@@ -429,23 +453,17 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           main='M'
           keyword='PAUSE'
           symbol={"\xa0\xa0.\xa0\xa0"}
-          above='INVERSE'
-          below='PI'
+          above='PI'
+          below='INVERSE'
         />
+        <Key zoom={zoom} code={37} secondaryCode={36} keyAction={handleClick} main='.' />
         <Key
           zoom={zoom}
-          code={36}
+          xwidth={167}
+          code={0}
           keyAction={handleClick}
-          top='SYMBOL'
-          bottom='SHIFT'
-        />
-        <Key
-          zoom={zoom}
-          code={35}
-          keyAction={handleClick}
-          xwidth={180}
-          top='BREAK'
-          center='SPACE'
+          keyword='CAPS'
+          symbolWord='SHIFT'
         />
       </Row>
       <Row height='auto' style={rowStyle}>
@@ -453,94 +471,78 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={0}
           keyAction={handleClick}
-          xwidth={130}
-          top='CAPS'
-          bottom='SHIFT'
+          keyword='SYMBOL'
+          symbolWord='SHIFT'
         />
         <Key
           zoom={zoom}
-          code={1}
+          code={26}
+          secondaryCode={36}
           keyAction={handleClick}
-          main='Z'
-          keyword='COPY'
-          symbol={"\xa0\xa0:\xa0\xa0"}
-          above='LN'
-          below='BEEP'
+          main=';'
+          centerMode={true}
         />
         <Key
           zoom={zoom}
-          code={2}
+          code={25}
+          secondaryCode={36}
           keyAction={handleClick}
-          main='X'
-          keyword='CLEAR'
-          symbol={"\xa0\u00a3\xa0"}
-          above='EXP'
-          below='INK'
+          main='"'
+          centerMode={true}
         />
         <Key
           zoom={zoom}
-          code={3}
+          code={19}
+          secondaryCode={0}
           keyAction={handleClick}
-          main='C'
-          keyword='CONT'
-          symbol={"\xa0?\xa0"}
-          above='LPRINT'
-          below='PAPER'
+          main={"\u25c0"}
+          centerMode={true}
         />
         <Key
           zoom={zoom}
-          code={4}
+          code={22}
+          secondaryCode={0}
           keyAction={handleClick}
-          main='V'
-          keyword='CLS'
-          symbol={"\xa0/\xa0"}
-          above='LLIST'
-          below='FLASH'
+          main={"\u25b6"}
+          centerMode={true}
         />
         <Key
           zoom={zoom}
-          code={39}
+          xwidth={338}
+          code={35}
           keyAction={handleClick}
-          main='B'
-          keyword='BORDER'
-          symbol={"\xa0*\xa0"}
-          above='BIN'
-          below='BRIGHT'
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={23}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25b2"}
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={24}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25bc"}
+          centerMode={true}
         />
         <Key
           zoom={zoom}
           code={38}
+          secondaryCode={36}
           keyAction={handleClick}
-          main='N'
-          keyword='NEXT'
-          symbol={"\xa0\xa0,\xa0\xa0"}
-          above='INKEY$'
-          below='OVER'
+          main=','
+          centerMode={true}
         />
         <Key
           zoom={zoom}
-          code={37}
+          code={0}
           keyAction={handleClick}
-          main='M'
-          keyword='PAUSE'
-          symbol={"\xa0\xa0.\xa0\xa0"}
-          above='INVERSE'
-          below='PI'
-        />
-        <Key
-          zoom={zoom}
-          code={36}
-          keyAction={handleClick}
-          top='SYMBOL'
-          bottom='SHIFT'
-        />
-        <Key
-          zoom={zoom}
-          code={35}
-          keyAction={handleClick}
-          xwidth={180}
-          top='BREAK'
-          center='SPACE'
+          keyword='SYMBOL'
+          symbolWord='SHIFT'
         />
       </Row>
     </Column>
@@ -555,7 +557,11 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
         setKeyStatus(
           e.down,
           e.code,
-          e.button === 0 ? undefined : 0 /* CShift */
+          e.button === 0
+            ? e.secondaryButton === undefined
+              ? undefined
+              : e.secondaryButton
+            : 0 /* CShift */
         );
         break;
       case "symbol":

@@ -424,7 +424,6 @@ export abstract class ZxSpectrumBase
     if (keyStroke.startTact > this.tacts) return;
 
     if (keyStroke.endTact < this.tacts) {
-      console.log("end keystroke", this.tacts)
       // --- End emulation of this very keystroke
       this.keyboardDevice.setStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
@@ -437,7 +436,6 @@ export abstract class ZxSpectrumBase
     }
 
     // --- Emulate this very keystroke, and leave it in the queue
-    console.log("start keystroke", this.tacts)
     this.keyboardDevice.setStatus(keyStroke.primaryCode, true);
     if (keyStroke.secondaryCode !== undefined) {
       this.keyboardDevice.setStatus(keyStroke.secondaryCode, true);
@@ -470,7 +468,6 @@ export abstract class ZxSpectrumBase
       secondary
     );
     this.emulatedKeyStrokes.push(keypress);
-    console.log(keypress);
   }
 
   /**

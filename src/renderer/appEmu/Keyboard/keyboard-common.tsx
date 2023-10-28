@@ -8,6 +8,7 @@ export interface KeyboardButtonClickArgs {
   code: number;
   keyCategory: string;
   button: number;
+  secondaryButton?: number;
   down: boolean;
 }
 
