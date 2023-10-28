@@ -6,6 +6,7 @@ import {
   openFolderAction,
   primaryBarOnRightAction,
   resetCompileAction,
+  saveProjectSettingAction,
   setBuildRootAction,
   setExcludedProjectItemsAction,
   setIdeFontSizeAction,
@@ -167,6 +168,7 @@ export async function openFolderByPath (
           !!projectStruct.builder?.roots
         )
       );
+      disp(saveProjectSettingAction(projectStruct.settings));
 
       // --- Restore breakpoints
       await sendFromMainToEmu({

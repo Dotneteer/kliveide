@@ -34,7 +34,9 @@ import {
   applyProjectSettingAction,
   applyUserSettingAction,
   dimMenuAction,
-  refreshExcludedProjectItemsAction
+  refreshExcludedProjectItemsAction,
+  saveProjectSettingAction,
+  saveUserSettingAction
 } from "../common/state/actions";
 import {
   getCompiler,
@@ -254,6 +256,18 @@ export async function processRendererToMainMessages (
       saveAppSettings();
       break;
 
+    case "MainGetUserSettings":
+      return {
+        type: "MainGetSettingsResponse",
+        settings: appSettings.userSettings ?? {}
+      };
+
+    case "MainGetProjectSettings":
+      return {
+        type: "MainGetSettingsResponse",
+        settings: mainStore.getState()?.projectSettings ?? {}
+      };
+
     case "MainApplyUserSettings":
       if (message.key) {
         appSettings.userSettings ??= {};
@@ -271,6 +285,38 @@ export async function processRendererToMainMessages (
       if (message.key) {
         dispatch(applyProjectSettingAction(message.key, message.value));
         await saveKliveProject();
+      }
+      break;
+
+    case "MainMoveSettings":
+      if (message.pull) {
+        // --- User --> Project
+        let projSettings: Record<string, any> = {};
+        if (message.copy) {
+          projSettings = appSettings.userSettings ?? {};
+        } else {
+          projSettings = {
+            ...(mainStore.getState()?.projectSettings ?? {}),
+            ...(appSettings.userSettings ?? {})
+          };
+        }
+        mainStore.dispatch(saveProjectSettingAction(projSettings));
+        await saveKliveProject();
+      } else {
+        // --- Project --> User
+        if (message.copy) {
+          appSettings.userSettings =
+            mainStore.getState()?.projectSettings ?? {};
+        } else {
+          appSettings.userSettings = {
+            ...(mainStore.getState()?.userSettings ?? {}),
+            ...(mainStore.getState()?.userSettings ?? {})
+          };
+          mainStore.dispatch(
+            saveUserSettingAction({ ...appSettings.userSettings })
+          );
+          saveAppSettings();
+        }
       }
       break;
 

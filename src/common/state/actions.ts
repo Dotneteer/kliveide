@@ -346,7 +346,12 @@ export const applyUserSettingAction: ActionCreator = (id, value) => ({
   payload: { id, value }
 });
 
-export const initUserSettingAction: ActionCreator = value => ({
-  type: "INIT_USER_SETTINGS",
+export const saveUserSettingAction: ActionCreator = value => ({
+  type: "SAVE_USER_SETTINGS",
+  payload: { value }
+});
+
+export const saveProjectSettingAction: ActionCreator = value => ({
+  type: "SAVE_PROJECT_SETTINGS",
   payload: { value }
 });

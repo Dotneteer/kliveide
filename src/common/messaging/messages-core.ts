@@ -48,7 +48,11 @@ import {
   MainShowItemInFolderRequest,
   MainApplyUserSettingsRequest,
   MainApplyProjectSettingsRequest,
-  MainPathExistsRequest
+  MainPathExistsRequest,
+  MainGetUserSettingsRequest,
+  MainGetProjectSettingsRequest,
+  MainGetSettingsResponse,
+  MainMoveSettingsRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -191,8 +195,11 @@ export type RequestMessage =
   | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
   | MainSaveSettingsRequest
+  | MainGetUserSettingsRequest
+  | MainGetProjectSettingsRequest
   | MainApplyUserSettingsRequest
   | MainApplyProjectSettingsRequest
+  | MainMoveSettingsRequest
   | MainCompileFileRequest
   | MainExitAppRequest
   | MainShowItemInFolderRequest
@@ -220,6 +227,7 @@ export type ResponseMessage =
   | MainShowOpenFolderDialogResponse
   | MainShowOpenFileDialogResponse
   | MainSaveFileResponse
+  | MainGetSettingsResponse
   | MainCompileResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse

@@ -63,8 +63,12 @@ export function appStateFlagsReducer (
       }
       return { ...state, userSettings: newSetting };
     }
-    case "INIT_USER_SETTINGS":
+
+    case "SAVE_USER_SETTINGS":
       return { ...state, userSettings: payload.value };
+
+    case "SAVE_PROJECT_SETTINGS":
+      return { ...state, projectSettings: payload.value };
 
     default:
       return state;
