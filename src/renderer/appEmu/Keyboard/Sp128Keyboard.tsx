@@ -1,18 +1,18 @@
-import { Sp48Key as Key } from "./Sp48Key";
+import { Sp128Key as Key } from "./Sp128Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
 import { CSSProperties } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 
-const DEFAULT_WIDTH = 10 * 104 + 130;
-const DEFAULT_HEIGHT = 4 * (128 + 16);
+const DEFAULT_WIDTH = 14 * 75 + 20;
+const DEFAULT_HEIGHT = 5 * 73 + 16;
 
 type Props = {
   width: number;
   height: number;
 };
 
-export const Sp48Keyboard = ({ width, height }: Props) => {
+export const Sp128Keyboard = ({ width, height }: Props) => {
   const { machineService } = useAppServices();
   const zoom = calculateZoom(width, height);
   const row1Shift = 80 * zoom;
@@ -25,7 +25,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={15}
           keyAction={handleClick}
           topNum='BLUE'
-          topNumColor='#0030ff'
           main='1'
           symbol={"\xa0\xa0!\xa0\xa0"}
           above='EDIT'
@@ -37,10 +36,31 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={16}
           keyAction={handleClick}
           topNum='RED'
-          topNumColor='#ff0000'
           main='2'
           symbol={"\xa0@\xa0"}
-          above='CAPS LOCK'
+          above='CAPS! LOCK'
+          below='FN'
+          glyph={2}
+        />
+        <Key
+          zoom={zoom}
+          code={15}
+          keyAction={handleClick}
+          topNum='BLUE'
+          main='1'
+          symbol={"\xa0\xa0!\xa0\xa0"}
+          above='EDIT'
+          below='DEF FN'
+          glyph={1}
+        />
+        <Key
+          zoom={zoom}
+          code={16}
+          keyAction={handleClick}
+          topNum='RED'
+          main='2'
+          symbol={"\xa0@\xa0"}
+          above='CAPS! LOCK'
           below='FN'
           glyph={2}
         />
@@ -49,7 +69,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={17}
           keyAction={handleClick}
           topNum='MAGENTA'
-          topNumColor='#e000e0'
           main='3'
           symbol={"\xa0#\xa0"}
           above='TRUE VID'
@@ -61,7 +80,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={18}
           keyAction={handleClick}
           topNum='GREEN'
-          topNumColor='#00c000'
           main='4'
           symbol={"\xa0$\xa0"}
           above='INV.VIDEO'
@@ -73,7 +91,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={19}
           keyAction={handleClick}
           topNum='CYAN'
-          topNumColor='#00c0c0'
           main='5'
           symbol={"\xa0%\xa0"}
           above={"\u140a"}
@@ -85,7 +102,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={24}
           keyAction={handleClick}
           topNum='YELLOW'
-          topNumColor='#fff000'
           main='6'
           symbol={"\xa0&\xa0"}
           above={"\u1401"}
@@ -97,7 +113,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={23}
           keyAction={handleClick}
           topNum='WHITE'
-          topNumColor='#ffffff'
           main='7'
           symbol={"\xa0\xa0'\xa0\xa0"}
           above={"\u1403"}
@@ -109,7 +124,6 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={22}
           keyAction={handleClick}
           topNum='UNBRIGHT'
-          topNumColor='#a0a0a0'
           main='8'
           symbol={"\xa0\xa0(\xa0\xa0"}
           above={"\u1405"}
@@ -131,14 +145,20 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={20}
           keyAction={handleClick}
           topNum='BLACK'
-          topNumColor='#606060'
           main='0'
           symbol={"\uff3f"}
           above='DELETE'
           below='FORMAT'
         />
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={20}
+          keyAction={handleClick}
+          center='BREAK'
+        />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row1Shift }}>
+      <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
           code={10}
@@ -240,7 +260,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           below='(C)'
         />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row2Shift }}>
+      <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
           code={5}
@@ -418,7 +438,101 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           top='SYMBOL'
           bottom='SHIFT'
-          useSymColor={true}
+        />
+        <Key
+          zoom={zoom}
+          code={35}
+          keyAction={handleClick}
+          xwidth={180}
+          top='BREAK'
+          center='SPACE'
+        />
+      </Row>
+      <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          code={0}
+          keyAction={handleClick}
+          xwidth={130}
+          top='CAPS'
+          bottom='SHIFT'
+        />
+        <Key
+          zoom={zoom}
+          code={1}
+          keyAction={handleClick}
+          main='Z'
+          keyword='COPY'
+          symbol={"\xa0\xa0:\xa0\xa0"}
+          above='LN'
+          below='BEEP'
+        />
+        <Key
+          zoom={zoom}
+          code={2}
+          keyAction={handleClick}
+          main='X'
+          keyword='CLEAR'
+          symbol={"\xa0\u00a3\xa0"}
+          above='EXP'
+          below='INK'
+        />
+        <Key
+          zoom={zoom}
+          code={3}
+          keyAction={handleClick}
+          main='C'
+          keyword='CONT'
+          symbol={"\xa0?\xa0"}
+          above='LPRINT'
+          below='PAPER'
+        />
+        <Key
+          zoom={zoom}
+          code={4}
+          keyAction={handleClick}
+          main='V'
+          keyword='CLS'
+          symbol={"\xa0/\xa0"}
+          above='LLIST'
+          below='FLASH'
+        />
+        <Key
+          zoom={zoom}
+          code={39}
+          keyAction={handleClick}
+          main='B'
+          keyword='BORDER'
+          symbol={"\xa0*\xa0"}
+          above='BIN'
+          below='BRIGHT'
+        />
+        <Key
+          zoom={zoom}
+          code={38}
+          keyAction={handleClick}
+          main='N'
+          keyword='NEXT'
+          symbol={"\xa0\xa0,\xa0\xa0"}
+          above='INKEY$'
+          below='OVER'
+        />
+        <Key
+          zoom={zoom}
+          code={37}
+          keyAction={handleClick}
+          main='M'
+          keyword='PAUSE'
+          symbol={"\xa0\xa0.\xa0\xa0"}
+          above='INVERSE'
+          below='PI'
+        />
+        <Key
+          zoom={zoom}
+          code={36}
+          keyAction={handleClick}
+          top='SYMBOL'
+          bottom='SHIFT'
         />
         <Key
           zoom={zoom}

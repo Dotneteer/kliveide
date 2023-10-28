@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { KeyboardButtonClickArgs } from "./keyboard-common";
 
-const NORMAL_WIDTH = 100;
+const NORMAL_WIDTH = 75;
+const NORMAL_HEIGHT = 73;
+const BUTTON_BACK = "#1c1c1c";
+const BUTTON_RAISE = "#303030";
+const TEXT_COLOR = "#c0c0c0"
 
 /**
  * Component properties
@@ -10,6 +14,7 @@ const NORMAL_WIDTH = 100;
 type Props = {
   zoom: number;
   code: number;
+  secondaryCode?: number;
   main?: string;
   keyword?: string;
   symbol?: string;
@@ -20,9 +25,7 @@ type Props = {
   top?: string;
   bottom?: string;
   topNum?: string;
-  topNumColor?: string;
   glyph?: number;
-  useSymColor?: boolean;
   xwidth?: number;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
@@ -30,9 +33,9 @@ type Props = {
 /**
  * Represents a key of the ZX Spectrum 48 keyboard
  */
-export const Sp48Key = ({
+export const Sp128Key = ({
   zoom,
-  code,
+  code, //
   main,
   keyword,
   symbol,
@@ -43,9 +46,7 @@ export const Sp48Key = ({
   top,
   bottom,
   topNum,
-  topNumColor,
   glyph,
-  useSymColor,
   xwidth,
   keyAction
 }: Props) => {
@@ -70,8 +71,8 @@ export const Sp48Key = ({
 
   // --- State dependent display properties
   const appliedZoom = zoom <= 0 ? 0.05 : zoom;
-  const normalHeight = topNum ? 148 : 128;
-  const heightOffset = topNum ? 20 : 0;
+  const normalHeight = NORMAL_HEIGHT;
+  const heightOffset = topNum ? 0 : 0;
   const currentWidth = appliedZoom * (xwidth || NORMAL_WIDTH);
   const currentHeight = appliedZoom * normalHeight;
   const mainFillColor = mouseOverKey ? highlightKeyColor : mainKeyColor;
@@ -86,9 +87,7 @@ export const Sp48Key = ({
   const aboveStrokeColor = mouseOverAbove ? highlightKeyColor : "transparent";
   const belowFillColor = mouseOverBelow ? highlightKeyColor : belowKeyColor;
   const belowStrokeColor = mouseOverBelow ? highlightKeyColor : "transparent";
-  const topNumFillColor = mouseOverTopNum
-    ? highlightKeyColor
-    : topNumColor || mainKeyColor;
+  const topNumFillColor = mouseOverTopNum ? highlightKeyColor : mainKeyColor;
   const topNumStrokeColor = mouseOverTopNum ? highlightKeyColor : "transparent";
   const glyphFillColor = mouseOverGlyph ? highlightKeyColor : mainKeyColor;
   const cursor =
@@ -106,31 +105,91 @@ export const Sp48Key = ({
       width={currentWidth}
       height={currentHeight}
       viewBox={`0 0 ${xwidth || NORMAL_WIDTH} ${normalHeight}`}
-      style={{ marginRight: "4px" }}
+      style={{ marginRight: 4, marginBottom: 4 }}
       xmlns='http://www.w3.org/2000/svg'
     >
+      {/* Button rectangle */}
       <rect
         x='0'
-        y={30 + heightOffset}
-        rx='8'
-        ry='8'
+        y={heightOffset}
         width='100%'
-        height='70'
-        fill={keyBackground}
+        height='100%'
+        fill={BUTTON_BACK}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
         onMouseDown={e => raiseKeyAction(e, "main", true)}
         onMouseUp={e => raiseKeyAction(e, "main", false)}
       />
+      {/* Button left ellipse */}
+      <ellipse
+        cx={NORMAL_WIDTH / 2}
+        cy={NORMAL_WIDTH / 2}
+        rx='32'
+        ry='32'
+        width='100%'
+        height='100%'
+        fill={BUTTON_RAISE}
+        cursor={cursor}
+        onMouseEnter={() => setMouseOverKey(true)}
+        onMouseLeave={() => setMouseOverKey(false)}
+        onMouseDown={e => raiseKeyAction(e, "main", true)}
+        onMouseUp={e => raiseKeyAction(e, "main", false)}
+      />
+      {xwidth && (
+        <>
+          {/* Button right ellipse */}
+          <ellipse
+            cx={NORMAL_WIDTH / 2 + (xwidth - NORMAL_WIDTH)}
+            cy={NORMAL_WIDTH / 2}
+            rx='32'
+            ry='32'
+            width='100%'
+            height='100%'
+            fill={BUTTON_RAISE}
+            cursor={cursor}
+            onMouseEnter={() => setMouseOverKey(true)}
+            onMouseLeave={() => setMouseOverKey(false)}
+            onMouseDown={e => raiseKeyAction(e, "main", true)}
+            onMouseUp={e => raiseKeyAction(e, "main", false)}
+          />
+          {/* Button middle rect */}
+          <rect
+            x={NORMAL_WIDTH / 2}
+            y={heightOffset + 6}
+            width={xwidth - NORMAL_WIDTH}
+            height='64'
+            fill={BUTTON_RAISE}
+            cursor={cursor}
+            onMouseEnter={() => setMouseOverKey(true)}
+            onMouseLeave={() => setMouseOverKey(false)}
+            onMouseDown={e => raiseKeyAction(e, "main", true)}
+            onMouseUp={e => raiseKeyAction(e, "main", false)}
+          />
+        </>
+      )}
+      {/* Top rectangle */}
+      <rect
+        x='0'
+        y={heightOffset}
+        width='100%'
+        height={24}
+        fill={BUTTON_BACK}
+        cursor={cursor}
+        onMouseEnter={() => setMouseOverKey(true)}
+        onMouseLeave={() => setMouseOverKey(false)}
+        onMouseDown={e => raiseKeyAction(e, "main", true)}
+        onMouseUp={e => raiseKeyAction(e, "main", false)}
+      />
+
+      {/* Main text */}
       {main && (
         <text
-          x='12'
-          y={70 + heightOffset}
-          fontSize='36'
-          textAnchor='left'
-          fill={mainFillColor}
-          stroke={mainStrokeColor}
+          x="50%"
+          textAnchor="middle"
+          y={62 + heightOffset}
+          fontSize={18}
+          fill={TEXT_COLOR}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -140,14 +199,15 @@ export const Sp48Key = ({
           {main}
         </text>
       )}
+
+      {/* Keyword text */}
       {keyword && (
         <text
-          x='88'
-          y={92 + heightOffset}
-          fontSize='22'
-          textAnchor='end'
-          fill={mainFillColor}
-          stroke={mainStrokeColor}
+          x="50%"
+          textAnchor="middle"
+          y={35 + heightOffset}
+          fontSize={11}
+          fill={TEXT_COLOR}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -157,6 +217,45 @@ export const Sp48Key = ({
           {keyword}
         </text>
       )}
+
+      {/* Symbol text */}
+      {symbol && (
+        <text
+          x={62}
+          textAnchor="end"
+          y={46 + heightOffset}
+          fontSize={11}
+          fill={TEXT_COLOR}
+          cursor={cursor}
+          onMouseEnter={() => setMouseOverKey(true)}
+          onMouseLeave={() => setMouseOverKey(false)}
+          onMouseDown={e => raiseKeyAction(e, "main", true)}
+          onMouseUp={e => raiseKeyAction(e, "main", false)}
+        >
+          {symbol}
+        </text>
+      )}
+
+      {/* Center text */}
+      {center && (
+        <text
+          x="50%"
+          textAnchor="middle"
+          y={54 + heightOffset}
+          fontSize={11}
+          fill={TEXT_COLOR}
+          cursor={cursor}
+          onMouseEnter={() => setMouseOverKey(true)}
+          onMouseLeave={() => setMouseOverKey(false)}
+          onMouseDown={e => raiseKeyAction(e, "main", true)}
+          onMouseUp={e => raiseKeyAction(e, "main", false)}
+        >
+          {center}
+        </text>
+      )}
+
+
+      { /*}
       {symbol ||
         (symbolWord && (
           <rect
@@ -267,20 +366,8 @@ export const Sp48Key = ({
           y={62 + heightOffset}
           fontSize='20'
           textAnchor='middle'
-          fill={
-            useSymColor
-              ? mouseOverKey
-                ? highlightKeyColor
-                : symbolFillColor
-              : mainFillColor
-          }
-          stroke={
-            useSymColor
-              ? mouseOverKey
-                ? highlightKeyColor
-                : symbolStrokeColor
-              : mainStrokeColor
-          }
+          fill={mainFillColor}
+          stroke={mainStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -296,20 +383,8 @@ export const Sp48Key = ({
           y={84 + heightOffset}
           fontSize='20'
           textAnchor='middle'
-          fill={
-            useSymColor
-              ? mouseOverKey
-                ? highlightKeyColor
-                : symbolFillColor
-              : mainFillColor
-          }
-          stroke={
-            useSymColor
-              ? mouseOverKey
-                ? highlightKeyColor
-                : symbolStrokeColor
-              : mainStrokeColor
-          }
+          fill={mainFillColor}
+          stroke={mainStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -393,7 +468,7 @@ export const Sp48Key = ({
           onMouseDown={e => raiseKeyAction(e, "glyph", true)}
           onMouseUp={e => raiseKeyAction(e, "glyph", false)}
         />
-      )}
+      )} */}
     </svg>
   );
 
