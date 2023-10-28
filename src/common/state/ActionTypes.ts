@@ -78,6 +78,7 @@ export interface ActionTypes {
 
   SET_RESTART_TARGET: null;
   APPLY_PROJECT_SETTING: null;
-  INIT_USER_SETTINGS: null;
   APPLY_USER_SETTING: null;
+  SAVE_USER_SETTINGS: null;
+  SAVE_PROJECT_SETTINGS: null;
 }

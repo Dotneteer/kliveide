@@ -27,7 +27,7 @@ import {
   dimMenuAction,
   emuFocusedAction,
   ideFocusedAction,
-  initUserSettingAction,
+  saveUserSettingAction,
   isWindowsAction,
   unloadWindowsAction
 } from "../common/state/actions";
@@ -202,7 +202,7 @@ async function createAppWindows () {
   registerMainToIdeMessenger(ideWindow);
 
   // --- Store initial user settings
-  mainStore.dispatch(initUserSettingAction(appSettings.userSettings));
+  mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 
   // --- Prepare the main menu. Update items on application state change
   Menu.setApplicationMenu(null);

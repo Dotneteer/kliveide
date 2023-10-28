@@ -171,6 +171,20 @@ export interface MainSaveSettingsRequest extends MessageBase {
 }
 
 /**
+ * The client wants to get the current user settings
+ */
+export interface MainGetUserSettingsRequest extends MessageBase {
+  type: "MainGetUserSettings";
+}
+
+/**
+ * The client wants to get the current project settings
+ */
+export interface MainGetProjectSettingsRequest extends MessageBase {
+  type: "MainGetProjectSettings";
+}
+
+/**
  * The client wants to apply and save a user setting
  */
 export interface MainApplyUserSettingsRequest extends MessageBase {
@@ -186,6 +200,15 @@ export interface MainApplyProjectSettingsRequest extends MessageBase {
   type: "MainApplyProjectSettings";
   key: string;
   value?: any;
+}
+
+/**
+ * The client wants to move settings
+ */
+export interface MainMoveSettingsRequest extends MessageBase {
+  type: "MainMoveSettings";
+  pull: boolean;
+  copy: boolean;
 }
 
 /**
@@ -283,6 +306,15 @@ export interface MainSaveFileResponse extends MessageBase {
   type: "MainSaveFileResponse";
   path: string;
 }
+
+/**
+ * The client wants to get settings
+ */
+export interface MainGetSettingsResponse extends MessageBase {
+  type: "MainGetSettingsResponse";
+  settings: Record<string, any>;
+}
+
 
 export function textContentsResponse (contents: string): TextContentsResponse {
   return {
