@@ -4,9 +4,6 @@ import { KeyboardButtonClickArgs } from "./keyboard-common";
 
 const NORMAL_WIDTH = 75;
 const NORMAL_HEIGHT = 73;
-const BUTTON_BACK = "#1c1c1c";
-const BUTTON_RAISE = "#303030";
-const TEXT_COLOR = "#c0c0c0";
 
 /**
  * Component properties
@@ -56,14 +53,21 @@ export const Sp128Key = ({
   const [mouseOverSymbol, setMouseOverSymbol] = useState(false);
   const [mouseOverAbove, setMouseOverAbove] = useState(false);
   const [mouseOverBelow, setMouseOverBelow] = useState(false);
-  const [mouseOverTopNum, setMouseOverTopNum] = useState(false);
   const [mouseOverGlyph, setMouseOverGlyph] = useState(false);
 
   // --- Invariant display properties
   const themeService = useTheme();
-  const mainKeyColor = themeService.getThemeProperty("--color-key-main");
   const highlightKeyColor = themeService.getThemeProperty(
-    "--color-key-highlight"
+    "--color-key128-highlight"
+  );
+  const buttonBackColor = themeService.getThemeProperty(
+    "--bgcolor-key128"
+  );
+  const buttonRaiseColor = themeService.getThemeProperty(
+    "--bgcolor-key128-raise"
+  );
+  const buttonTextColor = themeService.getThemeProperty(
+    "--color-key128-main"
   );
 
   // --- State dependent display properties
@@ -71,29 +75,26 @@ export const Sp128Key = ({
   const normalHeight = NORMAL_HEIGHT;
   const currentWidth = appliedZoom * (xwidth || NORMAL_WIDTH);
   const currentHeight = appliedZoom * normalHeight;
-  const mainColor = mouseOverKey ? highlightKeyColor : TEXT_COLOR;
+  const mainColor = mouseOverKey ? highlightKeyColor : buttonTextColor;
   const mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
-  const symbolColor = mouseOverSymbol ? highlightKeyColor : (cleanMode ? mainColor : TEXT_COLOR);
+  const symbolColor = mouseOverSymbol ? highlightKeyColor : (cleanMode ? mainColor : buttonTextColor);
   const symbolStrokeColor = mouseOverSymbol ? highlightKeyColor : (cleanMode ? mainStrokeColor : "transparent");
-  const keywordColor = mouseOverKey ? highlightKeyColor : (cleanMode && mouseOverSymbol ? highlightKeyColor : TEXT_COLOR);
+  const keywordColor = mouseOverKey ? highlightKeyColor : (cleanMode && mouseOverSymbol ? highlightKeyColor : buttonTextColor);
   const keywordStrokeColor = mouseOverKey ? highlightKeyColor : (cleanMode && mouseOverSymbol ? highlightKeyColor : "transparent");
   const aboveColor = mouseOverAbove
     ? highlightKeyColor
     : numMode
-    ? TEXT_COLOR
-    : TEXT_COLOR;
+    ? buttonTextColor
+    : buttonTextColor;
   const aboveStrokeColor = mouseOverAbove ? highlightKeyColor : "transparent";
-  const belowColor = mouseOverBelow ? highlightKeyColor : TEXT_COLOR;
+  const belowColor = mouseOverBelow ? highlightKeyColor : buttonTextColor;
   const belowStrokeColor = mouseOverBelow ? highlightKeyColor : "transparent";
-  const topNumFillColor = mouseOverTopNum ? highlightKeyColor : mainKeyColor;
-  const topNumStrokeColor = mouseOverTopNum ? highlightKeyColor : "transparent";
-  const glyphFillColor = mouseOverGlyph ? highlightKeyColor : mainKeyColor;
+  const glyphColor = mouseOverGlyph ? highlightKeyColor : buttonTextColor;
   const cursor =
     mouseOverKey ||
     mouseOverSymbol ||
     mouseOverAbove ||
     mouseOverBelow ||
-    mouseOverTopNum ||
     mouseOverGlyph
       ? "pointer"
       : "default";
@@ -103,7 +104,7 @@ export const Sp128Key = ({
       width={currentWidth}
       height={currentHeight}
       viewBox={`0 0 ${xwidth || NORMAL_WIDTH} ${normalHeight}`}
-      style={{ marginRight: 4, marginBottom: 4 }}
+      style={{ marginRight: 2*zoom, marginBottom: 2*zoom }}
       xmlns='http://www.w3.org/2000/svg'
     >
       {/* Button rectangle */}
@@ -112,7 +113,7 @@ export const Sp128Key = ({
         y={0}
         width='100%'
         height='100%'
-        fill={BUTTON_BACK}
+        fill={buttonBackColor}
         cursor={cursor}
       />
       {/* Button left ellipse */}
@@ -123,7 +124,7 @@ export const Sp128Key = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={BUTTON_RAISE}
+        fill={buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -140,7 +141,7 @@ export const Sp128Key = ({
             ry='32'
             width='100%'
             height='100%'
-            fill={BUTTON_RAISE}
+            fill={buttonRaiseColor}
             cursor={cursor}
             onMouseEnter={() => setMouseOverKey(true)}
             onMouseLeave={() => setMouseOverKey(false)}
@@ -153,7 +154,7 @@ export const Sp128Key = ({
             y={6}
             width={xwidth - NORMAL_WIDTH}
             height='63.5'
-            fill={BUTTON_RAISE}
+            fill={buttonRaiseColor}
             cursor={cursor}
             onMouseEnter={() => setMouseOverKey(true)}
             onMouseLeave={() => setMouseOverKey(false)}
@@ -162,13 +163,14 @@ export const Sp128Key = ({
           />
         </>
       )}
+
       {/* Top rectangle */}
       <rect
         x='0'
         y={0}
         width='100%'
         height={24}
-        fill={BUTTON_BACK}
+        fill={buttonBackColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -318,7 +320,7 @@ export const Sp128Key = ({
           width='16'
           height='16'
           strokeWidth='1'
-          stroke={TEXT_COLOR}
+          stroke={glyphColor}
           fill="transparent"
           cursor={cursor}
           onMouseEnter={() => setMouseOverGlyph(true)}
@@ -333,8 +335,8 @@ export const Sp128Key = ({
           y='30.5'
           width='7'
           height='7'
-          stroke={TEXT_COLOR}
-          fill={TEXT_COLOR}
+          stroke={glyphColor}
+          fill={glyphColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverGlyph(true)}
           onMouseLeave={() => setMouseOverGlyph(false)}
@@ -348,8 +350,8 @@ export const Sp128Key = ({
           y='30.5'
           width='7'
           height='7'
-          stroke={TEXT_COLOR}
-          fill={TEXT_COLOR}
+          stroke={glyphColor}
+          fill={glyphColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverGlyph(true)}
           onMouseLeave={() => setMouseOverGlyph(false)}
@@ -363,8 +365,8 @@ export const Sp128Key = ({
           y='38.5'
           width='7'
           height='7'
-          stroke={TEXT_COLOR}
-          fill={TEXT_COLOR}
+          stroke={glyphColor}
+          fill={glyphColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverGlyph(true)}
           onMouseLeave={() => setMouseOverGlyph(false)}

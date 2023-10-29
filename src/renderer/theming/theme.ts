@@ -136,11 +136,15 @@ export type ThemeProperties = {
   // --- Keyboard
   "--bgcolor-keyboard"?: string;
   "--bgcolor-key"?: string;
-  "--color-key-main"?: string;
+  "--color-key48-main"?: string;
+  "--color-key128-main"?: string;
   "--color-key-symbol"?: string;
   "--color-key-above"?: string;
   "--color-key-below"?: string;
-  "--color-key-highlight"?: string;
+  "--color-key48-highlight"?: string;
+  "--color-key128-highlight"?: string;
+  "--bgcolor-key128"?: string;
+  "--bgcolor-key128-raise"?: string;
 
   // --- Document area
   "--bgcolor-docspanel"?: string;

@@ -1,8 +1,10 @@
 import { Sp128Key as Key } from "./Sp128Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties } from "react";
+import { CSSProperties, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
+import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
+import { Sp128EnterKeyBottom } from "./Sp128EnterKeyBottom";
 
 const DEFAULT_WIDTH = 14 * 75 + 20;
 const DEFAULT_HEIGHT = 5 * 77 + 32;
@@ -14,7 +16,10 @@ type Props = {
 
 export const Sp128Keyboard = ({ width, height }: Props) => {
   const { machineService } = useAppServices();
+  const [hilited, setHilited] = useState(false);
   const zoom = calculateZoom(width, height);
+
+
   return (
     <Column width='auto' style={rootStyle}>
       <Row height='auto' style={rowStyle}>
@@ -160,7 +165,13 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           center='DELETE'
         />
-        <Key zoom={zoom} code={21} secondaryCode={0} keyAction={handleClick} center='GRAPH' />
+        <Key
+          zoom={zoom}
+          code={21}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='GRAPH'
+        />
         <Key
           zoom={zoom}
           code={10}
@@ -260,6 +271,27 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           symbol={'\xa0\xa0"\xa0\xa0'}
           above='TAB'
           below='(C)'
+        />
+        <Sp128EnterKeyTop
+          zoom={zoom}
+          mouseOnKey={() => setHilited(true)}
+          mouseOutOfKey={() => setHilited(false)}
+          mouseDown={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: true
+            })
+          }
+          mouseUp={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: false
+            })
+          }
         />
       </Row>
       <Row height='auto' style={rowStyle}>
@@ -371,11 +403,31 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           above='USR'
           below='ATTR'
         />
+        <Sp128EnterKeyBottom
+          zoom={zoom}
+          hilited={hilited}
+          mouseDown={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: true
+            })
+          }
+          mouseUp={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: false
+            })
+          }
+        />
       </Row>
       <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
-          xwidth={168}
+          xwidth={170}
           code={0}
           keyAction={handleClick}
           keyword='CAPS'
@@ -461,10 +513,16 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           above='PI'
           below='INVERSE'
         />
-        <Key zoom={zoom} code={37} secondaryCode={36} keyAction={handleClick} main='.' />
         <Key
           zoom={zoom}
-          xwidth={167}
+          code={37}
+          secondaryCode={36}
+          keyAction={handleClick}
+          main='.'
+        />
+        <Key
+          zoom={zoom}
+          xwidth={170}
           code={0}
           keyAction={handleClick}
           keyword='CAPS'
@@ -515,7 +573,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
         />
         <Key
           zoom={zoom}
-          xwidth={338}
+          xwidth={342}
           code={35}
           keyAction={handleClick}
           centerMode={true}

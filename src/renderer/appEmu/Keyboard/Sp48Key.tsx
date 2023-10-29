@@ -60,12 +60,12 @@ export const Sp48Key = ({
   // --- Invariant display properties
   const themeService = useTheme();
   const keyBackground = themeService.getThemeProperty("--bgcolor-key");
-  const mainKeyColor = themeService.getThemeProperty("--color-key-main");
+  const mainKeyColor = themeService.getThemeProperty("--color-key48-main");
   const symbolKeyColor = themeService.getThemeProperty("--color-key-symbol");
   const aboveKeyColor = themeService.getThemeProperty("--color-key-above");
   const belowKeyColor = themeService.getThemeProperty("--color-key-below");
   const highlightKeyColor = themeService.getThemeProperty(
-    "--color-key-highlight"
+    "--color-key48-highlight"
   );
 
   // --- State dependent display properties

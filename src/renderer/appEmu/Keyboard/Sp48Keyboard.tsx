@@ -131,7 +131,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           code={20}
           keyAction={handleClick}
           topNum='BLACK'
-          topNumColor='#606060'
+          topNumColor='#505050'
           main='0'
           symbol={"\uff3f"}
           above='DELETE'
@@ -514,7 +514,8 @@ const rootStyle: CSSProperties = {
   alignContent: "start",
   justifyItems: "center",
   justifyContent: "center",
-  overflow: "hidden"
+  overflow: "hidden",
+  userSelect: "none"
 };
 
 const rowStyle: CSSProperties = {
