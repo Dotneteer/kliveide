@@ -1,34 +1,54 @@
-import { Sp48Key as Key } from "./Sp48Key";
+import { Sp128Key as Key } from "./Sp128Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties } from "react";
+import { CSSProperties, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
+import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
+import { Sp128EnterKeyBottom } from "./Sp128EnterKeyBottom";
 
-const DEFAULT_WIDTH = 10 * 104 + 130;
-const DEFAULT_HEIGHT = 4 * (128 + 16);
+const DEFAULT_WIDTH = 14 * 75 + 20;
+const DEFAULT_HEIGHT = 5 * 77 + 32;
 
 type Props = {
   width: number;
   height: number;
 };
 
-export const Sp48Keyboard = ({ width, height }: Props) => {
+export const Sp128Keyboard = ({ width, height }: Props) => {
   const { machineService } = useAppServices();
+  const [hilited, setHilited] = useState(false);
   const zoom = calculateZoom(width, height);
-  const row1Shift = 80 * zoom;
-  const row2Shift = 110 * zoom;
+
+
   return (
     <Column width='auto' style={rootStyle}>
       <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
+          code={18}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='INV'
+          symbolWord='VIDEO'
+          cleanMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={17}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='TRUE'
+          symbolWord='VIDEO'
+          cleanMode={true}
+        />
+        <Key
+          zoom={zoom}
           code={15}
           keyAction={handleClick}
-          topNum='BLUE'
-          topNumColor='#0030ff'
+          numMode={true}
           main='1'
-          symbol={"\xa0\xa0!\xa0\xa0"}
-          above='EDIT'
+          symbol={"\xa0!\xa0"}
+          above='BLUE'
           below='DEF FN'
           glyph={1}
         />
@@ -36,11 +56,10 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={16}
           keyAction={handleClick}
-          topNum='RED'
-          topNumColor='#ff0000'
+          numMode={true}
           main='2'
           symbol={"\xa0@\xa0"}
-          above='CAPS LOCK'
+          above='RED'
           below='FN'
           glyph={2}
         />
@@ -48,11 +67,10 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={17}
           keyAction={handleClick}
-          topNum='MAGENTA'
-          topNumColor='#e000e0'
+          numMode={true}
           main='3'
           symbol={"\xa0#\xa0"}
-          above='TRUE VID'
+          above='MAGENTA'
           below='LINE'
           glyph={3}
         />
@@ -60,35 +78,32 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={18}
           keyAction={handleClick}
-          topNum='GREEN'
-          topNumColor='#00c000'
+          numMode={true}
           main='4'
           symbol={"\xa0$\xa0"}
-          above='INV.VIDEO'
-          below='OPEN'
+          above='GREEN'
+          below='OPEN #'
           glyph={4}
         />
         <Key
           zoom={zoom}
           code={19}
           keyAction={handleClick}
-          topNum='CYAN'
-          topNumColor='#00c0c0'
+          numMode={true}
           main='5'
           symbol={"\xa0%\xa0"}
-          above={"\u140a"}
-          below='CLOSE'
+          above='CYAN'
+          below='CLOSE #'
           glyph={5}
         />
         <Key
           zoom={zoom}
           code={24}
           keyAction={handleClick}
-          topNum='YELLOW'
-          topNumColor='#fff000'
+          numMode={true}
           main='6'
           symbol={"\xa0&\xa0"}
-          above={"\u1401"}
+          above='YELLOW'
           below='MOVE'
           glyph={6}
         />
@@ -96,11 +111,10 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={23}
           keyAction={handleClick}
-          topNum='WHITE'
-          topNumColor='#ffffff'
+          numMode={true}
           main='7'
           symbol={"\xa0\xa0'\xa0\xa0"}
-          above={"\u1403"}
+          above='WHITE'
           below='ERASE'
           glyph={7}
         />
@@ -108,11 +122,9 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={22}
           keyAction={handleClick}
-          topNum='UNBRIGHT'
-          topNumColor='#a0a0a0'
           main='8'
+          numMode={true}
           symbol={"\xa0\xa0(\xa0\xa0"}
-          above={"\u1405"}
           below='POINT'
           glyph={16}
         />
@@ -120,25 +132,46 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           zoom={zoom}
           code={21}
           keyAction={handleClick}
-          topNum='BRIGHT'
+          numMode={true}
           main='9'
           symbol={"\xa0\xa0)\xa0\xa0"}
-          above='GRAPHICS'
           below='CAT'
         />
         <Key
           zoom={zoom}
           code={20}
           keyAction={handleClick}
-          topNum='BLACK'
-          topNumColor='#505050'
+          numMode={true}
           main='0'
           symbol={"\uff3f"}
-          above='DELETE'
+          above='BLACK'
           below='FORMAT'
         />
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={35}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='BREAK'
+        />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row1Shift }}>
+      <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={20}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='DELETE'
+        />
+        <Key
+          zoom={zoom}
+          code={21}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='GRAPH'
+        />
         <Key
           zoom={zoom}
           code={10}
@@ -167,7 +200,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           keyword='REM'
           symbol='>='
           above='TAN'
-          below='ATB'
+          below='ATN'
         />
         <Key
           zoom={zoom}
@@ -239,8 +272,47 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='TAB'
           below='(C)'
         />
+        <Sp128EnterKeyTop
+          zoom={zoom}
+          mouseOnKey={() => setHilited(true)}
+          mouseOutOfKey={() => setHilited(false)}
+          mouseDown={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: true
+            })
+          }
+          mouseUp={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: false
+            })
+          }
+        />
       </Row>
-      <Row height='auto' style={{ ...rowStyle, marginLeft: row2Shift }}>
+      <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          xwidth={110}
+          code={36}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='EXTEND'
+          symbolWord='MODE'
+          cleanMode={true}
+        />
+        <Key
+          zoom={zoom}
+          xwidth={95}
+          code={15}
+          secondaryCode={0}
+          keyAction={handleClick}
+          center='EDIT'
+        />
         <Key
           zoom={zoom}
           code={5}
@@ -331,16 +403,45 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='USR'
           below='ATTR'
         />
-        <Key zoom={zoom} code={30} keyAction={handleClick} center='ENTER' />
+        <Sp128EnterKeyBottom
+          zoom={zoom}
+          hilited={hilited}
+          mouseDown={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: true
+            })
+          }
+          mouseUp={() =>
+            handleClick({
+              button: 0,
+              code: 30,
+              keyCategory: "main",
+              down: false
+            })
+          }
+        />
       </Row>
       <Row height='auto' style={rowStyle}>
         <Key
           zoom={zoom}
+          xwidth={170}
           code={0}
           keyAction={handleClick}
-          xwidth={130}
-          top='CAPS'
-          bottom='SHIFT'
+          keyword='CAPS'
+          symbolWord='SHIFT'
+          cleanMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={16}
+          secondaryCode={0}
+          keyAction={handleClick}
+          keyword='CAPS'
+          symbolWord='LOCK'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -409,24 +510,105 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           main='M'
           keyword='PAUSE'
           symbol={"\xa0\xa0.\xa0\xa0"}
-          above='INVERSE'
-          below='PI'
+          above='PI'
+          below='INVERSE'
         />
         <Key
           zoom={zoom}
-          code={36}
+          code={37}
+          secondaryCode={36}
           keyAction={handleClick}
-          top='SYMBOL'
-          bottom='SHIFT'
-          useSymColor={true}
+          main='.'
         />
         <Key
           zoom={zoom}
+          xwidth={170}
+          code={0}
+          keyAction={handleClick}
+          keyword='CAPS'
+          symbolWord='SHIFT'
+          cleanMode={true}
+        />
+      </Row>
+      <Row height='auto' style={rowStyle}>
+        <Key
+          zoom={zoom}
+          code={0}
+          keyAction={handleClick}
+          keyword='SYMBOL'
+          symbolWord='SHIFT'
+          cleanMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={26}
+          secondaryCode={36}
+          keyAction={handleClick}
+          main=';'
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={25}
+          secondaryCode={36}
+          keyAction={handleClick}
+          main='"'
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={19}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25c0"}
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={22}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25b6"}
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          xwidth={342}
           code={35}
           keyAction={handleClick}
-          xwidth={180}
-          top='BREAK'
-          center='SPACE'
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={23}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25b2"}
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={24}
+          secondaryCode={0}
+          keyAction={handleClick}
+          main={"\u25bc"}
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={38}
+          secondaryCode={36}
+          keyAction={handleClick}
+          main=','
+          centerMode={true}
+        />
+        <Key
+          zoom={zoom}
+          code={0}
+          keyAction={handleClick}
+          keyword='SYMBOL'
+          symbolWord='SHIFT'
+          cleanMode={true}
         />
       </Row>
     </Column>
@@ -441,7 +623,11 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
         setKeyStatus(
           e.down,
           e.code,
-          e.button === 0 ? undefined : 0 /* CShift */
+          e.button === 0
+            ? e.secondaryButton === undefined
+              ? undefined
+              : e.secondaryButton
+            : 0 /* CShift */
         );
         break;
       case "symbol":

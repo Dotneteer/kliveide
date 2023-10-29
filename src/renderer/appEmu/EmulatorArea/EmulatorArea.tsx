@@ -8,13 +8,14 @@ export const EmulatorArea = () => {
   const keyboardVisible = useSelector(
     s => s.emuViewOptions?.showKeyboard ?? false
   );
+  const machineType = useSelector(s => s.emulatorState?.machineId);
   return (
     <div className={styles.emulatorArea}>
       <SplitPanel
         primaryLocation='bottom'
         secondaryPanel={<EmulatorPanel />}
         initialPrimarySize='33%'
-        primaryPanel={<KeyboardPanel />}
+        primaryPanel={<KeyboardPanel machineType={machineType} />}
         primaryVisible={keyboardVisible}
         secondaryVisible={true}
         minSize={120}

@@ -2,6 +2,17 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { CSSProperties, DOMAttributes } from "react";
 
 /**
+ * Event arguments when pressing a key on the ZX Spectrum 48 virtual keyboard
+ */
+export interface KeyboardButtonClickArgs {
+  code: number;
+  keyCategory: string;
+  button: number;
+  secondaryButton?: number;
+  down: boolean;
+}
+
+/**
  * Generic panel properties
  */
 export type PanelProps<P = {}> = P &

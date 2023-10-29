@@ -1,17 +1,8 @@
 import { useState } from "react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
+import { KeyboardButtonClickArgs } from "./keyboard-common";
 
 const NORMAL_WIDTH = 100;
-
-/**
- * Event arguments when pressing a key on the ZX Spectrum 48 virtual keyboard
- */
-export interface Sp48ButtonClickArgs {
-  code: number;
-  keyCategory: string;
-  button: number;
-  down: boolean;
-}
 
 /**
  * Component properties
@@ -33,7 +24,7 @@ type Props = {
   glyph?: number;
   useSymColor?: boolean;
   xwidth?: number;
-  keyAction?: (e: Sp48ButtonClickArgs) => void;
+  keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
 
 /**
@@ -69,12 +60,12 @@ export const Sp48Key = ({
   // --- Invariant display properties
   const themeService = useTheme();
   const keyBackground = themeService.getThemeProperty("--bgcolor-key");
-  const mainKeyColor = themeService.getThemeProperty("--color-key-main");
+  const mainKeyColor = themeService.getThemeProperty("--color-key48-main");
   const symbolKeyColor = themeService.getThemeProperty("--color-key-symbol");
   const aboveKeyColor = themeService.getThemeProperty("--color-key-above");
   const belowKeyColor = themeService.getThemeProperty("--color-key-below");
   const highlightKeyColor = themeService.getThemeProperty(
-    "--color-key-highlight"
+    "--color-key48-highlight"
   );
 
   // --- State dependent display properties

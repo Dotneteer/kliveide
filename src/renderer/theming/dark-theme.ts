@@ -135,12 +135,16 @@ export const darkTheme: ThemeProperties = {
 
   // --- Keyboard
   "--bgcolor-keyboard": "#181818",
-  "--bgcolor-key": "#808080",
-  "--color-key-main": "#ffffff",
+  "--bgcolor-key": "#707070",
+  "--color-key48-main": "#e0e0e0",
+  "--color-key128-main": "#c0c0c0",
   "--color-key-symbol": "#c00000",
   "--color-key-above": "#00a000",
   "--color-key-below": "#d02000",
-  "--color-key-highlight": "#0048c0",
+  "--color-key48-highlight": "#0048c0",
+  "--color-key128-highlight": "#0068e0",
+  "--bgcolor-key128": "#1c1c1c",
+  "--bgcolor-key128-raise": "#303030",
 
   // --- Document area
   "--bgcolor-docspanel": "#181818",
