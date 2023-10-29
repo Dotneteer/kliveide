@@ -5,7 +5,7 @@ const withNextra = require("nextra")({
 
 module.exports = withNextra({
   output: "export",
-  basePath: '/kliveide',
+  //basePath: '/kliveide',
   distDir: "docs-out",
   images: {
     unoptimized: true,

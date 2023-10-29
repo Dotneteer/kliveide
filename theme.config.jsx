@@ -1,7 +1,7 @@
 export default {
-  logo: <span>My Nextra Documentation</span>,
+  logo: <span>Klive IDE Documentation</span>,
   project: {
-    link: "https://github.com/shuding/nextra"
+    link: "https://github.com/dotneteer/kliveide"
   }
   // ... other theme options
 };
