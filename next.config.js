@@ -9,8 +9,6 @@ module.exports = withNextra({
   distDir: "docs-out",
   images: {
     unoptimized: true,
-    loader: 'akamai',
-    path: '',
   },
   assetPrefix: './'
 });
