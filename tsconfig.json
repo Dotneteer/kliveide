@@ -1,18 +1,30 @@
 {
   "compilerOptions": {
-		"baseUrl": ".",
+    "baseUrl": ".",
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-		"paths": {
-			"@/*": ["src/*"],
-      "@styles/*": ["src/renderer/assets/styles/*"],
-      "@messaging/*": ["src/common/messaging/*"],
-      "@state/*": ["src/common/state/*"]
-		},
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@styles/*": [
+        "src/renderer/assets/styles/*"
+      ],
+      "@messaging/*": [
+        "src/common/messaging/*"
+      ],
+      "@state/*": [
+        "src/common/state/*"
+      ]
+    },
     "allowJs": false,
     "skipLibCheck": true,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
@@ -21,9 +33,17 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "preserve",
+    "strict": false,
+    "incremental": true
   },
   "include": [],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
-
