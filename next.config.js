@@ -8,8 +8,11 @@ module.exports = withNextra({
   basePath: '/kliveide',
   distDir: "docs-out",
   images: {
-    unoptimized: true
-  }
+    unoptimized: true,
+    loader: 'akamai',
+    path: '',
+  },
+  assetPrefix: './'
 });
 
 // If you have other Next.js configurations, you can pass them as the parameter:
