@@ -24,6 +24,7 @@ type Props = {
   center?: string;
   numMode?: boolean;
   centerMode?: boolean;
+  cleanMode?: boolean;
   glyph?: number;
   xwidth?: number;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
@@ -45,6 +46,7 @@ export const Sp128Key = ({
   center,
   numMode,
   centerMode,
+  cleanMode,
   glyph,
   xwidth,
   keyAction
@@ -70,7 +72,11 @@ export const Sp128Key = ({
   const currentWidth = appliedZoom * (xwidth || NORMAL_WIDTH);
   const currentHeight = appliedZoom * normalHeight;
   const mainColor = mouseOverKey ? highlightKeyColor : TEXT_COLOR;
-  const symbolColor = mouseOverSymbol ? highlightKeyColor : TEXT_COLOR;
+  const mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
+  const symbolColor = mouseOverSymbol ? highlightKeyColor : (cleanMode ? mainColor : TEXT_COLOR);
+  const symbolStrokeColor = mouseOverSymbol ? highlightKeyColor : (cleanMode ? mainStrokeColor : "transparent");
+  const keywordColor = mouseOverKey ? highlightKeyColor : (cleanMode && mouseOverSymbol ? highlightKeyColor : TEXT_COLOR);
+  const keywordStrokeColor = mouseOverKey ? highlightKeyColor : (cleanMode && mouseOverSymbol ? highlightKeyColor : "transparent");
   const aboveColor = mouseOverAbove
     ? highlightKeyColor
     : numMode
@@ -178,7 +184,7 @@ export const Sp128Key = ({
           y={centerMode ? 48 : 64}
           fontSize={18}
           fill={mainColor}
-          stroke={mainColor}
+          stroke={mainStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -196,7 +202,8 @@ export const Sp128Key = ({
           textAnchor='middle'
           y={35}
           fontSize={10}
-          fill={TEXT_COLOR}
+          fill={keywordColor}
+          stroke={keywordStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}
@@ -215,7 +222,7 @@ export const Sp128Key = ({
           y={numMode ? 42 : 48}
           fontSize={numMode ? 16 : 12}
           fill={symbolColor}
-          stroke={symbolColor}
+          stroke={symbolStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverSymbol(true)}
           onMouseLeave={() => setMouseOverSymbol(false)}
@@ -234,12 +241,12 @@ export const Sp128Key = ({
           y={46}
           fontSize={10}
           fill={symbolColor}
-          stroke={symbolColor}
+          stroke={symbolStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverSymbol(true)}
           onMouseLeave={() => setMouseOverSymbol(false)}
-          onMouseDown={e => raiseKeyAction(e, "symbol", true)}
-          onMouseUp={e => raiseKeyAction(e, "symbol", false)}
+          onMouseDown={e => raiseKeyAction(e, cleanMode ? "main" : "symbol", true)}
+          onMouseUp={e => raiseKeyAction(e, cleanMode ? "main" : "symbol", false)}
         >
           {symbolWord}
         </text>
@@ -253,7 +260,7 @@ export const Sp128Key = ({
           y={50}
           fontSize={10}
           fill={mainColor}
-          stroke={mainColor}
+          stroke={mainStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverKey(true)}
           onMouseLeave={() => setMouseOverKey(false)}

@@ -25,6 +25,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='INV'
           symbolWord='VIDEO'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -33,6 +34,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='TRUE'
           symbolWord='VIDEO'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -269,6 +271,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='EXTEND'
           symbolWord='MODE'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -377,6 +380,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='CAPS'
           symbolWord='SHIFT'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -385,6 +389,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='CAPS'
           symbolWord='LOCK'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -464,6 +469,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='CAPS'
           symbolWord='SHIFT'
+          cleanMode={true}
         />
       </Row>
       <Row height='auto' style={rowStyle}>
@@ -473,6 +479,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='SYMBOL'
           symbolWord='SHIFT'
+          cleanMode={true}
         />
         <Key
           zoom={zoom}
@@ -543,6 +550,7 @@ export const Sp128Keyboard = ({ width, height }: Props) => {
           keyAction={handleClick}
           keyword='SYMBOL'
           symbolWord='SHIFT'
+          cleanMode={true}
         />
       </Row>
     </Column>
@@ -634,7 +642,8 @@ const rootStyle: CSSProperties = {
   alignContent: "start",
   justifyItems: "center",
   justifyContent: "center",
-  overflow: "hidden"
+  overflow: "hidden",
+  userSelect: "none"
 };
 
 const rowStyle: CSSProperties = {
