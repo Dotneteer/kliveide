@@ -3,9 +3,10 @@ const withNextra = require("nextra")({
   themeConfig: "./theme.config.jsx"
 });
 
+const isProduction = process.env.NODE_ENV === "production";
 module.exports = withNextra({
   output: "export",
-  //basePath: '/kliveide',
+  basePath: isProduction ? '/kliveide' : "",
   distDir: "docs-out",
   images: {
     unoptimized: true,
