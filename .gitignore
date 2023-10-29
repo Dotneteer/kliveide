@@ -29,3 +29,4 @@ yarn.lock
 dist-electron
 .next
 out
+docs-out
