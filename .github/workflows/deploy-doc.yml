@@ -5,7 +5,7 @@ name: GitHub Pages deploy
 
 on:
   push:
-    branches: [dotneteer/nextra]
+    branches: [klive3]
 
 jobs:
   build:
