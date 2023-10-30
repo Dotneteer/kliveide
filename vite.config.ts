@@ -52,6 +52,7 @@ export default defineConfig(({ command }) => {
           },
           vite: {
             build: {
+              
               sourcemap,
               minify: isBuild,
               outDir: 'dist-electron/main',
@@ -59,6 +60,7 @@ export default defineConfig(({ command }) => {
                 external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
               },
             },
+            publicDir: "src/public"
           },
         },
         {
