@@ -27,3 +27,6 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 dist-electron
+.next
+out
+docs-out
