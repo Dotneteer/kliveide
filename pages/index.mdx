@@ -1,3 +1,57 @@
-# Klive IDE
+# Introduction to Klive IDE
 
-Used from klive3
+**Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac and Windows.**
+
+Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
+
+Klive IDE supports dual monitor mode to place the Emulator and IDE on different monitors while working with code.
+
+![Intro](/images/intro/klive-ide-intro.png)
+
+## Supported Emulators
+
+Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports these emulators:
+
+- **ZX Spectrum 48K**
+- **ZX Spectrum 128K**
+- **ZX Spectrum +2E/+3E** (*in progress*)
+- ZX 80/81 (*in the future*)
+- Cambridge Z88 (*in the future*)
+- ZX Spectrum Next (*in the future*)
+
+## Emulator Features
+
+The emulator can run the selected machine with or without debugging. These modes can be changed without restarting the running machine:
+
+- Starting, pausing, continuing to run
+- Start or continue in debug mode
+- Setting up breakpoints, step-in, step-over, step-out modes
+
+To examine the state of the emulator, Klive offers several views:
+
+- Full CPU view
+- Full ULA view
+- Memory view with live refresh
+- Disassembly view with execution point tracking
+- Monitoring system variable values
+- Displaying (and exporting) the current BASIC listing
+
+You can quickly load and play programs (games) from files:
+
+- Loading tape files (`.tap` and `.tzx`)
+- Fast load
+- Loading from disk files (`.dsk`) with ZX Spectrum +3E
+- Writing and formatting disk (`.dsk`) files (*in progress*)
+
+Other emulator features:
+
+- Multiplying CPU clock speed (1-24 multiplier)
+- Setting up the sound level, muting and unmuting sound
+
+Planned features (*in the future*):
+
+- Using custom machine ROMs
+- Memory read/write breakpoints
+- I/O read/write breakpoints
+- Breakpoints with hit count conditions
+
