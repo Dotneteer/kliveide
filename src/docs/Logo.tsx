@@ -11,8 +11,8 @@ export const Logo = () => {
     >
       { /* Frame and Stripes */ }
       <rect width="100%" height="100%" fill="#000" />
-      <rect x={12} y={12} width={14} height={100} fill="#007acc" />
       <rect width="100%" height="100%" stroke="black" strokeWidth={4} />
+      <rect x={12} y={0} width={7} height="100%" fill="#007acc" />
 
       <path d="M 293 103 l -21 21 l -21 0 l 42 -42" fill="#0ff" />
       <path d="M 293 82 l -42 42 l -21 0 l 63 -63" fill="#0f0" />
