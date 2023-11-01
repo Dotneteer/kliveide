@@ -11,7 +11,6 @@ module.exports = withNextra({
   images: {
     unoptimized: true,
   },
-  assetPrefix: './'
 });
 
 // If you have other Next.js configurations, you can pass them as the parameter:

@@ -1,5 +1,8 @@
+import { Logo } from "./src/docs/Logo";
+
 export default {
-  logo: <span>Klive IDE Documentation</span>,
+  logo: <Logo />,
+  //logo: <span>Klive IDE Documentation</span>,
   logoLink: "https://dotneteer.github.io/kliveide",
   editLink: {
     text: null
