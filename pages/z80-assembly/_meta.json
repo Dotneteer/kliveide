@@ -2,5 +2,9 @@
     "z80-assembler": "Introduction",
     "language-structure": "Language Structure",
     "expressions": "Expressions",
-    "z80-instructions": "Z80 Instructions"
+    "z80-instructions": "Z80 Instructions",
+    "pragmas": "Pragmas",
+    "statements": "Assembler Statements",
+    "macros": "Macros",
+    "structs": "Structs"
 }
