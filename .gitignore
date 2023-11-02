@@ -21,6 +21,9 @@ dist-ssr
 *.sln
 *.sw?
 
+artifacts/**/*
+!artifacts/.gitkeep
+
 release
 .vscode/.debug.env
 package-lock.json

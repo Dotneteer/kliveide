@@ -19,10 +19,13 @@
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "build:check": "tsc && vite build",
+    "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
+    "build:linux": "npm run build && electron-builder build --linux --x64",
     "doc:dev": "next",
     "doc:build": "next build",
-    "doc:start": "next start"
+    "doc:start": "next start",
+    "bootstrap:ci": "npm ci"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
