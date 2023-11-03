@@ -4,5 +4,53 @@ The first time you start Klive, it displays the Emulator window. You can recogni
 
 ![Emulator](/images/getting-started/emulator-start-screen.png)
 
-
 Klive stores your last selected machine type and a few other settings when you close the app and reloads them automatically the next time you start Klive again.
+
+Klive has two separate windows; however, the first time you start it, the app shows only the Emulator window. Select the **View | Show IDE** menu command and Klive displays the IDE window:
+
+![IDE](/images/getting-started/ide-start-screen.png)
+
+When you close the Emulator window, it automatically closes the IDE window, too. However, closing the IDE window keeps the Emulator window open. You can quit the Klive application by closing the Emulator window or selecting **File | Exit** on Windows or **Klive | Quit klive-emu** on Mac.
+
+> **Note**: Klive saves the window positions when exiting the app. If you use multiple monitors, the windows will be restored according to their last display the next time you start Klive.
+
+## Controlling the Emulator
+
+You can start the emulated machine (ZX Spectrum 48K, by default) in several ways:
+
+1. Pressing the **F5** key.
+2. Using the **Machine | Start** menu command
+3. Clicking the **Play** toolbar button (the leftmost green button of the Emulator's toolbar)
+
+> **Note**: You can also start the machine with the `em-start` (or `:s`) interactive command within the IDE.
+
+You can control the running machine with other commands:
+
+- **Pause**: You can suspend running the machine with the `Shift+F5` key, the **Pause** icon in the toolbar, or the **Machine | Pause** menu. Later, you can restore running the machine.
+- **Stop**: When turning the emulated machine off, use the `F4` key, the **Stop** icon in the toolbar, or the **Machine | Stop** menu command. Though you can view the state of the stopped machine, you cannot continue running it.
+- **Restart**: You can stop and immediately start the machine again with the `Shift+F4` key. The same action is available with the **Restart** toolbar icon and the **Machine | Restart** menu.
+
+## Debug Mode
+
+The emulator supports running in debug mode. In this mode, the running machine will stop at designated breakpoints, allowing you to examine the current state.
+
+You can turn the machine on in debug mode with the `Ctrl+F5` key, using the **Machine | Start with Debugging** menu, or selecting the "Start with Debugging" option from the toolbar's drop-down and pressing the play button.
+
+When you suspend (pause) the machine, you can continue running it in debug mode with `Ctrl+F5`. Also, while the machine is paused, you can move it into debug mode with any of these debugger commands:
+
+- **Step Into**. This command executes the next Z80 instruction and pauses the machine again. Use the `F10` key, the **Machine | Step Into command, or the **Step Into** toolbar key.
+- **Step Over**. This command executes the next Z80 instruction and pauses the machine again. Suppose the instruction is a subroutine call, an `RST` call, or a block operation (e.g., `LDIR`). In that case, the entire instruction is executed, and the machine pauses again at the next instruction following the call or the block operation. Use the `F11` key, the **Machine | Step Over command, or the **Step Over** toolbar key.
+- **Step Out**. This command executes all Z80 instructions to the next return instruction and suspends running again at the return point. Use the `Shift+F11` key, the **Machine | Step Over command, or the **Step Over** toolbar key.
+
+> **Note**: The Step Out command may not work in every context. There are Z80 programs that do not use the `RET` statement (or its conditional equivalents) but manipulate the stack and use indirect jump statements. The Step Out command cannot work with such constructs.
+
+## Changing the View
+
+In the **View** menu, you find several commands that allow changing  the view of the current window (Emulator or IDE):
+
+- **Actual Size**: Sets the view size to Normal (100%) according to the operating system on which you run Klive.
+- **Zoom In**: Enlarges the screen (including all text and graphics).
+- **Zoom Out**: Makes text and graphics smaller.
+- **Toggle Full Screen**: Turns on and off full-screen mode.
+
+> **Note**: While the **Toggle Full Screen** command handles the Emulator and IDE windows independently, other commands affect both.

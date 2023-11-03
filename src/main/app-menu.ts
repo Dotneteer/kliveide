@@ -33,7 +33,8 @@ import {
   setVolatileDocStateAction,
   setDiskFileAction,
   protectDiskAction,
-  setRestartTarget
+  setRestartTarget,
+  showKeyboardAction
 } from "../common/state/actions";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
@@ -59,6 +60,7 @@ const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
+const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
 const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right";
@@ -321,6 +323,17 @@ export function setupMenu (
         }
       },
       {
+        id: TOGGLE_KEYBOARD,
+        label: "Show the Virtual Keyboard",
+        type: "checkbox",
+        visible: emuTraits.isFocused,
+        checked: appState.emuViewOptions.showKeyboard,
+        click: async mi => {
+          mainStore.dispatch(showKeyboardAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
         type: "separator",
         visible: emuTraits.isFocused || ideTraits.isFocused
       },
@@ -541,7 +554,7 @@ export function setupMenu (
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
-      accelerator: "F3",
+      accelerator: "F10",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepInto"));
       }
@@ -550,7 +563,7 @@ export function setupMenu (
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
-      accelerator: "Shift+F3",
+      accelerator: "Shift+F11",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOver"));
       }
@@ -559,7 +572,7 @@ export function setupMenu (
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
-      accelerator: "Ctrl+F3",
+      accelerator: "Ctrl+F11",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOut"));
       }

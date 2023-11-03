@@ -241,7 +241,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-into'
         fill='--color-toolbarbutton-blue'
-        title='Step Into (F3)'
+        title='Step Into (F10)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||
@@ -262,7 +262,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-over'
         fill='--color-toolbarbutton-blue'
-        title='Step Over (Shift+F3)'
+        title='Step Over (F11)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||
@@ -283,7 +283,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-out'
         fill='--color-toolbarbutton-blue'
-        title='Step Out (Ctrl+F3)'
+        title='Step Out (Ctrl+F11)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||
