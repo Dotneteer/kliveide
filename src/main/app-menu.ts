@@ -492,6 +492,7 @@ export function setupMenu (
       id: START_MACHINE,
       label: "Start",
       enabled: machineWaits,
+      accelerator: "F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("start"));
@@ -501,6 +502,7 @@ export function setupMenu (
       id: PAUSE_MACHINE,
       label: "Pause",
       enabled: machineRuns,
+      accelerator: "Shift+F5",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("pause"));
       }
@@ -509,6 +511,7 @@ export function setupMenu (
       id: STOP_MACHINE,
       label: "Stop",
       enabled: machineRestartable,
+      accelerator: "F4",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stop"));
       }
@@ -517,6 +520,7 @@ export function setupMenu (
       id: RESTART_MACHINE,
       label: "Restart",
       enabled: machineRestartable,
+      accelerator: "Shift+F4",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("restart"));
@@ -527,6 +531,7 @@ export function setupMenu (
       id: DEBUG_MACHINE,
       label: "Start with Debugging",
       enabled: machineWaits,
+      accelerator: "Ctrl+F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("debug"));
@@ -536,6 +541,7 @@ export function setupMenu (
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
+      accelerator: "F3",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepInto"));
       }
@@ -544,6 +550,7 @@ export function setupMenu (
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
+      accelerator: "Shift+F3",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOver"));
       }
@@ -552,6 +559,7 @@ export function setupMenu (
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
+      accelerator: "Ctrl+F3",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOut"));
       }

@@ -2,6 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { app } from "electron";
 import { WindowState } from "./WindowStateManager";
+import { mainStore } from "./main-store";
 
 const SETTINGS_FILE_NAME = "klive.settings";
 const SETTINGS_FOLDER = "Klive";
@@ -12,6 +13,12 @@ export type AppSettings = {
     ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
   },
+  theme?: string;
+  showKeyboard?: boolean;
+  fastLoad?: boolean;
+  machineId?: string;
+  clockMultiplier?: number;
+  soundLevel?: number;
   folders?: Record<string, string>;
   excludedProjectItems?: string[];
   userSettings?: Record<string, any>;
@@ -25,6 +32,17 @@ export function saveAppSettings (): void {
   if (!fs.existsSync(filePath)) {
     fs.mkdirSync(filePath);
   }
+
+  // --- Get settings from the current state
+  const state = mainStore.getState();
+  appSettings.theme = state.theme;
+  appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
+  appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
+  appSettings.machineId = state.emulatorState?.machineId;
+  appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
+  appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
+
+  // --- Save to the settings file
   fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
     encoding: "utf8",
     flag: "w"
