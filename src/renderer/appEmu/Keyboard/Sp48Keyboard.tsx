@@ -454,7 +454,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
             3,
             2,
             e.code,
-            e.button === 0 ? undefined : 0 /* CShift */
+            undefined
           );
         }
         break;
@@ -477,7 +477,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
             e.code,
             e.button === 0 ? undefined : 0 /* CShift */
           );
-          machine.queueKeystroke(6, 2, 21 /* N9 */, 0 /* CShift */);
+          machine.queueKeystroke(10, 2, 21 /* N9 */, 0 /* CShift */);
         }
         break;
     }

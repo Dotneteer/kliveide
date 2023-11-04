@@ -19,6 +19,7 @@ import { reportMessagingError } from "@renderer/reportError";
 import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { __DARWIN__ } from "../../electron/electron-utils";
 
 type Props = {
   ide: boolean;
@@ -28,15 +29,15 @@ type Props = {
 const emuStartOptions = [
   {
     value: 'debug',
-    label: 'Start Machine with Debugging',
-    labelCont: 'Continue Debugging',
+    label: "Start with Debugging (Ctrl+F5)",
+    labelCont: 'Continue Debugging (Ctrl+F5)',
     iconName: 'debug',
     cmd: null
   },
   {
     value: 'start',
-    label: 'Start Machine',
-    labelCont: 'Continue',
+    label: 'Start Machine (F5)',
+    labelCont: 'Continue (F5)',
     iconName: 'play',
     cmd: null
   },
@@ -45,15 +46,15 @@ const emuStartOptions = [
 const ideStartOptions = [
   {
     value: 'debug',
-    label: 'Debug Project',
-    labelCont: 'Continue Debugging',
+    label: 'Debug Project (Ctrl+F5)',
+    labelCont: 'Continue Debugging (Ctrl+F5)',
     iconName: 'debug',
     cmd: 'debug'
   },
   {
     value: 'start',
-    label: 'Run Project',
-    labelCont: 'Continue',
+    label: 'Run Project (F5)',
+    labelCont: 'Continue (F5)',
     iconName: 'play',
     cmd: 'run'
   },
@@ -148,7 +149,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-blue'
         title={
           state === MachineControllerState.Running
-            ? 'Pause'
+            ? 'Pause (Shift+F5)'
             : startOpt.labelCont
         }
         enable={
@@ -173,7 +174,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='stop'
         fill='--color-toolbarbutton-red'
-        title='Stop'
+        title='Stop (F4)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Running ||
@@ -195,7 +196,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='restart'
         fill='--color-toolbarbutton-green'
-        title='Restart'
+        title='Restart (Shift+F4)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Running ||
@@ -240,7 +241,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-into'
         fill='--color-toolbarbutton-blue'
-        title='Step Into'
+        title='Step Into (F10)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||
@@ -261,7 +262,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-over'
         fill='--color-toolbarbutton-blue'
-        title='Step Over'
+        title='Step Over (F11)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||
@@ -282,7 +283,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName='step-out'
         fill='--color-toolbarbutton-blue'
-        title='Step Out'
+        title='Step Out (Ctrl+F11)'
         enable={
           !isCompiling && (
             state === MachineControllerState.Pausing ||

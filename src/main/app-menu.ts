@@ -33,13 +33,14 @@ import {
   setVolatileDocStateAction,
   setDiskFileAction,
   protectDiskAction,
-  setRestartTarget
+  setRestartTarget,
+  showKeyboardAction,
+  setFastLoadAction
 } from "../common/state/actions";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -53,12 +54,17 @@ import {
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "../common/state/common-ids";
-import { logEmuEvent, registeredMachines, setMachineType } from "./registeredMachines";
+import {
+  logEmuEvent,
+  registeredMachines,
+  setMachineType
+} from "./registeredMachines";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
+const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
 const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right";
@@ -110,6 +116,10 @@ const EDITOR_FONT_SIZE = "editor_font_size";
 const HELP_MENU = "help_menu";
 const HELP_HOME_PAGE = "help_home_page";
 const HELP_ABOUT = "help_about";
+
+const TAPE_FILE_FOLDER = "tapeFileFolder";
+const TOGGLE_FAST_LOAD = "toggle_fast_load";
+const REWIND_TAPE = "rewind_tape";
 
 /**
  * Creates and sets the main menu of the app
@@ -271,8 +281,7 @@ export function setupMenu (
         click: () => {
           ensureIdeWindow();
         }
-      },
-      {
+      },      {
         type: "separator",
         visible: !ideTraits.isVisible
       },
@@ -317,6 +326,17 @@ export function setupMenu (
         checked: appState.ideViewOptions.showStatusBar,
         click: async mi => {
           mainStore.dispatch(showIdeStatusBarAction(mi.checked));
+          await saveKliveProject();
+        }
+      },
+      {
+        id: TOGGLE_KEYBOARD,
+        label: "Show the Virtual Keyboard",
+        type: "checkbox",
+        visible: emuTraits.isFocused,
+        checked: appState.emuViewOptions.showKeyboard,
+        click: async mi => {
+          mainStore.dispatch(showKeyboardAction(mi.checked));
           await saveKliveProject();
         }
       },
@@ -492,6 +512,7 @@ export function setupMenu (
       id: START_MACHINE,
       label: "Start",
       enabled: machineWaits,
+      accelerator: "F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("start"));
@@ -501,6 +522,7 @@ export function setupMenu (
       id: PAUSE_MACHINE,
       label: "Pause",
       enabled: machineRuns,
+      accelerator: "Shift+F5",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("pause"));
       }
@@ -509,6 +531,7 @@ export function setupMenu (
       id: STOP_MACHINE,
       label: "Stop",
       enabled: machineRestartable,
+      accelerator: "F4",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stop"));
       }
@@ -517,6 +540,7 @@ export function setupMenu (
       id: RESTART_MACHINE,
       label: "Restart",
       enabled: machineRestartable,
+      accelerator: "Shift+F4",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("restart"));
@@ -527,6 +551,7 @@ export function setupMenu (
       id: DEBUG_MACHINE,
       label: "Start with Debugging",
       enabled: machineWaits,
+      accelerator: "Ctrl+F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
         await sendFromMainToEmu(createMachineCommand("debug"));
@@ -536,6 +561,7 @@ export function setupMenu (
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
+      accelerator: "F10",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepInto"));
       }
@@ -544,6 +570,7 @@ export function setupMenu (
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
+      accelerator: "Shift+F11",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOver"));
       }
@@ -552,8 +579,27 @@ export function setupMenu (
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
+      accelerator: "Ctrl+F11",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("stepOut"));
+      }
+    },
+    { type: "separator" },
+    {
+      id: TOGGLE_FAST_LOAD,
+      label: "Fast Load",
+      type: "checkbox",
+      checked: !!appState.emulatorState?.fastLoad,
+      click: async mi => {
+        mainStore.dispatch(setFastLoadAction(mi.checked));
+        await saveKliveProject();
+      }
+    },
+    {
+      id: TOGGLE_FAST_LOAD,
+      label: "Rewind Tape",
+      click: async mi => {
+        await sendFromMainToEmu(createMachineCommand("rewind"));
       }
     },
     { type: "separator" },
@@ -893,7 +939,6 @@ export function setupMenu (
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function setTapeFile (browserWindow: BrowserWindow): Promise<void> {
-  const TAPE_FILE_FOLDER = "tapeFileFolder";
   const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
   const defaultPath =
     appSettings?.folders?.[TAPE_FILE_FOLDER] ||
@@ -910,7 +955,15 @@ async function setTapeFile (browserWindow: BrowserWindow): Promise<void> {
   if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
 
   // --- Read the file
-  const filename = dialogResult.filePaths[0];
+  await setSelectedTapeFile(dialogResult.filePaths[0]);
+}
+
+export async function setSelectedTapeFile (
+  filename: string,
+  confirm?: boolean,
+  suppressError?: boolean
+): Promise<void> {
+  // --- Read the file
   const tapeFileFolder = path.dirname(filename);
 
   // --- Store the last selected tape file

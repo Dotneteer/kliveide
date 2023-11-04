@@ -29,13 +29,19 @@ import {
   ideFocusedAction,
   saveUserSettingAction,
   isWindowsAction,
-  unloadWindowsAction
+  unloadWindowsAction,
+  setClockMultiplierAction,
+  setSoundLevelAction,
+  setThemeAction,
+  showKeyboardAction,
+  setFastLoadAction,
+  setTapeFileAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setupMenu } from "./app-menu";
+import { setSelectedTapeFile, setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron/electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
@@ -213,12 +219,24 @@ async function createAppWindows () {
     const state = mainStore.getState();
     const loaded = state.emuLoaded;
     if (loaded && !machineTypeInitialized) {
-      // --- Set the default machine type to ZX Spectrum 48
+      // --- Sign machine initialization is done, so we do not run into this code again
       machineTypeInitialized = true;
-      await setMachineType("sp48");
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
+
+      // --- Set saved traits
+      mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
+      await setMachineType(appSettings.machineId ?? "sp48");
+      mainStore.dispatch(
+        setClockMultiplierAction(appSettings.clockMultiplier ?? 1)
+      );
+      mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
+      mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
+      mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
+      if (appSettings.lastTapeFile) {
+        setSelectedTapeFile(appSettings.lastTapeFile, false, false);
+      }
     }
 
     // --- Adjust menu items whenever the app state changes

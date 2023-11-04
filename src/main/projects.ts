@@ -23,7 +23,7 @@ import { app, BrowserWindow, dialog } from "electron";
 import * as fs from "fs";
 import * as path from "path";
 import { mainStore } from "./main-store";
-import { appSettings, saveAppSettings } from "./settings";
+import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
 import {
   TEMPLATES,
   PROJECT_FILE,
@@ -265,6 +265,17 @@ export function resolveHomeFilePath (toResolve: string): string {
   return path.isAbsolute(toResolve)
     ? toResolve
     : path.join(app.getPath("home"), toResolve);
+}
+
+/**
+ * Resolves the specified path using the save folder as relative root
+ * @param toResolve Path to resolve
+ * @returns Resolved path
+ */
+export function resolveSavedFilePath (toResolve: string): string {
+  return path.isAbsolute(toResolve)
+    ? toResolve
+    : path.join(path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"), toResolve);
 }
 
 /**

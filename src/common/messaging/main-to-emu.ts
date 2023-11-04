@@ -43,6 +43,8 @@ export interface EmuSetTapeFileRequest extends MessageBase {
   type: "EmuSetTapeFile";
   file: string;
   contents: Uint8Array;
+  confirm?: boolean;
+  suppressError?: boolean;
 }
 
 /**
@@ -53,6 +55,8 @@ export interface EmuSetDiskFileRequest extends MessageBase {
   diskIndex: number;
   file?: string;
   contents?: Uint8Array;
+  confirm?: boolean;
+  suppressError?: boolean;
 }
 
 /**

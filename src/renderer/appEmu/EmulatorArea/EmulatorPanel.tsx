@@ -231,7 +231,8 @@ export const EmulatorPanel = () => {
         const response = await messenger.sendMessage({
           type: "MainSaveBinaryFile",
           path: args.savedFileInfo.name,
-          data: args.savedFileInfo.contents
+          data: args.savedFileInfo.contents,
+          resolveIn: "saveFolder"
         });
         if (response.type === "ErrorResponse") {
           reportMessagingError(

@@ -391,16 +391,18 @@ export async function processMainToEmuMessages (
       const tapReader = new TapReader(reader);
       result = tapReader.readContent();
       if (result) {
-        const response = await emuToMain.sendMessage({
-          type: "MainDisplayMessageBox",
-          messageType: "error",
-          title: "Tape file error",
-          message: `Error while processing tape file ${message.file} (${result})`
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `Error displaying message dialog: ${response.message}`
-          );
+        if (!message.suppressError) {
+          const response = await emuToMain.sendMessage({
+            type: "MainDisplayMessageBox",
+            messageType: "error",
+            title: "Tape file error",
+            message: `Error while processing tape file ${message.file} (${result})`
+          });
+          if (response.type === "ErrorResponse") {
+            reportMessagingError(
+              `Error displaying message dialog: ${response.message}`
+            );
+          }
         }
         return;
       } else {
@@ -417,16 +419,18 @@ export async function processMainToEmuMessages (
     controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
 
     // --- Done.
-    const response = await emuToMain.sendMessage({
-      type: "MainDisplayMessageBox",
-      messageType: "info",
-      title: "Tape file set",
-      message: `Tape file ${message.file} successfully set.`
-    });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(
-        `Error displaying message dialog: ${response.message}`
-      );
+    if (message.confirm) {
+      const response = await emuToMain.sendMessage({
+        type: "MainDisplayMessageBox",
+        messageType: "info",
+        title: "Tape file set",
+        message: `Tape file ${message.file} successfully set.`
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `Error displaying message dialog: ${response.message}`
+        );
+      }
     }
   }
 
@@ -444,30 +448,34 @@ export async function processMainToEmuMessages (
       controller.machine.setMachineProperty(propName, floppy);
 
       // --- Done.
-      const response = await emuToMain.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "info",
-        title: floppy ? "Disk inserted" : "Disk ejected",
-        message: floppy
-          ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
-          : `Disk successfully ejected from drive ${drive}`
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `Error displaying message dialog: ${response.message}`
-        );
+      if (message.confirm) {
+        const response = await emuToMain.sendMessage({
+          type: "MainDisplayMessageBox",
+          messageType: "info",
+          title: floppy ? "Disk inserted" : "Disk ejected",
+          message: floppy
+            ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
+            : `Disk successfully ejected from drive ${drive}`
+        });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `Error displaying message dialog: ${response.message}`
+          );
+        }
       }
     } catch (err) {
-      const response = await emuToMain.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "error",
-        title: "Disk file error",
-        message: `Error while processing disk file ${message.file} (${err})`
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `Error displaying message dialog: ${response.message}`
-        );
+      if (!message.suppressError) {
+        const response = await emuToMain.sendMessage({
+          type: "MainDisplayMessageBox",
+          messageType: "error",
+          title: "Disk file error",
+          message: `Error while processing disk file ${message.file} (${err})`
+        });
+        if (response.type === "ErrorResponse") {
+          reportMessagingError(
+            `Error displaying message dialog: ${response.message}`
+          );
+        }
       }
       return;
     }

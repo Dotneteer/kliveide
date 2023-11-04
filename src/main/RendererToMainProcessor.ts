@@ -26,6 +26,7 @@ import {
   openFolderByPath,
   resolveHomeFilePath,
   resolvePublicFilePath,
+  resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
 import { appSettings, saveAppSettings } from "./settings";
@@ -475,6 +476,9 @@ function resolveMessagePath (inputPath: string, resolveIn?: string): string {
       case "project":
         inputPath = getKliveProjectFolder(inputPath);
         break;
+      case "saveFolder":
+        inputPath = resolveSavedFilePath(inputPath);
+        break;  
       default:
         inputPath = resolvePublicFilePath(inputPath);
         break;
