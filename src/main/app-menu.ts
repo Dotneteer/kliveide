@@ -60,6 +60,7 @@ import {
   registeredMachines,
   setMachineType
 } from "./registeredMachines";
+import { createSettingsReader } from "../common/utils/SettingsReader";
 
 const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -154,6 +155,9 @@ export function setupMenu (
   const currentMachine = registeredMachines.find(m => m.id === machineId);
   const disksState = appState?.emulatorState?.floppyDisks ?? [];
   const ideFocus = appState?.ideFocused;
+
+  const settingsReader = createSettingsReader(mainStore);
+  const allowDevTools = settingsReader.readSetting("devTools.allow");
 
   function getWindowTraits (w?: BrowserWindow): {
     isFocused: boolean;
@@ -268,6 +272,7 @@ export function setupMenu (
       {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",
+        visible: !!allowDevTools,
         accelerator: "Ctrl+Shift+I",
         click: () => {
           BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
