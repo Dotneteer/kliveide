@@ -9,6 +9,7 @@ import {
 } from "electron";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import { __DARWIN__ } from "../electron/electron-utils";
 import { mainStore } from "./main-store";
 import {
@@ -59,6 +60,8 @@ import {
   registeredMachines,
   setMachineType
 } from "./registeredMachines";
+
+const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -150,6 +153,7 @@ export function setupMenu (
   const machineId = appState?.emulatorState?.machineId;
   const currentMachine = registeredMachines.find(m => m.id === machineId);
   const disksState = appState?.emulatorState?.floppyDisks ?? [];
+  const ideFocus = appState?.ideFocused;
 
   function getWindowTraits (w?: BrowserWindow): {
     isFocused: boolean;
@@ -170,10 +174,6 @@ export function setupMenu (
       label: app.name,
       id: SYSTEM_MENU_ID,
       submenu: [
-        { role: "about" },
-        { type: "separator" },
-        { role: "services" },
-        { type: "separator" },
         { role: "hide" },
         { role: "hideOthers" },
         { role: "unhide" },
@@ -281,7 +281,8 @@ export function setupMenu (
         click: () => {
           ensureIdeWindow();
         }
-      },      {
+      },
+      {
         type: "separator",
         visible: !ideTraits.isVisible
       },
@@ -596,7 +597,7 @@ export function setupMenu (
       }
     },
     {
-      id: TOGGLE_FAST_LOAD,
+      id: REWIND_TAPE,
       label: "Rewind Tape",
       click: async mi => {
         await sendFromMainToEmu(createMachineCommand("rewind"));
@@ -878,19 +879,33 @@ export function setupMenu (
 
   template.push({
     id: HELP_MENU,
-    visible: ideTraits.isVisible,
     label: "Help",
     submenu: [
       {
         id: HELP_HOME_PAGE,
         label: "Klive IDE Home Page",
-        click: () => shell.openExternal("https://dotneteer.github.io/kliveide")
+        click: () => shell.openExternal(KLIVE_GITHUB_PAGES)
       },
       { type: "separator" },
       {
         id: HELP_ABOUT,
         label: "About",
-        click: () => app.showAboutPanel()
+        click: async () => {
+          const result = await dialog.showMessageBox(
+            ideFocus ? ideWindow : emuWindow,
+            {
+              message: "About Klive IDE",
+              detail:
+                `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
+                `Electron version: ${process.versions.electron}\n` +
+                `OS version: ${os.version()}`,
+              buttons: ["Close", "Visit website"]
+            }
+          );
+          if (result.response) {
+            shell.openExternal(KLIVE_GITHUB_PAGES);
+          }
+        }
       }
     ]
   });
