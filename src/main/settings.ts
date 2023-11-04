@@ -4,8 +4,8 @@ import { app } from "electron";
 import { WindowState } from "./WindowStateManager";
 import { mainStore } from "./main-store";
 
-const SETTINGS_FILE_NAME = "klive.settings";
-const SETTINGS_FOLDER = "Klive";
+export const KLIVE_HOME_FOLDER = "Klive";
+export const SETTINGS_FILE_NAME = "klive.settings";
 
 export type AppSettings = {
   windowStates?: {
@@ -19,6 +19,7 @@ export type AppSettings = {
   machineId?: string;
   clockMultiplier?: number;
   soundLevel?: number;
+  lastTapeFile?: string;
   folders?: Record<string, string>;
   excludedProjectItems?: string[];
   userSettings?: Record<string, any>;
@@ -41,6 +42,7 @@ export function saveAppSettings (): void {
   appSettings.machineId = state.emulatorState?.machineId;
   appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
   appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
+  appSettings.lastTapeFile = state.emulatorState?.tapeFile;
 
   // --- Save to the settings file
   fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
@@ -59,5 +61,5 @@ export function loadAppSettings(): void {
 }
 
 function getSettingsFilePath (): string {
-  return path.join(app.getPath("home"), SETTINGS_FOLDER, SETTINGS_FILE_NAME);
+  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME);
 }
