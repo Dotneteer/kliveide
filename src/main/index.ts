@@ -56,6 +56,7 @@ import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { setMachineType } from "./registeredMachines";
 import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
+import { createSettingsReader } from "../common/utils/SettingsReader";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -86,6 +87,15 @@ registerCompiler(new Z80Compiler());
 registerCompiler(new ZxBasicCompiler());
 
 loadAppSettings();
+
+// --- Store initial user settings
+mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
+
+// --- Get seeting used
+const settingsReader = createSettingsReader(mainStore);
+const allowDevTools = !!settingsReader.readSetting("devTools.allow");
+const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
+const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
@@ -156,6 +166,9 @@ async function createAppWindows () {
       webSecurity: false
     }
   });
+  if (displayEmuDevTools) {
+    emuWindow.webContents.toggleDevTools();
+  }
 
   emuWindowStateManager.manage(emuWindow);
 
@@ -200,15 +213,15 @@ async function createAppWindows () {
     show:
       ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
   });
+  if (displayIdeDevTools && !!appSettings.windowStates?.showIdeOnStartup) {
+    ideWindow.webContents.toggleDevTools();
+  }
 
   ideWindowStateManager.manage(ideWindow);
 
   // --- Initialize messaging
   registerMainToEmuMessenger(emuWindow);
   registerMainToIdeMessenger(ideWindow);
-
-  // --- Store initial user settings
-  mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 
   // --- Prepare the main menu. Update items on application state change
   Menu.setApplicationMenu(null);
