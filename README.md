@@ -1,50 +1,99 @@
-# Klive IDE
+# Klive IDE Project
 
-## Source code structure
+Quick links:
+- [What Klive IDE Is](#what-klive-ide-is)
+- [Klive Documentation](https://dotneteer.github.io/kliveide/)
 
-This figure shows the source code structure of the project (essential files and folders only):
+## Announcement
 
-```
-|-- _docs: temporary files for documentation
-|-- .vscode: VS Code setting
-|-- dist: distribution files for the Electron renderer process (not committed to repo)
-|-- node_modules: node files (not commited to repo)
-|-- dist-electron: distribution files for the Electron renderer process (not committed to repo)
-|-- public: public resources used by the main and renderer processes
-|-- release: released build files (not committed to repo)
-|-- src: the root folder of all source code files
-    |-- common: common code available in the main and renderer processes
-    |-- electron: resources and other files (no code files) related to Electron Build
-    |-- emu: Th ZX Spectrum Emulator core
-    |-- lib: source code of external libraries used within the project
-    |-- main: the source code of the Electron main process
-    |-- renderer: the source code of the Electron renderer process
-    |-- main.tsx: the entry point of the EMU and IDE renderer processes
-|-- test: the root folder for all test files
-|-- index.htlm: the start file for both renderer (EMU and IDE) processes
-|-- package.json: the package file of the project
-|-- tsconfig.json: the renderer processes' TypeScript configuration
-|-- tsconfig.node.json: the main process's TypeScript configuration
-|-- vite.config.js
-```
+**Klive IDE is about to receive a significant update affecting its functionality, stability, and internal architecture. I plan to release the new version (Klive v0.30.0) in December, before Christmas.**
 
-## Electron processes
+This new version, due to the new architecture, removes annoying issues and implements long-awaited features such as exporting code, viewing the structure of tape files, and improved source code debugging.
 
-Klive IDE utilizes three processes following the Electron architecture:
-- The **main** process (used in Node.js) accesses machine resources, such as files directly. This process displays the main menu and initiates menu command execution by sending messages to the EMU and IDE processes. This process holds the Z80 Assembler that compiles the Klive IDE code to binary content.
-- The **EMU** renderer process displays a window with the ZX Spectrum Emulator and related UI. This process runs the emulator entirely. During machine setup, it communicates with the main process to obtain the necessary resources (e.g., ROM files).
-- The **IDE** renderer process displays a window with the development environment UI. This process communicates with the main process to get resources and the emulator process to obtain machine information to show in the IDE.
+> **Note**: The new release brings a new project file format. You will still be able to work with your Z80 assembly and ZX Basic source files; however, you should manually migrate your projects from the old format. I do not plan to add migration tools, but I will provide simple instructions. Sorry for that inconvenience. I plan to use my time to deliver more significant features!
 
-Though Klive has two renderer processes, they share the same source code. When the renderer processes start, they check their URL's for the `?emu` and `?ide` query parameters to decide whether they display the EMU or the IDE UI.
+**After the release, I will entirely focus on the new version and plan to abandon supporting the old ones gradually.**
 
-This check is in the `src/main.tsx` file. The UI creates an `EmuApp` or an `IdeApp` React component according to the query parameter.
+## How You Can Contribute
 
-## State management
+I run this project for fun (my first computer was a ZX 81, and then I got a ZX Spectrum 48K). I never plan to earn money from this project; however, I am looking for networking opportunities and collaboration with Sinclair computer fans.
 
-Klive IDE uses the redux-style state management. Each process contains an up-to-date store with the actual application state. Each process (main, EMU, and IDE) may initiate state changes through reducer actions. Whenever a store's state changes due to an action, the action is forwarded to the other processes so that those can update their state.
+Klive is entirely written in TypeScript (using the Electron Shell and React). I'd be happy if you could contribute to the project, whether just mending documentation or other text typos, making small changes, fixing bugs, or even adding new features.
 
-The `src/common/state` folder contains all files for state management. State changes are conveyed through the Electron IPC mechanism with a message type of `ForwardAction`. Each process has its infrastructure to send messages and process incoming message requests.
+If you're interested, contact me through dotneteer@hotmail.com!
 
-The following figure depicts this communication; it displays the message channel names (arrows) and the messaging class names (boxes):
+## What Klive IDE Is
 
-![Messaging](_docs/messaging.svg)
+**Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac and Windows.**
+
+Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
+
+Klive IDE supports dual monitor mode to place the Emulator and IDE on different monitors while working with code.
+
+![Intro](/public/images/intro/klive-ide-intro.png)
+
+### Supported Emulators
+
+Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports these emulators:
+
+- **ZX Spectrum 48K**
+- **ZX Spectrum 128K**
+- **ZX Spectrum +2E/+3E** (*in progress*)
+- ZX 80/81 (*in the future*)
+- Cambridge Z88 (*in the future*)
+- ZX Spectrum Next (*in the future*)
+
+### Emulator Features
+
+The emulator can run the selected machine with or without debugging. These modes can be changed without restarting the running machine:
+
+- Starting, pausing, continuing to run
+- Start or continue in debug mode
+- Setting up breakpoints, step-in, step-over, step-out modes
+
+To examine the state of the emulator, Klive offers several views:
+
+- Full CPU view
+- Full ULA view
+- Memory view with live refresh
+- Disassembly view with execution point tracking
+- Monitoring system variable values
+- Displaying (and exporting) the current BASIC listing
+
+You can quickly load and play programs (games) from files:
+
+- Loading tape files (`.tap` and `.tzx`)
+- Fast load
+- Loading from disk files (`.dsk`) with ZX Spectrum +3E
+- Writing and formatting disk (`.dsk`) files (*in progress*)
+
+Other emulator features:
+
+- Visual keyboard (ZX Spectrum 48K and ZX Spectrum 128K styles)
+- Multiplying CPU clock speed (1-24 multiplier)
+- Setting up the sound level, muting and unmuting sound
+
+Planned features (*in the future*):
+
+- Using custom machine ROMs
+- Memory read/write breakpoints
+- I/O read/write breakpoints
+- Breakpoints with hit count conditions
+
+### IDE Features
+
+The IDE allows you to open project folders that keep the files belonging to a particular (development) project together. You can use Z80 Assembly language (with the built-in Klive Z80 Assembler) and ZX BASIC (Boriel's Basic) as your programming language.
+
+- Syntax highlighting
+- Source code debugging (works with the Klive Z80 Assembler)
+- Exporting the compiled code to tape files (`.tap` and `.tzx) with BASIC loaders
+
+Klive's unique feature is the one-click start and debugging: With a click of one button, your code is compiled and injected into the selected emulator and immediately starts up. You can start your code with debugging (or pause it and continue with debugging).
+
+Commands: The IDE has an interactive command panel to issue CLI commands executed within the IDE.
+
+Planned features (*in the future*):
+
+- Watch Panel: display runtime information about memory variables (expressions)
+- Conditional breakpoints
+- Integration with other assemblers, including compilation and optional source code debugging (if the particular compiler supports debug symbol information).
