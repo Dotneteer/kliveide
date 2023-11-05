@@ -34,6 +34,7 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
 import { KliveProjectStructure } from "../common/abstractions/KliveProjectStructure";
 import { setMachineType } from "./registeredMachines";
+import { sendFromMainToIde } from "@common/messaging/MainToIdeMessenger";
 
 type ProjectCreationResult = {
   path?: string;
@@ -127,6 +128,7 @@ export async function openFolderByPath (
   if (!fs.existsSync(projectFolder)) {
     return `Folder ${projectFolder} does not exists.`;
   }
+  await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
   const disp = mainStore.dispatch;
   disp(closeFolderAction());
 

@@ -14,6 +14,8 @@ import {
   BASIC_EDITOR
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
+import { dimMenuAction } from "@common/state/actions";
+import { IProjectService } from "@renderer/abstractions/IProjectService";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -116,9 +118,16 @@ export async function processMainToIdeMessages (
     }
 
     case "IdeSaveAllBeforeQuit": {
-      await projectService.performAllDelayedSavesNow();
+      await saveAllBeforeQuit(store, projectService);
       break;
     }
   }
   return defaultResponse();
+}
+
+export async function saveAllBeforeQuit(store: Store<AppState>, projectService: IProjectService) : Promise<void> {
+  let wasDimmed = store.getState().dimMenu;
+  store.dispatch(dimMenuAction(true))
+  try { await projectService.performAllDelayedSavesNow(); }
+  finally { store.dispatch(dimMenuAction(wasDimmed)); }
 }

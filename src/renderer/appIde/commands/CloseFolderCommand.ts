@@ -7,6 +7,7 @@ import {
   commandSuccess
 } from "../services/ide-commands";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
+import { saveAllBeforeQuit } from "../MainToIdeProcessor";
 
 export class CloseFolderCommand extends CommandWithNoArgBase {
   readonly id = "close";
@@ -20,6 +21,7 @@ export class CloseFolderCommand extends CommandWithNoArgBase {
     if (!projectPath) {
       return commandError("No folder is open in the IDE.");
     }
+    await saveAllBeforeQuit(context.store, context.service.projectService);
     context.store.dispatch(closeFolderAction(), context.messageSource);
     writeSuccessMessage(context.output, `Folder ${projectPath} closed.`);
     return commandSuccess;

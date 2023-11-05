@@ -478,7 +478,6 @@ async function forwardActions (
 }
 
 async function saveOnClose () {
-  mainStore.dispatch(dimMenuAction(true));
   await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
   ideSaved = true;
 }
