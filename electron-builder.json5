@@ -8,7 +8,7 @@
   asar: true,
   directories: {
     output: "release/${version}",
-    buildResources: "electron/resources",
+    buildResources: "src/electron/resources",
   },
   files: [
     "dist-electron",
@@ -34,7 +34,7 @@
     artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
   linux: {
-    icon: "electron/resources/iconset",
+    icon: "src/electron/resources/iconset",
     target: ["AppImage", "deb"],
     artifactName: "${productName}-Linux-${version}.${ext}",
   },
