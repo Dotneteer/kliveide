@@ -10,15 +10,15 @@ Quick links:
 
 This new version, due to the new architecture, removes annoying issues and implements long-awaited features such as exporting code, viewing the structure of tape files, and improved source code debugging.
 
-> **Note**: The new project will still be able to work with your Z80 assembly and ZX Basic source files; however, the project file's format will be slightly changed. I do not plan to add migration tools to move your old Klive project to the new format; unfortunately, you should do it manually. Sorry for that inconvenience. I plan to use my time to deliver more significant features!
+> **Note**: The new release brings a new project file format. You will still be able to work with your Z80 assembly and ZX Basic source files; however, you should manually migrate your projects from the old format. I do not plan to add migration tools, but I will provide simple instructions. Sorry for that inconvenience. I plan to use my time to deliver more significant features!
 
-**After the release, I will entirely focus on the new version and plan to abandon supporting the old ones**.
+**After the release, I will entirely focus on the new version and plan to abandon supporting the old ones gradually.**
 
 ## How You Can Contribute
 
 I run this project for fun (my first computer was a ZX 81, and then I got a ZX Spectrum 48K). I never plan to earn money from this project; however, I am looking for networking opportunities and collaboration with Sinclair computer fans.
 
-Klive is entirely written in TypeScript (using the Electron Shell). I'd be happy if you could contribute to the project, whether just mending documentation or other text typos, making small changes, fixing bugs, or even adding new features.
+Klive is entirely written in TypeScript (using the Electron Shell and React). I'd be happy if you could contribute to the project, whether just mending documentation or other text typos, making small changes, fixing bugs, or even adding new features.
 
 If you're interested, contact me through dotneteer@hotmail.com!
 
