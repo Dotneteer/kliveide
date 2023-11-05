@@ -260,6 +260,8 @@ export interface ISourceFileItem {
 export interface IFileLine {
   fileIndex: number;
   line: number;
+  startColumn?: number;
+  endColumn?: number;
 }
 
 /**

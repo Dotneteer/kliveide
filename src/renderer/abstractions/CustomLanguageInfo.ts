@@ -17,6 +17,7 @@ type CustomLanguageInfo = {
   lightTheme?: any;
   darkTheme?: any;
   supportsBreakpoints?: boolean;
+  fullLineBreakpoints?: boolean;
   compiler?: string;
 };
 

@@ -109,6 +109,7 @@ import {
   IEvaluationContext,
   IExpressionValue,
   IfDefinition,
+  IFileLine,
   IfSection,
   IListFileItem,
   IMacroDefinition,
@@ -131,7 +132,10 @@ import {
   setRandomSeed
 } from "./expressions";
 import { FixupEntry } from "./fixups";
-import { ExpressionValueType, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
+import {
+  ExpressionValueType,
+  SpectrumModelType
+} from "../../common/abstractions/IZ80CompilerService";
 
 /**
  * The file name of a direct text compilation
@@ -429,8 +433,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             break;
           }
         }
-      }
-      else {
+      } else {
         this.applyScopedDirective(
           line as unknown as Directive,
           ifdefStack,
@@ -1102,11 +1105,9 @@ export class Z80Assembler extends ExpressionEvaluator {
           !(
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
-            (
-              (isFieldAssignment &&
-              isByteEmittingPragma(asmLine)) &&
-              this._currentStructInvocation
-            )
+            (isFieldAssignment &&
+              isByteEmittingPragma(asmLine) &&
+              this._currentStructInvocation)
           )
         ) {
           if (
@@ -1242,7 +1243,9 @@ export class Z80Assembler extends ExpressionEvaluator {
         ) {
           this._output.sourceMap[addr] = {
             fileIndex: asmLine.fileIndex,
-            line: asmLine.line
+            line: asmLine.line,
+            startColumn: asmLine.startColumn,
+            endColumn: asmLine.endColumn
           };
           this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, addr);
           this._currentListFileItem.codeLength =
@@ -1839,7 +1842,13 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     let currentAddr = this.getCurrentAssemblyAddress();
     if (skipAddr.value < currentAddr) {
-      this.reportAssemblyError("Z0313", pragma, null, skipAddr.value, currentAddr);
+      this.reportAssemblyError(
+        "Z0313",
+        pragma,
+        null,
+        skipAddr.value,
+        currentAddr
+      );
       return;
     }
     var fillByte = 0xff;
@@ -2590,7 +2599,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       asmLine.line,
       currentAddress
     );
-    const fileLine = { fileIndex: asmLine.fileIndex, line: asmLine.line - 1 };
+    const fileLine: IFileLine = {
+      fileIndex: asmLine.fileIndex,
+      line: asmLine.line - 1,
+      startColumn: (asmLine.sourceText ?? "").length - (asmLine.sourceText ?? "").trimStart().length,
+      endColumn: asmLine.endColumn
+    };
     this._output.sourceMap[currentAddress] = fileLine;
 
     // --- We store the original source file information to
@@ -5374,7 +5388,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.reportAssemblyError(
       "Z0604",
       op,
-      toPosition(issueWithOp1 ? op.operand1.startToken : op.operand2.startToken));
+      toPosition(issueWithOp1 ? op.operand1.startToken : op.operand2.startToken)
+    );
   }
 
   /**
@@ -6018,14 +6033,14 @@ export class Z80Assembler extends ExpressionEvaluator {
   }
 }
 
-function toPosition(token: Token): NodePosition {
+function toPosition (token: Token): NodePosition {
   return {
     line: token.location.line,
     startPosition: token.location.startPos,
     endPosition: token.location.endPos,
     startColumn: token.location.startColumn,
     endColumn: token.location.endColumn
-  }
+  };
 }
 
 /**

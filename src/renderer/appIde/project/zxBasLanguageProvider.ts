@@ -13,6 +13,7 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   options: {
   },
   supportsBreakpoints: false,
+  fullLineBreakpoints: true,
   languageDef: {
     ignoreCase: true,
     statements: [

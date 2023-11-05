@@ -585,10 +585,20 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       const lineInfo = compilation.result.listFileItems.find(
         li => li.fileIndex === fileIndex && li.address === pc
       );
+
+      // --- Get source map information
+      const sourceMapInfo = compilation.result.sourceMap[pc];
       if (lineInfo) {
         oldExecPointDecoration.current = editor.current.deltaDecorations(
           oldExecPointDecoration.current,
-          [createCurrentBreakpointDecoration(lineInfo.lineNumber)]
+          [
+            createCurrentBreakpointDecoration(
+              languageInfo.fullLineBreakpoints,
+              lineInfo.lineNumber,
+              sourceMapInfo?.startColumn,
+              sourceMapInfo?.endColumn
+            )
+          ]
         );
       }
       return;
@@ -649,7 +659,7 @@ function createMixedBreakpointDecoration (
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
-      isWholeLine: false,
+      isWholeLine: true,
       glyphMarginClassName: disabled
         ? styles.disabledBreakpointMargin
         : styles.mixedBreakpointMargin
@@ -696,11 +706,21 @@ function createUnreachableBreakpointDecoration (lineNo: number): Decoration {
  * @param lineNo Line to apply the decoration to
  * @returns
  */
-function createCurrentBreakpointDecoration (lineNo: number): Decoration {
+function createCurrentBreakpointDecoration (
+  fullLine: boolean,
+  lineNo: number,
+  startColumn?: number,
+  endColumn?: number
+): Decoration {
   return {
-    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    range: new monacoEditor.Range(
+      lineNo,
+      startColumn ?? 1,
+      lineNo,
+      (endColumn ?? 1) + 1
+    ),
     options: {
-      isWholeLine: true,
+      isWholeLine: fullLine,
       className: styles.activeBreakpointLine,
       glyphMarginClassName: styles.activeBreakpointMargin
     }
