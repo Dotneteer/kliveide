@@ -67,9 +67,11 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Create the command line arguments
       const outFilename = `${filename}.bin`;
+      const labelFilename = `${filename}.lab`;
       const cmdLine = await createZxbCommandLineArgs(
         filename,
         outFilename,
+        labelFilename,
         null
       );
       const traceOutput = [`Executing ${cmdLine}`];
@@ -101,13 +103,21 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Extract the output
       const org = settingsReader.readSetting(ZXBC_MACHINE_CODE_ORIGIN);
       const machineCode = new Uint8Array(fs.readFileSync(outFilename));
+
+      // --- Extract the labels
+      const labelList = fs.readFileSync(labelFilename, "utf8");
       const segment: BinarySegment = {
         emittedCode: Array.from(machineCode),
         startAddress: typeof org === "number" ? org & 0xffff : 0x8000
       };
 
-      // --- Remove the output file
-      fs.unlinkSync(outFilename);
+      // --- Remove the output files
+      try {
+        fs.unlinkSync(outFilename);
+        fs.unlinkSync(labelFilename);
+      } catch {
+        // --- Intentionally ignored
+      }
 
       // --- Done.
       return {
@@ -123,16 +133,19 @@ export class ZxBasicCompiler extends CompilerBase {
 
     /**
      * Generates the command-line arguments to run ZXBC.EXE
+     * @param inputFile Source file to compile
      * @param outputFile Output file to generate
+     * @param labelFile Lable file to generate
      * @param rawArgs Raw arguments from the code
      */
     async function createZxbCommandLineArgs (
       inputFile: string,
       outputFile: string,
+      labelFile: string,
       rawArgs: string | null
     ): Promise<string> {
       const settingsReader = createSettingsReader(mainStore);
-      const argRoot = `${inputFile} --output ${outputFile} `;
+      const argRoot = `${inputFile} --output ${outputFile} --mmap ${labelFile} `;
       let additional = rawArgs ? rawArgs.trim() : "";
       if (!additional) {
         const arrayBaseOne = !!settingsReader.readSetting(
