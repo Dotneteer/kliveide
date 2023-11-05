@@ -111,6 +111,8 @@ const ExplorerPanel = () => {
     vlApi.current.refresh();
   };
 
+  const [forceRefresh, setForceRefresh] = useState(0);
+
   // --- Let's use this context menu when clicking a project tree node
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
@@ -118,6 +120,17 @@ const ExplorerPanel = () => {
       state={contextMenuState}
       onClickAway={contextMenuApi.conceal}
     >
+      {selectedNodeIsRoot && (
+        <>
+          <ContextMenuItem
+            text='Refresh'
+            clicked={()=> {
+              folderCache.clear();
+              setForceRefresh(forceRefresh + 1);
+            }}
+          />
+        </>
+      )}
       {selectedContextNodeIsFolder && (
         <>
           <ContextMenuItem
@@ -168,7 +181,7 @@ const ExplorerPanel = () => {
       />
       <ContextMenuItem
         text='Exclude'
-        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
+        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject}
         clicked={async () => {
           await ideCommandsService.executeCommand(
             `p:x "${selectedContextNode.data.fullPath}"`
@@ -199,6 +212,7 @@ const ExplorerPanel = () => {
               );
               await saveProject(messenger);
             }}
+            disabled={!isKliveProject}
           />
         </>
       )}
@@ -564,7 +578,7 @@ const ExplorerPanel = () => {
         folderCache.set(folderPath, projectTree);
       }
     })();
-  }, [folderPath, excludedItems]);
+  }, [folderPath, excludedItems, forceRefresh]);
 
   // --- Render the Explorer panel
   return folderPath ? (
