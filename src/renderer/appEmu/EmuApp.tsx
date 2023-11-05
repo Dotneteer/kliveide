@@ -7,9 +7,18 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { RequestMessage, NotReadyResponse, errorResponse, ResponseMessage } from "@messaging/messages-core";
+import {
+  RequestMessage,
+  NotReadyResponse,
+  errorResponse,
+  ResponseMessage
+} from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
+import {
+  displayDialogAction,
+  emuLoadedAction,
+  setAudioSampleRateAction
+} from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import styles from "@styles/app.module.scss";
@@ -18,6 +27,8 @@ import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
+import { FIRST_STARTUP_DIALOG_EMU } from "@common/messaging/dialog-ids";
+import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -33,8 +44,11 @@ const EmuApp = () => {
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
-  const kliveProjectLoaded = useSelector(s => s.project?.isKliveProject ?? false);
+  const kliveProjectLoaded = useSelector(
+    s => s.project?.isKliveProject ?? false
+  );
   const dimmed = useSelector(s => s.dimMenu ?? false);
+  const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -67,10 +81,20 @@ const EmuApp = () => {
 
   return (
     <div id='appMain' className={styles.app}>
-      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />}
+      {showToolbar && (
+        <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
+      )}
       <EmulatorArea />
       {showStatusBar && <EmuStatusBar />}
       <BackDrop visible={dimmed} />
+
+      {dialogId === FIRST_STARTUP_DIALOG_EMU && (
+        <FirstStartDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
     </div>
   );
 };

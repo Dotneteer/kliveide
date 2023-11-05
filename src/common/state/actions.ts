@@ -355,3 +355,7 @@ export const saveProjectSettingAction: ActionCreator = value => ({
   type: "SAVE_PROJECT_SETTINGS",
   payload: { value }
 });
+
+export const startScreenDisplayedAction: ActionCreator = () => ({
+  type: "START_SCREEN_DISPLAYED"
+});

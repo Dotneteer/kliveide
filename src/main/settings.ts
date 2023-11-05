@@ -13,6 +13,7 @@ export type AppSettings = {
     ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
   },
+  startScreenDisplayed?: boolean;
   theme?: string;
   showKeyboard?: boolean;
   fastLoad?: boolean;
@@ -36,6 +37,7 @@ export function saveAppSettings (): void {
 
   // --- Get settings from the current state
   const state = mainStore.getState();
+  appSettings.startScreenDisplayed = state.startScreenDisplayed;
   appSettings.theme = state.theme;
   appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
   appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;

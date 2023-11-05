@@ -81,4 +81,6 @@ export interface ActionTypes {
   APPLY_USER_SETTING: null;
   SAVE_USER_SETTINGS: null;
   SAVE_PROJECT_SETTINGS: null;
+
+  START_SCREEN_DISPLAYED: null;
 }

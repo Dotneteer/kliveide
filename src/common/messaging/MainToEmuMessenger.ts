@@ -46,14 +46,14 @@ class MainToEmuMessenger extends MessengerBase {
 /**
  * The singleton messenger instance of the messenger
  */
-let mainToIdeMessenger: MainToEmuMessenger | undefined;
+let mainToEmuMessenger: MainToEmuMessenger | undefined;
 
 /**
  * Registers the messenger to be used with the main process.
  * @param window The browser window to use as the message target
  */
 export function registerMainToEmuMessenger (window: BrowserWindow) {
-  mainToIdeMessenger = new MainToEmuMessenger(window);
+  mainToEmuMessenger = new MainToEmuMessenger(window);
 }
 
 /**
@@ -64,5 +64,7 @@ export function registerMainToEmuMessenger (window: BrowserWindow) {
 export async function   sendFromMainToEmu<TResp extends ResponseMessage> (
   message: RequestMessage
 ): Promise<TResp> {
-  return await mainToIdeMessenger.sendMessage(message);
+  if (mainToEmuMessenger) {
+    return await mainToEmuMessenger.sendMessage(message);
+  }
 }

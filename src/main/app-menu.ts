@@ -47,7 +47,9 @@ import { openFolder, saveKliveProject } from "./projects";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
-  EXCLUDED_PROJECT_ITEMS_DIALOG
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  FIRST_STARTUP_DIALOG_EMU,
+  FIRST_STARTUP_DIALOG_IDE
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
 import {
@@ -62,7 +64,7 @@ import {
 } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 
-const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
+export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
@@ -118,9 +120,9 @@ const IDE_SHOW_BASIC = "show_basic";
 const EDITOR_FONT_SIZE = "editor_font_size";
 
 const HELP_MENU = "help_menu";
-const HELP_HOME_PAGE = "help_home_page";
 const HELP_ABOUT = "help_about";
-
+const HELP_HOME_PAGE = "help_home_page";
+const HELP_SHOW_WELCOME = "help_welcome";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 const TOGGLE_FAST_LOAD = "toggle_fast_load";
 const REWIND_TAPE = "rewind_tape";
@@ -911,7 +913,21 @@ export function setupMenu (
             shell.openExternal(KLIVE_GITHUB_PAGES);
           }
         }
-      }
+      },
+      { type: "separator" },
+      {
+        id: HELP_SHOW_WELCOME,
+        label: "Welcome screen",
+        click: () => {
+          if (ideTraits.isFocused) {
+            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_IDE));
+          } else {
+            mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+          }
+        }
+      },
+
+
     ]
   });
 

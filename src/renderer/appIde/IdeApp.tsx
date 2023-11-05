@@ -12,7 +12,9 @@ import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
-  EXCLUDED_PROJECT_ITEMS_DIALOG
+  EXCLUDED_PROJECT_ITEMS_DIALOG,
+  FIRST_STARTUP_DIALOG_EMU,
+  FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
 import {
   RequestMessage,
@@ -89,6 +91,7 @@ import {
   SettingCommand
 } from "./commands/SettingCommands";
 import { ResetZxbCommand } from "./commands/ZxbCommands";
+import { FirstStartDialog } from "./dialogs/FirstStartDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -220,6 +223,13 @@ const IdeApp = () => {
       )}
       {dialogId === EXCLUDED_PROJECT_ITEMS_DIALOG && (
         <ExcludedProjectItemsDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === FIRST_STARTUP_DIALOG_IDE && (
+        <FirstStartDialog
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}

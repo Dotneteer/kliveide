@@ -52,7 +52,8 @@ import {
   MainGetUserSettingsRequest,
   MainGetProjectSettingsRequest,
   MainGetSettingsResponse,
-  MainMoveSettingsRequest
+  MainMoveSettingsRequest,
+  MainShowWebsiteRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -204,6 +205,7 @@ export type RequestMessage =
   | MainExitAppRequest
   | MainShowItemInFolderRequest
   | MainPathExistsRequest
+  | MainShowWebsiteRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

@@ -245,6 +245,13 @@ export interface MainPathExistsRequest extends MessageBase {
 }
 
 /**
+ * The client wants to open the project's web site
+ */
+export interface MainShowWebsiteRequest extends MessageBase {
+  type: "MainShowWebsite";
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
