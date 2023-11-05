@@ -97,6 +97,3 @@ Planned features (*in the future*):
 - Watch Panel: display runtime information about memory variables (expressions)
 - Conditional breakpoints
 - Integration with other assemblers, including compilation and optional source code debugging (if the particular compiler supports debug symbol information).
-
-
-
