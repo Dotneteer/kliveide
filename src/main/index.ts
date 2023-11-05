@@ -35,7 +35,8 @@ import {
   setThemeAction,
   showKeyboardAction,
   setFastLoadAction,
-  setTapeFileAction
+  displayDialogAction,
+  startScreenDisplayedAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
@@ -57,6 +58,7 @@ import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { setMachineType } from "./registeredMachines";
 import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { createSettingsReader } from "../common/utils/SettingsReader";
+import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -94,8 +96,10 @@ mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 // --- Get seeting used
 const settingsReader = createSettingsReader(mainStore);
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
-const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
-const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
+const displayIdeDevTools =
+  !!settingsReader.readSetting("devTools.ide") && allowDevTools;
+const displayEmuDevTools =
+  !!settingsReader.readSetting("devTools.emu") && allowDevTools;
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
@@ -239,6 +243,10 @@ async function createAppWindows () {
       mainStore.dispatch(isWindowsAction(__WIN32__));
 
       // --- Set saved traits
+      if (appSettings.startScreenDisplayed) {
+        mainStore.dispatch(startScreenDisplayedAction());
+      }
+      mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       await setMachineType(appSettings.machineId ?? "sp48");
       mainStore.dispatch(
@@ -249,6 +257,13 @@ async function createAppWindows () {
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       if (appSettings.lastTapeFile) {
         setSelectedTapeFile(appSettings.lastTapeFile, false, false);
+      }
+
+      if (!appSettings.startScreenDisplayed) {
+        await new Promise(r => setTimeout(r, 400));
+        if (!appSettings.startScreenDisplayed) {
+          mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+        }
       }
     }
 

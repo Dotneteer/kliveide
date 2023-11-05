@@ -65,5 +65,7 @@ export function registerMainToIdeMessenger (window: BrowserWindow) {
 export async function sendFromMainToIde<TResp extends ResponseMessage> (
   message: RequestMessage
 ): Promise<TResp> {
-  return await mainToIdeMessenger.sendMessage(message);
+  if (mainToIdeMessenger) {
+    return await mainToIdeMessenger.sendMessage(message);
+  }
 }

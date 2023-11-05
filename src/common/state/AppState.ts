@@ -11,6 +11,7 @@ export type AppState = {
   emuStateSynched?: boolean;
   ideLoaded?: boolean;
   ideStateSynched?: boolean;
+  startScreenDisplayed?: boolean;
   isWindows?: boolean;
   emuFocused?: boolean;
   ideFocused?: boolean;

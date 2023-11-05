@@ -48,6 +48,7 @@ import {
   getDirectoryContent,
   getProjectDirectoryContentFilter
 } from "./directory-content";
+import { KLIVE_GITHUB_PAGES } from "./app-menu";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -361,6 +362,10 @@ export async function processRendererToMainMessages (
       }
       return flagResponse(true);
 
+    case "MainShowWebsite":
+      shell.openExternal(KLIVE_GITHUB_PAGES);
+      break;
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -478,7 +483,7 @@ function resolveMessagePath (inputPath: string, resolveIn?: string): string {
         break;
       case "saveFolder":
         inputPath = resolveSavedFilePath(inputPath);
-        break;  
+        break;
       default:
         inputPath = resolvePublicFilePath(inputPath);
         break;

@@ -70,6 +70,9 @@ export function appStateFlagsReducer (
     case "SAVE_PROJECT_SETTINGS":
       return { ...state, projectSettings: payload.value };
 
+    case "START_SCREEN_DISPLAYED":
+      return { ...state, startScreenDisplayed: true };
+
     default:
       return state;
   }
