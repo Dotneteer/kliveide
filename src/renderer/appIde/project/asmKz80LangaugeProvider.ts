@@ -15,6 +15,7 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
     }
   },
   supportsBreakpoints: true,
+  fullLineBreakpoints: true,
   compiler: "Z80Compiler",
   languageDef: {
     keywords: [

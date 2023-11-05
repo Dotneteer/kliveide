@@ -447,6 +447,8 @@ export interface AssemblerErrorInfo {
 export type FileLine = {
   fileIndex: number;
   line: number;
+  startColumn?: number;
+  endColumn?: number;
 };
 
 /**
