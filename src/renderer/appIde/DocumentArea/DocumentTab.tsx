@@ -51,11 +51,12 @@ export const DocumentTab = ({
   tabCloseClicked
 }: Props) => {
   // --- Services used in this component
-  const { messenger } = useRendererContext();
+  const { store, messenger } = useRendererContext();
 
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const readOnlyRef = useRef<HTMLDivElement>(null);
+  const isWindows = !!store.getState().isWindows;
   const [pointed, setPointed] = useState(false);
 
   // --- Whenever the tab is displayed or its position has changed, report it to the
@@ -96,7 +97,7 @@ export const DocumentTab = ({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text='Reveal in File Explorer'
+        text={`Reveal in ${isWindows ? "File Explorer": "Finder"}`}
         clicked={() => {
           contextMenuApi.conceal();
           messenger.postMessage({

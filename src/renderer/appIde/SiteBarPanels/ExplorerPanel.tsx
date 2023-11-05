@@ -52,7 +52,7 @@ let lastExplorerPath = "";
 
 const ExplorerPanel = () => {
   // --- Services used in this component
-  const { messenger } = useRendererContext();
+  const { store, messenger } = useRendererContext();
   const dispatch = useDispatch();
   const { projectService, ideCommandsService } = useAppServices();
   const documentHubService = projectService.getActiveDocumentHubService();
@@ -80,6 +80,7 @@ const ExplorerPanel = () => {
   const hasExcludedItems = useSelector(
     s => s.project?.excludedItems?.length > 0
   );
+  const isWindows = !!store.getState().isWindows;
 
   // --- State and helpers for the selected node's context menu
   const [selectedContextNode, setSelectedContextNode] =
@@ -152,7 +153,7 @@ const ExplorerPanel = () => {
         </>
       )}
       <ContextMenuItem
-        text='Reveal in File Explorer'
+        text={`Reveal in ${isWindows ? "File Explorer": "Finder"}`}
         disabled={!selectedContextNode?.data.fullPath}
         clicked={() => messenger.postMessage({
           type:"MainShowItemInFolder",
