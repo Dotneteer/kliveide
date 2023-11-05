@@ -216,6 +216,7 @@ export function setupMenu (
         enabled: !!folderOpen,
         click: async () => {
           ensureIdeWindow();
+          await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
           mainStore.dispatch(closeFolderAction());
           await saveKliveProject();
         }

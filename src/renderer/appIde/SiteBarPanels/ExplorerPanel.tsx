@@ -217,6 +217,7 @@ const ExplorerPanel = () => {
           ),
           newName
         );
+        await projectService.performAllDelayedSavesNow();
         const response = await messenger.sendMessage({
           type: "MainRenameFileEntry",
           oldName: selectedContextNode.data.fullPath,
