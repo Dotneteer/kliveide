@@ -1,17 +1,21 @@
 import React from "react";
 
-export const Logo = () => {
+type Props = {
+  width?: number | string;
+  height?: number | string;
+}
+export const Logo = ({width = 118, height = 50}: Props) => {
   return (
     <svg
-      width='118'
-      height='50'
+      width={width}
+      height={height}
       viewBox='0 0 294 124'
       fill='none'
       xmlns='http://www.w3.org/2000/svg'
     >
       { /* Frame and Stripes */ }
-      <rect width="100%" height="100%" fill="#000" />
-      <rect width="100%" height="100%" stroke="black" strokeWidth={4} />
+      <rect width="100%" height="100%" fill="#282828" />
+      <rect width="100%" height="100%" stroke="#282828" strokeWidth={4} />
       <rect x={12} y={0} width={7} height="100%" fill="#007acc" />
 
       <path d="M 293 103 l -21 21 l -21 0 l 42 -42" fill="#0ff" />

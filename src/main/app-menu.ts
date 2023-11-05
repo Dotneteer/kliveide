@@ -889,12 +889,6 @@ export function setupMenu (
     label: "Help",
     submenu: [
       {
-        id: HELP_HOME_PAGE,
-        label: "Klive IDE Home Page",
-        click: () => shell.openExternal(KLIVE_GITHUB_PAGES)
-      },
-      { type: "separator" },
-      {
         id: HELP_ABOUT,
         label: "About",
         click: async () => {
@@ -913,6 +907,11 @@ export function setupMenu (
             shell.openExternal(KLIVE_GITHUB_PAGES);
           }
         }
+      },
+      {
+        id: HELP_HOME_PAGE,
+        label: "Klive IDE Home Page",
+        click: () => shell.openExternal(KLIVE_GITHUB_PAGES)
       },
       { type: "separator" },
       {

@@ -1,12 +1,12 @@
 import { startScreenDisplayedAction } from "@common/state/actions";
 import styles from "./FirstStartDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
-import { DialogRow } from "@renderer/controls/DialogRow";
 import {
   useDispatch,
   useRendererContext
 } from "@renderer/core/RendererProvider";
 import { useRef } from "react";
+import { Logo } from "@renderer/controls/Logo";
 
 type Props = {
   onClose: () => void;
@@ -41,9 +41,21 @@ export const FirstStartDialog = ({ onClose }: Props) => {
         onClose?.();
       }}
     >
-      <DialogRow>
-        <div>Welcome</div>
-      </DialogRow>
+      <div className={styles.logoWrapper}>
+        <Logo />
+      </div>
+      <div className={styles.lineWrapper}>
+        Klive IDE is a retro computer emulator and Integrated Development
+        Environment running on Mac, Windows, and Linux.
+      </div>
+      <div className={styles.lineWrapper}>
+        You can not only run your favorite retro machines but also create
+        programs and games for them.
+      </div>
+      <div className={styles.lineWrapper}>
+      Visit the Klive website to get started!
+      </div>
+      <div className={styles.lineWrapper} />
     </Modal>
   );
 };

@@ -1,4 +1,4 @@
-import { Logo } from "./src/docs/Logo";
+import { Logo } from "./src/renderer/controls/Logo";
 
 export default {
   logo: <Logo />,
