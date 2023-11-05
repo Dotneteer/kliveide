@@ -1,13 +1,13 @@
-import { ExpressionValueType } from "@abstractions/z80-compiler-service";
 import {
   CompareBinPragma,
   Expression,
   IdentifierNode,
   NodePosition,
   Statement,
-  Z80AssemblyLine,
+  Z80AssemblyLine
 } from "./assembler-tree-nodes";
 import { ErrorCodes } from "./assembler-errors";
+import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
 
 /**
  * Represents the value of an evaluated expression
@@ -131,7 +131,10 @@ export interface IEvaluationContext {
    * @param expr Expression to evaluate
    * @param context: Evaluation context
    */
-  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue;
+  doEvalExpression(
+    context: IEvaluationContext,
+    expr: Expression
+  ): IExpressionValue;
 
   /**
    * Reports an error during evaluation
@@ -298,7 +301,7 @@ export interface IListFileItem {
 export enum SymbolType {
   None,
   Label,
-  Var,
+  Var
 }
 
 /**
@@ -338,7 +341,7 @@ export enum FixupType {
   Xent,
   Struct,
   FieldBit8,
-  FieldBit16,
+  FieldBit16
 }
 
 /**
@@ -434,7 +437,7 @@ export class IfDefinition {
  * Represents a section of an IF definition
  */
 export class IfSection {
-  constructor(
+  constructor (
     public readonly ifStatement: Statement,
     firstLine: number,
     lastLine: number
@@ -451,7 +454,7 @@ export class IfSection {
  * Represents a struct
  */
 export class StructDefinition implements IStructDefinition {
-  constructor(
+  constructor (
     public readonly structName: string,
     macroDefLine: number,
     macroEndLine: number,
@@ -480,7 +483,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Field name
    * @param definition Field definition
    */
-  addField(fieldName: string, definition: IFieldDefinition): void {
+  addField (fieldName: string, definition: IFieldDefinition): void {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -492,7 +495,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Name of the field to check
    * @returns True, if the struct contains the field; otherwise, false.
    */
-  containsField(fieldName: string): boolean {
+  containsField (fieldName: string): boolean {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -504,7 +507,7 @@ export class StructDefinition implements IStructDefinition {
    * @param name field name
    * @returns The field information, if found; otherwise, undefined.
    */
-  getField(fieldName: string): IFieldDefinition | undefined {
+  getField (fieldName: string): IFieldDefinition | undefined {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -516,7 +519,7 @@ export class StructDefinition implements IStructDefinition {
  * Information about binary comparison
  */
 export class BinaryComparisonInfo {
-  constructor(
+  constructor (
     public readonly comparePragma: CompareBinPragma,
     public readonly segment: IBinarySegment,
     public readonly segmentLength: number

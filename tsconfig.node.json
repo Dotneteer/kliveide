@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@abstractions/*": ["./src/common/abstractions/*"],
+      "@common/*": ["./src/common/*"],
+      "@styles/*": ["./src/renderer/assets/styles/*"],
+      "@messaging/*": ["./src/common/messaging/*"],
+      "@state/*": ["./src/common/state/*"],
+      "@utils/*": ["./src/common/utils/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@appIde/*": ["./src/renderer/appIde/*"],
+      "@main/*": ["./src/main/*"],
+      "@controls/*": ["./src/renderer/controls/*"],
+		},
+  },
+  "include": [
+    "package.json", 
+    "src/electron", 
+    "src/**/*",
+    "src/common/**/*"
+  ]
+}

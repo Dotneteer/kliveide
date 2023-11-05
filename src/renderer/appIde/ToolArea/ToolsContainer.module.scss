@@ -1,0 +1,6 @@
+@import "@styles/core.scss";
+
+.toolsContainer {
+    @include fill-parent-flex;
+    display: flex;
+}

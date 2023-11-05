@@ -1,4 +1,4 @@
-import { ExpressionValueType } from "@abstractions/z80-compiler-service";
+import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
 import { ErrorCodes } from "./assembler-errors";
 import {
   BinaryExpression,
@@ -11,12 +11,12 @@ import {
   OperandType,
   Symbol,
   UnaryExpression,
-  Z80AssemblyLine,
+  Z80AssemblyLine
 } from "./assembler-tree-nodes";
 import {
   IEvaluationContext,
   IExpressionValue,
-  IValueInfo,
+  IValueInfo
 } from "./assembler-types";
 
 // --- Evaluation error messages
@@ -48,7 +48,7 @@ export class ExpressionValue implements IExpressionValue {
    * Initializes a value expression
    * @param value Value to initialize
    */
-  constructor(value?: ExpressionValueType | boolean | number | string) {
+  constructor (value?: ExpressionValueType | boolean | number | string) {
     if (value === undefined) {
       this._type = ExpressionValueType.Error;
       return;
@@ -72,14 +72,14 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Gets the type of the expression
    */
-  get type(): ExpressionValueType {
+  get type (): ExpressionValueType {
     return this._type;
   }
 
   /**
    * Checks if the value of this expression is valid
    */
-  get isValid(): boolean {
+  get isValid (): boolean {
     return (
       this !== ExpressionValue.NonEvaluated && this !== ExpressionValue.Error
     );
@@ -88,21 +88,21 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Checks if the value of this expression is not evaluated
    */
-  get isNonEvaluated(): boolean {
+  get isNonEvaluated (): boolean {
     return this === ExpressionValue.NonEvaluated;
   }
 
   /**
    * Gets the value of this instance
    */
-  get value(): number {
+  get value (): number {
     return this.asWord();
   }
 
   /**
    * Returns the value as a long integer
    */
-  asLong(): number {
+  asLong (): number {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
@@ -125,7 +125,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a real number
    */
-  asReal(): number {
+  asReal (): number {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
@@ -147,7 +147,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a string
    */
-  asString(): string {
+  asString (): string {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? "true" : "false";
@@ -164,7 +164,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a Boolean
    */
-  asBool(): boolean {
+  asBool (): boolean {
     switch (this.type) {
       case ExpressionValueType.Bool:
       case ExpressionValueType.Integer:
@@ -180,14 +180,14 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a 16-bit unsigned integer
    */
-  asWord(): number {
+  asWord (): number {
     return this.asLong() & 0xffff;
   }
 
   /**
    * Returns the value as an 8-bit unsigned integer
    */
-  asByte(): number {
+  asByte (): number {
     return this.asLong() & 0xff;
   }
 }
@@ -237,7 +237,10 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue {
+  doEvalExpression (
+    context: IEvaluationContext,
+    expr: Expression
+  ): IExpressionValue {
     try {
       switch (expr.type) {
         case "Identifier":
@@ -268,7 +271,12 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
           return ExpressionValue.Error;
       }
     } catch (err) {
-      this.reportEvaluationError(context, "Z0606", expr, (err as Error).message);
+      this.reportEvaluationError(
+        context,
+        "Z0606",
+        expr,
+        (err as Error).message
+      );
       return ExpressionValue.Error;
     }
 
@@ -277,7 +285,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param context Evaluation context
      * @param expr Expression to evaluate
      */
-    function evalIdentifierValue(
+    function evalIdentifierValue (
       context: IEvaluationContext,
       expr: IdentifierNode
     ): IExpressionValue {
@@ -297,7 +305,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param context Evaluation context
      * @param expr Expression to evaluate
      */
-    function evalSymbolValue(
+    function evalSymbolValue (
       context: IEvaluationContext,
       expr: Symbol
     ): IExpressionValue {
@@ -311,7 +319,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         }
         return valueInfo.value;
       }
-      context.reportEvaluationError(context,
+      context.reportEvaluationError(
+        context,
         "Z0605",
         expr.identifier,
         expr.identifier.name
@@ -325,7 +334,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Bynary expression
      * @returns The value of the evaluated expression
      */
-    function evalBinaryOperationValue(
+    function evalBinaryOperationValue (
       context: IEvaluationContext,
       expr: BinaryExpression
     ): ExpressionValue {
@@ -1005,7 +1014,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Unary expression
      * @returns The value of the evaluated expression
      */
-    function evalUnaryOperationValue(
+    function evalUnaryOperationValue (
       context: IEvaluationContext,
       expr: UnaryExpression
     ): IExpressionValue {
@@ -1072,7 +1081,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Unary expression
      * @returns The value of the evaluated expression
      */
-    function evalConditionalOperationValue(
+    function evalConditionalOperationValue (
       context: IEvaluationContext,
       expr: ConditionalExpression
     ): IExpressionValue {
@@ -1085,11 +1094,11 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         : context.doEvalExpression(context, expr.alternate);
     }
 
-    function throwStringError(side: string, operator: string): void {
+    function throwStringError (side: string, operator: string): void {
       throw new Error(`The ${side} operand of ${operator} cannot be a string.`);
     }
 
-    function throwIntegralError(side: string, operator: string): void {
+    function throwIntegralError (side: string, operator: string): void {
       throw new Error(
         `The ${side} operand of ${operator} must be an integral type.`
       );
@@ -1120,7 +1129,7 @@ class SeededRandom {
    * Initializes the random generator with the specified seed value
    * @param seed Seed value
    */
-  constructor(seed: number) {
+  constructor (seed: number) {
     this._seed = seed % 2147483647;
     if (this._seed <= 0) {
       this._seed += 2147483646;
@@ -1130,14 +1139,14 @@ class SeededRandom {
   /**
    * Generates the next 32-bit integer random number
    */
-  next(): number {
+  next (): number {
     return (this._seed = (this._seed * 16807) % 2147483647);
   }
 
   /**
    * Generates the next random number between 0.0 and 1.0 (exclusive)
    */
-  nextFloat(): number {
+  nextFloat (): number {
     return (this.next() - 1) / 2147483646;
   }
 
@@ -1146,7 +1155,7 @@ class SeededRandom {
    * @param inclusiveFrom The inclusive start of the range
    * @param exclusiveTo The exclusive end of the range
    */
-  integer(inclusiveFrom: number, exclusiveTo: number): number {
+  integer (inclusiveFrom: number, exclusiveTo: number): number {
     return Math.floor(
       inclusiveFrom + this.nextFloat() * (exclusiveTo - inclusiveFrom)
     );
@@ -1155,7 +1164,7 @@ class SeededRandom {
 
 let randomGenerator = new SeededRandom(Date.now());
 
-export function setRandomSeed(seed: number): void {
+export function setRandomSeed (seed: number): void {
   randomGenerator = new SeededRandom(seed);
 }
 
@@ -1163,7 +1172,7 @@ export function setRandomSeed(seed: number): void {
  * Represents a function evaluator class
  */
 class FunctionEvaluator {
-  constructor(
+  constructor (
     public readonly evaluateFunc: (
       args: IExpressionValue[]
     ) => IExpressionValue,
@@ -1174,240 +1183,235 @@ class FunctionEvaluator {
 const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   abs: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.abs(args[0].asLong())),
+      args => new ExpressionValue(Math.abs(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.abs(args[0].asReal())),
+      args => new ExpressionValue(Math.abs(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   acos: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.acos(args[0].asReal())),
+      args => new ExpressionValue(Math.acos(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   asin: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.asin(args[0].asReal())),
+      args => new ExpressionValue(Math.asin(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   atan: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.atan(args[0].asReal())),
+      args => new ExpressionValue(Math.atan(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   atan2: [
     new FunctionEvaluator(
-      (args) =>
+      args =>
         new ExpressionValue(Math.atan2(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
-    ),
+    )
   ],
   ceiling: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.ceil(args[0].asReal())),
+      args => new ExpressionValue(Math.ceil(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   cos: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.cos(args[0].asReal())),
+      args => new ExpressionValue(Math.cos(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   cosh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.cosh(args[0].asReal())),
+      args => new ExpressionValue(Math.cosh(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   exp: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.exp(args[0].asReal())),
+      args => new ExpressionValue(Math.exp(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   floor: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.floor(args[0].asReal())),
+      args => new ExpressionValue(Math.floor(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   log: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.log(args[0].asReal())),
+      args => new ExpressionValue(Math.log(args[0].asReal())),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      (args) =>
+      args =>
         new ExpressionValue(
           Math.log(args[0].asReal()) /
             (args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))
         ),
       [ExpressionValueType.Real, ExpressionValueType.Real]
-    ),
+    )
   ],
   log10: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.log10(args[0].asReal())),
+      args => new ExpressionValue(Math.log10(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   max: [
     new FunctionEvaluator(
-      (args) =>
-        new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
+      args => new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) =>
-        new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
-    ),
+    )
   ],
   min: [
     new FunctionEvaluator(
-      (args) =>
-        new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
+      args => new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) =>
-        new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
-    ),
+    )
   ],
   pow: [
     new FunctionEvaluator(
-      (args) =>
-        new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
-    ),
+    )
   ],
   round: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.round(args[0].asReal())),
+      args => new ExpressionValue(Math.round(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   sign: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sign(args[0].asLong())),
+      args => new ExpressionValue(Math.sign(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sign(args[0].asReal())),
+      args => new ExpressionValue(Math.sign(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   sin: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sin(args[0].asReal())),
+      args => new ExpressionValue(Math.sin(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   sinh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sinh(args[0].asReal())),
+      args => new ExpressionValue(Math.sinh(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   sqrt: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sqrt(args[0].asReal())),
+      args => new ExpressionValue(Math.sqrt(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   tan: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.tan(args[0].asReal())),
+      args => new ExpressionValue(Math.tan(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   tanh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.tanh(args[0].asReal())),
+      args => new ExpressionValue(Math.tanh(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   truncate: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.trunc(args[0].asReal())),
+      args => new ExpressionValue(Math.trunc(args[0].asReal())),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
-  pi: [new FunctionEvaluator((args) => new ExpressionValue(Math.PI), [])],
-  nat: [new FunctionEvaluator((args) => new ExpressionValue(Math.E), [])],
+  pi: [new FunctionEvaluator(args => new ExpressionValue(Math.PI), [])],
+  nat: [new FunctionEvaluator(args => new ExpressionValue(Math.E), [])],
   low: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() & 0xff),
+      args => new ExpressionValue(args[0].asLong() & 0xff),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   high: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
+      args => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   word: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asWord()),
+      args => new ExpressionValue(args[0].asWord()),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   rnd: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(randomGenerator.integer(0, 65536)),
+      args => new ExpressionValue(randomGenerator.integer(0, 65536)),
       []
     ),
     new FunctionEvaluator(
-      (args) =>
+      args =>
         new ExpressionValue(
           randomGenerator.integer(args[0].asLong(), args[1].asLong())
         ),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
-    ),
+    )
   ],
   length: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().length),
+      args => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   len: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().length),
+      args => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   left: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(0, len));
       },
       [ExpressionValueType.String, ExpressionValueType.Integer]
-    ),
+    )
   ],
   right: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(str.length - len, len));
       },
       [ExpressionValueType.String, ExpressionValueType.Integer]
-    ),
+    )
   ],
   substr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const start = Math.min(str.length, args[1].asLong());
         const len = Math.min(str.length - start, args[2].asLong());
@@ -1416,13 +1420,13 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       [
         ExpressionValueType.String,
         ExpressionValueType.Integer,
-        ExpressionValueType.Integer,
+        ExpressionValueType.Integer
       ]
-    ),
+    )
   ],
   fill: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const count = args[1].asLong();
         const resultLen = str.length * count;
@@ -1438,65 +1442,65 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
         return new ExpressionValue(result);
       },
       [ExpressionValueType.String, ExpressionValueType.Integer]
-    ),
+    )
   ],
   int: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong()),
+      args => new ExpressionValue(args[0].asLong()),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   frac: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asReal() - args[0].asLong()),
+      args => new ExpressionValue(args[0].asReal() - args[0].asLong()),
       [ExpressionValueType.Real]
-    ),
+    )
   ],
   lowercase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
+      args => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   lcase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
+      args => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   uppercase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
+      args => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   ucase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
+      args => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   str: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Bool]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.String]
-    ),
+    )
   ],
   scraddr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1517,11 +1521,11 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
         return new ExpressionValue(addr);
       },
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
-    ),
+    )
   ],
   attraddr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1538,35 +1542,35 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
         return new ExpressionValue(0x5800 + (line >> 3) * 32 + (col >> 3));
       },
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
-    ),
+    )
   ],
   ink: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() & 0x07),
+      args => new ExpressionValue(args[0].asLong() & 0x07),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   paper: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue((args[0].asLong() & 0x07) << 3),
+      args => new ExpressionValue((args[0].asLong() & 0x07) << 3),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   bright: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
+      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   flash: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
+      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
       [ExpressionValueType.Integer]
-    ),
+    )
   ],
   attr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
@@ -1577,11 +1581,11 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
         ExpressionValueType.Integer,
         ExpressionValueType.Integer,
         ExpressionValueType.Integer,
-        ExpressionValueType.Integer,
+        ExpressionValueType.Integer
       ]
     ),
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
@@ -1590,18 +1594,18 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       [
         ExpressionValueType.Integer,
         ExpressionValueType.Integer,
-        ExpressionValueType.Integer,
+        ExpressionValueType.Integer
       ]
     ),
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         return new ExpressionValue((paper | ink) & 0xff);
       },
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
-    ),
-  ],
+    )
+  ]
 };
 
 /**
@@ -1610,7 +1614,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalFunctionInvocationValue(
+export function evalFunctionInvocationValue (
   context: IEvaluationContext,
   funcExpr: FunctionInvocation
 ): IExpressionValue {
@@ -1709,7 +1713,7 @@ export function evalFunctionInvocationValue(
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalMacroTimeFunctionInvocationValue(
+export function evalMacroTimeFunctionInvocationValue (
   context: IEvaluationContext,
   funcExpr: MacroTimeFunctionInvocation
 ): IExpressionValue {

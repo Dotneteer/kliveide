@@ -1,0 +1,25 @@
+@import "@styles/core.scss";
+
+.ulaPanel {
+  @include side-panel-content;
+}
+
+.flags {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.rows {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.cols {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
+}

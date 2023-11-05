@@ -23,28 +23,28 @@ export class TokenStream {
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
    */
-  constructor(public readonly input: InputStream) {}
+  constructor (public readonly input: InputStream) {}
 
   /**
    * Gets the specified part of the source code
    * @param start Start position
    * @param end End position
    */
-  getSourceSpan(start: number, end: number): string {
+  getSourceSpan (start: number, end: number): string {
     return this.input.getSourceSpan(start, end);
   }
 
   /**
    * Resets the last comment
    */
-  resetComment(): void {
+  resetComment (): void {
     this._lastComment = null;
   }
 
   /**
    * Gets the last end-of-line comment
    */
-  get lastComment(): string | null {
+  get lastComment (): string | null {
     return this._lastComment;
   }
 
@@ -52,7 +52,7 @@ export class TokenStream {
    * Fethches the next token without advancing to its position
    * @param ws If true, retrieve whitespaces too
    */
-  peek(ws = false): Token {
+  peek (ws = false): Token {
     return this.ahead(0, ws);
   }
 
@@ -61,7 +61,7 @@ export class TokenStream {
    * @param n Number of token positions to read ahead
    * @param ws If true, retrieve whitespaces too
    */
-  ahead(n = 1, ws = false): Token {
+  ahead (n = 1, ws = false): Token {
     if (n > 16) {
       throw new Error("Cannot look ahead more than 16 tokens");
     }
@@ -86,7 +86,7 @@ export class TokenStream {
    * Fethces the nex token and advances the stream position
    * @param ws If true, retrieve whitespaces too
    */
-  get(ws = false): Token {
+  get (ws = false): Token {
     if (this._ahead.length > 0) {
       const token = this._ahead.shift();
       if (!token) {
@@ -108,7 +108,7 @@ export class TokenStream {
   /**
    * Fetches the next token from the input stream
    */
-  private fetch(): Token {
+  private fetch (): Token {
     const lexer = this;
     const input = this.input;
     const startPos = this._prefetchedPos || input.position;
@@ -554,7 +554,7 @@ export class TokenStream {
             text
               .substr(1)
               .split("")
-              .every((c) => isHexadecimalDigit(c))
+              .every(c => isHexadecimalDigit(c))
           ) {
             tokenType = TokenType.HexadecimalLiteral;
           } else {
@@ -580,7 +580,7 @@ export class TokenStream {
             text
               .substr(1)
               .split("")
-              .every((c) => isHexadecimalDigit(c))
+              .every(c => isHexadecimalDigit(c))
           ) {
             tokenType = TokenType.HexadecimalLiteral;
           } else {
@@ -958,7 +958,7 @@ export class TokenStream {
     /**
      * Appends the last character to the token, and manages positions
      */
-    function appendTokenChar(): void {
+    function appendTokenChar (): void {
       text += ch;
       lexer._prefetched = null;
       lexer._prefetchedPos = null;
@@ -970,7 +970,7 @@ export class TokenStream {
     /**
      * Fetches the next character from the input stream
      */
-    function fetchNextChar(): string | null {
+    function fetchNextChar (): string | null {
       let ch: string;
       if (!lexer._prefetched) {
         lexer._prefetchedPos = input.position;
@@ -984,7 +984,7 @@ export class TokenStream {
      * Packs the specified type of token to send back
      * @param type
      */
-    function makeToken(): Token {
+    function makeToken (): Token {
       if (useResolver) {
         tokenType =
           resolverHash[text] ??
@@ -1000,15 +1000,15 @@ export class TokenStream {
           endPos: lastEndPos,
           line,
           startColumn,
-          endColumn: lastEndColumn,
-        },
+          endColumn: lastEndColumn
+        }
       };
     }
 
     /**
      * Add the last character to the token and return it
      */
-    function completeToken(suggestedType?: TokenType): Token {
+    function completeToken (suggestedType?: TokenType): Token {
       appendTokenChar();
 
       // --- Send back the token
@@ -1359,7 +1359,7 @@ export enum TokenType {
   HexadecimalLiteral,
   RealLiteral,
   CharLiteral,
-  StringLiteral,
+  StringLiteral
 }
 
 /**
@@ -1478,14 +1478,14 @@ enum LexerPhase {
   StringTail,
 
   // Wait for the end of DEFG pragma
-  DefgTail,
+  DefgTail
 }
 
 /**
  * Tests if a token id EOF
  * @param t Token instance
  */
-function isEof(t: Token): boolean {
+function isEof (t: Token): boolean {
   return t.type === TokenType.Eof;
 }
 
@@ -1493,7 +1493,7 @@ function isEof(t: Token): boolean {
  * Tests if a token is whitespace
  * @param t Token instance
  */
-function isWs(t: Token): boolean {
+function isWs (t: Token): boolean {
   return t.type <= TokenType.Ws;
 }
 
@@ -1501,7 +1501,7 @@ function isWs(t: Token): boolean {
  * Tests if a character is a letter
  * @param ch Character to test
  */
-function isLetter(ch: string): boolean {
+function isLetter (ch: string): boolean {
   return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z");
 }
 
@@ -1509,7 +1509,7 @@ function isLetter(ch: string): boolean {
  * Tests if a character is a letter
  * @param ch Character to test
  */
-function isLetterOrDigit(ch: string): boolean {
+function isLetterOrDigit (ch: string): boolean {
   return (
     (ch >= "A" && ch <= "Z") ||
     (ch >= "a" && ch <= "z") ||
@@ -1521,7 +1521,7 @@ function isLetterOrDigit(ch: string): boolean {
  * Tests if a character is a binary digit
  * @param ch Character to test
  */
-function isBinaryDigit(ch: string): boolean {
+function isBinaryDigit (ch: string): boolean {
   return ch === "0" || ch === "1" || ch === "_";
 }
 
@@ -1529,7 +1529,7 @@ function isBinaryDigit(ch: string): boolean {
  * Tests if a character is an octal digit
  * @param ch Character to test
  */
-function isOctalDigit(ch: string): boolean {
+function isOctalDigit (ch: string): boolean {
   return ch >= "0" && ch <= "7";
 }
 
@@ -1537,7 +1537,7 @@ function isOctalDigit(ch: string): boolean {
  * Tests if a character is a decimal digit
  * @param ch Character to test
  */
-function isDecimalDigit(ch: string): boolean {
+function isDecimalDigit (ch: string): boolean {
   return ch >= "0" && ch <= "9";
 }
 
@@ -1545,7 +1545,7 @@ function isDecimalDigit(ch: string): boolean {
  * Tests if a character is a hexadecimal digit
  * @param ch Character to test
  */
-function isHexadecimalDigit(ch: string): boolean {
+function isHexadecimalDigit (ch: string): boolean {
   return (
     (ch >= "0" && ch <= "9") ||
     (ch >= "A" && ch <= "F") ||
@@ -1557,7 +1557,7 @@ function isHexadecimalDigit(ch: string): boolean {
  * Tests if a character can be the start of an identifier
  * @param ch Character to test
  */
-function isIdStart(ch: string): boolean {
+function isIdStart (ch: string): boolean {
   return (
     ch === "." ||
     ch === "_" ||
@@ -1572,7 +1572,7 @@ function isIdStart(ch: string): boolean {
  * Tests if a character can be the continuation of an identifier
  * @param ch Character to test
  */
-function isIdContinuation(ch: string): boolean {
+function isIdContinuation (ch: string): boolean {
   return (
     ch === "_" ||
     ch === "@" ||
@@ -1589,7 +1589,7 @@ function isIdContinuation(ch: string): boolean {
  * @param ch Character to test
  *
  */
-function isBinarySuffix(ch: string | null, ra: string | null): boolean {
+function isBinarySuffix (ch: string | null, ra: string | null): boolean {
   return (
     (ch === "b" || ch === "B") &&
     (!ra || (!isHexadecimalDigit(ra) && ra !== "h" && ra !== "H"))
@@ -1600,7 +1600,7 @@ function isBinarySuffix(ch: string | null, ra: string | null): boolean {
  * Tests if a character can be the suffix of a hexadecimal literal
  * @param ch Character to test
  */
-function isHexaSuffix(ch: string | null): boolean {
+function isHexaSuffix (ch: string | null): boolean {
   return ch === "h" || ch === "H";
 }
 
@@ -1608,7 +1608,7 @@ function isHexaSuffix(ch: string | null): boolean {
  * Tests if a character can be the suffix of an octal literal
  * @param ch Character to test
  */
-function isOctalSuffix(ch: string | null): boolean {
+function isOctalSuffix (ch: string | null): boolean {
   return ch === "o" || ch === "O" || ch === "q" || ch === "Q";
 }
 
@@ -1616,7 +1616,7 @@ function isOctalSuffix(ch: string | null): boolean {
  * Tests if a character is a hexadecimal mark after 0
  * @param ch Character to test
  */
-function isHexaMark(ch: string | null): boolean {
+function isHexaMark (ch: string | null): boolean {
   return ch === "x" || ch === "X";
 }
 
@@ -1624,7 +1624,7 @@ function isHexaMark(ch: string | null): boolean {
  * Tests if a character is restricted in a string
  * @param ch Character to test
  */
-function isRestrictedInString(ch: string): boolean {
+function isRestrictedInString (ch: string): boolean {
   return (
     ch === "\r" ||
     ch === "\n" ||
@@ -1635,7 +1635,7 @@ function isRestrictedInString(ch: string): boolean {
 }
 
 // --- Tests for a breaking char
-function isLiteralBreakingChar(ch: string): boolean {
+function isLiteralBreakingChar (ch: string): boolean {
   return (
     !isHexadecimalDigit(ch) &&
     !isHexaSuffix(ch) &&
@@ -2329,5 +2329,5 @@ const resolverHash: { [key: string]: TokenType } = {
   "#ifnmod": TokenType.IfNModDir,
   "#line": TokenType.LineDir,
 
-  $: TokenType.CurAddress,
+  $: TokenType.CurAddress
 };

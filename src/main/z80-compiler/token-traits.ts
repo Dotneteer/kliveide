@@ -104,7 +104,7 @@ export interface TokenTraits {
  * Gets the traits of the specified token type
  * @param type Token type
  */
-export function getTokenTraits(type: TokenType): TokenTraits {
+export function getTokenTraits (type: TokenType): TokenTraits {
   return tokenTraits.get(type) ?? {};
 }
 
@@ -132,7 +132,7 @@ tokenTraits.set(TokenType.BankPragma, { pragma: true });
 tokenTraits.set(TokenType.BC, { reg: true, reg16: true });
 tokenTraits.set(TokenType.BinaryLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.BinaryNot, { expressionStart: true });
 tokenTraits.set(TokenType.Bit, { instruction: true });
@@ -149,13 +149,13 @@ tokenTraits.set(TokenType.C, {
   reg: true,
   reg8: true,
   condition: true,
-  relCondition: true,
+  relCondition: true
 });
 tokenTraits.set(TokenType.Call, { instruction: true });
 tokenTraits.set(TokenType.Ccf, { instruction: true, simple: true });
 tokenTraits.set(TokenType.CharLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.CiEqual, {});
 tokenTraits.set(TokenType.CiNotEqual, {});
@@ -180,11 +180,11 @@ tokenTraits.set(TokenType.Daa, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Dec, { instruction: true });
 tokenTraits.set(TokenType.DecimalLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.Def, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.DefbPragma, { pragma: true });
 tokenTraits.set(TokenType.DefcPragma, { pragma: true });
@@ -245,12 +245,12 @@ tokenTraits.set(TokenType.GreaterThanOrEqual, {});
 tokenTraits.set(TokenType.H, { reg: true, reg8: true });
 tokenTraits.set(TokenType.HL, { reg: true, reg16: true });
 tokenTraits.set(TokenType.HReg, {
-  expressionStart: true,
+  expressionStart: true
 });
 tokenTraits.set(TokenType.Halt, { instruction: true, simple: true });
 tokenTraits.set(TokenType.HexadecimalLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 
 // ----------------------------------------------------------------------------
@@ -280,131 +280,131 @@ tokenTraits.set(TokenType.InjectOptPragma, { pragma: true });
 tokenTraits.set(TokenType.InlineComment, {});
 tokenTraits.set(TokenType.IsCPort, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsCondition, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsExpr, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsIndexedAddr, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg16, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg16Idx, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg16Std, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg8, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg8Idx, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg8Spec, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsReg8Std, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegIndirect, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegA, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegAf, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegB, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegC, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegBc, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegD, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegE, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegDe, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegH, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegL, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegHl, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegI, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegR, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegXh, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegXl, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegIx, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegYh, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegYl, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegIy, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 tokenTraits.set(TokenType.IsRegSp, {
   expressionStart: true,
-  macroTimeFunction: true,
+  macroTimeFunction: true
 });
 
 // ----------------------------------------------------------------------------
@@ -419,12 +419,12 @@ tokenTraits.set(TokenType.LDBrac, { expressionStart: true });
 tokenTraits.set(TokenType.LineDir, { directive: true });
 tokenTraits.set(TokenType.LPar, { expressionStart: true });
 tokenTraits.set(TokenType.LReg, {
-  expressionStart: true,
+  expressionStart: true
 });
 tokenTraits.set(TokenType.LSBrac, { expressionStart: true });
 tokenTraits.set(TokenType.LTextOf, {
   expressionStart: true,
-  parseTimeFunction: true,
+  parseTimeFunction: true
 });
 tokenTraits.set(TokenType.Ld, { instruction: true });
 tokenTraits.set(TokenType.Ldd, { instruction: true, simple: true });
@@ -432,34 +432,34 @@ tokenTraits.set(TokenType.Lddr, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Lddrx, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Lddx, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Ldi, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Ldir, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Ldirx, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Ldix, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Ldpirx, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Ldws, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.LeftShift, {});
 tokenTraits.set(TokenType.LessThan, {});
@@ -480,7 +480,7 @@ tokenTraits.set(TokenType.Modulo, {});
 tokenTraits.set(TokenType.Mul, { instruction: true, next: true });
 tokenTraits.set(TokenType.Multiplication, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 
 // ----------------------------------------------------------------------------
@@ -498,7 +498,7 @@ tokenTraits.set(TokenType.NotEqual, {});
 // O
 tokenTraits.set(TokenType.OctalLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.Or, { instruction: true });
 tokenTraits.set(TokenType.OrgPragma, { pragma: true });
@@ -508,7 +508,7 @@ tokenTraits.set(TokenType.Out, { instruction: true });
 tokenTraits.set(TokenType.OutInB, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Outd, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Outi, { instruction: true, simple: true });
@@ -521,12 +521,12 @@ tokenTraits.set(TokenType.PO, { condition: true });
 tokenTraits.set(TokenType.PixelAd, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.PixelDn, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.Plus, { expressionStart: true });
 tokenTraits.set(TokenType.Pop, { instruction: true });
@@ -545,7 +545,7 @@ tokenTraits.set(TokenType.RPar, {});
 tokenTraits.set(TokenType.RSBrac, {});
 tokenTraits.set(TokenType.RealLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.Repeat, { statement: true });
 tokenTraits.set(TokenType.Res, { instruction: true });
@@ -575,7 +575,7 @@ tokenTraits.set(TokenType.Set, { instruction: true });
 tokenTraits.set(TokenType.SetAE, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 tokenTraits.set(TokenType.SkipPragma, { pragma: true });
 tokenTraits.set(TokenType.Sla, { instruction: true });
@@ -585,14 +585,14 @@ tokenTraits.set(TokenType.Srl, { instruction: true });
 tokenTraits.set(TokenType.Step, {});
 tokenTraits.set(TokenType.StringLiteral, {
   expressionStart: true,
-  literal: true,
+  literal: true
 });
 tokenTraits.set(TokenType.Struct, { statement: true });
 tokenTraits.set(TokenType.Sub, { instruction: true });
 tokenTraits.set(TokenType.Swapnib, {
   instruction: true,
   simple: true,
-  next: true,
+  next: true
 });
 
 // ----------------------------------------------------------------------------
@@ -600,7 +600,7 @@ tokenTraits.set(TokenType.Swapnib, {
 tokenTraits.set(TokenType.Test, { instruction: true, next: true });
 tokenTraits.set(TokenType.TextOf, {
   expressionStart: true,
-  parseTimeFunction: true,
+  parseTimeFunction: true
 });
 tokenTraits.set(TokenType.To, {});
 tokenTraits.set(TokenType.TracePragma, { pragma: true });

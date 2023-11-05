@@ -1,4 +1,9 @@
-import { IAssemblySymbolInfo, IMacroDefinition, IStructDefinition, IValueInfo } from "./assembler-types";
+import {
+  IAssemblySymbolInfo,
+  IMacroDefinition,
+  IStructDefinition,
+  IValueInfo
+} from "./assembler-types";
 import { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
@@ -8,7 +13,7 @@ import { FixupEntry } from "./fixups";
  * modules and symbols.
  */
 export class AssemblyModule implements ISymbolScope {
-  constructor(
+  constructor (
     public readonly parentModule: AssemblyModule | null,
     private readonly caseSensitive: boolean
   ) {}
@@ -16,7 +21,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Gets the root (global) module
    */
-  get rootModule(): AssemblyModule {
+  get rootModule (): AssemblyModule {
     return this.parentModule === null ? this : this.parentModule.rootModule;
   }
 
@@ -55,7 +60,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @param symbol Symbol data
    */
-  addSymbol(name: string, symbol: IAssemblySymbolInfo): void {
+  addSymbol (name: string, symbol: IAssemblySymbolInfo): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -65,7 +70,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified symbol has been defined
    */
-  containsSymbol(name: string): boolean {
+  containsSymbol (name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -77,7 +82,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol(name: string): IAssemblySymbolInfo | undefined {
+  getSymbol (name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -89,7 +94,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @param struct Struct data
    */
-  addStruct(name: string, struct: IStructDefinition): void {
+  addStruct (name: string, struct: IStructDefinition): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -99,7 +104,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified struct has been defined
    */
-  containsStruct(name: string): boolean {
+  containsStruct (name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -111,7 +116,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @returns The struct information, if found; otherwise, undefined.
    */
-  getStruct(name: string): IStructDefinition | undefined {
+  getStruct (name: string): IStructDefinition | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -123,7 +128,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @param macro Macro data
    */
-  addMacro(name: string, macro: IMacroDefinition): void {
+  addMacro (name: string, macro: IMacroDefinition): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -133,11 +138,11 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified macro has been defined
    */
-  containsMacro(name: string): boolean {
+  containsMacro (name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
-    return !!this.macros[name];
+    return !!this.macros[name] || this.parentModule?.containsMacro(name) === true;
   }
 
   /**
@@ -145,11 +150,11 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @returns The macro information, if found; otherwise, undefined.
    */
-  getMacro(name: string): IMacroDefinition | undefined {
+  getMacro (name: string): IMacroDefinition | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
-    return this.macros[name];
+    return this.macros[name] ?? this.parentModule?.getMacro(name);
   }
 
   /**
@@ -157,7 +162,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Module name
    * @param module Module data
    */
-  addNestedModule(name: string, module: AssemblyModule): void {
+  addNestedModule (name: string, module: AssemblyModule): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -167,7 +172,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified nested module has been defined
    */
-  containsNestedModule(name: string): boolean {
+  containsNestedModule (name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -179,7 +184,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Module name
    * @returns The module information, if found; otherwise, undefined.
    */
-  getNestedModule(name: string): AssemblyModule | undefined {
+  getNestedModule (name: string): AssemblyModule | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -192,7 +197,7 @@ export class AssemblyModule implements ISymbolScope {
    * @returns Null, if the symbol cannot be found; otherwise, the symbols value and usage
    * information
    */
-  resolveSimpleSymbol(symbol: string): IValueInfo | null {
+  resolveSimpleSymbol (symbol: string): IValueInfo | null {
     // --- Iterate through all modules from the innermost to the outermost
     let currentModule: AssemblyModule | null = this;
     while (currentModule) {
@@ -207,7 +212,7 @@ export class AssemblyModule implements ISymbolScope {
     return null;
 
     // --- Checks the specified module for a symbol
-    function resolveInModule(
+    function resolveInModule (
       module: AssemblyModule,
       symb: string
     ): IValueInfo | null {
@@ -218,7 +223,7 @@ export class AssemblyModule implements ISymbolScope {
         if (localSymbolValue) {
           return {
             value: localSymbolValue.value,
-            usageInfo: localSymbolValue,
+            usageInfo: localSymbolValue
           };
         }
         if (scope.containsLocalBooking(symb)) {
@@ -234,7 +239,7 @@ export class AssemblyModule implements ISymbolScope {
     }
   }
 
-  resolveCompoundSymbol(
+  resolveCompoundSymbol (
     fullSymbol: string,
     startFromGlobal: boolean
   ): IValueInfo | null {
@@ -250,7 +255,10 @@ export class AssemblyModule implements ISymbolScope {
 
     // --- Iterate through segments
     for (let i = 0; i < symbolSegments.length; i++) {
-      var segment = symbolSegments[i];
+      let segment = symbolSegments[i];
+      if (!this.caseSensitive) {
+        segment = segment?.toLowerCase();
+      }
 
       // --- Do not search for module-local variables
       if (segment.startsWith("@") && i > 0) {
@@ -270,7 +278,7 @@ export class AssemblyModule implements ISymbolScope {
           return fieldDefinition
             ? {
                 value: new ExpressionValue(fieldDefinition.offset),
-                usageInfo: fieldDefinition,
+                usageInfo: fieldDefinition
               }
             : null;
         }
@@ -278,7 +286,7 @@ export class AssemblyModule implements ISymbolScope {
         return symbolInfo
           ? {
               value: symbolInfo.value,
-              usageInfo: symbolInfo,
+              usageInfo: symbolInfo
             }
           : null;
       }

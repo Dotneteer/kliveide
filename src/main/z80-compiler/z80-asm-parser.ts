@@ -130,12 +130,12 @@ import {
   FunctionInvocation,
   IdentifierNode,
   Expression,
-  ExpressionNode,
+  ExpressionNode
 } from "./assembler-tree-nodes";
 import {
   ParserErrorMessage,
   errorMessages,
-  ErrorCodes,
+  ErrorCodes
 } from "./assembler-errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
@@ -200,7 +200,7 @@ export class Z80AsmParser {
    */
   private async allowEvents(): Promise<void> {
     if (this._batchCounter++ % PARSER_BATCH_SIZE === 0) {
-      await new Promise((r) => setTimeout(r, 0));
+      await new Promise(r => setTimeout(r, 0));
     }
   }
 
@@ -228,7 +228,7 @@ export class Z80AsmParser {
             startColumn: endToken.location.startColumn,
             endPosition: endToken.location.endPos,
             endColumn: endToken.location.endColumn,
-            comment: this.tokens.lastComment,
+            comment: this.tokens.lastComment
           });
         }
         this.tokens.resetComment();
@@ -264,7 +264,7 @@ export class Z80AsmParser {
     // --- Done
     return <Program>{
       type: "Program",
-      assemblyLines,
+      assemblyLines
     };
   }
 
@@ -304,11 +304,14 @@ export class Z80AsmParser {
     ) {
       asmLine = <LabelOnlyLine>{
         type: "LabelOnlyLine",
-        label,
+        label
       };
     } else {
       // --- Is the token the start of line body?
-      if (this.startsLineBody(mainToken) || mainToken.type === TokenType.Identifier) {
+      if (
+        this.startsLineBody(mainToken) ||
+        mainToken.type === TokenType.Identifier
+      ) {
         this._macroParamsCollected.length = 0;
         asmLine = this.parseLineBody(this.getParsePoint());
         if (asmLine) {
@@ -337,7 +340,7 @@ export class Z80AsmParser {
       startColumn: start.location.startColumn,
       endPosition: nextToken.location.startPos,
       endColumn: nextToken.location.startColumn,
-      comment: this.tokens.lastComment,
+      comment: this.tokens.lastComment
     });
     return resultLine;
   }
@@ -401,7 +404,7 @@ export class Z80AsmParser {
       if (text === "endl" || text === "lend") {
         this.tokens.get();
         return <LoopEndStatement>{
-          type: "LoopEndStatement",
+          type: "LoopEndStatement"
         };
       }
       if (text === "while") {
@@ -411,14 +414,14 @@ export class Z80AsmParser {
       if (text === "endw" || text === "wend") {
         this.tokens.get();
         return <WhileEndStatement>{
-          type: "WhileEndStatement",
+          type: "WhileEndStatement"
         };
       }
       if (text === "repeat") {
         this.tokens.get();
         return <RepeatStatement>{
           type: "RepeatStatement",
-          isBlock: true,
+          isBlock: true
         };
       }
       if (text === "until") {
@@ -429,25 +432,25 @@ export class Z80AsmParser {
         this.tokens.get();
         return <ProcStatement>{
           type: "ProcStatement",
-          isBlock: true,
+          isBlock: true
         };
       }
       if (text === "endp" || text === "pend") {
         this.tokens.get();
         return <ProcEndStatement>{
-          type: "ProcEndStatement",
+          type: "ProcEndStatement"
         };
       }
       if (text === "endm" || text === "mend") {
         this.tokens.get();
         return <MacroEndStatement>{
-          type: "MacroEndStatement",
+          type: "MacroEndStatement"
         };
       }
       if (text === "else") {
         this.tokens.get();
         return <ElseStatement>{
-          type: "ElseStatement",
+          type: "ElseStatement"
         };
       }
       if (text === "elif") {
@@ -457,31 +460,31 @@ export class Z80AsmParser {
       if (text === "endif") {
         this.tokens.get();
         return <EndIfStatement>{
-          type: "EndIfStatement",
+          type: "EndIfStatement"
         };
       }
       if (text === "break") {
         this.tokens.get();
         return <BreakStatement>{
-          type: "BreakStatement",
+          type: "BreakStatement"
         };
       }
       if (text === "continue") {
         this.tokens.get();
         return <ContinueStatement>{
-          type: "ContinueStatement",
+          type: "ContinueStatement"
         };
       }
       if (text === "ends") {
         this.tokens.get();
         return <StructEndStatement>{
-          type: "StructEndStatement",
+          type: "StructEndStatement"
         };
       }
       if (text === "next") {
         this.tokens.get();
         return <NextStatement>{
-          type: "NextStatement",
+          type: "NextStatement"
         };
       }
       return this.parseMacroOrStructInvocation();
@@ -537,7 +540,7 @@ export class Z80AsmParser {
         const orgExpr = this.getExpression();
         return <OrgPragma>{
           type: "OrgPragma",
-          address: orgExpr,
+          address: orgExpr
         };
       case TokenType.BankPragma:
         const bankExpr = this.getExpression();
@@ -545,81 +548,81 @@ export class Z80AsmParser {
         return <BankPragma>{
           type: "BankPragma",
           bankId: bankExpr,
-          offset: bankOffsExpr,
+          offset: bankOffsExpr
         };
       case TokenType.XorgPragma:
         const xorgExpr = this.getExpression();
         return <XorgPragma>{
           type: "XorgPragma",
-          address: xorgExpr,
+          address: xorgExpr
         };
       case TokenType.EntPragma:
         const entExpr = this.getExpression();
         return <EntPragma>{
           type: "EntPragma",
-          address: entExpr,
+          address: entExpr
         };
       case TokenType.XentPragma:
         const xentExpr = this.getExpression();
         return <XentPragma>{
           type: "XentPragma",
-          address: xentExpr,
+          address: xentExpr
         };
       case TokenType.EquPragma:
         const equExpr = this.getExpression();
         return <EquPragma>{
           type: "EquPragma",
-          value: equExpr,
+          value: equExpr
         };
       case TokenType.VarPragma:
       case TokenType.Assign:
         const varExpr = this.getExpression();
         return <VarPragma>{
           type: "VarPragma",
-          value: varExpr,
+          value: varExpr
         };
       case TokenType.DispPragma:
         const dispExpr = this.getExpression();
         return <DispPragma>{
           type: "DispPragma",
-          offset: dispExpr,
+          offset: dispExpr
         };
       case TokenType.DefbPragma:
         const defbExprs = this.getExpressionList(true);
         return <DefBPragma>{
           type: "DefBPragma",
-          values: defbExprs,
+          values: defbExprs
         };
       case TokenType.DefwPragma:
         const defwExprs = this.getExpressionList(true);
         return <DefWPragma>{
           type: "DefWPragma",
-          values: defwExprs,
+          values: defwExprs
         };
         break;
       case TokenType.DefmPragma:
         const defmExpr = this.getExpression();
         return <DefMPragma>{
           type: "DefMPragma",
-          value: defmExpr,
+          value: defmExpr
         };
       case TokenType.DefnPragma:
         const defnExpr = this.getExpression();
         return <DefNPragma>{
           type: "DefNPragma",
-          value: defnExpr,
+          value: defnExpr
         };
       case TokenType.DefhPragma:
         const defhExpr = this.getExpression();
         return <DefHPragma>{
           type: "DefHPragma",
-          value: defhExpr,
+          value: defhExpr
         };
       case TokenType.DefgxPragma:
         const defgxExpr = this.getExpression();
         return <DefGxPragma>{
           type: "DefGxPragma",
-          pattern: defgxExpr,
+          pattern: defgxExpr
         };
       case TokenType.DefgPragma:
         let pattern = "";
@@ -632,13 +635,13 @@ export class Z80AsmParser {
         }
         return <DefGPragma>{
           type: "DefGPragma",
-          pattern,
+          pattern
         };
       case TokenType.DefcPragma:
         const defcExpr = this.getExpression();
         return <DefCPragma>{
           type: "DefCPragma",
-          value: defcExpr,
+          value: defcExpr
         };
       case TokenType.SkipPragma:
         const skipExpr = this.getExpression();
@@ -646,11 +649,11 @@ export class Z80AsmParser {
         return <SkipPragma>{
           type: "SkipPragma",
           skip: skipExpr,
-          fill: skipFillExpr,
+          fill: skipFillExpr
         };
       case TokenType.ExternPragma:
         return <ExternPragma>{
-          type: "ExternPragma",
+          type: "ExternPragma"
         };
       case TokenType.DefsPragma:
         const defsExpr = this.getExpression();
@@ -658,7 +661,7 @@ export class Z80AsmParser {
         return <DefSPragma>{
           type: "DefSPragma",
           count: defsExpr,
-          fill: defsFillExpr,
+          fill: defsFillExpr
         };
       case TokenType.FillbPragma:
         const fillbExpr = this.getExpression();
@@ -666,7 +669,7 @@ export class Z80AsmParser {
         return <FillbPragma>{
           type: "FillbPragma",
           count: fillbExpr,
-          fill: fillValbExpr,
+          fill: fillValbExpr
         };
       case TokenType.FillwPragma:
         const fillwExpr = this.getExpression();
@@ -674,7 +677,7 @@ export class Z80AsmParser {
         return <FillwPragma>{
           type: "FillwPragma",
           count: fillwExpr,
-          fill: fillValwExpr,
+          fill: fillValwExpr
         };
       case TokenType.ModelPragma:
         const nextToken = this.tokens.peek();
@@ -690,39 +693,39 @@ export class Z80AsmParser {
         }
         return <ModelPragma>{
           type: "ModelPragma",
-          modelId,
+          modelId
         };
       case TokenType.AlignPragma:
         const alignExpr = this.getExpression(true);
         return <AlignPragma>{
           type: "AlignPragma",
-          alignExpr: alignExpr,
+          alignExpr: alignExpr
         };
       case TokenType.TracePragma:
         const traceExprs = this.getExpressionList(true);
         return <TracePragma>{
           type: "TracePragma",
           isHex: false,
-          values: traceExprs,
+          values: traceExprs
         };
       case TokenType.TraceHexPragma:
         const traceHexExprs = this.getExpressionList(true);
         return <TracePragma>{
           type: "TracePragma",
           isHex: true,
-          values: traceHexExprs,
+          values: traceHexExprs
         };
       case TokenType.RndSeedPragma:
         const rndSeedExpr = this.getExpression(true);
         return <RndSeedPragma>{
           type: "RndSeedPragma",
-          seedExpr: rndSeedExpr,
+          seedExpr: rndSeedExpr
         };
       case TokenType.ErrorPragma:
         const errorExpr = this.getExpression();
         return <ErrorPragma>{
           type: "ErrorPragma",
-          message: errorExpr,
+          message: errorExpr
         };
       case TokenType.IncludeBinPragma:
         const incBinExpr = this.getExpression();
@@ -734,7 +737,7 @@ export class Z80AsmParser {
           type: "IncBinPragma",
           filename: incBinExpr,
           offset: incBinOffsExpr,
-          length: incBinLenExpr,
+          length: incBinLenExpr
         };
       case TokenType.CompareBinPragma:
         const compBinExpr = this.getExpression();
@@ -746,13 +749,13 @@ export class Z80AsmParser {
           type: "CompareBinPragma",
           filename: compBinExpr,
           offset: compBinOffsExpr,
-          length: compBinLenExpr,
+          length: compBinLenExpr
         };
       case TokenType.InjectOptPragma:
         const optIds = this.getIdentifierNodeList(true);
         return <InjectOptPragma>{
           type: "InjectOptPragma",
-          identifiers: optIds,
+          identifiers: optIds
         };
     }
     return null;
@@ -828,7 +831,7 @@ export class Z80AsmParser {
     this.tokens.get();
     return {
       type: "SimpleZ80Instruction",
-      mnemonic: parsePoint.start.text.toUpperCase(),
+      mnemonic: parsePoint.start.text.toUpperCase()
     };
   }
 
@@ -883,7 +886,7 @@ export class Z80AsmParser {
         const djnzTarget = this.getOperand();
         return <DjnzInstruction>{
           type: "DjnzInstruction",
-          target: djnzTarget,
+          target: djnzTarget
         };
 
       case TokenType.Jr:
@@ -899,13 +902,13 @@ export class Z80AsmParser {
         let retCondition: Operand = this.parseOperand();
         return <RetInstruction>{
           type: "RetInstruction",
-          condition: retCondition,
+          condition: retCondition
         };
 
       case TokenType.Rst:
         return <RstInstruction>{
           type: "RstInstruction",
-          target: this.getOperand(),
+          target: this.getOperand()
         };
 
       case TokenType.Push:
@@ -923,7 +926,7 @@ export class Z80AsmParser {
       case TokenType.Im:
         return <ImInstruction>{
           type: "ImInstruction",
-          mode: this.getOperand(),
+          mode: this.getOperand()
         };
 
       case TokenType.Rlc:
@@ -965,14 +968,14 @@ export class Z80AsmParser {
         parser.expectToken(TokenType.E, "Z0105");
         return <SimpleZ80Instruction>{
           type: "SimpleZ80Instruction",
-          mnemonic: "mul",
+          mnemonic: "mul"
         };
 
       case TokenType.Mirror:
         this.expectToken(TokenType.A, "Z0101");
         return <SimpleZ80Instruction>{
           type: "SimpleZ80Instruction",
-          mnemonic: "mirror",
+          mnemonic: "mirror"
         };
 
       case TokenType.NextReg:
@@ -981,7 +984,7 @@ export class Z80AsmParser {
       case TokenType.Test:
         return <TestInstruction>{
           type: "TestInstruction",
-          expr: this.getExpression(),
+          expr: this.getExpression()
         };
 
       case TokenType.Bsla:
@@ -1006,7 +1009,7 @@ export class Z80AsmParser {
     ): T | null {
       return <T>{
         type: instrType,
-        operand: parser.getOperand(),
+        operand: parser.getOperand()
       };
     }
 
@@ -1019,7 +1022,7 @@ export class Z80AsmParser {
       return <T>{
         type: instrType,
         operand1,
-        operand2,
+        operand2
       };
     }
 
@@ -1034,7 +1037,7 @@ export class Z80AsmParser {
       return <T>{
         type: instrType,
         operand1,
-        operand2,
+        operand2
       };
     }
 
@@ -1052,7 +1055,7 @@ export class Z80AsmParser {
         type: instrType,
         operand1,
         operand2,
-        operand3,
+        operand3
       };
     }
 
@@ -1062,7 +1065,7 @@ export class Z80AsmParser {
       parser.expectToken(TokenType.B, "Z0102");
       return <SimpleZ80Instruction>{
         type: "SimpleZ80Instruction",
-        mnemonic,
+        mnemonic
       };
     }
   }
@@ -1092,12 +1095,12 @@ export class Z80AsmParser {
       case TokenType.EndIfDir:
         this.tokens.get();
         return <EndIfDirective>{
-          type: "EndIfDirective",
+          type: "EndIfDirective"
         };
       case TokenType.ElseDir:
         this.tokens.get();
         return <ElseDirective>{
-          type: "ElseDirective",
+          type: "ElseDirective"
         };
       case TokenType.IfDir:
         return createIfDirective();
@@ -1116,7 +1119,7 @@ export class Z80AsmParser {
       if (identifier) {
         return <T>{
           type,
-          identifier,
+          identifier
         };
       }
       return null;
@@ -1126,7 +1129,7 @@ export class Z80AsmParser {
       parser.tokens.get();
       return <IfDirective>{
         type: "IfDirective",
-        condition: parser.getExpression(),
+        condition: parser.getExpression()
       };
     }
 
@@ -1137,7 +1140,7 @@ export class Z80AsmParser {
         const literal = parser.parseStringLiteral(token.text);
         return <IncludeDirective>{
           type: "IncludeDirective",
-          filename: literal.value,
+          filename: literal.value
         };
       }
       parser.reportError("Z0108");
@@ -1164,7 +1167,7 @@ export class Z80AsmParser {
       return <LineDirective>{
         type: "LineDirective",
         lineNumber: expr,
-        filename: stringValue,
+        filename: stringValue
       };
     }
   }
@@ -1174,7 +1177,7 @@ export class Z80AsmParser {
    */
   private parseOperand(): Operand | null {
     const { start, traits } = this.getParsePoint();
-
+    const startToken = this.tokens.peek();
     // --- Check registers
     if (traits.reg) {
       // --- We have a register operand
@@ -1198,6 +1201,7 @@ export class Z80AsmParser {
         type: "Operand",
         operandType,
         register,
+        startToken
       };
     }
 
@@ -1213,6 +1217,7 @@ export class Z80AsmParser {
         return <Operand>{
           type: "Operand",
           operandType: OperandType.NoneArg,
+          startToken
         };
       }
       let register: string | undefined;
@@ -1240,6 +1245,7 @@ export class Z80AsmParser {
         type: "Operand",
         operandType,
         register,
+        startToken
       };
     }
 
@@ -1255,6 +1261,7 @@ export class Z80AsmParser {
         return <Operand>{
           type: "Operand",
           operandType: OperandType.NoneArg,
+          startToken
         };
       }
       let register: string | undefined;
@@ -1282,6 +1289,7 @@ export class Z80AsmParser {
         type: "Operand",
         operandType,
         register,
+        startToken
       };
     }
 
@@ -1291,6 +1299,7 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType: OperandType.NoneArg,
+        startToken,
       };
     }
 
@@ -1306,6 +1315,7 @@ export class Z80AsmParser {
         return <Operand>{
           type: "Operand",
           operandType: OperandType.CPort,
+          startToken
         };
       }
       if (traits.reg16) {
@@ -1317,6 +1327,7 @@ export class Z80AsmParser {
           type: "Operand",
           operandType: OperandType.RegIndirect,
           register: ahead.text.toLowerCase(),
+          startToken
         };
       }
       if (traits.reg16Idx) {
@@ -1342,6 +1353,7 @@ export class Z80AsmParser {
           register,
           offsetSign,
           expr,
+          startToken
         };
       }
       if (traits.expressionStart) {
@@ -1353,6 +1365,7 @@ export class Z80AsmParser {
           type: "Operand",
           operandType: OperandType.MemIndirect,
           expr,
+          startToken
         };
       }
     }
@@ -1364,6 +1377,7 @@ export class Z80AsmParser {
         type: "Operand",
         operandType: OperandType.Condition,
         register: start.text,
+        startToken
       };
     }
 
@@ -1374,6 +1388,7 @@ export class Z80AsmParser {
         type: "Operand",
         operandType: OperandType.Expression,
         expr: this.getExpression(),
+        startToken
       };
     }
 
@@ -1434,7 +1449,7 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.Endm) {
       return <MacroEndStatement>{
-        type: "MacroEndStatement",
+        type: "MacroEndStatement"
       };
     }
 
@@ -1443,7 +1458,7 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.Endl) {
       return <LoopEndStatement>{
-        type: "LoopEndStatement",
+        type: "LoopEndStatement"
       };
     }
 
@@ -1452,14 +1467,14 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.Endw) {
       return <WhileEndStatement>{
-        type: "WhileEndStatement",
+        type: "WhileEndStatement"
       };
     }
 
     if (start.type === TokenType.Repeat) {
       return <RepeatStatement>{
         type: "RepeatStatement",
-        isBlock: true,
+        isBlock: true
       };
     }
     if (start.type === TokenType.Until) {
@@ -1469,12 +1484,12 @@ export class Z80AsmParser {
     if (start.type === TokenType.Proc) {
       return <ProcStatement>{
         type: "ProcStatement",
-        isBlock: true,
+        isBlock: true
       };
     }
     if (start.type === TokenType.Endp) {
       return <ProcEndStatement>{
-        type: "ProcEndStatement",
+        type: "ProcEndStatement"
       };
     }
 
@@ -1489,12 +1504,12 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.Else) {
       return <ElseStatement>{
-        type: "ElseStatement",
+        type: "ElseStatement"
       };
     }
     if (start.type === TokenType.Endif) {
       return <EndIfStatement>{
-        type: "EndIfStatement",
+        type: "EndIfStatement"
       };
     }
     if (start.type === TokenType.Elif) {
@@ -1503,12 +1518,12 @@ export class Z80AsmParser {
 
     if (start.type === TokenType.Break) {
       return <BreakStatement>{
-        type: "BreakStatement",
+        type: "BreakStatement"
       };
     }
     if (start.type === TokenType.Continue) {
       return <ContinueStatement>{
-        type: "ContinueStatement",
+        type: "ContinueStatement"
       };
     }
 
@@ -1517,19 +1532,19 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.EndModule) {
       return <ModuleEndStatement>{
-        type: "ModuleEndStatement",
+        type: "ModuleEndStatement"
       };
     }
 
     if (start.type === TokenType.Struct) {
       return <StructStatement>{
         type: "StructStatement",
-        isBlock: true,
+        isBlock: true
       };
     }
     if (start.type === TokenType.Ends) {
       return <StructEndStatement>{
-        type: "StructEndStatement",
+        type: "StructEndStatement"
       };
     }
 
@@ -1538,7 +1553,7 @@ export class Z80AsmParser {
     }
     if (start.type === TokenType.Next) {
       return <NextStatement>{
-        type: "NextStatement",
+        type: "NextStatement"
       };
     }
     return null;
@@ -1555,7 +1570,7 @@ export class Z80AsmParser {
     return <MacroStatement>{
       type: "MacroStatement",
       isBlock: true,
-      parameters,
+      parameters
     };
   }
 
@@ -1567,7 +1582,7 @@ export class Z80AsmParser {
     return <LoopStatement>{
       type: "LoopStatement",
       isBlock: true,
-      expr: this.getExpression(),
+      expr: this.getExpression()
     };
   }
 
@@ -1579,7 +1594,7 @@ export class Z80AsmParser {
     return <WhileStatement>{
       type: "WhileStatement",
       isBlock: true,
-      expr: this.getExpression(),
+      expr: this.getExpression()
     };
   }
 
@@ -1590,7 +1605,7 @@ export class Z80AsmParser {
   private parseUntilStatement(): PartialZ80AssemblyLine | null {
     return <UntilStatement>{
       type: "UntilStatement",
-      expr: this.getExpression(),
+      expr: this.getExpression()
     };
   }
 
@@ -1602,7 +1617,7 @@ export class Z80AsmParser {
     return <IfStatement>{
       type: "IfStatement",
       isBlock: true,
-      expr: this.getExpression(),
+      expr: this.getExpression()
     };
   }
 
@@ -1616,7 +1631,7 @@ export class Z80AsmParser {
     return <IfUsedStatement>{
       type: "IfUsedStatement",
       isBlock: true,
-      symbol,
+      symbol
     };
   }
 
@@ -1630,7 +1645,7 @@ export class Z80AsmParser {
     return <IfNUsedStatement>{
       type: "IfNUsedStatement",
       isBlock: true,
-      symbol,
+      symbol
     };
   }
 
@@ -1641,7 +1656,7 @@ export class Z80AsmParser {
   private parseElseIfStatement(): PartialZ80AssemblyLine | null {
     return <ElseIfStatement>{
       type: "ElseIfStatement",
-      expr: this.getExpression(),
+      expr: this.getExpression()
     };
   }
 
@@ -1658,7 +1673,7 @@ export class Z80AsmParser {
     return <ModuleStatement>{
       type: "ModuleStatement",
       isBlock: true,
-      identifier,
+      identifier
     };
   }
 
@@ -1683,7 +1698,7 @@ export class Z80AsmParser {
       identifier,
       startExpr,
       toExpr,
-      stepExpr,
+      stepExpr
     };
   }
 
@@ -1703,7 +1718,7 @@ export class Z80AsmParser {
       } else {
         operands.push(<Operand>{
           type: "Operand",
-          operandType: OperandType.NoneArg,
+          operandType: OperandType.NoneArg
         });
       }
       while (this.skipToken(TokenType.Comma)) {
@@ -1713,7 +1728,7 @@ export class Z80AsmParser {
         } else {
           operands.push(<Operand>{
             type: "Operand",
-            operandType: OperandType.NoneArg,
+            operandType: OperandType.NoneArg
           });
         }
       }
@@ -1722,7 +1737,7 @@ export class Z80AsmParser {
     return <MacroOrStructInvocation>{
       type: "MacroOrStructInvocation",
       identifier,
-      operands,
+      operands
     };
   }
 
@@ -1749,7 +1764,7 @@ export class Z80AsmParser {
       case TokenType.DefgxPragma:
         return <FieldAssignment>{
           type: "FieldAssignment",
-          assignment: this.parsePragma(parsePoint),
+          assignment: this.parsePragma(parsePoint)
         };
       default:
         this.reportError("Z0110");
@@ -1818,7 +1833,7 @@ export class Z80AsmParser {
       {
         condition: condExpr,
         consequent: trueExpr,
-        alternate: falseExpr,
+        alternate: falseExpr
       },
       startToken,
       endToken
@@ -1848,7 +1863,7 @@ export class Z80AsmParser {
         {
           operator: "|",
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -1880,7 +1895,7 @@ export class Z80AsmParser {
         {
           operator: "^",
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -1912,7 +1927,7 @@ export class Z80AsmParser {
         {
           operator: "&",
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -1953,7 +1968,7 @@ export class Z80AsmParser {
           type: "BinaryExpression",
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -1993,7 +2008,7 @@ export class Z80AsmParser {
         {
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -2028,7 +2043,7 @@ export class Z80AsmParser {
         {
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -2061,7 +2076,7 @@ export class Z80AsmParser {
         {
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -2100,7 +2115,7 @@ export class Z80AsmParser {
         {
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -2133,7 +2148,7 @@ export class Z80AsmParser {
         {
           operator: opType.text,
           left: leftExpr,
-          right: rightExpr,
+          right: rightExpr
         },
         startToken,
         endToken
@@ -2194,7 +2209,7 @@ export class Z80AsmParser {
       case TokenType.LPar:
         return this.parseParExpr();
       case TokenType.LSBrac:
-          return this.parseBrackExpr();
+        return this.parseBrackExpr();
       case TokenType.Identifier:
         const lpar = this.tokens.ahead(1);
         return lpar.type === TokenType.LPar
@@ -2228,7 +2243,7 @@ export class Z80AsmParser {
       "MacroTimeFunctionInvocation",
       {
         functionName: start.text.toLowerCase(),
-        operand,
+        operand
       },
       start,
       this.tokens.peek()
@@ -2252,7 +2267,7 @@ export class Z80AsmParser {
         value:
           start.type === TokenType.LTextOf
             ? argToken.text.toLowerCase()
-            : argToken.text.toUpperCase(),
+            : argToken.text.toUpperCase()
       };
     }
     if (argToken.type === TokenType.LPar) {
@@ -2272,7 +2287,7 @@ export class Z80AsmParser {
           start.type === TokenType.LTextOf
             ? reg16.text.toLowerCase()
             : reg16.text.toUpperCase()
-        })`,
+        })`
       };
     }
 
@@ -2301,7 +2316,7 @@ export class Z80AsmParser {
       "FunctionInvocation",
       {
         functionName,
-        args,
+        args
       },
       startToken,
       this.tokens.peek()
@@ -2326,7 +2341,7 @@ export class Z80AsmParser {
         "Symbol",
         {
           startsFromGlobal,
-          identifier,
+          identifier
         },
         startToken,
         this.tokens.peek()
@@ -2351,7 +2366,7 @@ export class Z80AsmParser {
       "UnaryExpression",
       {
         operator,
-        operand,
+        operand
       },
       parsePoint.start,
       this.tokens.peek()
@@ -2398,13 +2413,13 @@ export class Z80AsmParser {
       case TokenType.True:
         literal = <BooleanLiteral>{
           type: "BooleanLiteral",
-          value: true,
+          value: true
         };
         break;
       case TokenType.False:
         literal = <BooleanLiteral>{
           type: "BooleanLiteral",
-          value: false,
+          value: false
         };
         break;
       case TokenType.CurAddress:
@@ -2421,7 +2436,7 @@ export class Z80AsmParser {
         literal = this.createExpressionNode<CurrentCounterLiteral>(
           "CurrentCounterLiteral",
           {
-            type: "CurrentCounterLiteral",
+            type: "CurrentCounterLiteral"
           },
           start,
           this.tokens.peek()
@@ -2458,7 +2473,7 @@ export class Z80AsmParser {
     if (!isNaN(value)) {
       return <IntegerLiteral>{
         type: "IntegerLiteral",
-        value,
+        value
       };
     }
     this.reportError("Z0114");
@@ -2475,7 +2490,7 @@ export class Z80AsmParser {
     if (!isNaN(value)) {
       return <IntegerLiteral>{
         type: "IntegerLiteral",
-        value,
+        value
       };
     }
     this.reportError("Z0114");
@@ -2492,7 +2507,7 @@ export class Z80AsmParser {
     if (!isNaN(value)) {
       return <IntegerLiteral>{
         type: "IntegerLiteral",
-        value,
+        value
       };
     }
     this.reportError("Z0114");
@@ -2515,7 +2530,7 @@ export class Z80AsmParser {
     if (!isNaN(value)) {
       return <IntegerLiteral>{
         type: "IntegerLiteral",
-        value,
+        value
       };
     }
     this.reportError("Z0114");
@@ -2533,7 +2548,7 @@ export class Z80AsmParser {
     if (!isNaN(value)) {
       return <RealLiteral>{
         type: "RealLiteral",
-        value,
+        value
       };
     }
     this.reportError("Z0114");
@@ -2548,7 +2563,7 @@ export class Z80AsmParser {
     text = convertSpectrumString(text.substr(1, text.length - 2));
     return <IntegerLiteral>{
       type: "IntegerLiteral",
-      value: text.length > 0 ? text.charCodeAt(0) : 0x00,
+      value: text.length > 0 ? text.charCodeAt(0) : 0x00
     };
   }
 
@@ -2556,7 +2571,7 @@ export class Z80AsmParser {
     text = text.substr(1, text.length - 2);
     return <StringLiteral>{
       type: "StringLiteral",
-      value: convertSpectrumString(text),
+      value: convertSpectrumString(text)
     };
   }
 
@@ -2601,7 +2616,7 @@ export class Z80AsmParser {
       line: startToken.location.line,
       startColumn: startToken.location.startColumn,
       endColumn: endToken.location.startColumn,
-      sourceText: this.tokens.getSourceSpan(startPosition, endPosition),
+      sourceText: this.tokens.getSourceSpan(startPosition, endPosition)
     });
   }
 
@@ -2687,7 +2702,7 @@ export class Z80AsmParser {
       text: errorText,
       line: token.location.line,
       column: token.location.startColumn,
-      position: token.location.startPos,
+      position: token.location.startPos
     });
     throw new ParserError(errorText, errorCode);
 
@@ -2737,7 +2752,7 @@ export class Z80AsmParser {
       endPosition: idToken.location.endPos,
       line: idToken.location.line,
       startColumn: idToken.location.startColumn,
-      endColumn: idToken.location.endColumn,
+      endColumn: idToken.location.endColumn
     };
   }
 
@@ -2884,5 +2899,5 @@ const keywordLikeIDs: { [key: string]: boolean } = {
   loop: true,
   LOOP: true,
   next: true,
-  NEXT: true,
+  NEXT: true
 };

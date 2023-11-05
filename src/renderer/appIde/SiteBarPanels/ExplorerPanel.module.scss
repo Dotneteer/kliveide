@@ -1,0 +1,90 @@
+@import "@styles/core.scss";
+
+.explorerPanel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-family: var(--main-font);
+  font-size: 0.9em;
+  font-weight: 500;
+  outline: none;
+
+  .item {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    color: var(--color-explorer);
+    overflow: hidden;
+    outline: none;
+    width: calc(100% - 2px);
+    height: 20px;
+    align-items: center;
+    border: 1px solid transparent;
+
+    &:hover {
+        background-color: var(--bgcolor-explorer-pointed)
+    }
+
+    &.focused:focus-within {
+      border-color: var(--border-explorer-focused);
+    }
+
+    &.selected {
+      background-color: var(--bgcolor-explorer-selected);
+      color: var(--color-explorer-selected);
+
+      &.focused {
+        background-color: var(--bgcolor-explorer-focused-selected);
+        color: var(--color-explorer-focused-selected);
+      }
+    }
+  }
+
+  .indent {
+    display: flex;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+
+  .name {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .iconRight {
+    display: flex;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-right: 8px;
+  }
+}
+
+.actionButton {
+  fill: var(--color-explorer) !important;
+
+  &:hover {
+    fill: var(--fill-explorer-icon) !important;
+  }
+
+  &:active {
+    fill: var(--color-explorer-selected) !important;
+  }
+}
+
+.noFolder {
+  color: var(--color-explorer);
+  padding: 16px;
+}
+
+.editor {
+  outline: none;
+  border: none;
+  color: white;
+  background: transparent;
+  font-family: var(--main-font);
+  font-size: 1em;
+}

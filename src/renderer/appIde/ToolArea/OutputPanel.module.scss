@@ -1,0 +1,15 @@
+@import "@styles/core.scss";
+
+.outputPanel {
+    @include fill-parent-flex;
+    box-sizing: border-box;
+    flex-direction: column;
+    user-select: text;
+    font-family: var(--monospace-font);
+    font-size: 0.8em;
+}
+
+.outputLine {
+    overflow-x: hidden;
+    word-break: break-all;
+}

@@ -1,0 +1,13 @@
+@import "@styles/core.scss";
+
+.toolbar {
+    @include fix-height-panel(38px);
+    padding: 2px 4px;
+    background: var(--bgcolor-toolbar);
+}
+
+.toolbarDropdownContainer {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}

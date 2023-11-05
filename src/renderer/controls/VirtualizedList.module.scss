@@ -1,0 +1,25 @@
+@import "@styles/core.scss";
+
+.virtualizedList {
+  box-sizing: border-box;
+  flex-direction: column;
+  background: transparent;
+  &::-webkit-scrollbar {
+    background: var(--bgcolor-scrollbar);
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--bgcolor-scrollbar-thumb);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+.hideScrollBar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

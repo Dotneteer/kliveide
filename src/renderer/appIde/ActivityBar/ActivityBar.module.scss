@@ -1,0 +1,8 @@
+@import "@styles/core.scss";
+
+.activityBar {
+    @include fix-width-panel(52px);
+    display: flex;
+    flex-direction: column;
+    background: var(--bgcolor-activitybar);
+}

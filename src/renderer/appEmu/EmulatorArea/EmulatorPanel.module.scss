@@ -1,0 +1,11 @@
+@import "@styles/core.scss";
+
+.emulatorPanel {
+  @include fill-parent-flex;
+  background: var(--bgcolor-emuarea);
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+  user-select: none;
+}

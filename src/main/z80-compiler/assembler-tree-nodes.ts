@@ -1,3 +1,5 @@
+import { Token } from "./token-stream";
+
 /**
  * Aggregate type for all syntax nodes
  */
@@ -811,6 +813,7 @@ export interface SetInstruction extends Z80InstructionWithTwoOrThreeOperands {
  */
 export interface Operand extends BaseNode {
   type: "Operand";
+  startToken?: Token;
   operandType: OperandType;
   register?: string;
   expr?: Expression;
@@ -834,7 +837,7 @@ export enum OperandType {
   CPort,
   Expression,
   Condition,
-  NoneArg,
+  NoneArg
 }
 
 // ============================================================================

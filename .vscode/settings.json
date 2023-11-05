@@ -1,8 +1,30 @@
 {
+  "editor.defaultFormatter": "rvest.vs-code-prettier-eslint",
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+
   "mochaExplorer.mochaPath": "node_modules/mocha",
-  "mochaExplorer.files": "src/test/**/*.test.ts",
+  "mochaExplorer.files": "test/**/*.test.ts",
   "mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"],
   "mochaExplorer.env": {
-    "TS_NODE_PROJECT": "./src/test/tsconfig.json"
+    "TS_NODE_PROJECT": "./test/tsconfig.json"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
   }
 }

@@ -15,35 +15,35 @@ export class InputStream {
    * Creates a stream that uses the specified source code
    * @param source Source code string
    */
-  constructor(public readonly source: string) {}
+  constructor (public readonly source: string) {}
 
   /**
    * Gets the specified part of the source code
    * @param start Start position
    * @param end End position
    */
-  getSourceSpan(start: number, end: number): string {
+  getSourceSpan (start: number, end: number): string {
     return this.source.substring(start, end);
   }
 
   /**
    * Gets the current position in the stream. Starts from 0.
    */
-  get position(): number {
+  get position (): number {
     return this._pos;
   }
 
   /**
    * Gets the current line number. Starts from 1.
    */
-  get line(): number {
+  get line (): number {
     return this._line;
   }
 
   /**
    * Gets the current column number. Starts from0.
    */
-  get column(): number {
+  get column (): number {
     return this._column;
   }
 
@@ -51,7 +51,7 @@ export class InputStream {
    * Peeks the next character in the stream
    * @returns null, if EOF; otherwise the current source code character
    */
-  peek(): string | null {
+  peek (): string | null {
     return this.ahead(0);
   }
 
@@ -60,7 +60,7 @@ export class InputStream {
    * @param n Number of positions to look ahead. Default: 1
    * @returns null, if EOF; otherwise the look-ahead character
    */
-  ahead(n: number = 1): string | null {
+  ahead (n: number = 1): string | null {
     return this._pos + n > this.source.length - 1
       ? null
       : this.source[this._pos + n];
@@ -69,7 +69,7 @@ export class InputStream {
   /**
    * Gets the next character from the stream
    */
-  get(): string | null {
+  get (): string | null {
     // --- Check for EOF
     if (this._pos >= this.source.length) {
       return null;

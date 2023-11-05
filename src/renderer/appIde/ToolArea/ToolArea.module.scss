@@ -1,0 +1,33 @@
+@import "@styles/core.scss";
+
+.toolArea {
+    @include fill-parent-flex;
+    box-sizing: border-box;
+    flex-direction: column;
+    background: var(--bgcolor-toolarea);
+    border: 1px solid transparent;
+    user-select: none;
+}
+
+.left {
+    border-left: 1px solid var(--color-tool-border);
+}
+
+.right {
+    border-right: 1px solid var(--color-tool-border);
+}
+
+.bottom {
+    border-top: 1px solid var(--color-tool-border);
+}
+
+.top {
+    border-bottom: 1px solid var(--color-tool-border);
+}
+
+.wrapper {
+    @include fill-parent-flex;
+    box-sizing: border-box;
+    flex-direction: column;
+    padding: 12px 0 2px 8px;
+}

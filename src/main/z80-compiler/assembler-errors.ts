@@ -325,5 +325,5 @@ export const errorMessages: ErrorText = {
   Z1012: "Error in macro invocation",
 
   // --- Others
-  Z2000: "ERROR: {0}",
+  Z2000: "ERROR: {0}"
 };

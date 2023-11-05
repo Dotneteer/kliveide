@@ -1,0 +1,38 @@
+@import "@styles/core.scss";
+
+.tabButton {
+  display: flex;
+  height: auto;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  flex-grow: 0;
+
+  &:hover {
+    border-radius: 4px;
+    background: var(--bgcolor-tabbutton-pointed);
+  }
+}
+
+.keyDown,
+.keyDown:hover {
+  background: var(--bgcolor-tabbutton-down);
+}
+
+.disabled,
+.disabled:hover {
+  background: transparent;
+}
+
+.placeholder {
+  width: 20px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.separator {
+    border-left: 1px solid var(--color-button-separator);
+    margin: 8px 10px;
+    width: 0px;
+    height: calc(100% - 12px);
+}

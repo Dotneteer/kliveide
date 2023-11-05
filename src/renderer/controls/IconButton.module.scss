@@ -1,0 +1,30 @@
+@import "@styles/core.scss";
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  padding: 2px 2px;
+}
+
+.noPadding {
+  padding: 0;
+}
+
+.iconWrapper {
+  @include fill-parent-flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid transparent;
+}
+
+.enabled {
+  cursor: pointer;
+}
+
+.selected {
+  border: 2px solid var(--color-toolbarbutton-selected);
+}
+
+.keyDown {
+  background: var(--bgcolor-keydown-toolbarbutton);
+}

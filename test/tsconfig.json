@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "module": "commonjs",
+    "target": "ESNext",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": false,
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+		"paths": {
+      "@abstractions/*": ["../src/common/abstractions/*"],
+      "@common/*": ["../src/common/*"],
+      "@styles/*": ["../src/renderer/assets/styles/*"],
+      "@messaging/*": ["../src/common/messaging/*"],
+      "@state/*": ["../src/common/state/*"],
+      "@utils/*": ["../src/common/utils/*"],
+      "@renderer/*": ["../src/renderer/*"],
+      "@emu/*": ["../src/emu/*"],
+      "@appIde/*": ["../src/renderer/appIde/*"],
+      "@main/*": ["../src/main/*"],
+		},
+  },
+  "include": ["../**/*", "/common/state", "/common/abstractions"],
+  "exclude": ["node_modules", "**/build/*", "**/*.d.ts"]
+}

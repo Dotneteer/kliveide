@@ -1,0 +1,74 @@
+$splitterHighlightColor: "blue";
+
+@mixin fill-parent {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+@mixin fill-parent-flex {
+  @include fill-parent;
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+@mixin container-for-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+@mixin container-for-columns {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+@mixin container-for-rows-reverse {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+@mixin container-for-columns-reverse {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+@mixin fix-width-panel($width) {
+  height: 100%;
+  width: $width;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+@mixin fix-height-panel($height) {
+  height: $height;
+  width: 100%;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+@mixin side-panel-content {
+  display: block;
+  height: auto;
+  width: auto;
+  padding: 0;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+  padding: 4px 4px 4px 8px;
+}
+
+@font-face {
+  font-family: 'ZxSpectrum';
+  src: url('../fonts/zxspectrum.woff2');
+}

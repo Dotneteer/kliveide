@@ -1,0 +1,26 @@
+@import "@styles/core.scss";
+
+.documentsHeader {
+  @include fix-height-panel(38px);
+  flex-direction: row;
+  background: var(--bgcolor-docsheader);
+  outline: none;
+  
+  .tabWrapper {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+.closingTab {
+  @include fix-height-panel(38px);
+  width: 4px;
+  border-left: 1px solid var(--color-doc-border);
+}
+
+.commandBar {
+  width: auto;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}

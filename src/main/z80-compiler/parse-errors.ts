@@ -7,7 +7,7 @@ export class ParserError extends Error {
    * @param message Error message
    * @param code Optional code to identify the message
    */
-  constructor(message: string, public code?: string) {
+  constructor (message: string, public code?: string) {
     super(message);
 
     // --- Set the prototype explicitly.

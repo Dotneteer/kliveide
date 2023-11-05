@@ -1,4 +1,6 @@
-import { SpectrumModelType } from "@abstractions/z80-compiler-service";
+import * as path from "path";
+
+import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { ErrorCodes } from "./assembler-errors";
 import {
   IAssemblerErrorInfo,
@@ -7,7 +9,7 @@ import {
   IListFileItem,
   ISourceFileItem,
   SourceMap,
-  SymbolValueMap,
+  SymbolValueMap
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 
@@ -15,7 +17,7 @@ import { AssemblyModule } from "./assembly-module";
  * This class represents the output of the Z80 assembler
  */
 export class AssemblerOutput extends AssemblyModule {
-  constructor(
+  constructor (
     public readonly sourceItem: SourceFileItem,
     caseSensitive: boolean
   ) {
@@ -41,7 +43,7 @@ export class AssemblerOutput extends AssemblyModule {
   /**
    * Number of errors
    */
-  get errorCount(): number {
+  get errorCount (): number {
     return this.errors.length;
   }
 
@@ -98,7 +100,7 @@ export class AssemblerOutput extends AssemblyModule {
    * @param line Source line number
    * @param address Address
    */
-  addToAddressMap(fileIndex: number, line: number, address: number): void {
+  addToAddressMap (fileIndex: number, line: number, address: number): void {
     const sourceInfo: IFileLine = { fileIndex, line };
     const addressList = this.addressMap.get(sourceInfo);
     if (addressList) {
@@ -166,7 +168,7 @@ export class BinarySegment implements IBinarySegment {
   /**
    * The current code generation offset
    */
-  get currentOffset(): number {
+  get currentOffset (): number {
     return this.emittedCode.length;
   }
 
@@ -175,7 +177,7 @@ export class BinarySegment implements IBinarySegment {
    * @param data Byte to emit
    * @returns Null, if byte emitted; otherwise, error message
    */
-  emitByte(data: number): ErrorCodes | null {
+  emitByte (data: number): ErrorCodes | null {
     this.emittedCode.push(data & 0xff);
     if (
       this.startAddress + this.emittedCode.length > 0x10000 &&
@@ -199,7 +201,7 @@ export class BinarySegment implements IBinarySegment {
  * Represents a compilation error
  */
 export class AssemblerErrorInfo implements IAssemblerErrorInfo {
-  constructor(
+  constructor (
     public readonly errorCode: ErrorCodes,
     public readonly fileName: string,
     public readonly line: number,
@@ -216,7 +218,11 @@ export class AssemblerErrorInfo implements IAssemblerErrorInfo {
  * Describes a source file item
  */
 export class SourceFileItem implements ISourceFileItem {
-  constructor(public readonly filename: string) {}
+  public readonly filename: string;
+
+  constructor (filename: string) {
+    this.filename = path.normalize(filename);
+  }
 
   /**
    * Optional parent item
@@ -235,7 +241,7 @@ export class SourceFileItem implements ISourceFileItem {
    * False, if the inclusion would create a circular reference,
    * or the child is already is in the list
    */
-  include(childItem: SourceFileItem): boolean {
+  include (childItem: SourceFileItem): boolean {
     let current: SourceFileItem = this;
     while (current) {
       if (current.filename === childItem.filename) {
@@ -257,8 +263,8 @@ export class SourceFileItem implements ISourceFileItem {
    * @param childItem Child item to check
    * @returns True, if this item contains the child item; otherwise, false
    */
-  containsInIncludeList(childItem: SourceFileItem): boolean {
-    return this.includes.some((c) => c.filename === childItem.filename);
+  containsInIncludeList (childItem: SourceFileItem): boolean {
+    return this.includes.some(c => c.filename === childItem.filename);
   }
 }
 

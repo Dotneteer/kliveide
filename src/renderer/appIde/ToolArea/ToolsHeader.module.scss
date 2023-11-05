@@ -1,0 +1,22 @@
+@import "@styles/core.scss";
+
+.toolsHeader {
+    @include fix-height-panel(38px);
+    flex-direction: row;
+}
+
+.headerBar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    height: 100%;
+    padding: 0 8px;
+}
+
+
+.commandBar {
+    width: auto;
+    display: flex;
+    align-items: center;
+}
