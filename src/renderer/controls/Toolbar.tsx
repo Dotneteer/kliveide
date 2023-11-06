@@ -72,13 +72,13 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const muted = useSelector(s => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad ?? false);
   const isDebugging = useSelector(s => s.emulatorState?.isDebugging ?? false);
-  const isKliveProject = useSelector(s => s.project?.isKliveProject ?? false);
   const isCompiling = useSelector(s => s.compilation?.inProgress ?? false);
   const isRunning =
     state !== MachineControllerState.None &&
     state !== MachineControllerState.Stopped;
-  const canStart = !isCompiling && !isRunning;
-  const mayInjectCode = ide && isKliveProject;
+  const canStart = (!ide || kliveProjectLoaded) && !isCompiling && !isRunning;
+  const canPickStartOption = (!ide || kliveProjectLoaded) && !isRunning;
+  const mayInjectCode = ide && kliveProjectLoaded;
   const [ startMode, setStartMode ] = useState(ide && kliveProjectLoaded ? "debug" : "start");
 
   const storeDispatch = useDispatch();
@@ -132,7 +132,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       />
       <div
           className={styles.toolbarDropdownContainer}
-          style={isRunning ? { pointerEvents: 'none', opacity: '.4' } : {}}>
+          style={!canPickStartOption ? { pointerEvents: 'none', opacity: '.4' } : {}}>
         <Dropdown
           placeholder={undefined}
           options={[...startOptions]}
@@ -208,7 +208,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           var response: any;
           switch (restartTarget) {
             case 'project': {
-              if (isKliveProject) {
+              if (kliveProjectLoaded) {
                 messenger.postMessage({
                   type: "IdeExecuteCommand",
                   commandText: "outp build"
@@ -373,7 +373,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             selected={syncSourceBps}
             fill='orange'
             title='Stop sync with current source code breakpoint'
-            enable={isKliveProject}
+            enable={kliveProjectLoaded}
             clicked={() => {
               dispatch(syncSourceBreakpointsAction(!syncSourceBps));
             }}
