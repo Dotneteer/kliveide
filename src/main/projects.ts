@@ -34,7 +34,7 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
 import { KliveProjectStructure } from "../common/abstractions/KliveProjectStructure";
 import { setMachineType } from "./registeredMachines";
-import { sendFromMainToIde } from "@common/messaging/MainToIdeMessenger";
+import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 
 type ProjectCreationResult = {
   path?: string;
