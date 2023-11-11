@@ -73,6 +73,13 @@ export function appStateFlagsReducer (
     case "START_SCREEN_DISPLAYED":
       return { ...state, startScreenDisplayed: true };
 
+    case "SET_KEY_MAPPINGS":
+      return {
+        ...state,
+        keyMappingFile: payload.file,
+        keyMappings: payload.value
+      };
+
     default:
       return state;
   }

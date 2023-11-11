@@ -25,6 +25,7 @@ import {
 } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -55,6 +56,8 @@ export const EmulatorPanel = () => {
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
+  const keyMappings = useSelector(s => s.keyMappings);
+  const currentKeyMappings = useRef(spectrumKeyMappings);
 
   // --- Variables for display management
   const imageBuffer = useRef<ArrayBuffer>();
@@ -64,10 +67,10 @@ export const EmulatorPanel = () => {
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
   const _handleKeyDown = (e: KeyboardEvent) => {
-    handleKey(e, true);
+    handleKey(e, currentKeyMappings.current, true);
   };
   const _handleKeyUp = (e: KeyboardEvent) => {
-    handleKey(e, false);
+    handleKey(e, currentKeyMappings.current, false);
   };
 
   // --- Variables for audio management
@@ -80,6 +83,17 @@ export const EmulatorPanel = () => {
     machineFrameCompleted
   );
   const controllerRef = useRef<IMachineController>(controller);
+
+  // --- Update key mappings
+  useEffect(() => {
+    if (!keyMappings) {
+      currentKeyMappings.current = spectrumKeyMappings;
+    } else {
+      currentKeyMappings.current = keyMappings.merge
+        ? { ...spectrumKeyMappings, ...keyMappings.mapping }
+        : keyMappings.mapping;
+    }
+  }, [keyMappings]);
 
   // --- Set up keyboard handling
   useEffect(() => {
@@ -324,7 +338,11 @@ export const EmulatorPanel = () => {
   }
 
   // --- Hanldles key events
-  function handleKey (e: KeyboardEvent, isDown: boolean): void {
+  function handleKey (
+    e: KeyboardEvent,
+    mapping: KeyMapping,
+    isDown: boolean
+  ): void {
     if (!e || controllerRef.current?.state !== MachineControllerState.Running)
       return;
     // --- Special key: both Shift released
@@ -333,10 +351,10 @@ export const EmulatorPanel = () => {
       e.shiftKey === false &&
       !isDown
     ) {
-      handleMappedKey("ShiftLeft", false);
-      handleMappedKey("ShiftRight", false);
+      handleMappedKey("ShiftLeft", mapping, false);
+      handleMappedKey("ShiftRight", mapping, false);
     } else {
-      handleMappedKey(e.code, isDown);
+      handleMappedKey(e.code, mapping, isDown);
     }
     if (isDown) {
       pressedKeys.current[e.code.toString()] = true;
@@ -346,8 +364,12 @@ export const EmulatorPanel = () => {
   }
 
   // --- Maps physical keys to ZX Spectrum keys
-  function handleMappedKey (code: string, isDown: boolean): void {
-    const mapping = spectrumKeyMappings[code];
+  function handleMappedKey (
+    code: string,
+    keyMapping: KeyMapping,
+    isDown: boolean
+  ): void {
+    const mapping = keyMapping[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
     if (typeof mapping === "string") {

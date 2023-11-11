@@ -1,7 +1,7 @@
 /**
  * Defines a set of virtual machine keys that can be assigned to a virtual key
  */
-type KeySet =
+export type KeySet =
   | string
   | [string]
   | [string, string];

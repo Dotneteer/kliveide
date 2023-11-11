@@ -83,4 +83,5 @@ export interface ActionTypes {
   SAVE_PROJECT_SETTINGS: null;
 
   START_SCREEN_DISPLAYED: null;
+  SET_KEY_MAPPINGS: null;
 }

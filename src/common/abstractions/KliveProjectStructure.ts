@@ -11,6 +11,7 @@ export type KliveProjectStructure = {
   tapeFile?: string;
   fastLoad?: boolean;
   machineSpecific?: Record<string, Record<string, any>>;
+  keyMappingFile?: string;
   ide?: Record<string, any>;
   debugger?: DebuggerState;
   builder?: BuilderState;

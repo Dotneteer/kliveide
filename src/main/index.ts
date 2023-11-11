@@ -17,6 +17,7 @@
 // parameter).
 // ====================================================================================================================
 
+import * as fs from "fs";
 import {
   defaultResponse,
   errorResponse,
@@ -24,7 +25,6 @@ import {
   ResponseMessage
 } from "../common/messaging/messages-core";
 import {
-  dimMenuAction,
   emuFocusedAction,
   ideFocusedAction,
   saveUserSettingAction,
@@ -36,7 +36,8 @@ import {
   showKeyboardAction,
   setFastLoadAction,
   displayDialogAction,
-  startScreenDisplayedAction
+  startScreenDisplayedAction,
+  setKeyMappingsAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
@@ -59,6 +60,7 @@ import { setMachineType } from "./registeredMachines";
 import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -256,7 +258,18 @@ async function createAppWindows () {
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       if (appSettings.lastTapeFile) {
-        setSelectedTapeFile(appSettings.lastTapeFile, false, false);
+        setSelectedTapeFile(appSettings.lastTapeFile);
+      }
+
+      // --- Set key mappings 
+      if (appSettings.keyMappingFile) {
+        try {
+          const mappingSource = fs.readFileSync(appSettings.keyMappingFile, "utf8");
+          const mappings = parseKeyMappings(mappingSource);
+          mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings));
+        } catch (err) {
+          // --- Intentionally ignored
+        }
       }
 
       if (!appSettings.startScreenDisplayed) {
