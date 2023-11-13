@@ -135,6 +135,8 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-key": "#707070",
   "--color-key48-main": "#e0e0e0",
   "--color-key128-main": "#c0c0c0",
+  "--bgcolor-hilited48": "orangered",
+  "--bgcolor-hilited128": "orangered",
   "--color-key-symbol": "#c00000",
   "--color-key-above": "#00a000",
   "--color-key-below": "#d02000",

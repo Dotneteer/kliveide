@@ -1,6 +1,7 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 /**
  * Represents the state of the entire application
@@ -24,6 +25,8 @@ export type AppState = {
   project?: IdeProject;
   compilation?: CompilationState;
   projectSettings?: Record<string, any>;
+  keyMappingFile?: string;
+  keyMappings?: { mapping: KeyMapping; merge: boolean };
   userSettings?: Record<string, any>;
 };
 
@@ -151,7 +154,7 @@ export const initialAppState: AppState = {
   emuViewOptions: {
     showToolbar: true,
     showStatusBar: true,
-    showKeyboard: false,
+    showKeyboard: false
   },
   emulatorState: {
     soundLevel: 0.8,

@@ -9,6 +9,7 @@ const NORMAL_HEIGHT = 76;
  */
 type Props = {
   zoom: number;
+  pressed?: boolean;
   mouseOnKey: () => void;
   mouseOutOfKey: () => void;
   mouseDown: () => void;
@@ -20,6 +21,7 @@ type Props = {
  */
 export const Sp128EnterKeyTop = ({
   zoom,
+  pressed,
   mouseOnKey,
   mouseOutOfKey,
   mouseDown,
@@ -35,21 +37,22 @@ export const Sp128EnterKeyTop = ({
   const currentHeight = appliedZoom * NORMAL_HEIGHT;
   const cursor = mouseOverKey ? "pointer" : "default";
 
-    // --- Invariant display properties
-    const themeService = useTheme();
-    const buttonBackColor = themeService.getThemeProperty(
-      "--bgcolor-key128"
-    );
-    const buttonRaiseColor = themeService.getThemeProperty(
-      "--bgcolor-key128-raise"
-    );
-  
+  // --- Invariant display properties
+  const themeService = useTheme();
+  const buttonBackColor = themeService.getThemeProperty("--bgcolor-key128");
+  const buttonRaiseColor = themeService.getThemeProperty(
+    "--bgcolor-key128-raise"
+  );
+  const highlightBackColor = themeService.getThemeProperty(
+    "--bgcolor-hilited128"
+  );
+
   return (
     <svg
       width={currentWidth}
       height={currentHeight}
       viewBox={`0 0 ${NORMAL_WIDTH} ${normalHeight}`}
-      style={{ marginRight: 2*zoom }}
+      style={{ marginRight: 2 * zoom }}
       xmlns='http://www.w3.org/2000/svg'
     >
       {/* Button rectangle */}
@@ -69,7 +72,7 @@ export const Sp128EnterKeyTop = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={buttonRaiseColor}
+        fill={pressed ? highlightBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => {
           setMouseOverKey(true);
@@ -87,7 +90,7 @@ export const Sp128EnterKeyTop = ({
         y={36}
         width={64}
         height={40}
-        fill={buttonRaiseColor}
+        fill={pressed ? highlightBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => {
           setMouseOverKey(true);

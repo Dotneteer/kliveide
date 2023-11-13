@@ -36,7 +36,8 @@ import {
   protectDiskAction,
   setRestartTarget,
   showKeyboardAction,
-  setFastLoadAction
+  setFastLoadAction,
+  setKeyMappingsAction
 } from "../common/state/actions";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
@@ -51,7 +52,7 @@ import {
   FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
 } from "../common/messaging/dialog-ids";
-import { IdeExecuteCommandResponse } from "@common/messaging/any-to-ide";
+import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
   BASIC_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
@@ -63,6 +64,7 @@ import {
   setMachineType
 } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
+import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -111,6 +113,8 @@ const CREATE_DISK_FILE = "create_disk_file";
 const INSERT_DISK = "insert_disk";
 const PROTECT_DISK = "protect_disk";
 const EJECT_DISK = "eject_disk";
+const SELECT_KEY_MAPPING = "select_key_mapping";
+const RESET_KEY_MAPPING = "reset_key_mapping";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
@@ -126,6 +130,7 @@ const HELP_SHOW_WELCOME = "help_welcome";
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 const TOGGLE_FAST_LOAD = "toggle_fast_load";
 const REWIND_TAPE = "rewind_tape";
+const KEY_MAPPING_FOLDER = "keyMappingFolder";
 
 /**
  * Creates and sets the main menu of the app
@@ -625,8 +630,28 @@ export function setupMenu (
     },
     { type: "separator" },
     {
+      id: SELECT_KEY_MAPPING,
+      label: "Select Key Mapping...",
+      visible: !ideTraits.isFocused,
+      click: async () => {
+        await setKeyMappingFile(emuWindow);
+        await saveKliveProject();
+      }
+    },
+    {
+      id: RESET_KEY_MAPPING,
+      label: "Reset Key Mapping",
+      visible: !ideTraits.isFocused,
+      click: async () => {
+        mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
+        await saveKliveProject();
+      }
+    },
+    { type: "separator" },
+    {
       id: SELECT_TAPE_FILE,
       label: "Select Tape File...",
+      visible: !ideTraits.isFocused,
       click: async () => {
         await setTapeFile(emuWindow);
         await saveKliveProject();
@@ -925,9 +950,7 @@ export function setupMenu (
             mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
           }
         }
-      },
-
-
+      }
     ]
   });
 
@@ -938,21 +961,25 @@ export function setupMenu (
 
   // Preserve the submenus as a dedicated array.
   const submenus = template.map(i => i.submenu);
+
   function templateTransform (wnd: BrowserWindow) {
     return wnd.isFocused()
       ? (i, idx) => (i.submenu = submenus[idx])
       : i => (i.submenu = null);
   }
+
   if (__DARWIN__) {
     const windowFocused = emuTraits.isFocused ? emuWindow : ideWindow;
-    template.forEach(templateTransform(windowFocused));
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    if (!windowFocused.isDestroyed()) {
+      template.forEach(templateTransform(windowFocused));
+      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    }
   } else {
-    if (emuWindow) {
+    if (emuWindow && !emuWindow.isDestroyed()) {
       template.forEach(templateTransform(emuWindow));
       emuWindow.setMenu(Menu.buildFromTemplate(template));
     }
-    if (ideWindow) {
+    if (ideWindow && !ideWindow.isDestroyed()) {
       template.forEach(templateTransform(ideWindow));
       ideWindow.setMenu(Menu.buildFromTemplate(template));
     }
@@ -994,11 +1021,7 @@ async function setTapeFile (browserWindow: BrowserWindow): Promise<void> {
   await setSelectedTapeFile(dialogResult.filePaths[0]);
 }
 
-export async function setSelectedTapeFile (
-  filename: string,
-  confirm?: boolean,
-  suppressError?: boolean
-): Promise<void> {
+export async function setSelectedTapeFile (filename: string): Promise<void> {
   // --- Read the file
   const tapeFileFolder = path.dirname(filename);
 
@@ -1008,7 +1031,6 @@ export async function setSelectedTapeFile (
   // --- Save the folder into settings
   appSettings.folders ??= {};
   appSettings.folders[TAPE_FILE_FOLDER] = tapeFileFolder;
-  saveAppSettings();
 
   try {
     const contents = fs.readFileSync(filename);
@@ -1063,7 +1085,6 @@ async function setDiskFile (
   // --- Save the folder into settings
   appSettings.folders ??= {};
   appSettings.folders[DISK_FILE_FOLDER] = diskFileFolder;
-  saveAppSettings();
 
   try {
     const contents = fs.readFileSync(filename);
@@ -1102,6 +1123,46 @@ async function ejectDiskFile (index: number, suffix: string): Promise<void> {
     dialog.showErrorBox(
       "Error while ejecting disk file",
       `Ejecting resulted in error: ${err.message}`
+    );
+  }
+}
+
+/**
+ * Sets the key mapping file
+ * @param browserWindow Host browser window
+ * @returns The key mappings file is set in the app state
+ */
+async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
+  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const defaultPath =
+    appSettings?.folders?.[KEY_MAPPING_FOLDER] ||
+    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select Key Mapping File",
+    defaultPath,
+    filters: [
+      { name: "Key Mapping Files", extensions: ["keymap"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  // --- Read the file
+  const filename = dialogResult.filePaths[0];
+  try {
+    const mappingSource = fs.readFileSync(filename, "utf8");
+    const mappings = parseKeyMappings(mappingSource);
+    mainStore.dispatch(setKeyMappingsAction(filename, mappings));
+
+    // --- Save the folder into settings
+    appSettings.folders ??= {};
+    appSettings.folders[KEY_MAPPING_FOLDER] = path.dirname(filename);
+    saveAppSettings();
+  } catch (err) {
+    dialog.showErrorBox(
+      "Error while reading key mapping file",
+      `Reading file ${filename} resulted in error: ${err.message}`
     );
   }
 }

@@ -359,3 +359,8 @@ export const saveProjectSettingAction: ActionCreator = value => ({
 export const startScreenDisplayedAction: ActionCreator = () => ({
   type: "START_SCREEN_DISPLAYED"
 });
+
+export const setKeyMappingsAction: ActionCreator = (file, value) => ({
+  type: "SET_KEY_MAPPINGS",
+  payload: { file, value }
+});

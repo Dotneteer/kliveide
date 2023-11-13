@@ -24,6 +24,7 @@ type Props = {
   glyph?: number;
   useSymColor?: boolean;
   xwidth?: number;
+  pressed?: boolean;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
 
@@ -47,6 +48,7 @@ export const Sp48Key = ({
   glyph,
   useSymColor,
   xwidth,
+  pressed,
   keyAction
 }: Props) => {
   // --- State bindings
@@ -66,6 +68,9 @@ export const Sp48Key = ({
   const belowKeyColor = themeService.getThemeProperty("--color-key-below");
   const highlightKeyColor = themeService.getThemeProperty(
     "--color-key48-highlight"
+  );
+  const highlightBackColor = themeService.getThemeProperty(
+    "--bgcolor-hilited48"
   );
 
   // --- State dependent display properties
@@ -116,7 +121,7 @@ export const Sp48Key = ({
         ry='8'
         width='100%'
         height='70'
-        fill={keyBackground}
+        fill={pressed ? highlightBackColor : keyBackground}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}

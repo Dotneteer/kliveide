@@ -138,6 +138,8 @@ export type ThemeProperties = {
   "--bgcolor-key"?: string;
   "--color-key48-main"?: string;
   "--color-key128-main"?: string;
+  "--bgcolor-hilited48"?: string;
+  "--bgcolor-hilited128"?: string;
   "--color-key-symbol"?: string;
   "--color-key-above"?: string;
   "--color-key-below"?: string;

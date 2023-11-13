@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { app } from "electron";
 import { WindowState } from "./WindowStateManager";
 import { mainStore } from "./main-store";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive.settings";
@@ -23,6 +24,7 @@ export type AppSettings = {
   lastTapeFile?: string;
   folders?: Record<string, string>;
   excludedProjectItems?: string[];
+  keyMappingFile?: string;
   userSettings?: Record<string, any>;
 };
 
@@ -45,6 +47,7 @@ export function saveAppSettings (): void {
   appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
   appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
   appSettings.lastTapeFile = state.emulatorState?.tapeFile;
+  appSettings.keyMappingFile = state.keyMappingFile;
 
   // --- Save to the settings file
   fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {

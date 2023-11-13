@@ -24,6 +24,7 @@ type Props = {
   cleanMode?: boolean;
   glyph?: number;
   xwidth?: number;
+  pressed?: boolean;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
 
@@ -46,6 +47,7 @@ export const Sp128Key = ({
   cleanMode,
   glyph,
   xwidth,
+  pressed,
   keyAction
 }: Props) => {
   // --- State bindings
@@ -68,6 +70,9 @@ export const Sp128Key = ({
   );
   const buttonTextColor = themeService.getThemeProperty(
     "--color-key128-main"
+  );
+  const highlightBackColor = themeService.getThemeProperty(
+    "--bgcolor-hilited48"
   );
 
   // --- State dependent display properties
@@ -124,7 +129,7 @@ export const Sp128Key = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={buttonRaiseColor}
+        fill={pressed ? highlightBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -141,7 +146,7 @@ export const Sp128Key = ({
             ry='32'
             width='100%'
             height='100%'
-            fill={buttonRaiseColor}
+            fill={pressed ? highlightBackColor : buttonRaiseColor}
             cursor={cursor}
             onMouseEnter={() => setMouseOverKey(true)}
             onMouseLeave={() => setMouseOverKey(false)}
@@ -154,7 +159,7 @@ export const Sp128Key = ({
             y={6}
             width={xwidth - NORMAL_WIDTH}
             height='63.5'
-            fill={buttonRaiseColor}
+            fill={pressed ? highlightBackColor : buttonRaiseColor}
             cursor={cursor}
             onMouseEnter={() => setMouseOverKey(true)}
             onMouseLeave={() => setMouseOverKey(false)}
