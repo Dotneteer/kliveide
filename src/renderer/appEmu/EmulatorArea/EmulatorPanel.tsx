@@ -33,7 +33,11 @@ let machineStateHandlerQueue: {
 }[] = [];
 let machineStateProcessing = false;
 
-export const EmulatorPanel = () => {
+type Props = {
+  keyStatusSet?: (code: SpectrumKeyCode, down: boolean) => void;
+};
+
+export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Access state information
   const store = useStore();
 
@@ -374,15 +378,24 @@ export const EmulatorPanel = () => {
     const machine = controllerRef.current?.machine;
     if (typeof mapping === "string") {
       machine?.setKeyStatus(SpectrumKeyCode[mapping], isDown);
+      keyStatusSet?.(SpectrumKeyCode[mapping], isDown);
     } else {
       if (mapping.length > 0) {
         machine?.setKeyStatus(
           SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode,
           isDown
         );
+        keyStatusSet?.(
+          SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode,
+          isDown
+        );
       }
       if (mapping.length > 1) {
         machine?.setKeyStatus(
+          SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode,
+          isDown
+        );
+        keyStatusSet?.(
           SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode,
           isDown
         );

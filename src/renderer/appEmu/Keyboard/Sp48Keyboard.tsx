@@ -1,8 +1,11 @@
 import { Sp48Key as Key } from "./Sp48Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
+import { KeyboardApi } from "./KeyboardPanel";
+import { KeyPressMapper } from "./KeyPressMapper";
+import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);
@@ -10,13 +13,38 @@ const DEFAULT_HEIGHT = 4 * (128 + 16);
 type Props = {
   width: number;
   height: number;
+  apiLoaded?: (api: KeyboardApi) => void;
 };
 
-export const Sp48Keyboard = ({ width, height }: Props) => {
+export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
   const zoom = calculateZoom(width, height);
   const row1Shift = 80 * zoom;
   const row2Shift = 110 * zoom;
+  const mounted = useRef(false);
+  const keystatus = useRef(new KeyPressMapper());
+  const [version, setVersion] = useState(1);
+
+  const api: KeyboardApi = {
+    signKeyStatus: (code, down) => {
+      keystatus.current.setKeyStatus(code, down);
+      setVersion(version + 1);
+    }
+  };
+
+  const isPressed = (code: SpectrumKeyCode) =>
+    keystatus.current.isPressed(code);
+
+  useEffect(() => {
+    if (mounted.current) return;
+    mounted.current = true;
+    apiLoaded?.(api);
+
+    return () => {
+      mounted.current = false;
+    };
+  });
+
   return (
     <Column width='auto' style={rootStyle}>
       <Row height='auto' style={rowStyle}>
@@ -31,6 +59,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='EDIT'
           below='DEF FN'
           glyph={1}
+          hilite={isPressed(15)}
         />
         <Key
           zoom={zoom}
@@ -43,6 +72,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='CAPS LOCK'
           below='FN'
           glyph={2}
+          hilite={isPressed(16)}
         />
         <Key
           zoom={zoom}
@@ -55,6 +85,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='TRUE VID'
           below='LINE'
           glyph={3}
+          hilite={isPressed(17)}
         />
         <Key
           zoom={zoom}
@@ -67,6 +98,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above='INV.VIDEO'
           below='OPEN'
           glyph={4}
+          hilite={isPressed(18)}
         />
         <Key
           zoom={zoom}
@@ -79,6 +111,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above={"\u140a"}
           below='CLOSE'
           glyph={5}
+          hilite={isPressed(19)}
         />
         <Key
           zoom={zoom}
@@ -91,6 +124,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above={"\u1401"}
           below='MOVE'
           glyph={6}
+          hilite={isPressed(24)}
         />
         <Key
           zoom={zoom}
@@ -103,6 +137,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above={"\u1403"}
           below='ERASE'
           glyph={7}
+          hilite={isPressed(23)}
         />
         <Key
           zoom={zoom}
@@ -115,6 +150,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           above={"\u1405"}
           below='POINT'
           glyph={16}
+          hilite={isPressed(22)}
         />
         <Key
           zoom={zoom}
@@ -125,6 +161,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\xa0)\xa0\xa0"}
           above='GRAPHICS'
           below='CAT'
+          hilite={isPressed(21)}
         />
         <Key
           zoom={zoom}
@@ -136,6 +173,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\uff3f"}
           above='DELETE'
           below='FORMAT'
+          hilite={isPressed(20)}
         />
       </Row>
       <Row height='auto' style={{ ...rowStyle, marginLeft: row1Shift }}>
@@ -148,6 +186,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol='<='
           above='SIN'
           below='ASN'
+          hilite={isPressed(10)}
         />
         <Key
           zoom={zoom}
@@ -158,6 +197,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol='<>'
           above='COS'
           below='ACS'
+          hilite={isPressed(11)}
         />
         <Key
           zoom={zoom}
@@ -168,6 +208,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol='>='
           above='TAN'
           below='ATB'
+          hilite={isPressed(12)}
         />
         <Key
           zoom={zoom}
@@ -178,6 +219,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0<\xa0"}
           above='INT'
           below='VERIFY'
+          hilite={isPressed(13)}
         />
         <Key
           zoom={zoom}
@@ -188,6 +230,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0>\xa0"}
           above='RND'
           below='MERGE'
+          hilite={isPressed(14)}
         />
         <Key
           zoom={zoom}
@@ -198,6 +241,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='AND'
           above='STR$'
           below='['
+          hilite={isPressed(29)}
         />
         <Key
           zoom={zoom}
@@ -208,6 +252,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='OR'
           above='CHR$'
           below=']'
+          hilite={isPressed(28)}
         />
         <Key
           zoom={zoom}
@@ -218,6 +263,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='AT'
           above='CODE'
           below='IN'
+          hilite={isPressed(27)}
         />
         <Key
           zoom={zoom}
@@ -228,6 +274,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\xa0;\xa0\xa0"}
           above='PEEK'
           below='OUT'
+          hilite={isPressed(26)}
         />
         <Key
           zoom={zoom}
@@ -238,6 +285,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={'\xa0\xa0"\xa0\xa0'}
           above='TAB'
           below='(C)'
+          hilite={isPressed(25)}
         />
       </Row>
       <Row height='auto' style={{ ...rowStyle, marginLeft: row2Shift }}>
@@ -250,6 +298,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='STOP'
           above='READ'
           below={"\xa0\xa0~\xa0\xa0"}
+          hilite={isPressed(5)}
         />
         <Key
           zoom={zoom}
@@ -260,6 +309,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='NOT'
           above='RESTORE'
           below={"\xa0\xa0|\xa0\xa0"}
+          hilite={isPressed(6)}
         />
         <Key
           zoom={zoom}
@@ -270,6 +320,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='STEP'
           above='DATA'
           below={"\xa0\xa0\\\xa0\xa0"}
+          hilite={isPressed(7)}
         />
         <Key
           zoom={zoom}
@@ -280,6 +331,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='TO'
           above='SGN'
           below={"\xa0\xa0{\xa0\xa0"}
+          hilite={isPressed(8)}
         />
         <Key
           zoom={zoom}
@@ -290,6 +342,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbolWord='THEN'
           above='ABS'
           below={"\xa0\xa0}\xa0\xa0"}
+          hilite={isPressed(9)}
         />
         <Key
           zoom={zoom}
@@ -300,6 +353,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\u2191\xa0"}
           above='SQR'
           below='CIRCLE'
+          hilite={isPressed(34)}
         />
         <Key
           zoom={zoom}
@@ -310,6 +364,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\u2212\xa0"}
           above='VAL'
           below='VAL$'
+          hilite={isPressed(33)}
         />
         <Key
           zoom={zoom}
@@ -320,6 +375,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0+\xa0"}
           above='LEN'
           below='SCREEN$'
+          hilite={isPressed(32)}
         />
         <Key
           zoom={zoom}
@@ -330,8 +386,15 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0=\xa0"}
           above='USR'
           below='ATTR'
+          hilite={isPressed(31)}
         />
-        <Key zoom={zoom} code={30} keyAction={handleClick} center='ENTER' />
+        <Key
+          zoom={zoom}
+          code={30}
+          keyAction={handleClick}
+          center='ENTER'
+          hilite={isPressed(30)}
+        />
       </Row>
       <Row height='auto' style={rowStyle}>
         <Key
@@ -341,6 +404,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           xwidth={130}
           top='CAPS'
           bottom='SHIFT'
+          hilite={isPressed(0)}
         />
         <Key
           zoom={zoom}
@@ -351,6 +415,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\xa0:\xa0\xa0"}
           above='LN'
           below='BEEP'
+          hilite={isPressed(1)}
         />
         <Key
           zoom={zoom}
@@ -361,6 +426,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\u00a3\xa0"}
           above='EXP'
           below='INK'
+          hilite={isPressed(2)}
         />
         <Key
           zoom={zoom}
@@ -371,6 +437,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0?\xa0"}
           above='LPRINT'
           below='PAPER'
+          hilite={isPressed(3)}
         />
         <Key
           zoom={zoom}
@@ -381,6 +448,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0/\xa0"}
           above='LLIST'
           below='FLASH'
+          hilite={isPressed(4)}
         />
         <Key
           zoom={zoom}
@@ -391,6 +459,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0*\xa0"}
           above='BIN'
           below='BRIGHT'
+          hilite={isPressed(39)}
         />
         <Key
           zoom={zoom}
@@ -401,6 +470,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\xa0,\xa0\xa0"}
           above='INKEY$'
           below='OVER'
+          hilite={isPressed(38)}
         />
         <Key
           zoom={zoom}
@@ -411,6 +481,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           symbol={"\xa0\xa0.\xa0\xa0"}
           above='INVERSE'
           below='PI'
+          hilite={isPressed(37)}
         />
         <Key
           zoom={zoom}
@@ -419,6 +490,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           top='SYMBOL'
           bottom='SHIFT'
           useSymColor={true}
+          hilite={isPressed(36)}
         />
         <Key
           zoom={zoom}
@@ -427,6 +499,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
           xwidth={180}
           top='BREAK'
           center='SPACE'
+          hilite={isPressed(35)}
         />
       </Row>
     </Column>
@@ -450,12 +523,7 @@ export const Sp48Keyboard = ({ width, height }: Props) => {
       case "above":
         if (e.down) {
           machine.queueKeystroke(0, 2, 0 /* CShift */, 36 /* SShift */);
-          machine.queueKeystroke(
-            3,
-            2,
-            e.code,
-            undefined
-          );
+          machine.queueKeystroke(3, 2, e.code, undefined);
         }
         break;
       case "below":

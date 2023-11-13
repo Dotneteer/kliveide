@@ -961,21 +961,25 @@ export function setupMenu (
 
   // Preserve the submenus as a dedicated array.
   const submenus = template.map(i => i.submenu);
+
   function templateTransform (wnd: BrowserWindow) {
     return wnd.isFocused()
       ? (i, idx) => (i.submenu = submenus[idx])
       : i => (i.submenu = null);
   }
+
   if (__DARWIN__) {
     const windowFocused = emuTraits.isFocused ? emuWindow : ideWindow;
-    template.forEach(templateTransform(windowFocused));
-    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    if (!windowFocused.isDestroyed()) {
+      template.forEach(templateTransform(windowFocused));
+      Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    }
   } else {
-    if (emuWindow) {
+    if (emuWindow && !emuWindow.isDestroyed()) {
       template.forEach(templateTransform(emuWindow));
       emuWindow.setMenu(Menu.buildFromTemplate(template));
     }
-    if (ideWindow) {
+    if (ideWindow && !ideWindow.isDestroyed()) {
       template.forEach(templateTransform(ideWindow));
       ideWindow.setMenu(Menu.buildFromTemplate(template));
     }

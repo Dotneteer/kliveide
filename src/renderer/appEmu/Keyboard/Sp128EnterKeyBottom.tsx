@@ -11,6 +11,7 @@ const XTRA_WIDTH = 132;
 type Props = {
   zoom: number;
   hilited: boolean;
+  pressed?: boolean,
   mouseDown: () => void;
   mouseUp: () => void;
 };
@@ -21,6 +22,7 @@ type Props = {
 export const Sp128EnterKeyBottom = ({
   zoom,
   hilited,
+  pressed,
   mouseDown,
   mouseUp
 }: Props) => {
@@ -40,6 +42,9 @@ export const Sp128EnterKeyBottom = ({
   );
   const buttonTextColor = themeService.getThemeProperty(
     "--color-key128-main"
+  );
+  const pressedBackColor = themeService.getThemeProperty(
+    "--bgcolor-hilited128"
   );
 
   // --- State dependent display properties
@@ -77,7 +82,7 @@ export const Sp128EnterKeyBottom = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={buttonRaiseColor}
+        fill={pressed ? pressedBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -93,7 +98,7 @@ export const Sp128EnterKeyBottom = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={buttonRaiseColor}
+        fill={pressed ? pressedBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -107,7 +112,7 @@ export const Sp128EnterKeyBottom = ({
         y={6}
         width={XTRA_WIDTH - NORMAL_WIDTH}
         height='63.5'
-        fill={buttonRaiseColor}
+        fill={pressed ? pressedBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
@@ -120,7 +125,7 @@ export const Sp128EnterKeyBottom = ({
         y={0}
         width={64}
         height={36}
-        fill={buttonRaiseColor}
+        fill={pressed ? pressedBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}
