@@ -24,7 +24,7 @@ type Props = {
   glyph?: number;
   useSymColor?: boolean;
   xwidth?: number;
-  hilite?: boolean;
+  pressed?: boolean;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
 
@@ -48,7 +48,7 @@ export const Sp48Key = ({
   glyph,
   useSymColor,
   xwidth,
-  hilite,
+  pressed,
   keyAction
 }: Props) => {
   // --- State bindings
@@ -121,7 +121,7 @@ export const Sp48Key = ({
         ry='8'
         width='100%'
         height='70'
-        fill={hilite ? highlightBackColor : keyBackground}
+        fill={pressed ? highlightBackColor : keyBackground}
         cursor={cursor}
         onMouseEnter={() => setMouseOverKey(true)}
         onMouseLeave={() => setMouseOverKey(false)}

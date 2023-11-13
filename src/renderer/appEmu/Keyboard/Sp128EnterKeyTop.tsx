@@ -9,7 +9,7 @@ const NORMAL_HEIGHT = 76;
  */
 type Props = {
   zoom: number;
-  hilite?: boolean;
+  pressed?: boolean;
   mouseOnKey: () => void;
   mouseOutOfKey: () => void;
   mouseDown: () => void;
@@ -21,7 +21,7 @@ type Props = {
  */
 export const Sp128EnterKeyTop = ({
   zoom,
-  hilite,
+  pressed,
   mouseOnKey,
   mouseOutOfKey,
   mouseDown,
@@ -72,7 +72,7 @@ export const Sp128EnterKeyTop = ({
         ry='32'
         width='100%'
         height='100%'
-        fill={hilite ? highlightBackColor : buttonRaiseColor}
+        fill={pressed ? highlightBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => {
           setMouseOverKey(true);
@@ -90,7 +90,7 @@ export const Sp128EnterKeyTop = ({
         y={36}
         width={64}
         height={40}
-        fill={hilite ? highlightBackColor : buttonRaiseColor}
+        fill={pressed ? highlightBackColor : buttonRaiseColor}
         cursor={cursor}
         onMouseEnter={() => {
           setMouseOverKey(true);
