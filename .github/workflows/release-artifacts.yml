@@ -19,6 +19,8 @@ jobs:
       run: npm run bootstrap:ci --force
 
     - name: Build the packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build
 
     - name: Build Electron app on windows
