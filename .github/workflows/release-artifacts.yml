@@ -23,7 +23,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build
 
-    - name: Build Electron app on windows
+    - name: Build Electron app on Windows
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:win
@@ -50,6 +50,8 @@ jobs:
       run: npm run bootstrap:ci --force
 
     - name: Build the packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build
 
     - name: Build Electron app on linux
@@ -79,9 +81,11 @@ jobs:
       run: npm run bootstrap:ci --force
 
     - name: Build the packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build
 
-    - name: Build Electron app on linux
+    - name: Build Electron app on Mac
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:mac
