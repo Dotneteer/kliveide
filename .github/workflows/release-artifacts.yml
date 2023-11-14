@@ -23,7 +23,7 @@ jobs:
 
     - name: Build Electron app on windows
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:win
 
     - name: Add install Emulator install kit to artifacts
@@ -52,7 +52,7 @@ jobs:
 
     - name: Build Electron app on linux
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:linux
 
     - name: Add install Emulator install kit to artifacts
@@ -81,7 +81,7 @@ jobs:
 
     - name: Build Electron app on linux
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:mac
 
     - name: Add install Emulator install kit to artifacts
