@@ -78,7 +78,6 @@
     "artifactName": "${productName}Setup-${version}.${ext}",
     "directories": {
       "buildResources": "buildResources",
-      "app": "./dist/",
       "output": "artifacts/"
     },
     "mac": {
