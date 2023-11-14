@@ -2,7 +2,10 @@
   "name": "klive-emu",
   "version": "3.0.0",
   "description": "Sinclair Computer Emulator",
-  "author": "Istvan Novak",
+  "author": {
+    "name": "Istvan Novak",
+    "email": "dotneteer@hotmail.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Dotneteer/kliveide.git"
@@ -68,5 +71,29 @@
     "next": "^14.0.0",
     "nextra": "^2.13.2",
     "nextra-theme-docs": "^2.13.2"
+  },
+  "build": {
+    "appId": "dotneteer.kliveide",
+    "productName": "KliveIde",
+    "artifactName": "${productName}Setup-${version}.${ext}",
+    "directories": {
+      "buildResources": "buildResources",
+      "app": "./dist/",
+      "output": "artifacts/"
+    },
+    "mac": {
+      "target": "pkg"
+    },
+    "win": {
+      "target": "nsis",
+      "asar": false
+    },
+    "fileAssociations": [
+      {
+        "ext": "klive",
+        "name": "Klive Startup File",
+        "role": "Editor"
+      }
+    ]
   }
 }
