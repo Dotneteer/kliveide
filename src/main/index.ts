@@ -409,6 +409,7 @@ app.whenReady().then(() => {
 
 // --- When the user is about to quit the app, allow closing the IDE window
 app.on("before-quit", async e => {
+  await new Promise(r => setTimeout(r, 100));
   allowCloseIde = true;
 });
 
