@@ -1,7 +1,7 @@
 {
   "name": "klive-emu",
-  "version": "3.0.0",
-  "description": "Sinclair Computer Emulator",
+  "version": "0.30.0",
+  "description": "Retro computer emulator and IDE for Mac, Windows, and Linux",
   "author": {
     "name": "Istvan Novak",
     "email": "dotneteer@hotmail.com"
@@ -86,13 +86,6 @@
     "win": {
       "target": "nsis",
       "asar": false
-    },
-    "fileAssociations": [
-      {
-        "ext": "klive",
-        "name": "Klive Startup File",
-        "role": "Editor"
-      }
-    ]
+    }
   }
 }
