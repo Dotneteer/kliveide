@@ -13,7 +13,6 @@ import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
-  FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
 import {
@@ -170,7 +169,6 @@ const IdeApp = () => {
 
   useEffect(() => {
     if (appPath) {
-      console.log(appPath);
       initializeMonaco(appPath);
     }
   }, [appPath]);

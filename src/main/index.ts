@@ -299,7 +299,7 @@ async function createAppWindows () {
       search: EMU_QP + appPathParam
     });
     ideWindow.loadFile(indexHtml, {
-      search: IDE_QP + `&apppath=${encodeURI("..")}`
+      search: IDE_QP + `&apppath=${process.resourcesPath}`
     });
   }
   if (maximizeIde) {
