@@ -170,6 +170,7 @@ const IdeApp = () => {
 
   useEffect(() => {
     if (appPath) {
+      console.log(appPath);
       initializeMonaco(appPath);
     }
   }, [appPath]);
