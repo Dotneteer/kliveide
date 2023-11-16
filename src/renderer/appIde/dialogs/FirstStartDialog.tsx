@@ -23,6 +23,7 @@ export const FirstStartDialog = ({ onClose }: Props) => {
       isOpen={true}
       fullScreen={false}
       width={500}
+      translateY={0}
       onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Ok'
       secondaryEnabled={true}
