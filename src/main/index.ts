@@ -141,8 +141,8 @@ async function createAppWindows () {
   const emuWindowStateManager = createWindowStateManager(
     appSettings?.windowStates?.emuWindow,
     {
-      defaultWidth: 640,
-      defaultHeight: 480,
+      defaultWidth: 720,
+      defaultHeight: 540,
       maximize: true,
       fullScreen: true,
       stateSaver: state => {
