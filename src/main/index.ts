@@ -52,7 +52,7 @@ import {
   registerMainToIdeMessenger,
   sendFromMainToIde
 } from "../common/messaging/MainToIdeMessenger";
-import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
+import { appSettings, loadAppSettings, saveAppSettings, signFinalSave } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
@@ -191,6 +191,7 @@ async function createAppWindows () {
           ...appSettings.windowStates,
           ideWindow: state
         };
+        appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
         saveAppSettings();
       }
     }
@@ -352,7 +353,6 @@ async function createAppWindows () {
     if (appSettings.windowStates) {
       // --- Make sure to save the last IDE settings
       appSettings.windowStates.showIdeOnStartup = false;
-      saveAppSettings();
     }
 
     // --- IDE id hidden, so it's not focused
@@ -385,6 +385,8 @@ async function createAppWindows () {
 
   // --- Close the emu window with the IDE window
   emuWindow.on("close", async e => {
+    saveAppSettings();
+    signFinalSave();
     if (!ideSaved) {
       // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
@@ -408,9 +410,9 @@ app.whenReady().then(() => {
 });
 
 // --- When the user is about to quit the app, allow closing the IDE window
-app.on("before-quit", async e => {
-  await new Promise(r => setTimeout(r, 100));
-  allowCloseIde = true;
+app.on("before-quit",  e => {
+  saveAppSettings();
+  signFinalSave();
 });
 
 // --- Close all windows when requested so
