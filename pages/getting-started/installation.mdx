@@ -1,3 +1,33 @@
+import Image from 'next/image'
+
 # Installing Klive
 
-_TBD_
+Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
+
+- `KliveIdeSetup-{version}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
+ - `KliveIdeSetup-{version}.exe`: Self-extracting executable to install Klive IDE on Windows x64
+- `KliveIdeSetup-{version}.pkg`: The standard PKG format to install Klive IDE on MacOS
+
+`{version}` is a placeholder for the version number of a particular release in the filename.
+
+Download the file according to the operating system to use, and follow the sections of this article.
+
+> **Note**: Though there is an install kit for Linux, I have yet to test it thoroughly. If you plan to work with Klive IDE on Linux, please help me test it or even create additional install kits. 
+
+## MacOS Installation
+
+Open the downloaded `.pkg` file. As the file comes from an untrusted source, the OS cannot install it directly. Click the OK button to close the message.
+
+<Image src="/images/getting-started/warning1.png" alt="P&S" width="248" height="269" />
+
+Now, open the System Settings panel and navigate the Privacy & Security tab. As you scroll down, you can see the message with the blocked filename and the Open Anyway button. Click the button to sign that you intend to run the install kit.
+
+<Image src="/images/getting-started/privacy-and-security.png" alt="P&S" width="551" height="464" />
+
+Open the `.pkg` file again and select the Open button in the security dialog on the screen.
+
+> **Note**: The OS may ask for your password to confirm the installation.
+
+<Image src="/images/getting-started/warning2.png" alt="P&S" width="248" height="308" />
+
+

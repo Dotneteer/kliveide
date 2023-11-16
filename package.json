@@ -81,11 +81,31 @@
       "output": "artifacts/"
     },
     "mac": {
-      "target": "pkg"
+      "target": "dmg"
     },
     "win": {
       "target": "nsis",
       "asar": false
-    }
+    },    
+    "files": [
+      "!.prettierrc",
+      "!.vscode",
+      "!CHANGELOG.md",
+      "!next.config.js",
+      "!_docs",
+      "!docs-out",
+      "!pages",
+      "!public",
+      "!release",
+      "!src",
+      "!test",
+      "!node_modules/next/**/*",
+      "!node_modules/next*/**/*",
+      "!node_modules/nextra/**/*",
+      "!node_modules/nextra*/**/*"
+    ],
+    "extraResources": [
+      "node_modules/monaco-editor/min/vs/**/*"
+    ]
   }
 }

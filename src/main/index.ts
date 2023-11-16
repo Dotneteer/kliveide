@@ -71,7 +71,7 @@ const IDE_QP = "?ide"; // IDE discriminator
 process.env.DIST_ELECTRON = join(__dirname, "../..");
 process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
 process.env.PUBLIC = app.isPackaged
-  ? process.env.DIST
+  ? join(process.env.DIST, "../dist-electron/main")
   : join(process.env.DIST_ELECTRON, "src/public");
 
 // --- Disable GPU Acceleration for Windows 7
@@ -299,7 +299,7 @@ async function createAppWindows () {
       search: EMU_QP + appPathParam
     });
     ideWindow.loadFile(indexHtml, {
-      search: IDE_QP + appPathParam
+      search: IDE_QP + `&apppath=${process.resourcesPath}`
     });
   }
   if (maximizeIde) {

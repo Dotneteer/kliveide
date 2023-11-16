@@ -280,7 +280,7 @@ export function setupMenu (
       {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",
-        visible: !!allowDevTools,
+        //visible: !!allowDevTools,
         accelerator: "Ctrl+Shift+I",
         click: () => {
           BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
