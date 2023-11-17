@@ -1,5 +1,6 @@
 {
-  "name": "klive-emu",
+  "name": "klive-ide",
+  "productName": "Klive IDE",
   "version": "0.30.0",
   "description": "Retro computer emulator and IDE for Mac, Windows, and Linux",
   "author": {
@@ -74,19 +75,27 @@
   },
   "build": {
     "appId": "dotneteer.kliveide",
-    "productName": "KliveIde",
-    "artifactName": "${productName}Setup-${version}.${ext}",
+    "productName": "Klive IDE",
+    "artifactName": "KliveIdeSetup-${version}.${ext}",
     "directories": {
       "buildResources": "buildResources",
       "output": "artifacts/"
     },
     "mac": {
-      "target": "dmg"
+      "target": "pkg",
+      "icon": "public/images/klive-logo.icns"
     },
     "win": {
       "target": "nsis",
       "asar": false
     },    
+    "dmg": {
+      "backgroundColor": "#00b4cc",
+      "window": {
+        "width": 512,
+        "height": 380
+      }
+    },
     "files": [
       "!.prettierrc",
       "!.vscode",

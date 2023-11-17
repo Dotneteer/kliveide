@@ -27,33 +27,28 @@ export type AppSettings = {
   userSettings?: Record<string, any>;
 };
 
-let finalSaveDone = false;
-
 export let appSettings: AppSettings = {};
 
 export function saveAppSettings (): void {
-  if (finalSaveDone) return;
-
   const filename = getSettingsFilePath();
   const filePath = path.dirname(filename);
   if (!fs.existsSync(filePath)) {
     fs.mkdirSync(filePath);
   }
 
-  // --- Do not refresh state after the final save
-  if (!finalSaveDone) {
-    // --- Get settings from the current state
-    const state = mainStore.getState();
-    appSettings.startScreenDisplayed = state.startScreenDisplayed;
-    appSettings.theme = state.theme;
-    appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
-    appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
-    appSettings.machineId = state.emulatorState?.machineId;
-    appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
-    appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
-    appSettings.lastTapeFile = state.emulatorState?.tapeFile;
-    appSettings.keyMappingFile = state.keyMappingFile;
-  }
+  // --- Get settings from the current state
+  const state = mainStore.getState();
+  appSettings.startScreenDisplayed = state.startScreenDisplayed;
+  appSettings.theme = state.theme;
+  appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
+  appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
+  appSettings.machineId = state.emulatorState?.machineId;
+  appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
+  appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
+  appSettings.lastTapeFile = state.emulatorState?.tapeFile;
+  appSettings.keyMappingFile = state.keyMappingFile;
+
+  fs.writeFileSync("/Users/dotneteer/klive.txt", getSettingsFilePath());
 
   // --- Save to the settings file
   fs.writeFileSync(
@@ -73,10 +68,6 @@ export function loadAppSettings (): void {
   } catch {
     appSettings = {};
   }
-}
-
-export function signFinalSave (): void {
-  finalSaveDone = true;
 }
 
 function getSettingsFilePath (): string {
