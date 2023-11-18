@@ -89,6 +89,10 @@
       "target": "nsis",
       "asar": false
     },    
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/images/512x512.png"
+    },
     "dmg": {
       "backgroundColor": "#00b4cc",
       "window": {
