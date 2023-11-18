@@ -52,7 +52,7 @@ import {
   registerMainToIdeMessenger,
   sendFromMainToIde
 } from "../common/messaging/MainToIdeMessenger";
-import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
+import { appSettings, loadAppSettings, saveAppSettings, signFinalSave } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
@@ -192,11 +192,7 @@ async function createAppWindows () {
           ...appSettings.windowStates,
           ideWindow: state
         };
-        if (!ideWindowStateSaved) {
-          appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
-        }
-        console.log("IDE window state saved")
-        ideWindowStateSaved = true;
+        appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
         saveAppSettings();
       }
     }
