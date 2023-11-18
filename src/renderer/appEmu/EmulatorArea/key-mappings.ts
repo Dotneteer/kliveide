@@ -79,4 +79,4 @@ const usMapping: KeyMapping = {
 /**
  * The current key mappings
  */
-export const spectrumKeyMappings = usMapping;
+export const  spectrumKeyMappings = usMapping;
