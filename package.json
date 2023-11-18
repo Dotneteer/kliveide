@@ -87,7 +87,8 @@
     },
     "win": {
       "target": "nsis",
-      "asar": false
+      "asar": false,
+      "icon": "public/images/klive-logo.ico"
     },    
     "linux": {
       "target": "AppImage",
