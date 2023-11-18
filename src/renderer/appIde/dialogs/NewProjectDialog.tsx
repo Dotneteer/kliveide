@@ -69,6 +69,7 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       isOpen={true}
       fullScreen={false}
       width={500}
+      translateY={0}
       onApiLoaded={api => (modalApi.current = api)}
       primaryLabel='Create'
       primaryEnabled={folderIsValid && projectIsValid}
