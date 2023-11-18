@@ -87,7 +87,8 @@
     },
     "win": {
       "target": "nsis",
-      "asar": false
+      "asar": false,
+      "icon": "public/images/512x512.png"
     },    
     "linux": {
       "target": "AppImage",

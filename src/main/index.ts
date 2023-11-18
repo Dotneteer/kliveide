@@ -159,7 +159,7 @@ async function createAppWindows () {
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
     title: "Emu window",
-    icon: join(process.env.PUBLIC, "favicon.svg"),
+    icon: join(process.env.PUBLIC, "images/klive-logo.png"),
     minWidth: 640,
     minHeight: 480,
     x: emuWindowStateManager.x,
@@ -209,7 +209,7 @@ async function createAppWindows () {
     showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
-    icon: join(process.env.PUBLIC, "favicon.svg"),
+    icon: join(process.env.PUBLIC, "images/klive-logo.png"),
     minWidth: 640,
     minHeight: 480,
     x: ideWindowStateManager.x,
