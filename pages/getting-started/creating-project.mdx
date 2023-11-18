@@ -1,0 +1,30 @@
+import Image from 'next/image'
+
+# Creating a Klive Project
+
+The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
+
+## The New Project Dialog
+
+With the **File | New project** menu command, you can create a new Klive project:
+
+<Image src="/images/getting-started/new-klive-project.png" alt="P&S" width="335" height="217" style={{marginTop: 24}} />
+
+- You can select the machine type to use in the project (you can change it any time when the project is open)
+- You can specify a root folder for your project directory. The new project will be a subfolder of the root. If you leave it empty, the new project goes into your user home's `KliveProjects` folder.
+- The project requires a name (`MyFirstKliveProject` in the figure above). 
+
+## The Project Structure
+
+A Klive project is a folder with a `klive.project` file in it. The file is a JSON file that describes the project's properties. The IDE creates the following structure for a new project:
+
+<Image src="/images/getting-started/project-in-explorer.png" alt="P&S" width="165" height="133" style={{marginTop: 24}} />
+
+The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last file, `klive.project`, contains information about the current project. As you work with the project, this file may store more settings (e.g., breakpoints, some integration settings, etc.)
+
+When you open a folder that is not a Klive project, you cannot see the home icon:
+
+<Image src="/images/getting-started/non-klive-project.png" alt="P&S" width="165" height="103" style={{marginTop: 24}} />
+
+## The Build Root
+
