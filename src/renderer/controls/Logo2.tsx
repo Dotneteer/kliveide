@@ -4,7 +4,7 @@ type Props = {
   width?: number | string;
   height?: number | string;
 };
-export const Logo = ({ width = 50, height = 50 }: Props) => {
+export const Logo2 = ({ width = 50, height = 50 }: Props) => {
   return (
     <svg
       width={width}

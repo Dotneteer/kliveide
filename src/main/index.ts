@@ -109,6 +109,7 @@ let emuWindow: BrowserWindow | null = null;
 
 // --- Sign if closing the IDE window is allowed
 let allowCloseIde: boolean;
+let ideWindowStateSaved = false;
 let ideSaved: boolean;
 
 // --- Flag indicating if any virtual machine has been initialized
@@ -158,7 +159,7 @@ async function createAppWindows () {
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
     title: "Emu window",
-    icon: join(process.env.PUBLIC, "favicon.svg"),
+    icon: join(process.env.PUBLIC, "images/klive-logo.png"),
     minWidth: 640,
     minHeight: 480,
     x: emuWindowStateManager.x,
@@ -204,7 +205,7 @@ async function createAppWindows () {
     showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
-    icon: join(process.env.PUBLIC, "favicon.svg"),
+    icon: join(process.env.PUBLIC, "images/klive-logo.png"),
     minWidth: 640,
     minHeight: 480,
     x: ideWindowStateManager.x,
@@ -262,12 +263,17 @@ async function createAppWindows () {
         setSelectedTapeFile(appSettings.lastTapeFile);
       }
 
-      // --- Set key mappings 
+      // --- Set key mappings
       if (appSettings.keyMappingFile) {
         try {
-          const mappingSource = fs.readFileSync(appSettings.keyMappingFile, "utf8");
+          const mappingSource = fs.readFileSync(
+            appSettings.keyMappingFile,
+            "utf8"
+          );
           const mappings = parseKeyMappings(mappingSource);
-          mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings));
+          mainStore.dispatch(
+            setKeyMappingsAction(appSettings.keyMappingFile, mappings)
+          );
         } catch (err) {
           // --- Intentionally ignored
         }
@@ -350,7 +356,9 @@ async function createAppWindows () {
     // --- Do not allow the IDE close, instead, hide it.
     e.preventDefault();
     ideWindow.hide();
-    if (appSettings.windowStates) {
+    console.log("IDE window is hidden");
+    if (appSettings.windowStates && !ideWindowStateSaved) {
+      console.log("Saving IDE window state");
       // --- Make sure to save the last IDE settings
       appSettings.windowStates.showIdeOnStartup = false;
     }
@@ -386,7 +394,6 @@ async function createAppWindows () {
   // --- Close the emu window with the IDE window
   emuWindow.on("close", async e => {
     saveAppSettings();
-    signFinalSave();
     if (!ideSaved) {
       // --- Do not allow the emu close while IDE is not saved
       e.preventDefault();
@@ -410,9 +417,9 @@ app.whenReady().then(() => {
 });
 
 // --- When the user is about to quit the app, allow closing the IDE window
-app.on("before-quit",  e => {
+app.on("before-quit", e => {
+  ideWindowStateSaved = true;
   saveAppSettings();
-  signFinalSave();
 });
 
 // --- Close all windows when requested so
