@@ -1,5 +1,6 @@
 {
     "index": "Introduction",
     "getting-started": "Getting Started",
+    "working-with-ide": "Working with the IDE",
     "z80-assembly": "Klive Z80 Assembler"
 }

@@ -14,6 +14,18 @@ export default {
   },
   project: {
     link: "https://github.com/dotneteer/kliveide"
+  },
+  sidebar: {
+    autoCollape: true,
+    defaultMenuCollapseLevel: 1
+  },
+  footer: {
+    text: (
+      <div>
+      <span>
+        <strong>Klive IDE</strong> is an open-source project (MIT) developed by <em>Istvan Novak</em> (2016-2023).
+      </span>
+      </div>
+    )
   }
-  // ... other theme options
 };

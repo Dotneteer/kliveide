@@ -1,0 +1,13 @@
+{
+    "project-explorer": "The Project Explorer",
+    "editing-code": "Editing Code",
+    "run-debug": "Running & Debugging Code",
+    "cpu": "The CPU View",
+    "ula": "The ULA View",
+    "memory": "The Memory View",
+    "disassembly": "The Disassembly View",
+    "breakpoints": "The Breakpoints View",
+    "system-vars": "The System Variables View",
+    "basic": "The BASIC Listing",
+    "commands": "Interactive Commands"
+}
