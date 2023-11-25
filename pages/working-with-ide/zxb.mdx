@@ -1,0 +1,66 @@
+import Image from 'next/image'
+import zxbReset from '../../public/images/working-with-ide/zxb-reset.png'
+
+# ZX Basic Integration
+
+Klive IDE supports ZX Basic out-of-the-box. After setting up ZX Basic integration, you can use Klive IDE to edit and run ZX Basic programs.
+
+> **Note**: The current version of ZX Basic does not provide debug information, so source code debugging is not available with the IDE yet.
+
+As Klive IDE does not know where to find the ZX Basic compiler on your machine, you must set it up before using it.
+
+## Setting up ZX BASIC
+
+You need to download and install [ZX Basic](https://zxbasic.readthedocs.io/en/latest/archive/). Note the installation folder; you will need it to set up the integration with Klive.
+
+The IDE provides a command, `zxb-reset` (or shorter, `zxbr`), to connect Klive with ZX BASIC. You can issue this command from the Command window:
+
+<Image src={zxbReset} alt="ZxbReset" width="770" height="210" style={{marginTop: 24}} />
+
+The command expects one to three parameters:
+- The path to the ZX Basic compiler (required)
+- The path to access the Python interpreter (optional; you may need it on Mac and Linux)
+- The machine code origin address (optional, `$8000`, if omitted)
+
+> **Note**: The ZX Basic compiler is a Python script, so you need to have Python installed on your machine. On Windows, the IDE can find the Python interpreter automatically. On Mac and Linux, you must provide the path to the Python interpreter.
+
+### Windows Integration
+
+Windows 10 and 11 usually install Python with the OS. If not, you can install Python from [here](https://www.python.org/downloads/). ZX Basic requires Python 3.10 or higher. The installer adds its folder to the `PATH` environment variable, so you can use `zxb-reset` with a single command parameter:
+
+```text
+zxb-reset <full path to zxbc.exe>
+```
+
+When you define the path, you should provide the reference for the `zxbc.exe` file within the folder. For example, if you installed ZX BASIC into the `C:\Users\joe\zxbasic` folder, use this command:
+
+```text
+zxb-reset C:\Users\joe\zxbasic\zxbc.exe
+```
+
+When you have a space anywhere in the path, wrap the path into double quotes:
+
+```text
+zxb-reset "C:\My folder with spaces\zxbasic\zxbc.exe"
+```
+
+### MacOS Integration
+
+On MacOS, use the `zxb-reset` command with a full path to the `zxbc.py` file, like in this example:
+
+```text
+zxb-reset /Users/joe/zxbasic/zxbc.py
+```
+
+Most of the time, you must also specify the Python interpreter path:
+
+```text
+zxb-reset /Users/joe/zxbasic/zxbc.py /opt/homebrew/bin
+```
+
+> **Note**: You can find the path of the Python installation with the `which python3` command. Do not forget that the last segment is the `python3` executable; you should omit it from the path specification.
+
+### Linux Integration
+
+*I have not tried to integrate Klive IDE with ZX Basic on Linux. If you did and have a helpful description of the integration steps, please create a PR to extend the installation notes in this article.*
+
