@@ -1,5 +1,22 @@
 # Klive IDE Changelog
 
+## 0.30.2
+
+### Fixes
+
+- ZX Basic integration (now Python path can be set)
+- The Create New Klive project now works in the packaged product.
+- Installer fixes
+- Fixing IDE closing issues
+
+### Documentation
+
+- Many new articles have been added to help get started with Klive
+
+## 0.30.1
+
+Failed on internal tests, not released publicly.
+
 ## 0.30.0
 
 This version of Klive is a significant update with an entirely new architecture. It is not just about new features and bug fixes but a rethought, brand-new Klive IDE. These are the essential changes:
