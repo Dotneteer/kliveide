@@ -171,8 +171,8 @@ export function setupMenu (
     isVisible: boolean;
   } {
     return {
-      isFocused: w?.isDestroyed() === false && w.isFocused(),
-      isVisible: w?.isDestroyed() === false && w.isVisible()
+      isFocused: (w?.isDestroyed() ?? false) === false && w.isFocused?.(),
+      isVisible: (w?.isDestroyed() ?? false) === false && w.isVisible?.()
     };
   }
 
@@ -280,7 +280,7 @@ export function setupMenu (
       {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",
-        //visible: !!allowDevTools,
+        visible: !!allowDevTools,
         accelerator: "Ctrl+Shift+I",
         click: () => {
           BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
