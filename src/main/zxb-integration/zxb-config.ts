@@ -1,5 +1,6 @@
 export const ZXBC_ALL = "zxbasic";
 export const ZXBC_EXECUTABLE_PATH = "zxbasic.executablePath";
+export const ZXBC_PYTHON_PATH = "zxbasic.pythonPath";
 export const ZXBC_OPTIMIZATION_LEVEL = "zxbasic.optimizationLevel";
 export const ZXBC_MACHINE_CODE_ORIGIN = "zxbasic.machineCodeOrigin";
 export const ZXBC_SINCLAIR = "zxbasic.sinclair";

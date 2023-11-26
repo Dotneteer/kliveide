@@ -259,6 +259,7 @@ export const DocumentsHeader = () => {
 // --- Encapsulates the command bar to use with the build root document
 const BuildRootCommandBar = () => {
   const { outputPaneService, ideCommandsService } = useAppServices();
+  const compiling = useSelector(s => s.compilation?.inProgress ?? false);
   const storeDispatch = useDispatch();
   return (
     <>
@@ -266,6 +267,7 @@ const BuildRootCommandBar = () => {
       <TabButton
         iconName='combine'
         title='Compile code'
+        disabled={compiling}
         clicked={async () => {
           const buildPane = outputPaneService.getOutputPaneBuffer("build");
           await ideCommandsService.executeCommand("compile", buildPane);
@@ -276,6 +278,7 @@ const BuildRootCommandBar = () => {
       <TabButton
         iconName='inject'
         title={"Inject code into\nthe virtual machine"}
+        disabled={compiling}
         clicked={async () => {
           const buildPane = outputPaneService.getOutputPaneBuffer("build");
           await ideCommandsService.executeCommand("inject", buildPane);
@@ -286,6 +289,7 @@ const BuildRootCommandBar = () => {
       <TabButton
         iconName='play'
         title={"Inject code and start\nthe virtual machine"}
+        disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer("build");
@@ -297,6 +301,7 @@ const BuildRootCommandBar = () => {
       <TabButton
         iconName='debug'
         title={"Inject code and start\ndebugging"}
+        disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer("build");

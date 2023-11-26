@@ -19,10 +19,13 @@ import {
   ZXBC_ONE_AS_ARRAY_BASE_INDEX,
   ZXBC_ONE_AS_STRING_BASE_INDEX,
   ZXBC_OPTIMIZATION_LEVEL,
+  ZXBC_PYTHON_PATH,
   ZXBC_SINCLAIR,
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
+import * as path from "path";
+import {app} from "electron";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
@@ -64,6 +67,7 @@ export class ZxBasicCompiler extends CompilerBase {
           "ZXBC executable path is not set, cannot start the compiler."
         );
       }
+      const pythonPath = settingsReader.readSetting(ZXBC_PYTHON_PATH)?.toString();
 
       // --- Create the command line arguments
       const outFilename = `${filename}.bin`;
@@ -77,7 +81,8 @@ export class ZxBasicCompiler extends CompilerBase {
       const traceOutput = [`Executing ${cmdLine}`];
 
       // --- Run the compiler
-      const compileOut = await this.executeCommandLine(execPath, cmdLine);
+      const compileOut = await this.executeCommandLine(execPath, cmdLine, pythonPath);
+      fs.writeFileSync(path.join(app.getPath("home"), "klive-compile.log"), JSON.stringify(compileOut, null, 2));
       if (compileOut) {
         if (typeof compileOut === "string") {
           return {

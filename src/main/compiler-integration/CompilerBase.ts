@@ -58,6 +58,7 @@ export abstract class CompilerBase implements IKliveCompiler {
   async executeCommandLine (
     execPath: string,
     cmdArgs: string,
+    envPath?: string,
     _options?: any
   ): Promise<(AssemblerErrorInfo | string)[] | string | null> {
     const workdir = path.dirname(execPath);
@@ -66,16 +67,19 @@ export abstract class CompilerBase implements IKliveCompiler {
     const cmd = `${__DARWIN__ || __LINUX__ ? execPath : filename} ${args}`;
     return new Promise<(AssemblerErrorInfo | string)[] | string | null>(
       resolve => {
-        const process = exec(
+        const childProcess = exec(
           cmd,
           {
-            cwd: workdir
+            cwd: workdir,
+            env: envPath
+              ? { ...process.env, PATH: envPath }
+              : { ...process.env }
           },
           (error, stdout, stderr) => {
             let processedMessages: (AssemblerErrorInfo | string)[] = [];
-            if (process.exitCode !== 0) {
+            if (childProcess.exitCode !== 0) {
               processedMessages.push(
-                `The process exited with code ${process.exitCode}.`
+                `The process exited with code ${childProcess.exitCode}.`
               );
             }
             processedMessages.push(
@@ -93,7 +97,7 @@ export abstract class CompilerBase implements IKliveCompiler {
             resolve(null);
           }
         );
-        if (!process?.pid) {
+        if (!childProcess?.pid) {
           throw new Error(
             `Cannot run the process with the specified path (${execPath})`
           );

@@ -12,7 +12,8 @@ import { TokenType } from "../services/command-parser";
 import {
   ZXBC_ALL,
   ZXBC_EXECUTABLE_PATH,
-  ZXBC_MACHINE_CODE_ORIGIN
+  ZXBC_MACHINE_CODE_ORIGIN,
+  ZXBC_PYTHON_PATH
 } from "@main/zxb-integration/zxb-config";
 
 export class ResetZxbCommand extends IdeCommandBase {
@@ -20,14 +21,16 @@ export class ResetZxbCommand extends IdeCommandBase {
   readonly description =
     "Resets ZXB settings with the provided executable path and machine code origin";
   readonly usage =
-    "zxb-reset <Full ZXBC exeutable path> [<start of machine code>]";
+    "zxb-reset <Full ZXBC executable path> [<python3 path>] [<start of machine code>]";
   readonly aliases = ["zxbr"];
 
   private exePath?: string;
+  private pythonPath?: string;
   private codeOrigin?: number;
 
   prepareCommand (): void {
     delete this.exePath;
+    delete this.pythonPath;
     delete this.codeOrigin;
   }
 
@@ -35,57 +38,37 @@ export class ResetZxbCommand extends IdeCommandBase {
     context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
-    if (args.length > 2) {
-      return validationError("This command expects up to two parameters");
+    if (args.length > 3) {
+      return validationError("This command expects up to three parameters");
     }
 
-    // --- Ger ZX BASIC path
-    if (args.length > 0) {
-      switch (args[0].type) {
+    for (let i = 0; i < args.length; i++) {
+      switch (args[i].type) {
         case TokenType.BinaryLiteral:
         case TokenType.DecimalLiteral:
         case TokenType.HexadecimalLiteral:
-          return validationError("The first parameter should be a path string");
-        default:
-          const response = await context.messenger.sendMessage({
-            type: "MainPathExists",
-            path: args[0].text,
-            isFolder: false
-          });
-          if (response.type === "ErrorResponse") {
-            return validationError(response.message);
+          if (this.codeOrigin !== undefined) {
+            return validationError("Code origin already specified");
           }
-          if (response.type !== "FlagResponse") {
-            return validationError(`Invalid response type: '${response.type}'`);
-          }
-          if (!response.flag) {
-            return validationError(
-              `The path: '${args[0].text}' does not point to a valid file`
-            );
-          }
-          this.exePath = args[0].text;
-          break;
-      }
-    }
-
-    // --- Get the optional code origin
-    if (args.length > 1) {
-      switch (args[1].type) {
-        case TokenType.BinaryLiteral:
-        case TokenType.DecimalLiteral:
-        case TokenType.HexadecimalLiteral:
-          const tokenValue = getNumericTokenValue(args[1]);
+          const tokenValue = getNumericTokenValue(args[i]);
           if (tokenValue.messages) {
             return validationError("Invalid address");
           }
           this.codeOrigin = tokenValue.value & 0xffff;
+          this.codeOrigin = getNumericTokenValue(args[i]).value & 0xffff;
           break;
         default:
-          return validationError(
-            "The first parameter should be a number (address)"
-          );
+          if (this.exePath === undefined) {
+            this.exePath = args[i].text;
+          } else if (this.pythonPath === undefined) { 
+            this.pythonPath = args[i].text;
+          } else {
+            return validationError("Code origin must be a number");
+          }
+          break;
       }
     }
+
     return [];
   }
 
@@ -95,6 +78,12 @@ export class ResetZxbCommand extends IdeCommandBase {
         `set ${ZXBC_EXECUTABLE_PATH} "${this.exePath}"`
       );
       let cmdMessage = `ZX BASIC path set to ${this.exePath}`;
+      if (this.pythonPath) {
+        await context.service.ideCommandsService.executeCommand(
+          `set ${ZXBC_PYTHON_PATH} "${this.pythonPath}"`
+        );
+        cmdMessage += `, python path to $${this.pythonPath}`;
+      }
       if (this.codeOrigin) {
         await context.service.ideCommandsService.executeCommand(
           `set ${ZXBC_MACHINE_CODE_ORIGIN} "${this.codeOrigin}"`
