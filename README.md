@@ -21,6 +21,7 @@ New and improved features at a glance:
 - Exclude files/folders from a project
 - ZX Spectrum 128 Keyboard
 - Keyboard mapping customization
+- More stable ZX Basic integration
 - New source code debugging architecture
 - New integration architecture to allow future integration with external compilers and tools
 
