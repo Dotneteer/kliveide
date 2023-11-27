@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.30.3
+
+### Fixes
+
+- Remove log message preventing Klive from starting
+
 ## 0.30.2
 
 ### Fixes
