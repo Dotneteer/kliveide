@@ -55,8 +55,6 @@ export function saveAppSettings (): void {
     appSettings.keyMappingFile = state.keyMappingFile;
   }
 
-  fs.writeFileSync("/Users/dotneteer/klive.txt", getSettingsFilePath());
-
   // --- Save to the settings file
   fs.writeFileSync(
     getSettingsFilePath(),
