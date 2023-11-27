@@ -1,4 +1,6 @@
 import Image from 'next/image'
+import mainKey from '../../public//images/getting-started/main-key.png'
+import symbolKey from '../../public//images/getting-started/symbol-key.png'
  
 # Using the Keyboard
 
@@ -29,8 +31,8 @@ This table shows a few examples:
 
 | Example | Description
 |-|:-|
-| <Image src="/images/getting-started/main-key.png" alt="Hello" width="64" height="77" /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
-| <Image src="/images/getting-started/symbol-key.png" width="64" height="77" /> | The click will result in `AT` regardless of which mouse button you click. |
+| <Image src={mainKey} alt="Hello" width="64" height="77" /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
+| <Image src={symbolKey} width="64" height="77" /> | The click will result in `AT` regardless of which mouse button you click. |
 | <Image src="/images/getting-started/above-key.png" width="64" height="77" /> | The click will show `CODE` regardless of which mouse button you click.. |
 | <Image src="/images/getting-started/below-key.png" width="64" height="90" /> | The click will display `IN` regardless of which mouse button you click. |
 | <Image src="/images/getting-started/glyph-key.png" width="64" height="77" /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
