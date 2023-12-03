@@ -8,6 +8,8 @@ import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { FloppyDisk, crcFdcTable } from "./FloppyDisk";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { DISK_A_DATA, DISK_B_DATA } from "../machine-props";
+import { read } from "original-fs";
+import { r } from "nextra/dist/types-c8e621b7";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {
@@ -78,6 +80,9 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Read/write cycle num
   private cycle: number;
+
+  // --- Result byte index
+  private resultIndex: number;
 
   // --- Read/wrire deleted data
   private delData: boolean;
@@ -413,7 +418,8 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       opType: PortOperationType.ReadData,
       addr: this.machine.opStartAddress,
       phase: "R",
-      data: r
+      data: r,
+      comment: this.cmd.reslbls[this.resultIndex++]
     });
     return r;
   }
@@ -897,6 +903,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
 
   // --- Adds a new item to the operation log
   private log (entry: FloppyLogEntry): void {
+    if (entry.opType === PortOperationType.ReadMsr) return;
     if (this.opLog.length >= MAX_LOG_ENTRIES) {
       this.opLog.shift();
     }
@@ -960,6 +967,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
       this.phase = OperationPhase.Result;
       this.intReq = IntRequest.Result;
       this.msr |= MSR_DIO;
+      this.resultIndex = 0;
     } else {
       // --- No result state
       this.phase = OperationPhase.Command;
@@ -1776,6 +1784,8 @@ type CommandDescriptor = {
   reslength: number;
   // --- Parameter names
   pars: string[];
+  // --- Result names
+  reslbls: string[]; 
 };
 
 // --- Represents the execution phases of the controller
@@ -1789,6 +1799,9 @@ enum OperationPhase {
   Result
 }
 
+const readDataPars = ["HD/US", "C", "H", "N", "R", "EOT", "GPL", "DTL"];
+const readDataResults = ["ST0", "ST1", "ST2", "C", "H", "R", "N"];
+
 // --- Description of available commmands
 const commandTable: CommandDescriptor[] = [
   {
@@ -1798,7 +1811,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x06,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   // --- Deleted data
   {
@@ -1808,7 +1822,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x0c,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   {
     id: Command.Recalibrate,
@@ -1817,7 +1832,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x07,
     cmdLength: 0x01,
     reslength: 0x00,
-    pars: ["US"]
+    pars: ["US"],
+    reslbls: []
   },
   {
     id: Command.Seek,
@@ -1826,7 +1842,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x0f,
     cmdLength: 0x02,
     reslength: 0x00,
-    pars: ["NCN"]
+    pars: ["HD/US", "NCN"],
+    reslbls: []
   },
   {
     id: Command.WriteData,
@@ -1835,7 +1852,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x05,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   // --- Deleted data
   {
@@ -1845,7 +1863,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x09,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "DTL"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   // --- Equal
   {
@@ -1855,7 +1874,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x11,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   // --- Low or Equal
   {
@@ -1865,7 +1885,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x19,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   // --- High or Equal
   {
@@ -1875,7 +1896,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x1d,
     cmdLength: 0x08,
     reslength: 0x07,
-    pars: ["C", "H", "N", "R", "EOT", "GPL", "STP"]
+    pars: readDataPars,
+    reslbls: readDataResults
   },
   {
     id: Command.ReadId,
@@ -1884,7 +1906,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x0a,
     cmdLength: 0x01,
     reslength: 0x07,
-    pars: []
+    pars: ["HD/US"],
+    reslbls: readDataResults
   },
   {
     id: Command.SenseInt,
@@ -1893,7 +1916,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x08,
     cmdLength: 0x00,
     reslength: 0x02,
-    pars: []
+    pars: [],
+    reslbls: ["ST0", "PCN"]
   },
   {
     id: Command.Specify,
@@ -1902,7 +1926,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x03,
     cmdLength: 0x02,
     reslength: 0x00,
-    pars: ["SRT/HUT", "HLT/ND"]
+    pars: ["SRT/HUT", "HLT/ND"],
+    reslbls: []
   },
   {
     id: Command.SenseDrive,
@@ -1911,7 +1936,8 @@ const commandTable: CommandDescriptor[] = [
     value: 0x04,
     cmdLength: 0x01,
     reslength: 0x01,
-    pars: ["HD/US"]
+    pars: ["HD/US"],
+    reslbls: ["ST3"]
   },
   {
     id: Command.Invalid,
@@ -1920,6 +1946,7 @@ const commandTable: CommandDescriptor[] = [
     value: 0x00,
     cmdLength: 0x00,
     reslength: 0x01,
-    pars: []
+    pars: [],
+    reslbls: ["ST0"]
   }
 ];
