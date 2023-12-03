@@ -1,0 +1,64 @@
+R1:
+8e8
+977
+985
+9a8
+9c8
+a39
+a8e
+a95
+ad4
+d6d: Perform disk save
+d86
+
+DOS_OPEN: R2:$106 --> R2:$635
+Problem: CALL $0c20 --> does not return with success
+
+R2:
+01c3
+17d3
+17e0
+17f6
+17fe
+1805: login to disk
+18d3: Subroutine to login a disk at low-level
+18ef
+18f6: call routine to write sector
+
+
+Fuse <--> Klive
+R2:1d97
+2193: Motor on
+2031: Recalibrate
+205e
+2061: PAR - 00 (US)
+215c
+2163: Read ID
+20ef
+2112
+1f4a
+1efa
+21a6: Strange things starting!
+
+(again)
+2163: Read ID
+20ef: Starts reading Read ID results
+      Fuse : 00 00 00 00 00 08 02
+      Klive: 40 05 00 00 00 09 02
+      
+
+
+1f4a
+1caf: What is E430 --> FDC result buffer
+1d00
+
+
+
+
+
+
+
+
+
+
+

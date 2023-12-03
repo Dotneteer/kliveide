@@ -230,6 +230,14 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the partition in which the specified address is paged in
+   * @param address Address to get the partition for
+   */
+  getPartition (address: number): number | undefined {
+    return this.memory.getAddressPartition(address);
+  }
+
+  /**
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */
@@ -603,7 +611,9 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
+    throw new Error(
+      `Code for machine model '${model}' cannot run on this virtual machine.`
+    );
   }
 
   /**
