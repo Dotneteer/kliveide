@@ -63,7 +63,38 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: install-kit
-        path: artifacts/*.AppImage
+        path: artifacts/*x86_64.AppImage
+
+  build-on-linux-arm64:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+
+    - name: Install npm dependencies
+      run: npm run bootstrap:ci --force
+
+    - name: Build the packages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npm run build
+
+    - name: Build Electron app on linux ARM64
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npm run build:linux:arm64
+
+    - name: Add install Emulator install kit to artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: install-kit
+        path: artifacts/*arm64.AppImage
 
   build-on-mac:
     runs-on: macos-latest

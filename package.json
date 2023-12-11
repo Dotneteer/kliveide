@@ -25,7 +25,9 @@
     "build:check": "tsc && vite build",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
+    "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
+    "build:linux:arm64": "npm run build && electron-builder build --linux --arm64",
     "doc:dev": "next",
     "doc:build": "next build",
     "doc:start": "next start",
@@ -76,7 +78,7 @@
   "build": {
     "appId": "dotneteer.kliveide",
     "productName": "Klive IDE",
-    "artifactName": "KliveIdeSetup-${version}.${ext}",
+    "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
     "directories": {
       "buildResources": "buildResources",
       "output": "artifacts/"
