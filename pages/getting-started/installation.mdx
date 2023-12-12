@@ -8,20 +8,22 @@ import installStep3 from '/public/images/getting-started/install-step-3.png'
 import installStep4 from '/public/images/getting-started/install-step-4.png'
 import appsInFinder from '/public/images/getting-started/apps-in-finder.png'
 import kliveInSearch from '/public/images/getting-started/klive-in-search.png'
+import ubuntuPermission from '/public/images/getting-started/ubuntu-permission.png'
 
 # Installing Klive
 
 Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
 
-- `KliveIdeSetup-{version}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
- - `KliveIdeSetup-{version}.exe`: Self-extracting executable to install Klive IDE on Windows x64
-- `KliveIdeSetup-{version}.pkg`: The standard PKG format to install Klive IDE on MacOS
+- `KliveIdeSetup-{version}-{arch}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
+- `KliveIdeSetup-{version}-{arch}.exe`: Self-extracting executable to install Klive IDE on Windows x64
+- `KliveIdeSetup-{version}-{arch}.pkg`: The standard PKG format to install Klive IDE on MacOS
 
 `{version}` is a placeholder for the version number of a particular release in the filename.
+`{arch}` is a placeholder for the architecture of the target platform. It can be `x64` or `arm64`.  
 
-Download the file according to the operating system to use, and follow the sections of this article.
+> **Note**: Windows currently supports only the x64 architecture.
 
-> **Note**: Though there is an install kit for Linux, I have yet to test it thoroughly. If you plan to work with Klive IDE on Linux, please help me test it or even create additional install kits. 
+Download the file according to the operating system and architecture to use, and follow the sections of this article.
 
 ## MacOS Installation
 
@@ -71,4 +73,21 @@ Click on Klive IDE to start it.
 
 ## Linux Installation
 
-*I have not tried to install Klive IDE on Linux. If you did and have a helpful description of the installation steps, please create a PR to extend the installation notes in this article.*
+The Linux install kit is an `.AppImage` file. You may need to download and install FUSE on your machine to use it. For example, on Ubuntu (where FUSE is not installed by default), you can install it:
+
+```text
+sudo apt-get install fuse libfuse2
+```
+
+Copy the `.AppImage` file into the folder from which you intend to use it. Make it executable with this command line:
+
+```text
+chmod +x KliveIdeSetup-{version}-{arch}.AppImage
+``` 
+
+Alternatively, you can right-click on the file in the file manager and select the Properties command. In the Permissions tab, check the Allow executing file as program checkbox:
+
+<Image src={ubuntuPermission} alt="UbuntuPermission" width="296" height="290" style={{ marginTop: 24 }} />
+
+Now, you can run Klive IDE by double-clicking the setup kit's icon or using the Run command from its context menu.
+
