@@ -35,5 +35,8 @@
   },
   "[mdx]": {
     "editor.defaultFormatter": "unifiedjs.vscode-mdx"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "numso.prettier-standard-vscode"
   }
 }
