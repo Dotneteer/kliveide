@@ -7,122 +7,153 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install npm dependencies
-      run: npm run bootstrap:ci --force
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
 
-    - name: Build the packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build
+      - name: Install npm dependencies
+        run: npm run bootstrap:ci --force
 
-    - name: Build Electron app on Windows
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build:win
+      - name: Build the packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
 
-    - name: Add install Emulator install kit to artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: install-kit
-        path: artifacts/*.exe
+      - name: Build Electron app on Windows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win
+
+      - name: Add install Emulator install kit to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install-kit
+          path: artifacts/*.exe
 
   build-on-linux:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install npm dependencies
-      run: npm run bootstrap:ci --force
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
 
-    - name: Build the packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build
+      - name: Install npm dependencies
+        run: npm run bootstrap:ci --force
 
-    - name: Build Electron app on linux
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build:linux
+      - name: Build the packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
 
-    - name: Add install Emulator install kit to artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: install-kit
-        path: artifacts/*x86_64.AppImage
+      - name: Build Electron app on linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:linux
+
+      - name: Add install Emulator install kit to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install-kit
+          path: artifacts/*x86_64.AppImage
 
   build-on-linux-arm64:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install npm dependencies
-      run: npm run bootstrap:ci --force
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
 
-    - name: Build the packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build
+      - name: Install npm dependencies
+        run: npm run bootstrap:ci --force
 
-    - name: Build Electron app on linux ARM64
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build:linux:arm64
+      - name: Build the packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
 
-    - name: Add install Emulator install kit to artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: install-kit
-        path: artifacts/*arm64.AppImage
+      - name: Build Electron app on linux ARM64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:linux:arm64
+
+      - name: Add install Emulator install kit to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install-kit
+          path: artifacts/*arm64.AppImage
 
   build-on-mac:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18.x
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install npm dependencies
-      run: npm run bootstrap:ci --force
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
 
-    - name: Build the packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build
+      - name: Install npm dependencies
+        run: npm run bootstrap:ci --force
 
-    - name: Build Electron app on Mac
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npm run build:mac
+      - name: Build the packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
 
-    - name: Add install Emulator install kit to artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: install-kit
-        path: artifacts/*.pkg
+      - name: Build Electron app on Mac
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:mac
+
+      - name: Add install Emulator install kit to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install-kit
+          path: artifacts/*x64.pkg
+
+  build-on-mac-arm64:
+    runs-on: macos-latest-large
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: Install npm dependencies
+        run: npm run bootstrap:ci --force
+
+      - name: Build the packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
+
+      - name: Build Electron app on Mac ARM64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:mac:arm64
+
+      - name: Add install Emulator install kit to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: install-kit
+          path: artifacts/*arm64.pkg
