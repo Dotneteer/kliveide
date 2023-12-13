@@ -12,6 +12,8 @@ export type AppSettings = {
     emuWindow?: WindowState;
     ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
+    emuZoomFactor?: number;
+    ideZoomFactor?: number;
   };
   startScreenDisplayed?: boolean;
   theme?: string;
