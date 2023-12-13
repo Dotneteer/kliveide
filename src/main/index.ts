@@ -52,7 +52,12 @@ import {
   registerMainToIdeMessenger,
   sendFromMainToIde
 } from "../common/messaging/MainToIdeMessenger";
-import { appSettings, loadAppSettings, saveAppSettings, signFinalSave } from "./settings";
+import {
+  appSettings,
+  loadAppSettings,
+  saveAppSettings,
+  signFinalSave
+} from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
@@ -149,7 +154,8 @@ async function createAppWindows () {
       stateSaver: state => {
         appSettings.windowStates = {
           ...appSettings.windowStates,
-          emuWindow: state
+          emuWindow: state,
+          emuZoomFactor: emuWindow?.webContents.getZoomFactor()
         };
         saveAppSettings();
       }
@@ -190,7 +196,8 @@ async function createAppWindows () {
       stateSaver: state => {
         appSettings.windowStates = {
           ...appSettings.windowStates,
-          ideWindow: state
+          ideWindow: state,
+          ideZoomFactor: ideWindow?.webContents.getZoomFactor()
         };
         appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
         saveAppSettings();
@@ -319,6 +326,11 @@ async function createAppWindows () {
       "main-process-message",
       new Date().toLocaleString()
     );
+    if (appSettings.windowStates.ideZoomFactor != undefined) {
+      ideWindow.webContents.setZoomFactor(
+        appSettings.windowStates.ideZoomFactor
+      );
+    }
   });
 
   // --- Make all links open with the browser, not with the application
@@ -339,6 +351,10 @@ async function createAppWindows () {
 
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async e => {
+    if (ideWindow?.webContents) {
+      appSettings.windowStates.ideZoomFactor =
+        ideWindow.webContents.getZoomFactor();
+    }
     if (allowCloseIde) {
       // --- The emu allows closing the IDE
       if (!ideSaved) {
@@ -356,9 +372,7 @@ async function createAppWindows () {
     // --- Do not allow the IDE close, instead, hide it.
     e.preventDefault();
     ideWindow.hide();
-    console.log("IDE window is hidden");
     if (appSettings.windowStates && !ideWindowStateSaved) {
-      console.log("Saving IDE window state");
       // --- Make sure to save the last IDE settings
       appSettings.windowStates.showIdeOnStartup = false;
     }
@@ -373,6 +387,12 @@ async function createAppWindows () {
       "main-process-message",
       new Date().toLocaleString()
     );
+    // --- Set emu zoom factor
+    if (appSettings.windowStates.emuZoomFactor != undefined) {
+      emuWindow.webContents.setZoomFactor(
+        appSettings.windowStates.emuZoomFactor
+      );
+    }
   });
 
   // --- Make all links open with the browser, not with the application
@@ -393,6 +413,10 @@ async function createAppWindows () {
 
   // --- Close the emu window with the IDE window
   emuWindow.on("close", async e => {
+    if (emuWindow?.webContents) {
+      appSettings.windowStates.emuZoomFactor =
+        emuWindow.webContents.getZoomFactor();
+    }
     saveAppSettings();
     if (!ideSaved) {
       // --- Do not allow the emu close while IDE is not saved
