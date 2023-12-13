@@ -1,5 +1,15 @@
 # Klive IDE Changelog
 
+## Next release
+
+### Fixes
+
+- The IDE saves the zoom factor at exit and reloads it with a new start
+
+### Features
+
+- New install kits for ARM64 (MacOS and Linux)
+
 ## 0.30.3
 
 ### Fixes
