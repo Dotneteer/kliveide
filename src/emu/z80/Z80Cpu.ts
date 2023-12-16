@@ -1,3 +1,4 @@
+import { n } from "nextra/dist/types-c8e621b7";
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
 import { IZ80Cpu } from "../abstractions/IZ80Cpu";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
@@ -339,7 +340,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The WZ (MEMPTR) register pair
    */
   get wz (): number {
-    return this._viewWZ.getUint16(0)
+    return this._viewWZ.getUint16(0);
   }
   set wz (value: number) {
     this._viewWZ.setUint16(0, value);
@@ -537,7 +538,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This flag is reserved for future extension. The ZX Spectrum Next computer uses additional Z80 instructions.
    * This flag indicates if those are allowed.
    */
-  allowExtendedInstructions: boolean;
+  allowExtendedInstructions = false;
 
   /**
    * Accumulates the total contention value since the last start
@@ -2651,12 +2652,12 @@ export class Z80Cpu implements IZ80Cpu {
     nop,
     nop,
     nop,
+    swapnib,
+    mirrorA,
     nop,
     nop,
-    nop,
-    nop,
-    nop, // 20-27
-    nop,
+    testN, // 20-27
+    bslaDEB,
     nop,
     nop,
     nop,
@@ -2664,13 +2665,13 @@ export class Z80Cpu implements IZ80Cpu {
     nop,
     nop,
     nop, // 28-2f
-    nop,
-    nop,
-    nop,
-    nop,
-    nop,
-    nop,
-    nop,
+    mulDE,
+    addHLA,
+    addDEA,
+    addBCA,
+    addHLNN,
+    addDENN,
+    addBCNN,
     nop, // 30-37
     nop,
     nop,
@@ -8359,4 +8360,110 @@ function otdr (cpu: Z80Cpu) {
   if (cpu.b === 0) return;
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.pc -= 2;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// Z80 Extended instructions (ZX Spectrum Next)
+
+// 0x23: SWAPNIB
+function swapnib (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const nLow = cpu.a & 0x0f;
+    const nHigh = cpu.a & 0xf0;
+    cpu.a = (nLow << 4) | (nHigh >>> 4);
+  }
+}
+
+// 0x24: MIRROR A
+function mirrorA (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let oldA = cpu.a;
+    let newA = 0x00;
+    for (let i = 0; i < 8; i++) {
+      newA = newA >> 1;
+      if (oldA & 0x80) {
+        newA = newA | 0x80;
+      }
+      oldA = oldA << 1;
+    }
+    cpu.a = newA;
+  }
+}
+
+// 0x27: TEST A
+function testN (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const value = cpu.fetchCodeByte();
+    const temp = cpu.a & value;
+    cpu.f = FlagsSetMask.H | sz53pvTable[temp];
+  }
+}
+
+// 0x28: BSLA DE,B
+function bslaDEB (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const shAmount = cpu.b & 31;
+    if (!shAmount) return;
+    if (shAmount >= 16) {
+      // 16+ shifts set DE to zero
+      cpu.de = 0;
+    } else {
+      cpu.de <<= shAmount;
+    }
+  }
+}
+
+// 0x30: MUL D,E
+function mulDE (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.de = cpu.d * cpu.e;
+  }
+}
+
+// 0x31: ADD HL,A
+function addHLA (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.hl = cpu.hl + cpu.a;
+  }
+}
+
+// 0x32: ADD DE,A
+function addDEA (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.de = cpu.de + cpu.a;
+  }
+}
+
+// 0x33: ADD BC,A
+function addBCA (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.bc = cpu.bc + cpu.a;
+  }
+}
+
+// 0x34: ADD HL,NNNN
+function addHLNN (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let opVal = cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8);
+    cpu.hl += opVal;
+    cpu.tactPlusN(2);
+  }
+}
+
+// 0x35: ADD DE,NNNN
+function addDENN (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let opVal = cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8);
+    cpu.de += opVal;
+    cpu.tactPlusN(2);
+  }
+}
+
+// 0x36: ADD BC,NNNN
+function addBCNN (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let opVal = cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8);
+    cpu.bc += opVal;
+    cpu.tactPlusN(2);
+  }
 }
