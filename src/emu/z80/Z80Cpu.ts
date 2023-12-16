@@ -2657,11 +2657,11 @@ export class Z80Cpu implements IZ80Cpu {
     nop,
     nop,
     testN, // 20-27
-    bslaDEB,
-    nop,
-    nop,
-    nop,
-    nop,
+    bsla,
+    bsra,
+    bsrl,
+    bsrf,
+    brlc,
     nop,
     nop,
     nop, // 28-2f
@@ -2757,7 +2757,7 @@ export class Z80Cpu implements IZ80Cpu {
     nop, // 80-87
     nop,
     nop,
-    nop,
+    pushNN,
     nop,
     nop,
     nop,
@@ -8400,15 +8400,74 @@ function testN (cpu: Z80Cpu) {
 }
 
 // 0x28: BSLA DE,B
-function bslaDEB (cpu: Z80Cpu) {
+function bsla (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const shAmount = cpu.b & 0x1f;
+    if (!shAmount) return;
+    if (shAmount >= 0x10) {
+      cpu.de = 0;
+    } else {
+      cpu.de <<= shAmount;
+    }
+  }
+}
+
+// 0x29: BSRA DE,B
+function bsra (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const shAmount = cpu.b & 0x1f;
+    const isDeNeg = (1 << 15) & cpu.de; // extract top bit
+    if (!shAmount) return;
+    if (shAmount >= 15) {
+      cpu.de = isDeNeg ? 0xffff : 0x0000;
+    } else {
+      let de_bottom_part = cpu.de >> shAmount;
+      let de_upper_part = 0; // 0 for positive/zero values
+      if (isDeNeg) {
+        // negative values have to fill vacant top bits with ones
+        de_upper_part = 0xffff << (15 - shAmount);
+      }
+      cpu.de = de_upper_part | de_bottom_part;
+    }
+  }
+}
+
+// 0x2A: BSRL DE,B
+function bsrl (cpu: Z80Cpu) {
   if (cpu.allowExtendedInstructions) {
     const shAmount = cpu.b & 31;
     if (!shAmount) return;
     if (shAmount >= 16) {
-      // 16+ shifts set DE to zero
       cpu.de = 0;
     } else {
-      cpu.de <<= shAmount;
+      cpu.de >>>= shAmount;
+    }
+  }
+}
+
+// 0x2B: BSRF DE,B
+function bsrf (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const shAmount = cpu.b & 31;
+    if (!shAmount) return;
+    if (shAmount >= 16) {
+      cpu.de = 0xffff;
+    } else {
+      const deBottom = cpu.de >> shAmount;
+      const deUpper = 0xffff << (16 - shAmount);
+      cpu.de = deUpper | deBottom;
+    }
+  }
+}
+
+// 0x2C: BRLC DE,B
+function brlc (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const rolls = cpu.b & 15;
+    if (0 < rolls) {
+      const deUpper = cpu.de << rolls;
+      const deBottom = cpu.de >> (16 - rolls);
+      cpu.de = deUpper | deBottom;
     }
   }
 }
@@ -8465,5 +8524,16 @@ function addBCNN (cpu: Z80Cpu) {
     let opVal = cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8);
     cpu.bc += opVal;
     cpu.tactPlusN(2);
+  }
+}
+
+// 0x8a: PUSH NNNN
+function pushNN (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.fetchCodeByte());
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.fetchCodeByte());
+    cpu.tactPlus3();
   }
 }

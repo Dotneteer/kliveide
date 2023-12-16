@@ -192,13 +192,12 @@ describe("Z80 next ops", () => {
     const m = new Z80TestMachine(RunMode.OneInstruction, true);
     m.initCode([
       0xed,
-      0x28,
-      0x24 // TEST 0x24
+      0x28 // BSLA DE,B
     ]);
 
     // --- Act
     m.cpu.de = 0xffff;
-    m.cpu.b = 0x05
+    m.cpu.b = 0x05;
     m.run();
 
     // --- Assert
@@ -217,13 +216,12 @@ describe("Z80 next ops", () => {
     const m = new Z80TestMachine(RunMode.OneInstruction, true);
     m.initCode([
       0xed,
-      0x28,
-      0x24 // TEST 0x24
+      0x28 // BSLA DE,B
     ]);
 
     // --- Act
     m.cpu.de = 0xffff;
-    m.cpu.b = 0x65
+    m.cpu.b = 0x65;
     m.run();
 
     // --- Assert
@@ -242,13 +240,12 @@ describe("Z80 next ops", () => {
     const m = new Z80TestMachine(RunMode.OneInstruction, true);
     m.initCode([
       0xed,
-      0x28,
-      0x24 // TEST 0x24
+      0x28 // BSLA DE,B
     ]);
 
     // --- Act
     m.cpu.de = 0xffff;
-    m.cpu.b = 0x12
+    m.cpu.b = 0x12;
     m.run();
 
     // --- Assert
@@ -267,13 +264,12 @@ describe("Z80 next ops", () => {
     const m = new Z80TestMachine(RunMode.OneInstruction, true);
     m.initCode([
       0xed,
-      0x28,
-      0x24 // TEST 0x24
+      0x28 // BSLA DE,B
     ]);
 
     // --- Act
     m.cpu.de = 0xffff;
-    m.cpu.b = 0x0c
+    m.cpu.b = 0x0c;
     m.run();
 
     // --- Assert
@@ -282,6 +278,470 @@ describe("Z80 next ops", () => {
     m.shouldKeepMemory();
 
     expect(cpu.de).toBe(0xf000);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x29: BSRA DE,B (ext not allowed)", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xed,
+      0x29 // BSRA DE,B
+    ]);
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters();
+    m.shouldKeepMemory();
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x29: BSRA DE,B #1", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x29 // BSRA DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0xffff;
+    m.cpu.b = 0x05;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xffff);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x29: BSRA DE,B #2", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x29 // BSRA DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x13ff;
+    m.cpu.b = 0x65;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x009f);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x29: BSRA DE,B #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x29 // BSRA DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x12ff;
+    m.cpu.b = 0x12;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x0000);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x29: BSRA DE,B #4", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x29 // BSRA DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x1fff;
+    m.cpu.b = 0x0a;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x0007);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2A: BSRL DE,B (ext not allowed)", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xed,
+      0x2a // BSRL DE,B
+    ]);
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters();
+    m.shouldKeepMemory();
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2A: BSRL DE,B #1", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2a // BSRL
+    ]);
+
+    // --- Act
+    m.cpu.de = 0xffff;
+    m.cpu.b = 0x05;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x07ff);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2A: BSRL DE,B #2", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2a // BSRL DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x13ff;
+    m.cpu.b = 0x65;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x009f);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2A: BSRL DE,B #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2a // BSRL DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x12ff;
+    m.cpu.b = 0x12;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x0000);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2A: BSRL DE,B #4", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2a, // BSRL DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x1fff;
+    m.cpu.b = 0x0a;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x0007);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2B: BSRF DE,B (ext not allowed)", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xed,
+      0x2b // BSRF DE,B
+    ]);
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters();
+    m.shouldKeepMemory();
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2B: BSRF DE,B #1", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2b // BSRF DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0xffff;
+    m.cpu.b = 0x05;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xffff);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2B: BSRF DE,B #2", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2b // BSRF DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x13ff;
+    m.cpu.b = 0x65;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xF89f);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2B: BSRF DE,B #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2b // BSRF DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x12ff;
+    m.cpu.b = 0x12;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xffff);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2B: BSRF DE,B #4", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2b, // BSRF DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x1fff;
+    m.cpu.b = 0x0a;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xffc7);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2C: BRLC DE,B (ext not allowed)", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xed,
+      0x2c // BRLC DE,B
+    ]);
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters();
+    m.shouldKeepMemory();
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2C: BRLC DE,B #1", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2c // BRLC DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0xffff;
+    m.cpu.b = 0x05;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xffff);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2C: BRLC DE,B #2", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2c // BRCL DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x13ff;
+    m.cpu.b = 0x65;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x7fe2);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2C: BRLC DE,B #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2c // BRLC DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x12ff;
+    m.cpu.b = 0x12;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0x4bfc);
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x2C: BRLC DE,B #4", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0x2c, // BRLC DE,B
+    ]);
+
+    // --- Act
+    m.cpu.de = 0x1fff;
+    m.cpu.b = 0x0a;
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("DE");
+    m.shouldKeepMemory();
+
+    expect(cpu.de).toBe(0xfc7f);
 
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(8);
@@ -651,4 +1111,50 @@ describe("Z80 next ops", () => {
     expect(cpu.pc).toBe(0x0007);
     expect(cpu.tacts).toBe(26);
   });
+
+  it("0x8A: PUSH NN (ext not allowed)", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xed,
+      0x8a // PUSH NN
+    ]);
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters();
+    m.shouldKeepMemory();
+
+    expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(8);
+  });
+
+  it("0x8A: PUSH NN", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.UntilEnd, true);
+    m.initCode([
+      0xed,
+      0x8a,
+      0x23,
+      0xab, // PUSH 0x23ab
+      0xe1 // POP HL
+    ]);
+    m.cpu.sp = 0;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("HL");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.hl).toBe(0x23ab);
+
+    expect(cpu.pc).toBe(0x0005);
+    expect(cpu.tacts).toBe(33);
+  });
+
 });
