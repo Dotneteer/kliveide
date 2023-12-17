@@ -1,4 +1,4 @@
-import { n } from "nextra/dist/types-c8e621b7";
+import { writeMessage } from "@renderer/appIde/services/ide-commands";
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
 import { IZ80Cpu } from "../abstractions/IZ80Cpu";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
@@ -1447,6 +1447,16 @@ export class Z80Cpu implements IZ80Cpu {
     // --- Override this method in derived classes
   }
 
+  /**
+   * Sets a TBBlue register value
+   * @param address Register address
+   * @param value Register value;
+   */
+  tbblueOut (address: number, value: number): void {
+    // --- Override this method in derived classes
+    this.tactPlusN(6);
+  }
+
   // ----------------------------------------------------------------------------------------------------------------
   // Z80 clock methods
 
@@ -2763,15 +2773,15 @@ export class Z80Cpu implements IZ80Cpu {
     nop,
     nop,
     nop, // 88-8f
-    nop,
-    nop,
-    nop,
-    nop,
-    nop,
-    nop,
+    outinb,
+    nextregn,
+    nextrega,
+    pixeldn,
+    pixelad,
+    setae,
     nop,
     nop, // 90-97
-    nop,
+    jpc,
     nop,
     nop,
     nop,
@@ -2783,15 +2793,15 @@ export class Z80Cpu implements IZ80Cpu {
     cpi,
     ini,
     outi,
-    nop,
-    nop,
+    ldix,
+    ldws,
     nop,
     nop, // a0-a7
     ldd,
     cpd,
     ind,
     outd,
-    nop,
+    lddx,
     nop,
     nop,
     nop, // a8-af
@@ -2799,15 +2809,15 @@ export class Z80Cpu implements IZ80Cpu {
     cpir,
     inir,
     otir,
+    ldirx,
     nop,
     nop,
-    nop,
-    nop, // b0-b7
+    ldpirx, // b0-b7
     lddr,
     cpdr,
     indr,
     otdr,
-    nop,
+    lddrx,
     nop,
     nop,
     nop, // b8-bf
@@ -8535,5 +8545,184 @@ function pushNN (cpu: Z80Cpu) {
     cpu.sp--;
     cpu.writeMemory(cpu.sp, cpu.fetchCodeByte());
     cpu.tactPlus3();
+  }
+}
+
+// 0x90: OUTINB
+function outinb (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.wz = cpu.bc + 1;
+    cpu.writePort(cpu.bc, tmp);
+    cpu.hl++;
+    const tmp2 = (tmp + cpu.l) & 0xff;
+    cpu.f =
+      ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+      (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+      (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+      sz53Table[cpu.b];
+  }
+}
+
+// 0x91: NEXTREG NN,NN
+function nextregn (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const register = cpu.fetchCodeByte();
+    const value = cpu.fetchCodeByte();
+    cpu.tbblueOut(register, value);
+  }
+}
+
+// 0x92: NEXTREG NN,A
+function nextrega (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const register = cpu.fetchCodeByte();
+    cpu.tbblueOut(register, cpu.a);
+  }
+}
+
+// 0x93: PIXELDN
+function pixeldn (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const hl = cpu.hl;
+    if ((hl & 0x0700) !== 0x0700) {
+      cpu.h++;
+    } else if ((hl & 0xe0) !== 0xe0) {
+      cpu.hl = (hl & 0xf8ff) + 0x20;
+    } else cpu.hl = (hl & 0xf81f) + 0x0800;
+  }
+}
+
+// 0x94: PIXELAD
+function pixelad (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.hl =
+      0x4000 +
+      ((cpu.d & 0xc0) << 5) +
+      ((cpu.d & 0x07) << 8) +
+      ((cpu.d & 0x38) << 2) +
+      (cpu.e >> 3);
+  }
+}
+
+// 0x95: SETAE
+function setae (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.a = 0x80 >> (cpu.e & 7);
+  }
+}
+
+// 0x98: JP (C)
+function jpc (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    cpu.pc = cpu.wz = (cpu.pc & 0xc000) | (cpu.readPort(cpu.bc) << 6);
+    cpu.tactPlusN(1);
+  }
+}
+
+// 0xA4: LDIX
+function ldix (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let tmp = cpu.readMemory(cpu.hl);
+    if (tmp !== cpu.a) {
+      cpu.writeMemory(cpu.de, tmp);
+    } else {
+      cpu.tactPlus3();
+    }
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    cpu.de++;
+    cpu.hl++;
+  }
+}
+
+// 0xA5: LDWS
+function ldws (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.writeMemory(cpu.de, tmp);
+    cpu.l++;
+    cpu.d++;
+  }
+}
+
+// 0xAC: LDDX
+function lddx (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let tmp = cpu.readMemory(cpu.hl);
+    if (tmp !== cpu.a) {
+      cpu.writeMemory(cpu.de, tmp);
+    } else {
+      cpu.tactPlus3();
+    }
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    cpu.de++;
+    cpu.hl--;
+  }
+}
+
+// 0xB4: LDIRX
+function ldirx (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let tmp = cpu.readMemory(cpu.hl);
+    if (tmp !== cpu.a) {
+      cpu.writeMemory(cpu.de, tmp);
+    } else {
+      cpu.tactPlus3();
+    }
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    if (cpu.bc) {
+      cpu.tactPlus5WithAddress(cpu.de);
+      cpu.pc -= 2;
+    }
+    cpu.de++;
+    cpu.hl++;
+  }
+}
+
+// 0xB7: LDPIRX
+function ldpirx (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    const source_adr = (cpu.hl & ~0x07) | (cpu.e & 7);
+
+    if (cpu.b || cpu.c !== 1) cpu.wz = cpu.pc;
+
+    const tmp = cpu.readMemory(source_adr);
+    if (tmp !== cpu.a) {
+      cpu.writeMemory(cpu.de, tmp);
+    } else {
+      cpu.tactPlus3();
+    }
+
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    if (cpu.bc) {
+      cpu.tactPlus5WithAddress(cpu.de);
+      cpu.pc -= 2;
+    }
+    cpu.de++;
+  }
+}
+
+// 0xBC: LDDRX
+function lddrx (cpu: Z80Cpu) {
+  if (cpu.allowExtendedInstructions) {
+    let tmp = cpu.readMemory(cpu.hl);
+    if (tmp !== cpu.a) {
+      cpu.writeMemory(cpu.de, tmp);
+    } else {
+      cpu.tactPlus3();
+    }
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    if (cpu.bc) {
+      cpu.tactPlus5WithAddress(cpu.de);
+      cpu.pc -= 2;
+    }
+    cpu.de++;
+    cpu.hl--;
   }
 }
