@@ -29,7 +29,7 @@ export class Z80Disassembler {
    * Initializes a new instance of the disassembler
    * @param memorySections Memory map for disassembly
    * @param memoryContents The contents of the memory to disassemble
-   * 
+   *
    */
   constructor (
     public readonly memorySections: MemorySection[],
@@ -454,7 +454,9 @@ export class Z80Disassembler {
         var distance = this._fetch();
         var labelAddr = (this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
-        replacement = `${(this.options?.noLabelPrefix ?? false) ? "$" : "L"}${intToX4(labelAddr)}`;
+        replacement = `${
+          this.options?.noLabelPrefix ?? false ? "$" : "L"
+        }${intToX4(labelAddr)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;
@@ -463,7 +465,9 @@ export class Z80Disassembler {
         // --- #L: absolute label (16 bit address)
         var target = this._fetchWord();
         this._output.createLabel(target, this._opOffset);
-        replacement = `${(this.options?.noLabelPrefix ?? false) ? "$" : "L"}${intToX4(target)}`;
+        replacement = `${
+          this.options?.noLabelPrefix ?? false ? "$" : "L"
+        }${intToX4(target)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = target;
@@ -483,6 +487,13 @@ export class Z80Disassembler {
       case "W":
         // --- #W: 16-bit word from the code
         var word = this._fetchWord();
+        replacement = `$${intToX4(word)}`;
+        symbolPresent = true;
+        symbolValue = word;
+        break;
+      case "w":
+        // --- #W: 16-bit word from the code, big endian
+        var word = (this._fetch() << 8) | this._fetch();
         replacement = `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
@@ -1026,7 +1037,7 @@ export const extendedInstructions: { [key: number]: string } = {
   0x7c: "neg",
   0x7d: "retn",
   0x7e: "im 2",
-  0x8a: "push ^W", // BIG ENDIAN!
+  0x8a: "push ^w", // BIG ENDIAN!
   0x90: "outinb",
   0x91: "nextreg ^B,^B",
   0x92: "nextreg ^B,a",

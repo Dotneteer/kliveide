@@ -50,7 +50,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.TestExt("add bc,$789A", 0xed, 0x36, 0x9a, 0x78);
     await Z80Tester.Test("nop", 0xed, 0x36);
 
-    await Z80Tester.TestExt("push $34AF", 0xed, 0x8a, 0xaf, 0x34);
+    await Z80Tester.TestExt("push $34AF", 0xed, 0x8a, 0x34, 0xaf);
     await Z80Tester.Test("nop", 0xed, 0x8a);
 
     await Z80Tester.TestExt("outinb", 0xed, 0x90);
