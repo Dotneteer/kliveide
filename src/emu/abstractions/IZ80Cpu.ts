@@ -415,4 +415,14 @@ export interface IZ80Cpu {
    * @param n Number of tact increments
    */
   tactPlusN(n: number): void;
+
+  // ==========================================================================
+  // Z80 NEXT EXTENSIONS
+
+  /**
+   * Sets a TBBlue register value
+   * @param address Register address
+   * @param value Register value;
+   */
+  tbblueOut(address: number, value: number): void;
 }

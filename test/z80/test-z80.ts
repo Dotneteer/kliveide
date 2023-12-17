@@ -57,6 +57,10 @@ export class Z80TestCpu extends Z80Cpu {
   doWritePort (address: number, value: number) {
     this.machine.writePort(address, value);
   }
+
+  tbblueOut(address: number, value: number): void {
+    this.machine.writeTbBlue(address, value);
+  }
 }
 
 /**
@@ -105,6 +109,11 @@ export class Z80TestMachine {
    * The count of I/O reads
    */
   ioReadCount: number;
+
+  /**
+   * Log that helps testing TBBlue I/O access operations.
+   */
+  tbBlueAccessLog: IoOp[] = [];
 
   /**
    * Sign that a CPU cycle has just been completed.
@@ -266,6 +275,16 @@ export class Z80TestMachine {
    */
   writePort (addr: number, value: number): void {
     this.ioAccessLog.push(new IoOp(addr, value, true));
+  }
+
+  /**
+   * This method writes a byte into the specified TBBLUE register
+   * @param addr TBBLUE register address
+   * @param value Byte value to write
+   */
+  writeTbBlue (addr: number, value: number): void {
+    this.tbBlueAccessLog.push(new IoOp(addr, value, true));
+    this.cpu.tactPlusN(6);
   }
 
   /**
