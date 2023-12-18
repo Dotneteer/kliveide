@@ -3,6 +3,7 @@ import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
 import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
 import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
 import { Z80Cpu } from "@emu/z80/Z80Cpu";
+import { Z80NCpu } from "@emu/z80/Z80NCpu";
 
 /**
  * This enum defines the run modes the Z80TestMachine allows
@@ -57,11 +58,37 @@ export class Z80TestCpu extends Z80Cpu {
   doWritePort (address: number, value: number) {
     this.machine.writePort(address, value);
   }
+}
+
+/**
+ * Implements a Z80 CPU used for testing
+ */
+export class Z80NTestCpu extends Z80NCpu {
+  constructor (private readonly machine: Z80TestMachine) {
+    super();
+  }
+
+  doReadMemory (address: number): number {
+    return this.machine.readMemory(address);
+  }
+
+  doWriteMemory (address: number, value: number) {
+    this.machine.writeMemory(address, value);
+  }
+
+  doReadPort (address: number): number {
+    return this.machine.readPort(address);
+  }
+
+  doWritePort (address: number, value: number) {
+    this.machine.writePort(address, value);
+  }
 
   tbblueOut(address: number, value: number): void {
     this.machine.writeTbBlue(address, value);
   }
 }
+
 
 /**
  * This class implements a Z80 machine that can be used for unit testing.
@@ -166,15 +193,13 @@ export class Z80TestMachine {
     public readonly runMode: RunMode = RunMode.Normal,
     public readonly allowExtendedInstructions = false
   ) {
-    this.cpu = new Z80TestCpu(this);
     this.memory = [];
     for (let i = 0; i < 0x1_0000; i++) this.memory[i] = 0x00;
     this.memoryAccessLog = [];
     this.ioAccessLog = [];
     this.ioInputSequence = [];
     this.ioReadCount = 0;
-    this.cpu = new Z80TestCpu(this);
-    this.cpu.allowExtendedInstructions = allowExtendedInstructions;
+    this.cpu = allowExtendedInstructions ? new Z80NTestCpu(this) : new Z80TestCpu(this);
   }
 
   /**
