@@ -152,11 +152,8 @@ async function createAppWindows () {
       maximize: true,
       fullScreen: true,
       stateSaver: state => {
-        appSettings.windowStates = {
-          ...appSettings.windowStates,
-          emuWindow: state,
-          emuZoomFactor: emuWindow?.webContents.getZoomFactor()
-        };
+        appSettings.windowStates ??= {};
+        appSettings.windowStates.emuWindow = state;
         saveAppSettings();
       }
     }
@@ -194,11 +191,8 @@ async function createAppWindows () {
       maximize: false,
       fullScreen: false,
       stateSaver: state => {
-        appSettings.windowStates = {
-          ...appSettings.windowStates,
-          ideWindow: state,
-          ideZoomFactor: ideWindow?.webContents.getZoomFactor()
-        };
+        appSettings.windowStates ??= {};
+        appSettings.windowStates.ideWindow = state;
         appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
         saveAppSettings();
       }
@@ -352,6 +346,7 @@ async function createAppWindows () {
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async e => {
     if (ideWindow?.webContents) {
+      appSettings.windowStates ??= {};
       appSettings.windowStates.ideZoomFactor =
         ideWindow.webContents.getZoomFactor();
     }
@@ -414,6 +409,7 @@ async function createAppWindows () {
   // --- Close the emu window with the IDE window
   emuWindow.on("close", async e => {
     if (emuWindow?.webContents) {
+      appSettings.windowStates ??= {};
       appSettings.windowStates.emuZoomFactor =
         emuWindow.webContents.getZoomFactor();
     }
