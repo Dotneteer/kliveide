@@ -18,6 +18,14 @@ export type AppSettings = {
   startScreenDisplayed?: boolean;
   theme?: string;
   showKeyboard?: boolean;
+  showIdeToolbar?: boolean;
+  showIdeStatusBar?: boolean;
+  showEmuToolbar?: boolean;
+  showEmuStatusBar?: boolean;
+  primaryBarRight?: boolean;
+  toolPanelsTop?: boolean;
+  maximizeTools?: boolean;
+
   fastLoad?: boolean;
   machineId?: string;
   clockMultiplier?: number;
@@ -49,6 +57,13 @@ export function saveAppSettings (): void {
     appSettings.startScreenDisplayed = state.startScreenDisplayed;
     appSettings.theme = state.theme;
     appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
+    appSettings.showIdeToolbar = state.ideViewOptions?.showToolbar ?? false;
+    appSettings.showIdeStatusBar = state.ideViewOptions?.showStatusBar ?? false;
+    appSettings.showEmuToolbar = state.emuViewOptions?.showToolbar ?? false;
+    appSettings.showEmuStatusBar = state.emuViewOptions?.showStatusBar ?? false;
+    appSettings.primaryBarRight = state.ideViewOptions?.primaryBarOnRight ?? false;
+    appSettings.toolPanelsTop = state.ideViewOptions?.toolPanelsOnTop ?? false;
+    appSettings.maximizeTools = state.ideViewOptions?.maximizeTools ?? false;
     appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
     appSettings.machineId = state.emulatorState?.machineId;
     appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;

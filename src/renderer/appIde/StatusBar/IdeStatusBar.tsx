@@ -6,7 +6,12 @@ import { SpaceFiller } from "@controls/SpaceFiller";
 import classnames from "../../utils/classnames";
 import styles from "./IdeStatusBar.module.scss";
 
-export const IdeStatusBar = () => {
+type IdeStatusBarProps = {
+  show: boolean;
+}
+
+
+export const IdeStatusBar = ({show}: IdeStatusBarProps) => {
   const execState = useSelector(s => s.emulatorState?.machineState);
   const statusMessage = useSelector(s => s.ideView?.statusMessage);
   const statusSuccess = useSelector(s => s.ideView?.statusSuccess);
@@ -57,6 +62,8 @@ export const IdeStatusBar = () => {
     setCompileStatus(compilationLabel);
   }, [compilation]);
 
+  if (!show) return null;
+  
   return (
     <div className={styles.ideStatusBar}>
       <div className={styles.sectionWrapper}>

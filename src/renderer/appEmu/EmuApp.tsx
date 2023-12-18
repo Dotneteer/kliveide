@@ -85,7 +85,7 @@ const EmuApp = () => {
         <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
       )}
       <EmulatorArea />
-      {showStatusBar && <EmuStatusBar />}
+      <EmuStatusBar show={showStatusBar}/>
       <BackDrop visible={dimmed} />
 
       {dialogId === FIRST_STARTUP_DIALOG_EMU && (
