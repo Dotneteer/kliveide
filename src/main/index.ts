@@ -326,9 +326,9 @@ async function createAppWindows () {
       "main-process-message",
       new Date().toLocaleString()
     );
-    if (appSettings.windowStates.ideZoomFactor != undefined) {
+    if (appSettings.windowStates?.ideZoomFactor != undefined) {
       ideWindow.webContents.setZoomFactor(
-        appSettings.windowStates.ideZoomFactor
+        appSettings.windowStates?.ideZoomFactor ?? 1.0
       );
     }
   });
@@ -388,9 +388,9 @@ async function createAppWindows () {
       new Date().toLocaleString()
     );
     // --- Set emu zoom factor
-    if (appSettings.windowStates.emuZoomFactor != undefined) {
+    if (appSettings.windowStates?.emuZoomFactor != undefined) {
       emuWindow.webContents.setZoomFactor(
-        appSettings.windowStates.emuZoomFactor
+        appSettings.windowStates?.emuZoomFactor ?? 1.0
       );
     }
   });
