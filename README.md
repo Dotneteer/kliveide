@@ -3,7 +3,7 @@
 Quick links:
 - [What Klive IDE Is](#what-klive-ide-is)
 - [Klive Documentation](https://dotneteer.github.io/kliveide/)
-- [Release v0.30.3](https://github.com/Dotneteer/kliveide/releases/tag/v0.30.3)
+- [Release v0.30.4](https://github.com/Dotneteer/kliveide/releases/tag/v0.30.4)
 
 ## Announcement
 

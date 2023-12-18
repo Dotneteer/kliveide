@@ -1,10 +1,13 @@
 # Klive IDE Changelog
 
-## Next release
+## 0.30.4
 
 ### Fixes
 
 - The IDE saves the zoom factor at exit and reloads it with a new start
+- A few IDE startup bugs fixed
+- Toolbar, status bar, primary and tool panel states are saved
+- Status bar PC refresh fixed
 
 ### Features
 
