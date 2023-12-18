@@ -39,6 +39,10 @@ describe("Assembler - NEXT operations", async () => {
     await testNextCodeEmit("brlc de,b", 0xed, 0x2c);
   });
 
+  it("jp (c)", async () => {
+    await testNextCodeEmit("jp (c)", 0xed, 0x98);
+  });
+
   it("next ops in non-next mode", async () => {
     await codeRaisesError("mul d,e", "Z0414");
     await codeRaisesError("test #1234", "Z0414");

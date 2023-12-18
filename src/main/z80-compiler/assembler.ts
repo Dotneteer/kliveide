@@ -4527,6 +4527,9 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (!op.operand2) {
       switch (op.operand1.operandType) {
         case OperandType.CPort:
+          if (this.invalidNextInst(op)) {
+            return;
+          }
           this.emitOpCode(0xed98);
           return;
         case OperandType.Reg16:

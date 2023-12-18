@@ -40,7 +40,6 @@ describe("Assembler - control flow operations", async () => {
   });
 
   it("jp spec", async () => {
-    await testCodeEmit("jp (c)", 0xed, 0x98);
     await testCodeEmit("jp hl", 0xe9);
     await testCodeEmit("jp (hl)", 0xe9);
     await testCodeEmit("jp ix", 0xdd, 0xe9);
