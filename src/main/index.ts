@@ -37,7 +37,14 @@ import {
   setFastLoadAction,
   displayDialogAction,
   startScreenDisplayedAction,
-  setKeyMappingsAction
+  setKeyMappingsAction,
+  showEmuToolbarAction,
+  showEmuStatusBarAction,
+  showIdeToolbarAction,
+  showIdeStatusBarAction,
+  primaryBarOnRightAction,
+  toolPanelsOnTopAction,
+  maximizeToolsAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
@@ -56,7 +63,6 @@ import {
   appSettings,
   loadAppSettings,
   saveAppSettings,
-  signFinalSave
 } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
@@ -259,6 +265,13 @@ async function createAppWindows () {
       );
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
+      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? false));
+      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? false));
+      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? false));
+      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? false));
+      mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
+      mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
+      mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       if (appSettings.lastTapeFile) {
         setSelectedTapeFile(appSettings.lastTapeFile);

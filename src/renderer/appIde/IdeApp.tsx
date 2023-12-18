@@ -200,8 +200,7 @@ const IdeApp = () => {
           }
         />
       </div>
-      {showStatusBar && <IdeStatusBar />}
-
+      <IdeStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
 
       {dialogId === NEW_PROJECT_DIALOG && (

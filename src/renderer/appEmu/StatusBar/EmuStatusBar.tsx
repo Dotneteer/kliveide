@@ -7,8 +7,13 @@ import { SpaceFiller } from "@controls/SpaceFiller";
 import { FrameStats } from "@renderer/abstractions/FrameStats";
 import classnames from "../../utils/classnames";
 import styles from "./EmuStatusBar.module.scss";
+import { FrameCompletedArgs } from "@renderer/abstractions/IMachineController";
 
-export const EmuStatusBar = () => {
+type EmuStatusBarProps = {
+  show: boolean;
+}
+
+export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
   const { machineService } = useAppServices();
   const controller = useMachineController();
   const [frameStats, setFrameStats] = useState<FrameStats>();
@@ -18,19 +23,23 @@ export const EmuStatusBar = () => {
   const clockMultiplier = useSelector(s => s.emulatorState.clockMultiplier);
   const counter = useRef(0);
 
+  const onFrameCompleted = (completed: FrameCompletedArgs) => {
+    if (!completed || counter.current++ % 10) {
+      console.log("EmuStatusBar.onFrameCompleted", completed);
+      setFrameStats({ ...controller.frameStats });
+    }
+  };
+
   // --- Reflect controller changes
   useEffect(() => {
+    console.log("EmuStatusBar.useEffect");
     if (machineId) {
       const info = machineService.getMachineInfo();
       setMachineName(info?.displayName ?? "");
     }
     if (controller) {
       setFreq(controller.machine.baseClockFrequency * clockMultiplier);
-      controller.frameCompleted.on(completed => {
-        if (!completed || counter.current++ % 10) {
-          setFrameStats({ ...controller.frameStats });
-        }
-      });
+      controller.frameCompleted.on(onFrameCompleted);
     }
   }, [controller]);
 
@@ -41,6 +50,7 @@ export const EmuStatusBar = () => {
     }
   }, [clockMultiplier]);
 
+  if (!show) return null;
   return (
     <div className={styles.statusBar}>
       <div className={styles.sectionWrapper}>
