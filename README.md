@@ -7,7 +7,7 @@ Quick links:
 
 ## Announcement
 
-**Klive IDE is about to receive a significant update affecting its functionality, stability, and internal architecture. Now, you can access the first release of this train of updates, v0.30.3.**
+**Klive IDE is about to receive a significant update affecting its functionality, stability, and internal architecture. Now, you can access the first release of this train of updates, v0.30.4.**
 
 This new version, due to the new architecture, removes annoying issues and implements long-awaited features such as exporting code, viewing the structure of tape files, and improved source code debugging.
 
