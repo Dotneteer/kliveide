@@ -265,10 +265,10 @@ async function createAppWindows () {
       );
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
-      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? false));
-      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? false));
-      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? false));
-      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? false));
+      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
+      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
+      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
+      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
       mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
       mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
       mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
