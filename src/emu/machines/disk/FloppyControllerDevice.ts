@@ -8,8 +8,6 @@ import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { FloppyDisk, crcFdcTable } from "./FloppyDisk";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { DISK_A_DATA, DISK_B_DATA } from "../machine-props";
-import { read } from "original-fs";
-import { r } from "nextra/dist/types-c8e621b7";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice implements IFloppyControllerDevice {

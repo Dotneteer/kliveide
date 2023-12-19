@@ -259,6 +259,23 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     this._queuedEvents.splice(idx, 1);
   }
 
+  consumeEvents (): void {
+    if (!this._queuedEvents) return;
+    const currentTact = this.tacts;
+    while (
+      this._queuedEvents &&
+      this._queuedEvents.length > 0 &&
+      this._queuedEvents[0].eventTact <= currentTact
+    ) {
+      const currentEvent = this._queuedEvents[0];
+      currentEvent.eventFn(currentEvent.data);
+      this._queuedEvents.shift();
+    }
+    if (this._queuedEvents.length === 0) {
+      this._queuedEvents = null;
+    }
+  }
+
   /**
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
@@ -418,17 +435,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       } while (this.prefix !== OpCodePrefix.None);
 
       // --- Execute the queued event
-      if (this._queuedEvents) {
-        const currentEvent = this._queuedEvents[0];
-        if (currentEvent.eventTact < this.tacts) {
-          // --- Time to execute the event
-          currentEvent.eventFn(currentEvent.data);
-          this._queuedEvents.shift();
-          if (this._queuedEvents.length === 0) {
-            this._queuedEvents = null;
-          }
-        }
-      }
+      this.consumeEvents();
 
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
