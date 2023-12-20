@@ -5,7 +5,7 @@ import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { KeyboardApi } from "./KeyboardPanel";
 import { KeyPressMapper } from "./KeyPressMapper";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);

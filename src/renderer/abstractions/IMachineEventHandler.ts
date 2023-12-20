@@ -1,5 +1,5 @@
 export type MachineEventFn = (data: any) => void;
-export interface IMachneEventHandler {
+export interface IMachineEventHandler {
   /**
    * Registers and event to execute at the specified tact
    * @param eventTact Tact when the event should be executed

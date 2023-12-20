@@ -651,7 +651,6 @@ export function setupMenu (
     {
       id: SELECT_TAPE_FILE,
       label: "Select Tape File...",
-      visible: !ideTraits.isFocused,
       click: async () => {
         await setTapeFile(emuWindow);
         await saveKliveProject();

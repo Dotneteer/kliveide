@@ -1,11 +1,11 @@
-import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
+import { ISpectrumKeyboardDevice } from "./ISpectrumKeyboardDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 /**
  * This class implements the ZX Spectrum keyboard device.
  */
-export class KeyboardDevice implements IKeyboardDevice {
+export class KeyboardDevice implements ISpectrumKeyboardDevice {
   /**
    * This field stores the status bits of keys. Each byte in the array represents an address line from A8 to A15,
    * and the lower five bits represent the five keys associated with the particular address line. One means the key

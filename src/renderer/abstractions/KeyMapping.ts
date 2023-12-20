@@ -4,7 +4,8 @@
 export type KeySet =
   | string
   | [string]
-  | [string, string];
+  | [string, string]
+  | [string, string, string];
 
 /**
  * Defines mappings between the physical keyboard and virtual machine keyboard

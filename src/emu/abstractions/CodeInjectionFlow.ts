@@ -1,4 +1,4 @@
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { KeyCodeSet } from "./IGenericKeyboardDevice";
 
 export type CodeInjectionFlow = CodeInjectionStep[];
 
@@ -31,8 +31,9 @@ export interface SetReturnStep extends CodeInjectionStepBase {
 
 export interface QueueKeyStep extends CodeInjectionStepBase {
   type: "QueueKey";
-  primary: SpectrumKeyCode;
-  secondary?: SpectrumKeyCode;
+  primary: number;
+  secondary?: number;
+  ternary?: number;
   wait?: number;
 }
 

@@ -1,10 +1,12 @@
-import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { IAudioDevice } from "./IAudioDevice";
+import { PsgChipState } from "./PsgChipState";
 
 /**
  * Represents the AY-3-8910 PSG chip as a device
  */
-export interface IPsgDevice extends IAudioDevice {
+export interface IGenericPsgDevice<T extends IZ80Machine>
+  extends IAudioDevice<T> {
   /**
    * Sets the PSG register index to read or write
    * @param index PSG register index

@@ -1,8 +1,8 @@
 import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { BeeperDevice } from "../BeeperDevice";
+import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
-import { KeyboardDevice } from "../KeyboardDevice";
+import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import {
   AUDIO_SAMPLE_RATE,
   KBTYPE_48,
@@ -44,7 +44,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
       this,
       CommonScreenDevice.ZxSpectrum48ScreenConfiguration
     );
-    this.beeperDevice = new BeeperDevice(this);
+    this.beeperDevice = new SpectrumBeeperDevice(this);
     this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
     this.reset();

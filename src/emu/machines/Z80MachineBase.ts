@@ -2,17 +2,16 @@ import { IFileProvider } from "@renderer/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import {
-  IZ80Machine,
-} from "@renderer/abstractions/IZ80Machine";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -172,11 +171,21 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract getPixelBuffer(): Uint32Array;
 
   /**
+   * Gets the key code set used for the machine
+   */
+  abstract getKeyCodeSet(): KeyCodeSet;
+
+  /**
+   * Gets the default key mapping for the machine
+   */
+  abstract getDefaultKeyMapping(): KeyMapping;
+
+  /**
    * Set the status of the specified ZX Spectrum key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down
    */
-  abstract setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void;
+  abstract setKeyStatus(key: number, isDown: boolean): void;
 
   /**
    * Emulates queued key strokes as if those were pressed by the user
@@ -195,8 +204,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract queueKeystroke(
     frameOffset: number,
     frames: number,
-    primary: SpectrumKeyCode,
-    secondary?: SpectrumKeyCode
+    primary: number,
+    secondary?: number,
+    ternary?: number
   ): void;
 
   /**

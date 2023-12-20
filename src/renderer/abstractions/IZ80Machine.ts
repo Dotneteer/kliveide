@@ -1,17 +1,18 @@
 import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
 import { ILiteEvent } from "@emu/utils/lite-event";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { IMachneEventHandler } from "./IMachineEventHandler";
+import { IMachineEventHandler } from "./IMachineEventHandler";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { KeyMapping } from "./KeyMapping";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
  * components, including the Z80 CPU, the memory, screen, keyboard, and many other devices.
  */
-export interface IZ80Machine extends IZ80Cpu, IMachneEventHandler {
+export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   /**
    * The unique identifier of the machine type
    */
@@ -86,11 +87,21 @@ export interface IZ80Machine extends IZ80Cpu, IMachneEventHandler {
   getPixelBuffer(): Uint32Array;
 
   /**
+   * Gets the key code set used for the machine
+   */
+  getKeyCodeSet(): KeyCodeSet;
+
+  /**
+   * Gets the default key mapping for the machine
+   */
+  getDefaultKeyMapping(): KeyMapping;
+
+  /**
    * Set the status of the specified ZX Spectrum key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down
    */
-  setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void;
+  setKeyStatus(key: number, isDown: boolean): void;
 
   /**
    * Emulates queued keystrokes as if those were pressed by the user
@@ -109,8 +120,9 @@ export interface IZ80Machine extends IZ80Cpu, IMachneEventHandler {
   queueKeystroke(
     frameOffset: number,
     frames: number,
-    primary: SpectrumKeyCode,
-    secondary?: SpectrumKeyCode
+    primary: number,
+    secondary?: number,
+    ternary?: number
   ): void;
 
   /**

@@ -1,9 +1,9 @@
-import { IBeeperDevice } from "../abstractions/IBeeperDevice";
+import { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { AudioDeviceBase } from "./AudioDeviceBase";
 
 // --- This class implements the ZX Spectrum beeper device.
-export class BeeperDevice extends AudioDeviceBase implements IBeeperDevice {
+export class SpectrumBeeperDevice extends AudioDeviceBase implements ISpectrumBeeperDevice {
   private _earBit = false;
 
   /// <summary>

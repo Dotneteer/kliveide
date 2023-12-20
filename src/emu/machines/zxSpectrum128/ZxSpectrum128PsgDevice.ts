@@ -1,4 +1,4 @@
-import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
+import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { AudioDeviceBase } from "../AudioDeviceBase";
 import { PsgChip, PsgChipState } from "./PsgChip";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
@@ -8,7 +8,7 @@ const PSG_CLOCK_STEP = 16;
 
 export class ZxSpectrum128PsgDevice
   extends AudioDeviceBase
-  implements IPsgDevice
+  implements ISpectrumPsgDevice
 {
   // --- The value of the next ULA tact when a PSG output value should be generated
   private _psgNextClockTact: number;

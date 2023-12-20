@@ -1,10 +1,10 @@
 import { SysVar } from "@abstractions/SysVar";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
+import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { BeeperDevice } from "../BeeperDevice";
+import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
-import { KeyboardDevice } from "../KeyboardDevice";
+import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import {
   SP48_MAIN_ENTRY,
   SPP3_MAIN_WAITING_LOOP,
@@ -31,7 +31,7 @@ import { setDiskFileAction } from "@common/state/actions";
 import { PagedMemory } from "../memory/PagedMemory";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -59,7 +59,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
   /**
    * Represents the PSG device of ZX Spectrum +3E
    */
-  psgDevice: IPsgDevice;
+  psgDevice: ISpectrumPsgDevice;
 
   /**
    * Represents the floppy controller device
@@ -89,7 +89,7 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
         this,
         CommonScreenDevice.ZxSpectrumP3EScreenConfiguration
       );
-      this.beeperDevice = new BeeperDevice(this);
+      this.beeperDevice = new SpectrumBeeperDevice(this);
       this.psgDevice = new ZxSpectrum128PsgDevice(this);
       if (this.hasFloppy()) {
         this.floppyDevice = new FloppyControllerDevice(this);

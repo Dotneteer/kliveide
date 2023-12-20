@@ -1,8 +1,8 @@
 import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { BeeperDevice } from "../BeeperDevice";
+import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
-import { KeyboardDevice } from "../KeyboardDevice";
+import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import {
   AUDIO_SAMPLE_RATE,
   KBTYPE_48,
@@ -19,13 +19,13 @@ import {
   ZxSpectrumBase
 } from "../ZxSpectrumBase";
 import { ZxSpectrum128FloatingBusDevice } from "./ZxSpectrum128FloatingBusDevice";
-import { IPsgDevice } from "@emu/abstractions/IPsgDevice";
+import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { ZxSpectrum128PsgDevice } from "./ZxSpectrum128PsgDevice";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { PagedMemory } from "../memory/PagedMemory";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -49,7 +49,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Represents the PSG device of ZX Spectrum 128
    */
-  psgDevice: IPsgDevice;
+  psgDevice: ISpectrumPsgDevice;
 
   /**
    * Initialize the machine
@@ -70,7 +70,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       this,
       CommonScreenDevice.ZxSpectrum128ScreenConfiguration
     );
-    this.beeperDevice = new BeeperDevice(this);
+    this.beeperDevice = new SpectrumBeeperDevice(this);
     this.psgDevice = new ZxSpectrum128PsgDevice(this);
     this.floatingBusDevice = new ZxSpectrum128FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
