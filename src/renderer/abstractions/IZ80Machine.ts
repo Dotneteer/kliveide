@@ -5,12 +5,13 @@ import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { IMachneEventHandler } from "./IMachineEventHandler";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
  * components, including the Z80 CPU, the memory, screen, keyboard, and many other devices.
  */
-export interface IZ80Machine extends IZ80Cpu {
+export interface IZ80Machine extends IZ80Cpu, IMachneEventHandler {
   /**
    * The unique identifier of the machine type
    */
@@ -128,20 +129,6 @@ export interface IZ80Machine extends IZ80Cpu {
    * @param codeToInject Code to inject into the machine
    */
   injectCodeToRun(codeToInject: CodeToInject): number;
-
-  /**
-   * Registers and event to execute at the specified tact
-   * @param eventTact Tact when the event should be executed
-   * @param eventFn Event function with event data passed
-   * @param data Data to pass to the event function
-   */
-  queueEvent(eventTact: number, eventFn: (data: any) => void, data: any): void;
-
-  /**
-   * Removes the specified event handler from the event queue
-   * @param eventFn Event function to remove
-   */
-  removeEvent(eventFn: (data: any) => void): void;
 
   /**
    * Gets the partition in which the specified address is paged in
