@@ -8,7 +8,6 @@ import {
   useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
-import { DskDiskReader, Sector } from "@emu/machines/disk/DskDiskReader";
 import {
   DiskDensity,
   DiskError,
@@ -21,6 +20,7 @@ import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import { DskDiskReader, DskSectorInformationBlock } from "@emu/machines/disk/DskDiskReader";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -293,10 +293,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               return (
                 <DataSection
                   key={`T${idx}`}
-                  title={`Track #${t.trackNo} | Side #${t.sideNo} | ${
+                  title={`Track #${t.trackNumber} | Side #${t.sideNumber} | ${
                     t.sectors.length
                   } sector${t.sectors.length > 1 ? "s" : ""} | GAP3: ${toHexa2(
-                    t.gap3Length
+                    t.gap3
                   )} | Filler: ${toHexa2(t.filler)}`}
                   expanded={docState?.[`T${idx}`] ?? false}
                   changed={exp => {
@@ -373,7 +373,7 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
 );
 
 type SectorProps = {
-  sector: Sector;
+  sector: DskSectorInformationBlock;
 };
 
 const SectorPanel = ({ sector }: SectorProps) => {
@@ -383,29 +383,29 @@ const SectorPanel = ({ sector }: SectorProps) => {
         <LabeledValue
           label='C:'
           title='Cylinder (Track)'
-          value={sector.trackNo}
+          value={sector.C}
         />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='H:' title='Head (Side)' value={sector.sideNo} />
+        <LabeledValue label='H:' title='Head (Side)' value={sector.H} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='R:' title='Sector ID' value={sector.sectorId} />
+        <LabeledValue label='R:' title='Sector ID' value={sector.R} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='N:' title='Sector size' value={sector.actualData.length} />
+        <LabeledValue label='N:' title='Sector size' value={sector.actualLength} />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR1:'
           title='FDD SR1 value'
-          value={`${toHexa2(sector.fdcStatus1)}`}
+          value={`${toHexa2(sector.SR1)}`}
         />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR2:'
           title='FDD SR2 value'
-          value={`${toHexa2(sector.fdcStatus2)}`}
+          value={`${toHexa2(sector.SR2)}`}
         />
       </div>
       <div className={styles.dataSection}>
-        <StaticMemoryView memory={sector.actualData} />
+        <StaticMemoryView memory={sector.sectorData} />
       </div>
     </>
   );

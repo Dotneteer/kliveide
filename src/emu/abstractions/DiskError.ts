@@ -6,5 +6,6 @@ export enum DiskError {
   GEOMETRY_ISSUE,
   DISK_IS_OPEN,
   UNSUPPORTED,
+  MISSING_TRACK_INFO,
   READ_ONLY
 }

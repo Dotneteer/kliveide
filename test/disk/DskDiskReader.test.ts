@@ -2,8 +2,8 @@ import "mocha";
 import * as path from "path";
 import * as fs from "fs";
 import { expect } from "expect";
-import { FloppyDiskFormat } from "@emu/machines/disk/FloppyDisk";
 import { DskDiskReader } from "@emu/machines/disk/DskDiskReader";
+import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 
 describe("Floppy Disk", () => {
   it("readContents works #1", () => {

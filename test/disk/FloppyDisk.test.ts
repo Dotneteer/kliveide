@@ -45,14 +45,14 @@ describe("Floppy Disk", () => {
     const diskData = readTestFile("missingTrackInfo1.dsk");
     const fd = new FloppyDisk(diskData);
 
-    expect(fd.status).toEqual(DiskError.GEOMETRY_ISSUE);
+    expect(fd.status).toEqual(DiskError.MISSING_TRACK_INFO);
   });
 
   it("detects missing track info #2", () => {
     const diskData = readTestFile("missingTrackInfo2.dsk");
     const fd = new FloppyDisk(diskData);
 
-    expect(fd.status).toEqual(DiskError.GEOMETRY_ISSUE);
+    expect(fd.status).toEqual(DiskError.MISSING_TRACK_INFO);
   });
 
 });

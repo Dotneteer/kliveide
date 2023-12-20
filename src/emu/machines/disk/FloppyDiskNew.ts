@@ -13,14 +13,6 @@ const EXTENDED_DISK_HEADER = "EXTENDED CPC DSK File\r\n"; // --- from 0x00-0x16,
 const GAP_MINIMAL_FM = 0;
 const GAP_MINIMAL_MFM = 1;
 
-// --- CPC +3 disk format issues
-const CPC_ISSUE_NONE = 0;
-const CPC_ISSUE_1 = 1;
-const CPC_ISSUE_2 = 2;
-const CPC_ISSUE_3 = 3;
-const CPC_ISSUE_4 = 4;
-const CPC_ISSUE_5 = 5;
-
 export class FloppyDisk implements IFloppyDisk {
   // --- Initialize this disk contents from the specified stream
   constructor (public readonly diskData: Uint8Array) {
@@ -83,7 +75,20 @@ export class FloppyDisk implements IFloppyDisk {
 
   // --- Sets the index structures to the specified track index
   setTrackIndex (trackNo: number): void {
-    // TODO: Implement this method
+    this.trackData = new BufferSpan(
+      this.data,
+      trackNo * this.trackLength,
+      this.trackLength
+    );
+    // this.clockData = new BufferSpan(this.data, this.bytesPerTrack, 3);
+    // this.fmData = new BufferWithPosition(
+    //   this.data,
+    //   this.clockData.index + Math.ceil(this.bytesPerTrack / 8)
+    // );
+    // this.weakData = new BufferWithPosition(
+    //   this.data,
+    //   this.fmData.index + Math.ceil(this.bytesPerTrack / 8)
+    // );
   }
 
   /**
@@ -94,32 +99,6 @@ export class FloppyDisk implements IFloppyDisk {
   private openDsk (diskData: Uint8Array): DiskError {
     // --- Span for the entire .DSK file
     let buffer = new BufferSpan(diskData, 0, diskData.length);
-
-    // --- ZX Spectrum fixes to apply for a particular track
-    const trackFix: number[] = [];
-
-    // let i: number;
-    // let j: number;
-    // let seclen: number;
-    // let idlen: number;
-    // let gap: number;
-    // let sector_pad: number;
-    // let idx: { value: number };
-    // let bpt: number;
-    // let max_bpt = 0;
-    // let trlen: number;
-    // let hdrb: BufferWithPosition;
-    // let buffer = new BufferWithPosition(diskData, 0);
-
-    // // --- Helper functions
-    // const buff = (offset = 0) => buffer.get(offset);
-    // const bufferAvailable = () => buffer.data.length - buffer.index;
-    // const compareData = (offset: number, data: string): boolean => {
-    //   for (let i = 0; i < data.length; i++) {
-    //     if (buffer.get(offset + i) !== data.charCodeAt(i)) return false;
-    //   }
-    //   return true;
-    // };
 
     // --- Set the disk format according to its header
     if (compareData(0, NORMAL_DISK_HEADER)) {
@@ -147,47 +126,41 @@ export class FloppyDisk implements IFloppyDisk {
     buffer = new BufferSpan(diskData, 256, diskData.length - 256);
 
     // --- First scan for the longest track
+    let maxBytesPerTrack = 0;
+    let gapType = 0;
     for (let i = 0; i < this.sides * this.tracksPerSide; i++) {
       // --- Ignore Sector Offset block
       if (buffer.length >= 12 && !compareData(0, "Track-Info\r\n")) {
-        buffer = new BufferSpan(diskData, diskData.length, 0);
+        return (this.status = DiskError.MISSING_TRACK_INFO);
       }
 
       // --- Sometimes in the header there are more track than in the file
       if (buffer.length === 0) {
-        // --- No more data, calculate the real track number
-        this.tracksPerSide = Math.ceil(i / this.sides);
-
-        // --- Now, we now the longest track, abort the search
         break;
       }
 
       // --- Is the current data valid track information?
       if (buffer.length < 256 || !compareData(0, "Track-Info")) {
         // --- Track header does not match
-        return (this.status = DiskError.DISK_IS_OPEN);
+        return (this.status = DiskError.MISSING_TRACK_INFO);
       }
 
       // --- Yes, obtain the currently used gap information
-      const gap = buffer.get(0x16) === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM;
+      gapType = buffer.get(0x16) === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM;
 
-      // --- Check which ZX Spectrum +3 fix should be used
-      let plus3Fix = 0;
+      // --- Start calculating length
       let trlen = 0;
 
       // --- Get track index from the file
-      const numTracks = buffer.get(0x10) * this.sides + buffer.get(0x11);
-      while (i < numTracks) {
-        if (i < 84) trackFix[i] = 0;
-        i++;
-      }
+      const trackIndex = buffer.get(0x10) * this.sides + buffer.get(0x11);
 
       // --- Detect track number health issues
-      if (i >= this.sides * this.tracksPerSide || i !== numTracks) {
+      if (i >= this.sides * this.tracksPerSide || i !== trackIndex) {
         return DiskError.DISK_IS_OPEN;
       }
 
-      let bytesPerTrack = gaps[gap].len[1] + (gap === GAP_MINIMAL_MFM ? 6 : 3);
+      let bytesPerTrack =
+        gaps[gapType].len[1] + (gapType === GAP_MINIMAL_MFM ? 6 : 3);
       let sectorPad = 0;
 
       // --- Iterate through sectors
@@ -214,59 +187,9 @@ export class FloppyDisk implements IFloppyDisk {
         // --- Add sector length
         bytesPerTrack += this.calcSectorLen(
           seclen > idlen ? idlen : seclen,
-          gap
+          gapType
         );
 
-        if (i < 84) {
-          if (j === 0 && buffer.get(0x1b) === 6 && seclen > 6144) {
-            plus3Fix = CPC_ISSUE_4;
-          } else if (j === 0 && buffer.get(0x1b) === 6) {
-            plus3Fix = CPC_ISSUE_1;
-          } else if (
-            j === 0 &&
-            !buffer.get(0x18) &&
-            !buffer.get(0x19) &&
-            !buffer.get(0x1a) &&
-            !buffer.get(0x1b)
-          ) {
-            plus3Fix = CPC_ISSUE_3;
-          } else if (
-            j === 1 &&
-            plus3Fix === CPC_ISSUE_1 &&
-            buffer.get(0x1b + 8) === 2
-          ) {
-            plus3Fix = CPC_ISSUE_2;
-          } else if (i === 38 && j === 0 && buffer.get(0x1b) === 2) {
-            plus3Fix = CPC_ISSUE_5;
-          } else if (
-            j > 1 &&
-            plus3Fix === CPC_ISSUE_2 &&
-            buffer.get(0x1b + 8 * j) !== 2
-          ) {
-            plus3Fix = CPC_ISSUE_NONE;
-          } else if (
-            j > 0 &&
-            plus3Fix === CPC_ISSUE_3 &&
-            (buffer.get(0x18 + 8 * j) !== j ||
-              buffer.get(0x19 + 8 * j) !== j ||
-              buffer.get(0x1a + 8 * j) !== j ||
-              buffer.get(0x1b + 8 * j) !== j)
-          ) {
-            plus3Fix = CPC_ISSUE_NONE;
-          } else if (j > 10 && plus3Fix === CPC_ISSUE_2) {
-            plus3Fix = CPC_ISSUE_NONE;
-          } else if (
-            i === 38 &&
-            j > 0 &&
-            plus3Fix === CPC_ISSUE_5 &&
-            buffer.get(0x1b + 8 * j) !== 2 - (j & 1)
-          ) {
-            plus3Fix = CPC_ISSUE_NONE;
-          }
-        }
-
-        // Go on from here...
-        
         // --- Increment track length
         trlen += seclen;
         if (seclen % 0x100) {
@@ -275,60 +198,18 @@ export class FloppyDisk implements IFloppyDisk {
         }
       }
 
-      // ============
-      // --- Calculate the number of tracks
-      i = numTracks;
+      // --- Skip paddings, position to the next track
+      const nextTrackData = buffer.startOffset + trlen + sectorPad * 128 + 256;
+      buffer = new BufferSpan(
+        diskData,
+        nextTrackData,
+        diskData.length - nextTrackData
+      );
 
-      // --- Check track number health
-      if (i >= this.sides * this.tracksPerSide || i !== numTracks) {
-        // --- Problem with track IDs
-        return (this.status = DiskError.DISK_IS_OPEN);
+      // --- Store the longest track length
+      if (bytesPerTrack > maxBytesPerTrack) {
+        maxBytesPerTrack = bytesPerTrack;
       }
-
-      //   // === We start calculating the bytes per track information
-      //   const gapInfo = gaps[gap];
-
-      //   // --- Add GAP 4a
-      //   bpt = gapInfo.len[1] + (gap === GAP_MINIMAL_MFM ? 6 : 3); /* gap4 */
-      //   sector_pad = 0;
-
-      //   // --- Iterate through sectors
-      //   for (j = 0; j < buff(0x15); j++) {
-      //     // --- Sector length
-      //     seclen =
-      //       this.diskFormat === FloppyDiskFormat.CpcExtended
-      //         ? buff(0x1e + 8 * j) + 256 * buff(0x1f + 8 * j)
-      //         : 0x80 << buff(0x1b + 8 * j);
-
-      //     // --- Sector length according to the track ID info
-      //     idlen = 0x80 << buff(0x1b + 8 * j);
-
-      //     // --- Check if sector length is healthy
-      //     if (
-      //       idlen !== 0 &&
-      //       idlen <= 0x80 << 0x08 &&
-      //       seclen > idlen &&
-      //       seclen % idlen !== 0
-      //     ) {
-      //       return (this.status = DiskError.DISK_IS_OPEN);
-      //     }
-
-      //     // --- Add sector length
-      //     bpt += this.calcSectorLen(seclen > idlen ? idlen : seclen, gap);
-
-      //     // --- Increment track length
-      //     trlen += seclen;
-      //     if (seclen % 0x100) {
-      //       // --- Add sector padding, if the sector length is not a multiple of 256
-      //       sector_pad++;
-      //     }
-      //   }
-
-      //   // --- Skip paddings, position to the next track
-      //   buffer.index += trlen + sector_pad * 128 + 256;
-      //   if (bpt > max_bpt) {
-      //     max_bpt = bpt;
-      //   }
     }
 
     // --- Tracks per side may be modified because of more tracks in the header than in the file
@@ -337,29 +218,25 @@ export class FloppyDisk implements IFloppyDisk {
       return (this.status = DiskError.GEOMETRY_ISSUE);
     }
 
-    // // --- Now, all tracks in the disk are processed.
-    // if (max_bpt === 0) {
-    //   // --- If maximum length is still zero, something is wrong
-    //   return (this.status = DiskError.GEOMETRY_ISSUE);
-    // }
+    // --- Now, all tracks in the disk are processed.
+    if (!maxBytesPerTrack) {
+      // --- If maximum length is still zero, something is wrong
+      return (this.status = DiskError.GEOMETRY_ISSUE);
+    }
 
-    // // --- Use auto detection for diskAlloc call
-    // this.density = DiskDensity.Auto;
+    // --- Use auto detection for diskAlloc call
+    this.density = DiskDensity.Auto;
 
-    // // --- Use the maximum bytes per track
-    // this.bytesPerTrack = max_bpt;
+    // --- Use the maximum bytes per track
+    this.bytesPerTrack = maxBytesPerTrack;
 
-    // // --- Allocate memory for the disk surface data
-    // if (
-    //   this.allocate(
-    //     buffer.data[0x16] === 0xff ? GAP_MINIMAL_FM : GAP_MINIMAL_MFM
-    //   ) !== DiskError.OK
-    // ) {
-    //   return this.status;
-    // }
+    // --- Allocate memory for the disk surface data
+    if (this.allocateSurfaceSpace(gapType) !== DiskError.OK) {
+      return this.status;
+    }
 
-    // // --- Set the track index to track 0
-    // this.setTrackIndex(0);
+    // --- Set the track index to track 0
+    this.setTrackIndex(0);
 
     // // --- Rewind to the first track
     // buffer.index = 256;
@@ -489,6 +366,53 @@ export class FloppyDisk implements IFloppyDisk {
     len += g.len[3];
     return len;
   }
+
+  // --- Allocates the data for the physical surface of the disk
+  private allocateSurfaceSpace (gaptype: number): number {
+    if (this.density !== DiskDensity.Auto) {
+      this.bytesPerTrack = diskBytePerTrackValues[this.density];
+    } else if (this.bytesPerTrack > 12500) {
+      return (this.status = DiskError.UNSUPPORTED);
+    } else if (this.bytesPerTrack > 10416) {
+      this.density = DiskDensity.HD;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.HD];
+    } else if (this.bytesPerTrack > 6500) {
+      this.density = DiskDensity.DD_8;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.DD_8];
+    } else if (this.bytesPerTrack > 6250) {
+      this.density = DiskDensity.DD_PLUS;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.DD_PLUS];
+    } else if (this.bytesPerTrack > 5208) {
+      this.density = DiskDensity.DD;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.DD];
+    } else if (this.bytesPerTrack > 3125) {
+      this.density = DiskDensity.SD_8;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.SD_8];
+    } else if (this.bytesPerTrack > 0) {
+      this.density = DiskDensity.SD;
+      this.bytesPerTrack = diskBytePerTrackValues[DiskDensity.SD];
+    }
+
+    if (this.bytesPerTrack > 0) {
+      this.trackLength =
+        this.calcTrackHeaderLength(gaptype) +
+        this.bytesPerTrack +
+        3 * Math.ceil(this.bytesPerTrack / 8);
+    }
+
+    // --- Disk length
+    const diskLength = this.sides * this.tracksPerSide * this.trackLength;
+    if (diskLength === 0) return (this.status = DiskError.GEOMETRY_ISSUE);
+    this.data = new Uint8Array(diskLength);
+
+    return (this.status = DiskError.OK);
+  }
+
+  // --- Calculates the length of the track header
+  private calcTrackHeaderLength (gaptype: number): number {
+    const g = gaps[gaptype];
+    return g.len[0] + g.len[1] + g.sync_len + (g.mark >= 0 ? 3 : 0) + 1;
+  }
 }
 
 type DiskGap = {
@@ -508,4 +432,9 @@ const gaps: DiskGap[] = [
   { gap: 0xff, sync: 0x00, sync_len: 6, mark: 0xff, len: [0, 16, 11, 10] },
   // --- MINIMAL MFM
   { gap: 0x4e, sync: 0x00, sync_len: 12, mark: 0xa1, len: [0, 32, 22, 24] }
+];
+
+const diskBytePerTrackValues: number[] = [
+  6250 /* AUTO assumes DD */, 5208 /* 8" SD */, 10416 /* 8" DD */,
+  3125 /* SD */, 6250 /* DD */, 6500 /* DD+ e.g. Coin Op Hits */, 12500 /* HD */
 ];
