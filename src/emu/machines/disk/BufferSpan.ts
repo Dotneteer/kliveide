@@ -84,4 +84,12 @@ export class BufferSpan {
     }
     return (this.buffer[this.startOffset + byteIndex] & bitMask) !== 0;
   }
+
+  /**
+   * Gets the data as a byte array
+   * @returns Byte array
+   */
+  view(): Uint8Array {
+    return this.buffer.slice(this.startOffset, this.startOffset + this.length);
+  }
 }
