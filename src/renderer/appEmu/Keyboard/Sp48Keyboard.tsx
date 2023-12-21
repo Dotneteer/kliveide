@@ -5,7 +5,6 @@ import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { KeyboardApi } from "./KeyboardPanel";
 import { KeyPressMapper } from "./KeyPressMapper";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);
@@ -32,7 +31,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
     }
   };
 
-  const isPressed = (code: SpectrumKeyCode) =>
+  const isPressed = (code: number) =>
     keystatus.current.isPressed(code);
 
   useEffect(() => {

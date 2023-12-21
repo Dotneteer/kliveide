@@ -6,7 +6,6 @@ import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
 import { Sp128EnterKeyBottom } from "./Sp128EnterKeyBottom";
 import { KeyboardApi } from "./KeyboardPanel";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { KeyPressMapper } from "./KeyPressMapper";
 
 const DEFAULT_WIDTH = 14 * 75 + 20;
@@ -33,7 +32,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
     }
   };
 
-  const isPressed = (code: SpectrumKeyCode, secondary?: SpectrumKeyCode) =>
+  const isPressed = (code: number, secondary?: number) =>
     keystatus.current.isPressed(code, secondary);
 
   useEffect(() => {
