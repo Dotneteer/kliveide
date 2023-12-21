@@ -338,7 +338,12 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
       // --- Execute the next CPU instruction entirely
       do {
-        this.executeCpuCycle();
+        if (this.isCpuSnoozed()) {
+          // --- The CPU is snoozed, mimic 4 NOPs
+          this.onSnooze();
+        } else {
+          this.executeCpuCycle();
+        }
       } while (this.prefix !== OpCodePrefix.None);
 
       // --- Execute the queued event
@@ -440,7 +445,12 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
       // --- Execute the next CPU instruction entirely
       do {
-        this.executeCpuCycle();
+        if (this.isCpuSnoozed()) {
+          // --- The CPU is snoozed, mimic 4 NOPs
+          this.onSnooze();
+        } else {
+          this.executeCpuCycle();
+        }
         instructionsExecuted++;
       } while (this.prefix !== OpCodePrefix.None);
 

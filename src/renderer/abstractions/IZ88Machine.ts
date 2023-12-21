@@ -2,6 +2,7 @@ import { IZ80Machine } from "./IZ80Machine";
 import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
 import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
+import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 
 /**
  * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the emulator
@@ -11,6 +12,11 @@ export interface IZ88Machine extends IZ80Machine {
    * Gets the ROM ID to load the ROM file
    */
   get romId(): string;
+
+  /**
+   * Represents the Blink device of Z88
+   */
+  blinkDevice: IZ88BlinkDevice;
 
   /**
    * Represents the keyboard device of Z88

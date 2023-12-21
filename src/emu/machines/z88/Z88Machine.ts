@@ -15,6 +15,8 @@ import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
+import { IZ88BlinkDevice } from "./IZ88BlinkDevice";
+import { Z88BlinkDevice } from "./Z88BlinkDevice";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   private memory: PagedMemory;
@@ -30,6 +32,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   get romId (): string {
     return this.machineId;
   }
+
+  /**
+   * Represents the real time clock device of Z88
+   */
+  blinkDevice: IZ88BlinkDevice;
 
   /**
    * Represents the keyboard device of Z88
@@ -68,6 +75,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // this.memory = new PagedMemory(2, 8);
 
     // --- Create and initialize devices
+    this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
     this.beeperDevice = new Z88BeeperDevice(this);
@@ -395,8 +403,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt (): boolean {
-    // TODO: Implement this
-    return false;
+    return this.blinkDevice.interruptSignalActive;
   }
 
   /**

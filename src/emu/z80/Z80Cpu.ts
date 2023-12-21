@@ -43,6 +43,8 @@ export class Z80Cpu implements IZ80Cpu {
   private _tactsInFrame: number;
   private _tactsInDisplayLine: number;
 
+  private _snoozed = false;
+
   // ----------------------------------------------------------------------------------------------------------------
   // Register access
 
@@ -639,6 +641,37 @@ export class Z80Cpu implements IZ80Cpu {
     this.frames = 0;
     this.frameTacts = 0;
     this.setTactsInFrame(1_000_000);
+
+    this._snoozed = false;
+  }
+
+  /**
+   * Indicates if the CPU is currently snoozed
+   */
+  isCpuSnoozed (): boolean {
+    return this._snoozed;
+  }
+
+  /**
+   * Awakes the CPU from the snoozed state
+   */
+  awakeCpu (): void {
+    this._snoozed = false;
+  }
+
+  /**
+   * Puts the CPU into snoozed state
+   */
+  snoozeCpu (): void {
+    this._snoozed = true;
+  }
+
+  /**
+   * Define what to do when CPU is snoozed. You should increment the tacts emulating the snoozing.
+   */
+  onSnooze (): void {
+    // --- Emulate 4 NOPs
+    this.tactPlusN(16);
   }
 
   /**
@@ -673,7 +706,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Override this method in derived classes to refine extended operations
    */
-  getExtendedOpsTable():Z80Operation[] {
+  getExtendedOpsTable (): Z80Operation[] {
     return this.extendedOps;
   }
 
@@ -8373,4 +8406,3 @@ function otdr (cpu: Z80Cpu) {
 
 // --------------------------------------------------------------------------------------------------------------------
 // Z80 Extended instructions (ZX Spectrum Next)
-

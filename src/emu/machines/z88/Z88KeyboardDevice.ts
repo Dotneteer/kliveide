@@ -24,7 +24,7 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setStatus (key: Z88KeyCode, isDown: boolean): void {
+  setStatus (key: number, isDown: boolean): void {
     // TODO: Implement this
   }
 
@@ -33,7 +33,7 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus (key: Z88KeyCode): boolean {
+  getStatus (key: number): boolean {
     // TODO: Implement this
     return false;
   }

@@ -1,5 +1,4 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { Z88KeyCode } from "./Z88KeyCode";
 import { IGenericKeyboardDevice } from "@emu/abstractions/IGenericKeyboardDevice";
 
 /**
