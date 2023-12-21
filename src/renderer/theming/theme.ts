@@ -147,6 +147,10 @@ export type ThemeProperties = {
   "--color-key128-highlight"?: string;
   "--bgcolor-key128"?: string;
   "--bgcolor-key128-raise"?: string;
+  "--bgcolor-keyz88"?: string;
+  "--color-keyz88-main"?: string;
+  "--color-keyz88"?: string;
+  "--color-keyz88-highlight"?: string;
 
   // --- Document area
   "--bgcolor-docspanel"?: string;
