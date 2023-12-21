@@ -6,6 +6,26 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
  */
 export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
   /**
+   * Segment register 0 (8-bit)
+   */
+  readonly SR0: number;
+
+  /**
+   * Segment register 1 (8-bit)
+   */
+  readonly SR1: number;
+
+  /**
+   * Segment register 2 (8-bit)
+   */
+  readonly SR2: number;
+
+  /**
+   * Segment register 3 (8-bit)
+   */
+  readonly SR3: number;
+
+  /**
    * 5 millisecond period, counts from 0 to 199 (8-bit)
    */
   readonly TIM0: number;
@@ -59,6 +79,30 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
    * EPR, Eprom Programming Register (8-bit)
    */
   readonly EPR: number;
+
+  /**
+   * Set the value of the SR0 register
+   * @param bank Bank value to set
+   */
+  setSR0(bank: number): void;
+
+  /**
+   * Set the value of the SR1 register
+   * @param bank Bank value to set
+   */
+  setSR1(bank: number): void;
+
+  /**
+   * Set the value of the SR2 register
+   * @param bank Bank value to set
+   */
+  setSR2(bank: number): void;
+
+  /**
+   * Set the value of the SR3 register
+   * @param bank Bank value to set
+   */
+  setSR3(bank: number): void;
 
   /**
    * Sets the TACK register value

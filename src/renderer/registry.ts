@@ -209,6 +209,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: "sp48",
     displayName: "ZX Spectrum 48K",
+    tapeSupport: true,
     factory: () => new ZxSpectrum48Machine()
   },
   {
@@ -216,6 +217,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 128K",
     roms: 2,
     banks: 8,
+    tapeSupport: true,
     factory: () => new ZxSpectrum128Machine()
   },
   {
@@ -223,6 +225,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum +2E",
     roms: 4,
     banks: 8,
+    tapeSupport: true,
     factory: store => new ZxSpectrumP2eMachine(store)
   },
   {
@@ -230,13 +233,15 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum +3E (1 FDD)",
     roms: 4,
     banks: 8,
+    tapeSupport: true,
     factory: (store) => new ZxSpectrumP3eMachine(store)
   },
   {
     machineId: "spp3ef2",
+    displayName: "ZX Spectrum +3E (2 FDDs)",
     roms: 4,
     banks: 8,
-    displayName: "ZX Spectrum +3E (2 FDDs)",
+    tapeSupport: true,
     factory: (store) => new ZxSpectrumP3eF2Machine(store)
   },
   {

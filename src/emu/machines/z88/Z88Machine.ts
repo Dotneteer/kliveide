@@ -19,8 +19,6 @@ import { IZ88BlinkDevice } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
-  private memory: PagedMemory;
-
   /**
    * The unique identifier of the machine type
    */
@@ -32,6 +30,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   get romId (): string {
     return this.machineId;
   }
+
+  /**
+   * The physical memory of the machine
+   */    
+  memory: PagedMemory;
 
   /**
    * Represents the real time clock device of Z88
@@ -70,9 +73,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
 
-    // --- Initialize the memory contents
-    // TODO: Set up paged memory (romPages, ramPages)
-    // this.memory = new PagedMemory(2, 8);
+    // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
+    this.memory = new PagedMemory(0, 256);
 
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
