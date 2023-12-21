@@ -17,8 +17,7 @@ import {
   AUDIO_SAMPLE_RATE,
   TAPE_MODE,
   TAPE_SAVER,
-  REWIND_REQUESTED,
-  KBTYPE_48
+  REWIND_REQUESTED
 } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
@@ -202,7 +201,6 @@ export abstract class ZxSpectrum2Or3Machine extends ZxSpectrumBase {
       new TapeSaver(this.tapeDevice as TapeDevice)
     );
     this.setMachineProperty(REWIND_REQUESTED);
-    this.setMachineProperty(KBTYPE_48, true);
 
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;

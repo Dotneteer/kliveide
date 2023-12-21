@@ -33,12 +33,16 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
   /**
    * Get the width of the rendered screen.
    */
-  screenWidth: number;
+  get screenWidth (): number {
+    return 640;
+  }
 
   /**
    * Get the number of visible screen lines.
    */
-  screenLines: number;
+  get screenLines (): number {
+    return 64;
+  }
 
   /**
    * Gets the buffer that stores the rendered pixels

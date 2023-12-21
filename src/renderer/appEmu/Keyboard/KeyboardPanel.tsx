@@ -3,10 +3,9 @@ import { Sp48Keyboard } from "./Sp48Keyboard";
 import { Sp128Keyboard } from "./Sp128Keyboard";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 
 export type KeyboardApi = {
-  signKeyStatus: (code: SpectrumKeyCode, down: boolean) => void;
+  signKeyStatus: (code: number, down: boolean) => void;
 };
 
 type KeyboardProps = {

@@ -57,9 +57,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   constructor () {
     super();
     // --- Set up machine attributes
-    this.baseClockFrequency = 3_500_000;
+    this.baseClockFrequency = 3_276_800;
     this.clockMultiplier = 1;
-    this.delayedAddressBus = true;
+
+    // --- Z88 address bus is not delayed?
+    this.delayedAddressBus = false;
 
     // --- Initialize the memory contents
     // TODO: Set up paged memory (romPages, ramPages)

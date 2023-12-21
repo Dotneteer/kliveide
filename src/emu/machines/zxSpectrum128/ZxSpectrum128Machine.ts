@@ -5,7 +5,6 @@ import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import {
   AUDIO_SAMPLE_RATE,
-  KBTYPE_48,
   REWIND_REQUESTED,
   TAPE_MODE,
   TAPE_SAVER
@@ -164,7 +163,6 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
       new TapeSaver(this.tapeDevice as TapeDevice)
     );
     this.setMachineProperty(REWIND_REQUESTED);
-    this.setMachineProperty(KBTYPE_48, true);
 
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;
@@ -544,7 +542,9 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
+    throw new Error(
+      `Code for machine model '${model}' cannot run on this virtual machine.`
+    );
   }
 
   /**
