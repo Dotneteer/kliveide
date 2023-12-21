@@ -46,6 +46,7 @@ import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2eMachine";
 import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eF2Machine";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
+import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -208,6 +209,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: "sp48",
     displayName: "ZX Spectrum 48K",
+    tapeSupport: true,
     factory: () => new ZxSpectrum48Machine()
   },
   {
@@ -215,6 +217,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 128K",
     roms: 2,
     banks: 8,
+    tapeSupport: true,
     factory: () => new ZxSpectrum128Machine()
   },
   {
@@ -222,6 +225,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum +2E",
     roms: 4,
     banks: 8,
+    tapeSupport: true,
     factory: store => new ZxSpectrumP2eMachine(store)
   },
   {
@@ -229,15 +233,22 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum +3E (1 FDD)",
     roms: 4,
     banks: 8,
+    tapeSupport: true,
     factory: (store) => new ZxSpectrumP3eMachine(store)
   },
   {
     machineId: "spp3ef2",
+    displayName: "ZX Spectrum +3E (2 FDDs)",
     roms: 4,
     banks: 8,
-    displayName: "ZX Spectrum +3E (2 FDDs)",
+    tapeSupport: true,
     factory: (store) => new ZxSpectrumP3eF2Machine(store)
-  }
+  },
+  {
+    machineId: "z88",
+    displayName: "Cambridge Z88",
+    factory: () => new Z88Machine()
+  },
 ];
 
 // --- The registry of ile types

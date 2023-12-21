@@ -1,6 +1,5 @@
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import {
   useRendererContext,
   useSelector,
@@ -18,7 +17,7 @@ import {
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
-import { spectrumKeyMappings } from "./key-mappings";
+import { spectrumKeyMappings } from "../../../emu/machines/zxSpectrum/SpectrumKeyMappings";
 import {
   FrameCompletedArgs,
   IMachineController
@@ -26,6 +25,8 @@ import {
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { update } from "lodash";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -34,7 +35,7 @@ let machineStateHandlerQueue: {
 let machineStateProcessing = false;
 
 type Props = {
-  keyStatusSet?: (code: SpectrumKeyCode, down: boolean) => void;
+  keyStatusSet?: (code: number, down: boolean) => void;
 };
 
 export const EmulatorPanel = ({ keyStatusSet }: Props) => {
@@ -61,7 +62,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector(s => s.keyMappings);
-  const currentKeyMappings = useRef(spectrumKeyMappings);
+  const defaultKeyMappings = useRef<KeyMapping>();
+  const currentKeyMappings = useRef<KeyMapping>();
+  const keyCodeSet = useRef<KeyCodeSet>();
 
   // --- Variables for display management
   const imageBuffer = useRef<ArrayBuffer>();
@@ -89,14 +92,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const controllerRef = useRef<IMachineController>(controller);
 
   // --- Update key mappings
-  useEffect(() => {
+  const updateKeyMappings = () => {
     if (!keyMappings) {
-      currentKeyMappings.current = spectrumKeyMappings;
+      currentKeyMappings.current = defaultKeyMappings.current;
     } else {
       currentKeyMappings.current = keyMappings.merge
-        ? { ...spectrumKeyMappings, ...keyMappings.mapping }
+        ? { ...defaultKeyMappings.current, ...keyMappings.mapping }
         : keyMappings.mapping;
     }
+  };
+
+  // --- Prepare the key mappings
+  useEffect(() => {
+    updateKeyMappings();
   }, [keyMappings]);
 
   // --- Set up keyboard handling
@@ -164,8 +172,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     ctrl: MachineController
   ): Promise<void> {
     // --- Let's store a ref
-    controllerRef.current = controller;
-    if (!controller) return;
+    controllerRef.current = ctrl;
+    if (!ctrl) return;
 
     // --- Initial overlay message
     setOverlay(
@@ -175,13 +183,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Prepare audio
     if (audioSampleRate) {
       const samplesPerFrame =
-        (controller.machine.tactsInFrame * audioSampleRate) /
-        controller.machine.baseClockFrequency;
+        (ctrl.machine.tactsInFrame * audioSampleRate) /
+        ctrl.machine.baseClockFrequency;
       await releaseBeeperContext();
       beeperRenderer.current = new AudioRenderer(
         await getBeeperContext(samplesPerFrame)
       );
     }
+
+    // --- Prepare key codes
+    keyCodeSet.current = ctrl.machine.getKeyCodeSet();
+    defaultKeyMappings.current = ctrl.machine.getDefaultKeyMapping();
+    updateKeyMappings();
   }
 
   // --- Handles machine state changes
@@ -377,28 +390,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
     if (typeof mapping === "string") {
-      machine?.setKeyStatus(SpectrumKeyCode[mapping], isDown);
-      keyStatusSet?.(SpectrumKeyCode[mapping], isDown);
+      machine?.setKeyStatus(keyCodeSet.current[mapping], isDown);
+      keyStatusSet?.(keyCodeSet.current[mapping], isDown);
     } else {
       if (mapping.length > 0) {
-        machine?.setKeyStatus(
-          SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode,
-          isDown
-        );
-        keyStatusSet?.(
-          SpectrumKeyCode[mapping[0]] as unknown as SpectrumKeyCode,
-          isDown
-        );
+        machine?.setKeyStatus(keyCodeSet.current[mapping[0]], isDown);
+        keyStatusSet?.(keyCodeSet.current[mapping[0]], isDown);
       }
       if (mapping.length > 1) {
-        machine?.setKeyStatus(
-          SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode,
-          isDown
-        );
-        keyStatusSet?.(
-          SpectrumKeyCode[mapping[1]] as unknown as SpectrumKeyCode,
-          isDown
-        );
+        machine?.setKeyStatus(keyCodeSet.current[mapping[1]], isDown);
+        keyStatusSet?.(keyCodeSet.current[mapping[1]], isDown);
+      }
+      if (mapping.length > 2) {
+        machine?.setKeyStatus(keyCodeSet.current[mapping[2]], isDown);
+        keyStatusSet?.(keyCodeSet.current[mapping[2]], isDown);
       }
     }
   }

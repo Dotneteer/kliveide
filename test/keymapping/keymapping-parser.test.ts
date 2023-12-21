@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
-import { spectrumKeyMappings } from "@renderer/appEmu/EmulatorArea/key-mappings";
 import { parseKeyMappings } from "@main/key-mappings/keymapping-parser";
+import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 
 describe("Key mappings", () => {
   it("default keymappings work", () => {

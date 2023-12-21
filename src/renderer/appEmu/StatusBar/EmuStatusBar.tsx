@@ -25,14 +25,12 @@ export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
 
   const onFrameCompleted = (completed: FrameCompletedArgs) => {
     if (!completed || counter.current++ % 10) {
-      console.log("EmuStatusBar.onFrameCompleted", completed);
       setFrameStats({ ...controller.frameStats });
     }
   };
 
   // --- Reflect controller changes
   useEffect(() => {
-    console.log("EmuStatusBar.useEffect");
     if (machineId) {
       const info = machineService.getMachineInfo();
       setMachineName(info?.displayName ?? "");

@@ -1,11 +1,10 @@
-import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
+import { ISpectrumKeyboardDevice } from "./ISpectrumKeyboardDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 
 /**
  * This class implements the ZX Spectrum keyboard device.
  */
-export class KeyboardDevice implements IKeyboardDevice {
+export class KeyboardDevice implements ISpectrumKeyboardDevice {
   /**
    * This field stores the status bits of keys. Each byte in the array represents an address line from A8 to A15,
    * and the lower five bits represent the five keys associated with the particular address line. One means the key
@@ -38,7 +37,7 @@ export class KeyboardDevice implements IKeyboardDevice {
    * @param key Key code
    * @param isDown Indicates if the key is pressed down
    */
-  setStatus (key: SpectrumKeyCode, isDown: boolean): void {
+  setStatus (key: number, isDown: boolean): void {
     const lineIndex = (key / 5) & 0xff;
     const lineMask = 1 << (key % 5 & 0xff);
     this._lineStatus[lineIndex] = isDown
@@ -51,7 +50,7 @@ export class KeyboardDevice implements IKeyboardDevice {
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus (key: SpectrumKeyCode): boolean {
+  getStatus (key: number): boolean {
     const lineIndex = (key / 5) & 0xff;
     const lineMask = 1 << (key % 5 & 0xff);
     return (this._lineStatus[lineIndex] & lineMask) !== 0;

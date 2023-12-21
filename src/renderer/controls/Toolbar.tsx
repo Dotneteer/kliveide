@@ -20,6 +20,7 @@ import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { __DARWIN__ } from "../../electron/electron-utils";
+import { machineRegistry } from "@renderer/registry";
 
 type Props = {
   ide: boolean;
@@ -28,40 +29,42 @@ type Props = {
 
 const emuStartOptions = [
   {
-    value: 'debug',
+    value: "debug",
     label: "Start with Debugging (Ctrl+F5)",
-    labelCont: 'Continue Debugging (Ctrl+F5)',
-    iconName: 'debug',
+    labelCont: "Continue Debugging (Ctrl+F5)",
+    iconName: "debug",
     cmd: null
   },
   {
-    value: 'start',
-    label: 'Start Machine (F5)',
-    labelCont: 'Continue (F5)',
-    iconName: 'play',
+    value: "start",
+    label: "Start Machine (F5)",
+    labelCont: "Continue (F5)",
+    iconName: "play",
     cmd: null
-  },
-]
+  }
+];
 
 const ideStartOptions = [
   {
-    value: 'debug',
-    label: 'Debug Project (Ctrl+F5)',
-    labelCont: 'Continue Debugging (Ctrl+F5)',
-    iconName: 'debug',
-    cmd: 'debug'
+    value: "debug",
+    label: "Debug Project (Ctrl+F5)",
+    labelCont: "Continue Debugging (Ctrl+F5)",
+    iconName: "debug",
+    cmd: "debug"
   },
   {
-    value: 'start',
-    label: 'Run Project (F5)',
-    labelCont: 'Continue (F5)',
-    iconName: 'play',
-    cmd: 'run'
-  },
+    value: "start",
+    label: "Run Project (F5)",
+    labelCont: "Continue (F5)",
+    iconName: "play",
+    cmd: "run"
+  }
 ];
 
 export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
+  const machineId = useSelector(s => s.emulatorState.machineId);
+  const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
   const state = useSelector(s => s.emulatorState?.machineState);
   const showKeyboard = useSelector(
     s => s.emuViewOptions?.showKeyboard ?? false
@@ -79,12 +82,15 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const canStart = (!ide || kliveProjectLoaded) && !isCompiling && !isRunning;
   const canPickStartOption = (!ide || kliveProjectLoaded) && !isRunning;
   const mayInjectCode = ide && kliveProjectLoaded;
-  const [ startMode, setStartMode ] = useState(ide && kliveProjectLoaded ? "debug" : "start");
+  const [startMode, setStartMode] = useState(
+    ide && kliveProjectLoaded ? "debug" : "start"
+  );
 
   const storeDispatch = useDispatch();
-  const restartTarget = useSelector(s => s.ideView?.restartTarget ?? 'machine');
+  const restartTarget = useSelector(s => s.ideView?.restartTarget ?? "machine");
 
-  const startOptions = ide && kliveProjectLoaded ? ideStartOptions : emuStartOptions;
+  const startOptions =
+    ide && kliveProjectLoaded ? ideStartOptions : emuStartOptions;
   const startOpt = !isRunning
     ? startOptions.find(v => v.value === startMode)
     : startOptions[isDebugging ? 0 : 1];
@@ -100,8 +106,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   };
 
   useEffect(() => {
-    setStartMode(ide && kliveProjectLoaded ? "debug" : "start")
-  }, [ide, kliveProjectLoaded])
+    setStartMode(ide && kliveProjectLoaded ? "debug" : "start");
+  }, [ide, kliveProjectLoaded]);
 
   return (
     <div className={styles.toolbar}>
@@ -116,8 +122,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             const buildPane = outputPaneService.getOutputPaneBuffer("build");
             await ideCommandsService.executeCommand(startOpt.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
-          }
-          else {
+          } else {
             storeDispatch(setRestartTarget("machine"));
             const response = await messenger.sendMessage(
               createMachineCommand(startOpt.value as any)
@@ -131,8 +136,11 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         }}
       />
       <div
-          className={styles.toolbarDropdownContainer}
-          style={!canPickStartOption ? { pointerEvents: 'none', opacity: '.4' } : {}}>
+        className={styles.toolbarDropdownContainer}
+        style={
+          !canPickStartOption ? { pointerEvents: "none", opacity: ".4" } : {}
+        }
+      >
         <Dropdown
           placeholder={undefined}
           options={[...startOptions]}
@@ -142,27 +150,23 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       </div>
       <IconButton
         iconName={
-          state === MachineControllerState.Paused
-            ? 'debug-continue'
-            : 'pause'
+          state === MachineControllerState.Paused ? "debug-continue" : "pause"
         }
         fill='--color-toolbarbutton-blue'
         title={
           state === MachineControllerState.Running
-            ? 'Pause (Shift+F5)'
+            ? "Pause (Shift+F5)"
             : startOpt.labelCont
         }
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Running ||
+          !isCompiling &&
+          (state === MachineControllerState.Running ||
             state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
-          const cmd = state !== MachineControllerState.Running
-            ? startOpt.value
-            : 'pause';
+          const cmd =
+            state !== MachineControllerState.Running ? startOpt.value : "pause";
           const response = await messenger.sendMessage(
             createMachineCommand(cmd as any)
           );
@@ -176,11 +180,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-red'
         title='Stop (F4)'
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Running ||
+          !isCompiling &&
+          (state === MachineControllerState.Running ||
             state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -198,16 +201,15 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-green'
         title='Restart (Shift+F4)'
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Running ||
+          !isCompiling &&
+          (state === MachineControllerState.Running ||
             state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
           var response: any;
           switch (restartTarget) {
-            case 'project': {
+            case "project": {
               if (kliveProjectLoaded) {
                 messenger.postMessage({
                   type: "IdeExecuteCommand",
@@ -215,7 +217,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
                 });
                 response = await messenger.sendMessage({
                   type: "IdeExecuteCommand",
-                  commandText: isDebugging ? 'debug' : 'run'
+                  commandText: isDebugging ? "debug" : "run"
                 });
                 break;
               }
@@ -243,10 +245,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-blue'
         title='Step Into (F10)'
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+          !isCompiling &&
+          (state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -264,10 +265,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-blue'
         title='Step Over (F11)'
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+          !isCompiling &&
+          (state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -285,10 +285,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         fill='--color-toolbarbutton-blue'
         title='Step Out (Ctrl+F11)'
         enable={
-          !isCompiling && (
-            state === MachineControllerState.Pausing ||
-            state === MachineControllerState.Paused
-          )
+          !isCompiling &&
+          (state === MachineControllerState.Pausing ||
+            state === MachineControllerState.Paused)
         }
         clicked={async () => {
           const response = await messenger.sendMessage(
@@ -337,32 +336,36 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               }}
             />
           )}
-          <ToolbarSeparator />
-          <IconButton
-            iconName='rocket'
-            fill='--color-toolbarbutton'
-            title='Fast LOAD mode'
-            selected={fastLoad}
-            clicked={async () => {
-              dispatch(setFastLoadAction(!fastLoad));
-              await saveProject();
-            }}
-          />
-          <IconButton
-            iconName='reverse-tape'
-            fill='--color-toolbarbutton'
-            title='Rewind the tape'
-            clicked={async () => {
-              const response = await messenger.sendMessage(
-                createMachineCommand("rewind")
-              );
-              if (response.type === "ErrorResponse") {
-                reportMessagingError(
-                  `Rewinding tape failed: ${response.message}`
+          {machineInfo?.tapeSupport && <ToolbarSeparator />}
+          {machineInfo?.tapeSupport && (
+            <IconButton
+              iconName='rocket'
+              fill='--color-toolbarbutton'
+              title='Fast LOAD mode'
+              selected={fastLoad}
+              clicked={async () => {
+                dispatch(setFastLoadAction(!fastLoad));
+                await saveProject();
+              }}
+            />
+          )}
+          {machineInfo?.tapeSupport && (
+            <IconButton
+              iconName='reverse-tape'
+              fill='--color-toolbarbutton'
+              title='Rewind the tape'
+              clicked={async () => {
+                const response = await messenger.sendMessage(
+                  createMachineCommand("rewind")
                 );
-              }
-            }}
-          />
+                if (response.type === "ErrorResponse") {
+                  reportMessagingError(
+                    `Rewinding tape failed: ${response.message}`
+                  );
+                }
+              }}
+            />
+          )}
         </>
       )}
       {ide && (

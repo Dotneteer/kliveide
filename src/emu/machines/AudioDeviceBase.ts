@@ -1,10 +1,11 @@
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { IAudioDevice } from "../abstractions/IAudioDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
 /**
  * This class represents the functionality of an audio device that can generate audio samples
  */
-export class AudioDeviceBase implements IAudioDevice {
+export class AudioDeviceBase<T extends IZ80Machine> implements IAudioDevice<T> {
   private _audioSampleRate = 0;
   private _audioSampleLength = 0;
   private _audioNextSampleTact = 0;
@@ -14,7 +15,7 @@ export class AudioDeviceBase implements IAudioDevice {
    * Initialize the audio device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZxSpectrumMachine) {}
+  constructor (public readonly machine: T) {}
 
   /**
    * Dispose the resources held by the device

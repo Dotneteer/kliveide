@@ -22,6 +22,9 @@ export type MachineInfo = {
   // --- Number of memory banks available
   banks?: number;
 
+  // --- The machine supports tape files
+  tapeSupport?: boolean;
+
   /**
    * Creates the emulate machine instance
    * @returns The emulated machine instance

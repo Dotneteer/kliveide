@@ -1,24 +1,26 @@
 import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+
+export type KeyCodeSet = Record<string, number>;
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's keyboard device.
  */
-export interface IKeyboardDevice extends IGenericDevice<IZxSpectrumMachine> {
+export interface IGenericKeyboardDevice<TMachine extends IZ80Machine>
+  extends IGenericDevice<TMachine> {
   /**
-   * Set the status of the specified ZX Spectrum key.
+   * Set the status of the specified keyboard key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setStatus(key: SpectrumKeyCode, isDown: boolean): void;
+  setStatus(key: number, isDown: boolean): void;
 
   /**
-   * Get the status of the specified Spectrum keyboard key.
+   * Get the status of the specified keyboard key.
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus(key: SpectrumKeyCode): boolean;
+  getStatus(key: number): boolean;
 
   /**
    * Gets the value of the specified keyline

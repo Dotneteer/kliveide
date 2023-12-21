@@ -32,7 +32,7 @@ const store = createAppStore(async (action, source) => {
 });
 
 document.title = isEmu
-  ? "Klive ZX Spectrum Emulator"
+  ? "Klive Retro-Computer Emulator"
   : "Klive IDE"
 
 // --- Render the app's UI

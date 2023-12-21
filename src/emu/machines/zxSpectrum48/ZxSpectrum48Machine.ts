@@ -1,11 +1,10 @@
 import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { BeeperDevice } from "../BeeperDevice";
+import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
-import { KeyboardDevice } from "../KeyboardDevice";
+import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import {
   AUDIO_SAMPLE_RATE,
-  KBTYPE_48,
   REWIND_REQUESTED,
   TAPE_MODE,
   TAPE_SAVER
@@ -44,7 +43,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
       this,
       CommonScreenDevice.ZxSpectrum48ScreenConfiguration
     );
-    this.beeperDevice = new BeeperDevice(this);
+    this.beeperDevice = new SpectrumBeeperDevice(this);
     this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
     this.reset();
@@ -111,7 +110,6 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
       new TapeSaver(this.tapeDevice as TapeDevice)
     );
     this.setMachineProperty(REWIND_REQUESTED);
-    this.setMachineProperty(KBTYPE_48, true);
 
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;
@@ -268,7 +266,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param model Machine model to use for code execution
    */
   getCodeInjectionFlow (model: string): CodeInjectionFlow {
-    if ((model === "sp48")) {
+    if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
@@ -287,7 +285,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`)
+    throw new Error(
+      `Code for machine model '${model}' cannot run on this virtual machine.`
+    );
   }
 
   /**

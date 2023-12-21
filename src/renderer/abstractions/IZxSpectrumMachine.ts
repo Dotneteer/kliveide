@@ -1,6 +1,6 @@
-import { IBeeperDevice } from "@emu/abstractions/IBeeperDevice";
+import { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import { IKeyboardDevice } from "@emu/abstractions/IKeyboardDevice";
+import { ISpectrumKeyboardDevice } from "@emu/machines/zxSpectrum/ISpectrumKeyboardDevice";
 import { IScreenDevice } from "@emu/abstractions/IScreenDevice";
 import { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
@@ -38,7 +38,7 @@ export interface IZxSpectrumMachine extends IZ80Machine {
   /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
-  keyboardDevice: IKeyboardDevice;
+  keyboardDevice: ISpectrumKeyboardDevice;
 
   /**
    * Represents the screen device of ZX Spectrum 48K
@@ -48,7 +48,7 @@ export interface IZxSpectrumMachine extends IZ80Machine {
   /**
    * Represents the beeper device of ZX Spectrum 48K
    */
-  beeperDevice: IBeeperDevice;
+  beeperDevice: ISpectrumBeeperDevice;
 
   /**
    * Represents the floating port device of ZX Spectrum 48K

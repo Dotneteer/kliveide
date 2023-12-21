@@ -276,7 +276,7 @@ export class MachineController implements IMachineController {
           break;
 
         case "QueueKey":
-          m.queueKeystroke(0, 5, step.primary, step.secondary);
+          m.queueKeystroke(0, 5, step.primary, step.secondary, step.ternary);
           if ((step.wait ?? 100) > 0) {
             await delay(step.wait);
           }

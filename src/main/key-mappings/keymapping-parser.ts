@@ -1,6 +1,6 @@
 import { KeyMappingResult } from "../../common/abstractions/KeyMappingResult";
 import { KeyMapping } from "../../renderer/abstractions/KeyMapping";
-import { SpectrumKeyCode } from "../../renderer/abstractions/SpectrumKeyCode";
+import { SpectrumKeyCode } from "../../emu/machines/zxSpectrum/SpectrumKeyCode";
 
 /**
  * Parses the specified JSON source to valid key mappings

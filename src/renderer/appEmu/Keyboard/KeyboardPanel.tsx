@@ -3,10 +3,10 @@ import { Sp48Keyboard } from "./Sp48Keyboard";
 import { Sp128Keyboard } from "./Sp128Keyboard";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
+import { Z88Keyboard } from "./Z88Keyboard";
 
 export type KeyboardApi = {
-  signKeyStatus: (code: SpectrumKeyCode, down: boolean) => void;
+  signKeyStatus: (code: number, down: boolean) => void;
 };
 
 type KeyboardProps = {
@@ -37,7 +37,10 @@ export const KeyboardPanel = ({
       {type === "sp48" && (
         <Sp48Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
-      {type !== "sp48" && (
+      {type === "z88" && (
+        <Z88Keyboard width={width} height={height} apiLoaded={apiLoaded} />
+      )}
+      {type !== "sp48" && type !== "z88" && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
     </div>

@@ -1,16 +1,19 @@
 import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
-import { IBeeperDevice } from "../abstractions/IBeeperDevice";
+import { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
-import { IKeyboardDevice } from "../abstractions/IKeyboardDevice";
+import { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevice";
 import { IScreenDevice } from "../abstractions/IScreenDevice";
 import { ITapeDevice } from "../abstractions/ITapeDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { SpectrumKeyCode } from "@renderer/abstractions/SpectrumKeyCode";
 import { SysVar } from "@abstractions/SysVar";
 import { TapeMode } from "../abstractions/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -77,7 +80,7 @@ export abstract class ZxSpectrumBase
   /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
-  keyboardDevice: IKeyboardDevice;
+  keyboardDevice: ISpectrumKeyboardDevice;
 
   /**
    * Represents the screen device of ZX Spectrum 48K
@@ -87,7 +90,7 @@ export abstract class ZxSpectrumBase
   /**
    * Represents the beeper device of ZX Spectrum 48K
    */
-  beeperDevice: IBeeperDevice;
+  beeperDevice: ISpectrumBeeperDevice;
 
   /**
    * Represents the floating port device of ZX Spectrum 48K
@@ -403,11 +406,25 @@ export abstract class ZxSpectrumBase
   }
 
   /**
+   * Gets the key code set used for the machine
+   */
+  getKeyCodeSet (): KeyCodeSet {
+    return SpectrumKeyCode;
+  }
+
+  /**
+   * Gets the default key mapping for the machine
+   */
+  getDefaultKeyMapping (): KeyMapping {
+    return spectrumKeyMappings;
+  }
+
+  /**
    * Set the status of the specified ZX Spectrum key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setKeyStatus (key: SpectrumKeyCode, isDown: boolean): void {
+  setKeyStatus (key: number, isDown: boolean): void {
     this.keyboardDevice.setStatus(key, isDown);
   }
 
@@ -454,8 +471,8 @@ export abstract class ZxSpectrumBase
   queueKeystroke (
     frameOffset: number,
     frames: number,
-    primary: SpectrumKeyCode,
-    secondary?: SpectrumKeyCode
+    primary: number,
+    secondary?: number
   ): void {
     const startTact =
       this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
@@ -493,6 +510,7 @@ export abstract class ZxSpectrumBase
   /**
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
+   * @returns The start address of the injected code
    */
   injectCodeToRun (codeToInject: CodeToInject): number {
     // --- Clear the screen unless otherwise requested

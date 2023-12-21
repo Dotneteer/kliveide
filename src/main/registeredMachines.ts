@@ -17,13 +17,17 @@ export const registeredMachines = [
   },
   {
     id: "spp3e",
-    displayName: "ZX Spectrum +3E (1 FDD)",
+    displayName: "ZX Spectrum +3E WIP (1 FDD)",
     supportedFdds: 1
   },
   {
     id: "spp3ef2",
-    displayName: "ZX Spectrum +3E (2 FDDs)",
+    displayName: "ZX Spectrum +3E WIP (2 FDDs)",
     supportedFdds: 2
+  },
+  {
+    id: "z88",
+    displayName: "Cambridge Z88 WIP"
   }
 ];
 
@@ -54,24 +58,22 @@ let loggedEmuOutputEvents = 0;
  * @param color Text color to use
  */
 export async function logEmuEvent (
-    text: string,
-    color?: OutputColor
-  ): Promise<void> {
-    loggedEmuOutputEvents++;
-    await sendFromMainToIde({
-      type: "IdeDisplayOutput",
-      pane: "emu",
-      text: `[${loggedEmuOutputEvents}] `,
-      color: "yellow",
-      writeLine: false
-    });
-    await sendFromMainToIde({
-      type: "IdeDisplayOutput",
-      pane: "emu",
-      text,
-      color,
-      writeLine: true
-    });
-  }
-  
-  
+  text: string,
+  color?: OutputColor
+): Promise<void> {
+  loggedEmuOutputEvents++;
+  await sendFromMainToIde({
+    type: "IdeDisplayOutput",
+    pane: "emu",
+    text: `[${loggedEmuOutputEvents}] `,
+    color: "yellow",
+    writeLine: false
+  });
+  await sendFromMainToIde({
+    type: "IdeDisplayOutput",
+    pane: "emu",
+    text,
+    color,
+    writeLine: true
+  });
+}

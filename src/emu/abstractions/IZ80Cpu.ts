@@ -415,4 +415,24 @@ export interface IZ80Cpu {
    * @param n Number of tact increments
    */
   tactPlusN(n: number): void;
+
+  /**
+   * Indicates if the CPU is currently snoozed
+   */
+  isCpuSnoozed(): boolean;
+
+  /**
+   * Awakes the CPU from the snoozed state
+   */
+  awakeCpu(): void;
+
+  /**
+   * Puts the CPU into snoozed state
+   */
+  snoozeCpu(): void;
+
+  /**
+   * Define what to do when CPU is snoozed. You should increment the tacts emulating the snoozing.
+   */
+  onSnooze(): void;
 }
