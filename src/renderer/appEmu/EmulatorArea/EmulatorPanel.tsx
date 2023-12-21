@@ -17,7 +17,7 @@ import {
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
-import { spectrumKeyMappings } from "./key-mappings";
+import { spectrumKeyMappings } from "../../../emu/machines/zxSpectrum/SpectrumKeyMappings";
 import {
   FrameCompletedArgs,
   IMachineController

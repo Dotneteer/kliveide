@@ -1,10 +1,11 @@
-import { ISpectrumKeyboardDevice } from "./ISpectrumKeyboardDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
+import { Z88KeyCode } from "./Z88KeyCode";
 
 /**
- * This class implements the ZX Spectrum keyboard device.
+ * This class implements the Cambridge Z88 keyboard device.
  */
-export class KeyboardDevice implements ISpectrumKeyboardDevice {
+export class Z88KeyboardDevice implements IZ88KeyboardDevice {
   /**
    * This field stores the status bits of keys. Each byte in the array represents an address line from A8 to A15,
    * and the lower five bits represent the five keys associated with the particular address line. One means the key
@@ -16,44 +17,25 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZxSpectrumMachine) {}
+  constructor (public readonly machine: IZ88Machine) {}
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose (): void {
-    // --- Nothing to dispose
-  }
-
-  /**
-   * Reset the device to its initial state.
-   */
-  reset (): void {
-    for (let i = 0; i < 8; i++) this._lineStatus[i] = 0;
-  }
-
-  /**
-   * Set the status of the specified ZX Spectrum key.
+   * Set the status of the specified keyboard key.
    * @param key Key code
-   * @param isDown Indicates if the key is pressed down
+   * @param isDown Indicates if the key is pressed down.
    */
-  setStatus (key: number, isDown: boolean): void {
-    const lineIndex = (key / 5) & 0xff;
-    const lineMask = 1 << (key % 5 & 0xff);
-    this._lineStatus[lineIndex] = isDown
-      ? (this._lineStatus[lineIndex] | lineMask) & 0xff
-      : this._lineStatus[lineIndex] & ~lineMask & 0xff;
+  setStatus (key: Z88KeyCode, isDown: boolean): void {
+    // TODO: Implement this
   }
 
   /**
-   * Get the status of the specified Spectrum keyboard key.
+   * Get the status of the specified keyboard key.
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus (key: number): boolean {
-    const lineIndex = (key / 5) & 0xff;
-    const lineMask = 1 << (key % 5 & 0xff);
-    return (this._lineStatus[lineIndex] & lineMask) !== 0;
+  getStatus (key: Z88KeyCode): boolean {
+    // TODO: Implement this
+    return false;
   }
 
   /**
@@ -62,7 +44,8 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
    * @returns Key line value
    */
   getKeyLineValue (line: number): number {
-    return this._lineStatus[line & 0x07];
+    // TDOO: Implement this
+    return 0xff;
   }
 
   /**
@@ -79,5 +62,19 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
       }
     }
     return ~status & 0xff;
+  }
+
+  /**
+   * Reset the device to its initial state.
+   */
+  reset (): void {
+    for (let i = 0; i < 8; i++) this._lineStatus[i] = 0;
+  }
+
+  /**
+   * Dispose the resources held by the device
+   */
+  dispose (): void {
+    // --- Nothing to dispose
   }
 }

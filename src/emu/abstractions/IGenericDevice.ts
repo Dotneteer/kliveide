@@ -10,9 +10,9 @@ export interface IGenericDevice<TMachine extends IZ80Machine> {
    */
   machine: TMachine;
 
-  /// <summary>
-  /// Reset the device to its initial state.
-  /// </summary>
+  /**
+   * Reset the device to its initial state.
+   */
   reset(): void;
 
   /**

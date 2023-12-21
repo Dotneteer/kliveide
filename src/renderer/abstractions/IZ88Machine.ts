@@ -34,11 +34,11 @@ export interface IZ88Machine extends IZ80Machine {
   get64KFlatMemory(): Uint8Array;
 
   /**
-   * Get the specified 8K partition (page or bank) of the Z88 computer
+   * Get the specified 16K partition (page or bank) of the Z88 computer
    * @param index Partition index
    * @returns Bytes of the partition
    */
-  get8KPartition(index: number): Uint8Array;
+  get16KPartition(index: number): Uint8Array;
 
   /**
    * Gets the audio samples rendered in the current frame

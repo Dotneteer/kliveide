@@ -12,7 +12,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { spectrumKeyMappings } from "@renderer/appEmu/EmulatorArea/key-mappings";
+import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 
 /**
@@ -510,6 +510,7 @@ export abstract class ZxSpectrumBase
   /**
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
+   * @returns The start address of the injected code
    */
   injectCodeToRun (codeToInject: CodeToInject): number {
     // --- Clear the screen unless otherwise requested

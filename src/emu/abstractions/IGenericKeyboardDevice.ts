@@ -9,14 +9,14 @@ export type KeyCodeSet = Record<string, number>;
 export interface IGenericKeyboardDevice<TMachine extends IZ80Machine>
   extends IGenericDevice<TMachine> {
   /**
-   * Set the status of the specified ZX Spectrum key.
+   * Set the status of the specified keyboard key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
   setStatus(key: number, isDown: boolean): void;
 
   /**
-   * Get the status of the specified Spectrum keyboard key.
+   * Get the status of the specified keyboard key.
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */

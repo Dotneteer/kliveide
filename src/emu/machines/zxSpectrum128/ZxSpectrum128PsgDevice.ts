@@ -1,13 +1,14 @@
 import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { AudioDeviceBase } from "../AudioDeviceBase";
-import { PsgChip, PsgChipState } from "./PsgChip";
+import { PsgChip } from "./PsgChip";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 // ---The number of ULA tacts that represent a single PSG clock tick
 const PSG_CLOCK_STEP = 16;
 
 export class ZxSpectrum128PsgDevice
-  extends AudioDeviceBase
+  extends AudioDeviceBase<IZxSpectrumMachine>
   implements ISpectrumPsgDevice
 {
   // --- The value of the next ULA tact when a PSG output value should be generated
