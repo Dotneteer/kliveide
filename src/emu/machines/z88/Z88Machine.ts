@@ -15,10 +15,12 @@ import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
-import { IZ88BlinkDevice } from "./IZ88BlinkDevice";
+import { INTFlags, IZ88BlinkDevice } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
+  private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
   /**
    * The unique identifier of the machine type
    */
@@ -33,7 +35,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
   /**
    * The physical memory of the machine
-   */    
+   */
   memory: PagedMemory;
 
   /**
@@ -57,9 +59,13 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   beeperDevice: IZ88BeeperDevice;
 
   /**
+   * Indicates if Z88 is in sleep mode
+   */
+  isInSleepMode: boolean;
+
+  /**
    * Stores the key strokes to emulate
    */
-  readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
    * Initialize the machine
@@ -69,6 +75,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
     this.clockMultiplier = 1;
+    this.setTactsInFrame(16384);
 
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
@@ -80,6 +87,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
+    this.screenDevice.setScreenSize(640, 64);
     this.beeperDevice = new Z88BeeperDevice(this);
     this.reset();
   }
@@ -133,7 +141,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.executionContext.lastTerminationReason = null;
 
     // --- Empty the queue of emulated keystrokes
-    this.emulatedKeyStrokes.length = 0;
+    this._emulatedKeyStrokes.length = 0;
+    this.isInSleepMode = false;
   }
 
   /**
@@ -156,6 +165,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
+   * Reads the memory directly from the physical memory
+   * @param absAddress Absolute memory address
+   */
+  directReadMemory (absAddress: number): number {
+    return this.memory.directRead(absAddress);
+  }
+
+  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
@@ -174,36 +191,12 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
-   * This function implements the memory read delay of the CPU.
-   * @param address Memory address to read
-   *
-   * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
-   *  action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
-   * the CPU tacts at least with 3 T-states!
-   */
-  delayMemoryRead (address: number): void {
-    // TODO: Implement this
-  }
-
-  /**
    * Write the given byte to the specified memory address.
    * @param address 16-bit memory address
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
     this.memory.writeMemory(address, value);
-  }
-
-  /**
-   * This function implements the memory write delay of the CPU.
-   * @param address Memory address to write
-   *
-   * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
-   * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
-   * the CPU tacts at least with 3 T-states!
-   */
-  delayMemoryWrite (address: number): void {
-    // TODO: Implement this
   }
 
   /**
@@ -215,44 +208,160 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * I/O port read operation.
    */
   doReadPort (address: number): number {
-    // TODO: Implement this
-    return 0xff;
-  }
+    const addr8 = address & 0xff;
+    const blink = this.blinkDevice;
 
-  /**
-   * This function implements the I/O port read delay of the CPU.
-   * @param address Port address
-   *
-   * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
-   * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
-   * the CPU tacts at least with 4 T-states!
-   */
-  delayPortRead (address: number): void {
-    // TODO: Implement this
+    switch (addr8) {
+      case 0xb0:
+        // --- Machine Identification (MID)
+        // --- $01: F88
+        // --- $80: ZVM
+        // --- $FF: Z88 (Blink on Cambridge Z88 does not implement read operation, and returns $FF)
+        return 0x80;
+
+      case 0xb1:
+        return blink.STA;
+
+      case 0xb2:
+        // --- Read keyboard status
+        if (blink.INT & INTFlags.KWAIT) {
+          if (!this.keyboardDevice.isKeyPressed) {
+            this.snoozeCpu();
+            return 0xff;
+          }
+        }
+        return this.keyboardDevice.getKeyLineStatus(address >> 8);
+
+      case 0xb5:
+        return blink.TSTA;
+
+      case 0xd0:
+        return blink.TIM0;
+
+      case 0xd1:
+        return blink.TIM1;
+
+      case 0xd2:
+        return blink.TIM2;
+
+      case 0xd3:
+        return blink.TIM3;
+
+      case 0xd4:
+        return blink.TIM4;
+
+      case 0x70:
+        return this.screenDevice.SCW;
+
+      case 0x71:
+        return this.screenDevice.SCH;
+
+      case 0xe0:
+        // --- Read RxD (not implemented yet)
+        return 0x00;
+
+      case 0xe1:
+        // --- Read RxE (not implemented yet)
+        return 0x00;
+
+      case 0xe5:
+        // --- Read UIT, UART Int status, always ready to receive... (not implemented yet)
+        return 0x10;
+
+      default:
+        // --- Return the default port value
+        return 0xff;
+    }
   }
 
   /**
    * This function writes a byte (8-bit) to the 16-bit I/O port address provided in the first argument.
-   * @param address Port address
+   * @param port Port address
    * @param value Value to send to the port
    *
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (address: number, value: number): void {
-    // TODO: Implement this
-  }
+  doWritePort (port: number, value: number): void {
+    const addr8 = port & 0xff;
 
-  /**
-   * This function implements the I/O port write delay of the CPU.
-   * @param address  Port address
-   *
-   * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
-   * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
-   * the CPU tacts at least with 4 T-states!
-   */
-  delayPortWrite (address: number): void {
-    // TODO: Implement this
+    // --- No ports below address 0x70 are handled
+    if (addr8 < 0x70) {
+      return;
+    }
+
+    // --- Check for screen ports (0x70..0x74)
+    if (addr8 <= 0x74) {
+      // --- This is a screen port, calculate the register value
+      const screenRegVal = (port & 0xff00) | value;
+      const screen = this.screenDevice;
+      switch (addr8) {
+        case 0x70:
+          screen.PB0 = screenRegVal;
+          return;
+        case 0x71:
+          screen.PB1 = screenRegVal;
+          return;
+        case 0x72:
+          screen.PB2 = screenRegVal;
+          return;
+        case 0x73:
+          screen.PB3 = screenRegVal;
+          return;
+        default:
+          screen.SBR = screenRegVal;
+          return;
+      }
+    }
+
+    const blink = this.blinkDevice;
+    switch (addr8) {
+      case 0xd0:
+        blink.setSR0(value);
+        return;
+
+      case 0xd1:
+        blink.setSR1(value);
+        return;
+
+      case 0xd2:
+        blink.setSR2(value);
+        return;
+
+      case 0xd3:
+        blink.setSR3(value);
+        return;
+
+      case 0xb0:
+        blink.setCOM(value);
+        return;
+
+      case 0xb1:
+        blink.setINT(value);
+        return;
+
+      case 0xb2:
+        blink.EPR = value;
+        return;
+
+      case 0xb4:
+        blink.setTACK(value);
+        return;
+
+      case 0xb5:
+        blink.TMK = value;
+        return;
+
+      case 0xb6:
+        blink.setACK(value);
+        return;
+    }
+
+    // 0xe2: RXC, UART Receiver Control (not yet implemented)
+    // 0xe3: TXD, UART Transmit Data (not yet implemented)
+    // 0xe4: TXC, UART Transmit Control (not yet implemented)
+    // 0xe5: UMK, UART Int. mask (not yet implemented)
+    // 0xe6 UAK, UART acknowledge int. mask (not yet implemented)
   }
 
   /**
@@ -304,10 +413,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Emulates queued key strokes as if those were pressed by the user
    */
   emulateKeystroke (): void {
-    if (this.emulatedKeyStrokes.length === 0) return;
+    if (this._emulatedKeyStrokes.length === 0) return;
 
     // --- Check the next keystroke
-    const keyStroke = this.emulatedKeyStrokes[0];
+    const keyStroke = this._emulatedKeyStrokes[0];
 
     // --- Time has not come
     if (keyStroke.startTact > this.tacts) return;
@@ -323,7 +432,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       }
 
       // --- Remove the keystroke from the queue
-      this.emulatedKeyStrokes.shift();
+      this._emulatedKeyStrokes.shift();
       return;
     }
 
@@ -362,14 +471,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       primary,
       secondary
     );
-    this.emulatedKeyStrokes.push(keypress);
+    this._emulatedKeyStrokes.push(keypress);
   }
 
   /**
    * Gets the length of the key emulation queue
    */
   getKeyQueueLength (): number {
-    return this.emulatedKeyStrokes.length;
+    return this._emulatedKeyStrokes.length;
   }
 
   /**
@@ -397,7 +506,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * previous frame.
    */
   onInitNewFrame (clockMultiplierChanged: boolean): void {
-    // TODO: Implement this
+    // --- Nothing to do
   }
 
   /**

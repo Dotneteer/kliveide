@@ -165,4 +165,13 @@ export class PagedMemory {
     }
     return flat16;
   }
+
+  /**
+   * Get value directly from the physical memory
+   * @param index Absoulte memory address
+   * @returns Memory value
+   */
+  directRead(index: number): number {
+    return this.memory[index];
+  }
 }

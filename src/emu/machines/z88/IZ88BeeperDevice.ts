@@ -9,4 +9,9 @@ export interface IZ88BeeperDevice extends IGenericBeeperDevice<IZ88Machine> {
    * Gets the current value of the oscillator bit
    */
   oscillatorBit: boolean;
+
+  /**
+   * Calculates the current value of the oscillator bit
+   */
+  calculateOscillatorBit(): void;
 }

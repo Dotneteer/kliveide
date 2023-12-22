@@ -62,4 +62,15 @@ export interface IZ88Machine extends IZ80Machine {
    * Indicates if the machine's operating system is initialized
    */
   get isOsInitialized(): boolean;
+
+  /**
+   * Indicates if Z88 is in sleep mode
+   */
+  isInSleepMode: boolean;
+
+  /**
+   * Reads the memory directly from the physical memory
+   * @param absAddress Absolute memory address
+   */
+  directReadMemory(absAddress: number): number;
 }
