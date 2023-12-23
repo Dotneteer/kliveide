@@ -18,13 +18,16 @@ import { PagedMemory } from "../memory/PagedMemory";
 import { INTFlags, IZ88BlinkDevice } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 
+// --- Default ROM file
+const DEFAULT_ROM = "Z88OZ47";
+
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
    * The unique identifier of the machine type
    */
-  public readonly machineId = "Z88";
+  readonly machineId = "z88";
 
   /**
    * Gets the ROM ID to load the ROM file
@@ -32,6 +35,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   get romId (): string {
     return this.machineId;
   }
+
+  /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency = 8;
 
   /**
    * The physical memory of the machine
@@ -75,7 +83,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
     this.clockMultiplier = 1;
-    this.setTactsInFrame(16384);
 
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
@@ -87,7 +94,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
-    this.screenDevice.setScreenSize(640, 64);
+    this.screenDevice.setScreenSize(0xff, 8);
     this.beeperDevice = new Z88BeeperDevice(this);
     this.reset();
   }
@@ -96,7 +103,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Sets up the machine (async)
    */
   async setup (): Promise<void> {
-    // TODO: Get the ROM file and upload it
+    // --- Get the ROM file
+    const romContents = await this.loadRomFromResource(DEFAULT_ROM);
+
+    // --- Initialize the machine's ROM (roms/sp48.rom)
+    this.uploadRomBytes(romContents);
   }
 
   /**
@@ -125,6 +136,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     super.reset();
 
     // --- Reset and setup devices
+    this.blinkDevice.reset();
     this.keyboardDevice.reset();
     this.screenDevice.reset();
     this.beeperDevice.reset();
@@ -134,7 +146,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     }
 
     // TODO: Implement Z88-specific reset
-    // TODO: Reset paged memory
 
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;
@@ -143,6 +154,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Empty the queue of emulated keystrokes
     this._emulatedKeyStrokes.length = 0;
     this.isInSleepMode = false;
+
+    // --- Set up the machine frame length
+    this.setTactsInFrame(16384);
   }
 
   /**
@@ -150,8 +164,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    // TODO: Implement this
-    return new Uint8Array(0);
+    return this.memory.get64KFlatMemory();
   }
 
   /**
@@ -160,8 +173,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the partition
    */
   get16KPartition (index: number): Uint8Array {
-    // TODO: Implement this
-    return new Uint8Array(0);
+    return this.memory.get16KPartition(index);
   }
 
   /**
@@ -506,7 +518,51 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * previous frame.
    */
   onInitNewFrame (clockMultiplierChanged: boolean): void {
-    // --- Nothing to do
+    // --- 5ms frame completed, update the real time clock
+    const blink = this.blinkDevice;
+    blink.incrementRtc();
+
+    // --- Awake the CPU when a key is pressed
+    if (this.keyboardDevice.isKeyPressed && blink.INT & INTFlags.KWAIT) {
+      this.awakeCpu();
+    }
+
+    // --- Render the screen (if it is time)
+    this.screenDevice.renderScreen();
+
+    // --- Check id the CPU is HALTed
+    // const keyboard = this.keyboardDevice;
+    // if (this.halted) {
+    //   // --- Check if I is 0x3F
+    //   if (this.i === 0x3f) {
+    //     this.isInSleepMode = true;
+    //     if (keyboard.shiftsReleased) {
+    //       // --- Test if both shift keys are pressed again
+    //       if (((keyboardLines[7] & 0x80) | (keyboardLines[6] & 0x40)) == 0xc0) {
+    //         shiftsReleased = false;
+    //         return;
+    //       }
+    //     } else {
+    //       // --- Test if both shift keys are released
+    //       if (((keyboardLines[7] & 0x80) | (keyboardLines[6] & 0x40)) == 0x00) {
+    //         shiftsReleased = true;
+    //       }
+    //     }
+    //   } else {
+    //     this.isInSleepMode = false;
+    //   }
+    // } else {
+    //   this.isInSleepMode = false;
+    // }
+
+    // // --- Special shift key handling for sleep mode
+    // if (this.isInSleepMode) {
+    //   if (keyboard.isLeftShiftDown && keyboard.isRightShiftDown) {
+    //     // --- Sign both shift as pressed
+    //     keyboardLines[7] |= 0x80;
+    //     keyboardLines[6] |= 0x40;
+    //   }
+    // }
   }
 
   /**
@@ -521,7 +577,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Whatever should be done before the CPU executes the next instruction
    */
   afterInstructionExecuted (): void {
-    // TODO: Implement this
+    // ---Awake the CPU whenever a key is pressed
+    if (this.keyboardDevice.isKeyPressed) {
+      this.awakeCpu();
+    }
   }
 
   /**
@@ -530,7 +589,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   onTactIncremented (): void {
     // TODO: Implement this
-    // TODO: Screen rendering?
     this.beeperDevice.setNextAudioSample();
   }
 
@@ -540,5 +598,15 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   get isOsInitialized (): boolean {
     // TODO: Implement this
     return true;
+  }
+
+  /**
+   * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
+   * @param data ROM contents
+   */
+  private uploadRomBytes (data: Uint8Array): void {
+    for (let i = 0; i < data.length; i++) {
+      this.memory.directWrite(i, data[i]);
+    }
   }
 }

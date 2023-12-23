@@ -585,4 +585,9 @@ export abstract class ZxSpectrumBase
     }
     this.beeperDevice.setNextAudioSample();
   }
+
+  /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency = 1;
 }

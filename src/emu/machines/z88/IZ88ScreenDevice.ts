@@ -67,7 +67,7 @@ export interface IZ88ScreenDevice extends IGenericDevice<IZ88Machine> {
   /**
    * This flag indicates whether the flash is in the standard (false) or inverted (true) phase.
    */
-  get flashFlag(): boolean;
+  flashFlag: boolean;
 
   /**
    * Sets the screen dimensions
@@ -90,6 +90,8 @@ export interface IZ88ScreenDevice extends IGenericDevice<IZ88Machine> {
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array;
+
+  
 
   /**
    * Renders the LCD screen

@@ -3,11 +3,12 @@ import { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
 
 const SBF_ROW_WIDTH = 256;
+const TEXT_FLASH_TOGGLE = 200;
 
 // --- Pixel colors
-const PX_COL_ON = 0xff461b7d;
-const PX_COL_OFF = 0xffd2e0b9;
-const PX_COL_GREY = 0xff90b0a7;
+const PX_COL_ON = 0xff7d1b46;
+const PX_COL_OFF = 0xffb9e0d2;
+const PX_COL_GREY = 0xffa7b090;
 const PX_SCR_OFF = 0xffe0e0e0;
 
 // --- Attribute flags
@@ -26,8 +27,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
   private _defaultSCW = 0;
   private _defaultSCH = 0;
   private _ctrlCharsPerRow = 0;
-  private _sbfSize = 0;
-  private _flashCount = 0;
+  private _textFlashCount = 0;
   private _textFlashPhase = false;
   private _pixelBuffer: Uint32Array;
 
@@ -124,12 +124,9 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
     this.SCH = this._defaultSCH;
     this.SCW = this._defaultSCW;
     this.flashFlag = false;
-    this._flashCount = 0;
     this._textFlashPhase = false;
+    this._textFlashCount = 0;
     this.lcdWentOff = false;
-
-    // --- Calculate screen dimensions
-    this._sbfSize = SBF_ROW_WIDTH * this.SCH;
 
     // --- Screen width in pixels
     this.screenWidth = this.SCW === 0xff ? 640 : this.SCW * 8;
@@ -165,8 +162,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer (): Uint32Array {
-    // TODO: Implement this
-    return new Uint32Array(0);
+    return this._pixelBuffer;
   }
 
   /**
@@ -180,10 +176,25 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
    * Renders the LCD screen
    */
   renderScreen (): void {
-    // --- Test if LCD is ON
     const blink = this.machine.blinkDevice;
     const screen = this;
 
+    // --- Calculate flash phase related information
+    this.flashFlag = blink.TIM0 <= 120;
+
+    // --- Set text flash phase
+    this._textFlashCount += 1;
+    if (this._textFlashCount >= TEXT_FLASH_TOGGLE) {
+      this._textFlashCount = 0;
+      this._textFlashPhase = !this._textFlashPhase;
+    }
+
+    // --- Refresh the screen for every 8th frame
+    if (this.machine.frames % this.machine.uiFrameFrequency) {
+      return;
+    }
+
+    // --- Test if LCD is ON
     if (!(blink.COM & COMFlags.LCDON)) {
       if (!this.lcdWentOff) {
         this.renderScreenOff();
@@ -226,6 +237,10 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
     let rowCount = this.SCH;
     let rowSbrPtr = (sbr & 0x3fff) | (sbrBank << 14);
 
+    const directRead = (v: number) => {
+      return this.machine.directReadMemory.call(this.machine, v);
+    };
+
     // --- Row loop
     while (rowCount) {
       // --- Initialize the row pointer and the column loop
@@ -235,8 +250,8 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
       // --- Column loop
       while (columnCount) {
         // --- Read the screen character and its attribute
-        const char = this.machine.directReadMemory(sbrPtr);
-        const attr = this.machine.directReadMemory(sbrPtr + 1);
+        const char = directRead(sbrPtr);
+        const attr = directRead(sbrPtr + 1);
 
         // --- Render individual characters
         if (!(attr & ATTR_HRS)) {
@@ -325,7 +340,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
 
       // --- Set pixel color
       const pixelColor = attr & ATTR_GRY ? PX_COL_GREY : PX_COL_ON;
-      const directRead = screen.machine.directReadMemory;
 
       // --- Calculate font offset
       let fontOffset = ((attr & 0x01) << 8) | char;
@@ -428,7 +442,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
       // --- Draw the bits sequentially
       let fontAddress = (fontOffset & 0x3fff) | (fontBank << 14);
       const charMask = screen.flashFlag ? 0xff : 0x00;
-      const directRead = screen.machine.directReadMemory;
       for (let i = 0; i < 8; i++) {
         let charPattern = directRead(fontAddress + i) ^ charMask;
         drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
@@ -492,7 +505,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
       // --- Draw the bits sequentially
       const fontAddress = (fontOffset & 0x3fff) | (fontBank << 14);
       const charMask = attr & ATTR_REV ? 0xff : 0x00;
-      const directRead = screen.machine.directReadMemory;
       for (let i = 0; i < 8; i++) {
         const charPattern = directRead[fontAddress] ^ charMask;
         drawHiResRow(pixelPtr, pixelColor, charPattern);

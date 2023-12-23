@@ -174,4 +174,13 @@ export class PagedMemory {
   directRead(index: number): number {
     return this.memory[index];
   }
+
+  /**
+   * Set value directly into the physical memory
+   * @param index Absolute memory address
+   * @param value Value to set
+   */
+  directWrite(index: number, value: number): void {
+    this.memory[index] = value;
+  }
 }

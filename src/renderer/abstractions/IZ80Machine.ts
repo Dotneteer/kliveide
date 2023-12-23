@@ -67,6 +67,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   executeMachineFrame(): FrameTerminationMode;
 
   /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency: number;
+
+  /**
    * Cleans up machine resources on stop
    */
   onStop(): void;

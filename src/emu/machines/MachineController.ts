@@ -249,8 +249,9 @@ export class MachineController implements IMachineController {
 
     // --- Execute the code injection flow
     const m = this.machine;
-    console.log()
-    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId);
+    const injectionFlow = this.machine.getCodeInjectionFlow(
+      codeToInject.model ?? m.machineId
+    );
     await this.sendOutput("Initialize the machine", "blue");
     this.isDebugging = debug;
 
@@ -401,7 +402,9 @@ export class MachineController implements IMachineController {
     this._machineTask = (async () => {
       this._cancelRequested = false;
       const nextFrameGap =
-        (this.machine.tactsInFrame / this.machine.baseClockFrequency) * 1000;
+        (this.machine.tactsInFrame / this.machine.baseClockFrequency) *
+        1000 *
+        this.machine.uiFrameFrequency;
       let nextFrameTime = performance.now() + nextFrameGap;
       do {
         // --- Use the latest clock multiplier
@@ -473,10 +476,12 @@ export class MachineController implements IMachineController {
         }
 
         // --- Calculate the time to wait before the next machine frame starts
-        const curTime = performance.now();
-        const toWait = Math.floor(nextFrameTime - curTime);
-        await delay(toWait - 2);
-        nextFrameTime += nextFrameGap;
+        if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
+          const curTime = performance.now();
+          const toWait = Math.floor(nextFrameTime - curTime);
+          await delay(toWait - 2);
+          nextFrameTime += nextFrameGap;
+        }
       } while (true);
     })();
 

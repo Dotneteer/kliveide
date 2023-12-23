@@ -17,7 +17,9 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZ88Machine) {}
+  constructor (public readonly machine: IZ88Machine) {
+    this.reset();
+  }
 
   /**
    * Indicates if there is any key pressed
