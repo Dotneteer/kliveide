@@ -128,17 +128,20 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
 
   /**
    * This method queries the status of the keyboard keys using the specified port address.
-   * @param address Port address of the line to query
+   * @param line Port address of the line to query
    * @returns The data byte representing the keyboard status
    */
-  getKeyLineStatus (address: number): number {
+  getKeyLineStatus (line: number): number {
     let status = 0;
-    const lines = ~(address >> 8) & 0xff;
-    for (let line = 0; line < 8; line++) {
-      if ((lines & (1 << line)) !== 0) {
-        status |= this._lineStatus[line];
+    let lineIndex = 0;
+    line ^= 0xff;
+    while (lineIndex < 8) {
+      if (line & 0x01) {
+        status |= this._lineStatus[lineIndex];
       }
+      lineIndex += 1;
+      line >>= 1;
     }
-    return ~status & 0xff;
+    return status ^ 0xff;
   }
 }

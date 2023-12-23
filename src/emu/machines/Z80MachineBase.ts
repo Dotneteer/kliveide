@@ -175,6 +175,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   abstract getPixelBuffer(): Uint32Array;
 
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset (): number {
+    return 0;
+  }
+
   /**
    * Gets the key code set used for the machine
    */

@@ -405,6 +405,13 @@ export abstract class ZxSpectrumBase
     return this.screenDevice.getPixelBuffer();
   }
 
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset (): number {
+    return this.screenDevice.screenWidth;
+  }
+
   /**
    * Gets the key code set used for the machine
    */

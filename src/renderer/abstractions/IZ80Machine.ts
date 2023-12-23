@@ -91,6 +91,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   getPixelBuffer(): Uint32Array;
 
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset(): number;
+
   /**
    * Gets the key code set used for the machine
    */

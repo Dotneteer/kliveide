@@ -151,6 +151,7 @@ export const darkTheme: ThemeProperties = {
   "--color-keyz88": "#a0a0a0",
   "--color-keyz88-main": "white",
   "--color-keyz88-highlight": "#0088e0",
+  "--bgcolor-hilitedz88": "#0B486B",
 
   // --- Document area
   "--bgcolor-docspanel": "#181818",

@@ -335,7 +335,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
-    const startIndex = shadowScreenEl.width;
+    const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
     for (let i = startIndex; i < endIndex; i++) {
       pixelData.current[j++] = screenData[i];
