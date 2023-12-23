@@ -151,6 +151,7 @@ export type ThemeProperties = {
   "--color-keyz88-main"?: string;
   "--color-keyz88"?: string;
   "--color-keyz88-highlight"?: string;
+  "--bgcolor-hilitedz88"?: string;
 
   // --- Document area
   "--bgcolor-docspanel"?: string;

@@ -67,6 +67,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   executeMachineFrame(): FrameTerminationMode;
 
   /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency: number;
+
+  /**
    * Cleans up machine resources on stop
    */
   onStop(): void;
@@ -85,6 +90,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array;
+
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset(): number;
 
   /**
    * Gets the key code set used for the machine

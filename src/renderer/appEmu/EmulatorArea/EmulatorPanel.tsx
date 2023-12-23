@@ -17,7 +17,6 @@ import {
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
-import { spectrumKeyMappings } from "../../../emu/machines/zxSpectrum/SpectrumKeyMappings";
 import {
   FrameCompletedArgs,
   IMachineController
@@ -26,7 +25,6 @@ import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { update } from "lodash";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -242,7 +240,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     args: FrameCompletedArgs
   ): Promise<void> {
     // --- Update the screen
-    displayScreenData();
+    if (controller.machine.frames % controller.machine.uiFrameFrequency === 0) {
+      displayScreenData();
+    }
 
     // --- Stop sound rendering when fast load has been invoked
     // --- Do we need to render sound samples?
@@ -335,7 +335,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
-    const startIndex = shadowScreenEl.width;
+    const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
     for (let i = startIndex; i < endIndex; i++) {
       pixelData.current[j++] = screenData[i];

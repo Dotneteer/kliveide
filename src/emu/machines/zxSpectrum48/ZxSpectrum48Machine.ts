@@ -244,9 +244,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     return this.screenDevice.screenLines;
   }
 
-  /// <summary>
-  /// Gets the buffer that stores the rendered pixels
-  /// </summary>
+  /**
+   * Gets the buffer that stores the rendered pixels
+   */
   getPixelBuffer (): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }

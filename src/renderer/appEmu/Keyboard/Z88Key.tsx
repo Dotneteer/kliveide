@@ -21,6 +21,7 @@ type Props = {
   vshift?: number;
   fontSize?: number;
   isEnter?: boolean;
+  pressed?: boolean;
   keyAction?: (e: Z88ButtonClickArgs, down: boolean) => void;
 };
 
@@ -38,6 +39,7 @@ export const Z88Key = ({
   vshift,
   fontSize,
   isEnter,
+  pressed,
   keyAction
 }: Props) => {
   // --- Component states
@@ -61,6 +63,10 @@ export const Z88Key = ({
   const highlightKeyColor = themeService.getThemeProperty(
     "--color-keyz88-highlight"
   );
+  const highlightBackColor = themeService.getThemeProperty(
+    "--bgcolor-hilitedz88"
+  );
+
 
   // --- Prepare rendering
   let main = "";
@@ -111,7 +117,7 @@ export const Z88Key = ({
         ry='12'
         width={xwidth || NORMAL_WIDTH}
         height={xheight || NORMAL_HEIGHT}
-        fill={keyBackground}
+        fill={pressed ? highlightBackColor : keyBackground}
         stroke={keyStrokeColor}
         strokeWidth='4'
         cursor={cursor}

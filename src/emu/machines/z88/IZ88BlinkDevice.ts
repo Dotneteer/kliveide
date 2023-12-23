@@ -58,7 +58,7 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
   /**
    * Timer interrupt mask (8-bit)
    */
-  readonly TMK: number;
+  TMK: number;
 
   /**
    * Main Blink Interrrupts (8-bit)
@@ -78,7 +78,7 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
   /**
    * EPR, Eprom Programming Register (8-bit)
    */
-  readonly EPR: number;
+  EPR: number;
 
   /**
    * Set the value of the SR0 register

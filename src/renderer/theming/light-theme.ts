@@ -148,6 +148,7 @@ export const lightTheme: ThemeProperties = {
   "--color-keyz88": "#a0a0a0",
   "--color-keyz88-main": "white",
   "--color-keyz88-highlight": "#0088e0",
+  "--bgcolor-hilitedz88": "orangered",
 
   // --- Document area
   "--bgcolor-docspanel": "#e8e8e8",

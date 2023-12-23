@@ -148,6 +148,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency: number = 1;
+
+  /**
    * Clean up machine resources on stop
    */
   onStop (): void {
@@ -169,6 +174,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Gets the buffer that stores the rendered pixels
    */
   abstract getPixelBuffer(): Uint32Array;
+
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset (): number {
+    return 0;
+  }
 
   /**
    * Gets the key code set used for the machine
