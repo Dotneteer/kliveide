@@ -189,8 +189,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Array with the audio samples
    */
   getAudioSamples (): number[] {
-    // TODO: Implement this
-    return [];
+    return this.beeperDevice.getAudioSamples();
   }
 
   /**
@@ -563,6 +562,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     //     keyboardLines[6] |= 0x40;
     //   }
     // }
+
+    // --- Prepare the beeper device for the new frame
+    this.beeperDevice.onNewFrame();
   }
 
   /**
@@ -581,6 +583,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     if (this.keyboardDevice.isKeyPressed) {
       this.awakeCpu();
     }
+    this.beeperDevice.calculateOscillatorBit();
   }
 
   /**
