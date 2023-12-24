@@ -247,9 +247,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Stop sound rendering when fast load has been invoked
     // --- Do we need to render sound samples?
     if (args.fullFrame && beeperRenderer.current) {
-      const zxSpectrum = controller.machine as IZxSpectrumMachine;
-      if (zxSpectrum?.beeperDevice) {
-        const samples = zxSpectrum.getAudioSamples();
+      const sampleGetter = (controller.machine as any).getAudioSamples
+      if (typeof sampleGetter === "function") {
+        const samples = sampleGetter.call(controller.machine) as number[];
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
         await beeperRenderer.current.play();

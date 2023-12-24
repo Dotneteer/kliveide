@@ -9,3 +9,4 @@ export const DISK_B_DATA = "DiskAData";
 
 export const FILE_PROVIDER = "FileProvider";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";
+export const BEEPER_SAMPLES = "BeeperSamples";
