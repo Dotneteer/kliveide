@@ -20,8 +20,9 @@ export interface IMachineService {
   /**
    * Sets the machine to to the specified one
    * @param machineId ID of the machine type to set
+   * @param modelId ID of the machine model
    */
-  setMachineType(machineId: string): Promise<void>;
+  setMachineType(machineId: string, modelId?: string): Promise<void>;
 
   /**
    * Gets the current machine type

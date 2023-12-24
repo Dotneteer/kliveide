@@ -8,7 +8,7 @@ import { LiteEvent } from "@emu/utils/lite-event";
 import { machineRegistry } from "@renderer/registry";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineTypeAction } from "@state/actions";
+import { setMachineTypeAction, setModelTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
@@ -17,6 +17,7 @@ import {
   MachineInstanceEventHandler
 } from "../abstractions/IMachineService";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -39,7 +40,7 @@ class MachineService implements IMachineService {
    * Sets the machine to to the specified one
    * @param machineId ID of the machine type to set
    */
-  async setMachineType (machineId: string): Promise<void> {
+  async setMachineType (machineId: string, modelId?: string): Promise<void> {
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(m => m.machineId === machineId);
     if (!machineInfo) {
@@ -63,7 +64,8 @@ class MachineService implements IMachineService {
     }
 
     // --- Initialize the new machine
-    const machine = machineInfo.factory(this.store);
+    const rendererInfo = machineRendererRegistry.find(r => r.machineId === machineId);
+    const machine = rendererInfo.factory(this.store);
     this._controller = new MachineController(
       this.store,
       this.messenger,
@@ -86,6 +88,7 @@ class MachineService implements IMachineService {
 
     // --- Ready, sign the machine type state change
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
+    this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
   }
 
   /**

@@ -65,6 +65,7 @@ import {
 } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
+import { machineRegistry } from "../common/machines/machine-registry";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -499,20 +500,41 @@ export function setupMenu (
   );
 
   // --- Machine types submenu (use the registered machines)
-  const machineTypesMenu: MenuItemConstructorOptions[] = registeredMachines.map(
+  const machineTypesMenu: MenuItemConstructorOptions[] = machineRegistry.map(
     mt => {
       return {
-        id: `machine_${mt.id}`,
+        id: `machine_${mt.machineId}`,
         label: mt.displayName,
-        type: "checkbox",
-        checked: appState.emulatorState?.machineId === mt.id,
+        type: mt.models?.length > 0 ? undefined : "checkbox",
+        checked: appState.emulatorState?.machineId === mt.machineId,
         click: async () => {
-          await setMachineType(mt.id);
-          await saveKliveProject();
-        }
+          if (mt.hasDefaultModel) {
+            await setMachineType(mt.machineId, mt.models?.[0]?.modelId);
+            await saveKliveProject();
+          } else {
+            await setMachineType(mt.machineId);
+            await saveKliveProject();
+          }
+        },
+        submenu: mt.models?.map(m => {
+          return {
+            id: `machine_${mt.machineId}_${m.modelId}`,
+            label: m.displayName,
+            type: "checkbox",
+            checked:
+              appState.emulatorState?.machineId === mt.machineId &&
+              appState.emulatorState?.modelId === m.modelId,
+            click: async () => {
+              await setMachineType(mt.machineId, m.modelId);
+              await saveKliveProject();
+            }
+          };
+        })
       };
     }
   );
+
+  console.log(JSON.stringify(machineTypesMenu, null, 2));
 
   // --- All standard submenus under "Machine"
   const machineSubMenu: MenuItemConstructorOptions[] = [
