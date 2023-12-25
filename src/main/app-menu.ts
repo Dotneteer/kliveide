@@ -500,41 +500,39 @@ export function setupMenu (
   );
 
   // --- Machine types submenu (use the registered machines)
-  const machineTypesMenu: MenuItemConstructorOptions[] = machineRegistry.map(
-    mt => {
-      return {
+  const machineTypesMenu: MenuItemConstructorOptions[] = [];
+  machineRegistry.forEach(mt => {
+    if (!mt.models) {
+      machineTypesMenu.push({
         id: `machine_${mt.machineId}`,
         label: mt.displayName,
-        type: mt.models?.length > 0 ? undefined : "checkbox",
+        type: "checkbox",
         checked: appState.emulatorState?.machineId === mt.machineId,
         click: async () => {
-          if (mt.hasDefaultModel) {
-            await setMachineType(mt.machineId, mt.models?.[0]?.modelId);
-            await saveKliveProject();
-          } else {
-            await setMachineType(mt.machineId);
+          await setMachineType(mt.machineId);
+          await saveKliveProject();
+        }
+      });
+    } else {
+      mt.models.forEach((m, idx) => {
+        machineTypesMenu.push({
+          id: `machine_${mt.machineId}_${m.modelId}`,
+          label: m.displayName,
+          type: "checkbox",
+          checked:
+            appState.emulatorState?.machineId === mt.machineId &&
+            appState.emulatorState?.modelId === m.modelId,
+          click: async () => {
+            await setMachineType(mt.machineId, m.modelId);
             await saveKliveProject();
           }
-        },
-        submenu: mt.models?.map(m => {
-          return {
-            id: `machine_${mt.machineId}_${m.modelId}`,
-            label: m.displayName,
-            type: "checkbox",
-            checked:
-              appState.emulatorState?.machineId === mt.machineId &&
-              appState.emulatorState?.modelId === m.modelId,
-            click: async () => {
-              await setMachineType(mt.machineId, m.modelId);
-              await saveKliveProject();
-            }
-          };
-        })
-      };
+        });
+      });
     }
-  );
+    machineTypesMenu.push({ type: "separator" });
+  });
 
-  console.log(JSON.stringify(machineTypesMenu, null, 2));
+  const allMachineTypesMenu: MenuItemConstructorOptions[] = [];
 
   // --- All standard submenus under "Machine"
   const machineSubMenu: MenuItemConstructorOptions[] = [

@@ -12,7 +12,7 @@ import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_SPECTRUM_48,
-    factory: (store, model) => new ZxSpectrum48Machine()
+    factory: (store, model) => new ZxSpectrum48Machine(model)
   },
   {
     machineId: MI_SPECTRUM_128,

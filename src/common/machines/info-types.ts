@@ -31,11 +31,6 @@ export type MachineInfo = {
    */
   models?: MachineModel[];
 
-  /**
-   * Indicates that the first machine model is the default one
-   */
-  hasDefaultModel?: boolean;
-
   // --- Number of ROMS available
   roms?: number;
 
@@ -54,11 +49,6 @@ export type MachineModel = {
    * ID of the machine model
    */
   modelId: string;
-
-  /**
-   * Indicates that the model should be displayed in the main menu
-   */
-  displayInMainMenu?: boolean;
 
   /**
    * The display name of the particular model
@@ -84,7 +74,7 @@ export type MachineUiRendererInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: (store: Store<AppState>, model?: MachineModel) => IZ80Machine;
+  factory: (store: Store<AppState>, modelId?: string) => IZ80Machine;
 };
 
 /**

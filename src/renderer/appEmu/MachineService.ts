@@ -1,11 +1,9 @@
-import { MachineInfo } from "@renderer/abstractions/MachineInfo";
 import { FileProvider } from "@renderer/core/FileProvider";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { MachineController } from "@emu/machines/MachineController";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { LiteEvent } from "@emu/utils/lite-event";
-import { machineRegistry } from "@renderer/registry";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { setMachineTypeAction, setModelTypeAction } from "@state/actions";
@@ -18,6 +16,8 @@ import {
 } from "../abstractions/IMachineService";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MachineInfo } from "@common/machines/info-types";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -42,7 +42,10 @@ class MachineService implements IMachineService {
    */
   async setMachineType (machineId: string, modelId?: string): Promise<void> {
     // --- Check if machine type is available
-    const machineInfo = machineRegistry.find(m => m.machineId === machineId);
+    const machineInfo = machineRegistry.find(
+      m =>
+        m.machineId === machineId && m.models?.find(m => m.modelId === modelId)
+    );
     if (!machineInfo) {
       throw new Error(
         `Cannot find machine type '${machineId}' in the registry.`
@@ -64,8 +67,10 @@ class MachineService implements IMachineService {
     }
 
     // --- Initialize the new machine
-    const rendererInfo = machineRendererRegistry.find(r => r.machineId === machineId);
-    const machine = rendererInfo.factory(this.store);
+    const rendererInfo = machineRendererRegistry.find(
+      r => r.machineId === machineId
+    );
+    const machine = rendererInfo.factory(this.store, modelId);
     this._controller = new MachineController(
       this.store,
       this.messenger,
@@ -103,7 +108,8 @@ class MachineService implements IMachineService {
    */
   getMachineInfo (): MachineInfo | undefined {
     const currentType = this.store.getState()?.emulatorState?.machineId;
-    return machineRegistry.find(m => m.machineId === currentType);
+    const currentModel = this.store.getState()?.emulatorState?.modelId;
+    return machineRegistry.find(m => m.machineId === currentType && m.models?.find(m => m.modelId === currentModel));
   }
 
   /**

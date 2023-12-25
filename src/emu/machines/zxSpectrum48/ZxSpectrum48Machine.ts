@@ -21,6 +21,7 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 export class ZxSpectrum48Machine extends ZxSpectrumBase {
   // --- This byte array represents the 64K memory, including the 16K ROM and 48K RAM.
   private readonly _memory = new Uint8Array(0x1_0000);
+  private readonly _is16KModel: boolean;
 
   /**
    * The unique identifier of the machine type
@@ -30,18 +31,24 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor () {
+  constructor (public readonly modelId?: string) {
     super();
     // --- Set up machine attributes
-    this.baseClockFrequency = 3_500_000;
+    this.baseClockFrequency = modelId.startsWith("ntsc")
+      ? 3_527_500
+      : 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
+    this._is16KModel = modelId.endsWith("16k");
+    console.log("is16KModel: " + this._is16KModel);
 
     // --- Create and initialize devices
     this.keyboardDevice = new KeyboardDevice(this);
     this.screenDevice = new CommonScreenDevice(
       this,
-      CommonScreenDevice.ZxSpectrum48ScreenConfiguration
+      modelId.startsWith("ntsc")
+        ? CommonScreenDevice.ZxSpectrum48NtscScreenConfiguration
+        : CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
@@ -82,6 +89,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   hardReset (): void {
     super.hardReset();
     for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
+    if (this._is16KModel) {
+      for (let i = 0x8000; i < this._memory.length; i++) this._memory[i] = 0xff;
+    }
     this.reset();
   }
 
@@ -177,7 +187,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    if ((address & 0xc000) !== 0x0000) {
+    const slot = address >>> 14;
+    if ((this._is16KModel && slot === 1) || (!this._is16KModel && slot !== 0)) {
+      console.log("write", address, value);
       this._memory[address] = value;
     }
   }

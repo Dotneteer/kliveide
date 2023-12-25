@@ -7,7 +7,8 @@ import {
   MC_SCREEN_FREQ,
   MF_ROM,
   MF_BANK,
-  MC_DISK_SUPPORT
+  MC_DISK_SUPPORT,
+  MC_MEM_SIZE
 } from "./constants";
 import { MachineInfo } from "./info-types";
 
@@ -24,18 +25,24 @@ export const machineRegistry: MachineInfo[] = [
     models: [
       {
         modelId: "pal",
-        displayInMainMenu: false,
-        displayName: "ZX Spectrum 48K (PAL, 50Hz)",
+        displayName: "ZX Spectrum 48K",
         config: {
           [MC_SCREEN_FREQ]: "pal"
         }
       },
       {
         modelId: "ntsc",
-        displayInMainMenu: false,
         displayName: "ZX Spectrum 48K (NTSC, 60Hz)",
         config: {
           [MC_SCREEN_FREQ]: "ntsc"
+        }
+      },
+      {
+        modelId: "pal-16k",
+        displayName: "ZX Spectrum 16K",
+        config: {
+          [MC_SCREEN_FREQ]: "pal",
+          [MC_MEM_SIZE]: 16
         }
       }
     ]
@@ -60,7 +67,6 @@ export const machineRegistry: MachineInfo[] = [
     models: [
       {
         modelId: "nofdd",
-        displayInMainMenu: true,
         displayName: "ZX Spectrum +2E (no FDD)",
         config: {
           [MC_DISK_SUPPORT]: 0
@@ -68,7 +74,6 @@ export const machineRegistry: MachineInfo[] = [
       },
       {
         modelId: "fdd1",
-        displayInMainMenu: true,
         displayName: "ZX Spectrum +3E (1 FDD)",
         config: {
           [MC_DISK_SUPPORT]: 1
@@ -76,14 +81,12 @@ export const machineRegistry: MachineInfo[] = [
       },
       {
         modelId: "fdd2",
-        displayInMainMenu: false,
         displayName: "ZX Spectrum +3E (2 FDDs)",
         config: {
           [MC_DISK_SUPPORT]: 2
         }
       }
-    ],
-    hasDefaultModel: true
+    ]
   },
   {
     machineId: MI_Z88,

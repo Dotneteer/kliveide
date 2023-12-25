@@ -259,7 +259,7 @@ async function createAppWindows () {
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
-      await setMachineType(appSettings.machineId ?? "sp48");
+      await setMachineType(appSettings.machineId ?? "sp48", appSettings.modelId);
       mainStore.dispatch(
         setClockMultiplierAction(appSettings.clockMultiplier ?? 1)
       );
