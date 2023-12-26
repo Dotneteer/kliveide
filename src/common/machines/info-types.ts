@@ -1,6 +1,7 @@
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { MF_TAPE_SUPPORT } from "./constants";
 
 /**
  * This type stores common information about a particular emulated machine
@@ -77,3 +78,44 @@ export type MachineFeatureSet = Record<string, any>;
  * This type represents a set of features of a particular machine
  */
 export type MachineConfigSet = Record<string, any>;
+
+/**
+ * This type represents a machine-related menu item
+ */
+export type MachineMenuItem = {
+  id: string;
+  label: string;
+  type?: "separator" | "submenu" | "normal" | "checkbox" | "radio";
+  checked?: boolean;
+  enabled?: boolean;
+  click?: () => Promise<void>;
+};
+
+/**
+ * This function collects machine-related menu items
+ */
+export type MachineMenuRenderer = (
+  windowInfo: any,
+  machine: MachineInfo,
+  model?: MachineModel
+) => MachineMenuItem[];
+
+/**
+ * Represents a machine-specifoc help link item
+ */
+export type HelpLinkInfo = {
+  label: string;
+  url: string;
+};
+
+/**
+ * This type represents a machine-related menu item information
+ */
+export type MachineMenuInfo = {
+  viewItems?: MachineMenuRenderer;
+  machineItems?: MachineMenuRenderer;
+  ideItems?: MachineMenuRenderer;
+  helpItems?: MachineMenuRenderer;
+  helpLinks?: HelpLinkInfo[];
+};
+
