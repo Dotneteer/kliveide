@@ -1,7 +1,7 @@
 // Available machine IDs
 export const MI_SPECTRUM_48 = "sp48";
 export const MI_SPECTRUM_128 = "sp128";
-export const MI_SPECTRUM_P2_3 = "spp2-3e";
+export const MI_SPECTRUM_3E = "spp3e";
 export const MI_Z88 = "z88";
 export const MI_ZXNEXT = "zxnext";
 

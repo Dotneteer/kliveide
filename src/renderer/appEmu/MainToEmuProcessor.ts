@@ -29,8 +29,8 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
-import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
+import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 
 const borderColors = [
   "Black",
@@ -367,7 +367,7 @@ export async function processMainToEmuMessages (
       if (machine.machineId.startsWith("spp3e")) {
         return {
           type: "EmuGetNecUpd765StateResponse",
-          log: (machine as ZxSpectrumP3eMachine).floppyDevice.getLogEntries()
+          log: (machine as ZxSpectrumP3EMachine).floppyDevice.getLogEntries()
         };
       }
     }

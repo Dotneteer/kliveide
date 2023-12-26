@@ -14,6 +14,8 @@ import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { MachineModel } from "@common/machines/info-types";
+import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -31,22 +33,20 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor (public readonly modelId?: string) {
+  constructor (public readonly modelInfo?: MachineModel) {
     super();
     // --- Set up machine attributes
-    this.baseClockFrequency = modelId.startsWith("ntsc")
-      ? 3_527_500
-      : 3_500_000;
+    this._is16KModel = modelInfo?.config?.[MC_MEM_SIZE] === 16;
+    const isNtsc = modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
+    this.baseClockFrequency = isNtsc ? 3_527_500 : 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
-    this._is16KModel = modelId.endsWith("16k");
-    console.log("is16KModel: " + this._is16KModel);
 
     // --- Create and initialize devices
     this.keyboardDevice = new KeyboardDevice(this);
     this.screenDevice = new CommonScreenDevice(
       this,
-      modelId.startsWith("ntsc")
+      isNtsc
         ? CommonScreenDevice.ZxSpectrum48NtscScreenConfiguration
         : CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
@@ -189,7 +189,6 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   doWriteMemory (address: number, value: number): void {
     const slot = address >>> 14;
     if ((this._is16KModel && slot === 1) || (!this._is16KModel && slot !== 0)) {
-      console.log("write", address, value);
       this._memory[address] = value;
     }
   }

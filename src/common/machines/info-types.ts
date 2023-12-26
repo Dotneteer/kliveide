@@ -30,15 +30,6 @@ export type MachineInfo = {
    * Available machine models
    */
   models?: MachineModel[];
-
-  // --- Number of ROMS available
-  roms?: number;
-
-  // --- Number of memory banks available
-  banks?: number;
-
-  // --- The machine supports tape files
-  tapeSupport?: boolean;
 };
 
 /**
@@ -74,7 +65,7 @@ export type MachineUiRendererInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: (store: Store<AppState>, modelId?: string) => IZ80Machine;
+  factory: (store: Store<AppState>, model: MachineModel) => IZ80Machine;
 };
 
 /**

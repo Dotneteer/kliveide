@@ -3,7 +3,7 @@ import {
   MI_SPECTRUM_128,
   MI_Z88,
   MF_TAPE_SUPPORT,
-  MI_SPECTRUM_P2_3,
+  MI_SPECTRUM_3E,
   MC_SCREEN_FREQ,
   MF_ROM,
   MF_BANK,
@@ -32,7 +32,7 @@ export const machineRegistry: MachineInfo[] = [
       },
       {
         modelId: "ntsc",
-        displayName: "ZX Spectrum 48K (NTSC, 60Hz)",
+        displayName: "ZX Spectrum 48K (NTSC)",
         config: {
           [MC_SCREEN_FREQ]: "ntsc"
         }
@@ -57,7 +57,7 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    machineId: MI_SPECTRUM_P2_3,
+    machineId: MI_SPECTRUM_3E,
     displayName: "ZX Spectrum +2E/+3E",
     features: {
       [MF_TAPE_SUPPORT]: true,
@@ -67,7 +67,7 @@ export const machineRegistry: MachineInfo[] = [
     models: [
       {
         modelId: "nofdd",
-        displayName: "ZX Spectrum +2E (no FDD)",
+        displayName: "ZX Spectrum +2E",
         config: {
           [MC_DISK_SUPPORT]: 0
         }

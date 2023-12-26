@@ -23,8 +23,9 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
-import { machineRegistry } from "@renderer/registry";
 import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -72,8 +73,8 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
-  const romsNum = machineInfo.roms ?? 1;
-  const banksNum = machineInfo.banks ?? 0;
+  const romsNum = machineInfo.features?.[MF_ROM] ?? 1;
+  const banksNum = machineInfo.features?.[MF_BANK] ?? 0;
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   const refreshInProgress = useRef(false);

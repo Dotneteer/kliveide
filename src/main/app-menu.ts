@@ -532,8 +532,6 @@ export function setupMenu (
     machineTypesMenu.push({ type: "separator" });
   });
 
-  const allMachineTypesMenu: MenuItemConstructorOptions[] = [];
-
   // --- All standard submenus under "Machine"
   const machineSubMenu: MenuItemConstructorOptions[] = [
     {

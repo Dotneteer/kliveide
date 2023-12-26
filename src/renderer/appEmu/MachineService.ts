@@ -17,7 +17,7 @@ import {
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MachineInfo } from "@common/machines/info-types";
+import { MachineInfo, MachineModel } from "@common/machines/info-types";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -44,13 +44,17 @@ class MachineService implements IMachineService {
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       m =>
-        m.machineId === machineId && m.models?.find(m => m.modelId === modelId)
+        m.machineId === machineId &&
+        (!m.models || m.models.find(m => m.modelId === modelId))
     );
     if (!machineInfo) {
       throw new Error(
         `Cannot find machine type '${machineId}' in the registry.`
       );
     }
+
+    // --- Get the model instance
+    const modelInfo = machineInfo.models?.find(m => m.modelId === modelId);
 
     // --- Ok, dismount the old machine type
     let oldBps: BreakpointInfo[] | undefined;
@@ -70,7 +74,7 @@ class MachineService implements IMachineService {
     const rendererInfo = machineRendererRegistry.find(
       r => r.machineId === machineId
     );
-    const machine = rendererInfo.factory(this.store, modelId);
+    const machine = rendererInfo.factory(this.store, modelInfo);
     this._controller = new MachineController(
       this.store,
       this.messenger,
@@ -106,10 +110,19 @@ class MachineService implements IMachineService {
   /**
    * Gets descriptive information about the current machine
    */
-  getMachineInfo (): MachineInfo | undefined {
+  getMachineInfo (): { machine: MachineInfo; model: MachineModel } | undefined {
     const currentType = this.store.getState()?.emulatorState?.machineId;
     const currentModel = this.store.getState()?.emulatorState?.modelId;
-    return machineRegistry.find(m => m.machineId === currentType && m.models?.find(m => m.modelId === currentModel));
+    const machine = machineRegistry.find(
+      m =>
+        m.machineId === currentType &&
+        (!m.models || m.models?.find(m => m.modelId === currentModel))
+    );
+    if (!machine) {
+      return undefined;
+    }
+    const model = machine.models?.find(m => m.modelId === currentModel);
+    return { machine, model };
   }
 
   /**

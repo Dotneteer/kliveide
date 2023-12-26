@@ -13,7 +13,7 @@ import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand } from "./command-parser";
 import { IdeCommandBase } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
-import { machineRegistry } from "@renderer/registry";
+import { machineRegistry } from "@common/machines/machine-registry";
 
 const MAX_HISTORY = 1024;
 
