@@ -83,12 +83,13 @@ export type MachineConfigSet = Record<string, any>;
  * This type represents a machine-related menu item
  */
 export type MachineMenuItem = {
-  id: string;
-  label: string;
+  id?: string;
+  label?: string;
   type?: "separator" | "submenu" | "normal" | "checkbox" | "radio";
   checked?: boolean;
   enabled?: boolean;
   click?: () => Promise<void>;
+  submenu?: MachineMenuItem[];
 };
 
 /**
@@ -104,8 +105,8 @@ export type MachineMenuRenderer = (
  * Represents a machine-specifoc help link item
  */
 export type HelpLinkInfo = {
-  label: string;
-  url: string;
+  label?: string;
+  url?: string;
 };
 
 /**
@@ -114,6 +115,7 @@ export type HelpLinkInfo = {
 export type MachineMenuInfo = {
   viewItems?: MachineMenuRenderer;
   machineItems?: MachineMenuRenderer;
+  projectItems?: MachineMenuRenderer;
   ideItems?: MachineMenuRenderer;
   helpItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];

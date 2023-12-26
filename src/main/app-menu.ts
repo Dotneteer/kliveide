@@ -32,11 +32,8 @@ import {
   setIdeFontSizeAction,
   dimMenuAction,
   setVolatileDocStateAction,
-  setDiskFileAction,
-  protectDiskAction,
   setRestartTarget,
   showKeyboardAction,
-  setFastLoadAction,
   setKeyMappingsAction
 } from "../common/state/actions";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -54,7 +51,6 @@ import {
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
-  BASIC_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "../common/state/common-ids";
@@ -105,18 +101,12 @@ const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
-const FLOPPY_MENU = "floppy_menu";
-const CREATE_DISK_FILE = "create_disk_file";
-const INSERT_DISK = "insert_disk";
-const PROTECT_DISK = "protect_disk";
-const EJECT_DISK = "eject_disk";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_disassembly";
-const IDE_SHOW_BASIC = "show_basic";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -157,7 +147,6 @@ export function setupMenu (
   const currentMachine = machineRegistry.find(m => m.machineId === machineId);
   const currentModel = currentMachine?.models?.find(m => m.modelId === modelId);
   const machineMenus = machineMenuRegistry[machineId];
-  const disksState = appState?.emulatorState?.floppyDisks ?? [];
   const ideFocus = appState?.ideFocused;
 
   const settingsReader = createSettingsReader(mainStore);
@@ -306,6 +295,19 @@ export function setupMenu (
       };
     }
   );
+
+  // --- Machine-specific view menu items
+  let specificViewMenus: MenuItemConstructorOptions[] = [];
+  if (machineMenus && machineMenus.viewItems) {
+    specificViewMenus = machineMenus.viewItems(
+      {
+        emuWindow,
+        ideWindow
+      },
+      currentMachine,
+      currentModel
+    );
+  }
 
   // --- Assemble the view menu
   template.push({
@@ -497,7 +499,9 @@ export function setupMenu (
         id: EDITOR_FONT_SIZE,
         label: "Editor Font Size",
         submenu: editorFontMenu
-      }
+      },
+      { type: "separator" },
+      ...specificViewMenus
     ])
   });
 
@@ -561,7 +565,7 @@ export function setupMenu (
         }
       });
     } else {
-      mt.models.forEach((m, idx) => {
+      mt.models.forEach(m => {
         machineTypesMenu.push({
           id: `machine_${mt.machineId}_${m.modelId}`,
           label: m.displayName,
@@ -579,9 +583,10 @@ export function setupMenu (
     machineTypesMenu.push({ type: "separator" });
   });
 
-  let machineSpecificMenus: MenuItemConstructorOptions[] = [];
+  // --- Machine-specific menus
+  let specificMachineMenus: MenuItemConstructorOptions[] = [];
   if (machineMenus && machineMenus.machineItems) {
-    const machineItems = machineMenus.machineItems(
+    specificMachineMenus = machineMenus.machineItems(
       {
         emuWindow,
         ideWindow
@@ -589,16 +594,6 @@ export function setupMenu (
       currentMachine,
       currentModel
     );
-    machineSpecificMenus = machineItems.map(mi => {
-      return {
-        id: mi.id,
-        label: mi.label,
-        type: mi.type,
-        checked: mi.checked,
-        enabled: mi.enabled,
-        click: mi.click
-      };
-    });
   }
 
   // --- All standard submenus under "Machine"
@@ -698,7 +693,7 @@ export function setupMenu (
       submenu: soundLeveMenu
     },
     { type: "separator" },
-    ...machineSpecificMenus,
+    ...specificMachineMenus,
     { type: "separator" },
     {
       id: SELECT_KEY_MAPPING,
@@ -720,74 +715,6 @@ export function setupMenu (
     }
   ];
 
-  // // --- Optional floppy menus
-  // if (currentMachine?.supportedFdds) {
-  //   // --- Yes, it's a machine with FDDs!
-  //   const floppySubMenu: MenuItemConstructorOptions[] = [
-  //     {
-  //       id: CREATE_DISK_FILE,
-  //       label: "Create Disk File...",
-  //       click: () => {
-  //         console.log("Create Disk File");
-  //       }
-  //     },
-  //     { type: "separator" }
-  //   ];
-  //   createDiskMenu(0, "a");
-  //   if (currentMachine.supportedFdds > 1) {
-  //     createDiskMenu(1, "b");
-  //   }
-
-  //   const fddMenu: MenuItemConstructorOptions[] = [
-  //     { type: "separator" },
-  //     {
-  //       id: FLOPPY_MENU,
-  //       label: "Floppy Disks",
-  //       submenu: floppySubMenu
-  //     }
-  //   ];
-
-  //   machineSubMenu.push(...fddMenu);
-
-  //   function createDiskMenu (index: number, suffix: string): void {
-  //     const state = disksState[index];
-  //     floppySubMenu.push({ type: "separator" });
-  //     if (state?.diskFile) {
-  //       floppySubMenu.push({
-  //         id: `${EJECT_DISK}_${suffix}`,
-  //         label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
-  //         click: async () => {
-  //           await ejectDiskFile(index, suffix);
-  //         }
-  //       });
-  //       floppySubMenu.push({
-  //         id: `${PROTECT_DISK}_${suffix}`,
-  //         type: "checkbox",
-  //         checked: !!state.writeProtected,
-  //         label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
-  //         click: async () => {
-  //           mainStore.dispatch(protectDiskAction(index, !state.writeProtected));
-  //           await logEmuEvent(
-  //             `Write protection turned ${
-  //               state.writeProtected ? "on" : "off"
-  //             } for drive ${suffix.toUpperCase()}`
-  //           );
-  //         }
-  //       });
-  //     }
-  //     floppySubMenu.push({
-  //       id: `${INSERT_DISK}_${suffix}`,
-  //       label: state?.diskFile
-  //         ? `Change Disk in Drive ${suffix.toUpperCase()}...`
-  //         : `Insert Disk into Drive ${suffix.toUpperCase()}...`,
-  //       click: async () => {
-  //         await setDiskFile(emuWindow, index, suffix);
-  //         await saveKliveProject();
-  //       }
-  //     });
-  //   }
-  // }
-
   // --- Prepare the machine menu
   template.push({
     label: "Machine",
@@ -798,9 +725,19 @@ export function setupMenu (
   // Project Menu
 
   if (kliveProject) {
-    /**
-     * Project menu
-     */
+    // --- Machine-specific view menu items
+    let specificProjectMenus: MenuItemConstructorOptions[] = [];
+    if (machineMenus && machineMenus.projectItems) {
+      specificProjectMenus = machineMenus.projectItems(
+        {
+          emuWindow,
+          ideWindow
+        },
+        currentMachine,
+        currentModel
+      );
+    }
+
     template.push({
       label: "Project",
       submenu: [
@@ -862,9 +799,26 @@ export function setupMenu (
               displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
             );
           }
-        }
+        },
+        { type: "separator" },
+        ...specificProjectMenus
       ]
     });
+  }
+
+  // ==========================================================================
+  // IDE Menu
+
+  let specificIdeMenus: MenuItemConstructorOptions[] = [];
+  if (machineMenus && machineMenus.ideItems) {
+    specificIdeMenus = machineMenus.ideItems(
+      {
+        emuWindow,
+        ideWindow
+      },
+      currentMachine,
+      currentModel
+    );
   }
 
   template.push({
@@ -909,30 +863,37 @@ export function setupMenu (
         }
       },
       { type: "separator" },
-      {
-        id: IDE_SHOW_BASIC,
-        label: "Show BASIC Listing",
-        type: "checkbox",
-        checked: volatileDocs[BASIC_PANEL_ID],
-        click: async () => {
-          await sendFromMainToIde({
-            type: "IdeShowBasic",
-            show: !volatileDocs[BASIC_PANEL_ID]
-          });
-          mainStore.dispatch(
-            setVolatileDocStateAction(
-              BASIC_PANEL_ID,
-              !volatileDocs[BASIC_PANEL_ID]
-            )
-          );
-        }
-      },
-      { type: "separator" }
+      ...specificIdeMenus
     ]
   });
 
   // ==========================================================================
   // Help menu
+
+  let specificHelpMenus: MenuItemConstructorOptions[] = [];
+  if (machineMenus && machineMenus.helpItems) {
+    specificIdeMenus = machineMenus.helpItems(
+      {
+        emuWindow,
+        ideWindow
+      },
+      currentMachine,
+      currentModel
+    );
+  }
+
+  const helpLinks: MenuItemConstructorOptions[] = (
+    machineMenus?.helpLinks ?? []
+  ).map(hl => {
+    if (hl.label) {
+      return {
+        label: hl.label,
+        click: () => shell.openExternal(hl.url)
+      };
+    } else {
+      return { type: "separator" };
+    }
+  });
 
   template.push({
     id: HELP_MENU,
@@ -974,7 +935,11 @@ export function setupMenu (
             mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
           }
         }
-      }
+      },
+      { type: "separator" },
+      ...specificHelpMenus,
+      { type: "separator" },
+      ...helpLinks
     ]
   });
 
@@ -986,12 +951,7 @@ export function setupMenu (
   // Preserve the submenus as a dedicated array.
   const submenus = template.map(i => i.submenu);
 
-  function templateTransform (wnd: BrowserWindow) {
-    return wnd.isFocused()
-      ? (i, idx) => (i.submenu = submenus[idx])
-      : i => (i.submenu = null);
-  }
-
+  // --- Set the menu
   if (__DARWIN__) {
     const windowFocused = emuTraits.isFocused ? emuWindow : ideWindow;
     if (!windowFocused.isDestroyed()) {
@@ -1018,84 +978,14 @@ export function setupMenu (
     appSettings.windowStates.showIdeOnStartup = true;
     saveAppSettings();
   }
-}
 
-/**
- * Sets the disk file to use with the machine
- * @param browserWindow Host browser window
- * @param index Disk drive index (0: A, 1: B)
- * @returns The data blocks read from the tape, if successful; otherwise, undefined.
- */
-async function setDiskFile (
-  browserWindow: BrowserWindow,
-  index: number,
-  suffix: string
-): Promise<void> {
-  const DISK_FILE_FOLDER = "diskFileFolder";
-  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
-  const defaultPath =
-    appSettings?.folders?.[DISK_FILE_FOLDER] ||
-    (lastFile ? path.dirname(lastFile) : app.getPath("home"));
-  const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select Disk File",
-    defaultPath,
-    filters: [
-      { name: "Disk Files", extensions: ["dsk"] },
-      { name: "All Files", extensions: ["*"] }
-    ],
-    properties: ["openFile"]
-  });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-
-  // --- Read the file
-  const filename = dialogResult.filePaths[0];
-  const diskFileFolder = path.dirname(filename);
-
-  // --- Store the last selected tape file
-  mainStore.dispatch(setDiskFileAction(index, filename));
-
-  // --- Save the folder into settings
-  appSettings.folders ??= {};
-  appSettings.folders[DISK_FILE_FOLDER] = diskFileFolder;
-
-  try {
-    const contents = fs.readFileSync(filename);
-    await sendFromMainToEmu({
-      type: "EmuSetDiskFile",
-      file: filename,
-      contents,
-      diskIndex: index
-    });
-    await logEmuEvent(
-      `Disk file in drive ${suffix.toUpperCase()} set to ${filename}`
-    );
-  } catch (err) {
-    dialog.showErrorBox(
-      "Error while reading disk file",
-      `Reading file ${filename} resulted in error: ${err.message}`
-    );
-  }
-}
-
-/**
- * Sets the disk file to use with the machine
- * @param browserWindow Host browser window
- * @param index Disk drive index (0: A, 1: B)
- * @returns The data blocks read from the tape, if successful; otherwise, undefined.
- */
-async function ejectDiskFile (index: number, suffix: string): Promise<void> {
-  mainStore.dispatch(setDiskFileAction(index, null));
-  try {
-    await sendFromMainToEmu({
-      type: "EmuSetDiskFile",
-      diskIndex: index
-    });
-    await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
-  } catch (err) {
-    dialog.showErrorBox(
-      "Error while ejecting disk file",
-      `Ejecting resulted in error: ${err.message}`
-    );
+  function templateTransform (wnd: BrowserWindow) {
+    return wnd.isFocused()
+      ? (
+          i: { submenu: Electron.MenuItemConstructorOptions[] | Electron.Menu },
+          idx: string | number
+        ) => (i.submenu = submenus[idx])
+      : (i: { submenu: null }) => (i.submenu = null);
   }
 }
 
