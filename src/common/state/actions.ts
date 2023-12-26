@@ -162,6 +162,11 @@ export const setMachineTypeAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setModelTypeAction: ActionCreator = (id: string) => ({
+  type: "SET_MODEL_TYPE",
+  payload: { id }
+});
+
 export const setMachineStateAction: ActionCreator = (
   state: MachineControllerState
 ) => ({

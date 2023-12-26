@@ -28,6 +28,7 @@ export type AppSettings = {
 
   fastLoad?: boolean;
   machineId?: string;
+  modelId?: string;
   clockMultiplier?: number;
   soundLevel?: number;
   lastTapeFile?: string;
@@ -66,6 +67,7 @@ export function saveAppSettings (): void {
     appSettings.maximizeTools = state.ideViewOptions?.maximizeTools ?? false;
     appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
     appSettings.machineId = state.emulatorState?.machineId;
+    appSettings.modelId = state.emulatorState?.modelId;
     appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
     appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
     appSettings.lastTapeFile = state.emulatorState?.tapeFile;

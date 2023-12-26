@@ -8,7 +8,6 @@ import {
   DSK_EDITOR
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
-import { MachineInfo } from "./abstractions/MachineInfo";
 import { Activity } from "./abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./abstractions/CustomLanguageInfo";
 import { DocumentRendererInfo } from "./abstractions/DocumentRendererInfo";
@@ -41,10 +40,7 @@ import { ZxSpectrum48Machine } from "../emu/machines/zxSpectrum48/ZxSpectrum48Ma
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
-import { ZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
-import { ZxSpectrumP2eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP2eMachine";
-import { ZxSpectrumP3eF2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eF2Machine";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 
@@ -202,53 +198,6 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "floppy",
     iconFill: "--console-ansi-bright-blue"
   }
-];
-
-// --- Set up machine type registry
-export const machineRegistry: MachineInfo[] = [
-  {
-    machineId: "sp48",
-    displayName: "ZX Spectrum 48K",
-    tapeSupport: true,
-    factory: () => new ZxSpectrum48Machine()
-  },
-  {
-    machineId: "sp128",
-    displayName: "ZX Spectrum 128K",
-    roms: 2,
-    banks: 8,
-    tapeSupport: true,
-    factory: () => new ZxSpectrum128Machine()
-  },
-  {
-    machineId: "spp2e",
-    displayName: "ZX Spectrum +2E",
-    roms: 4,
-    banks: 8,
-    tapeSupport: true,
-    factory: store => new ZxSpectrumP2eMachine(store)
-  },
-  {
-    machineId: "spp3e",
-    displayName: "ZX Spectrum +3E (1 FDD)",
-    roms: 4,
-    banks: 8,
-    tapeSupport: true,
-    factory: (store) => new ZxSpectrumP3eMachine(store)
-  },
-  {
-    machineId: "spp3ef2",
-    displayName: "ZX Spectrum +3E (2 FDDs)",
-    roms: 4,
-    banks: 8,
-    tapeSupport: true,
-    factory: (store) => new ZxSpectrumP3eF2Machine(store)
-  },
-  {
-    machineId: "z88",
-    displayName: "Cambridge Z88",
-    factory: () => new Z88Machine()
-  },
 ];
 
 // --- The registry of ile types

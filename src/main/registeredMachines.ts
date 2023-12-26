@@ -33,12 +33,14 @@ export const registeredMachines = [
 
 /**
  * This function set the machine type to the specified one
- * @param machineId
+ * @param machineId ID of the machine type
+ * @param modelId ID of the machine model
  */
-export async function setMachineType (machineId: string): Promise<void> {
+export async function setMachineType (machineId: string, modelId?: string): Promise<void> {
   await sendFromMainToEmu({
     type: "EmuSetMachineType",
-    machineId
+    machineId,
+    modelId
   });
   const mt = registeredMachines.find(mt => mt.id === machineId);
   if (mt) {

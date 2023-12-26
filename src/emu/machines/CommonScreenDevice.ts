@@ -41,12 +41,32 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
-  static readonly ZxSpectrum48ScreenConfiguration: ScreenConfiguration = {
+  static readonly ZxSpectrum48PalScreenConfiguration: ScreenConfiguration = {
     verticalSyncLines: 8,
     nonVisibleBorderTopLines: 7,
     borderTopLines: 49,
     borderBottomLines: 48,
     nonVisibleBorderBottomLines: 8,
+    displayLines: 192,
+    borderLeftTime: 24,
+    borderRightTime: 24,
+    displayLineTime: 128,
+    horizontalBlankingTime: 40,
+    nonVisibleBorderRightTime: 8,
+    pixelDataPrefetchTime: 2,
+    attributeDataPrefetchTime: 1,
+    contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
+  };
+
+  /**
+   * Define the screen configuration attributes of ZX Spectrum 48K (NTSC)
+   */
+  static readonly ZxSpectrum48NtscScreenConfiguration: ScreenConfiguration = {
+    verticalSyncLines: 8,
+    nonVisibleBorderTopLines: 15,
+    borderTopLines: 25,
+    borderBottomLines: 24,
+    nonVisibleBorderBottomLines: 0,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,

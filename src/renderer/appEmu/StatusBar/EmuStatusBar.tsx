@@ -33,7 +33,7 @@ export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
   useEffect(() => {
     if (machineId) {
       const info = machineService.getMachineInfo();
-      setMachineName(info?.displayName ?? "");
+      setMachineName(info.model?.displayName ?? info.machine.displayName ?? "");
     }
     if (controller) {
       setFreq(controller.machine.baseClockFrequency * clockMultiplier);

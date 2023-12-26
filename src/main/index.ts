@@ -50,7 +50,7 @@ import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
 import { release } from "os";
 import { join } from "path";
-import { setSelectedTapeFile, setupMenu } from "./app-menu";
+import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "../electron/electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
@@ -72,6 +72,7 @@ import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
+import { setSelectedTapeFile } from "./machine-menus/machine-menu-registry";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -259,7 +260,7 @@ async function createAppWindows () {
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
-      await setMachineType(appSettings.machineId ?? "sp48");
+      await setMachineType(appSettings.machineId ?? "sp48", appSettings.modelId);
       mainStore.dispatch(
         setClockMultiplierAction(appSettings.clockMultiplier ?? 1)
       );

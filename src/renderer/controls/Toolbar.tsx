@@ -20,7 +20,8 @@ import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { __DARWIN__ } from "../../electron/electron-utils";
-import { machineRegistry } from "@renderer/registry";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 
 type Props = {
   ide: boolean;
@@ -104,6 +105,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       reportMessagingError(`MainSaveProject call failed: ${response.message}`);
     }
   };
+
+  const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;
 
   useEffect(() => {
     setStartMode(ide && kliveProjectLoaded ? "debug" : "start");
@@ -336,8 +339,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               }}
             />
           )}
-          {machineInfo?.tapeSupport && <ToolbarSeparator />}
-          {machineInfo?.tapeSupport && (
+          {tapeSupport && <ToolbarSeparator />}
+          {tapeSupport && (
             <IconButton
               iconName='rocket'
               fill='--color-toolbarbutton'
@@ -349,7 +352,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               }}
             />
           )}
-          {machineInfo?.tapeSupport && (
+          {tapeSupport && (
             <IconButton
               iconName='reverse-tape'
               fill='--color-toolbarbutton'

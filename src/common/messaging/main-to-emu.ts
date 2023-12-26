@@ -3,8 +3,8 @@ import { SysVar } from "@abstractions/SysVar";
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 /**
  * The main process signs that the emulator should change to a new emulated machine type
@@ -12,6 +12,7 @@ import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 export interface EmuSetMachineTypeRequest extends MessageBase {
   type: "EmuSetMachineType";
   machineId: string;
+  modelId?: string;
 }
 
 /**
