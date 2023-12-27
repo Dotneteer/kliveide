@@ -184,7 +184,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Set up the machine frame length
     this.setTactsInFrame(16384);
-
   }
 
   /**
@@ -559,25 +558,21 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Check id the CPU is HALTed
     const keyboard = this.keyboardDevice;
-    if (this.halted) {
+    if (this.halted && this.i === 0x3f) {
       // --- Check if I is 0x3F
-      if (this.i === 0x3f) {
-        this.isInSleepMode = true;
-        if (this._shiftsReleased) {
-          // --- Test if both shift keys are pressed again
-          if (keyboard.isLeftShiftDown && keyboard.isRightShiftDown) {
-            this._shiftsReleased = false;
-            this.isInSleepMode = false;
-            return;
-          }
-        } else {
-          // --- Test if both shift keys are released
-          if (!keyboard.isLeftShiftDown && !keyboard.isRightShiftDown) {
-            this._shiftsReleased = true;
-          }
+      this.isInSleepMode = true;
+      if (this._shiftsReleased) {
+        // --- Test if both shift keys are pressed again
+        if (keyboard.isLeftShiftDown && keyboard.isRightShiftDown) {
+          this._shiftsReleased = false;
+          this.isInSleepMode = false;
+          return;
         }
       } else {
-        this.isInSleepMode = false;
+        // --- Test if both shift keys are released
+        if (!keyboard.isLeftShiftDown && !keyboard.isRightShiftDown) {
+          this._shiftsReleased = true;
+        }
       }
     } else {
       this.isInSleepMode = false;
@@ -632,14 +627,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       case "battery_low":
         this.setKeyStatus(Z88KeyCode.ShiftL, true);
         this.setKeyStatus(Z88KeyCode.ShiftR, true);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 400));
         this.setKeyStatus(Z88KeyCode.ShiftL, false);
         this.setKeyStatus(Z88KeyCode.ShiftR, false);
         break;
       case "press_shifts":
         this.setKeyStatus(Z88KeyCode.ShiftL, true);
         this.setKeyStatus(Z88KeyCode.ShiftR, true);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 400));
         this.setKeyStatus(Z88KeyCode.ShiftL, false);
         this.setKeyStatus(Z88KeyCode.ShiftR, false);
         break;
