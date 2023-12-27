@@ -86,8 +86,8 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
-    super.hardReset();
+  async hardReset (): Promise<void> {
+    await super.hardReset();
     for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
     if (this._is16KModel) {
       for (let i = 0x8000; i < this._memory.length; i++) this._memory[i] = 0xff;

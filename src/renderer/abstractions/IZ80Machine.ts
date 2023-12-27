@@ -157,4 +157,10 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * @param address Address to get the partition for
    */
   getPartition(address: number): number | undefined;
+
+  /**
+   * Executes the specified custom command
+   * @param command Command to execute
+   */
+  executeCustomCommand(command: string): Promise<void>;
 }

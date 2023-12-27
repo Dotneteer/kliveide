@@ -90,10 +90,15 @@ export interface IMachineController {
    */
   pause(): Promise<void>;
 
-  /// <summary>
-  /// Stop the running or paused machine.
-  /// </summary>
+  /**
+   * Stop the running or paused machine.
+   */
   stop(): Promise<void>;
+
+  /**
+   * Reset the CPU of the machine.
+   */
+  cpuReset(): Promise<void>;
 
   /**
    * Stop and then start the machine again.
@@ -114,6 +119,12 @@ export interface IMachineController {
    * Starts the machine in step-out mode.
    */
   stepOut(): Promise<void>;
+
+  /**
+   * Executes a custom command
+   * @param command Custom command string
+   */
+  customCommand(command: string): Promise<void>;
 
   /**
    * Runs the specified code in the virtual machine

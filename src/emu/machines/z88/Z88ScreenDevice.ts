@@ -196,6 +196,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
 
     // --- Test if LCD is ON
     if (!(blink.COM & COMFlags.LCDON)) {
+      console.log("LCD OFF");
       if (!this.lcdWentOff) {
         this.renderScreenOff();
       }

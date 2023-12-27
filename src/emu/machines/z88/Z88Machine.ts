@@ -15,14 +15,17 @@ import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
-import { INTFlags, IZ88BlinkDevice } from "./IZ88BlinkDevice";
+import { COMFlags, INTFlags, IZ88BlinkDevice } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
+import { MachineModel } from "@common/machines/info-types";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+  private _shiftsReleased = false;
 
   /**
    * The unique identifier of the machine type
@@ -78,8 +81,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Initialize the machine
    */
-  constructor () {
+  constructor (model: MachineModel) {
     super();
+
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
     this.clockMultiplier = 1;
@@ -94,8 +98,31 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
-    this.screenDevice.setScreenSize(0xff, 8);
     this.beeperDevice = new Z88BeeperDevice(this);
+
+    // --- Set up the screen size
+    let scw = 0xff;
+    let sch = 8;
+    switch (model?.config[MC_SCREEN_SIZE]) {
+      case "640x320":
+        scw = 0xff;
+        sch = 40;
+        break;
+      case "640x480":
+        scw = 0xff;
+        sch = 60;
+        break;
+      case "800x320":
+        scw = 100;
+        sch = 40;
+        break;
+      case "800x480":
+        scw = 100;
+        sch = 60;
+        break;
+    }
+
+    this.screenDevice.setScreenSize(scw, sch);
     this.reset();
   }
 
@@ -122,9 +149,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
-    super.hardReset();
-    // TODO: Implement Z88-specific hard reset
+  async hardReset (): Promise<void> {
+    await super.hardReset();
+    this.memory.reset();
+    await this.setup();
     this.reset();
   }
 
@@ -138,14 +166,13 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Reset and setup devices
     this.blinkDevice.reset();
     this.keyboardDevice.reset();
+    this._shiftsReleased = false;
     this.screenDevice.reset();
     this.beeperDevice.reset();
     const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
     if (typeof audioRate === "number") {
       this.beeperDevice.setAudioSampleRate(audioRate);
     }
-
-    // TODO: Implement Z88-specific reset
 
     // --- Prepare for running a new machine loop
     this.clockMultiplier = this.targetClockMultiplier;
@@ -157,6 +184,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Set up the machine frame length
     this.setTactsInFrame(16384);
+
   }
 
   /**
@@ -530,38 +558,30 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.screenDevice.renderScreen();
 
     // --- Check id the CPU is HALTed
-    // const keyboard = this.keyboardDevice;
-    // if (this.halted) {
-    //   // --- Check if I is 0x3F
-    //   if (this.i === 0x3f) {
-    //     this.isInSleepMode = true;
-    //     if (keyboard.shiftsReleased) {
-    //       // --- Test if both shift keys are pressed again
-    //       if (((keyboardLines[7] & 0x80) | (keyboardLines[6] & 0x40)) == 0xc0) {
-    //         shiftsReleased = false;
-    //         return;
-    //       }
-    //     } else {
-    //       // --- Test if both shift keys are released
-    //       if (((keyboardLines[7] & 0x80) | (keyboardLines[6] & 0x40)) == 0x00) {
-    //         shiftsReleased = true;
-    //       }
-    //     }
-    //   } else {
-    //     this.isInSleepMode = false;
-    //   }
-    // } else {
-    //   this.isInSleepMode = false;
-    // }
-
-    // // --- Special shift key handling for sleep mode
-    // if (this.isInSleepMode) {
-    //   if (keyboard.isLeftShiftDown && keyboard.isRightShiftDown) {
-    //     // --- Sign both shift as pressed
-    //     keyboardLines[7] |= 0x80;
-    //     keyboardLines[6] |= 0x40;
-    //   }
-    // }
+    const keyboard = this.keyboardDevice;
+    if (this.halted) {
+      // --- Check if I is 0x3F
+      if (this.i === 0x3f) {
+        this.isInSleepMode = true;
+        if (this._shiftsReleased) {
+          // --- Test if both shift keys are pressed again
+          if (keyboard.isLeftShiftDown && keyboard.isRightShiftDown) {
+            this._shiftsReleased = false;
+            this.isInSleepMode = false;
+            return;
+          }
+        } else {
+          // --- Test if both shift keys are released
+          if (!keyboard.isLeftShiftDown && !keyboard.isRightShiftDown) {
+            this._shiftsReleased = true;
+          }
+        }
+      } else {
+        this.isInSleepMode = false;
+      }
+    } else {
+      this.isInSleepMode = false;
+    }
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
@@ -601,6 +621,29 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   get isOsInitialized (): boolean {
     // TODO: Implement this
     return true;
+  }
+
+  /**
+   * Executes the specified custom command
+   * @param command Command to execute
+   */
+  async executeCustomCommand (command: string): Promise<void> {
+    switch (command) {
+      case "battery_low":
+        this.setKeyStatus(Z88KeyCode.ShiftL, true);
+        this.setKeyStatus(Z88KeyCode.ShiftR, true);
+        await new Promise((r) => setTimeout(r, 400));
+        this.setKeyStatus(Z88KeyCode.ShiftL, false);
+        this.setKeyStatus(Z88KeyCode.ShiftR, false);
+        break;
+      case "press_shifts":
+        this.setKeyStatus(Z88KeyCode.ShiftL, true);
+        this.setKeyStatus(Z88KeyCode.ShiftR, true);
+        await new Promise((r) => setTimeout(r, 400));
+        this.setKeyStatus(Z88KeyCode.ShiftL, false);
+        this.setKeyStatus(Z88KeyCode.ShiftR, false);
+        break;
+    }
   }
 
   /**

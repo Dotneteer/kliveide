@@ -105,8 +105,8 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
-    super.hardReset();
+  async hardReset (): Promise<void> {
+    await super.hardReset();
     for (let i = 0; i < 8; i++) {
       this.memory.resetPartition(i);
     }

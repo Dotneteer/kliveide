@@ -8,7 +8,8 @@ import {
   MF_ROM,
   MF_BANK,
   MC_DISK_SUPPORT,
-  MC_MEM_SIZE
+  MC_MEM_SIZE,
+  MC_SCREEN_SIZE
 } from "./constants";
 import { MachineInfo } from "./info-types";
 
@@ -90,9 +91,46 @@ export const machineRegistry: MachineInfo[] = [
   },
   {
     machineId: MI_Z88,
-    displayName: "Cambridge Z88",
+    displayName: "Cambridge Z88 WIP",
     features: {
       [MF_BANK]: 256
-    }
+    },
+    models: [
+      {
+        modelId: "640_64",
+        displayName: "Cambridge Z88 WIP (640x64)",
+        config: {
+          [MC_SCREEN_SIZE]: "640x64"
+        }
+      },
+      {
+        modelId: "640_320",
+        displayName: "Cambridge Z88 WIP (640x320)",
+        config: {
+          [MC_SCREEN_SIZE]: "640x320"
+        }
+      },
+      {
+        modelId: "640_480",
+        displayName: "Cambridge Z88 WIP (640x480)",
+        config: {
+          [MC_SCREEN_SIZE]: "640x480"
+        }
+      },
+      {
+        modelId: "800_320",
+        displayName: "Cambridge Z88 WIP (800x320)",
+        config: {
+          [MC_SCREEN_SIZE]: "800x320"
+        }
+      },
+      {
+        modelId: "800_480",
+        displayName: "Cambridge Z88 WIP (800x480)",
+        config: {
+          [MC_SCREEN_SIZE]: "800x480"
+        }
+      }
+    ]
   }
 ];

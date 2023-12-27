@@ -22,12 +22,14 @@ export type MachineCommand =
   | "start"
   | "pause"
   | "stop"
+  | "reset"
   | "restart"
   | "debug"
   | "stepInto"
   | "stepOver"
   | "stepOut"
-  | "rewind";
+  | "rewind"
+  | "custom";
 
 /**
  * The main process sends a machine command to the emulator
@@ -35,6 +37,7 @@ export type MachineCommand =
 export interface EmuMachineCommandRequest extends MessageBase {
   type: "EmuMachineCommand";
   command: MachineCommand;
+  customCommand?: string;
 }
 
 /**
@@ -254,10 +257,12 @@ export interface EmuGetNecUpd765Response extends MessageBase {
 }
 
 export function createMachineCommand (
-  command: MachineCommand
+  command: MachineCommand,
+  customCommand?: string
 ): EmuMachineCommandRequest {
   return {
     type: "EmuMachineCommand",
-    command
+    command,
+    customCommand
   };
 }

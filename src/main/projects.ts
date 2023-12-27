@@ -328,6 +328,7 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
       showEmuStatusbar: state.emuViewOptions.showStatusBar,
       showEmuToolbar: state.emuViewOptions.showToolbar,
       showKeyboard: state.emuViewOptions.showKeyboard,
+      keyboardLayout: state.emuViewOptions.keyboardLayout,
       showFrameInfo: state.ideViewOptions.showFrameInfo,
       showIdeStatusbar: state.ideViewOptions.showStatusBar,
       showIdeToolbar: state.ideViewOptions.showToolbar,

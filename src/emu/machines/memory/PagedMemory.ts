@@ -36,6 +36,17 @@ export class PagedMemory {
   }
 
   /**
+   * Resets the memory to the specified data byte
+   * @param dataByte Reset value
+   */
+  reset(dataByte = 0): void {
+    
+    for (let i = 0; i < this.memory.length; i++) {
+      this.memory[i] = dataByte;
+    } 
+  }
+
+  /**
    * Sets the page information for the specified 8K memory page
    * @param pageIndex Page index
    * @param offset Memory offset for the page
