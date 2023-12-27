@@ -1,3 +1,4 @@
+import { MachineConfigSet } from "@common/machines/info-types";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
@@ -35,12 +36,14 @@ export const registeredMachines = [
  * This function set the machine type to the specified one
  * @param machineId ID of the machine type
  * @param modelId ID of the machine model
+ * @param config Optional machine configuration
  */
-export async function setMachineType (machineId: string, modelId?: string): Promise<void> {
+export async function setMachineType (machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void> {
   await sendFromMainToEmu({
     type: "EmuSetMachineType",
     machineId,
-    modelId
+    modelId,
+    config
   });
   const mt = registeredMachines.find(mt => mt.id === machineId);
   if (mt) {

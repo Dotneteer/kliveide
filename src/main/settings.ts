@@ -30,6 +30,7 @@ export type AppSettings = {
   fastLoad?: boolean;
   machineId?: string;
   modelId?: string;
+  config?: Record<string, any>;
   clockMultiplier?: number;
   soundLevel?: number;
   lastTapeFile?: string;

@@ -14,11 +14,17 @@ export function emulatorStateReducer (
 
     case "SET_MODEL_TYPE":
       return { ...state, modelId: payload?.id };
-  
+
     case "SET_MACHINE_STATE":
       return {
         ...state,
         machineState: payload.state
+      };
+
+    case "SET_MACHINE_CONFIG":
+      return {
+        ...state,
+        config: payload.value
       };
 
     case "MUTE_SOUND":

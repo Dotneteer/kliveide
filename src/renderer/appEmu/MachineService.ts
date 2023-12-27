@@ -17,7 +17,7 @@ import {
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MachineInfo, MachineModel } from "@common/machines/info-types";
+import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -39,8 +39,10 @@ class MachineService implements IMachineService {
   /**
    * Sets the machine to to the specified one
    * @param machineId ID of the machine type to set
+   * @param modelId ID of the machine model
+   * @param config Optional machine configuration
    */
-  async setMachineType (machineId: string, modelId?: string): Promise<void> {
+  async setMachineType (machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void> {
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       m =>

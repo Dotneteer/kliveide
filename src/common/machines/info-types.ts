@@ -99,7 +99,8 @@ export type MachineMenuItem = {
 export type MachineMenuRenderer = (
   windowInfo: any,
   machine: MachineInfo,
-  model?: MachineModel
+  model?: MachineModel,
+  config?: MachineConfigSet
 ) => MachineMenuItem[];
 
 /**

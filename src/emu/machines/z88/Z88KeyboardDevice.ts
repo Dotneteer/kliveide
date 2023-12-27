@@ -56,6 +56,7 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
    * @param isDown Indicates if the key is pressed down.
    */
   setStatus (key: number, isDown: boolean): void {
+    console.log(`Key ${key} is ${isDown ? "down" : "up"}`);
     // --- Ignore invalid key codes
     if (key > 63) {
       return;

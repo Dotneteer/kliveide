@@ -62,7 +62,7 @@ export async function processMainToEmuMessages (
 
     case "EmuSetMachineType":
       // --- Change the current machine type to a new one
-      await machineService.setMachineType(message.machineId, message.modelId);
+      await machineService.setMachineType(message.machineId, message.modelId, message.config);
       break;
 
     case "EmuMachineCommand": {
