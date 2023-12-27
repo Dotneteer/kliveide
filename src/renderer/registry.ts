@@ -36,13 +36,11 @@ import {
   outputPanelRenderer,
   outputPanelHeaderRenderer
 } from "./appIde/ToolArea/OutputPanel";
-import { ZxSpectrum48Machine } from "../emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
-import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
-import { Z88Machine } from "@emu/machines/z88/Z88Machine";
+import { MC_DISK_SUPPORT, MF_PSG, MF_ULA } from "@common/machines/constants";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -94,7 +92,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "ULA & I/O",
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: ulaPanelRenderer,
-    initialSize: 500
+    initialSize: 500,
+    requireFeature: [MF_ULA]
   },
   {
     id: "breakpointsPanel",
@@ -116,7 +115,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: psgPanelRenderer,
     initialSize: 500,
-    restrictTo: ["sp128", "spp2e", "spp3e", "spp3ef2"]
+    requireFeature: [MF_PSG]
   },
   {
     id: "necUpd765Panel",
@@ -124,7 +123,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     renderer: necUpd765PanelRenderer,
     initialSize: 500,
-    restrictTo: ["spp3e", "spp3ef2"]
+    requireConfig: [MC_DISK_SUPPORT]
   }
 ];
 

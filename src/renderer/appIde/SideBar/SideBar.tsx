@@ -11,6 +11,7 @@ import {
 } from "@state/actions";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { noop } from "@renderer/utils/stablerefs";
+import { useAppServices } from "../services/AppServicesProvider";
 
 // --- Minimum size of panels in pixels
 const MIN_PANEL_SIZE = 60;
@@ -24,19 +25,26 @@ type Props = {
  */
 export const SiteBar = ({ order }: Props) => {
   const dispatch = useDispatch();
+  const { machineService } = useAppServices();
 
   // --- Follow changes of the current activities and panel state changes
   const activityId = useSelector(s => s.ideView.activity);
   const sideBarPanelsState = useSelector(s => s.ideView.sideBarPanels);
   const machineId = useSelector(s => s.emulatorState?.machineId);
+  const machineConfig = useSelector(s => s.emulatorState?.config);
+  const machineInfo = machineService.getMachineInfo();
 
   // --- Obtain the current activity and panel states
   const activity = activityRegistry.find(a => a.id === activityId);
-  const panels = sideBarPanelRegistry.filter(
-    reg =>
+  const panels = sideBarPanelRegistry.filter(reg => {
+    return (
       reg.hostActivity === activityId &&
-      (!reg.restrictTo || reg.restrictTo.includes(machineId))
-  );
+      (!reg.restrictTo || reg.restrictTo.includes(machineId)) &&
+      (!reg.requireFeature ||
+        reg.requireFeature.every(f => machineInfo?.machine?.features?.[f])) &&
+      (!reg.requireConfig || reg.requireConfig.every(f => machineConfig?.[f]))
+    );
+  });
 
   // --- Later we need the dimension (height) of the side panel area
   const sideBarRef = useRef<HTMLDivElement>();
