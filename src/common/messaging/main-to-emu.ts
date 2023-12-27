@@ -85,6 +85,13 @@ export interface EmuGetPsgStateRequest extends MessageBase {
   type: "EmuGetPsgState";
 }
 
+/**
+ * The Ide process asks the emu process for BLINK state information
+ */
+export interface EmuGetBlinkStateRequest extends MessageBase {
+  type: "EmuGetBlinkState";
+}
+
 
 export interface EmuEraseAllBreakpointsRequest extends MessageBase {
   type: "EmuEraseAllBreakpoints";
@@ -255,6 +262,35 @@ export interface EmuGetSysVarsResponse extends MessageBase {
 export interface EmuGetNecUpd765Response extends MessageBase {
   type: "EmuGetNecUpd765StateResponse";
   log: FloppyLogEntry[];
+}
+
+export interface EmuGetBlinkStateResponse extends MessageBase {
+  type: "EmuGetBlinkStateResponse";
+  SR0: number;
+  SR1: number;
+  SR2: number;
+  SR3: number;
+  TIM0: number;
+  TIM1: number;
+  TIM2: number;
+  TIM3: number;
+  TIM4: number;
+  TSTA: number;
+  TMK: number;
+  INT: number;
+  STA: number;
+  COM: number;
+  EPR: number;
+  keyLines: number[];
+  oscBit: boolean;
+  earBit: boolean;
+  PB0: number;
+  PB1: number;
+  PB2: number;
+  PB3: number;
+  SBR: number;
+  SCW: number;
+  SCH: number;
 }
 
 export function createMachineCommand (

@@ -40,7 +40,8 @@ import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
-import { MC_DISK_SUPPORT, MF_PSG, MF_ULA } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MF_BLINK, MF_PSG, MF_ULA } from "@common/machines/constants";
+import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -94,6 +95,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: ulaPanelRenderer,
     initialSize: 500,
     requireFeature: [MF_ULA]
+  },
+  {
+    id: "blinkPanel",
+    title: "BLINK",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: blinkPanelRenderer,
+    initialSize: 500,
+    requireFeature: [MF_BLINK]
   },
   {
     id: "breakpointsPanel",
