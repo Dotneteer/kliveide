@@ -3,6 +3,8 @@ import { BreakpointInfo } from "./BreakpointInfo";
 export type KliveProjectStructure = {
   kliveVersion: string;
   machineType?: string;
+  modelId?: string;
+  config?: Record<string, any>;
   viewOptions?: ViewOptions;
   clockMultiplier?: number;
   soundLevel?: number;

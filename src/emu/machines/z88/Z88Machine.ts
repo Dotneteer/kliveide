@@ -15,7 +15,7 @@ import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
-import { COMFlags, INTFlags, IZ88BlinkDevice } from "./IZ88BlinkDevice";
+import { COMFlags, INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
@@ -623,22 +623,26 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param command Command to execute
    */
   async executeCustomCommand (command: string): Promise<void> {
+    const machine = this;
     switch (command) {
       case "battery_low":
-        this.setKeyStatus(Z88KeyCode.ShiftL, true);
-        this.setKeyStatus(Z88KeyCode.ShiftR, true);
-        await new Promise(r => setTimeout(r, 400));
-        this.setKeyStatus(Z88KeyCode.ShiftL, false);
-        this.setKeyStatus(Z88KeyCode.ShiftR, false);
+        if (this.isInSleepMode) {
+          await pressShifts();
+        }
+        this.blinkDevice.setSTA(this.blinkDevice.STA | STAFlags.BTL);
         break;
       case "press_shifts":
-        this.setKeyStatus(Z88KeyCode.ShiftL, true);
-        this.setKeyStatus(Z88KeyCode.ShiftR, true);
-        await new Promise(r => setTimeout(r, 400));
-        this.setKeyStatus(Z88KeyCode.ShiftL, false);
-        this.setKeyStatus(Z88KeyCode.ShiftR, false);
+        await pressShifts();
         break;
     }
+
+    async function pressShifts(): Promise<void> {
+      machine.setKeyStatus(Z88KeyCode.ShiftL, true);
+      machine.setKeyStatus(Z88KeyCode.ShiftR, true);
+      await new Promise(r => setTimeout(r, 400));
+      machine.setKeyStatus(Z88KeyCode.ShiftL, false);
+      machine.setKeyStatus(Z88KeyCode.ShiftR, false);
+    } 
   }
 
   /**

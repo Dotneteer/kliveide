@@ -10,6 +10,7 @@ import {
   setBuildRootAction,
   setExcludedProjectItemsAction,
   setIdeFontSizeAction,
+  setModelTypeAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
   showIdeStatusBarAction,
@@ -145,7 +146,11 @@ export async function openFolderByPath (
       );
 
       // --- Apply the machine type saved in the project
-      await setMachineType(projectStruct.machineType);
+      await setMachineType(
+        projectStruct.machineType,
+        projectStruct.modelId,
+        projectStruct.config
+      );
 
       // --- Apply settings if the project is valid
       disp(
@@ -277,7 +282,10 @@ export function resolveHomeFilePath (toResolve: string): string {
 export function resolveSavedFilePath (toResolve: string): string {
   return path.isAbsolute(toResolve)
     ? toResolve
-    : path.join(path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"), toResolve);
+    : path.join(
+        path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"),
+        toResolve
+      );
 }
 
 /**

@@ -9,7 +9,7 @@ const TEXT_FLASH_TOGGLE = 200;
 const PX_COL_ON = 0xff7d1b46;
 const PX_COL_OFF = 0xffb9e0d2;
 const PX_COL_GREY = 0xffa7b090;
-const PX_SCR_OFF = 0xffe0e0e0;
+const PX_SCR_OFF = 0xffa0a0a0;
 
 // --- Attribute flags
 const ATTR_HRS = 0x20;
