@@ -331,7 +331,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Check for screen ports (0x70..0x74)
     if (addr8 <= 0x74) {
       // --- This is a screen port, calculate the register value
-      const screenRegVal = (port & 0xff00) | value;
+      const screenRegVal = (port & 0xff00) | (value & 0xff);
       const screen = this.screenDevice;
       switch (addr8) {
         case 0x70:
