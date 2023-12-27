@@ -21,7 +21,7 @@ import { MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 // --- Default ROM file
-const DEFAULT_ROM = "Z88OZ47";
+const DEFAULT_ROM = "z88v47";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
