@@ -59,6 +59,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     {
       id: "z88_reset",
       label: "Soft reset",
+      accelerator: "F8",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("reset"));
       }
@@ -66,6 +67,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
     {
       id: "z88_hard_reset",
       label: "Hard reset",
+      accelerator: "F9",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("restart"));
       }
@@ -223,7 +225,7 @@ async function selectRomFileToUse (
   console.log(recentRoms);
 
   mainStore.dispatch(incMenuVersionAction());
-  
+
   // --- Request the current machine type
   //await this.requestMachine();
 }

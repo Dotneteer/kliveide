@@ -21,7 +21,6 @@ import { MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 // --- Default ROM file
-//const DEFAULT_ROM = "z88v47";
 const DEFAULT_ROM = "z88v50-r1f99aaae";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
@@ -134,7 +133,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Get the ROM file
     const romContents = await this.loadRomFromResource(DEFAULT_ROM);
 
-    // --- Initialize the machine's ROM (roms/sp48.rom)
+    // --- Initialize the Z88 machine's default ROM
     this.uploadRomBytes(romContents);
   }
 
@@ -643,11 +642,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       await new Promise(r => setTimeout(r, 400));
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
-    } 
+    }
   }
 
   /**
-   * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
+   * Uploades the specified ROM information to the Z88 ROM memory (slot 0)
    * @param data ROM contents
    */
   private uploadRomBytes (data: Uint8Array): void {
