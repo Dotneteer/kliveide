@@ -1,7 +1,7 @@
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { Unsubscribe } from "@state/redux-light";
 import { IMachineController } from "./IMachineController";
-import { MachineInfo, MachineModel } from "@common/machines/info-types";
+import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
 
 /**
  * This function type represents the event handler when a machine type is changing
@@ -21,8 +21,9 @@ export interface IMachineService {
    * Sets the machine to to the specified one
    * @param machineId ID of the machine type to set
    * @param modelId ID of the machine model
+   * @param config Optional machine configuration
    */
-  setMachineType(machineId: string, modelId?: string): Promise<void>;
+  setMachineType(machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void>;
 
   /**
    * Gets the current machine type

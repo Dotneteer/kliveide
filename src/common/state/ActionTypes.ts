@@ -12,6 +12,7 @@ export interface ActionTypes {
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
   DIM_MENU: null,
+  INC_MENU_VERSION: null;
 
   SHOW_EMU_TOOLBAR: null;
   SHOW_EMU_STATUSBAR: null;
@@ -44,6 +45,7 @@ export interface ActionTypes {
 
   SET_MACHINE_TYPE: null;
   SET_MODEL_TYPE: null;
+  SET_MACHINE_CONFIG: null;
   SET_MACHINE_STATE: null;
   SET_DEBUGGING: null;
   MUTE_SOUND: null;

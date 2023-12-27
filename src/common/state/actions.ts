@@ -167,6 +167,12 @@ export const setModelTypeAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setMachineConfigAction: ActionCreator = (value: any) => ({
+  type: "SET_MACHINE_CONFIG",
+  payload: { value }
+});
+
+
 export const setMachineStateAction: ActionCreator = (
   state: MachineControllerState
 ) => ({
@@ -374,3 +380,8 @@ export const emuSetKeyboardLayoutAction: ActionCreator = (id: string) => ({
   type: "EMU_SET_KEYBOARD_LAYOUT",
   payload: { id }
 });
+
+export const incMenuVersionAction: ActionCreator = () => ({
+  type: "START_SCREEN_DISPLAYED"
+});
+

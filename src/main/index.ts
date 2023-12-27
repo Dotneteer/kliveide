@@ -60,11 +60,7 @@ import {
   registerMainToIdeMessenger,
   sendFromMainToIde
 } from "../common/messaging/MainToIdeMessenger";
-import {
-  appSettings,
-  loadAppSettings,
-  saveAppSettings,
-} from "./settings";
+import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { registerCompiler } from "./compiler-integration/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
@@ -73,7 +69,7 @@ import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
-import { setSelectedTapeFile } from "./machine-menus/machine-menu-registry";
+import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -261,20 +257,40 @@ async function createAppWindows () {
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
-      await setMachineType(appSettings.machineId ?? "sp48", appSettings.modelId);
+      await setMachineType(
+        appSettings.machineId ?? "sp48",
+        appSettings.modelId,
+        appSettings.config
+      );
       mainStore.dispatch(
         setClockMultiplierAction(appSettings.clockMultiplier ?? 1)
       );
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
-      mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
-      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
-      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
-      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
-      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
-      mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
-      mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
-      mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
+      mainStore.dispatch(
+        emuSetKeyboardLayoutAction(appSettings.keyboardLayout)
+      );
+      mainStore.dispatch(
+        showEmuToolbarAction(appSettings.showEmuToolbar ?? true)
+      );
+      mainStore.dispatch(
+        showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true)
+      );
+      mainStore.dispatch(
+        showIdeToolbarAction(appSettings.showIdeToolbar ?? true)
+      );
+      mainStore.dispatch(
+        showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true)
+      );
+      mainStore.dispatch(
+        primaryBarOnRightAction(appSettings.primaryBarRight ?? false)
+      );
+      mainStore.dispatch(
+        toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false)
+      );
+      mainStore.dispatch(
+        maximizeToolsAction(appSettings.maximizeTools ?? false)
+      );
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       if (appSettings.lastTapeFile) {
         setSelectedTapeFile(appSettings.lastTapeFile);

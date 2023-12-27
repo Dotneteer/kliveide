@@ -13,6 +13,7 @@ export interface EmuSetMachineTypeRequest extends MessageBase {
   type: "EmuSetMachineType";
   machineId: string;
   modelId?: string;
+  config?: Record<string, any>;
 }
 
 /**

@@ -28,6 +28,7 @@ export type AppState = {
   keyMappingFile?: string;
   keyMappings?: { mapping: KeyMapping; merge: boolean };
   userSettings?: Record<string, any>;
+  menuVersion?: number;
 };
 
 /**
@@ -75,6 +76,7 @@ export type IdeView = {
 export type EmulatorState = {
   machineId?: string;
   modelId?: string;
+  config?: Record<string, any>;
   machineState?: MachineControllerState;
   isDebugging?: boolean;
   soundLevel?: number;
@@ -131,6 +133,7 @@ export const initialAppState: AppState = {
   theme: "dark",
   emuFocused: false,
   ideFocused: false,
+  menuVersion: 0,
   ideViewOptions: {
     showToolbar: true,
     showStatusBar: true,

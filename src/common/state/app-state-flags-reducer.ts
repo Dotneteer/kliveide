@@ -80,6 +80,9 @@ export function appStateFlagsReducer (
         keyMappings: payload.value
       };
 
+    case "INC_MENU_VERSION":
+      return { ...state, menuVersion: (state?.menuVersion ?? 0) + 1 };
+
     default:
       return state;
   }
