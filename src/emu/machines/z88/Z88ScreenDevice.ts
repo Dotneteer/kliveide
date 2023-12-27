@@ -196,7 +196,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
 
     // --- Test if LCD is ON
     if (!(blink.COM & COMFlags.LCDON)) {
-      console.log("LCD OFF");
       if (!this.lcdWentOff) {
         this.renderScreenOff();
       }
@@ -264,7 +263,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
             drawLoResCursor(coordX, coordY, char, attr);
             coordX += 6;
           } else {
-            if ((attr & ATTR_NUL) != ATTR_NUL) {
+            if ((attr & ATTR_NUL) !== ATTR_NUL) {
               drawHiResChar(coordX, coordY, char, attr);
               coordX += 8;
             }
@@ -282,7 +281,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
       let orphanY = coordY;
       while (orphanCount) {
         // --- Calculate the top-left pixel address
-        let pixelPtr = coordX + coordY * this.screenWidth;
+        let pixelPtr = coordX + orphanY * this.screenWidth;
 
         // --- Iterate through the orphaned pixels
         columnCount = coordX;
@@ -506,8 +505,9 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
       // --- Draw the bits sequentially
       const fontAddress = (fontOffset & 0x3fff) | (fontBank << 14);
       const charMask = attr & ATTR_REV ? 0xff : 0x00;
+
       for (let i = 0; i < 8; i++) {
-        const charPattern = directRead[fontAddress] ^ charMask;
+        let charPattern = directRead(fontAddress + i) ^ charMask;
         drawHiResRow(pixelPtr, pixelColor, charPattern);
         pixelPtr += screen.screenWidth;
       }

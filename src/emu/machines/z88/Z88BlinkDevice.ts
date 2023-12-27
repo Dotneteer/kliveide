@@ -454,7 +454,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   setCOM (value: number): void {
     // --- Set the register value
     this.COM = value & 0xff;
-    console.log(`COM: ${this.COM.toString(16)}`);
 
     // --- Reset the timer when requested
     if (value & COMFlags.RESTIM) {
