@@ -133,7 +133,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Get the ROM file
     const romContents = await this.loadRomFromResource(DEFAULT_ROM);
 
-    // --- Initialize the machine's ROM (roms/sp48.rom)
+    // --- Initialize the Z88 machine's default ROM
     this.uploadRomBytes(romContents);
   }
 
@@ -646,7 +646,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
-   * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
+   * Uploades the specified ROM information to the Z88 ROM memory (slot 0)
    * @param data ROM contents
    */
   private uploadRomBytes (data: Uint8Array): void {
