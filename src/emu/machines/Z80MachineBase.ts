@@ -307,6 +307,14 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * Executes the specified custom command
+   * @param command Command to execute
+   */
+  async executeCustomCommand (command: string): Promise<void> {
+    // --- Override in derived classes
+  }
+
+  /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop.
    */

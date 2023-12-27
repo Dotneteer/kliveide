@@ -60,14 +60,12 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
     if (key > 63) {
       return;
     }
-    // --- Special shift handling in sleep mode
-    if (this.machine.isInSleepMode) {
-      if (key === 63) {
-        this.isRightShiftDown = isDown;
-      }
-      if (key === 54) {
-        this.isLeftShiftDown = isDown;
-      }
+    // --- Take not of shift keys
+    if (key === 63) {
+      this.isRightShiftDown = isDown;
+    }
+    if (key === 54) {
+      this.isLeftShiftDown = isDown;
     }
 
     // --- Calculate line address and mask

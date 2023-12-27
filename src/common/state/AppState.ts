@@ -53,6 +53,7 @@ export type EmuViewOptions = {
   showKeyboard?: boolean;
   showToolbar?: boolean;
   showStatusBar?: boolean;
+  keyboardLayout?: string;
 };
 
 export type IdeView = {

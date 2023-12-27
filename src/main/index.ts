@@ -44,7 +44,8 @@ import {
   showIdeStatusBarAction,
   primaryBarOnRightAction,
   toolPanelsOnTopAction,
-  maximizeToolsAction
+  maximizeToolsAction,
+  emuSetKeyboardLayoutAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
@@ -266,6 +267,7 @@ async function createAppWindows () {
       );
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
+      mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
       mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
       mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
       mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));

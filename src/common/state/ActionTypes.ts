@@ -19,6 +19,7 @@ export interface ActionTypes {
   SHOW_IDE_STATUSBAR: null;
   SHOW_TOOL_PANELS: null;
   SHOW_KEYBOARD: null;
+  EMU_SET_KEYBOARD_LAYOUT: null;
   SHOW_FRAME_INFO: null;
   SET_IDE_FONT_SIZE: null;
 

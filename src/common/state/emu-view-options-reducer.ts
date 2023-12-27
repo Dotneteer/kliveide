@@ -15,6 +15,8 @@ export function emuViewOptionsReducer (
       return { ...state, showStatusBar: payload?.flag };
     case "SHOW_KEYBOARD":
       return { ...state, showKeyboard: payload?.flag };
+    case "EMU_SET_KEYBOARD_LAYOUT":
+      return { ...state, keyboardLayout: payload?.id };  
     default:
       return state;
   }

@@ -9,6 +9,7 @@ export const MI_ZXNEXT = "zxnext";
 export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";
 export const MC_MEM_SIZE = "memSize";
+export const MC_SCREEN_SIZE = "screenSize";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

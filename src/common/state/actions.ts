@@ -369,3 +369,8 @@ export const setKeyMappingsAction: ActionCreator = (file, value) => ({
   type: "SET_KEY_MAPPINGS",
   payload: { file, value }
 });
+
+export const emuSetKeyboardLayoutAction: ActionCreator = (id: string) => ({
+  type: "EMU_SET_KEYBOARD_LAYOUT",
+  payload: { id }
+});

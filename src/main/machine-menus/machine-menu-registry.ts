@@ -17,6 +17,7 @@ import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import { AppState } from "../../common/state/AppState";
 import {
+  emuSetKeyboardLayoutAction,
   protectDiskAction,
   setDiskFileAction,
   setFastLoadAction,
@@ -30,17 +31,16 @@ import { mainStore } from "../../main/main-store";
 import { logEmuEvent } from "../../main/registeredMachines";
 import { BASIC_PANEL_ID } from "../../common/state/common-ids";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
-const TOGGLE_FAST_LOAD = "toggle_fast_load";
-const REWIND_TAPE = "rewind_tape";
-const SELECT_TAPE_FILE = "select_tape_file";
-const FLOPPY_MENU = "floppy_menu";
-const CREATE_DISK_FILE = "create_disk_file";
-const INSERT_DISK = "insert_disk";
-const PROTECT_DISK = "protect_disk";
-const EJECT_DISK = "eject_disk";
-const IDE_SHOW_BASIC = "show_basic";
+const Z88_KEYBOARDS = "z88_keyboards";
+const Z88_DE_KEYBOARD = "z88_de_layout";
+const Z88_DK_KEYBOARD = "z88_dk_layout";
+const Z88_FR_KEYBOARD = "z88_fr_layout";
+const Z88_ES_KEYBOARD = "z88_es_layout";
+const Z88_SE_KEYBOARD = "z88_se_layout";
+const Z88_UK_KEYBOARD = "z88_uk_layout";
 
 /**
  * Renders tape commands
@@ -51,7 +51,7 @@ const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   const appState = mainStore.getState();
   if (machine.features?.[MF_TAPE_SUPPORT]) {
     items.push({
-      id: TOGGLE_FAST_LOAD,
+      id: "toggle_fast_load",
       label: "Fast Load",
       type: "checkbox",
       checked: !!appState.emulatorState?.fastLoad,
@@ -63,14 +63,14 @@ const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       }
     });
     items.push({
-      id: REWIND_TAPE,
+      id: "rewind_tape",
       label: "Rewind Tape",
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("rewind"));
       }
     });
     items.push({
-      id: SELECT_TAPE_FILE,
+      id: "select_tape_file",
       label: "Select Tape File...",
       click: async () => {
         await setTapeFile(emuWindow, appState);
@@ -94,7 +94,7 @@ const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
 
   const floppySubMenu: MachineMenuItem[] = [
     {
-      id: CREATE_DISK_FILE,
+      id: "create_disk_file",
       label: "Create Disk File...",
       click: async () => {
         console.log("Create Disk File");
@@ -110,7 +110,7 @@ const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   return [
     { type: "separator" },
     {
-      id: FLOPPY_MENU,
+      id: "floppy_menu",
       label: "Floppy Disks",
       submenu: floppySubMenu
     }
@@ -122,14 +122,14 @@ const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     floppySubMenu.push({ type: "separator" });
     if (state?.diskFile) {
       floppySubMenu.push({
-        id: `${EJECT_DISK}_${suffix}`,
+        id: `eject_disk_${suffix}`,
         label: `Eject Disk from Drive ${suffix.toUpperCase()}`,
         click: async () => {
           await ejectDiskFile(index, suffix);
         }
       });
       floppySubMenu.push({
-        id: `${PROTECT_DISK}_${suffix}`,
+        id: `protect_disk_${suffix}`,
         type: "checkbox",
         checked: !!state.writeProtected,
         label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
@@ -144,7 +144,7 @@ const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
       });
     }
     floppySubMenu.push({
-      id: `${INSERT_DISK}_${suffix}`,
+      id: `insert_disk_${suffix}`,
       label: state?.diskFile
         ? `Change Disk in Drive ${suffix.toUpperCase()}...`
         : `Insert Disk into Drive ${suffix.toUpperCase()}...`,
@@ -163,7 +163,7 @@ const spectrumIdeRenderer: MachineMenuRenderer = () => {
   const volatileDocs = mainStore.getState()?.ideView?.volatileDocs ?? {};
   return [
     {
-      id: IDE_SHOW_BASIC,
+      id: "show_basic",
       label: "Show BASIC Listing",
       type: "checkbox",
       checked: volatileDocs[BASIC_PANEL_ID],
@@ -178,6 +178,99 @@ const spectrumIdeRenderer: MachineMenuRenderer = () => {
             !volatileDocs[BASIC_PANEL_ID]
           )
         );
+      }
+    }
+  ];
+};
+
+/**
+ * Renders Z88 keyboard layout commands
+ */
+const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
+  const layouts = [
+    { id: Z88_UK_KEYBOARD, label: "British && American", kdid: "uk" },
+    { id: Z88_ES_KEYBOARD, label: "Spanish", kdid: "es" },
+    { id: Z88_FR_KEYBOARD, label: "French", kdid: "fr" },
+    { id: Z88_DE_KEYBOARD, label: "German", kdid: "de" },
+    { id: Z88_DK_KEYBOARD, label: "Danish && Norwegian", kdid: "dk" },
+    { id: Z88_SE_KEYBOARD, label: "Swedish && Finish", kdid: "se" }
+  ];
+  const kbState = mainStore.getState()?.emuViewOptions?.keyboardLayout;
+  return [
+    {
+      id: Z88_KEYBOARDS,
+      label: "Keyboard layout",
+      type: "submenu",
+      submenu: layouts.map(layout => ({
+        id: layout.id,
+        label: layout.label,
+        type: "radio",
+        checked: layout.kdid === kbState,
+        click: async () => {
+          mainStore.dispatch(emuSetKeyboardLayoutAction(layout.kdid));
+          await saveKliveProject();
+        }
+      }))
+    }
+  ];
+};
+
+const z88ResetRenderer: MachineMenuRenderer = () => {
+  const execState = mainStore.getState()?.emulatorState?.machineState;
+  return [
+    { type: "separator" },
+    {
+      id: "z88_reset",
+      label: "Soft reset",
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("reset"));
+      }
+    },
+    {
+      id: "z88_hard_reset",
+      label: "Hard reset",
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("restart"));
+      }
+    },
+    { type: "separator" },
+    {
+      id: "z88_press_both_shifts",
+      label: "Press both SHIFT keys",
+      accelerator: "F6",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "press_shifts"));
+      }
+    },
+    {
+      id: "z88_battery_low",
+      label: "Raise battery low signal",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "battery_low"));
+      }
+    }
+  ];
+};
+
+const z88RomAndCardRenderer: MachineMenuRenderer = () => {
+  const execState = mainStore.getState()?.emulatorState?.machineState;
+  return [
+    { type: "separator" },
+    {
+      id: "select_z88_rom",
+      label: "Select ROM",
+      click: async () => {
+        console.log("Select ROM");
+      }
+    },
+    {
+      id: "z88_insert_card",
+      label: "Insert or remove card",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        console.log("Insert or remove card");
       }
     }
   ];
@@ -203,6 +296,11 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     ideItems: spectrumIdeRenderer
   },
   [MI_Z88]: {
+    machineItems: (windowInfo, machine, model) => [
+      ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
+      ...z88ResetRenderer(windowInfo, machine, model),
+      ...z88RomAndCardRenderer(windowInfo, machine, model)
+    ],
     helpLinks: [
       {
         label: "Cambridge Z88 User Guide",

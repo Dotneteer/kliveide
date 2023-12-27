@@ -26,6 +26,7 @@ interface ViewOptions {
   showIdeStatusbar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
+  keyboardLayout?: string;
   showSidebar?: boolean;
   keyboardHeight?: number;
   primaryBarOnRight?: boolean;

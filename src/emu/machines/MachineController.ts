@@ -193,12 +193,22 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * Reset the CPU of the machine.
+   */
+  async cpuReset (): Promise<void> {
+    await this.stop();
+    await this.sendOutput("CPU reset", "cyan");
+    this.machine.reset();
+    await this.start();
+  }
+
+  /**
    * Stop and then start the machine again.
    */
   async restart (): Promise<void> {
     await this.stop();
     await this.sendOutput("Hard reset", "cyan");
-    this.machine.hardReset();
+    await this.machine.hardReset();
     await this.start();
   }
 
@@ -236,6 +246,14 @@ export class MachineController implements IMachineController {
       "cyan"
     );
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
+  }
+
+  /**
+   * Executes a custom command
+   * @param command Custom command string
+   */
+  async customCommand (command: string): Promise<void> {
+    await this.machine.executeCustomCommand(command);
   }
 
   /**

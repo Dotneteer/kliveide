@@ -88,6 +88,7 @@ export type MachineMenuItem = {
   type?: "separator" | "submenu" | "normal" | "checkbox" | "radio";
   checked?: boolean;
   enabled?: boolean;
+  accelerator?: string;
   click?: () => Promise<void>;
   submenu?: MachineMenuItem[];
 };

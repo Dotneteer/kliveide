@@ -454,6 +454,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   setCOM (value: number): void {
     // --- Set the register value
     this.COM = value & 0xff;
+    console.log(`COM: ${this.COM.toString(16)}`);
 
     // --- Reset the timer when requested
     if (value & COMFlags.RESTIM) {
@@ -529,7 +530,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   checkMaskableInterruptRequested (): void {
     // --- Is the BM_INTGINT flag set?
     if (this.INT & INTFlags.GINT) {
-      if (this.INT && this.STA) {
+      if (this.INT & this.STA) {
         this.interruptSignalActive = true;
         return;
       }

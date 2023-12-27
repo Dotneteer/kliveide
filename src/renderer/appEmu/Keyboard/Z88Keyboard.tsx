@@ -26,18 +26,17 @@ const DIAMOND_KEY = 52;
 type Props = {
   width: number;
   height: number;
+  layout?: string;
   apiLoaded?: (api: KeyboardApi) => void;
 };
 
-export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
+export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
   const zoom = calculateZoom(width, height);
   const mounted = useRef(false);
   const keystatus = useRef(new KeyPressMapper());
   const [version, setVersion] = useState(1);
 
-  // TODO: Get the layout from the machine
-  const layout: string = "";
   // --- Prepare keyboard layout information
   let l: Z88KeyboardLayout;
   switch (layout) {
@@ -70,6 +69,7 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
 
   const isPressed = (code: number) => keystatus.current.isPressed(code);
 
+  // --- Mount the kayboard API
   useEffect(() => {
     if (mounted.current) return;
     mounted.current = true;
@@ -200,16 +200,76 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
               xwidth={140}
               pressed={isPressed(53)}
             />
-            <Key zoom={zoom} code={44} layoutInfo={l.Q} keyAction={click} pressed={isPressed(44)}/>
-            <Key zoom={zoom} code={36} layoutInfo={l.W} keyAction={click} pressed={isPressed(36)}/>
-            <Key zoom={zoom} code={28} layoutInfo={l.E} keyAction={click} pressed={isPressed(28)}/>
-            <Key zoom={zoom} code={20} layoutInfo={l.R} keyAction={click} pressed={isPressed(20)}/>
-            <Key zoom={zoom} code={12} layoutInfo={l.T} keyAction={click} pressed={isPressed(12)}/>
-            <Key zoom={zoom} code={4} layoutInfo={l.Y} keyAction={click} pressed={isPressed(4)}/>
-            <Key zoom={zoom} code={9} layoutInfo={l.U} keyAction={click} pressed={isPressed(9)}/>
-            <Key zoom={zoom} code={8} layoutInfo={l.I} keyAction={click} pressed={isPressed(8)}/>
-            <Key zoom={zoom} code={16} layoutInfo={l.O} keyAction={click} pressed={isPressed(16)}/>
-            <Key zoom={zoom} code={32} layoutInfo={l.P} keyAction={click} pressed={isPressed(32)}/>
+            <Key
+              zoom={zoom}
+              code={44}
+              layoutInfo={l.Q}
+              keyAction={click}
+              pressed={isPressed(44)}
+            />
+            <Key
+              zoom={zoom}
+              code={36}
+              layoutInfo={l.W}
+              keyAction={click}
+              pressed={isPressed(36)}
+            />
+            <Key
+              zoom={zoom}
+              code={28}
+              layoutInfo={l.E}
+              keyAction={click}
+              pressed={isPressed(28)}
+            />
+            <Key
+              zoom={zoom}
+              code={20}
+              layoutInfo={l.R}
+              keyAction={click}
+              pressed={isPressed(20)}
+            />
+            <Key
+              zoom={zoom}
+              code={12}
+              layoutInfo={l.T}
+              keyAction={click}
+              pressed={isPressed(12)}
+            />
+            <Key
+              zoom={zoom}
+              code={4}
+              layoutInfo={l.Y}
+              keyAction={click}
+              pressed={isPressed(4)}
+            />
+            <Key
+              zoom={zoom}
+              code={9}
+              layoutInfo={l.U}
+              keyAction={click}
+              pressed={isPressed(9)}
+            />
+            <Key
+              zoom={zoom}
+              code={8}
+              layoutInfo={l.I}
+              keyAction={click}
+              pressed={isPressed(8)}
+            />
+            <Key
+              zoom={zoom}
+              code={16}
+              layoutInfo={l.O}
+              keyAction={click}
+              pressed={isPressed(16)}
+            />
+            <Key
+              zoom={zoom}
+              code={32}
+              layoutInfo={l.P}
+              keyAction={click}
+              pressed={isPressed(32)}
+            />
             <Key
               zoom={zoom}
               code={47}
@@ -222,7 +282,8 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
               code={39}
               layoutInfo={l.SBracketR}
               keyAction={click}
-              pressed={isPressed(39)}            />
+              pressed={isPressed(39)}
+            />
           </Row>
           <Row height='auto' style={rowStyle}>
             <Key
@@ -235,15 +296,69 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
               xwidth={180}
               pressed={isPressed(52)}
             />
-            <Key zoom={zoom} code={43} layoutInfo={l.A} keyAction={click} pressed={isPressed(43)}/>
-            <Key zoom={zoom} code={35} layoutInfo={l.S} keyAction={click} pressed={isPressed(35)}/>
-            <Key zoom={zoom} code={27} layoutInfo={l.D} keyAction={click} pressed={isPressed(27)}/>
-            <Key zoom={zoom} code={19} layoutInfo={l.F} keyAction={click} pressed={isPressed(19)}/>
-            <Key zoom={zoom} code={11} layoutInfo={l.G} keyAction={click} pressed={isPressed(11)}/>
-            <Key zoom={zoom} code={3} layoutInfo={l.H} keyAction={click} pressed={isPressed(3)}/>
-            <Key zoom={zoom} code={17} layoutInfo={l.J} keyAction={click} pressed={isPressed(17)}/>
-            <Key zoom={zoom} code={25} layoutInfo={l.K} keyAction={click} pressed={isPressed(25)}/>
-            <Key zoom={zoom} code={41} layoutInfo={l.L} keyAction={click} pressed={isPressed(41)}/>
+            <Key
+              zoom={zoom}
+              code={43}
+              layoutInfo={l.A}
+              keyAction={click}
+              pressed={isPressed(43)}
+            />
+            <Key
+              zoom={zoom}
+              code={35}
+              layoutInfo={l.S}
+              keyAction={click}
+              pressed={isPressed(35)}
+            />
+            <Key
+              zoom={zoom}
+              code={27}
+              layoutInfo={l.D}
+              keyAction={click}
+              pressed={isPressed(27)}
+            />
+            <Key
+              zoom={zoom}
+              code={19}
+              layoutInfo={l.F}
+              keyAction={click}
+              pressed={isPressed(19)}
+            />
+            <Key
+              zoom={zoom}
+              code={11}
+              layoutInfo={l.G}
+              keyAction={click}
+              pressed={isPressed(11)}
+            />
+            <Key
+              zoom={zoom}
+              code={3}
+              layoutInfo={l.H}
+              keyAction={click}
+              pressed={isPressed(3)}
+            />
+            <Key
+              zoom={zoom}
+              code={17}
+              layoutInfo={l.J}
+              keyAction={click}
+              pressed={isPressed(17)}
+            />
+            <Key
+              zoom={zoom}
+              code={25}
+              layoutInfo={l.K}
+              keyAction={click}
+              pressed={isPressed(25)}
+            />
+            <Key
+              zoom={zoom}
+              code={41}
+              layoutInfo={l.L}
+              keyAction={click}
+              pressed={isPressed(41)}
+            />
             <Key
               zoom={zoom}
               code={49}
@@ -251,8 +366,20 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
               keyAction={click}
               pressed={isPressed(49)}
             />
-            <Key zoom={zoom} code={48} layoutInfo={l.Quote} keyAction={click} pressed={isPressed(48)}/>
-            <Key zoom={zoom} code={56} layoutInfo={l.Pound} keyAction={click} pressed={isPressed(56)}/>
+            <Key
+              zoom={zoom}
+              code={48}
+              layoutInfo={l.Quote}
+              keyAction={click}
+              pressed={isPressed(48)}
+            />
+            <Key
+              zoom={zoom}
+              code={56}
+              layoutInfo={l.Pound}
+              keyAction={click}
+              pressed={isPressed(56)}
+            />
           </Row>
         </div>
         <div style={enterStyle}>
@@ -276,16 +403,76 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
           xwidth={240}
           pressed={isPressed(54)}
         />
-        <Key zoom={zoom} code={42} layoutInfo={l.Z} keyAction={click} pressed={isPressed(42)}/>
-        <Key zoom={zoom} code={34} layoutInfo={l.X} keyAction={click} pressed={isPressed(34)}/>
-        <Key zoom={zoom} code={26} layoutInfo={l.C} keyAction={click} pressed={isPressed(26)}/>
-        <Key zoom={zoom} code={18} layoutInfo={l.V} keyAction={click} pressed={isPressed(18)}/>
-        <Key zoom={zoom} code={10} layoutInfo={l.B} keyAction={click} pressed={isPressed(10)}/>
-        <Key zoom={zoom} code={2} layoutInfo={l.N} keyAction={click} pressed={isPressed(2)}/>
-        <Key zoom={zoom} code={33} layoutInfo={l.M} keyAction={click} pressed={isPressed(33)}/>
-        <Key zoom={zoom} code={50} layoutInfo={l.Comma} keyAction={click} pressed={isPressed(50)}/>
-        <Key zoom={zoom} code={58} layoutInfo={l.Period} keyAction={click} pressed={isPressed(58)}/>
-        <Key zoom={zoom} code={57} layoutInfo={l.Slash} keyAction={click} pressed={isPressed(57)}/>
+        <Key
+          zoom={zoom}
+          code={42}
+          layoutInfo={l.Z}
+          keyAction={click}
+          pressed={isPressed(42)}
+        />
+        <Key
+          zoom={zoom}
+          code={34}
+          layoutInfo={l.X}
+          keyAction={click}
+          pressed={isPressed(34)}
+        />
+        <Key
+          zoom={zoom}
+          code={26}
+          layoutInfo={l.C}
+          keyAction={click}
+          pressed={isPressed(26)}
+        />
+        <Key
+          zoom={zoom}
+          code={18}
+          layoutInfo={l.V}
+          keyAction={click}
+          pressed={isPressed(18)}
+        />
+        <Key
+          zoom={zoom}
+          code={10}
+          layoutInfo={l.B}
+          keyAction={click}
+          pressed={isPressed(10)}
+        />
+        <Key
+          zoom={zoom}
+          code={2}
+          layoutInfo={l.N}
+          keyAction={click}
+          pressed={isPressed(2)}
+        />
+        <Key
+          zoom={zoom}
+          code={33}
+          layoutInfo={l.M}
+          keyAction={click}
+          pressed={isPressed(33)}
+        />
+        <Key
+          zoom={zoom}
+          code={50}
+          layoutInfo={l.Comma}
+          keyAction={click}
+          pressed={isPressed(50)}
+        />
+        <Key
+          zoom={zoom}
+          code={58}
+          layoutInfo={l.Period}
+          keyAction={click}
+          pressed={isPressed(58)}
+        />
+        <Key
+          zoom={zoom}
+          code={57}
+          layoutInfo={l.Slash}
+          keyAction={click}
+          pressed={isPressed(57)}
+        />
         <Key
           zoom={zoom}
           code={63}
@@ -305,9 +492,27 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
         />
       </Row>
       <Row height='auto' style={rowStyle}>
-        <Key zoom={zoom} code={60} layoutInfo={l.Index} keyAction={click} pressed={isPressed(60)}/>
-        <Key zoom={zoom} code={51} layoutInfo={l.Menu} keyAction={click} pressed={isPressed(51)}/>
-        <Key zoom={zoom} code={55} layoutInfo={l.Help} keyAction={click} pressed={isPressed(55)}/>
+        <Key
+          zoom={zoom}
+          code={60}
+          layoutInfo={l.Index}
+          keyAction={click}
+          pressed={isPressed(60)}
+        />
+        <Key
+          zoom={zoom}
+          code={51}
+          layoutInfo={l.Menu}
+          keyAction={click}
+          pressed={isPressed(51)}
+        />
+        <Key
+          zoom={zoom}
+          code={55}
+          layoutInfo={l.Help}
+          keyAction={click}
+          pressed={isPressed(55)}
+        />
         <Key
           zoom={zoom}
           code={62}
@@ -325,7 +530,14 @@ export const Z88Keyboard = ({ width, height, apiLoaded }: Props) => {
           xwidth={702}
           pressed={isPressed(46)}
         />
-        <Key zoom={zoom} code={59} keyAction={click} top='CAPS' bottom='LOCK' pressed={isPressed(59)}/>
+        <Key
+          zoom={zoom}
+          code={59}
+          keyAction={click}
+          top='CAPS'
+          bottom='LOCK'
+          pressed={isPressed(59)}
+        />
         <Key
           zoom={zoom}
           code={38}

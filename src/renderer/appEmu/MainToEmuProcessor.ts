@@ -79,6 +79,9 @@ export async function processMainToEmuMessages (
         case "stop":
           await controller.stop();
           break;
+        case "reset":
+          await controller.cpuReset();
+          break;  
         case "restart":
           await controller.restart();
           break;
@@ -96,6 +99,9 @@ export async function processMainToEmuMessages (
           break;
         case "rewind":
           controller.machine.setMachineProperty(REWIND_REQUESTED, true);
+          break;
+        case "custom":
+          controller.customCommand(message.customCommand);
           break;
       }
       break;
