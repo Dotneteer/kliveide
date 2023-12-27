@@ -70,6 +70,13 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setSlotMask(3, false);
 
     this.resetRtc();
+
+    this.setACK(0);
+    this.COM = 0;
+    this.EPR = 0;
+    this.setINT(INTFlags.FLAP | INTFlags.TIME | INTFlags.GINT);
+    this.STA = 0;
+    this.TSTA = 0;
   }
 
   private resetRtc (): void {
@@ -79,7 +86,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.TIM3 = 0;
     this.TIM4 = 0;
     this.TSTA = 0;
-    this.TMK = TMKFlags.MIN;
+    this.TMK = TMKFlags.TICK;
   }
 
   /**

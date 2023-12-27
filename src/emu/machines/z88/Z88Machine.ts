@@ -15,13 +15,14 @@ import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
-import { COMFlags, INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
+import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 // --- Default ROM file
-const DEFAULT_ROM = "z88v47";
+//const DEFAULT_ROM = "z88v47";
+const DEFAULT_ROM = "z88v50-r1f99aaae";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
