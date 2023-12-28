@@ -2,7 +2,7 @@
   "name": "klive-ide",
   "productName": "Klive IDE",
   "version": "0.30.4",
-  "description": "Retro computer emulator and IDE for Mac, Windows, and Linux",
+  "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
     "email": "dotneteer@hotmail.com"
@@ -13,8 +13,11 @@
   },
   "keywords": [
     "ZX Spectrum",
+    "ZX Spectrum Next",
+    "Cambridge Z88",
     "Z80",
-    "emulator"
+    "Z80N",
+    "Emulator"
   ],
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
@@ -91,7 +94,7 @@
       "target": "nsis",
       "asar": false,
       "icon": "public/images/512x512.png"
-    },    
+    },
     "linux": {
       "target": "AppImage",
       "icon": "public/images/512x512.png"

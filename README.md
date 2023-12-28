@@ -40,7 +40,7 @@ If you're interested, contact me through dotneteer@hotmail.com!
 
 ## What Klive IDE Is
 
-**Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac and Windows.**
+**Klive IDE is a Sinclair retro computer emulator and Integrated Development Environment running on Mac, Linux and Windows.**
 
 Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
 
@@ -55,8 +55,8 @@ Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive 
 - **ZX Spectrum 48K**
 - **ZX Spectrum 128K**
 - **ZX Spectrum +2E/+3E** (*in progress*)
+- **Cambridge Z88** (*in progress*)
 - ZX 80/81 (*in the future*)
-- Cambridge Z88 (*in the future*)
 - ZX Spectrum Next (*in the future*)
 
 ### Emulator Features
