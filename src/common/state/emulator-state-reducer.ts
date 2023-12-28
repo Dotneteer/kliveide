@@ -27,6 +27,12 @@ export function emulatorStateReducer (
         config: payload.value
       };
 
+    case "SET_MACHINE_SPECIFIC":
+      return {
+        ...state,
+        machineSpecific: payload.value
+      };
+
     case "MUTE_SOUND":
       return {
         ...state,

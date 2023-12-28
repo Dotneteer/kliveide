@@ -10,6 +10,7 @@ import {
   setBuildRootAction,
   setExcludedProjectItemsAction,
   setIdeFontSizeAction,
+  setMachineSpecificAction,
   setModelTypeAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
@@ -156,9 +157,9 @@ export async function openFolderByPath (
         projectStruct.modelId,
         projectStruct.config
       );
-      const emulatorState = mainStore.getState().emulatorState;
-    
+
       // --- Apply settings if the project is valid
+      disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(
         setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems)
       );

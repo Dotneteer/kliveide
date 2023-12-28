@@ -8,7 +8,7 @@ import {
 } from "../../common/machines/info-types";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "../../common/state/actions";
+import { emuSetKeyboardLayoutAction, incMenuVersionAction, setMachineSpecificAction } from "../../common/state/actions";
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
 
@@ -97,6 +97,10 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   const emuWindow = windowInfo.emuWindow;
   const execState = mainStore.getState()?.emulatorState?.machineState;
   const romsSubmenu: MachineMenuItem[] = [];
+  const machineSpecific = mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  recentRoms = machineSpecific.recentRoms ?? [];
+  recentRomSelected = machineSpecific.recentRomSelected ?? false;
+  usedRomFile = machineSpecific.usedRomFile;
   romsSubmenu.push({
     id: "z88_use_default_rom",
     label: "Use default ROM",
@@ -221,8 +225,12 @@ async function selectRomFileToUse (
   // --- Now set the ROM name and refresh the menu
   recentRomSelected = true;
 
-  console.log("ROM file selected: ", filename);
-  console.log(recentRoms);
+  // --- Save recent ROMs
+  const machineSpecific = mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  machineSpecific.recentRoms = recentRoms;
+  machineSpecific.recentRomSelected = recentRomSelected;
+  machineSpecific.usedRomFile = usedRomFile;
+  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
 
   mainStore.dispatch(incMenuVersionAction());
 
