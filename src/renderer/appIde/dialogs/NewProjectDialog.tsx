@@ -10,31 +10,15 @@ import {
   reportUnexpectedMessageType
 } from "@renderer/reportError";
 import { useAppServices } from "../services/AppServicesProvider";
+import { getAllMachineModels } from "@common/machines/machine-registry";
+import { split } from "lodash";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 
-const machineIds = [
-  {
-    value: "sp48",
-    label: "ZX Spectrum 48K"
-  },
-  {
-    value: "sp128",
-    label: "ZX Spectrum 128K"
-  },
-  {
-    value: "spp2e",
-    label: "ZX Spectrum +2E"
-  },
-  {
-    value: "spp3e",
-    label: "ZX Spectrum +3E (1 FDD)"
-  },
-  {
-    value: "spp3ef2",
-    label: "ZX Spectrum +3E (2 FDDs)"
-  },
-];
+const machineIds = getAllMachineModels().map(m => ({
+  value: `${m.machineId}${m.modelId ? ":" + m.modelId : ""}`,
+  label: m.displayName
+}));
 
 type Props = {
   onClose: () => void;
@@ -49,7 +33,8 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const { messenger } = useRendererContext();
   const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
-  const [machineId, setMachineId] = useState("sp48");
+  const [machineId, setMachineId] = useState<string>("sp48");
+  const [modelId, setmodelId] = useState<string>(undefined);
   const [projectFolder, setProjectFolder] = useState("");
   const [projectName, setProjectName] = useState("");
   const [folderIsValid, setFolderIsValid] = useState(true);
@@ -79,9 +64,11 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
         const folder = result ? result[1] : projectFolder;
 
         // --- Create the project
+        console.log("Create project", machineId, modelId);
         const response = await messenger.sendMessage({
           type: "MainCreateKliveProject",
           machineId,
+          modelId,
           projectName: name,
           projectFolder: folder
         });
@@ -134,8 +121,13 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           <Dropdown
             placeholder='Select...'
             options={machineIds}
-            value={"sp48"}
-            onSelectionChanged={option => setMachineId(option)}
+            value={"sp48:pal"}
+            width={468}
+            onSelectionChanged={option => {
+              const [machineId, modelId] = split(option, ":");
+              setMachineId(machineId);
+              setmodelId(modelId);
+            }}
           />
         </div>
       </DialogRow>

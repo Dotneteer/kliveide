@@ -12,9 +12,15 @@ import {
   MC_SCREEN_SIZE,
   MF_ULA,
   MF_BLINK,
-  MF_PSG
+  MF_PSG,
+  MC_Z88_INTROM
 } from "./constants";
-import { MachineInfo } from "./info-types";
+import {
+  MachineConfigSet,
+  MachineInfo,
+  MachineModel,
+  MachineWithModel
+} from "./info-types";
 
 /**
  * The registry of available machine types with their available models
@@ -25,7 +31,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 48K",
     features: {
       [MF_TAPE_SUPPORT]: true,
-      [MF_ULA]: true,
+      [MF_ULA]: true
     },
     models: [
       {
@@ -102,44 +108,75 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "Cambridge Z88 WIP",
     features: {
       [MF_BANK]: 256,
-      [MF_BLINK]: true,
+      [MF_BLINK]: true
     },
     models: [
       {
-        modelId: "640_64",
-        displayName: "Cambridge Z88 WIP (640x64)",
+        modelId: "OZ50",
+        displayName: "Cambridge Z88 WIP (OZ v5.0)",
         config: {
-          [MC_SCREEN_SIZE]: "640x64"
+          [MC_Z88_INTROM]: "z88v50-r1f99aaae"
         }
       },
       {
-        modelId: "640_320",
-        displayName: "Cambridge Z88 WIP (640x320)",
+        modelId: "OZ47",
+        displayName: "Cambridge Z88 WIP (OZ v4.7)",
         config: {
-          [MC_SCREEN_SIZE]: "640x320"
+          [MC_Z88_INTROM]: "z88v47"
         }
       },
       {
-        modelId: "640_480",
-        displayName: "Cambridge Z88 WIP (640x480)",
+        modelId: "OZ47G",
+        displayName: "Cambridge Z88 WIP (OZ v4.7 + Games)",
         config: {
-          [MC_SCREEN_SIZE]: "640x480"
-        }
-      },
-      {
-        modelId: "800_320",
-        displayName: "Cambridge Z88 WIP (800x320)",
-        config: {
-          [MC_SCREEN_SIZE]: "800x320"
-        }
-      },
-      {
-        modelId: "800_480",
-        displayName: "Cambridge Z88 WIP (800x480)",
-        config: {
-          [MC_SCREEN_SIZE]: "800x480"
+          [MC_Z88_INTROM]: "z88v47+games"
         }
       }
     ]
   }
 ];
+
+/**
+ * Gets all available machine models
+ * @returns
+ */
+export function getAllMachineModels (): MachineWithModel[] {
+  const result: MachineWithModel[] = [];
+  for (const machine of machineRegistry) {
+    if (machine.models) {
+      result.push(
+        ...machine.models.map(m => ({
+          ...m,
+          machineId: machine.machineId
+        }))
+      );
+    } else {
+      result.push({
+        machineId: machine.machineId,
+        displayName: machine.displayName
+      });
+    }
+  }
+  return result;
+}
+
+/**
+ * Gets the configuration of the specified machine
+ * @param machineId Machine ID
+ * @param modelId Model ID
+ * @returns Machine configuration
+ */
+export function getModelConfig (
+  machineId: string,
+  modelId?: string
+): MachineConfigSet | undefined {
+  const machine = machineRegistry.find(m => m.machineId === machineId);
+  if (!machine) {
+    return undefined;
+  }
+  if (!modelId) {
+    return machine.config;
+  }
+  const model = machine.models?.find(m => m.modelId === modelId);
+  return model?.config;
+}

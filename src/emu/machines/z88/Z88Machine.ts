@@ -17,8 +17,8 @@ import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { PagedMemory } from "../memory/PagedMemory";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
-import { MachineModel } from "@common/machines/info-types";
-import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import { MC_SCREEN_SIZE, MC_Z88_INTROM } from "@common/machines/constants";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -81,8 +81,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Initialize the machine
    */
-  constructor (model: MachineModel) {
+  constructor (
+    private readonly model?: MachineModel,
+    private readonly config?: MachineConfigSet
+  ) {
     super();
+
+    // --- config overrides model.config
+    this.config = config ?? model?.config;
 
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
@@ -103,7 +109,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Set up the screen size
     let scw = 0xff;
     let sch = 8;
-    switch (model?.config[MC_SCREEN_SIZE]) {
+    switch (this.config?.[MC_SCREEN_SIZE]) {
       case "640x320":
         scw = 0xff;
         sch = 40;
@@ -131,7 +137,13 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   async setup (): Promise<void> {
     // --- Get the ROM file
-    const romContents = await this.loadRomFromResource(DEFAULT_ROM);
+    let romContents: Uint8Array;
+    const intRom = this.config?.[MC_Z88_INTROM];
+    if (intRom) {
+      romContents = await this.loadRomFromResource(intRom);
+    } else {
+      romContents = await this.loadRomFromResource(DEFAULT_ROM);
+    }
 
     // --- Initialize the Z88 machine's default ROM
     this.uploadRomBytes(romContents);
@@ -636,7 +648,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
         break;
     }
 
-    async function pressShifts(): Promise<void> {
+    async function pressShifts (): Promise<void> {
       machine.setKeyStatus(Z88KeyCode.ShiftL, true);
       machine.setKeyStatus(Z88KeyCode.ShiftR, true);
       await new Promise(r => setTimeout(r, 400));

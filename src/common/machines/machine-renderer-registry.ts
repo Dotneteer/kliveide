@@ -25,6 +25,6 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   },
   {
     machineId: MI_Z88,
-    factory: (_, model) => new Z88Machine(model)
+    factory: (_, model, config) => new Z88Machine(model, config)
   }
 ];

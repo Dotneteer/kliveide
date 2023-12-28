@@ -54,6 +54,7 @@ export interface MainOpenFolderRequest extends MessageBase {
 export interface MainCreateKliveProjectRequest extends MessageBase {
   type: "MainCreateKliveProject";
   machineId: string;
+  modelId?: string;
   projectName: string;
   projectFolder?: string;
 }

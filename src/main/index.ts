@@ -45,7 +45,8 @@ import {
   primaryBarOnRightAction,
   toolPanelsOnTopAction,
   maximizeToolsAction,
-  emuSetKeyboardLayoutAction
+  emuSetKeyboardLayoutAction,
+  setMachineSpecificAction
 } from "../common/state/actions";
 import { Unsubscribe } from "../common/state/redux-light";
 import { app, BrowserWindow, shell, ipcMain, Menu } from "electron";
@@ -261,6 +262,9 @@ async function createAppWindows () {
         appSettings.machineId ?? "sp48",
         appSettings.modelId,
         appSettings.config
+      );
+      mainStore.dispatch(
+        setMachineSpecificAction(appSettings.machineSpecific ?? {})
       );
       mainStore.dispatch(
         setClockMultiplierAction(appSettings.clockMultiplier ?? 1)

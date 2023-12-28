@@ -10,6 +10,11 @@ export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";
 export const MC_MEM_SIZE = "memSize";
 export const MC_SCREEN_SIZE = "screenSize";
+export const MC_Z88_INTROM = "intROM";
+export const MC_Z88_INTRAM = "intRAM";
+export const MC_Z88_SLOT1 = "slot1";
+export const MC_Z88_SLOT2 = "slot2";
+export const MC_Z88_SLOT3 = "slot3";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

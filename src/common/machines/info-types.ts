@@ -54,6 +54,31 @@ export type MachineModel = {
 };
 
 /**
+ * Available machine models with their IDs
+ */
+export type MachineWithModel = {
+  /**
+   * ID of the machine
+   */
+  machineId: string;
+
+  /**
+   * ID of the machine model
+   */
+  modelId?: string;
+
+  /**
+   * The display name of the particular model
+   */
+  displayName: string;
+
+  /**
+   * The configuratiton of the machine
+   */
+  config?: MachineConfigSet;
+};
+
+/**
  * This type stores renderer information about a particular emulated machine
  */
 export type MachineUiRendererInfo = {
@@ -66,7 +91,7 @@ export type MachineUiRendererInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: (store: Store<AppState>, model: MachineModel) => IZ80Machine;
+  factory: (store: Store<AppState>, model?: MachineModel, config?: MachineConfigSet) => IZ80Machine;
 };
 
 /**
@@ -89,7 +114,7 @@ export type MachineMenuItem = {
   checked?: boolean;
   enabled?: boolean;
   accelerator?: string;
-  click?: () => Promise<void>;
+  click?: (mi?: Electron.MenuItem) => Promise<void>;
   submenu?: MachineMenuItem[];
 };
 
@@ -122,4 +147,3 @@ export type MachineMenuInfo = {
   helpItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
 };
-

@@ -77,6 +77,7 @@ export type EmulatorState = {
   machineId?: string;
   modelId?: string;
   config?: Record<string, any>;
+  machineSpecific?: Record<string, any>;
   machineState?: MachineControllerState;
   isDebugging?: boolean;
   soundLevel?: number;
@@ -162,6 +163,8 @@ export const initialAppState: AppState = {
     showKeyboard: false
   },
   emulatorState: {
+    config: {},
+    machineSpecific: {},
     soundLevel: 0.8,
     soundMuted: false,
     savedSoundLevel: 0.8,

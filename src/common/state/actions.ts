@@ -172,7 +172,6 @@ export const setMachineConfigAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-
 export const setMachineStateAction: ActionCreator = (
   state: MachineControllerState
 ) => ({
@@ -385,3 +384,7 @@ export const incMenuVersionAction: ActionCreator = () => ({
   type: "START_SCREEN_DISPLAYED"
 });
 
+export const setMachineSpecificAction: ActionCreator = (value: any) => ({
+  type: "SET_MACHINE_SPECIFIC",
+  payload: { value }
+});

@@ -12,6 +12,7 @@ import {
 } from "./zx-specrum-menus";
 import {
   z88KeyboardLayoutRenderer,
+  z88LcdRenderer,
   z88ResetRenderer,
   z88RomAndCardRenderer
 } from "./z88-menus";
@@ -38,6 +39,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_Z88]: {
     machineItems: (windowInfo, machine, model) => [
       ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
+      ...z88LcdRenderer(windowInfo, machine, model),
       ...z88ResetRenderer(windowInfo, machine, model),
       ...z88RomAndCardRenderer(windowInfo, machine, model)
     ],
