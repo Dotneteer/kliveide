@@ -16,7 +16,7 @@ import {
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
 import { getModelConfig } from "../../common/machines/machine-registry";
-import { MC_Z88_INTROM } from "../../common/machines/constants";
+import { MC_SCREEN_SIZE, MC_Z88_INTROM } from "../../common/machines/constants";
 import { setMachineType } from "../../main/registeredMachines";
 
 const Z88_KEYBOARDS = "z88_keyboards";
@@ -57,6 +57,54 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
       }))
     }
   ];
+};
+
+/**
+ * Renders Z88 keyboard layout commands
+ */
+export const z88LcdRenderer: MachineMenuRenderer = () => {
+  const lcds = [
+    { id: "z88_640_64", label: "640 x 64" },
+    { id: "z88_640_320", label: "640 x 320" },
+    { id: "z88_640_480", label: "640 x 480" },
+    { id: "z88_800_320", label: "800 x 320" },
+    { id: "z88_800_480", label: "800 x 480" }
+  ];
+  const machineSpecific =
+    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  const lcdState = machineSpecific.lcd;
+  return [
+    {
+      id: "z88_lcd",
+      label: "LCD resolution",
+      type: "submenu",
+      submenu: lcds.map(lcd => ({
+        id: lcd.id,
+        label: lcd.label,
+        type: "radio",
+        checked: lcd.label.replaceAll(" ", "") === lcdState,
+        click: async () => {
+          const newLcd = lcd.label.replaceAll(" ", "");
+          if (machineSpecific.lcd !== newLcd) {
+            setLcd(newLcd);
+            await saveKliveProject();
+          }
+        }
+      }))
+    }
+  ];
+
+  // --- Sets the LCD dimentsions
+  function setLcd (lcdId?: string): void {
+    const emulatorState = mainStore.getState()?.emulatorState;
+    const machineId = emulatorState?.machineId;
+    const modelId = emulatorState?.modelId;
+    const config = getModelConfig(machineId, modelId);
+    config[MC_SCREEN_SIZE] = lcdId;
+    setMachineType(machineId, modelId, config);
+    saveRecentLcdInfo(lcdId);
+    mainStore.dispatch(incMenuVersionAction());
+  }
 };
 
 export const z88ResetRenderer: MachineMenuRenderer = () => {
@@ -145,8 +193,11 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
       id: "z88_select_rom_file",
       label: "Select ROM file...",
       click: async () => {
+        const prevRom = recentRoms[0];
         await selectRomFileToUse(emuWindow);
-        // TODO: Save the project
+        if (prevRom !== recentRoms[0]) {
+          setIntRom(recentRoms[0]);
+        }
       }
     }
   );
@@ -228,8 +279,6 @@ async function selectRomFileToUse (
     return;
   }
 
-  // TODO: Ok, let's use the contents of this file
-
   // --- Use the selected contents
   const recentFileIdx = recentRoms.indexOf(filename);
   if (recentFileIdx >= 0) {
@@ -243,9 +292,6 @@ async function selectRomFileToUse (
   recentRomSelected = true;
   saveRecentRomInfo();
   mainStore.dispatch(incMenuVersionAction());
-
-  // --- Request the current machine type
-  //await this.requestMachine();
 }
 
 /**
@@ -324,5 +370,15 @@ function saveRecentRomInfo (): void {
   machineSpecific.recentRoms = recentRoms;
   machineSpecific.recentRomSelected = recentRomSelected;
   machineSpecific.usedRomFile = usedRomFile;
+  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
+}
+
+/**
+ * Saves the recent ROM information to the store
+ */
+function saveRecentLcdInfo (lcdId: string): void {
+  const machineSpecific =
+    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  machineSpecific.lcd = lcdId;
   mainStore.dispatch(setMachineSpecificAction(machineSpecific));
 }

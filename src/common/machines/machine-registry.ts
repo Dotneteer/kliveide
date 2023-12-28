@@ -15,7 +15,12 @@ import {
   MF_PSG,
   MC_Z88_INTROM
 } from "./constants";
-import { MachineConfigSet, MachineInfo, MachineModel, MachineWithModel } from "./info-types";
+import {
+  MachineConfigSet,
+  MachineInfo,
+  MachineModel,
+  MachineWithModel
+} from "./info-types";
 
 /**
  * The registry of available machine types with their available models
@@ -107,38 +112,24 @@ export const machineRegistry: MachineInfo[] = [
     },
     models: [
       {
+        modelId: "OZ50",
+        displayName: "Cambridge Z88 WIP (OZ v5.0)",
+        config: {
+          [MC_Z88_INTROM]: "z88v50-r1f99aaae"
+        }
+      },
+      {
         modelId: "OZ47",
         displayName: "Cambridge Z88 WIP (OZ v4.7)",
         config: {
-          [MC_Z88_INTROM]: "z88v47",
+          [MC_Z88_INTROM]: "z88v47"
         }
       },
       {
         modelId: "OZ47G",
         displayName: "Cambridge Z88 WIP (OZ v4.7 + Games)",
         config: {
-          [MC_Z88_INTROM]: "z88v47+games",
-        }
-      },
-      {
-        modelId: "OZ50",
-        displayName: "Cambridge Z88 WIP (OZ v5.0)",
-        config: {
-          [MC_Z88_INTROM]: "z88v50-r1f99aaae",
-        }
-      },
-      {
-        modelId: "800_320",
-        displayName: "Cambridge Z88 WIP (800x320)",
-        config: {
-          [MC_SCREEN_SIZE]: "800x320"
-        }
-      },
-      {
-        modelId: "800_480",
-        displayName: "Cambridge Z88 WIP (800x480)",
-        config: {
-          [MC_SCREEN_SIZE]: "800x480"
+          [MC_Z88_INTROM]: "z88v47+games"
         }
       }
     ]
@@ -147,20 +138,22 @@ export const machineRegistry: MachineInfo[] = [
 
 /**
  * Gets all available machine models
- * @returns 
+ * @returns
  */
 export function getAllMachineModels (): MachineWithModel[] {
   const result: MachineWithModel[] = [];
   for (const machine of machineRegistry) {
     if (machine.models) {
-      result.push(...machine.models.map(m => ({
-        ...m,
-        machineId: machine.machineId,
-      })));
+      result.push(
+        ...machine.models.map(m => ({
+          ...m,
+          machineId: machine.machineId
+        }))
+      );
     } else {
       result.push({
         machineId: machine.machineId,
-        displayName: machine.displayName,
+        displayName: machine.displayName
       });
     }
   }
@@ -173,7 +166,10 @@ export function getAllMachineModels (): MachineWithModel[] {
  * @param modelId Model ID
  * @returns Machine configuration
  */
-export function getModelConfig(machineId: string, modelId?: string): MachineConfigSet | undefined {
+export function getModelConfig (
+  machineId: string,
+  modelId?: string
+): MachineConfigSet | undefined {
   const machine = machineRegistry.find(m => m.machineId === machineId);
   if (!machine) {
     return undefined;
