@@ -47,7 +47,7 @@ class MachineService implements IMachineService {
     const machineInfo = machineRegistry.find(
       m =>
         m.machineId === machineId &&
-        (!m.models || m.models.find(m => m.modelId === modelId))
+        (!modelId || !m.models || m.models.find(m => m.modelId === modelId))
     );
     if (!machineInfo) {
       throw new Error(

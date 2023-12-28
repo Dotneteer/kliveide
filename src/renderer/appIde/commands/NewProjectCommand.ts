@@ -17,8 +17,16 @@ export class NewProjectCommand extends IdeCommandBase {
   readonly aliases = ["np"];
 
   private machineId: string;
+  private modelId: string;
   private projectName: string;
   private projectFolder: string;
+
+  prepareCommand (): void {
+    delete this.machineId;
+    delete this.modelId;
+    delete this.projectName;
+    delete this.projectFolder;
+  }
 
   async validateArgs (
     context: IdeCommandContext
@@ -29,11 +37,23 @@ export class NewProjectCommand extends IdeCommandBase {
     }
 
     // --- Extract machine ID
-    this.machineId = args[0].text;
+    const [machineId, modelId] = args[0].text.split(":");
     const machineTypes = getAllMachineModels();
-    if (this.machineId !== "sp48") {
-      return validationError(`Cannot find machine type '${args[0].text}'`);
+    if (!machineTypes.find(mt => mt.machineId === machineId)) {
+      return validationError(`Cannot find machine type '${machineId}'`);
     }
+    this.machineId = machineId;
+    if (
+      modelId &&
+      !machineTypes.find(
+        mt => mt.machineId === machineId && mt.modelId === modelId
+      )
+    ) {
+      return validationError(
+        `Cannot find model type '${modelId}' for machine '${machineId}`
+      );
+    }
+    this.modelId = modelId;
 
     // --- Extract project name
     this.projectName = args[1].text;
@@ -47,8 +67,7 @@ export class NewProjectCommand extends IdeCommandBase {
     const response = await context.messenger.sendMessage({
       type: "MainCreateKliveProject",
       machineId: this.machineId,
-      // TODO extract modelId
-      modelId: undefined,
+      modelId: this.modelId,
       projectName: this.projectName,
       projectFolder: this.projectFolder
     });

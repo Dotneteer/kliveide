@@ -37,6 +37,7 @@ import { KliveProjectStructure } from "../common/abstractions/KliveProjectStruct
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { getModelConfig } from "../common/machines/machine-registry";
+import { delay } from "../renderer/utils/timing";
 
 type ProjectCreationResult = {
   path?: string;
@@ -155,7 +156,8 @@ export async function openFolderByPath (
         projectStruct.modelId,
         projectStruct.config
       );
-
+      const emulatorState = mainStore.getState().emulatorState;
+    
       // --- Apply settings if the project is valid
       disp(
         setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems)
@@ -200,6 +202,8 @@ export async function openFolderByPath (
   }
 
   disp(openFolderAction(projectFolder, isValidProject));
+
+  const emulatorState = mainStore.getState().emulatorState;
 
   // --- Save the folder into settings
   appSettings.folders ??= {};
