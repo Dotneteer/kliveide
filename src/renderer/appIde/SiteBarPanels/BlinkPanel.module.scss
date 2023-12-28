@@ -23,3 +23,14 @@
   flex-grow: 0;
   flex-shrink: 0;
 }
+
+.fieldRow {
+  display: flex;
+  flex-direction: row;
+
+  .fieldValue {
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+  }
+}

@@ -81,7 +81,13 @@ type FlagProps = {
   tooltip?: string;
 };
 
-export const Flag = ({ value, width, adjustLeft = true, center = true, tooltip }: FlagProps) => {
+export const Flag = ({
+  value,
+  width,
+  adjustLeft = true,
+  center = true,
+  tooltip
+}: FlagProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const toolTipLines = (tooltip ?? "").split("\n");
 
@@ -130,3 +136,47 @@ export const Separator = () => <hr className={styles.separator} />;
 export const LabelSeparator = ({ width }: { width: number | string }) => (
   <div className={styles.label} style={{ width }} />
 );
+
+type FlagRowProps = {
+  flagDescriptions: string[];
+  value: number;
+};
+
+export const FlagRow = ({ value, flagDescriptions }: FlagRowProps) => {
+  return (
+    <div className={styles.dumpSection}>
+      <Flag
+        value={value & 0x80}
+        tooltip={`Bit 7: ${flagDescriptions?.[7] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x40}
+        tooltip={`Bit 6: ${flagDescriptions?.[6] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x20}
+        tooltip={`Bit 5: ${flagDescriptions?.[5] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x10}
+        tooltip={`Bit 4: ${flagDescriptions?.[4] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x08}
+        tooltip={`Bit 3: ${flagDescriptions?.[3] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x04}
+        tooltip={`Bit 2: ${flagDescriptions?.[2] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x02}
+        tooltip={`Bit 1: ${flagDescriptions?.[1] ?? ""}`}
+      />
+      <Flag
+        value={value & 0x01}
+        tooltip={`Bit 0: ${flagDescriptions?.[0] ?? ""}`}
+      />
+    </div>
+  );
+};

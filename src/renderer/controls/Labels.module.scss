@@ -1,35 +1,43 @@
 @import "@styles/core.scss";
 
 .label {
-    display: flex;
-    flex-grow: 0;
-    flex-shrink: 0;
-    color: var(--color-label);
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-label);
 }
 
 .value {
-    display: flex;
-    flex-grow: 0;
-    flex-shrink: 0;
-    color: var(--color-value);
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-value);
 }
 
 .secondary {
-    display: flex;
-    flex-grow: 0;
-    flex-shrink: 0;
-    color: var(--color-secondary-label);
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
 }
 
 .flag {
-    display: flex;
-    flex-grow: 0;
-    flex-shrink: 0;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding: 0 2px;
 }
 
 .separator {
-    height: 1px;
-    background-color: var(--color-toolbar-separator);
-    border: none;
-    padding: 0;
+  height: 1px;
+  background-color: var(--color-toolbar-separator);
+  border: none;
+  padding: 0;
+}
+
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
 }

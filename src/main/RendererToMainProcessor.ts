@@ -380,6 +380,7 @@ export async function processRendererToMainMessages (
     case "EmuGetCpuState":
     case "EmuGetUlaState":
     case "EmuGetPsgState":
+    case "EmuGetBlinkState":
     case "EmuEraseAllBreakpoints":
     case "EmuListBreakpoints":
     case "EmuSetBreakpoint":
