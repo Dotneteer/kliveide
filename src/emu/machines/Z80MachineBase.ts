@@ -131,8 +131,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     if (!fileProvider) {
       throw new Error("Could not obtain file provider instance");
     }
-
-    const filename = `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
+    const filename = romName.startsWith("/")
+      ? romName
+      : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
     return fileProvider.readBinaryFile(filename);
   }
 

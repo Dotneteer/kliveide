@@ -8,9 +8,16 @@ import {
 } from "../../common/machines/info-types";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import { emuSetKeyboardLayoutAction, incMenuVersionAction, setMachineSpecificAction } from "../../common/state/actions";
+import {
+  emuSetKeyboardLayoutAction,
+  incMenuVersionAction,
+  setMachineSpecificAction
+} from "../../common/state/actions";
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
+import { getModelConfig } from "../../common/machines/machine-registry";
+import { MC_Z88_INTROM } from "../../common/machines/constants";
+import { setMachineType } from "../../main/registeredMachines";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
@@ -97,38 +104,37 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   const emuWindow = windowInfo.emuWindow;
   const execState = mainStore.getState()?.emulatorState?.machineState;
   const romsSubmenu: MachineMenuItem[] = [];
-  const machineSpecific = mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  const machineSpecific =
+    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
   recentRoms = machineSpecific.recentRoms ?? [];
   recentRomSelected = machineSpecific.recentRomSelected ?? false;
   usedRomFile = machineSpecific.usedRomFile;
   romsSubmenu.push({
     id: "z88_use_default_rom",
     label: "Use default ROM",
-    type: "checkbox",
+    type: "radio",
     checked: !recentRomSelected,
     click: async () => {
-      recentRomSelected = false;
-      usedRomFile = null;
-      const lastRomId = "z88_use_rom_0";
-      const item = Menu.getApplicationMenu().getMenuItemById(lastRomId);
-      if (item) {
-        item.checked = false;
+      if (recentRomSelected) {
+        recentRomSelected = false;
+        usedRomFile = null;
+        setIntRom();
       }
-
-      // TODO: Set the ROM
     }
   });
   if (recentRoms.length > 0) {
-    romsSubmenu.push({ type: "separator" });
     for (let i = 0; i < recentRoms.length; i++) {
       romsSubmenu.push({
         id: `z88_use_rom_${i}`,
         label: path.basename(recentRoms[i]),
-        type: i === 0 ? "checkbox" : "normal",
+        type: "radio",
         checked: i === 0 && recentRomSelected,
         click: async () => {
+          const prevRom = recentRoms[0];
           await selectRecentRomItem(emuWindow, i);
-          // TODO: Save the project
+          if (prevRom !== recentRoms[0]) {
+            setIntRom(recentRoms[0]);
+          }
         }
       });
     }
@@ -161,6 +167,17 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
       }
     }
   ];
+
+  // --- Sets the internal ROM
+  function setIntRom (romId?: string): void {
+    const emulatorState = mainStore.getState()?.emulatorState;
+    const machineId = emulatorState?.machineId;
+    const modelId = emulatorState?.modelId;
+    const config = getModelConfig(machineId, modelId);
+    config[MC_Z88_INTROM] = romId;
+    saveRecentRomInfo();
+    setMachineType(machineId, modelId, config);
+  }
 };
 
 // --- The current ROM file (null, if default is used)
@@ -224,14 +241,7 @@ async function selectRomFileToUse (
 
   // --- Now set the ROM name and refresh the menu
   recentRomSelected = true;
-
-  // --- Save recent ROMs
-  const machineSpecific = mainStore.getState()?.emulatorState?.machineSpecific ?? {};
-  machineSpecific.recentRoms = recentRoms;
-  machineSpecific.recentRomSelected = recentRomSelected;
-  machineSpecific.usedRomFile = usedRomFile;
-  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
-
+  saveRecentRomInfo();
   mainStore.dispatch(incMenuVersionAction());
 
   // --- Request the current machine type
@@ -303,4 +313,16 @@ function isOZRom (contents: Uint8Array): boolean {
     contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
     contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
   );
+}
+
+/**
+ * Saves the recent ROM information to the store
+ */
+function saveRecentRomInfo (): void {
+  const machineSpecific =
+    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
+  machineSpecific.recentRoms = recentRoms;
+  machineSpecific.recentRomSelected = recentRomSelected;
+  machineSpecific.usedRomFile = usedRomFile;
+  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
 }

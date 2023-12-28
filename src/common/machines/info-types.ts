@@ -91,7 +91,7 @@ export type MachineUiRendererInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: (store: Store<AppState>, model: MachineModel) => IZ80Machine;
+  factory: (store: Store<AppState>, model?: MachineModel, config?: MachineConfigSet) => IZ80Machine;
 };
 
 /**
@@ -114,7 +114,7 @@ export type MachineMenuItem = {
   checked?: boolean;
   enabled?: boolean;
   accelerator?: string;
-  click?: () => Promise<void>;
+  click?: (mi?: Electron.MenuItem) => Promise<void>;
   submenu?: MachineMenuItem[];
 };
 

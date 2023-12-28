@@ -12,7 +12,8 @@ import {
   MC_SCREEN_SIZE,
   MF_ULA,
   MF_BLINK,
-  MF_PSG
+  MF_PSG,
+  MC_Z88_INTROM
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineModel, MachineWithModel } from "./info-types";
 
@@ -106,24 +107,24 @@ export const machineRegistry: MachineInfo[] = [
     },
     models: [
       {
-        modelId: "640_64",
-        displayName: "Cambridge Z88 WIP (640x64)",
+        modelId: "OZ47",
+        displayName: "Cambridge Z88 WIP (OZ v4.7)",
         config: {
-          [MC_SCREEN_SIZE]: "640x64"
+          [MC_Z88_INTROM]: "z88v47",
         }
       },
       {
-        modelId: "640_320",
-        displayName: "Cambridge Z88 WIP (640x320)",
+        modelId: "OZ47G",
+        displayName: "Cambridge Z88 WIP (OZ v4.7 + Games)",
         config: {
-          [MC_SCREEN_SIZE]: "640x320"
+          [MC_Z88_INTROM]: "z88v47+games",
         }
       },
       {
-        modelId: "640_480",
-        displayName: "Cambridge Z88 WIP (640x480)",
+        modelId: "OZ50",
+        displayName: "Cambridge Z88 WIP (OZ v5.0)",
         config: {
-          [MC_SCREEN_SIZE]: "640x480"
+          [MC_Z88_INTROM]: "z88v50-r1f99aaae",
         }
       },
       {
