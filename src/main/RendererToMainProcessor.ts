@@ -149,6 +149,7 @@ export async function processRendererToMainMessages (
     case "MainCreateKliveProject":
       const createFolderResponse = await createKliveProject(
         message.machineId,
+        message.modelId,
         message.projectName,
         message.projectFolder
       );

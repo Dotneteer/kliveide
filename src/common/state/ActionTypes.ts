@@ -46,6 +46,7 @@ export interface ActionTypes {
   SET_MACHINE_TYPE: null;
   SET_MODEL_TYPE: null;
   SET_MACHINE_CONFIG: null;
+  SET_MACHINE_SPECIFIC: null;
   SET_MACHINE_STATE: null;
   SET_DEBUGGING: null;
   MUTE_SOUND: null;

@@ -54,6 +54,31 @@ export type MachineModel = {
 };
 
 /**
+ * Available machine models with their IDs
+ */
+export type MachineWithModel = {
+  /**
+   * ID of the machine
+   */
+  machineId: string;
+
+  /**
+   * ID of the machine model
+   */
+  modelId?: string;
+
+  /**
+   * The display name of the particular model
+   */
+  displayName: string;
+
+  /**
+   * The configuratiton of the machine
+   */
+  config?: MachineConfigSet;
+};
+
+/**
  * This type stores renderer information about a particular emulated machine
  */
 export type MachineUiRendererInfo = {
@@ -122,4 +147,3 @@ export type MachineMenuInfo = {
   helpItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
 };
-

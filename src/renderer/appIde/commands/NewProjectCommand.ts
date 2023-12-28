@@ -1,3 +1,4 @@
+import { getAllMachineModels } from "@common/machines/machine-registry";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
@@ -29,6 +30,7 @@ export class NewProjectCommand extends IdeCommandBase {
 
     // --- Extract machine ID
     this.machineId = args[0].text;
+    const machineTypes = getAllMachineModels();
     if (this.machineId !== "sp48") {
       return validationError(`Cannot find machine type '${args[0].text}'`);
     }
@@ -45,6 +47,8 @@ export class NewProjectCommand extends IdeCommandBase {
     const response = await context.messenger.sendMessage({
       type: "MainCreateKliveProject",
       machineId: this.machineId,
+      // TODO extract modelId
+      modelId: undefined,
       projectName: this.projectName,
       projectFolder: this.projectFolder
     });

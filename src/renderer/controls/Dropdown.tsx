@@ -12,6 +12,7 @@ type Props = {
   placeholder: string;
   options: OptionProps[];
   value?: string;
+  width?: number;
   onSelectionChanged?: (value: string) => void;
 };
 
@@ -19,6 +20,7 @@ export const Dropdown = ({
   placeholder,
   options,
   value,
+  width,
   onSelectionChanged
 }: Props) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -28,8 +30,6 @@ export const Dropdown = ({
   const [selectedLabel, setSelectedLabel] = useState<string>(
     options.find(o => o.value === value)?.label
   );
-
-  // TODO: Align selected label
 
   useEffect(() => {
     const handler = () => setShowMenu(false);
@@ -61,7 +61,7 @@ export const Dropdown = ({
     !selectedOption ? false : selectedOption.value === option.value;
 
   return (
-    <div className={styles.dropdownContainer}>
+    <div className={styles.dropdownContainer} style={{width}}>
       <div className={styles.dropdownInput} onClick={handleInputClick}>
         <div className={styles.dropdownSelectedValue}>{selectedLabel ?? placeholder}</div>
         <div className={styles.dropdownTools}>

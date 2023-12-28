@@ -36,6 +36,7 @@ import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
 import { KliveProjectStructure } from "../common/abstractions/KliveProjectStructure";
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+import { getModelConfig } from "../common/machines/machine-registry";
 
 type ProjectCreationResult = {
   path?: string;
@@ -50,6 +51,7 @@ type ProjectCreationResult = {
  */
 export async function createKliveProject (
   machineId: string,
+  modelId: string | undefined,
   projectName: string,
   projectFolder?: string
 ): Promise<ProjectCreationResult> {
@@ -77,6 +79,8 @@ export async function createKliveProject (
     // --- Set up the initial project structure
     const project = await getKliveProjectStructure();
     project.machineType = machineId;
+    project.modelId = modelId;
+    project.config = getModelConfig(machineId, modelId);
     project.builder = {
       roots: ["code/code.kz80.asm"]
     };
@@ -318,13 +322,15 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
   return {
     kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,
+    modelId: state.emulatorState.modelId,
+    config: state.emulatorState.config,
     clockMultiplier: state.emulatorState.clockMultiplier,
     soundLevel: state.emulatorState.soundLevel,
     soundMuted: state.emulatorState.soundMuted,
     savedSoundLevel: state.emulatorState.savedSoundLevel,
     tapeFile: state.emulatorState.tapeFile,
     fastLoad: state.emulatorState.fastLoad,
-    machineSpecific: {},
+    machineSpecific: state.emulatorState.machineSpecific,
     ide: {
       excludedProjectItems: state.project?.excludedItems ?? []
     },

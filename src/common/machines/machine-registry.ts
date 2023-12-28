@@ -14,7 +14,7 @@ import {
   MF_BLINK,
   MF_PSG
 } from "./constants";
-import { MachineInfo } from "./info-types";
+import { MachineConfigSet, MachineInfo, MachineModel, MachineWithModel } from "./info-types";
 
 /**
  * The registry of available machine types with their available models
@@ -25,7 +25,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 48K",
     features: {
       [MF_TAPE_SUPPORT]: true,
-      [MF_ULA]: true,
+      [MF_ULA]: true
     },
     models: [
       {
@@ -102,7 +102,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "Cambridge Z88 WIP",
     features: {
       [MF_BANK]: 256,
-      [MF_BLINK]: true,
+      [MF_BLINK]: true
     },
     models: [
       {
@@ -143,3 +143,43 @@ export const machineRegistry: MachineInfo[] = [
     ]
   }
 ];
+
+/**
+ * Gets all available machine models
+ * @returns 
+ */
+export function getAllMachineModels (): MachineWithModel[] {
+  const result: MachineWithModel[] = [];
+  for (const machine of machineRegistry) {
+    if (machine.models) {
+      result.push(...machine.models.map(m => ({
+        ...m,
+        machineId: machine.machineId,
+      })));
+    } else {
+      result.push({
+        machineId: machine.machineId,
+        displayName: machine.displayName,
+      });
+    }
+  }
+  return result;
+}
+
+/**
+ * Gets the configuration of the specified machine
+ * @param machineId Machine ID
+ * @param modelId Model ID
+ * @returns Machine configuration
+ */
+export function getModelConfig(machineId: string, modelId?: string): MachineConfigSet | undefined {
+  const machine = machineRegistry.find(m => m.machineId === machineId);
+  if (!machine) {
+    return undefined;
+  }
+  if (!modelId) {
+    return machine.config;
+  }
+  const model = machine.models?.find(m => m.modelId === modelId);
+  return model?.config;
+}
