@@ -83,7 +83,9 @@ import {
   EmuGetPsgStateResponse,
   EmuGetNecUpd765Request,
   EmuGetNecUpd765Response,
-  EmuSetDiskFileRequest
+  EmuSetDiskFileRequest,
+  EmuGetBlinkStateRequest,
+  EmuGetBlinkStateResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -178,6 +180,7 @@ export type RequestMessage =
   | EmuNormalizeBreakpointsRequest
   | EmuScrollBreakpointsRequest
   | EmuGetNecUpd765Request
+  | EmuGetBlinkStateRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -238,6 +241,7 @@ export type ResponseMessage =
   | EmuGetMemoryResponse
   | EmuGetSysVarsResponse
   | EmuGetNecUpd765Response
+  | EmuGetBlinkStateResponse
   | IdeExecuteCommandResponse;
 
 /**

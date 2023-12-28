@@ -9,7 +9,10 @@ import {
   MF_BANK,
   MC_DISK_SUPPORT,
   MC_MEM_SIZE,
-  MC_SCREEN_SIZE
+  MC_SCREEN_SIZE,
+  MF_ULA,
+  MF_BLINK,
+  MF_PSG
 } from "./constants";
 import { MachineInfo } from "./info-types";
 
@@ -21,7 +24,8 @@ export const machineRegistry: MachineInfo[] = [
     machineId: MI_SPECTRUM_48,
     displayName: "ZX Spectrum 48K",
     features: {
-      [MF_TAPE_SUPPORT]: true
+      [MF_TAPE_SUPPORT]: true,
+      [MF_ULA]: true,
     },
     models: [
       {
@@ -53,6 +57,8 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 128K",
     features: {
       [MF_TAPE_SUPPORT]: true,
+      [MF_ULA]: true,
+      [MF_PSG]: true,
       [MF_ROM]: 2,
       [MF_BANK]: 8
     }
@@ -62,6 +68,8 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum +2E/+3E",
     features: {
       [MF_TAPE_SUPPORT]: true,
+      [MF_ULA]: true,
+      [MF_PSG]: true,
       [MF_ROM]: 4,
       [MF_BANK]: 8
     },
@@ -93,7 +101,8 @@ export const machineRegistry: MachineInfo[] = [
     machineId: MI_Z88,
     displayName: "Cambridge Z88 WIP",
     features: {
-      [MF_BANK]: 256
+      [MF_BANK]: 256,
+      [MF_BLINK]: true,
     },
     models: [
       {

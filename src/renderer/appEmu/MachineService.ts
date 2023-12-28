@@ -6,7 +6,7 @@ import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineTypeAction, setModelTypeAction } from "@state/actions";
+import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
@@ -100,6 +100,7 @@ class MachineService implements IMachineService {
     // --- Ready, sign the machine type state change
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
+    this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
   }
 
   /**
@@ -118,7 +119,7 @@ class MachineService implements IMachineService {
     const machine = machineRegistry.find(
       m =>
         m.machineId === currentType &&
-        (!m.models || m.models?.find(m => m.modelId === currentModel))
+        (!m.models || !currentModel || m.models?.find(m => m.modelId === currentModel))
     );
     if (!machine) {
       return undefined;

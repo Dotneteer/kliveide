@@ -31,6 +31,10 @@ import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
+import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
+import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
+import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
 
 const borderColors = [
   "Black",
@@ -191,18 +195,61 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const machine = controller.machine;
-      if (machine.machineId !== "sp128") {
-        return errorResponse(
-          `EmuGetPsgState is not implemented for ${machine.machineId}`
-        );
-      }
       const psgDevice = (machine as ZxSpectrum128Machine).psgDevice;
-      console.log(psgDevice.getPsgState());
       return {
         type: "EmuGetPsgStateResponse",
         psgState: psgDevice.getPsgState()
       };
     }
+
+    case "EmuGetBlinkState":
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const blinkDevice = (controller.machine as any).blinkDevice as IZ88BlinkDevice;
+      const keyboardDevice = (controller.machine as any).keyboardDevice as IZ88KeyboardDevice;
+      const beeperDevice = (controller.machine as any).beeperDevice as IZ88BeeperDevice;
+      const screenDevice = (controller.machine as any).screenDevice as IZ88ScreenDevice; 
+      if (!blinkDevice || !keyboardDevice || !beeperDevice || !screenDevice) {
+        break;
+      }
+      return {
+        type: "EmuGetBlinkStateResponse",
+        SR0: blinkDevice.SR0,
+        SR1: blinkDevice.SR1,
+        SR2: blinkDevice.SR2,
+        SR3: blinkDevice.SR3,
+        TIM0: blinkDevice.TIM0,
+        TIM1: blinkDevice.TIM1,
+        TIM2: blinkDevice.TIM2,
+        TIM3: blinkDevice.TIM3,
+        TIM4: blinkDevice.TIM4,
+        TSTA: blinkDevice.TSTA,
+        TMK: blinkDevice.TMK,
+        INT: blinkDevice.INT,
+        STA: blinkDevice.STA,
+        COM: blinkDevice.COM,
+        EPR: blinkDevice.EPR,
+        keyLines: [
+          keyboardDevice.getKeyLineValue(0),
+          keyboardDevice.getKeyLineValue(1),
+          keyboardDevice.getKeyLineValue(2),
+          keyboardDevice.getKeyLineValue(3),
+          keyboardDevice.getKeyLineValue(4),
+          keyboardDevice.getKeyLineValue(5),
+          keyboardDevice.getKeyLineValue(6),
+          keyboardDevice.getKeyLineValue(7)
+        ],
+        oscBit: beeperDevice.oscillatorBit,
+        earBit: beeperDevice.earBit,
+        PB0: screenDevice.PB0,
+        PB1: screenDevice.PB1,
+        PB2: screenDevice.PB2,
+        PB3: screenDevice.PB3,
+        SBR: screenDevice.SBR,
+        SCW: screenDevice.SCW,
+        SCH: screenDevice.SCH
+      }
+
 
     case "EmuListBreakpoints": {
       const controller = machineService.getMachineController();

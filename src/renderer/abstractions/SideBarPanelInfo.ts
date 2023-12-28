@@ -42,4 +42,14 @@ export type SideBarPanelInfo = {
    * The machine IDs this panel is restricted to
    */
   readonly restrictTo?: string[];
+
+  /**
+   * The features required for this panel
+   */
+  readonly requireFeature?: string[];
+
+  /**
+   * The configuration values required for this panel
+   */
+  readonly requireConfig?: string[];
 };
