@@ -49,6 +49,7 @@ import {
   getProjectDirectoryContentFilter
 } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
+import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -211,6 +212,7 @@ export async function processRendererToMainMessages (
       const selectedFile = await displayOpenFileDialog(
         window,
         message.title,
+        message.filters,
         message.settingsId
       );
       return {
@@ -367,6 +369,20 @@ export async function processRendererToMainMessages (
       shell.openExternal(KLIVE_GITHUB_PAGES);
       break;
 
+    case "MainCheckZ88Card":
+      const cardResult = await checkZ88SlotFile(message.path);
+      if (typeof cardResult === "string") {
+        return {
+          type: "MainCheckZ88CardResponse",
+          message: cardResult
+        };
+      } else {
+        return {
+          type: "MainCheckZ88CardResponse",
+          content: cardResult
+        };
+      }
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -440,6 +456,7 @@ async function displayOpenFolderDialog (
 async function displayOpenFileDialog (
   browserWindow: BrowserWindow,
   title?: string,
+  filters?: Electron.FileFilter[],
   settingsId?: string
 ): Promise<string> {
   const defaultPath =
@@ -448,10 +465,7 @@ async function displayOpenFileDialog (
     title: title ?? "Open File",
     defaultPath,
     properties: ["openFile"],
-    filters: [
-      { name: "Tape files", extensions: ["tap", "tzx"] },
-      { name: "All Files", extensions: ["*"] }
-    ]
+    filters
   });
   if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
 

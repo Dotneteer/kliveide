@@ -122,18 +122,10 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
 /**
  * The client wants to get the app folder
  */
-export interface MainShowOpenFolderDialogRequest extends MessageBase {
-  type: "MainShowOpenFolderDialog";
-  title?: string;
-  settingsId?: string;
-}
-
-/**
- * The client wants to get the app folder
- */
 export interface MainShowOpenFileDialogRequest extends MessageBase {
   type: "MainShowOpenFileDialog";
   title?: string;
+  filters?: { name: string; extensions: string[] }[];
   settingsId?: string;
 }
 
@@ -253,6 +245,14 @@ export interface MainShowWebsiteRequest extends MessageBase {
 }
 
 /**
+ * The client wants to check if a Z88 card file is valid
+ */
+export interface MainCheckZ88CardRequest extends MessageBase {
+  type: "MainCheckZ88Card";
+  path: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -321,6 +321,15 @@ export interface MainSaveFileResponse extends MessageBase {
 export interface MainGetSettingsResponse extends MessageBase {
   type: "MainGetSettingsResponse";
   settings: Record<string, any>;
+}
+
+/**
+ * The client wants check if a Z88 card file is valid
+ */
+export interface MainCheckZ88CardResponse extends MessageBase {
+  type: "MainCheckZ88CardResponse";
+  message?: string;
+  content?: Uint8Array;
 }
 
 

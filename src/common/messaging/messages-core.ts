@@ -53,7 +53,9 @@ import {
   MainGetProjectSettingsRequest,
   MainGetSettingsResponse,
   MainMoveSettingsRequest,
-  MainShowWebsiteRequest
+  MainShowWebsiteRequest,
+  MainCheckZ88CardRequest,
+  MainCheckZ88CardResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -209,6 +211,7 @@ export type RequestMessage =
   | MainShowItemInFolderRequest
   | MainPathExistsRequest
   | MainShowWebsiteRequest
+  | MainCheckZ88CardRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -234,6 +237,7 @@ export type ResponseMessage =
   | MainSaveFileResponse
   | MainGetSettingsResponse
   | MainCompileResponse
+  | MainCheckZ88CardResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

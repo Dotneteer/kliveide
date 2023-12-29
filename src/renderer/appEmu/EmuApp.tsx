@@ -27,8 +27,9 @@ import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
-import { FIRST_STARTUP_DIALOG_EMU } from "@common/messaging/dialog-ids";
+import { FIRST_STARTUP_DIALOG_EMU, Z88_CARDS_DIALOG } from "@common/messaging/dialog-ids";
 import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
+import { Z88CardsDialog } from "./dialogs/Z88CardsDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -90,6 +91,13 @@ const EmuApp = () => {
 
       {dialogId === FIRST_STARTUP_DIALOG_EMU && (
         <FirstStartDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_CARDS_DIALOG && (
+        <Z88CardsDialog
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}

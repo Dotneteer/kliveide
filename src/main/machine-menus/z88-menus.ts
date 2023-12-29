@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { BrowserWindow, Menu, dialog } from "electron";
+import { BrowserWindow, dialog } from "electron";
 import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 import {
   MachineMenuItem,
@@ -9,6 +9,7 @@ import {
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import {
+  displayDialogAction,
   emuSetKeyboardLayoutAction,
   incMenuVersionAction,
   setMachineSpecificAction
@@ -18,6 +19,7 @@ import { saveKliveProject } from "../../main/projects";
 import { getModelConfig } from "../../common/machines/machine-registry";
 import { MC_SCREEN_SIZE, MC_Z88_INTROM } from "../../common/machines/constants";
 import { setMachineType } from "../../main/registeredMachines";
+import { Z88_CARDS_DIALOG } from "../../common/messaging/dialog-ids";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
@@ -212,9 +214,8 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     {
       id: "z88_insert_card",
       label: "Insert or remove card",
-      enabled: execState === MachineControllerState.Running,
       click: async () => {
-        console.log("Insert or remove card");
+        mainStore.dispatch(displayDialogAction(Z88_CARDS_DIALOG));
       }
     }
   ];
@@ -230,6 +231,40 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     setMachineType(machineId, modelId, config);
   }
 };
+
+/**
+ * Checks if specified file is a vlid OZ Application Card
+ * @param filename File to check
+ * @returns File contents or error message
+ */
+export async function checkZ88SlotFile(filename: string): Promise<string | Uint8Array> {
+  try {
+    const contents = Uint8Array.from(fs.readFileSync(filename));
+
+    // --- Check contents length
+    if (
+      contents.length !== 0x10_0000 &&
+      contents.length !== 0x08_0000 &&
+      contents.length !== 0x04_0000 &&
+      contents.length !== 0x02_0000 &&
+      contents.length !== 0x00_8000
+    ) {
+      return `Invalid card file length: ${contents.length}. The card file length can be 32K, 128K, 256K, 512K, or 1M.`;
+    }
+
+    // --- Done: valid ROM
+    return contents;
+  } catch (err) {
+    // --- This error is intentionally ignored
+    return (
+      `Error processing card file ${filename}. ` +
+      "Please check if you have the appropriate access rights " +
+      "to read the files contents and the file is a valid ROM file."
+    );
+  }
+}
+
+
 
 // --- The current ROM file (null, if default is used)
 let usedRomFile: string | null = null;
