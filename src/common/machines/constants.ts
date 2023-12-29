@@ -23,3 +23,6 @@ export const MF_BANK = "bank";
 export const MF_ULA = "ula";
 export const MF_PSG = "psg";
 export const MF_BLINK = "blink";
+
+// Available custom tool keys
+export const CT_DISASSEMBLER = "disassembler";

@@ -31,6 +31,11 @@ export type MachineInfo = {
    * Available machine models
    */
   models?: MachineModel[];
+
+  /**
+   * Information about custom tools
+   */
+  toolInfo?: Record<string, any>;
 };
 
 /**

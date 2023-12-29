@@ -36,7 +36,7 @@ export class ZxSpectrumP3eFloatingBusDevice implements IFloatingBusDevice {
       (this.machine.currentFrameTact - 3 + this.machine.tactsInFrame) %
       this.machine.tactsInFrame;
     const renderingTact = screen.renderingTactTable[currentTactIndex];
-    switch (renderingTact.phase) {
+    switch (renderingTact?.phase) {
       case RenderingPhase.BorderFetchPixel:
       case RenderingPhase.DisplayB1FetchB2:
       case RenderingPhase.DisplayB2FetchB1:

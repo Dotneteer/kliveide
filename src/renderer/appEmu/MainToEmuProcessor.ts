@@ -168,7 +168,7 @@ export async function processMainToEmuMessages (
         ras: Math.floor(machine.currentFrameTact / machine.screenWidthInPixels),
         pos: machine.currentFrameTact % machine.screenWidthInPixels,
         pix: RenderingPhase[
-          screenDevice.renderingTactTable[machine.currentFrameTact].phase
+          screenDevice.renderingTactTable[machine.currentFrameTact]?.phase
         ],
         bor: borderColors[screenDevice.borderColor & 0x07],
         flo: (machine as ZxSpectrumBase).floatingBusDevice.readFloatingBus(),

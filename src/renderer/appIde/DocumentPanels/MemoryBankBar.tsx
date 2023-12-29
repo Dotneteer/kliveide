@@ -23,7 +23,6 @@ export const MemoryBankBar = ({
   currentRamBank,
   changed
 }: MemoryBankPanelProps) => {
-  console.log("MemoryBankBar", romPages, ramBanks);
   
   // --- Need to have multiple ROM pages or RAM banks to render
   if (romPages < 2 && ramBanks < 2) return null;

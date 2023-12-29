@@ -120,7 +120,7 @@ const BreakpointsPanel = () => {
         <VirtualizedListView
           items={bps}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           itemRenderer={idx => {
             const bp = bps[idx];
             let addrKey = getBreakpointKey(bp);

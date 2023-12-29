@@ -1,4 +1,8 @@
-import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useSelector,
+  useStore
+} from "@renderer/core/RendererProvider";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import {
   activateOutputPaneAction,
@@ -67,7 +71,7 @@ const OutputPanel = () => {
         <VirtualizedListView
           items={contents ?? []}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
             return <OutputLine spans={contents?.[idx]?.spans} />;
@@ -133,9 +137,9 @@ export const outputPanelHeaderRenderer = () => {
         placeholder='Select...'
         options={panes}
         value={activePane}
-        onSelectionChanged={option =>
-          dispatch(activateOutputPaneAction(option))
-        }
+        onSelectionChanged={option => {
+          dispatch(activateOutputPaneAction(option));
+        }}
       />
       <TabButtonSpace />
       <TabButton

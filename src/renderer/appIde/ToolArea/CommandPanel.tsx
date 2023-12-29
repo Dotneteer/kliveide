@@ -61,7 +61,7 @@ const CommandPanel = () => {
         <VirtualizedListView
           items={contents ?? []}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
             return <OutputLine spans={contents?.[idx]?.spans} />;

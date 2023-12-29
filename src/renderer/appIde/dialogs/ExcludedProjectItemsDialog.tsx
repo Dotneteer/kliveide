@@ -60,7 +60,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
           <VirtualizedListView
             items={excludedItems}
             approxSize={30}
-            fixItemHeight={false}
+            fixItemHeight={true}
             itemRenderer={idx => (<>
               <ExcludedItem
                 itemInfo={excludedItems[idx]}
@@ -75,7 +75,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
           <VirtualizedListView
             items={globalExcludes}
             approxSize={30}
-            fixItemHeight={false}
+            fixItemHeight={true}
             itemRenderer={idx => (<>
               <ExcludedItem
                 itemInfo={globalExcludes[idx]}/>

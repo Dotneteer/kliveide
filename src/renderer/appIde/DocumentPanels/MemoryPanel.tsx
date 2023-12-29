@@ -329,7 +329,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         <VirtualizedListView
           items={memoryItems}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           scrolled={() => {
             if (!vlApi.current || cachedItems.current.length === 0) return;
 
