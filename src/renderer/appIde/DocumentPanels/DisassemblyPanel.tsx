@@ -36,6 +36,8 @@ import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { ZxSpectrum48CustomDisassembler } from "../z80-disassembler/zx-spectrum-48-disassembler";
+import { delay } from "lodash";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -172,6 +174,7 @@ const DisassemblyPanel = ({
         const disassembler = new Z80Disassembler(memSections, memory, {
           noLabelPrefix: false
         });
+        disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
         const output = await disassembler.disassemble(0x0000, 0xffff);
         const items = output.outputItems;
         cachedItems.current = items;
@@ -395,9 +398,9 @@ const DisassemblyPanel = ({
         <VirtualizedListView
           items={cachedItems.current}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           vlApiLoaded={api => (vlApi.current = api)}
-          scrolled={() => {
+          scrolled={async () => {
             if (!vlApi.current || !cachedItems.current) return;
 
             const range = vlApi.current.getRange();

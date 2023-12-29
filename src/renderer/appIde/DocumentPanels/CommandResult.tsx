@@ -110,7 +110,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
         <VirtualizedListView
           items={output}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           scrolled={scrolled}
           vlApiLoaded={api => (vlApi.current = api)}
           itemRenderer={idx => {

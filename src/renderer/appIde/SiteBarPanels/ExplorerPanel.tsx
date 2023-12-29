@@ -598,7 +598,7 @@ const ExplorerPanel = () => {
         <VirtualizedListView
           items={visibleNodes}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
           getItemKey={index => tree.getViewNodeByIndex(index).data.fullPath}

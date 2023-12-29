@@ -51,7 +51,7 @@ const NecUpd765Panel = () => {
         <VirtualizedListView
           items={log}
           approxSize={20}
-          fixItemHeight={false}
+          fixItemHeight={true}
           itemRenderer={idx => {
             const item = log[idx];
             let icon: string;
