@@ -11,7 +11,15 @@ import {
 } from "@renderer/reportError";
 import { useRef, useState } from "react";
 import { delay } from "@renderer/utils/timing";
-import { setMachineSpecificAction } from "@common/state/actions";
+import {
+  setMachineConfigAction,
+  setMachineSpecificAction
+} from "@common/state/actions";
+import {
+  MC_Z88_SLOT1,
+  MC_Z88_SLOT2,
+  MC_Z88_SLOT3
+} from "@common/machines/constants";
 
 // --- ID of the open file dialog path
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
@@ -32,28 +40,27 @@ type Props = {
 export const Z88CardsDialog = ({ onClose }: Props) => {
   const modalApi = useRef<ModalApi>(null);
   const { store, messageSource } = useRendererContext();
-  const machineSpecific = store.getState().emulatorState?.machineSpecific ?? {};
-  const initialState = machineSpecific.z88Cards ?? {
-    slot1: { content: "empty" },
-    slot2: { content: "empty" },
-    slot3: { content: "empty" }
+  const machineConfig = store.getState().emulatorState?.config ?? {};
+  const initialState = {
+    [MC_Z88_SLOT1]: machineConfig[MC_Z88_SLOT1] ?? { content: "empty" },
+    [MC_Z88_SLOT2]: machineConfig[MC_Z88_SLOT2] ?? { content: "empty" },
+    [MC_Z88_SLOT3]: machineConfig[MC_Z88_SLOT3] ?? { content: "empty" }
   };
-  const [newState, setNewState] = useState<Z88CardsState>(initialState);
+  const [newState, setNewState] = useState<Z88CardsState>(
+    initialState as Z88CardsState
+  );
   return (
     <Modal
       title='Insert or Remove Z88 Cards'
       isOpen={true}
       fullScreen={false}
-      width={500}
+      width={600}
       onApiLoaded={api => (modalApi.current = api)}
       initialFocus='cancel'
       onPrimaryClicked={async () => {
-        const machineSpecific =
-          store.getState().emulatorState.machineSpecific ?? {};
-        store.dispatch(
-          setMachineSpecificAction({ ...machineSpecific, z88Cards: newState }),
-          messageSource
-        );
+        if (slotStateChanged()) {
+          applyCardStateChange();
+        }
         return false;
       }}
       onClose={() => {
@@ -87,6 +94,43 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       </DialogRow>
     </Modal>
   );
+
+  function slotStateChanged (): boolean {
+    return (
+      initialState.slot1.content !== newState.slot1.content ||
+      initialState.slot1.epromFile !== newState.slot1.epromFile ||
+      initialState.slot2.content !== newState.slot2.content ||
+      initialState.slot2.epromFile !== newState.slot2.epromFile ||
+      initialState.slot3.content !== newState.slot3.content ||
+      initialState.slot3.epromFile !== newState.slot3.epromFile
+    );
+  }
+
+  async function applyCardStateChange (): Promise<void> {
+    // --- Save the new change
+    const machineConfig = store.getState().emulatorState.config ?? {};
+    store.dispatch(
+      setMachineConfigAction({ ...machineConfig, ...newState }),
+      messageSource
+    );
+
+    // TODO: Apply the card state change
+    let changed = false;
+    let useSoftReset = true;
+  }
+
+  // --- Check if slot content change requires a soft reset
+  function requiresSoftReset (
+    oldContent: SlotContent,
+    newContent: SlotContent
+  ): boolean {
+    return (
+      (oldContent === "eprom" && newContent === "empty") ||
+      (oldContent === "empty" && newContent === "eprom") ||
+      (oldContent === "empty" && newContent === "empty") ||
+      (oldContent === "eprom" && newContent === "eprom")
+    );
+  }
 };
 
 type CardColumnProps = {
@@ -107,50 +151,57 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
       <div className={styles.labelRow}>
         <div className={styles.slotLabel}>Slot {slot}</div>
         {hasNewState() && (
-          <Icon iconName='circle-filled' fill="--color-text-hilite" width={16} height={16} />
+          <Icon
+            iconName='circle-filled'
+            fill='--color-text-hilite'
+            width={16}
+            height={16}
+          />
         )}
       </div>
-      <Dropdown
-        placeholder='Select...'
-        options={cardData}
-        value={initialState.content}
-        width={168}
-        onSelectionChanged={async option => {
-          if (option === slotState.content) return;
-          let filename: string | undefined;
-          if (option === "eprom") {
-            await delay(10);
-            filename = await openFileDialog(messenger);
-            if (!filename) {
-              return true;
+      <div className={styles.row}>
+        <Dropdown
+          placeholder='Select...'
+          options={cardData}
+          value={initialState.content}
+          width={168}
+          onSelectionChanged={async option => {
+            if (option === slotState.content) return;
+            let filename: string | undefined;
+            if (option === "eprom") {
+              await delay(10);
+              filename = await getCardFile(messenger);
+              if (!filename) {
+                return true;
+              }
             }
-          }
-          const newSlotState: SlotState = {
-            ...slotState,
-            content: option as SlotContent,
-            epromFile: filename
-          };
+            const newSlotState: SlotState = {
+              ...slotState,
+              content: option as SlotContent,
+              epromFile: filename
+            };
 
-          setSlotState(newSlotState);
-          changed?.(newSlotState);
-        }}
-      />
-      <Filename
-        file={slotState.epromFile}
-        changed={async (name: string) => {
-          const newSlotState: SlotState = {
-            ...slotState,
-            epromFile: name
-          };
-          setSlotState(newSlotState);
-          changed?.(newSlotState);
-        }}
-      />
+            setSlotState(newSlotState);
+            changed?.(newSlotState);
+          }}
+        />
+        <Filename
+          file={slotState.epromFile}
+          changed={async (name: string) => {
+            const newSlotState: SlotState = {
+              ...slotState,
+              epromFile: name
+            };
+            setSlotState(newSlotState);
+            changed?.(newSlotState);
+          }}
+        />
+      </div>
     </div>
   );
 };
 
-async function openFileDialog (
+async function getCardFile (
   messenger: MessengerBase
 ): Promise<string | undefined> {
   const response = await messenger.sendMessage({
@@ -168,7 +219,32 @@ async function openFileDialog (
   } else if (response.type !== "MainShowOpenFileDialogResponse") {
     reportUnexpectedMessageType(response.type);
   } else {
-    return response.file;
+    // --- Check the selected file
+    const checkResponse = await messenger.sendMessage({
+      type: "MainCheckZ88Card",
+      path: response.file
+    });
+    if (checkResponse.type === "ErrorResponse") {
+      reportMessagingError(
+        `MainShowOpenFolderDialog call failed: ${checkResponse.message}`
+      );
+    } else if (checkResponse.type !== "MainCheckZ88CardResponse") {
+      reportUnexpectedMessageType(checkResponse.type);
+    } else {
+      // --- Result of test
+      if (checkResponse.content) {
+        return response.file;
+      } else if (checkResponse.message) {
+        messenger.sendMessage({
+          type: "MainDisplayMessageBox",
+          title: "Invalid Z88 Card",
+          messageType: "error",
+          message: checkResponse.message
+        });
+        return;
+      }
+      return response.file;
+    }
   }
 }
 
@@ -185,7 +261,7 @@ const Filename = ({ file, changed }: FileNameProps) => {
       style={{ cursor: file ? "pointer" : undefined }}
       onClick={async () => {
         if (!file) return;
-        const filename = await openFileDialog(messenger);
+        const filename = await getCardFile(messenger);
         if (filename) changed?.(filename);
       }}
     >

@@ -49,6 +49,7 @@ import {
   getProjectDirectoryContentFilter
 } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
+import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -367,6 +368,20 @@ export async function processRendererToMainMessages (
     case "MainShowWebsite":
       shell.openExternal(KLIVE_GITHUB_PAGES);
       break;
+
+    case "MainCheckZ88Card":
+      const cardResult = await checkZ88SlotFile(message.path);
+      if (typeof cardResult === "string") {
+        return {
+          type: "MainCheckZ88CardResponse",
+          message: cardResult
+        };
+      } else {
+        return {
+          type: "MainCheckZ88CardResponse",
+          content: cardResult
+        };
+      }
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

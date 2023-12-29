@@ -16,6 +16,12 @@
   padding: 4px;
 }
 
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
 .labelRow {
   display: flex;
   flex-direction: row;
@@ -32,9 +38,8 @@
   flex-direction: row;
   flex-grow: 1;
   flex-shrink: 0;
-  margin-top: 8px;
+  margin-left: 8px;
   align-items: center;
-  height: 24px;
 }
 
 .filename {
@@ -43,7 +48,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 432px;
+  width: 356px;
   direction: rtl;
   text-align: left;
 }

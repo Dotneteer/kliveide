@@ -232,6 +232,40 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   }
 };
 
+/**
+ * Checks if specified file is a vlid OZ Application Card
+ * @param filename File to check
+ * @returns File contents or error message
+ */
+export async function checkZ88SlotFile(filename: string): Promise<string | Uint8Array> {
+  try {
+    const contents = Uint8Array.from(fs.readFileSync(filename));
+
+    // --- Check contents length
+    if (
+      contents.length !== 0x10_0000 &&
+      contents.length !== 0x08_0000 &&
+      contents.length !== 0x04_0000 &&
+      contents.length !== 0x02_0000 &&
+      contents.length !== 0x00_8000
+    ) {
+      return `Invalid card file length: ${contents.length}. The card file length can be 32K, 128K, 256K, 512K, or 1M.`;
+    }
+
+    // --- Done: valid ROM
+    return contents;
+  } catch (err) {
+    // --- This error is intentionally ignored
+    return (
+      `Error processing card file ${filename}. ` +
+      "Please check if you have the appropriate access rights " +
+      "to read the files contents and the file is a valid ROM file."
+    );
+  }
+}
+
+
+
 // --- The current ROM file (null, if default is used)
 let usedRomFile: string | null = null;
 
