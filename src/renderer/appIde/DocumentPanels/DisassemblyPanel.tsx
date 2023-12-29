@@ -35,9 +35,11 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { CT_DISASSEMBLER, MF_BANK, MF_ROM } from "@common/machines/constants";
 import { ZxSpectrum48CustomDisassembler } from "../z80-disassembler/zx-spectrum-48-disassembler";
 import { delay } from "lodash";
+import { useAppServices } from "../services/AppServicesProvider";
+import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -65,6 +67,7 @@ const DisassemblyPanel = ({
   const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
   const romsNum = machineInfo.features?.[MF_ROM] ?? 1;
   const banksNum = machineInfo.features?.[MF_BANK] ?? 0;
+  const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
 
@@ -174,7 +177,10 @@ const DisassemblyPanel = ({
         const disassembler = new Z80Disassembler(memSections, memory, {
           noLabelPrefix: false
         });
-        disassembler.setCustomDisassembler(new ZxSpectrum48CustomDisassembler());
+        if (customDisassembly && typeof customDisassembly === "function") {
+          const customPlugin = customDisassembly() as ICustomDisassembler;
+          disassembler.setCustomDisassembler(customPlugin);
+        }
         const output = await disassembler.disassemble(0x0000, 0xffff);
         const items = output.outputItems;
         cachedItems.current = items;

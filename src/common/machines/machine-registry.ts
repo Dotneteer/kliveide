@@ -9,18 +9,15 @@ import {
   MF_BANK,
   MC_DISK_SUPPORT,
   MC_MEM_SIZE,
-  MC_SCREEN_SIZE,
   MF_ULA,
   MF_BLINK,
   MF_PSG,
-  MC_Z88_INTROM
+  MC_Z88_INTROM,
+  CT_DISASSEMBLER
 } from "./constants";
-import {
-  MachineConfigSet,
-  MachineInfo,
-  MachineModel,
-  MachineWithModel
-} from "./info-types";
+import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
+import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
+import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
 
 /**
  * The registry of available machine types with their available models
@@ -56,7 +53,10 @@ export const machineRegistry: MachineInfo[] = [
           [MC_MEM_SIZE]: 16
         }
       }
-    ]
+    ],
+    toolInfo: {
+      [CT_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+    }
   },
   {
     machineId: MI_SPECTRUM_128,
@@ -132,7 +132,10 @@ export const machineRegistry: MachineInfo[] = [
           [MC_Z88_INTROM]: "z88v40"
         }
       }
-    ]
+    ],
+    toolInfo: {
+      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler()
+    }
   }
 ];
 
