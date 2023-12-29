@@ -13,7 +13,7 @@ type Props = {
   options: OptionProps[];
   value?: string;
   width?: number;
-  onSelectionChanged?: (value: string) => void;
+  onSelectionChanged?: (value: string) => boolean | void | Promise<boolean | void>;
 };
 
 export const Dropdown = ({
@@ -42,7 +42,7 @@ export const Dropdown = ({
 
   useEffect(() => {
     setSelectedOption(options.find(o => o.value === value));
-    setSelectedLabel(options.find(o => o.value === value)?.label)
+    setSelectedLabel(options.find(o => o.value === value)?.label);
   }, [value, options]);
 
   const handleInputClick = (e: React.MouseEvent) => {
@@ -50,10 +50,16 @@ export const Dropdown = ({
     setShowMenu(!showMenu);
   };
 
-  const onItemClick = (option: OptionProps) => {
+  const onItemClick = async (option: OptionProps) => {
+    const prevOption = selectedOption;
+    const prevLabel = selectedLabel;
     setSelectedOption(option);
     setSelectedLabel(option.label);
-    onSelectionChanged?.(option.value);
+    const cancel = await onSelectionChanged?.(option.value);
+    if (cancel === true) {
+      setSelectedOption(prevOption);
+      setSelectedLabel(prevLabel);
+    }
     setShowMenu(false);
   };
 
@@ -61,9 +67,11 @@ export const Dropdown = ({
     !selectedOption ? false : selectedOption.value === option.value;
 
   return (
-    <div className={styles.dropdownContainer} style={{width}}>
+    <div className={styles.dropdownContainer} style={{ width }}>
       <div className={styles.dropdownInput} onClick={handleInputClick}>
-        <div className={styles.dropdownSelectedValue}>{selectedLabel ?? placeholder}</div>
+        <div className={styles.dropdownSelectedValue}>
+          {selectedLabel ?? placeholder}
+        </div>
         <div className={styles.dropdownTools}>
           <div className={styles.dropdownTool}>
             <Icon iconName='chevron-down' fill='--color-command-icon' />

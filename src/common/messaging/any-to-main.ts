@@ -122,18 +122,10 @@ export interface MainShowOpenFolderDialogRequest extends MessageBase {
 /**
  * The client wants to get the app folder
  */
-export interface MainShowOpenFolderDialogRequest extends MessageBase {
-  type: "MainShowOpenFolderDialog";
-  title?: string;
-  settingsId?: string;
-}
-
-/**
- * The client wants to get the app folder
- */
 export interface MainShowOpenFileDialogRequest extends MessageBase {
   type: "MainShowOpenFileDialog";
   title?: string;
+  filters?: { name: string; extensions: string[] }[];
   settingsId?: string;
 }
 

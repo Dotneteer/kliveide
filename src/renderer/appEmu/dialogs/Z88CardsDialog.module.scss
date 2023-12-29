@@ -1,0 +1,49 @@
+.hilite {
+  color: var(--color-text-hilite);
+}
+
+.cardRows {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.column {
+  flex: 1;
+  flex-grow: 1;
+  flex-direction: column;
+  padding: 4px;
+}
+
+.labelRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.slotLabel {
+  margin-right: 4px;
+}
+
+.filenameRow {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  flex-shrink: 0;
+  margin-top: 8px;
+  align-items: center;
+  height: 24px;
+}
+
+.filename {
+  padding-top: 2px;
+  padding-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 432px;
+  direction: rtl;
+  text-align: left;
+}

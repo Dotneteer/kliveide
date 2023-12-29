@@ -211,6 +211,7 @@ export async function processRendererToMainMessages (
       const selectedFile = await displayOpenFileDialog(
         window,
         message.title,
+        message.filters,
         message.settingsId
       );
       return {
@@ -440,6 +441,7 @@ async function displayOpenFolderDialog (
 async function displayOpenFileDialog (
   browserWindow: BrowserWindow,
   title?: string,
+  filters?: Electron.FileFilter[],
   settingsId?: string
 ): Promise<string> {
   const defaultPath =
@@ -448,10 +450,7 @@ async function displayOpenFileDialog (
     title: title ?? "Open File",
     defaultPath,
     properties: ["openFile"],
-    filters: [
-      { name: "Tape files", extensions: ["tap", "tzx"] },
-      { name: "All Files", extensions: ["*"] }
-    ]
+    filters
   });
   if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
 

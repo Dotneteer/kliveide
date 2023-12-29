@@ -77,11 +77,8 @@ type Props = {
 
 export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
   const { messenger } = useRendererContext();
-  const {
-    outputPaneService,
-    ideCommandsService,
-    validationService
-  } = useAppServices();
+  const { outputPaneService, ideCommandsService, validationService } =
+    useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
   const [exportFolder, setExportFolder] = useState("");
@@ -145,7 +142,6 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         }${addClear ? " -c" : ""}${
           screenFilename ? ` -scr "${screenFilename}"` : ""
         }`;
-        console.log(command);
         const buildPane = outputPaneService.getOutputPaneBuffer("build");
         const result = await ideCommandsService.executeCommand(
           command,
@@ -264,6 +260,10 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
           buttonClicked={async () => {
             const response = await messenger.sendMessage({
               type: "MainShowOpenFileDialog",
+              filters: [
+                { name: "Tape files", extensions: ["tap", "tzx"] },
+                { name: "All Files", extensions: ["*"] }
+              ],
               settingsId: EXPORT_CODE_FOLDER_ID
             });
             if (response.type === "ErrorResponse") {
