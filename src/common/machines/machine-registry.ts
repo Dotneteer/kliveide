@@ -105,7 +105,7 @@ export const machineRegistry: MachineInfo[] = [
   },
   {
     machineId: MI_Z88,
-    displayName: "Cambridge Z88 WIP",
+    displayName: "Cambridge Z88",
     features: {
       [MF_BANK]: 256,
       [MF_BLINK]: true
@@ -113,23 +113,23 @@ export const machineRegistry: MachineInfo[] = [
     models: [
       {
         modelId: "OZ50",
-        displayName: "Cambridge Z88 WIP (OZ v5.0)",
+        displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
         config: {
           [MC_Z88_INTROM]: "z88v50-r1f99aaae"
         }
       },
       {
         modelId: "OZ47",
-        displayName: "Cambridge Z88 WIP (OZ v4.7)",
+        displayName: "Cambridge Z88 (OZ v4.7)",
         config: {
           [MC_Z88_INTROM]: "z88v47"
         }
       },
       {
-        modelId: "OZ47G",
-        displayName: "Cambridge Z88 WIP (OZ v4.7 + Games)",
+        modelId: "OZ40",
+        displayName: "Cambridge Z88 (OZ v4.0 UK)",
         config: {
-          [MC_Z88_INTROM]: "z88v47+games"
+          [MC_Z88_INTROM]: "z88v40"
         }
       }
     ]
