@@ -148,6 +148,12 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
    * @param value value to set
    */
   setCOM(value: number): void;
+
+  /**
+   * Gets the access type of the specified address
+   * @param address Address to obtain the access type for
+   */
+  getAccessTypeOfAddress(address: number): AccessType;
 }
 
 /**
@@ -208,4 +214,27 @@ export enum STAFlags {
   KEY = 0x04, // Bit 2, If set, a column has gone low in snooze (or coma)
   TIME = 0x01, // Bit 0, If set, an enabled TSTA interrupt is active
   TIME_MASK = 0xfe // Bit 0 reset mask
+}
+
+/**
+ * Memory bank access types
+ */
+export enum AccessType {
+  Ram = 0x00,
+  Rom = 0x01,
+  Unavailable = 0xff
+}
+
+/**
+ * Future card types
+ */
+export enum CardType {
+  None = 0x00,
+  RAM  = 0x01,
+  EPROM = 0x40,
+
+  // --- List the other types here
+  FlashType1 = 0x80,
+  FlashType2 = 0x81,
+  OtherFlashType = 0x82  
 }
