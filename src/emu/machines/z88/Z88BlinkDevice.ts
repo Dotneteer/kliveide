@@ -1,6 +1,8 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import {
+  AccessType,
   COMFlags,
+  CardType,
   INTFlags,
   IZ88BlinkDevice,
   STAFlags,
@@ -19,18 +21,40 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
    * 2: Card Slot 1 size
    * 3: Card Slot 2 size
    * 4: Card Slot 3 size
+   *
+   * Chip size masking: determines the size of physical memory of a particular chip.
+   * A mask value is 6 bits, and can be used to mask out the lowest 6 bit of
+   * a bank index.
+   * For example, if Chip 3 has 32K memory, mask value is $01. When you address
+   * bank $40 and bank $42, they result in as if you addressed bank $40, to
+   * represent that the memory contents seem to be repeated for each  32K of
+   * the addressable 1M space. Similarly, $41, $43, $45, ..., $fd, and $ff each
+   * repeat the upper 16K of the 32K memory.
+   *
+   * Mask Values:
+   * $00: Chip nop present
+   * $01: 32K
+   * $03: 64K
+   * $07: 128K
+   * $0f: 256K
+   * $1f: 512K
+   * $3f: 1M
    */
   private readonly _chipMasks: number[] = [0, 0, 0, 0, 0];
 
   /**
    * Slot behavior for slots #1-3 (3 byte values)
    */
-  private readonly _slotMasks: boolean[] = [false, false, false];
+  private readonly _slotTypes: CardType[] = [
+    CardType.None,
+    CardType.None,
+    CardType.None
+  ];
 
   /**
-   * ROM information for each bank
+   * Information bout banks (RAM, ROM, Unavailable)
    */
-  private readonly _romInfo: BlockFlags[] = [];
+  private readonly _bankAccess: AccessType[] = [];
 
   /**
    * Initialize the keyboard device and assign it to its host machine.
@@ -39,7 +63,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   constructor (public readonly machine: IZ88Machine) {
     // --- Initialize ROM information
     for (let i = 0; i < 256; i++) {
-      this._romInfo.push(0);
+      this._bankAccess.push(AccessType.Ram);
     }
   }
 
@@ -60,14 +84,14 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setChipMask(1, 0x1f);
 
     // --- No cards in any slot
-    this.setChipMask(2, 0x00);
-    this.setChipMask(3, 0x00);
-    this.setChipMask(4, 0x00);
+    this.setChipMask(2, 0x1f);
+    this.setChipMask(3, 0x3f);
+    this.setChipMask(4, 0x0f);
 
     // --- Card 1 is RAM
-    this.setSlotMask(1, false);
-    this.setSlotMask(2, false);
-    this.setSlotMask(3, false);
+    this.setSlotMask(1, CardType.None);
+    this.setSlotMask(2, CardType.None);
+    this.setSlotMask(3, CardType.None);
 
     this.resetRtc();
 
@@ -196,7 +220,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
       1,
       pageOffset,
       bank,
-      this._romInfo[bank] === BlockFlags.ROM_BLOCK
+      this._bankAccess[bank] === AccessType.Rom
     );
   }
 
@@ -207,7 +231,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   setSR1 (bank: number): void {
     this.SR1 = bank;
     const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._romInfo[bank] === BlockFlags.ROM_BLOCK;
+    const romKind = this._bankAccess[bank] === AccessType.Rom;
     const mem = this.machine.memory;
 
     // --- Offset for 0x4000-0x5fff
@@ -224,7 +248,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   setSR2 (bank: number): void {
     this.SR2 = bank;
     const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._romInfo[bank] === BlockFlags.ROM_BLOCK;
+    const romKind = this._bankAccess[bank] === AccessType.Rom;
     const mem = this.machine.memory;
 
     // --- Offset for 0x8000-0x9fff
@@ -241,7 +265,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
   setSR3 (bank: number): void {
     this.SR3 = bank;
     const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._romInfo[bank] === BlockFlags.ROM_BLOCK;
+    const romKind = this._bankAccess[bank] === AccessType.Rom;
     const mem = this.machine.memory;
 
     // --- Offset for 0xc000-0xdfff
@@ -272,19 +296,19 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setSR3(this.SR3);
 
     // --- Create ROM information
-    this.recalculateRomInfo();
+    this.recalculateBankInfo();
   }
 
   /**
-   * Sets the slot mask for the specified slot
+   * Sets the slot type for the specified slot
    * @param slot Slot index
-   * @param isRom Indicates if the slot is ROM
+   * @param cardType Indicates if the slot is ROM
    */
-  setSlotMask (slot: number, isRom: boolean): void {
+  setSlotMask (slot: number, cardType: CardType): void {
     if (slot < 1) slot = 1;
     if (slot > 3) slot = 3;
-    this._slotMasks[slot - 1] = isRom;
-    this.recalculateRomInfo();
+    this._slotTypes[slot - 1] = cardType;
+    this.recalculateBankInfo();
   }
 
   /**
@@ -476,45 +500,68 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setSR0(this.SR0);
   }
 
+  /**
+   * Gets the access type of the specified address
+   * @param address Address to obtain the access type for
+   */
+  getAccessTypeOfAddress (address: number): AccessType {
+    if (address <= 0x1fff) {
+      return this._bankAccess[this.COM & COMFlags.RAMS ? 0x20 : 0x00]
+    }
+    let srValue = this.SR0;
+    switch (address >> 14) {
+      case 1:
+        srValue = this.SR1;
+        break;
+      case 2:
+        srValue = this.SR2;
+        break;
+      case 3:
+        srValue = this.SR3;
+        break;      
+    }
+    return this._bankAccess[srValue];
+  }
+
   // ==========================================================================
   // Helpers
 
   /**
    * Recalculates the ROM information from the current state
    */
-  recalculateRomInfo (): void {
+  recalculateBankInfo (): void {
     let bank = 0;
     while (bank < 0x100) {
-      let romFlags = 0;
+      let accessType = 0;
       if (bank <= 0x1f) {
         // --- Internal ROM
-        romFlags = BlockFlags.ROM_BLOCK;
+        accessType = AccessType.Rom;
       } else if (bank <= 0x3f) {
         // --- Internal RAM
-        romFlags = BlockFlags.RAM_BLOCK;
+        accessType = AccessType.Ram;
       } else if (bank <= 0x7f) {
         // --- Card Slot 1 RAM
-        romFlags = this._chipMasks[2]
-          ? this._slotMasks[0]
-            ? BlockFlags.ROM_BLOCK
-            : BlockFlags.RAM_BLOCK
-          : BlockFlags.UNV_BLOCK;
+        accessType = this._chipMasks[2]
+          ? this._slotTypes[0]
+            ? AccessType.Rom
+            : AccessType.Ram
+          : AccessType.Unavailable;
       } else if (bank <= 0xbf) {
         // --- Card Slot 2 RAM
-        romFlags = this._chipMasks[3]
-          ? this._slotMasks[1]
-            ? BlockFlags.ROM_BLOCK
-            : BlockFlags.RAM_BLOCK
-          : BlockFlags.UNV_BLOCK;
+        accessType = this._chipMasks[3]
+          ? this._slotTypes[1]
+            ? AccessType.Rom
+            : AccessType.Ram
+          : AccessType.Unavailable;
       } else {
         // --- Card Slot 3 RAM/EPROM
-        romFlags = this._chipMasks[4]
-          ? this._slotMasks[2]
-            ? BlockFlags.ROM_BLOCK
-            : BlockFlags.RAM_BLOCK
-          : BlockFlags.UNV_BLOCK;
+        accessType = this._chipMasks[4]
+          ? this._slotTypes[2]
+            ? AccessType.Rom
+            : AccessType.Ram
+          : AccessType.Unavailable;
       }
-      this._romInfo[bank] = romFlags;
+      this._bankAccess[bank] = accessType;
       bank += 1;
     }
   }
@@ -545,13 +592,4 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     // --- No interrupt
     this.interruptSignalActive = false;
   }
-}
-
-/**
- * Block flag types
- */
-enum BlockFlags {
-  RAM_BLOCK = 0x00,
-  ROM_BLOCK = 0x01,
-  UNV_BLOCK = 0xff
 }

@@ -19,6 +19,7 @@ import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE, MC_Z88_INTROM } from "@common/machines/constants";
+import { Z88PagedMemory } from "./Z88PagedMemory";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -97,14 +98,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
 
-    // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
-    this.memory = new PagedMemory(0, 256);
-
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
     this.beeperDevice = new Z88BeeperDevice(this);
+
+    // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
+    this.memory = new Z88PagedMemory(256, this.blinkDevice);
 
     // --- Set up the screen size
     let scw = 0xff;

@@ -18,7 +18,7 @@ export class PagedMemory {
     // --- Number of ROMS
     public readonly numRoms: number,
     // --- Number of banks
-    public readonly numBanks: number,
+    public readonly numBanks: number
   ) {
     if (numRoms < 0 || numRoms > 256) {
       throw new Error(`Invalid number of ROMs ${numRoms}`);
@@ -39,11 +39,10 @@ export class PagedMemory {
    * Resets the memory to the specified data byte
    * @param dataByte Reset value
    */
-  reset(dataByte = 0): void {
-    
+  reset (dataByte = 0): void {
     for (let i = 0; i < this.memory.length; i++) {
       this.memory[i] = dataByte;
-    } 
+    }
   }
 
   /**
@@ -182,7 +181,7 @@ export class PagedMemory {
    * @param index Absoulte memory address
    * @returns Memory value
    */
-  directRead(index: number): number {
+  directRead (index: number): number {
     return this.memory[index];
   }
 
@@ -191,7 +190,7 @@ export class PagedMemory {
    * @param index Absolute memory address
    * @param value Value to set
    */
-  directWrite(index: number, value: number): void {
+  directWrite (index: number, value: number): void {
     this.memory[index] = value;
   }
 }
