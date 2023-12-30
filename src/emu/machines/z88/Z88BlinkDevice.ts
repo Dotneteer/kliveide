@@ -84,9 +84,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setChipMask(1, 0x1f);
 
     // --- No cards in any slot
-    this.setChipMask(2, 0x1f);
-    this.setChipMask(3, 0x3f);
-    this.setChipMask(4, 0x0f);
+    this.setChipMask(2, 0x00);
+    this.setChipMask(3, 0x00);
+    this.setChipMask(4, 0x00);
 
     // --- Card 1 is RAM
     this.setSlotMask(1, CardType.None);
