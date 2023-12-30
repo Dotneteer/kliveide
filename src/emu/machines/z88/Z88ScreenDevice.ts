@@ -1,6 +1,7 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 const SBF_ROW_WIDTH = 256;
 const TEXT_FLASH_TOGGLE = 200;
@@ -102,17 +103,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
   flashFlag: boolean;
 
   /**
-   * Sets the screen dimensions
-   * @param width Screen width in pixels
-   * @param height Screen height in pixels
-   */
-  setScreenSize (width: number, height: number): void {
-    this._defaultSCW = width;
-    this._defaultSCH = height;
-    this.reset();
-  }
-
-  /**
    * Reset the device to its initial state.
    */
   reset (): void {
@@ -121,8 +111,31 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
     this.PB2 = 0;
     this.PB3 = 0;
     this.SBR = 0;
-    this.SCH = this._defaultSCH;
-    this.SCW = this._defaultSCW;
+
+    // --- Set up the screen size
+    let scw = 0xff;
+    let sch = 8;
+    switch (this.machine.config?.[MC_SCREEN_SIZE]) {
+      case "640x320":
+        scw = 0xff;
+        sch = 40;
+        break;
+      case "640x480":
+        scw = 0xff;
+        sch = 60;
+        break;
+      case "800x320":
+        scw = 100;
+        sch = 40;
+        break;
+      case "800x480":
+        scw = 100;
+        sch = 60;
+        break;
+    }
+
+    this.SCH = sch;
+    this.SCW = scw;
     this.flashFlag = false;
     this._textFlashPhase = false;
     this._textFlashCount = 0;

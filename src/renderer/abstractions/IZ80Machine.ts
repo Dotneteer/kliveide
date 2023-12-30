@@ -7,6 +7,7 @@ import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "./KeyMapping";
+import { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
@@ -17,6 +18,12 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * The unique identifier of the machine type
    */
   machineId: string;
+
+
+  /**
+   * The machine configuration
+   */
+  readonly config: MachineConfigSet;
 
   /**
    * This property stores the execution context where the emulated machine runs its execution loop.

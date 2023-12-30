@@ -35,6 +35,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   constructor (public readonly modelInfo?: MachineModel) {
     super();
+    
     // --- Set up machine attributes
     this._is16KModel = modelInfo?.config?.[MC_MEM_SIZE] === 16;
     const isNtsc = modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
