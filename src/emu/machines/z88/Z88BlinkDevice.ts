@@ -9,6 +9,7 @@ import {
   TMKFlags,
   TSTAFlags
 } from "./IZ88BlinkDevice";
+import { MC_Z88_INTRAM, MC_Z88_INTROM_SIZE } from "@common/machines/constants";
 
 /**
  * Represents the Blink device of Cambridge Z88
@@ -77,11 +78,27 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.setSR2(0);
     this.setSR3(0);
 
-    // --- 512K internal ROM
-    this.setChipMask(0, 0x1f);
+    // --- Internal ROM size
+    const intRomSize = this.machine.config?.[MC_Z88_INTROM_SIZE];
+    let intRomMask = 0x1f;
+    if (intRomSize <= 32 * 1024) {
+      intRomMask = 0x01;
+    } else if (intRomSize <= 128 * 1024) {
+      intRomMask = 0x07;
+    }
+    this.setChipMask(0, intRomMask);
 
-    // --- 512K internal RAM
-    this.setChipMask(1, 0x1f);
+    // --- Set up internal RAM size
+    const intRamSize = this.machine.config?.[MC_Z88_INTRAM];
+    switch (intRamSize) {
+      case 0x07:
+      case 0x1f:
+        this.setChipMask(1, intRamSize);
+        break;
+      default:
+        this.setChipMask(1, 0x01);
+        break;
+    }
 
     // --- No cards in any slot
     this.setChipMask(2, 0x00);
@@ -506,7 +523,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
    */
   getAccessTypeOfAddress (address: number): AccessType {
     if (address <= 0x1fff) {
-      return this._bankAccess[this.COM & COMFlags.RAMS ? 0x20 : 0x00]
+      return this._bankAccess[this.COM & COMFlags.RAMS ? 0x20 : 0x00];
     }
     let srValue = this.SR0;
     switch (address >> 14) {
@@ -518,9 +535,18 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
         break;
       case 3:
         srValue = this.SR3;
-        break;      
+        break;
     }
     return this._bankAccess[srValue];
+  }
+
+  /**
+   * Sets the size of the internal RAM
+   * @param value Ram size value
+   */
+  setInternalRamSize (value: number): void {
+    this.setChipMask(1, value);
+    console.log(`Internal RAM size set to ${value}`);
   }
 
   // ==========================================================================

@@ -70,13 +70,6 @@ export interface IZ88ScreenDevice extends IGenericDevice<IZ88Machine> {
   flashFlag: boolean;
 
   /**
-   * Sets the screen dimensions
-   * @param width Screen width in pixels
-   * @param height Screen height in pixels
-   */
-  setScreenSize(width: number, height: number): void;
-
-  /**
    * Get the width of the rendered screen.
    */
   screenWidth: number;

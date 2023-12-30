@@ -12,6 +12,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
+import { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -31,6 +32,15 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   // --- Events queued for execution
   private _queuedEvents?: QueuedEvent[];
+
+
+  /**
+   * Initialize the machine using the specified configuration
+   * @param config Machine configuration
+   */
+  constructor(readonly config: MachineConfigSet = {}) {
+    super();
+  }
 
   /**
    * The unique identifier of the machine type
