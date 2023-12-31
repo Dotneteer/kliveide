@@ -39,7 +39,7 @@ const BlinkPanel = () => {
     <div className={styles.blinkPanel}>
       <FlagFieldRow
         label='COM'
-        tooltip='Controls various diverse aspects of BLINK operations'
+        tooltip='Command Register handles LCD, Beeper, Clock ticking, UV Eprom in slot 3 and if lower 8K of S0 in slot 0 is ROM or RAM'
         value={blinkState?.COM}
         flagDescriptions={COMDescription}
       />
@@ -58,53 +58,54 @@ const BlinkPanel = () => {
       <Separator />
       <ValueFieldRow
         label='SR0'
-        tooltip='Segment Register 0'
+        tooltip='Segment Register 0 (Upper/lower 8K of Bank bound into 2000-3FFF'
         value={blinkState?.SR0}
       />
       <ValueFieldRow
         label='SR1'
-        tooltip='Segment Register 1'
+        tooltip='Segment Register 1 (16K Bank bound into 4000-7FFF)'
         value={blinkState?.SR1}
       />
       <ValueFieldRow
         label='SR2'
-        tooltip='Segment Register 2'
+        tooltip='Segment Register 2 (16K Bank bound into 8000-BFFF)'
         value={blinkState?.SR2}
       />
       <ValueFieldRow
         label='SR3'
-        tooltip='Segment Register 3'
+        tooltip='Segment Register 3 (16K Bank bound into C000-FFFF)'
         value={blinkState?.SR3}
       />
       <Separator />
       <ValueFieldRow
+        label='SBR'
+        tooltip='Screen Base Register  - Point to Screen Base File of characters and attributes (typically) in RAM'
+        value={blinkState?.SBR}
+        word={true}
+      />
+      <Separator />
+      <ValueFieldRow
         label='PB0'
-        tooltip='LORES0'
+        tooltip='Pixel Base 0 - Point to LORES0 (64 characters, 6 by 8 pixel) user defined font bitmap (typically) in RAM'
         value={blinkState?.PB0}
         word={true}
       />
       <ValueFieldRow
         label='PB1'
-        tooltip='LORES1'
+        tooltip='Pixel Base 1 - Point to LORES1 (448 characters, 6 by 8 pixel) font bitmap (typically) in ROM'
         value={blinkState?.PB1}
         word={true}
       />
       <ValueFieldRow
         label='PB2'
-        tooltip='HIRES0'
+        tooltip='Pixel Base 2 - Point to HIRES0 (768 characters, 8 by 8 pixel) "PipeDream" map (typically) in RAM'
         value={blinkState?.PB2}
         word={true}
       />
       <ValueFieldRow
         label='PB3'
-        tooltip='HIRES1'
+        tooltip='Pixel Base 3 - Point to HIRES1 (256 characters, 8 by 8 pixel) "OZ" font bitmap (typically) in ROM'
         value={blinkState?.PB3}
-        word={true}
-      />
-      <ValueFieldRow
-        label='SBR'
-        tooltip='SBR'
-        value={blinkState?.SBR}
         word={true}
       />
       <Separator />
@@ -148,56 +149,25 @@ const BlinkPanel = () => {
       <Separator />
       <div className={styles.cols}>
         <KeyboardLine
-          text='KL0'
-          tooltip='Keyboard line #0'
-          value={blinkState?.keyLines?.[0]}
-          titles={["8", "7", "N", "H", "Y", "6", "ENTER", "DEL"]}
+          text='A15#7'
+          tooltip='Keyboard address line A15 (#7) from KBD register'
+          value={blinkState?.keyLines?.[7]}
+          titles={[
+            "\u00a3",
+            "/",
+            ".",
+            "CAPS LOCK",
+            "INDEX",
+            "ESC",
+            "\u25fb",
+            "SHIFT (right)"
+          ]}
         />
       </div>
       <div className={styles.cols}>
         <KeyboardLine
-          text='KL1'
-          tooltip='Keyboard line #1'
-          value={blinkState?.keyLines?.[1]}
-          titles={["I", "U", "B", "G", "T", "5", "⬆︎", "\\"]}
-        />
-      </div>
-      <div className={styles.cols}>
-        <KeyboardLine
-          text='KL2'
-          tooltip='Keyboard line #2'
-          value={blinkState?.keyLines?.[2]}
-          titles={["O", "J", "V", "F", "R", "4", "⬇︎", "="]}
-        />
-      </div>
-      <div className={styles.cols}>
-        <KeyboardLine
-          text='KL3'
-          tooltip='Keyboard line #3'
-          value={blinkState?.keyLines?.[3]}
-          titles={["9", "K", "C", "D", "E", "3", "➡︎", "-"]}
-        />
-      </div>
-      <div className={styles.cols}>
-        <KeyboardLine
-          text='KL4'
-          tooltip='Keyboard line #4'
-          value={blinkState?.keyLines?.[4]}
-          titles={["P", "M", "X", "S", "W", "2", "⬅︎", "]"]}
-        />
-      </div>
-      <div className={styles.cols}>
-        <KeyboardLine
-          text='KL5'
-          tooltip='Keyboard line #5'
-          value={blinkState?.keyLines?.[5]}
-          titles={["0", "L", "Z", "A", "Q", "1", "SPACE", "["]}
-        />
-      </div>
-      <div className={styles.cols}>
-        <KeyboardLine
-          text='KL6'
-          tooltip='Keyboard line #6'
+          text='A14#6'
+          tooltip='Keyboard address line A14 (#6) from KBD register'
           value={blinkState?.keyLines?.[6]}
           titles={[
             "'",
@@ -213,21 +183,53 @@ const BlinkPanel = () => {
       </div>
       <div className={styles.cols}>
         <KeyboardLine
-          text='KL7'
-          tooltip='Keyboard line #7'
-          value={blinkState?.keyLines?.[7]}
-          titles={[
-            "\u00a3",
-            "/",
-            ".",
-            "CAPS LOCK",
-            "INDEX",
-            "ESC",
-            "\u25fb",
-            "SHIFT (right)"
-          ]}
+          text='A13#5'
+          tooltip='Keyboard address line A13 (#5) from KBD register'
+          value={blinkState?.keyLines?.[5]}
+          titles={["0", "L", "Z", "A", "Q", "1", "SPACE", "["]}
         />
       </div>
+      <div className={styles.cols}>
+        <KeyboardLine
+          text='A12#4'
+          tooltip='Keyboard address line A12 (#4) from KBD register'
+          value={blinkState?.keyLines?.[4]}
+          titles={["P", "M", "X", "S", "W", "2", "⬅︎", "]"]}
+        />
+      </div>
+      <div className={styles.cols}>
+        <KeyboardLine
+          text='A11#3'
+          tooltip='Keyboard address line A11 (#3) from KBD register'
+          value={blinkState?.keyLines?.[3]}
+          titles={["9", "K", "C", "D", "E", "3", "➡︎", "-"]}
+        />
+      </div>
+      <div className={styles.cols}>
+        <KeyboardLine
+          text='A10#2'
+          tooltip='Keyboard address line A10 (#2) from KBD register'
+          value={blinkState?.keyLines?.[2]}
+          titles={["O", "J", "V", "F", "R", "4", "⬇︎", "="]}
+        />
+      </div>
+      <div className={styles.cols}>
+        <KeyboardLine
+          text='A09#1'
+          tooltip='Keyboard address line A9 (#1) from KBD register'
+          value={blinkState?.keyLines?.[1]}
+          titles={["I", "U", "B", "G", "T", "5", "⬆︎", "\\"]}
+        />
+      </div>
+      <div className={styles.cols}>
+        <KeyboardLine
+          text='A08#0'
+          tooltip='Keyboard address line A8 (#0) from KBD register'
+          value={blinkState?.keyLines?.[0]}
+          titles={["8", "7", "N", "H", "Y", "6", "ENTER", "DEL"]}
+        />
+      </div>
+
     </div>
   );
 };
