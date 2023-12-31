@@ -3,6 +3,9 @@ import { IGenericDevice } from "./IGenericDevice";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 
+/**
+ * This interface represents an abstract floppy controller device
+ */
 export interface IFloppyControllerDevice
   extends IGenericDevice<IZxSpectrumMachine> {
   // --- Indicates if Drive #1 is present

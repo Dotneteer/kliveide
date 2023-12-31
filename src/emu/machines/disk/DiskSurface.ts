@@ -1,7 +1,8 @@
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
-import { DskDiskReader, DskTrackInformationBlock } from "./DskDiskReader";
 import { DiskCrc } from "./DiskCrc";
+import { readDiskData } from "./disk-readers";
+import { TrackInformation } from "./DiskInformation";
 
 // --- Gap type indexes
 const GAP_MINIMAL_FM = 0;
@@ -10,7 +11,7 @@ const GAP_MINIMAL_MFM = 1;
 /**
  * The surface view of a disk
  */
-export interface DiskSurfaceView {
+export interface DiskSurface {
   density: DiskDensity;
   tracks: TrackSurface[];
 }
@@ -18,7 +19,7 @@ export interface DiskSurfaceView {
 /**
  * Surface of a single track
  */
-export interface TrackSurface {
+interface TrackSurface {
   trackData: Uint8Array;
   header: BufferSpan;
   sectors: SectorSurface[];
@@ -30,15 +31,21 @@ export interface TrackSurface {
 /**
  * Surface of a single sector
  */
-export interface SectorSurface {
+interface SectorSurface {
   headerData: BufferSpan;
   sectorPrefix: BufferSpan;
   sectordata: BufferSpan;
   tailData: BufferSpan;
 }
 
-export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
-  const reader = new DskDiskReader(contents);
+/**
+ * Creates a surface view of the specified disk file contents
+ * @param contents Disk contents or a reader parsing the contents
+ * @returns The surface view of the disk
+ */
+export function createDiskSurface (
+  contents: Uint8Array): DiskSurface {
+  const reader = readDiskData(contents);
 
   // --- Get the longest track
   let maxBytesPerTrack = 0;
@@ -187,7 +194,7 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
  * @returns
  */
 function setSectorData (
-  track: DskTrackInformationBlock,
+  track: TrackInformation,
   sectorSpan: BufferSpan,
   gapInfo: DiskGap,
   clockData: BufferSpan
@@ -304,7 +311,11 @@ function setSectorData (
       ),
       tailData: new BufferSpan(
         sectorSpan.buffer,
-        sectorSpan.startOffset + sectorOffset + headerLength + prefixLength + storedDataLenght,
+        sectorSpan.startOffset +
+          sectorOffset +
+          headerLength +
+          prefixLength +
+          storedDataLenght,
         tailLength
       )
     });

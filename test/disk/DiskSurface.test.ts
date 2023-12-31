@@ -2,13 +2,12 @@ import "mocha";
 import * as path from "path";
 import * as fs from "fs";
 import { expect } from "expect";
-import { createDiskSurfaceView } from "@emu/machines/disk/DiskSurfaceView";
+import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import { DiskCrc } from "@emu/machines/disk/DiskCrc";
-import { DskDiskReader } from "@emu/machines/disk/DskDiskReader";
 
 describe("Disk Surface View", () => {
   it("createDiskSurfaceView works #1", () => {
-    const sv = createDiskSurfaceView(readTestFile("blank180K.dsk"));
+    const sv = createDiskSurface(readTestFile("blank180K.dsk"));
     expect(sv.tracks.length).toEqual(40);
     for (let trackIdx = 0; trackIdx < sv.tracks.length; trackIdx++) {
       const track = sv.tracks[trackIdx];
@@ -100,13 +99,11 @@ describe("Disk Surface View", () => {
   });
 
   it("createDiskSurfaceView works #2", () => {
-    const contents = readTestFile("ltk.dsk");
-    const reader = new DskDiskReader(contents);
-    const sv = createDiskSurfaceView(contents);
+    const sv = createDiskSurface(readTestFile("ltk.dsk"));
     expect(sv.tracks.length).toEqual(42);
     for (let trackIdx = 0; trackIdx < sv.tracks.length; trackIdx++) {
       const track = sv.tracks[trackIdx];
-      const dskTrack = reader.tracks[trackIdx];
+      const dskTrack = sv.tracks[trackIdx];
 
       // --- Test track length
       expect(track.trackData.length).toEqual(8596);
@@ -179,7 +176,7 @@ describe("Disk Surface View", () => {
         for (let i = 0; i < 512; i++) {
           const dataByte = sector.sectordata.get(i);
           datasum += dataByte;
-          dskDatasum += dskTrack.sectors[sectorIdx].sectorData[i];
+          dskDatasum += dskTrack.sectors[sectorIdx].sectordata.get(i)
           crc.add(dataByte);
         }
         expect(datasum).toEqual(dskDatasum);
@@ -192,7 +189,6 @@ describe("Disk Surface View", () => {
       }
     }
   });
-
 });
 
 export function readTestFile (filename: string): Uint8Array {

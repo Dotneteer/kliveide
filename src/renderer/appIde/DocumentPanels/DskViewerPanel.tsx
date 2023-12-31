@@ -20,7 +20,9 @@ import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { DskDiskReader, DskSectorInformationBlock } from "@emu/machines/disk/DskDiskReader";
+import { SectorInformationBlock } from "@emu/machines/disk/DskDiskReader";
+import { readDiskData } from "@emu/machines/disk/disk-readers";
+import { DiskInformation } from "@emu/machines/disk/DiskInformation";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -31,10 +33,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   );
 
   const contents = data as Uint8Array;
-  let fileInfo: DskDiskReader | undefined;
+  let fileInfo: DiskInformation | undefined;
   let floppyInfo: FloppyDisk | undefined;
   try {
-    fileInfo = new DskDiskReader(contents);
+    fileInfo = readDiskData(contents);
     floppyInfo = new FloppyDisk(contents);
   } catch (err) {
     // --- Intentionally ignored
@@ -60,9 +62,9 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
     <ScrollViewer allowHorizontal={false}>
       <div className={styles.dskViewerPanel}>
         <div className={styles.header}>
-          <LabeledValue label='Sides:' value={fileInfo.header.numSides} />
+          <LabeledValue label='Sides:' value={fileInfo.numSides} />
           <ToolbarSeparator small={true} />
-          <LabeledValue label='Tracks:' value={fileInfo.header.numTracks} />
+          <LabeledValue label='Tracks:' value={fileInfo.numTracks} />
           <ToolbarSeparator small={true} />
           <LabeledValue
             label='Disk format:'
@@ -278,9 +280,9 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           >
             <div className={styles.dataSection}>
               <div className={styles.blockHeader}>
-                <Secondary text={`Creator: ${fileInfo.header.creator}`} />
+                <Secondary text={`Creator: ${fileInfo.creator}`} />
               </div>
-              <StaticMemoryView memory={fileInfo.contents.slice(0, 0x100)} />
+              <StaticMemoryView memory={contents.slice(0, 0x100)} />
             </div>
           </DataSection>
         )}
@@ -373,7 +375,7 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
 );
 
 type SectorProps = {
-  sector: DskSectorInformationBlock;
+  sector: SectorInformationBlock;
 };
 
 const SectorPanel = ({ sector }: SectorProps) => {
