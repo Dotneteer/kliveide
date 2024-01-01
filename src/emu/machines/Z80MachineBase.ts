@@ -19,26 +19,25 @@ import { MachineConfigSet } from "@common/machines/info-types";
  */
 export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   // --- Store the start tact of the next machine frame
-  private _nextFrameStartTact = 0;
+  protected _nextFrameStartTact = 0;
 
   // --- Store machine-specific properties here
   private readonly _machineProps = new Map<string, any>();
 
   // --- This flag indicates that the last machine frame has been completed.
-  private _frameCompleted: boolean;
+  protected _frameCompleted: boolean;
 
   // --- Shows the number of frame tacts that overflow to the subsequent machine frame.
-  private _frameOverflow = 0;
+  protected _frameOverflow = 0;
 
   // --- Events queued for execution
-  private _queuedEvents?: QueuedEvent[];
-
+  protected _queuedEvents?: QueuedEvent[];
 
   /**
    * Initialize the machine using the specified configuration
    * @param config Machine configuration
    */
-  constructor(readonly config: MachineConfigSet = {}) {
+  constructor (readonly config: MachineConfigSet = {}) {
     super();
   }
 

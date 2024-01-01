@@ -1,9 +1,77 @@
-import { IFloppyControllerDevice } from "./IFloppyControllerDevice";
+import { DiskSurface } from "@emu/machines/disk/DiskSurface";
+import { DiskInformation } from "@emu/machines/disk/DiskInformation";
+import { IFloppyControllerDevice } from "./IFloppyControllerDeviceNew";
 
 /**
  * This interface represents a floppy disk drive
  */
 export interface IFloppyDiskDrive {
-  // --- The controller managing this drive  
+  // --- The controller managing this drive
   controller: IFloppyControllerDevice;
+
+  // --- Indicates if the drive has a disk loaded
+  readonly hasDiskLoaded: boolean;
+
+  // --- Loads the disk with the specified contents into the drive
+  loadDisk(contents: Uint8Array): void;
+
+  // --- Ejects the disk from the drive
+  ejectDisk(): void;
+
+  // --- Indicates if the drive is selected for active operation
+  selected: boolean;
+
+  // --- The "write protection" state of the disk
+  writeProtected: boolean;
+
+  // --- The contents data of the disk
+  readonly contents?: Uint8Array;
+
+  // --- Disk information
+  readonly disk: DiskInformation;
+
+  // --- The surface data of the disk
+  readonly surface?: DiskSurface;
+
+  // --- Does this drive has two heads?
+  hasTwoHeads: boolean;
+
+  // --- The current drive head
+  currentHead: number;
+
+  // --- Is at the index hole?
+  atIndexWhole: boolean;
+
+  // --- Track 0 mark
+  track0Mark: boolean;
+
+  // --- Indicates if the drive is ready
+  ready: boolean;
+
+  // --- The current cylinder number
+  currentCylinder: number;
+
+  // --- The maximum cylinder number of the drive
+  maxCylinders: number;
+
+  // --- Is the floppy motor turned on?
+  readonly motorOn: boolean;
+
+  // --- Is the motor accelerating or slowing down?
+  readonly motorAccelerating?: boolean;
+  
+  // --- Relative motor speed: 0%: fully stopped, 100%: fully started
+  readonly motorSpeed: number;
+
+  // --- Turn on the floppy drive's motor
+  turnOnMotor (): void;
+
+  // --- Turn off the floppy drive's motor
+  turnOffMotor (): void;
+
+  // --- Carry out chores when a machine frame has been completed
+  onFrameCompleted(): void;
+
+  // --- Step one cylinder into the specified direction
+  step (directionIn: boolean): void;
 }

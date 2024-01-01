@@ -54,6 +54,75 @@ R2:1d97
 
 
 
+FUSE: First sense drive result: 0x51 (2 floppys) Fixed in Klive!
+
+FUSE: Command and result sequence when CAT with no disk inserted
+C 07 00 08 (Recalibrate US0, Sense Interrupt)
+R 20 00 ()
+C 08
+R 80
+C 4A 00 
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08 
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00 
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 07 00 08 (Recalibrate US0, Sense Interrupt)
+R 20 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 0F 00 27 
+C 08 
+R E8 00 
+
 
 
 

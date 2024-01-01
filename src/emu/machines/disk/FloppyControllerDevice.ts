@@ -34,6 +34,9 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
   // --- Last INTRQ status
   private intReq: IntRequest;
 
+  // --- Current command
+  private command: CommandDescriptor;
+
   // --- The current operation phase
   private phase: OperationPhase;
 

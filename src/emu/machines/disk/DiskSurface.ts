@@ -1,8 +1,7 @@
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
 import { DiskCrc } from "./DiskCrc";
-import { readDiskData } from "./disk-readers";
-import { TrackInformation } from "./DiskInformation";
+import { DiskInformation, TrackInformation } from "./DiskInformation";
 
 // --- Gap type indexes
 const GAP_MINIMAL_FM = 0;
@@ -44,15 +43,14 @@ interface SectorSurface {
  * @returns The surface view of the disk
  */
 export function createDiskSurface (
-  contents: Uint8Array): DiskSurface {
-  const reader = readDiskData(contents);
+  diskInfo: DiskInformation): DiskSurface {
 
   // --- Get the longest track
   let maxBytesPerTrack = 0;
   let gapType = GAP_MINIMAL_FM;
 
   // --- All tracks should have the same gap type. Calculate track header length.
-  const track0 = reader.tracks[0];
+  const track0 = diskInfo.tracks[0];
   if (track0.gap3 !== 0xff) {
     gapType = GAP_MINIMAL_MFM;
   }
@@ -64,7 +62,7 @@ export function createDiskSurface (
     gapInfo.len[1]; // --- Gap 1
 
   // --- Iterate through all tracks to find the longest track size
-  reader.tracks.forEach(t => {
+  diskInfo.tracks.forEach(t => {
     let trackDataLength = 0;
 
     // --- Iterate through all sectors
@@ -132,7 +130,7 @@ export function createDiskSurface (
 
   // --- Now, let's allocate the space for the surface view
   const tracks: TrackSurface[] = [];
-  for (let i = 0; i < reader.tracks.length; i++) {
+  for (let i = 0; i < diskInfo.tracks.length; i++) {
     const trackData = new Uint8Array(trackLength);
     const sectorSpan = new BufferSpan(
       trackData,
@@ -146,7 +144,7 @@ export function createDiskSurface (
     const track = (tracks[i] = {
       trackData,
       header: new BufferSpan(trackData, 0, trackHeaderLength),
-      sectors: setSectorData(reader.tracks[i], sectorSpan, gapInfo, clockData),
+      sectors: setSectorData(diskInfo.tracks[i], sectorSpan, gapInfo, clockData),
       clockData,
       fmData: new BufferSpan(trackData, fmOffset, bitArrayLength),
       weakSectorData: new BufferSpan(trackData, weakOffset, bitArrayLength)

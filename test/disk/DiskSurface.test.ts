@@ -4,10 +4,12 @@ import * as fs from "fs";
 import { expect } from "expect";
 import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import { DiskCrc } from "@emu/machines/disk/DiskCrc";
+import { readDiskData } from "@emu/machines/disk/disk-readers";
 
 describe("Disk Surface View", () => {
   it("createDiskSurfaceView works #1", () => {
-    const sv = createDiskSurface(readTestFile("blank180K.dsk"));
+    const diskInfo = readDiskData(readTestFile("blank180K.dsk"));
+    const sv = createDiskSurface(diskInfo);
     expect(sv.tracks.length).toEqual(40);
     for (let trackIdx = 0; trackIdx < sv.tracks.length; trackIdx++) {
       const track = sv.tracks[trackIdx];
@@ -99,7 +101,8 @@ describe("Disk Surface View", () => {
   });
 
   it("createDiskSurfaceView works #2", () => {
-    const sv = createDiskSurface(readTestFile("ltk.dsk"));
+    const diskInfo = readDiskData(readTestFile("ltk.dsk"));
+    const sv = createDiskSurface(diskInfo);
     expect(sv.tracks.length).toEqual(42);
     for (let trackIdx = 0; trackIdx < sv.tracks.length; trackIdx++) {
       const track = sv.tracks[trackIdx];
