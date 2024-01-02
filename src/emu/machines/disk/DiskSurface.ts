@@ -12,6 +12,7 @@ const GAP_MINIMAL_MFM = 1;
  */
 export interface DiskSurface {
   density: DiskDensity;
+  bytesPerTrack: number;
   tracks: TrackSurface[];
 }
 
@@ -179,6 +180,7 @@ export function createDiskSurface (
   // --- Done.
   return {
     density,
+    bytesPerTrack,
     tracks
   };
 }

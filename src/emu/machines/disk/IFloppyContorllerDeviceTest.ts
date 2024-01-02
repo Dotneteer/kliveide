@@ -121,4 +121,25 @@ export interface IFloppyControllerDeviceTest {
 
   // --- Indicates that a Read ID operation is in progress
   readIdInProgress: boolean;
+
+  // --- Count of revolutions
+  revCounter: number;
+
+  // --- AM ID mark found
+  idMarkFound: boolean;
+
+  // --- Current track of read/write operation
+  idTrack: number;
+
+  // --- Current head of read/write operation
+  idHead: number;
+
+  // --- Current sector of read/write operation
+  idSector: number;
+
+  // --- Sector length code 0, 1, 2, 3 (128 << length code)
+  idLength: number;
+
+  // --- The actual sector length
+  sectorLength: number;
 }

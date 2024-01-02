@@ -54,6 +54,9 @@ export interface IFloppyDiskDrive {
   // --- The maximum cylinder number of the drive
   maxCylinders: number;
 
+  // --- Signs if the drive's head is loaded
+  headLoaded: boolean;
+
   // --- Is the floppy motor turned on?
   readonly motorOn: boolean;
 
@@ -62,6 +65,12 @@ export interface IFloppyDiskDrive {
   
   // --- Relative motor speed: 0%: fully stopped, 100%: fully started
   readonly motorSpeed: number;
+
+  // --- The current data position within the current track
+  dataPosInTrack: number;
+
+  // --- The data last read from the disk
+  currentData: number;
 
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void;
@@ -74,4 +83,13 @@ export interface IFloppyDiskDrive {
 
   // --- Step one cylinder into the specified direction
   step (directionIn: boolean): void;
+
+  // --- Loads or unloads the drive's head
+  loadHead(load: boolean): void;
+
+  // --- Sets the data position to the current cylinder's surface data using the specified random factor
+  setDataToCurrentCylinder(randomFactor: number): void;
+
+  // --- Read the next data feom the disk
+  readData(): number;
 }

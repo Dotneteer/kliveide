@@ -65,7 +65,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x03);
 
     expect(fdt.command.id).toBe(Command.Specify);
-    expect(fdt.commandBytesReceived).toBe(2);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.stepRate).toEqual(0x06);
     expect(fdt.headUnloadTime).toEqual(0xf0);
     expect(fdt.headLoadTime).toEqual(0x02);
@@ -98,7 +98,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -113,7 +113,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -131,7 +131,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -166,7 +166,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -181,7 +181,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -199,7 +199,7 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x01);
 
     expect(fdt.command.id).toBe(Command.SenseDrive);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
@@ -362,4 +362,209 @@ describe("FloppyControllerDevice", () => {
     expect(fdt.driveB.motorSpeed).toBe(0);
     expect(fdt.driveB.motorAccelerating).toBe(undefined);
   });
+
+  it("Recalibrate (motor off) #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.writeDataRegister(0x07);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("Recalibrate (motor off) #2", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.Seek);
+  });
+
+  it("Recalibrate (motor off) + Sense Interrupt #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.Seek);
+
+    fd.writeDataRegister(0x08);
+
+    expect(fdt.command.id).toBe(Command.SenseInt);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const r1 = fd.readDataRegister();
+    const r2 = fd.readDataRegister();
+    expect(r1).toBe(0x20);
+    expect(r2).toBe(0x00);
+  });
+
+  it("Recalibrate (motor on) #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x07);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("Recalibrate (motor on) #2", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.Seek);
+  });
+
+  it("Recalibrate (motor on) + Sense Interrupt #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    expect(fdt.command.id).toBe(Command.Recalibrate);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.Seek);
+
+    fd.writeDataRegister(0x08);
+
+    expect(fdt.command.id).toBe(Command.SenseInt);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const r1 = fd.readDataRegister();
+    const r2 = fd.readDataRegister();
+    expect(r1).toBe(0x20);
+    expect(r2).toBe(0x00);
+  });
+
+  it("ReadId (no disk) #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x4a);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("ReadId (no disk) #2", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Execution);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("ReadId (no disk) #3", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    updm.emulateFrameCompletion(10);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Execution);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("ReadId (no disk) #4", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    updm.emulateFrameCompletion(40);
+    
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Execution);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
 });

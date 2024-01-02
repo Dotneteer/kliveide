@@ -8,6 +8,11 @@ import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 const MOTOR_SPEED_INCREMENT = 2;
 const MOTOR_SPEED_DECREMENT = 2;
 
+// --- Random factors when positioning the drive's head
+const LOAD_RND_FACTOR = 2;
+const HEAD_RND_FACTOR = 16;
+const STEP_RND_FACTOR = 34;
+
 /**
  * This class represents a single floppy disk device
  */
@@ -24,6 +29,8 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.ready = false;
     this.motorSpeed = 0;
     this.motorOn = false;
+    this.headLoaded = false;
+    this.dataPosInTrack = -1;
   }
 
   // --- Indicates if the drive is selected for active operation
@@ -99,6 +106,15 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   // --- The maximum cylinder number of the drive
   maxCylinders: number;
 
+  // --- Signs if the drive's head is loaded
+  headLoaded: boolean;
+
+  // --- The current data position within the current track
+  dataPosInTrack: number;
+
+  // --- The data last read from the disk
+  currentData: number;
+
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
     if (this.motorOn) return;
@@ -139,5 +155,25 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   // --- Step one cylinder into the specified direction
   step (directionIn: boolean): void {
     // TODO: Implement this
+  }
+
+  // --- Loads or unloads the drive's head
+  loadHead (load: boolean): void {
+    if (!this.hasDiskLoaded || this.headLoaded === load) {
+      return;
+    }
+    this.headLoaded = load;
+    this.setDataToCurrentCylinder(LOAD_RND_FACTOR);
+  }
+
+  // --- Sets the data position to the current cylinder's surface data using the specified random factor
+  setDataToCurrentCylinder (randomFactor: number): void {
+    // TODO: Implement this
+  }
+
+  // --- Read the next data feom the disk
+  readData (): number {
+    // TODO: Implement this
+    return 0;
   }
 }

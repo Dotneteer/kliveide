@@ -2,17 +2,17 @@
  * Helper class for calculating CRCs of disk images.
  */
 export class DiskCrc {
-  private crc: number = 0xffff;
+  value: number = 0xffff;
 
   add(data: number): void {
-    this.crc = (this.crc << 8) ^ crcFdcTable[((this.crc >> 8) ^ data) & 0xff];
+    this.value = (this.value << 8) ^ crcFdcTable[((this.value >> 8) ^ data) & 0xff];
   }
 
   get low(): number {
-    return this.crc & 0xff;
+    return this.value & 0xff;
   }
   get high(): number {
-    return (this.crc >> 8) & 0xff;
+    return (this.value >> 8) & 0xff;
   }
 }
 

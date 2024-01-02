@@ -939,6 +939,7 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
     if (tableCmd) {
       cmd = tableCmd;
     }
+    console.log("Identify", cmd);
     this.mt = !!((this.commandRegister >> 7) & 0x01);
     this.mf = !!((this.commandRegister >> 6) & 0x01);
     this.sk = !!((this.commandRegister >> 5) & 0x01);

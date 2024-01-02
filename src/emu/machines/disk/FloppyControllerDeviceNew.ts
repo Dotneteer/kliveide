@@ -9,6 +9,7 @@ import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import { FloppyDiskDrive } from "./FloppyDiskDriveNew";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
+import { DiskCrc } from "./DiskCrc";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice
@@ -125,6 +126,27 @@ export class FloppyControllerDevice
   // --- Indicates that a Read ID operation is in progress
   readIdInProgress: boolean;
 
+  // --- Count of revolutions
+  revCounter: number;
+
+  // --- Current track of read/write operation
+  idTrack: number;
+
+  // --- Current head of read/write operation
+  idHead: number;
+
+  // --- Current sector of read/write operation
+  idSector: number;
+
+  // --- Sector length code 0, 1, 2, 3 (128 << length code)
+  idLength: number;
+
+  // --- The actual sector length
+  sectorLength: number;
+
+  // --- AM ID mark found
+  idMarkFound: boolean;
+
   // --- Initializes the controller
   constructor (
     public readonly machine: IZxSpectrumMachine,
@@ -176,7 +198,12 @@ export class FloppyControllerDevice
     this.resultBytesLeft;
     this.resultIndex = 0;
     this.readIdInProgress = false;
-    //this.lastSectorRead = 0;
+    this.revCounter = 0;
+    this.idTrack = 0;
+    this.idHead = 0;
+    this.idSector = 0;
+    this.idLength = 0;
+    this.idMarkFound = false;
 
     // --- Reset diagnostic members
     this.frames = 0;
@@ -488,7 +515,7 @@ export class FloppyControllerDevice
           break;
 
         case Command.ReadId:
-          this.processReadId();
+          this.commandWithLoadHead();
           return;
 
         case Command.ReadData:
@@ -611,33 +638,42 @@ export class FloppyControllerDevice
 
   // --- Handle the Sense Interrupt Status command
   private processSenseInterrupt (): void {
-    // for (let i = 0; i < 4; i++) {
-    //   if (this.seek[i] >= 4) {
-    //     // --- Seek interrupt, normal termination
-    //     this.sr0 &= ~0xc0;
-    //     this.sr0 |= SR0_SE;
-    //     if (this.seek[i] === 5) {
-    //       this.sr0 |= SR0_AT;
-    //     } else if (this.seek[i] === 6) {
-    //       this.sr0 |= SR0_IC | SR0_AT | SR0_NR;
-    //     }
-    //     // --- End of seek
-    //     this.seek[i] = this.seekAge[i] = 0;
-    //     // --- Return head always 0 (11111011)
-    //     this.senseIntRes[0] = this.sr0 & 0xfb;
-    //     this.senseIntRes[1] = this.pcn[i];
-    //     i = 4;
-    //   }
-    // }
-    // if (
-    //   this.seek[0] < 4 &&
-    //   this.seek[1] < 4 &&
-    //   this.seek[2] < 4 &&
-    //   this.seek[3] < 4
-    // ) {
-    //   // --- Delete INTRQ state
-    //   this.intReq = IntRequest.None;
-    // }
+    // --- Iterate through drives to find the first one with terminated seek
+    for (let i = 0; i < 4; i++) {
+      if (this.seekStatus[i] >= SeekStatus.NormalTermination) {
+        // --- The seek operation has been completed (normally or with error)
+        // --- Reset the termination flags to "normal termination of command"
+        this.sr0 &= ~0xc0;
+        // --- Sign Seek End
+        this.sr0 |= SR0_SE;
+        if (this.seekStatus[i] === SeekStatus.AbnormalTermination) {
+          // --- Sign Abnormal Termination
+          this.sr0 |= SR0_AT;
+        } else if (this.seekStatus[i] === SeekStatus.DriveNotReady) {
+          // --- Sign Abnormal termination due to drive not ready
+          this.sr0 |= SR0_IC | SR0_AT | SR0_NR;
+        }
+
+        // --- End of seek
+        this.seekStatus[i] = SeekStatus.None;
+        this.seekAge[i] = 0;
+
+        // --- Return head always 0 (11111011)
+        this.senseIntRes[0] = this.sr0 & 0xfb;
+        this.senseIntRes[1] = this.presentCylinderNumbers[i];
+        break;
+      }
+    }
+
+    if (
+      this.seekStatus[0] < SeekStatus.NormalTermination &&
+      this.seekStatus[1] < SeekStatus.NormalTermination &&
+      this.seekStatus[2] < SeekStatus.NormalTermination &&
+      this.seekStatus[3] < SeekStatus.NormalTermination
+    ) {
+      // --- No terminated seek operations, reset INTRQ state
+      this.intReq = IntRequest.None;
+    }
   }
 
   // --- Handle the Recalibrate command
@@ -677,11 +713,6 @@ export class FloppyControllerDevice
     // // --- Seek started
     // this.seek[this.us] = 1;
     // this.seekStep(true);
-  }
-
-  // --- Handle the Read ID command
-  private processReadId (): void {
-    // this.loadHead();
   }
 
   // --- Handle the Read Data command
@@ -840,6 +871,7 @@ export class FloppyControllerDevice
   // --- Turn the operation phase to sending back result
   private signCommandResult (): void {
     // --- Set up result phase
+    this.commandBytesReceived = 0;
     this.resultBytesLeft = this.command.resultLength;
     this.msr &= ~MSR_EXM;
     this.msr |= MSR_RQM;
@@ -964,14 +996,14 @@ export class FloppyControllerDevice
     }
 
     // --- Select the drive used in the seek operation
-    const d = driveIndex % 1 ? this.driveB : this.driveA;
+    const drive = driveIndex % 1 ? this.driveB : this.driveA;
 
     // --- There is need to seek?
     if (
       this.presentCylinderNumbers[driveIndex] ===
         this.newCylinderNumbers[driveIndex] &&
       this.seekStatus[driveIndex] === SeekStatus.Recalibrate &&
-      !d.track0Mark
+      !drive.track0Mark
     ) {
       // --- Recalibrate fail, abnormal termination
       this.seekStatus[driveIndex] = SeekStatus.AbnormalTermination;
@@ -988,7 +1020,8 @@ export class FloppyControllerDevice
     if (
       this.presentCylinderNumbers[driveIndex] ===
         this.newCylinderNumbers[driveIndex] ||
-      (this.seekStatus[driveIndex] === SeekStatus.Recalibrate && d.track0Mark)
+      (this.seekStatus[driveIndex] === SeekStatus.Recalibrate &&
+        drive.track0Mark)
     ) {
       // --- Correct position
       if (this.seekStatus[driveIndex] === SeekStatus.Recalibrate) {
@@ -1005,7 +1038,7 @@ export class FloppyControllerDevice
     }
 
     // --- Drive not ready
-    if (!d.ready) {
+    if (!drive.ready) {
       if (this.seekStatus[driveIndex] === SeekStatus.Recalibrate) {
         // --- Recalibrate
         this.presentCylinderNumbers[driveIndex] =
@@ -1031,7 +1064,7 @@ export class FloppyControllerDevice
       const directionIn =
         this.presentCylinderNumbers[driveIndex] >
         this.newCylinderNumbers[driveIndex];
-      d.step(directionIn);
+      drive.step(directionIn);
       this.presentCylinderNumbers[driveIndex] += directionIn ? -1 : 1;
 
       // --- Update age for active seek operations
@@ -1044,6 +1077,167 @@ export class FloppyControllerDevice
 
       // --- Wait step completion
       this.registerEvent(this.stepRate, this.fdcEventHandler, this);
+    }
+  }
+
+  // --- Loads the head and then executes the current command
+  private commandWithLoadHead (): void {
+    this.removeEvent(this.headEventHandler);
+    if (this.headLoaded) {
+      // --- Head already loaded
+      if (
+        this.command.id === Command.ReadData ||
+        this.command.id === Command.Scan
+      ) {
+        // TODO: Implement this
+        // this.startReadData();
+      } else if (this.command.id === Command.ReadId) {
+        this.startReadId();
+      } else if (this.command.id == Command.WriteData) {
+        // TODO: Implement this
+        // this.startWriteData();
+      }
+    } else {
+      this.currentDrive.loadHead(true);
+      this.headLoaded = true;
+      this.registerEvent(this.headLoadTime, this.fdcEventHandler, this);
+    }
+  }
+
+  // --- Start the Read ID command
+  private startReadId (): void {
+    // --- Allow up to 2 revolutions to find the ID
+    if (!this.readIdInProgress) {
+      this.revCounter = 2;
+      this.readIdInProgress = true;
+    }
+
+    // --- Work with the current drive
+    const drive = this.currentDrive;
+
+    // --- Is there any revolutions left to find the ID?
+    if (this.revCounter) {
+      // --- Yes, continue reading the ID
+      let startPosition =
+        drive.dataPosInTrack >= (drive.surface?.bytesPerTrack ?? 0)
+          ? 0
+          : drive.dataPosInTrack;
+      if (this.readId() !== ReadIdResult.NotFound) {
+        // --- ID found (or CRC error)
+        this.revCounter = 0;
+      }
+
+      const bytesPerTrack = drive.surface?.bytesPerTrack ?? 0;
+      const relativeMove = bytesPerTrack
+        ? (drive.dataPosInTrack - startPosition) / bytesPerTrack
+        : 1;
+      if (relativeMove > 0) {
+        // --- We need to move ahead to find the start position. Allow up to two revolutions
+        this.registerEvent(relativeMove * 200, this.fdcEventHandler, this);
+        return;
+      }
+    }
+
+    // --- No more revolutions, ID not found
+    this.readIdInProgress = false;
+    if (this.idMarkFound) {
+      this.dataRegister[1] = this.idTrack;
+      this.dataRegister[2] = this.idHead;
+      this.dataRegister[3] = this.idSector;
+      this.dataRegister[4] = this.idLength;
+    }
+    if (!this.idMarkFound || this.sr1 & SR1_DE) {
+      // --- ID mark not found (or CRC error)
+      this.sr0 |= SR0_AT;
+    }
+    this.intReq = IntRequest.Result;
+    this.signCommandResult();
+  }
+
+  // --- Reads the current position ID
+  private readId (): ReadIdResult {
+    const fdc = this;
+    const drive = this.currentDrive;
+
+    this.sr1 &= ~(SR1_DE | SR1_MA | SR1_ND);
+    this.idMarkFound = false;
+    let i = this.revCounter;
+    let crc: DiskCrc;
+    while (i === this.revCounter && drive.ready) {
+      readNextDataByte(false);
+      crc = new DiskCrc();
+      if (this.mf) {
+        // --- Double density (MFM)
+        if (drive.currentData === 0xffa1) {
+          crc.add(drive.currentData);
+          readNextDataByte();
+          if (drive.currentData != 0xffa1) continue;
+          readNextDataByte();
+          if (drive.currentData !== 0xffa1) continue;
+        } else {
+          // --- No 0xa1 with missing clock...
+          continue;
+        }
+      }
+      drive.readData();
+      if (drive.atIndexWhole) {
+        this.revCounter--;
+      }
+
+      // --- Read the address end mark
+      if (
+        (this.mf && drive.currentData !== 0x00fe) ||
+        (!this.mf && drive.currentData !== 0xfffe)
+      ) {
+        continue;
+      }
+      crc.add(drive.currentData);
+
+      // --- Read track, head, and sector IDs
+      readNextDataByte();
+      this.idTrack = drive.currentData;
+      readNextDataByte();
+      this.idHead = drive.currentData;
+      readNextDataByte();
+      this.idSector = drive.currentData;
+      readNextDataByte();
+      this.idLength =
+        drive.currentData > MAX_SIZE_CODE ? MAX_SIZE_CODE : drive.currentData;
+      this.sectorLength = 0x80 << this.idLength;
+
+      // --- Read CRC bytes
+      readNextDataByte();
+      readNextDataByte();
+
+      if (crc.value !== 0x0000) {
+        this.sr1 |= SR1_DE | SR1_ND;
+        this.idMarkFound = true;
+        // --- Found CRC error
+        return ReadIdResult.CrcError;
+      } else {
+        this.idMarkFound = true;
+        // --- Found and OK
+        return ReadIdResult.Ok;
+      }
+    }
+    if (!drive.ready) {
+      this.revCounter = 0;
+    }
+
+    // --- FIXME NO_DATA?
+    this.sr1 |= SR1_MA | SR1_ND;
+    // --- Not found
+    return ReadIdResult.NotFound;
+
+    // --- Helper for reading a byte (and calculating CRC)
+    function readNextDataByte (addCrc = true): void {
+      drive.readData();
+      if (addCrc) {
+        crc.add(drive.currentData);
+      }
+      if (drive.atIndexWhole) {
+        fdc.revCounter--;
+      }
     }
   }
 
@@ -1066,7 +1260,7 @@ export class FloppyControllerDevice
   private fdcEventHandler (data: any): void {
     // TODO: Implement this
     const fdc = data as FloppyControllerDevice;
-    const cmdId = this.command.id;
+    const cmdId = data.command.id;
     if (fdc.readIdInProgress) {
       if (cmdId === Command.ReadData) {
         // TODO: Implement this
@@ -1260,6 +1454,7 @@ export enum IntRequest {
   Seek
 }
 
+// --- Avaliable Seek Statuses
 export enum SeekStatus {
   None = 0,
   SeekStarted = 1,
@@ -1267,6 +1462,13 @@ export enum SeekStatus {
   NormalTermination = 4,
   AbnormalTermination = 5,
   DriveNotReady = 6
+}
+
+// --- Avaliable Statuses of the Read ID operation
+export enum ReadIdResult {
+  Ok = 0,
+  CrcError = 1,
+  NotFound = 2
 }
 
 // --- Describes a command
