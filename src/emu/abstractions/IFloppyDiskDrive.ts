@@ -19,7 +19,10 @@ export interface IFloppyDiskDrive {
   ejectDisk(): void;
 
   // --- Indicates if the drive is selected for active operation
-  selected: boolean;
+  readonly selected: boolean;
+
+  // --- Selects the drive for active/inactive operation
+  selectDrive(selected: boolean): void;
 
   // --- The "write protection" state of the disk
   writeProtected: boolean;

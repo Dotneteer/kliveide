@@ -90,9 +90,6 @@ export class FloppyControllerDevice
   // --- Head load time in milliseconds
   headLoadTime: number;
 
-  // --- The result to send back
-  resultData: number[];
-
   // --- The mumber of bytes to send back
   resultBytesLeft: number;
 
@@ -194,7 +191,6 @@ export class FloppyControllerDevice
     this.commandBytesReceived = 0;
     this.commandRegister = 0x00;
     this.commandParameters = [];
-    this.resultData = [];
     this.resultBytesLeft;
     this.resultIndex = 0;
     this.readIdInProgress = false;
@@ -278,7 +274,7 @@ export class FloppyControllerDevice
     } else {
       // --- Send back the other result bytes
       result =
-        this.resultData[this.command.resultLength - this.resultBytesLeft - 2];
+        this.dataRegister[this.command.resultLength - this.resultBytesLeft - 2];
     }
     this.resultBytesLeft--;
     if (!this.resultBytesLeft) {
@@ -419,12 +415,12 @@ export class FloppyControllerDevice
         this.us = this.commandParameters[0] & 0x03;
         if (this.us & 0x01 && this.hasDriveB) {
           this.currentDrive = this.driveB;
-          this.driveA.selected = false;
-          this.driveB.selected = true;
+          this.driveA.selectDrive(false);
+          this.driveB.selectDrive(true);
         } else {
           this.currentDrive = this.driveA;
-          this.driveA.selected = true;
-          this.driveB.selected = false;
+          this.driveA.selectDrive(true);
+          this.driveB.selectDrive(false);
         }
 
         // --- Set the current drive's head
@@ -1266,8 +1262,7 @@ export class FloppyControllerDevice
         // TODO: Implement this
         // fdc.startReadData();
       } else if (cmdId === Command.ReadId) {
-        // TODO: Implement this
-        // fdc.startReadId();
+        fdc.startReadId();
       } else if (cmdId === Command.WriteData) {
         // TODO: Implement this
         // fdc.startWriteData();
@@ -1280,7 +1275,7 @@ export class FloppyControllerDevice
       // fdc.startReadData();
     } else if (cmdId === Command.ReadId) {
       // TODO: Implement this
-      // fdc.startReadId();
+      fdc.startReadId();
     } else if (cmdId === Command.WriteData) {
       // TODO: Implement this
       // fdc.startWriteData();

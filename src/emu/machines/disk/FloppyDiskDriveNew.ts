@@ -41,19 +41,29 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     return !!this.contents;
   }
 
+  // --- Selects the drive for active/inactive operation
+  selectDrive (selected: boolean): void {
+    this.selected = selected;
+    this.loadHead(selected);
+  }
+
   // --- Loads the disk with the specified contents into the drive
   loadDisk (contents: Uint8Array): void {
-    if (this.contents) {
-      // --- Eject the disk first
-      this.ejectDisk();
-    }
-
     // --- Load the disk data
     this.contents = contents;
     this.disk = readDiskData(contents);
     this.surface = createDiskSurface(this.disk);
 
-    // TODO: Set up the drive with the loaded disk
+    // REVIEW this
+    this.writeProtected = true;
+    if (this.selected) {
+      this.loadHead(true);
+    }
+
+    // TODO: Implement this
+    //this.doReadWeak = this.disk.hasWeakSectors;
+    this.setDataToCurrentCylinder(LOAD_RND_FACTOR);
+    this.ready = this.motorOn && this.motorSpeed === 100 && this.hasDiskLoaded;
   }
 
   // --- Ejects the disk from the drive
@@ -62,6 +72,11 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     delete this.contents;
     delete this.disk;
     delete this.surface;
+    this.atIndexWhole = true;
+    this.writeProtected = true;
+    if (this.selected) {
+      this.loadHead(false);
+    }
   }
 
   // --- The "write protection" state of the disk
@@ -150,6 +165,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
         delete this.motorAccelerating;
       }
     }
+    this.ready = this.motorSpeed === 100 && this.hasDiskLoaded;
   }
 
   // --- Step one cylinder into the specified direction
@@ -168,10 +184,44 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
 
   // --- Sets the data position to the current cylinder's surface data using the specified random factor
   setDataToCurrentCylinder (randomFactor: number): void {
-    // TODO: Implement this
+    if (!this.hasDiskLoaded) return;
+
+    const head = this.currentHead;
+    if (
+      
+      (this.disk.numSides === 1 && head === 1) ||
+      this.currentCylinder >= this.disk.numTracks
+    ) {
+      // --- No data available for the disk
+      this.disk.trackData = null;
+      this.disk.clockData = null;
+      this.disk.fmData = null;
+      this.disk.weakData = null;
+      return;
+    }
+
+    // --- Set the index to the specified track
+    this.disk.setTrackIndex(this.disk.numSides * this.currentCylinder + head);
+    if (fact > 0) {
+      /* this generate a bpt/fact +-10% triangular distribution skip in bytes 
+         i know, we should use the higher bits of rand(), but we not
+         keen on _real_ (pseudo)random numbers... ;)
+      */
+      const tlen = this.disk.trackLength;
+
+      // --- Random number between -9 and 9
+      const rand =
+        (Math.floor(Math.random() * 10) % 10) +
+        (Math.floor(Math.random() * 10) % 10) -
+        9;
+      this.disk.indexPos +=
+        Math.floor(tlen / fact) + tlen * Math.floor(rand / fact / 100);
+      while (this.disk.indexPos >= tlen) this.disk.indexPos -= tlen;
+    }
+    this.atIndexWhole = !this.dataPosInTrack;
   }
 
-  // --- Read the next data feom the disk
+  // --- Read the next data from the disk
   readData (): number {
     // TODO: Implement this
     return 0;

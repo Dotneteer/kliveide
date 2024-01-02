@@ -86,9 +86,6 @@ export interface IFloppyControllerDeviceTest {
   // --- Head load time in milliseconds
   headLoadTime: number;
 
-  // --- The result to send back
-  resultData: number[];
-
   // --- The mumber of bytes to send back
   resultBytesLeft: number;
 

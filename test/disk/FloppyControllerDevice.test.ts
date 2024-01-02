@@ -1,4 +1,6 @@
 import "mocha";
+import * as path from "path";
+import * as fs from "fs";
 import { expect } from "expect";
 import { TestUpd765Machine } from "./TestUpd765Machine";
 import { IFloppyControllerDeviceTest } from "@emu/machines/disk/IFloppyContorllerDeviceTest";
@@ -8,6 +10,7 @@ import {
   MSR_CB,
   OperationPhase
 } from "@emu/machines/disk/FloppyControllerDeviceNew";
+import { DISK_A_DATA } from "@emu/machines/machine-props";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -559,12 +562,109 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x00);
 
     updm.emulateFrameCompletion(40);
-    
+
     expect(fdt.command.id).toBe(Command.ReadId);
-    expect(fdt.commandBytesReceived).toBe(1);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
-    expect(fdt.operationPhase).toBe(OperationPhase.Execution);
-    expect(fdt.intReq).toBe(IntRequest.None);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const st0 = fd.readDataRegister();
+    const st1 = fd.readDataRegister();
+    const st2 = fd.readDataRegister();
+    const c = fd.readDataRegister();
+    const h = fd.readDataRegister();
+    const r = fd.readDataRegister();
+    const n = fd.readDataRegister();
+
+    expect(st0).toBe(0x40);
+    expect(st1).toBe(0x05);
+    expect(st2).toBe(0x00);
+    expect(c).toBe(0x00);
+    expect(h).toBe(0x00);
+    expect(r).toBe(0x00);
+    expect(n).toBe(0x00);
+  });
+
+  it("ReadId (no disk) + Sense Interrupt #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+
+    fd.turnOnMotor();
+    updm.emulateFrameCompletion(60);
+
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    updm.emulateFrameCompletion(40);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const st0 = fd.readDataRegister();
+    const st1 = fd.readDataRegister();
+    const st2 = fd.readDataRegister();
+    const c = fd.readDataRegister();
+    const h = fd.readDataRegister();
+    const r = fd.readDataRegister();
+    const n = fd.readDataRegister();
+
+    expect(st0).toBe(0x40);
+    expect(st1).toBe(0x05);
+    expect(st2).toBe(0x00);
+    expect(c).toBe(0x00);
+    expect(h).toBe(0x00);
+    expect(r).toBe(0x00);
+    expect(n).toBe(0x00);
+
+    fd.writeDataRegister(0x08);
+
+    expect(fdt.command.id).toBe(Command.Invalid);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.us).toBe(0);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const r1 = fd.readDataRegister();
+    expect(r1).toBe(0x80);
+  });
+
+  it("Load disk #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    expect(fdt.driveA.hasDiskLoaded).toBe(true);
+    expect(fdt.driveA.contents).toBe(diskData);
+    expect(fdt.driveA.surface).toBeDefined();
+    expect(fdt.driveA.writeProtected).toBe(true);
+    expect(fdt.driveA.track0Mark).toBe(true);
+  });
+
+  it("Load disk and select #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    expect(fdt.driveA.hasDiskLoaded).toBe(true);
+    expect(fdt.driveA.contents).toBe(diskData);
+    expect(fdt.driveA.surface).toBeDefined();
+    expect(fdt.driveA.writeProtected).toBe(true);
+    expect(fdt.driveA.track0Mark).toBe(true);
   });
 
 });
+
+export function readTestFile (filename: string): Uint8Array {
+  const fullname = path.join(__dirname, "../testfiles", filename);
+  return fs.readFileSync(fullname);
+}

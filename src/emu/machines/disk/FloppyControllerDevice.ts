@@ -357,6 +357,13 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
           this.sr1 |= SR1_DE;
           this.sr0 |= SR0_AT;
           this.cmdResult(); /* set up result phase */
+          this.log({
+            opType: PortOperationType.ReadData,
+            addr: this.machine.opStartAddress,
+            phase: "R",
+            data: r,
+            comment: this.cmd.reslbls[this.resultIndex++]
+          });
           return r;
         }
 
@@ -367,12 +374,26 @@ export class FloppyControllerDevice implements IFloppyControllerDevice {
             this.sr0 |= SR0_AT;
           }
           this.cmdResult();
+          this.log({
+            opType: PortOperationType.ReadData,
+            addr: this.machine.opStartAddress,
+            phase: "R",
+            data: r,
+            comment: this.cmd.reslbls[this.resultIndex++]
+          });
           return r;
         }
         this.revCounter = 2;
         this.msr &= ~MSR_RQM;
         this.startReadData();
       }
+      this.log({
+        opType: PortOperationType.ReadData,
+        addr: this.machine.opStartAddress,
+        phase: "R",
+        data: r,
+        comment: this.cmd.reslbls[this.resultIndex++]
+      });
       return r;
     }
 
@@ -1724,7 +1745,7 @@ const MOTOR_SPEED_INCREMENT = 2;
 const MOTOR_SPEED_DECREMENT = 2;
 
 // --- Maximum log entries preserved
-const MAX_LOG_ENTRIES = 1024;
+const MAX_LOG_ENTRIES = 10240;
 
 // ???
 const MAX_SIZE_CODE = 8;
