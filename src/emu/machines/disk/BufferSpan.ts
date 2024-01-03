@@ -80,6 +80,7 @@ export class BufferSpan {
     const byteIndex = bitIndex >> 3;
     const bitMask = 1 << (bitIndex & 0x07);
     if (byteIndex < 0 || byteIndex >= this.length) {
+      console.log(`bitIndex: ${bitIndex}, byteIndex: ${byteIndex}, length: ${this.length}`);
       throw new Error("Index out of range");
     }
     return (this.buffer[this.startOffset + byteIndex] & bitMask) !== 0;

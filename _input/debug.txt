@@ -178,6 +178,8 @@ DATA xx xx xx xx xx xx xx xx xx xx
 DATA 00 00 00 00 00 00 E5 E5
 R 40 80 00 ...
 
+FUSE: save
+
 
 
 

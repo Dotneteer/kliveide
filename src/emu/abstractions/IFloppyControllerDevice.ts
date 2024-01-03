@@ -1,36 +1,19 @@
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { IGenericDevice } from "./IGenericDevice";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
+import { IFloppyDiskDrive } from "./IFloppyDiskDrive";
 
 /**
  * This interface represents an abstract floppy controller device
  */
 export interface IFloppyControllerDevice
   extends IGenericDevice<IZxSpectrumMachine> {
-  // --- Indicates if Drive #1 is present
-  isDriveAPresent: boolean;
 
-  // --- Indicates if Drive #2 is present
-  isDriveBPresent: boolean;
-
-  // --- Indicates if disk in Drive #1 is write protected
-  readonly isDiskAWriteProtected: boolean;
-
-  // --- Indicates if disk in Drive #2 is write protected
-  readonly isDiskBWriteProtected: boolean;
-
-  // --- Loads the specified floppy disk into drive A
-  loadDiskA(disk: FloppyDisk): void;
-
-  // --- Ejects disk from drive A
-  ejectDiskA(): void;
-
-  // --- Loads the specified floppy disk into drive B
-  loadDiskB(disk: FloppyDisk): void;
-
-  // --- Ejects disk from drive B
-  ejectDiskB(): void;
+  // --- Drive A (if present)  
+  driveA?: IFloppyDiskDrive; 
+  
+  // --- Drive B (if present)
+  driveB?: IFloppyDiskDrive;
 
   // --- Gets the value of the data register (8-bit)
   readDataRegister(): number;

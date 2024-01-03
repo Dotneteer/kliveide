@@ -8,21 +8,17 @@ import {
   useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
-import {
-  DiskDensity,
-  DiskError,
-  FloppyDisk,
-  FloppyDiskFormat
-} from "@emu/machines/disk/FloppyDisk";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { SectorInformationBlock } from "@emu/machines/disk/DskDiskReader";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
-import { DiskInformation } from "@emu/machines/disk/DiskInformation";
+import { DiskInformation, SectorInformation } from "@emu/machines/disk/DiskInformation";
+import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
+import { DiskDensity } from "@emu/abstractions/DiskDensity";
+import { DiskSurface, createDiskSurface } from "@emu/machines/disk/DiskSurface";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -34,10 +30,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
 
   const contents = data as Uint8Array;
   let fileInfo: DiskInformation | undefined;
-  let floppyInfo: FloppyDisk | undefined;
+  let floppyInfo: DiskSurface | undefined;
   try {
     fileInfo = readDiskData(contents);
-    floppyInfo = new FloppyDisk(contents);
+    floppyInfo = createDiskSurface(fileInfo);
   } catch (err) {
     // --- Intentionally ignored
     console.log(err);
@@ -90,7 +86,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
           />
         </div>
         <div className={styles.dskViewerWrapper}></div>
-        {showPhysical && (
+        {/* {showPhysical && (
           <>
             <DataSection
               key='GDI'
@@ -106,10 +102,6 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             >
               <div className={styles.dataSection}>
                 <div className={styles.header}>
-                  <LabeledValue
-                    label='Status:'
-                    value={DiskError[floppyInfo.status]}
-                  />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
                     label='Density:'
@@ -118,19 +110,19 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <ToolbarSeparator small={true} />
                   <LabeledFlag
                     label='Write protected'
-                    value={floppyInfo.isWriteProtected ?? false}
+                    value={true}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledFlag
                     label='Has weak sectors'
-                    value={floppyInfo.hasWeakSectors ?? false}
+                    value={false}
                   />
                 </div>
                 <div className={styles.header}>
                   <LabeledValue
                     label='Total:'
                     title='Total physical size in bytes'
-                    value={floppyInfo.data?.length}
+                    value={0}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
@@ -142,7 +134,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <LabeledValue
                     label='TLen:'
                     title='Track length in bytes'
-                    value={floppyInfo.trackLength}
+                    value={floppyInfo.bytesPerTrack}
                   />
                 </div>
               </div>
@@ -264,8 +256,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               );
             })}
           </>
-        )}
-        {!showPhysical && (
+        )} */}
+        {/* {!showPhysical && (
           <DataSection
             key='DIB'
             title='Disk Information Block'
@@ -285,8 +277,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               <StaticMemoryView memory={contents.slice(0, 0x100)} />
             </div>
           </DataSection>
-        )}
-        {!showPhysical &&
+        )} */}
+        {/* {!showPhysical &&
           fileInfo.tracks.map((t, idx) => {
             const selectedSectorIdx = docState?.[`TS${idx}`] ?? 1;
             if (!t.sectors.length) {
@@ -329,7 +321,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 </DataSection>
               );
             }
-          })}
+          })} */}
       </div>
     </ScrollViewer>
   );
@@ -375,7 +367,7 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
 );
 
 type SectorProps = {
-  sector: SectorInformationBlock;
+  sector: SectorInformation;
 };
 
 const SectorPanel = ({ sector }: SectorProps) => {

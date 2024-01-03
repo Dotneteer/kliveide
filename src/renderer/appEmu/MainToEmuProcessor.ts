@@ -29,7 +29,6 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
-import { FloppyDisk } from "@emu/machines/disk/FloppyDisk";
 import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
@@ -495,18 +494,16 @@ export async function processMainToEmuMessages (
     const drive = message.diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
-      const floppy = message.contents ? new FloppyDisk(message.contents) : null;
-
       // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(propName, floppy);
+      controller.machine.setMachineProperty(propName, message.contents);
 
       // --- Done.
       if (message.confirm) {
         const response = await emuToMain.sendMessage({
           type: "MainDisplayMessageBox",
           messageType: "info",
-          title: floppy ? "Disk inserted" : "Disk ejected",
-          message: floppy
+          title: message.contents ? "Disk inserted" : "Disk ejected",
+          message: message.contents
             ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
             : `Disk successfully ejected from drive ${drive}`
         });
