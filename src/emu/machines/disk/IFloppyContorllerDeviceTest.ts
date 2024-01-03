@@ -53,9 +53,6 @@ export interface IFloppyControllerDeviceTest {
   // --- The current command register value
   commandRegister: number;
 
-  // --- Command parameter received
-  commandParameters: number[];
-
   // --- Selected unit (0-3)
   us: number;
 
@@ -142,4 +139,16 @@ export interface IFloppyControllerDeviceTest {
 
   // --- The actual sector length
   sectorLength: number;
+
+  // --- Expected record length
+  expRecordLength: number;
+
+  // --- First sector always read/write even when EOT < R
+  firstRw: boolean;
+
+  // --- Read a deleted data mark
+  ddam: boolean;
+
+  // --- Offset of data byte during read and write operations
+  dataOffset: number;
 }

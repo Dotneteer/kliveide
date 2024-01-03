@@ -57,9 +57,6 @@ export class FloppyControllerDevice
   // --- The current command register value
   commandRegister: number;
 
-  // --- Command parameter received
-  commandParameters: number[];
-
   // --- Selected unit (0-3)
   us: number;
 
@@ -147,6 +144,21 @@ export class FloppyControllerDevice
   // --- AM ID mark found
   idMarkFound: boolean;
 
+  // --- Expected record length
+  expRecordLength: number;
+
+  // --- First sector always read/write even when EOT < R
+  firstRw: boolean;
+
+  // --- Read a deleted data mark
+  ddam: boolean;
+
+  // --- Offset of data byte during read and write operations
+  dataOffset: number;
+
+  // --- The last CRC value
+  crc: DiskCrc;
+
   // --- Initializes the controller
   constructor (
     public readonly machine: IZxSpectrumMachine,
@@ -196,7 +208,6 @@ export class FloppyControllerDevice
     this.headLoaded = false;
     this.commandBytesReceived = 0;
     this.commandRegister = 0x00;
-    this.commandParameters = [];
     this.resultBytesLeft;
     this.resultIndex = 0;
     this.readIdInProgress = false;
@@ -206,6 +217,7 @@ export class FloppyControllerDevice
     this.idSector = 0;
     this.idLength = 0;
     this.idMarkFound = false;
+    this.crc = new DiskCrc();
 
     // --- Reset diagnostic members
     this.frames = 0;
@@ -392,7 +404,7 @@ export class FloppyControllerDevice
       }
     } else {
       // --- Store the subsequent command parameter
-      this.commandParameters[this.commandBytesReceived - 1] = value;
+      this.dataRegister[this.commandBytesReceived - 1] = value;
       this.log({
         opType: PortOperationType.WriteData,
         addr: this.machine.opStartAddress,
@@ -420,7 +432,7 @@ export class FloppyControllerDevice
         this.command.id !== Command.Invalid
       ) {
         // --- The US parameter specified the current drive
-        this.us = this.commandParameters[0] & 0x03;
+        this.us = this.dataRegister[0] & 0x03;
         if (this.us & 0x01 && this.hasDriveB) {
           this.currentDrive = this.driveB;
           this.driveA.selectDrive(false);
@@ -432,7 +444,7 @@ export class FloppyControllerDevice
         }
 
         // --- Set the current drive's head
-        this.hd = (this.commandParameters[0] & 0x04) >> 2 ? 1 : 0;
+        this.hd = (this.dataRegister[0] & 0x04) >> 2 ? 1 : 0;
         this.currentDrive.currentHead = this.currentDrive.hasTwoHeads
           ? this.hd
           : 0;
@@ -443,7 +455,7 @@ export class FloppyControllerDevice
           this.command.id === Command.WriteData
         ) {
           this.deletedData = !!((this.commandRegister & 0x08) >> 3);
-          this.sk = !!((this.commandParameters[0] & 0x20) >> 5);
+          this.sk = !!((this.dataRegister[0] & 0x20) >> 5);
         }
       }
 
@@ -486,12 +498,12 @@ export class FloppyControllerDevice
 
         case Command.Specify:
           // --- Immediate execution: store the parameters
-          this.stepRate = 0x10 - (this.commandParameters[0] >> 4);
-          this.headUnloadTime = (this.commandParameters[0] & 0x0f) << 4;
+          this.stepRate = 0x10 - (this.dataRegister[0] >> 4);
+          this.headUnloadTime = (this.dataRegister[0] & 0x0f) << 4;
           if (this.headUnloadTime === 0) this.headUnloadTime = 128;
-          this.headLoadTime = this.commandParameters[1] & 0xfe;
+          this.headLoadTime = this.dataRegister[1] & 0xfe;
           if (this.headLoadTime === 0) this.headLoadTime = 256;
-          this.nonDmaMode = !!(this.commandParameters[1] & 0x01);
+          this.nonDmaMode = !!(this.dataRegister[1] & 0x01);
           this.operationPhase = OperationPhase.Command;
           break;
 
@@ -577,8 +589,7 @@ export class FloppyControllerDevice
 
   // --- Get the floppy drive's motor speed
   getMotorSpeed (): number {
-    // TODO: Implement this
-    return 0;
+    return this.currentDrive.motorSpeed;
   }
 
   // --- Get the floppy drive's save light value
@@ -721,35 +732,17 @@ export class FloppyControllerDevice
 
   // --- Handle the Read Data command
   private processReadData (): void {
-    // // --- Speedlock
-    // if (this.speedlock !== -1 && !d.doReadWeak) {
-    //   let u =
-    //     (this.dataRegister[2] & 0x01) +
-    //     (this.dataRegister[1] << 1) +
-    //     (this.dataRegister[3] << 8);
-    //   if (this.dataRegister[3] === this.dataRegister[5] && u == 0x200) {
-    //     if (u === this.lastSectorRead) {
-    //       this.speedlock++;
-    //     } else {
-    //       this.speedlock = 0;
-    //       this.lastSectorRead = u;
-    //     }
-    //   } else {
-    //     this.lastSectorRead = this.speedlock = 0;
-    //   }
-    // }
-    // // --- End of speedlock hack
-    // this.rlen =
-    //   0x80 <<
-    //   (this.dataRegister[4] > MAX_SIZE_CODE
-    //     ? MAX_SIZE_CODE
-    //     : this.dataRegister[4]);
-    // if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
-    //   this.rlen = this.dataRegister[7];
-    // }
-    // // --- Always read at least one sector
-    // this.firstRw = true;
-    // this.loadHead();
+    this.expRecordLength =
+      0x80 <<
+      (this.dataRegister[4] > MAX_SIZE_CODE
+        ? MAX_SIZE_CODE
+        : this.dataRegister[4]);
+    if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
+      this.expRecordLength = this.dataRegister[7];
+    }
+    // --- Always read at least one sector
+    this.firstRw = true;
+    this.commandWithLoadHead();
   }
 
   // --- Handle the Write Data command
@@ -891,7 +884,11 @@ export class FloppyControllerDevice
       this.msr &= ~MSR_DIO;
       this.msr &= ~MSR_CB;
     }
+
+    // --- No need to handle disk timeouts, as we completed an operation successfully
     this.removeEvent(this.timeoutEventHandler);
+
+    // --- If the last command used the head and the head is loaded, let's unload it after timeout
     if (this.headLoaded && this.command.id <= Command.ReadId) {
       this.registerEvent(this.headUnloadTime, this.headEventHandler, this);
     }
@@ -899,70 +896,52 @@ export class FloppyControllerDevice
 
   // --- Get the next data byte to sende back in the result phase of Read Data
   private getReadDataResult (): number {
-    // TODO: Implement this
-    // // --- READ_DATA
-    // this.dataOffset++; // --- count read bytes
-    // d.readData();
-    // this.crcAdd();
+    const drive = this.currentDrive;
 
-    // // --- Speedlock hack
-    // if (this.speedlock > 0 && !d.doReadWeak) {
-    //   if (this.dataOffset < 64 && d.data !== 0xe5) {
-    //     // --- W.E.C Le Mans type
-    //     this.speedlock = 2;
-    //   } else if (
-    //     (this.speedlock > 1 || this.dataOffset < 64) &&
-    //     !(this.dataOffset % 29)
-    //   ) {
-    //     // --- Mess up data
-    //     d.data ^= this.dataOffset;
-    //     // --- Mess up CRC
-    //     this.crcAdd();
-    //   }
-    // }
-    // // --- End of Speedlock hack
+    this.dataOffset++; // --- count read bytes
+    drive.readData();
+    this.crcAdd();
 
-    // r = d.data & 0xff;
-    // if (this.dataOffset === this.rlen) {
-    //   // --- Send only rlen byte to host
-    //   while (this.dataOffset < this.sectorLength) {
-    //     d.readData();
-    //     this.crcAdd();
-    //     this.dataOffset++;
-    //   }
-    // }
-    // if (
-    //   this.cmd.id == Command.ReadData &&
-    //   this.dataOffset === this.sectorLength
-    // ) {
-    //   // --- Read the CRC
-    //   d.readData();
-    //   this.crcAdd();
-    //   d.readData();
-    //   this.crcAdd();
-    //   if (this.crc !== 0x000) {
-    //     this.sr2 |= SR2_DD;
-    //     this.sr1 |= SR1_DE;
-    //     this.sr0 |= SR0_AT;
-    //     this.cmdResult(); /* set up result phase */
-    //     return r;
-    //   }
+    let r = drive.currentData & 0xff;
+    if (this.dataOffset === this.expRecordLength) {
+      // --- Send only the expected bytes to host
+      while (this.dataOffset < this.sectorLength) {
+        drive.readData();
+        this.crcAdd();
+        this.dataOffset++;
+      }
+    }
+    if (
+      this.command.id == Command.ReadData &&
+      this.dataOffset === this.sectorLength
+    ) {
+      // --- Read the CRC
+      drive.readData();
+      this.crcAdd();
+      drive.readData();
+      this.crcAdd();
+      if (this.crc.value !== 0x000) {
+        this.sr2 |= SR2_DD;
+        this.sr1 |= SR1_DE;
+        this.sr0 |= SR0_AT;
+        this.signCommandResult();
+        return r;
+      }
 
-    //   if (this.ddam !== this.delData) {
-    //     // --- we read a not 'wanted' sector... so
-    //     if (this.dataRegister[5] > this.dataRegister[3]) {
-    //       // --- if we want to read more...
-    //       this.sr0 |= SR0_AT;
-    //     }
-    //     this.cmdResult();
-    //     return r;
-    //   }
-    //   this.revCounter = 2;
-    //   this.msr &= ~MSR_RQM;
-    //   this.startReadData();
-    // }
-    // return r;
-    return 0xff;
+      if (this.ddam !== this.deletedData) {
+        // --- we read a not 'wanted' sector... so
+        if (this.dataRegister[5] > this.dataRegister[3]) {
+          // --- if we want to read more...
+          this.sr0 |= SR0_AT;
+        }
+        this.signCommandResult();
+        return r;
+      }
+      this.revCounter = 2;
+      this.msr &= ~MSR_RQM;
+      this.startReadData();
+    }
+    return r;
   }
 
   // --- Makes a seek step
@@ -1065,9 +1044,12 @@ export class FloppyControllerDevice
       this.presentCylinderNumbers[driveIndex] !==
       this.newCylinderNumbers[driveIndex]
     ) {
+      // --- Calculate the direction of the step
       const directionIn =
         this.presentCylinderNumbers[driveIndex] >
         this.newCylinderNumbers[driveIndex];
+
+      // --- Step into that direction
       drive.step(directionIn);
       this.presentCylinderNumbers[driveIndex] += directionIn ? -1 : 1;
 
@@ -1084,17 +1066,160 @@ export class FloppyControllerDevice
     }
   }
 
+  // --- Seek to a specified id
+  private seekId (): SeekIdResult {
+    // --- Reset the Wrong Cylinder and Bad Cylinder flags
+    this.sr2 &= ~(SR2_WC | SR2_BC);
+
+    // --- Read the next sector's ID
+    let idResult = this.readId();
+    // --- Not found any good ID
+    if (idResult !== ReadIdResult.Ok) {
+      return SeekIdResult.NotFoundAny;
+    }
+
+    // --- We found a sector ID, check if it is the one we are looking for
+    if (this.idTrack != this.dataRegister[1]) {
+      // --- We're looking for another track, sigh Wrong Cylinder
+      this.sr2 |= SR2_WC;
+
+      if (this.idTrack === 0xff) {
+        // --- We have found a Bad Cylinder
+        this.sr2 |= SR2_BC;
+      }
+
+      // --- Sign the seek failure
+      return SeekIdResult.NotFoundSpecified;
+    }
+
+    // --- Ok, we're on the right track, check the sector and the head
+    if (
+      this.idSector === this.dataRegister[3] &&
+      this.idHead === this.dataRegister[2]
+    ) {
+      // --- The Track, Head, and Sector number match
+      if (this.idLength !== this.dataRegister[4]) {
+        // --- The Length field does not match, sign No Data
+        this.sr1 |= SR1_ND;
+
+        // --- Sign the seek failure
+        return SeekIdResult.NotFoundSpecified;
+      }
+
+      // --- Yes, we have found the sector
+      return SeekIdResult.Found;
+    }
+
+    // --- The Head and/or Sector numbers do not match, sign No Data
+    this.sr1 |= SR1_ND;
+    return SeekIdResult.NotFoundSpecified;
+  }
+
+  // --- Reads the DAM (Data Address Mark)
+  // --- Return: false = found, true = not found
+  private readDataAddressMark (): boolean {
+    const drive = this.currentDrive;
+    let i = 0;
+
+    if (this.mf) {
+      // --- Double density (MFM)
+      for (i = 40; i > 0; i--) {
+        drive.readData();
+        // --- Read next?
+        if (drive.currentData === 0x4e) continue;
+        // --- Go to PLL sync
+        if (drive.currentCylinder == 0x00) break;
+
+        this.sr2 |= SR2_MD;
+        // --- Something wrong
+        return true;
+      }
+
+      for (; i > 0; i--) {
+        this.crcPreset();
+        drive.readData();
+        this.crcAdd();
+        if (drive.currentData === 0x00) continue;
+        // --- Got to 0xA1 mark
+        if (drive.currentData === 0xffa1) break;
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      for (i = drive.currentData === 0xffa1 ? 2 : 3; i > 0; i--) {
+        drive.readData();
+        this.crcAdd();
+        if (drive.currentData !== 0xffa1) {
+          this.sr2 |= SR2_MD;
+          return true;
+        }
+      }
+
+      drive.readData();
+      this.crcAdd();
+      if (drive.currentData < 0x00f8 || drive.currentData > 0x00fb) {
+        // !fb deleted mark
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      // --- DAM found
+      this.ddam = drive.currentData !== 0x00fb;
+      return false;
+    } else {
+      // --- SD -> FM
+      for (i = 30; i > 0; i--) {
+        drive.readData();
+        // --- Read next?
+        if (drive.currentData === 0xff) continue;
+        // --- Go to PLL sync?
+        if (drive.currentData === 0x00) break;
+        this.sr2 |= SR2_MD;
+        // --- Something wrond
+        return true;
+      }
+
+      for (; i > 0; i--) {
+        this.crcPreset();
+        drive.readData();
+        this.crcAdd();
+        if (drive.currentData === 0x00) continue;
+        // --- !fb deleted mark
+        if (drive.currentData >= 0xfff8 && drive.currentData <= 0xfffb) break;
+
+        this.sr2 |= SR2_MD;
+        return true;
+      }
+
+      if (i === 0) {
+        drive.readData();
+        this.crcAdd();
+        if (drive.currentData < 0xfff8 || drive.currentData > 0xfffb) {
+          // --- !fb deleted mark
+          this.sr2 |= SR2_MD;
+          return true;
+        }
+      }
+
+      // --- Found
+      this.ddam = drive.currentData !== 0x00fb;
+      return false;
+    }
+  }
+
   // --- Loads the head and then executes the current command
   private commandWithLoadHead (): void {
+    // --- The current command will use the head, so it must not be unloaded. Remove the
+    // --- event handler that would unolad the head
     this.removeEvent(this.headEventHandler);
+
     if (this.headLoaded) {
-      // --- Head already loaded
+      // --- Head already loaded, start the command usign the head
       if (
         this.command.id === Command.ReadData ||
         this.command.id === Command.Scan
       ) {
-        // TODO: Implement this
-        // this.startReadData();
+        this.startReadData();
       } else if (this.command.id === Command.ReadId) {
         this.startReadId();
       } else if (this.command.id == Command.WriteData) {
@@ -1102,8 +1227,12 @@ export class FloppyControllerDevice
         // this.startWriteData();
       }
     } else {
+      // --- The head is not loaded, load it
       this.currentDrive.loadHead(true);
       this.headLoaded = true;
+
+      // --- Allow the head to settle down after the head load time and start executing the command
+      // --- using the loaded head
       this.registerEvent(this.headLoadTime, this.fdcEventHandler, this);
     }
   }
@@ -1158,6 +1287,155 @@ export class FloppyControllerDevice
     this.signCommandResult();
   }
 
+  // --- Start the Read Data command
+  private startReadData (): void {
+    const fdc = this;
+
+    // --- Try reading the data unless the loop is broken
+    while (true) {
+      if (
+        this.firstRw ||
+        this.readIdInProgress ||
+        this.dataRegister[5] > this.dataRegister[3]
+      ) {
+        if (!this.readIdInProgress) {
+          // --- Read operation has not been started
+          if (!this.firstRw) {
+            // --- We target the next sector on this track
+            this.dataRegister[3]++;
+          }
+
+          // --- We do not target the first sector on the track anymore
+          this.firstRw = false;
+
+          // --- Allow two revolutions to find the sector
+          this.revCounter = 2;
+          this.readIdInProgress = true;
+        }
+
+        // --- Go on untile there is any revolution left or we find the sector
+        while (this.revCounter) {
+          // --- Start position
+          let startPosition =
+            this.currentDrive.dataPosInTrack >=
+            this.currentDrive.surface.bytesPerTrack
+              ? 0
+              : this.currentDrive.dataPosInTrack;
+
+          // --- Try to find the sector according to the current ID
+          if (this.seekId() === SeekIdResult.Found) {
+            // --- We have just found the sector, so we can exit the loop
+            this.revCounter = 0;
+          } else {
+            // --- We have not found the sector yet, so the ID mark is not found
+            this.idMarkFound = false;
+          }
+
+          // --- Calculate the relative move
+          const bytesPerTrack = this.currentDrive.surface?.bytesPerTrack ?? 0;
+          const relativeMove = bytesPerTrack
+            ? (this.currentDrive.dataPosInTrack - startPosition) / bytesPerTrack
+            : 1;
+
+          startPosition = this.currentDrive.surface.bytesPerTrack
+            ? ((this.currentDrive.dataPosInTrack - startPosition) * 200) /
+              this.currentDrive.surface.bytesPerTrack
+            : 200;
+
+          if (relativeMove > 0) {
+            // --- We need to move ahead to find the start position. Allow up to two revolutions
+            this.registerEvent(relativeMove * 200, this.fdcEventHandler, this);
+            return;
+          }
+        }
+
+        // --- We exited the loop above because we have found the sector or there
+        // --- is no more revolutions left
+        this.readIdInProgress = false;
+        if (!this.idMarkFound) {
+          // --- Not found/crc error
+          this.sr0 |= SR0_AT;
+          abortReadData();
+          return;
+        }
+
+        // --- We have found the sector. Now, find the data address mark to commence reading the sector data
+        if (this.readDataAddressMark()) {
+          // --- Not found
+          this.sr0 |= SR0_AT;
+          abortReadData();
+          return;
+        }
+
+        // --- Ok, we are just about to read the data
+        if (this.ddam !== this.deletedData) {
+          // --- We found not deleted data
+          this.sr2 |= SR2_CM;
+          if (this.sk) {
+            // --- Skip deleted data as we do not want to read it
+            this.dataRegister[3]++;
+            continue;
+          }
+        }
+      } else {
+        // --- We have not found the specified sector in the current track
+        if (this.mt) {
+          // --- As this operation is a multritrack, let's find the first available sector on the next track
+          this.dataRegister[1]++; // --- Next track
+          this.dataRegister[3] = 1; // --- First sector
+          continue;
+        }
+
+        // --- This is not a multitrack operation, so we abort
+        abortReadData();
+        return;
+      }
+
+      // --- Now, we are ready to send back data
+      this.msr |= MSR_RQM;
+      if (this.command.id !== Command.Scan) {
+        // --- We are not in scan mode, so we can send back data from the FDC to the CPU
+        this.msr |= MSR_DIO;
+      }
+
+      // --- This is the first data byte to send back
+      this.dataOffset = 0;
+      this.removeEvent(this.timeoutEventHandler);
+
+      // --- 2 revolutions
+      this.registerEvent(400, this.timeoutEventHandler, this);
+      return;
+    }
+
+    // --- Helper for aborting the Read Data command
+    function abortReadData (): void {
+      // --- End of execution phase
+      fdc.operationPhase = OperationPhase.Result;
+      fdc.resultBytesLeft = fdc.command.resultLength;
+
+      // --- End of cylinder is set if:
+      // --- 1: sector data is read completely (i.e. no other errors occur like no data.)
+      // --- 2: sector being read is same specified by EOT
+      // --- 3: terminal count is not received
+      // --- Note: in +3 uPD765 never got TC
+      if (!fdc.sr0 && !fdc.sr1) {
+        fdc.sr0 |= SR0_AT;
+        fdc.sr1 |= SR1_EN;
+      }
+
+      if (!(fdc.sr0 & (SR0_AT | SR0_IC))) {
+        // --- Next track
+        fdc.dataRegister[1]++;
+        // --- First sector
+        fdc.dataRegister[3] = 1;
+      }
+
+      fdc.msr &= ~MSR_EXM;
+      fdc.intReq = IntRequest.Result;
+      fdc.signCommandResult();
+    }
+  }
+
   // --- Reads the current position ID
   private readId (): ReadIdResult {
     const fdc = this;
@@ -1166,14 +1444,13 @@ export class FloppyControllerDevice
     this.sr1 &= ~(SR1_DE | SR1_MA | SR1_ND);
     this.idMarkFound = false;
     let i = this.revCounter;
-    let crc: DiskCrc;
     while (i === this.revCounter && drive.ready) {
       readNextDataByte(false);
-      crc = new DiskCrc();
+      this.crcPreset();
       if (this.mf) {
         // --- Double density (MFM)
         if (drive.currentData === 0xffa1) {
-          crc.add(drive.currentData);
+          this.crcAdd();
           readNextDataByte();
           if (drive.currentData != 0xffa1) continue;
           readNextDataByte();
@@ -1195,7 +1472,7 @@ export class FloppyControllerDevice
       ) {
         continue;
       }
-      crc.add(drive.currentData);
+      this.crcAdd();
 
       // --- Read track, head, and sector IDs
       readNextDataByte();
@@ -1213,7 +1490,7 @@ export class FloppyControllerDevice
       readNextDataByte();
       readNextDataByte();
 
-      if (crc.value !== 0x0000) {
+      if (this.crc.value !== 0x0000) {
         this.sr1 |= SR1_DE | SR1_ND;
         this.idMarkFound = true;
         // --- Found CRC error
@@ -1237,7 +1514,7 @@ export class FloppyControllerDevice
     function readNextDataByte (addCrc = true): void {
       drive.readData();
       if (addCrc) {
-        crc.add(drive.currentData);
+        fdc.crcAdd();
       }
       if (drive.atIndexWhole) {
         fdc.revCounter--;
@@ -1253,22 +1530,20 @@ export class FloppyControllerDevice
     fdc.signCommandResult();
   }
 
-  // --- Handles the head event
+  // --- This event unloads the head if no head-using operation is in progress after
+  // --- the head unload time
   private headEventHandler (data: any): void {
-    // TODO: Implement this
-    // const fdc = data as FloppyControllerDevice;
-    // fdc.currentDrive.loadHead(false);
-    // fdc.headLoad = false;
+    const fdc = data as FloppyControllerDevice;
+    fdc.currentDrive.loadHead(false);
+    fdc.headLoaded = false;
   }
 
   private fdcEventHandler (data: any): void {
-    // TODO: Implement this
     const fdc = data as FloppyControllerDevice;
     const cmdId = data.command.id;
     if (fdc.readIdInProgress) {
       if (cmdId === Command.ReadData) {
-        // TODO: Implement this
-        // fdc.startReadData();
+        fdc.startReadData();
       } else if (cmdId === Command.ReadId) {
         fdc.startReadId();
       } else if (cmdId === Command.WriteData) {
@@ -1279,15 +1554,23 @@ export class FloppyControllerDevice
       // --- Seek/Recalibrate active, make a new seek step (continue previous seek)
       fdc.seekStep(false);
     } else if (cmdId === Command.ReadData || cmdId === Command.Scan) {
-      // TODO: Implement this
-      // fdc.startReadData();
+      fdc.startReadData();
     } else if (cmdId === Command.ReadId) {
-      // TODO: Implement this
       fdc.startReadId();
     } else if (cmdId === Command.WriteData) {
       // TODO: Implement this
       // fdc.startWriteData();
     }
+  }
+
+  // --- Preset the CRC value to its default
+  private crcPreset () {
+    this.crc.value = 0xffff;
+  }
+
+  // --- Add the drive's data byte to the CRC
+  private crcAdd (): void {
+    this.crc.add(this.currentDrive.currentData);
   }
 }
 
@@ -1343,11 +1626,11 @@ export const SR1_NW = 0x02;
 export const SR1_ND = 0x04;
 
 // --- Over Run
-// --- If the FDC i s not serviced by the host system during data transfers within a certain time interval. this flaa i s set.
+// --- If the FDC is not serviced by the host system during data transfers within a certain time interval, this flag is set.
 export const SR1_OR = 0x10;
 
 // --- Data Error
-// --- If the FDC i s not serviced by the host system during data transfers within a certain time interval. this flaa i s set.
+// --- If the FDC is not serviced by the host system during data transfers within a certain time interval, this flag is set.
 export const SR1_DE = 0x20;
 
 // --- End of Track
@@ -1472,6 +1755,14 @@ export enum ReadIdResult {
   Ok = 0,
   CrcError = 1,
   NotFound = 2
+}
+
+// --- Avaliable results of the Seek ID operation
+export enum SeekIdResult {
+  Found = 0,
+  CrcError = 1,
+  NotFoundAny = 2,
+  NotFoundSpecified = 3
 }
 
 // --- Describes a command
