@@ -7,6 +7,7 @@ import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
 import { CommonScreenDevice } from "@emu/machines/CommonScreenDevice";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { FloppyControllerDevice } from "@emu/machines/disk/FloppyControllerDeviceNew";
+import { IFloppyControllerDeviceTest } from "@emu/machines/disk/IFloppyContorllerDeviceTest";
 import { DISK_A_DATA, DISK_B_DATA } from "@emu/machines/machine-props";
 import { TapeDevice } from "@emu/machines/tape/TapeDevice";
 
@@ -40,6 +41,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     this.tapeDevice.reset();
     this.floppyDevice.reset();
     this._frameCompleted = true;
+    (this.floppyDevice as unknown as IFloppyControllerDeviceTest).disableRandomSeek = true;
   }
 
   /**

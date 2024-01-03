@@ -660,6 +660,88 @@ describe("FloppyControllerDevice", () => {
     expect(fdt.driveA.surface).toBeDefined();
     expect(fdt.driveA.writeProtected).toBe(true);
     expect(fdt.driveA.track0Mark).toBe(true);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    expect(fdt.driveA.motorOn).toBe(true);
+    expect(fdt.driveA.motorSpeed).toBe(100);
+    expect(fdt.driveA.ready).toBe(true);
+  });
+
+  it("Load disk and recalibrate #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    // --- Sense interrupt
+    fd.writeDataRegister(0x08);
+
+    const r1 = fd.readDataRegister();
+    const r2 = fd.readDataRegister();
+    expect(r1).toBe(0x20);
+    expect(r2).toBe(0x00);
+  });
+
+  it("Load disk and read ID #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow finding Track 0
+    updm.emulateFrameCompletion(60);
+
+    // --- Sense interrupt and read calibration result
+    fd.writeDataRegister(0x08);
+    fd.readDataRegister();
+    fd.readDataRegister();
+
+    // --- Read ID
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow reading the ID
+    updm.emulateFrameCompletion(60);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const st0 = fd.readDataRegister();
+    const st1 = fd.readDataRegister();
+    const st2 = fd.readDataRegister();
+    const c = fd.readDataRegister();
+    const h = fd.readDataRegister();
+    const r = fd.readDataRegister();
+    const n = fd.readDataRegister();
+
+    expect(st0).toBe(0x00);
+    expect(st1).toBe(0x00);
+    expect(st2).toBe(0x00);
+    expect(c).toBe(0x00);
+    expect(h).toBe(0x00);
+    expect(r).toBe(0x07);
+    expect(n).toBe(0x02);
   });
 
 });

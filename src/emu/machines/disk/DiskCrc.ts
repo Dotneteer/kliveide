@@ -4,14 +4,16 @@
 export class DiskCrc {
   value: number = 0xffff;
 
-  add(data: number): void {
-    this.value = (this.value << 8) ^ crcFdcTable[((this.value >> 8) ^ data) & 0xff];
+  add (data: number): void {
+    this.value =
+      ((this.value << 8) ^ crcFdcTable[(this.value >> 8) ^ (data & 0xff)]) &
+      0xffff;
   }
 
-  get low(): number {
+  get low (): number {
     return this.value & 0xff;
   }
-  get high(): number {
+  get high (): number {
     return (this.value >> 8) & 0xff;
   }
 }

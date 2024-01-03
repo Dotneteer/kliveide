@@ -20,6 +20,7 @@ export interface DiskSurface {
  * Surface of a single track
  */
 interface TrackSurface {
+  trackLength: number;
   trackData: Uint8Array;
   header: BufferSpan;
   sectors: SectorSurface[];
@@ -143,6 +144,7 @@ export function createDiskSurface (
     const clockOffset = fmOffset - bitArrayLength;
     const clockData = new BufferSpan(trackData, clockOffset, bitArrayLength);
     const track = (tracks[i] = {
+      trackLength: bytesPerTrack,
       trackData,
       header: new BufferSpan(trackData, 0, trackHeaderLength),
       sectors: setSectorData(diskInfo.tracks[i], sectorSpan, gapInfo, clockData),

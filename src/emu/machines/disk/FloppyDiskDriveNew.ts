@@ -26,6 +26,9 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.writeProtected = true;
     this.track0Mark = true;
     this.hasTwoHeads = false;
+    this.currentHead = 0;
+    this.currentCylinder = 0;
+    this.atIndexWhole = true;
     this.ready = false;
     this.motorSpeed = 0;
     this.motorOn = false;
@@ -130,6 +133,12 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   // --- The data last read from the disk
   currentData: number;
 
+  // --- The current track index within the surface data
+  currentTrackIndex: number;
+
+  // --- The type of marks found when reading data
+  marks: number;
+
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
     if (this.motorOn) return;
@@ -188,42 +197,105 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
 
     const head = this.currentHead;
     if (
-      
       (this.disk.numSides === 1 && head === 1) ||
       this.currentCylinder >= this.disk.numTracks
     ) {
       // --- No data available for the disk
-      this.disk.trackData = null;
-      this.disk.clockData = null;
-      this.disk.fmData = null;
-      this.disk.weakData = null;
+      this.currentTrackIndex = -1;
       return;
     }
 
     // --- Set the index to the specified track
-    this.disk.setTrackIndex(this.disk.numSides * this.currentCylinder + head);
-    if (fact > 0) {
-      /* this generate a bpt/fact +-10% triangular distribution skip in bytes 
-         i know, we should use the higher bits of rand(), but we not
-         keen on _real_ (pseudo)random numbers... ;)
-      */
-      const tlen = this.disk.trackLength;
+    this.currentTrackIndex = this.disk.numSides * this.currentCylinder + head;
+    this.dataPosInTrack = 0;
+    if (randomFactor > 0) {
+      // --- Generate a bpt/fact +-10% triangular distribution skip in bytes
+      const trackLength =
+        this.surface.tracks[this.currentTrackIndex].trackLength;
 
       // --- Random number between -9 and 9
-      const rand =
-        (Math.floor(Math.random() * 10) % 10) +
-        (Math.floor(Math.random() * 10) % 10) -
-        9;
-      this.disk.indexPos +=
-        Math.floor(tlen / fact) + tlen * Math.floor(rand / fact / 100);
-      while (this.disk.indexPos >= tlen) this.disk.indexPos -= tlen;
+      const rand = this.controller.disableRandomSeek
+        ? 2
+        : (Math.floor(Math.random() * 10) % 10) +
+          (Math.floor(Math.random() * 10) % 10) -
+          9;
+      this.dataPosInTrack +=
+        Math.floor(trackLength / randomFactor) +
+        Math.floor((trackLength * rand) / randomFactor / 100);
+      while (this.dataPosInTrack >= trackLength)
+        this.dataPosInTrack -= trackLength;
     }
     this.atIndexWhole = !this.dataPosInTrack;
   }
 
   // --- Read the next data from the disk
-  readData (): number {
-    // TODO: Implement this
-    return 0;
+  readData (): void {
+    if (!this.positionData(false)) {
+      // --- Positioning the data is not done yet.
+      return;
+    }
+    this.readDataValue();
   }
+
+  // --- Helpers
+
+  // --- Positions the data to the specified operation
+  private positionData (write: boolean): boolean {
+    if (
+      !this.selected ||
+      !this.ready ||
+      !this.headLoaded ||
+      this.currentTrackIndex < 0
+    ) {
+      if (this.hasDiskLoaded && this.motorOn && this.motorSpeed === 100) {
+        // --- The disk is spinnng
+        if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
+          this.dataPosInTrack = 0;
+        }
+        if (!write) {
+          // --- No data
+          this.currentData = 0x100;
+        }
+        this.dataPosInTrack++;
+        this.atIndexWhole = this.dataPosInTrack >= this.surface.bytesPerTrack;
+      }
+      // --- Positioning is pending
+      return false;
+    }
+
+    // --- Positioning done
+    return true;
+  }
+
+  // --- Reads the next data from the disk (after positioning)
+  private readDataValue (): void {
+    const trackSurface = this.surface.tracks[this.currentTrackIndex];
+    this.currentData = trackSurface.trackData[this.dataPosInTrack];
+    if (trackSurface.clockData.testBit(this.dataPosInTrack)) {
+      this.currentData |= 0xff00;
+    }
+    this.marks = MarkFlags.None;
+    if(trackSurface.fmData.testBit(this.dataPosInTrack)) {
+      this.marks |= MarkFlags.FM;
+    }
+    if(trackSurface.weakSectorData.testBit(this.dataPosInTrack)) {
+      this.marks |= MarkFlags.Weak;
+      // --- Mess up weak data
+      this.currentData &= Math.floor(256 * Math.random());
+      this.currentData |= Math.floor(256 * Math.random());
+    }
+    this.dataPosInTrack++;
+    this.atIndexWhole = this.dataPosInTrack >= trackSurface.trackLength;
+  }
+
+  // --- Writes the current data to the disk (after positioning)
+  private writeDataValue (): void {
+    // TODO: Implement this
+  }
+}
+
+enum MarkFlags {
+  None = 0,
+  FM = 0x01,
+  Weak = 0x02
 }

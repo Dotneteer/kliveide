@@ -8,6 +8,9 @@ import {
 } from "./FloppyControllerDeviceNew";
 
 export interface IFloppyControllerDeviceTest {
+  // --- Disables randomization when seeking for a track or a sector
+  disableRandomSeek: boolean;
+
   // --- Number of frame completions
   frames: number;
 

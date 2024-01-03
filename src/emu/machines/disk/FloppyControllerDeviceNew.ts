@@ -18,6 +18,9 @@ export class FloppyControllerDevice
   // --- Members for testing
   // --- NOTE: These members are public for testing purposes only
 
+  // --- Disables randomization when seeking for a track or a sector
+  disableRandomSeek: boolean;
+
   // --- Number of frame completions
   frames: number;
 
@@ -163,6 +166,9 @@ export class FloppyControllerDevice
 
   // --- Resets the device
   reset (): void {
+    // --- Allow randomization
+    this.disableRandomSeek = false;
+
     // --- Set up the floppy drives
     this.currentDrive = this.driveA = new FloppyDiskDrive(this);
     this.driveB = new FloppyDiskDrive(this);
@@ -218,6 +224,7 @@ export class FloppyControllerDevice
         this.driveA?.ejectDisk();
       } else {
         this.driveA.loadDisk(newDiskA);
+        this.driveA?.turnOnMotor();
       }
     } else if (args.propertyName === DISK_B_DATA) {
       if (!(args.newValue instanceof Uint8Array)) return;
@@ -227,6 +234,7 @@ export class FloppyControllerDevice
         this.driveB?.ejectDisk();
       } else {
         this.driveB.loadDisk(newDiskB);
+        this.driveB?.turnOnMotor();
       }
     }
   }

@@ -75,6 +75,12 @@ export interface IFloppyDiskDrive {
   // --- The data last read from the disk
   currentData: number;
 
+  // --- The current track index within the surface data
+  currentTrackIndex: number;
+
+  // --- The type of marks found when reading data
+  marks: number;
+
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void;
 
@@ -93,6 +99,6 @@ export interface IFloppyDiskDrive {
   // --- Sets the data position to the current cylinder's surface data using the specified random factor
   setDataToCurrentCylinder(randomFactor: number): void;
 
-  // --- Read the next data feom the disk
-  readData(): number;
+  // --- Read the next data from the disk into currentData
+  readData(): void;
 }
