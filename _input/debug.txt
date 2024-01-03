@@ -54,7 +54,129 @@ R2:1d97
 
 
 
+FUSE: First sense drive result: 0x51 (2 floppys) *** Fixed in Klive!
 
+FUSE: Command and result sequence when CAT with no disk inserted *** Ok in Klive
+C 07 00 08 (Recalibrate US0, Sense Interrupt)
+R 20 00 ()
+C 08
+R 80
+C 4A 00 
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08 
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00 
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 07 00 08 (Recalibrate US0, Sense Interrupt)
+R 20 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 4A 00
+R 40 05 00 00 00 00 00
+C 08
+R 80
+C 0F 00 27 
+C 08 
+R E8 00 
+
+
+FUSE: Command and result sequence when CAT with blank 180K disk inserted
+
+C 07 00 08
+R 20 00
+C 08
+R 80
+C 4A 00
+R 00 00 00 00 00 08 02
+C 08 
+R 80
+C 66 00 00 00 01 02 01 2A FF
+R 40 80 00 00 00 01 02 
+C 0F 00 02 
+C 08
+R 20 02
+C 08
+R 80
+C 4A 00
+R 00 00 00 02 00 03 02
+C 0F 00 01
+C 08
+R 20 01
+C 08
+R 80
+C 66 00 01 00 01 02 01 2A FF
+R 40 80 00 01 00 01 02
+C 08
+R 80
+C 66 00 01 00 02 02 02 2A FF
+R 40 80 00 01 00 02 02
+C 08
+R 80
+C 66 00 01 00 03 02 03 2A FF
+R 40 80 00 01 00 03 02
+C 08
+R 80
+C 66 00 01 00 04 02 04 2A FF
+R 40 80 00 01 00 04 02 
+
+The same with data
+
+C 07 00 08
+R 20 00
+C 08
+R 80
+C 4A 00
+R 00 00 00 00 00 07 02 
+C 08 
+R 80
+C 66 00 00 00 01 02 01 2A FF
+DATA xx xx xx xx xx xx xx xx xx xx 
+DATA 00 00 00 00 00 00 E5 E5
+R 40 80 00 ...
 
 
 

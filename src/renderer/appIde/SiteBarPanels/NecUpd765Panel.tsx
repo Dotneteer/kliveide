@@ -54,6 +54,7 @@ const NecUpd765Panel = () => {
           fixItemHeight={true}
           itemRenderer={idx => {
             const item = log[idx];
+            if (!item) return null;
             let icon: string;
             let iconColor: string;
             switch (item.opType) {
@@ -81,10 +82,10 @@ const NecUpd765Panel = () => {
                 <LabelSeparator width={8} />
                 <Label text={toHexa4(item.addr)} />
                 <LabelSeparator width={8} />
-                <Value text={toHexa2(item.data)} />
+                <Value text={toHexa2(item.data ?? 0)} />
                 <LabelSeparator width={8} />
                 <Label text={item.phase ?? " "} width={16} />
-                <Secondary text={item.comment} />
+                <Secondary text={item.comment ?? ""} />
               </div>
             );
           }}
