@@ -719,15 +719,15 @@ export class FloppyControllerDevice
 
   // --- Handle the Seek command
   private processSeek (): void {
-    // // --- Previous seek in progress?
-    // if (this.msr & (1 << this.us)) {
-    //   break;
-    // }
-    // // --- Save new cylinder number
-    // this.ncn[this.us] = this.dataRegister[1];
-    // // --- Seek started
-    // this.seek[this.us] = 1;
-    // this.seekStep(true);
+    // --- Previous seek in progress?
+    if (this.msr & (1 << this.us)) {
+      return;
+    }
+    // --- Save new cylinder number
+    this.newCylinderNumbers[this.us] = this.dataRegister[1];
+    // --- Seek started
+    this.seekStatus[this.us] = SeekStatus.SeekStarted;
+    this.seekStep(true);
   }
 
   // --- Handle the Read Data command

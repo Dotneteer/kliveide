@@ -13,7 +13,6 @@ import {
   OperationPhase
 } from "@emu/machines/disk/FloppyControllerDeviceNew";
 import { DISK_A_DATA } from "@emu/machines/machine-props";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -892,6 +891,123 @@ describe("FloppyControllerDevice", () => {
     expect(h).toBe(0x00);
     expect(r).toBe(0x09);
     expect(n).toBe(0x02);
+  });
+
+  it("Read Data and Seek #1", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow finding Track 0
+    updm.emulateFrameCompletion(60);
+
+    // --- Sense interrupt and read calibration result
+    fd.writeDataRegister(0x08);
+    fd.readDataRegister();
+    fd.readDataRegister();
+
+    // --- Read ID
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow reading the ID
+    updm.emulateFrameCompletion(20);
+
+    // --- Retrieve the ID
+    fd.readDataRegister(); // st0
+    fd.readDataRegister(); // st1
+    fd.readDataRegister(); // st2
+    fd.readDataRegister(); // c
+    fd.readDataRegister(); // h
+    fd.readDataRegister(); // r
+    fd.readDataRegister(); // n
+
+    // --- Seek track 2
+    fd.writeDataRegister(0x0f);
+    fd.writeDataRegister(0x00);
+    fd.writeDataRegister(0x02);
+
+    expect(fdt.command.id).toBe(Command.Seek);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.None);
+  });
+
+  it("Read Data and Seek #2", () => {
+    const updm = new TestUpd765Machine();
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_A_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow finding Track 0
+    updm.emulateFrameCompletion(60);
+
+    // --- Sense interrupt and read calibration result
+    fd.writeDataRegister(0x08);
+    fd.readDataRegister();
+    fd.readDataRegister();
+
+    // --- Read ID
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x00);
+
+    // --- Allow reading the ID
+    updm.emulateFrameCompletion(20);
+
+    // --- Retrieve the ID
+    fd.readDataRegister(); // st0
+    fd.readDataRegister(); // st1
+    fd.readDataRegister(); // st2
+    fd.readDataRegister(); // c
+    fd.readDataRegister(); // h
+    fd.readDataRegister(); // r
+    fd.readDataRegister(); // n
+
+    // --- Seek track 2
+    fd.writeDataRegister(0x0f);
+    fd.writeDataRegister(0x00);
+    fd.writeDataRegister(0x02);
+
+    expect(fdt.command.id).toBe(Command.Seek);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(0x00);
+    expect(fdt.operationPhase).toBe(OperationPhase.Command);
+    expect(fdt.intReq).toBe(IntRequest.None);
+
+    // --- Allow seek to happen
+    updm.emulateFrameCompletion(30);
+
+    // --- Wait for seek result
+    fd.writeDataRegister(0x08);
+    expect(fdt.command.id).toBe(Command.SenseInt);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const r1 = fd.readDataRegister();
+    const r2 = fd.readDataRegister();
+
+    expect(r1).toBe(0x20);
+    expect(r2).toBe(0x02);
   });
 });
 
