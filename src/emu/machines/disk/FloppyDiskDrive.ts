@@ -28,7 +28,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     delete this.surface;
     delete this.motorAccelerating;
 
-    this.writeProtected = true;
+    this.writeProtected = false;
     this.track0Mark = true;
     this.hasTwoHeads = false;
     this.currentHead = 0;
@@ -68,7 +68,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.surface = createDiskSurface(this.disk);
 
     // REVIEW this
-    this.writeProtected = true;
+    this.writeProtected = false;
     if (this.selected) {
       this.loadHead(true);
     }
@@ -86,7 +86,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     delete this.disk;
     delete this.surface;
     this.atIndexWhole = true;
-    this.writeProtected = true;
+    this.writeProtected = false;
     if (this.selected) {
       this.loadHead(false);
     }

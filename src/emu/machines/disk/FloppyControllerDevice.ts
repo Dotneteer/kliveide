@@ -517,14 +517,24 @@ export class FloppyControllerDevice
           break;
 
         case Command.SenseDrive:
-          let driveBEnabled = (this.us & 0x01) === 0x01 && this.hasDriveB;
-          this.sr3 = (driveBEnabled ? SR3_US0 : 0x00) | (this.currentDrive.hasTwoHeads ? 0x04 : 0x00);
-          // --- The plus3 wiring cause that the double side signal is the same as
-          // --- the write protect signal
-          this.sr3 |= driveBEnabled && this.currentDrive.writeProtected ? SR3_WP : 0x00;
-          this.sr3 |= driveBEnabled && this.currentDrive.track0Mark ? SR3_T0 : 0x00;
-          this.sr3 |= driveBEnabled && this.currentDrive.hasTwoHeads ? SR3_TS : 0x00;
-          this.sr3 |= driveBEnabled && this.currentDrive.ready ? SR3_RD : 0x00;
+          if (this.us & 0x01) {
+            if (this.hasDriveB) {
+              this.sr3 = this.driveB.currentHead ? SR3_HD : 0x00;
+              this.sr3 |= this.driveB.writeProtected ? SR3_WP : 0x00;
+              this.sr3 |= this.driveB.track0Mark ? SR3_T0 : 0x00;
+              this.sr3 |= this.driveB.hasTwoHeads ? SR3_TS : 0x00;
+              this.sr3 |= this.driveB.ready ? SR3_RD : 0x00;
+              this.sr3 |= SR3_US0;
+            } else {
+              this.sr3 = 0x00;
+            }
+          } else {
+            this.sr3 = this.driveA.currentHead ? SR3_HD : 0x00;
+            this.sr3 |= this.driveA.writeProtected ? SR3_WP : 0x00;
+            this.sr3 |= this.driveA.track0Mark ? SR3_T0 : 0x00;
+            this.sr3 |= this.driveA.hasTwoHeads ? SR3_TS : 0x00;
+            this.sr3 |= this.driveA.ready ? SR3_RD : 0x00;
+          }
           break;
 
         case Command.SenseInt:
@@ -1682,6 +1692,9 @@ export const SR2_CM = 0x40;
 
 // --- US 0: Indicates the status of the Unit Select 0 signal
 export const SR3_US0 = 0x01;
+
+// --- HD 0: Indicates the status of the Side Select signal
+export const SR3_HD = 0x04;
 
 // --- Two Side
 // --- This bit is used to indicate the status of the two side signal from the FDD.
