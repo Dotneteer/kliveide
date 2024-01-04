@@ -1,6 +1,6 @@
 import { DiskSurface } from "@emu/machines/disk/DiskSurface";
 import { DiskInformation } from "@emu/machines/disk/DiskInformation";
-import { IFloppyControllerDevice } from "./IFloppyControllerDeviceNew";
+import { IFloppyControllerDevice } from "./IFloppyControllerDevice";
 
 /**
  * This interface represents a floppy disk drive
@@ -8,6 +8,9 @@ import { IFloppyControllerDevice } from "./IFloppyControllerDeviceNew";
 export interface IFloppyDiskDrive {
   // --- The controller managing this drive
   controller: IFloppyControllerDevice;
+
+  // --- Resets the drive
+  reset(): void;
 
   // --- Indicates if the drive has a disk loaded
   readonly hasDiskLoaded: boolean;

@@ -8,21 +8,20 @@ import {
   useDocumentHubService,
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
-import {
-  DiskDensity,
-  DiskError,
-  FloppyDisk,
-  FloppyDiskFormat
-} from "@emu/machines/disk/FloppyDisk";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DataSection } from "@renderer/controls/DataSection";
 import { StaticMemoryView } from "./StaticMemoryView";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { toHexa2 } from "../services/ide-commands";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { SectorInformationBlock } from "@emu/machines/disk/DskDiskReader";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
-import { DiskInformation } from "@emu/machines/disk/DiskInformation";
+import {
+  DiskInformation,
+  SectorInformation
+} from "@emu/machines/disk/DiskInformation";
+import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
+import { DiskDensity } from "@emu/abstractions/DiskDensity";
+import { DiskSurface, createDiskSurface } from "@emu/machines/disk/DiskSurface";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -34,10 +33,10 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
 
   const contents = data as Uint8Array;
   let fileInfo: DiskInformation | undefined;
-  let floppyInfo: FloppyDisk | undefined;
+  let floppyInfo: DiskSurface | undefined;
   try {
     fileInfo = readDiskData(contents);
-    floppyInfo = new FloppyDisk(contents);
+    floppyInfo = createDiskSurface(fileInfo);
   } catch (err) {
     // --- Intentionally ignored
     console.log(err);
@@ -79,8 +78,8 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             value={showPhysical}
             label='Show surface view'
             title='Floppy physical surface view'
-            clicked={(v) => {
-              setShowPhysical(v)
+            clicked={v => {
+              setShowPhysical(v);
               documentHubService.setDocumentViewState(document.id, {
                 ...docState,
                 ["showPhysical"]: v
@@ -107,30 +106,19 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               <div className={styles.dataSection}>
                 <div className={styles.header}>
                   <LabeledValue
-                    label='Status:'
-                    value={DiskError[floppyInfo.status]}
-                  />
-                  <ToolbarSeparator small={true} />
-                  <LabeledValue
                     label='Density:'
                     value={DiskDensity[floppyInfo.density]}
                   />
                   <ToolbarSeparator small={true} />
-                  <LabeledFlag
-                    label='Write protected'
-                    value={floppyInfo.isWriteProtected ?? false}
-                  />
+                  <LabeledFlag label='Write protected' value={true} />
                   <ToolbarSeparator small={true} />
-                  <LabeledFlag
-                    label='Has weak sectors'
-                    value={floppyInfo.hasWeakSectors ?? false}
-                  />
+                  <LabeledFlag label='Has weak sectors' value={false} />
                 </div>
                 <div className={styles.header}>
                   <LabeledValue
                     label='Total:'
                     title='Total physical size in bytes'
-                    value={floppyInfo.data?.length}
+                    value={0}
                   />
                   <ToolbarSeparator small={true} />
                   <LabeledValue
@@ -142,26 +130,14 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <LabeledValue
                     label='TLen:'
                     title='Track length in bytes'
-                    value={floppyInfo.trackLength}
+                    value={floppyInfo.bytesPerTrack}
                   />
                 </div>
               </div>
             </DataSection>
-            {floppyInfo.trackInfo.map((ti, idx) => {
+            {floppyInfo.tracks.map((ti, idx) => {
               const stateId = `TI${idx}`;
-              const startIndex = idx * floppyInfo.trackLength;
-              const tDataStart = startIndex + ti.headerLen;
               const selectedSectorIdx = docState?.[`TIS${idx}`] ?? 1;
-              const sectorOffset =
-                tDataStart +
-                (selectedSectorIdx - 1) *
-                  ti.sectorLengths[selectedSectorIdx - 1];
-              const cDataStart = tDataStart + floppyInfo.bytesPerTrack;
-              const cDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
-              const mfDataStart = cDataStart + cDataLen;
-              const mfDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
-              const wDataStart = mfDataStart + mfDataLen;
-              const wDataLen = Math.ceil(floppyInfo.bytesPerTrack/8);
               return (
                 <DataSection
                   key={stateId}
@@ -178,23 +154,17 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                   <div className={styles.dataSection}>
                     <div className={styles.blockHeader}>
                       <Secondary
-                        text={`Track header (GAP0 + Sync + Index + GAP1, ${ti.headerLen} bytes)`}
+                        text={`Track header (GAP0 + Sync + Index + GAP1, ${ti.header.length} bytes)`}
                       />
                     </div>
-                    <StaticMemoryView
-                      key={stateId}
-                      memory={floppyInfo.data.slice(
-                        startIndex,
-                        startIndex + ti.headerLen
-                      )}
-                    />
+                    <StaticMemoryView key={stateId} memory={ti.header.view()} />
                   </div>
 
                   <div className={styles.sectorSection}>
                     <LabeledGroup
                       label='Sectors:'
                       title=''
-                      values={ti.sectorLengths.map((_, sIdx) => sIdx + 1)}
+                      values={ti.sectors.map((_, sIdx) => sIdx + 1)}
                       marked={-1}
                       selected={selectedSectorIdx}
                       clicked={v => {
@@ -211,53 +181,16 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
                     <div className={styles.blockHeader}>
                       <Secondary
                         text={`Sector #${selectedSectorIdx} (Header + GAP2 + Sync + DM + Data + CRC + GAP3, ${
-                          ti.sectorLengths[selectedSectorIdx - 1]
+                          ti.sectors[selectedSectorIdx - 1].sectordata.length
                         } bytes) `}
                       />
                     </div>
                     <StaticMemoryView
                       key={stateId}
                       initialShowAll={true}
-                      memory={floppyInfo.data.slice(
-                        sectorOffset,
-                        sectorOffset + ti.sectorLengths[selectedSectorIdx - 1]
-                      )}
-                    />
-                  </div>
-                  <div className={styles.dataSection}>
-                    <div className={styles.blockHeader}>
-                      <Secondary text={`Clock data (${cDataLen} bytes)`} />
-                    </div>
-                    <StaticMemoryView
-                      key={stateId}
-                      memory={floppyInfo.data.slice(
-                        cDataStart,
-                        cDataStart + cDataLen
-                      )}
-                    />
-                  </div>
-                  <div className={styles.dataSection}>
-                    <div className={styles.blockHeader}>
-                      <Secondary text={`MF data (${mfDataLen} bytes)`} />
-                    </div>
-                    <StaticMemoryView
-                      key={stateId}
-                      memory={floppyInfo.data.slice(
-                        mfDataStart,
-                        mfDataStart + mfDataLen
-                      )}
-                    />
-                  </div>
-                  <div className={styles.dataSection}>
-                    <div className={styles.blockHeader}>
-                      <Secondary text={`Weak sector data (${wDataLen} bytes)`} />
-                    </div>
-                    <StaticMemoryView
-                      key={stateId}
-                      memory={floppyInfo.data.slice(
-                        wDataStart,
-                        wDataStart + wDataLen
-                      )}
+                      memory={ti.sectors[
+                        selectedSectorIdx - 1
+                      ].sectordata.view()}
                     />
                   </div>
                 </DataSection>
@@ -265,7 +198,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
             })}
           </>
         )}
-        {!showPhysical && (
+        {/* {!showPhysical && (
           <DataSection
             key='DIB'
             title='Disk Information Block'
@@ -285,7 +218,7 @@ const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
               <StaticMemoryView memory={contents.slice(0, 0x100)} />
             </div>
           </DataSection>
-        )}
+        )} */}
         {!showPhysical &&
           fileInfo.tracks.map((t, idx) => {
             const selectedSectorIdx = docState?.[`TS${idx}`] ?? 1;
@@ -375,24 +308,24 @@ const LabeledFlag = ({ label, title, value }: LabeledFlagProps) => (
 );
 
 type SectorProps = {
-  sector: SectorInformationBlock;
+  sector: SectorInformation;
 };
 
 const SectorPanel = ({ sector }: SectorProps) => {
   return (
     <>
       <div className={styles.sectorHeader}>
-        <LabeledValue
-          label='C:'
-          title='Cylinder (Track)'
-          value={sector.C}
-        />
+        <LabeledValue label='C:' title='Cylinder (Track)' value={sector.C} />
         <ToolbarSeparator small={true} />
         <LabeledValue label='H:' title='Head (Side)' value={sector.H} />
         <ToolbarSeparator small={true} />
         <LabeledValue label='R:' title='Sector ID' value={sector.R} />
         <ToolbarSeparator small={true} />
-        <LabeledValue label='N:' title='Sector size' value={sector.actualLength} />
+        <LabeledValue
+          label='N:'
+          title='Sector size'
+          value={sector.actualLength}
+        />
         <ToolbarSeparator small={true} />
         <LabeledValue
           label='SR1:'
@@ -413,7 +346,11 @@ const SectorPanel = ({ sector }: SectorProps) => {
   );
 };
 
-export const createDskViewerPanel = ({ document, viewState, contents }: DocumentProps) => (
+export const createDskViewerPanel = ({
+  document,
+  viewState,
+  contents
+}: DocumentProps) => (
   <DskViewerPanel
     key={document.id}
     document={document}

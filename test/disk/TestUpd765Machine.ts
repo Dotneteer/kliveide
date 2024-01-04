@@ -1,12 +1,12 @@
 import { SysVar } from "@abstractions/SysVar";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDeviceNew";
+import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
 import { CommonScreenDevice } from "@emu/machines/CommonScreenDevice";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
-import { FloppyControllerDevice } from "@emu/machines/disk/FloppyControllerDeviceNew";
+import { FloppyControllerDevice } from "@emu/machines/disk/FloppyControllerDevice";
 import { IFloppyControllerDeviceTest } from "@emu/machines/disk/IFloppyContorllerDeviceTest";
 import { DISK_A_DATA, DISK_B_DATA } from "@emu/machines/machine-props";
 import { TapeDevice } from "@emu/machines/tape/TapeDevice";

@@ -5,7 +5,7 @@ import {
   IntRequest,
   OperationPhase,
   SeekStatus
-} from "./FloppyControllerDeviceNew";
+} from "./FloppyControllerDevice";
 
 export interface IFloppyControllerDeviceTest {
   // --- Disables randomization when seeking for a track or a sector

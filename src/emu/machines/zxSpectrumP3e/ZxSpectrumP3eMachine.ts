@@ -1,5 +1,4 @@
 import { SysVar } from "@abstractions/SysVar";
-import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
@@ -33,6 +32,7 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
+import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -110,9 +110,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
       this.beeperDevice = new SpectrumBeeperDevice(this);
       this.psgDevice = new ZxSpectrum128PsgDevice(this);
       if (this.hasFloppy) {
-        this.floppyDevice = new FloppyControllerDevice(this);
-        this.floppyDevice.isDriveAPresent = true;
-        this.floppyDevice.isDriveBPresent = this.hasDriveB;
+        this.floppyDevice = new FloppyControllerDevice(this, this.hasDriveB);
       }
       this.floatingBusDevice = new ZxSpectrumP3eFloatingBusDevice(this);
       this.tapeDevice = new TapeDevice(this);
