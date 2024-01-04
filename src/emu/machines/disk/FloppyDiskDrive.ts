@@ -77,7 +77,6 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     //this.doReadWeak = this.disk.hasWeakSectors;
     this.setDataToCurrentCylinder(LOAD_RND_FACTOR);
     this.ready = this.motorOn && this.motorSpeed === 100 && this.hasDiskLoaded;
-
   }
 
   // --- Ejects the disk from the drive
@@ -274,6 +273,16 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.writeDataValue();
   }
 
+  // --- Wait while the revolution reaches the index hole
+  waitIndexHole (): void {
+    if (!this.selected || this.ready) {
+      return;
+    }
+
+    this.dataPosInTrack = 0;
+    this.atIndexWhole = true;
+  }
+
   // --- Helpers
 
   // --- Positions the data to the specified operation
@@ -341,9 +350,12 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       return;
     }
     trackSurface.trackData[this.dataPosInTrack] = this.currentData & 0x00ff;
-    trackSurface.clockData.setBit(this.dataPosInTrack,!!(this.currentData & 0xff00)); 
-    trackSurface.fmData.setBit(this.dataPosInTrack,!!(this.marks & 0x01)); 
-    trackSurface.fmData.setBit(this.dataPosInTrack, false); 
+    trackSurface.clockData.setBit(
+      this.dataPosInTrack,
+      !!(this.currentData & 0xff00)
+    );
+    trackSurface.fmData.setBit(this.dataPosInTrack, !!(this.marks & 0x01));
+    trackSurface.fmData.setBit(this.dataPosInTrack, false);
     this.dirty = true;
 
     this.dataPosInTrack++;

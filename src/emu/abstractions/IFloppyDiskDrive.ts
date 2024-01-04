@@ -110,4 +110,7 @@ export interface IFloppyDiskDrive {
 
   // --- Write the current data to the disk
   writeData(): void;
+
+  // --- Wait while the revolution reaches the index hole
+  waitIndexHole(): void;
 }
