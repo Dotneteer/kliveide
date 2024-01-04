@@ -84,6 +84,9 @@ export interface IFloppyDiskDrive {
   // --- The type of marks found when reading data
   marks: number;
 
+  // --- Signs that drive data has been changed
+  dirty: boolean;
+
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void;
 
@@ -104,4 +107,7 @@ export interface IFloppyDiskDrive {
 
   // --- Read the next data from the disk into currentData
   readData(): void;
+
+  // --- Write the current data to the disk
+  writeData(): void;
 }
