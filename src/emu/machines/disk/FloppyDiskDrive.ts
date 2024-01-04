@@ -22,7 +22,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Resets the drive
-  reset(): void {
+  reset (): void {
     delete this.contents;
     delete this.disk;
     delete this.surface;
@@ -43,7 +43,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.currentData = 0;
     this.currentTrackIndex = -1;
     this.marks = MarkFlags.None;
-
+    this.dirty = false;
   }
 
   // --- Indicates if the drive is selected for active operation
@@ -149,6 +149,9 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   // --- The type of marks found when reading data
   marks: number;
 
+  // --- Signs that drive data has been changed
+  dirty: boolean;
+
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
     if (this.motorOn) return;
@@ -201,7 +204,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       }
     }
     this.track0Mark = this.currentCylinder === 0;
-    this.setDataToCurrentCylinder(STEP_RND_FACTOR);  
+    this.setDataToCurrentCylinder(STEP_RND_FACTOR);
   }
 
   // --- Loads or unloads the drive's head
@@ -259,6 +262,15 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.readDataValue();
   }
 
+  // --- Write the current data to the disk
+  writeData (): void {
+    if (!this.positionData(true)) {
+      // --- Positioning the data is not done yet.
+      return;
+    }
+    this.writeDataValue();
+  }
+
   // --- Helpers
 
   // --- Positions the data to the specified operation
@@ -279,10 +291,10 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
           this.currentData = 0x100;
         }
         this.dataPosInTrack++;
-        this.atIndexWhole = this.dataPosInTrack >= this.surface.bytesPerTrack;
         if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
           this.dataPosInTrack = 0;
         }
+        this.atIndexWhole = !this.dataPosInTrack;
       }
       // --- Positioning is pending
       return false;
@@ -300,25 +312,43 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       this.currentData |= 0xff00;
     }
     this.marks = MarkFlags.None;
-    if(trackSurface.fmData.testBit(this.dataPosInTrack)) {
+    if (trackSurface.fmData.testBit(this.dataPosInTrack)) {
       this.marks |= MarkFlags.FM;
     }
-    if(trackSurface.weakSectorData.testBit(this.dataPosInTrack)) {
+    if (trackSurface.weakSectorData.testBit(this.dataPosInTrack)) {
       this.marks |= MarkFlags.Weak;
       // --- Mess up weak data
       this.currentData &= Math.floor(256 * Math.random());
       this.currentData |= Math.floor(256 * Math.random());
     }
+
     this.dataPosInTrack++;
-    this.atIndexWhole = this.dataPosInTrack >= trackSurface.trackLength;
     if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
       this.dataPosInTrack = 0;
     }
-}
+    this.atIndexWhole = !this.dataPosInTrack;
+  }
 
   // --- Writes the current data to the disk (after positioning)
   private writeDataValue (): void {
-    // TODO: Implement this
+    const trackSurface = this.surface.tracks[this.currentTrackIndex];
+    if (this.writeProtected) {
+      this.dataPosInTrack++;
+      this.atIndexWhole = this.dataPosInTrack >= trackSurface.trackLength;
+      return;
+    }
+    console.log(`pos: ${this.dataPosInTrack}, old: ${trackSurface.trackData[this.dataPosInTrack]}, new: ${this.currentData & 0x00ff}`)
+    trackSurface.trackData[this.dataPosInTrack] = this.currentData & 0x00ff;
+    trackSurface.clockData.setBit(this.dataPosInTrack,!!(this.currentData & 0xff00)); 
+    trackSurface.fmData.setBit(this.dataPosInTrack,!!(this.marks & 0x01)); 
+    trackSurface.fmData.setBit(this.dataPosInTrack, false); 
+    this.dirty = true;
+
+    this.dataPosInTrack++;
+    if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
+      this.dataPosInTrack = 0;
+    }
+    this.atIndexWhole = !this.dataPosInTrack;
   }
 }
 

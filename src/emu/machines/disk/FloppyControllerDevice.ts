@@ -375,8 +375,16 @@ export class FloppyControllerDevice
 
     if (this.msr & MSR_CB && this.operationPhase === OperationPhase.Execution) {
       // --- The controller executes a command and expects more data from the CPU (Write Data or Scan)
-      if (this.command.id === Command.WriteData) {
-        this.processDataWhileWriting();
+      if (this.command.id === Command.WriteId) {
+        this.processDataWhileFormatting();
+      } else if (this.command.id === Command.WriteData) {
+        this.log({
+          opType: PortOperationType.WriteData,
+          addr: this.machine.opStartAddress,
+          phase: "D",
+          data: value
+        });
+        this.processDataWhileWriting(value);
       } else {
         this.processDataWhileScanning();
       }
@@ -520,7 +528,10 @@ export class FloppyControllerDevice
           if (this.us & 0x01) {
             if (this.hasDriveB) {
               this.sr3 = this.driveB.currentHead ? SR3_HD : 0x00;
-              this.sr3 |= this.driveB.writeProtected ? SR3_WP : 0x00;
+              this.sr3 |=
+                !this.driveB.hasDiskLoaded || this.driveB.writeProtected
+                  ? SR3_WP
+                  : 0x00;
               this.sr3 |= this.driveB.track0Mark ? SR3_T0 : 0x00;
               this.sr3 |= this.driveB.hasTwoHeads ? SR3_TS : 0x00;
               this.sr3 |= this.driveB.ready ? SR3_RD : 0x00;
@@ -530,7 +541,10 @@ export class FloppyControllerDevice
             }
           } else {
             this.sr3 = this.driveA.currentHead ? SR3_HD : 0x00;
-            this.sr3 |= this.driveA.writeProtected ? SR3_WP : 0x00;
+            this.sr3 |=
+              !this.driveA.hasDiskLoaded || this.driveA.writeProtected
+                ? SR3_WP
+                : 0x00;
             this.sr3 |= this.driveA.track0Mark ? SR3_T0 : 0x00;
             this.sr3 |= this.driveA.hasTwoHeads ? SR3_TS : 0x00;
             this.sr3 |= this.driveA.ready ? SR3_RD : 0x00;
@@ -558,7 +572,6 @@ export class FloppyControllerDevice
           return;
 
         case Command.WriteData:
-          console.log("WriteData");
           terminated = this.processWriteData();
           if (terminated) {
             break;
@@ -767,23 +780,23 @@ export class FloppyControllerDevice
 
   // --- Handle the Write Data command
   private processWriteData (): boolean {
-    // if (d.isWriteProtected) {
-    //   this.sr1 |= SR1_NW;
-    //   this.sr0 |= SR0_AT;
-    //   terminated = 1;
-    //   break;
-    // }
-    // this.rlen =
-    //   0x80 <<
-    //   (this.dataRegister[4] > MAX_SIZE_CODE
-    //     ? MAX_SIZE_CODE
-    //     : this.dataRegister[4]);
-    // if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
-    //   this.rlen = this.dataRegister[7];
-    // }
-    // // --- Always write at least one sector */
-    // this.firstRw = true;
-    // this.loadHead();
+    const drive = this.currentDrive;
+    if (drive.writeProtected) {
+      this.sr1 |= SR1_NW;
+      this.sr0 |= SR0_AT;
+      return true;
+    }
+    this.expRecordLength =
+      0x80 <<
+      (this.dataRegister[4] > MAX_SIZE_CODE
+        ? MAX_SIZE_CODE
+        : this.dataRegister[4]);
+    if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
+      this.expRecordLength = this.dataRegister[7];
+    }
+    // --- Always write at least one sector */
+    this.firstRw = true;
+    this.commandWithLoadHead();
     return false;
   }
 
@@ -804,33 +817,112 @@ export class FloppyControllerDevice
     // this.loadHead();
   }
 
-  private processDataWhileWriting (): void {
-    // // --- Write data
-    // this.dataOffset++;
-    // d.data = value;
-    // d.writeData();
-    // this.crcAdd();
-    // if (this.dataOffset === this.rlen) {
-    //   // --- Read only rlen byte from host
-    //   d.data = 0x00;
-    //   while (this.dataOffset < this.sectorLength) {
-    //     // --- Fill with 0x00
-    //     d.readData();
-    //     this.crcAdd();
-    //     this.dataOffset++;
-    //   }
+  // --- Processes the data coming from the CPU while a Write Data command is in progress
+  private processDataWhileWriting (value: number): void {
+    const drive = this.currentDrive;
+    // --- Write data
+    this.dataOffset++;
+    drive.currentData = value;
+    drive.writeData();
+    this.crcAdd();
+    if (this.dataOffset === this.expRecordLength) {
+      // --- Read only rlen byte from host
+      drive.currentData = 0x00;
+      while (this.dataOffset < this.sectorLength) {
+        // --- Fill with 0x00
+        drive.readData();
+        this.crcAdd();
+        this.dataOffset++;
+      }
+    }
+    // --- Write the CRC
+    if (this.dataOffset === this.sectorLength) {
+      // --- Write CRC MSB
+      drive.currentData = this.crc.high;
+      drive.writeData();
+      // --- Write CRC LSB
+      drive.currentData = this.crc.low;
+      drive.writeData();
+      this.msr &= ~MSR_RQM;
+      this.startWriteData();
+    }
+  }
+
+  private processDataWhileFormatting (): void {
+    // TODO: Implement this
+    // 		/* at the index hole... */
+    //     f->data_register[f->data_offset + 5] = data;	/* read id fields */
+    //     f->data_offset++;
+    //     if( f->data_offset == 4 ) {			/* C, H, R, N done => format track */
+    // event_remove_type( timeout_event );
+    //       d->data = 0x00;
+    //       for( i = f->mf ? 12 : 6; i > 0; i-- )	/* write 6/12 zero */
+    //         fdd_write_data( d );
+    //       crc_preset( f );
+    //       if( f->mf ) {				/* MFM */
+    //         d->data = 0xffa1;
+    //         for( i = 3; i > 0; i-- ) {		/* write 3 0xa1 with clock mark */
+    //     fdd_write_data( d ); crc_add( f, d );
+    //         }
+    //       }
+    //       d->data = 0x00fe | ( f->mf ? 0x0000 : 0xff00 );	/* write id mark */
+    //       fdd_write_data( d ); crc_add( f, d );
+    // for( i = 0; i < 4; i++ ) {
+    //       d->data =  f->data_register[i + 5];	/* write id fields */
+    //         fdd_write_data( d ); crc_add( f, d );
     // }
-    // // --- Write the CRC
-    // if (this.dataOffset === this.sectorLength) {
-    //   // --- Write CRC MSB
-    //   d.data = this.crc >> 8;
-    //   d.writeData();
-    //   // --- Write CRC LSB
-    //   d.data = this.crc & 0xff;
-    //   d.writeData();
-    //   this.msr &= ~MSR_RQM;
-    //   this.startWriteData();
+    //       d->data = f->crc >> 8;
+    //       fdd_write_data( d );			/* write crc1 */
+    //       d->data = f->crc & 0xff;
+    //       fdd_write_data( d );			/* write crc2 */
+    //       d->data = f->mf ? 0x4e : 0xff;
+    //       for( i = 11; i > 0; i-- )	/* write 11 GAP byte */
+    //         fdd_write_data( d );
+    //       if( f->mf )					/* MFM */
+    //         for( i = 11; i > 0; i-- )	/* write another 11 GAP byte */
+    //     fdd_write_data( d );
+    //       d->data = 0x00;
+    //       for( i = f->mf ? 12 : 6; i > 0; i-- )	/* write 6/12 zero */
+    //         fdd_write_data( d );
+    //       crc_preset( f );
+    //       if( f->mf ) {				/* MFM */
+    //         d->data = 0xffa1;
+    //         for( i = 3; i > 0; i-- ) {		/* write 3 0xa1 with clock mark */
+    //     fdd_write_data( d ); crc_add( f, d );
+    //         }
+    //       }
+    //       d->data = 0x00fb | ( f->mf ? 0x0000 : 0xff00 );	/* write data mark */
+    //       fdd_write_data( d ); crc_add( f, d );
+    //     d->data =  f->data_register[4];	/* write filler byte */
+    // for( i = f->rlen; i > 0; i-- ) {
+    //         fdd_write_data( d ); crc_add( f, d );
     // }
+    //       d->data = f->crc >> 8;
+    //       fdd_write_data( d );			/* write crc1 */
+    //       d->data = f->crc & 0xff;
+    //       fdd_write_data( d );			/* write crc2 */
+    //       d->data = f->mf ? 0x4e : 0xff;
+    // for( i = f->data_register[3]; i > 0; i-- ) {	/* GAP */
+    //         fdd_write_data( d );
+    // }
+    //       f->data_offset = 0;
+    // f->data_register[2]--;		/* prepare next sector */
+    //     }
+    //     if( f->data_register[2] == 0 ) {	/* finish all sector */
+    //       d->data = f->mf ? 0x4e : 0xff;	/* GAP3 as Intel call this GAP */
+    //       while( !d->index )
+    //         fdd_write_data( d );
+    // f->state = UPD_FDC_STATE_RES;	/* end of execution phase */
+    //       f->cycle = f->cmd->res_length;
+    //       f->main_status &= ~UPD_FDC_MAIN_EXECUTION;
+    //     f->intrq = UPD_INTRQ_RESULT;
+    //       cmd_result( f );
+    // return;
+    //     }
+    //     event_add_with_data( tstates + 2 *		/* 1/10 revolution: 1 * 200 / 1000 */
+    //          machine_current->timings.processor_speed / 100,
+    //          timeout_event, f );
+    //     return;
   }
 
   private processDataWhileScanning (): void {
@@ -1243,8 +1335,7 @@ export class FloppyControllerDevice
       } else if (this.command.id === Command.ReadId) {
         this.startReadId();
       } else if (this.command.id == Command.WriteData) {
-        // TODO: Implement this
-        // this.startWriteData();
+        this.startWriteData();
       }
     } else {
       // --- The head is not loaded, load it
@@ -1542,6 +1633,141 @@ export class FloppyControllerDevice
     }
   }
 
+  // --- Start the Write Data command
+  private startWriteData (): void {
+    const drive = this.currentDrive;
+    const fdc = this;
+
+    // --- Try reading the data unless the loop is broken
+    while (true) {
+      if (
+        this.firstRw ||
+        this.readIdInProgress ||
+        this.dataRegister[5] > this.dataRegister[3]
+      ) {
+        if (!this.readIdInProgress) {
+          // --- Read operation has not been started
+          if (!this.firstRw) {
+            // --- We target the next sector on this track
+            this.dataRegister[3]++;
+          }
+
+          // --- We do not target the first sector on the track anymore
+          this.firstRw = false;
+
+          // --- Allow two revolutions to find the sector
+          this.revCounter = 2;
+          this.readIdInProgress = true;
+        }
+
+        // --- Go on untile there is any revolution left or we find the sector
+        while (this.revCounter) {
+          // --- Start position
+          let startPosition =
+            this.currentDrive.dataPosInTrack >=
+            this.currentDrive.surface.bytesPerTrack
+              ? 0
+              : this.currentDrive.dataPosInTrack;
+          if (this.seekId() === SeekIdResult.Found) {
+            // --- We have just found the sector, so we can exit the loop
+            this.revCounter = 0;
+          } else {
+            // --- We have not found the sector yet, so the ID mark is not found
+            this.idMarkFound = false;
+          }
+
+          // --- Calculate the relative move
+          const bytesPerTrack = this.currentDrive.surface?.bytesPerTrack ?? 0;
+          const relativeMove = bytesPerTrack
+            ? (this.currentDrive.dataPosInTrack - startPosition) / bytesPerTrack
+            : 1;
+
+          startPosition = this.currentDrive.surface.bytesPerTrack
+            ? ((this.currentDrive.dataPosInTrack - startPosition) * 200) /
+              this.currentDrive.surface.bytesPerTrack
+            : 200;
+
+          if (relativeMove > 0) {
+            // --- We need to move ahead to find the start position. Allow up to two revolutions
+            this.registerEvent(relativeMove * 200, this.fdcEventHandler, this);
+            return;
+          }
+        }
+
+        // --- We exited the loop above because we have found the sector or there
+        // --- is no more revolutions left
+        this.readIdInProgress = false;
+        if (!this.idMarkFound) {
+          // --- Not found/crc error
+          this.sr0 |= SR0_AT;
+          abortWriteData();
+          return;
+        }
+
+        // --- "Delay" 11 GAP bytes
+        for (let i = 11; i > 0; i--) {
+          drive.readData();
+        }
+        if (this.mf) {
+          // --- MFM, "delay" another 11 GAP byte
+          for (let i = 11; i > 0; i--) {
+            drive.readData();
+          }
+        }
+
+        drive.currentData = 0x00;
+        // -- Write 6/12 zero
+        for (let i = this.mf ? 12 : 6; i > 0; i--) {
+          drive.writeData();
+        }
+        this.crcPreset();
+        if (this.mf) {
+          // --- MFM
+          drive.currentData = 0xffa1;
+          // --- Write 3 0xa1 with clock mark */
+          for (let i = 3; i > 0; i--) {
+            drive.writeData();
+            this.crcAdd();
+          }
+        }
+        drive.currentData =
+          (this.deletedData ? 0x00f8 : 0x00fb) | (this.mf ? 0x0000 : 0xff00);
+        // --- Write data mark
+        drive.writeData();
+        this.crcAdd();
+      } else {
+        // --- Next track
+        this.dataRegister[1]++;
+        // --- First sector
+        this.dataRegister[3] = 1;
+        if (this.mt) continue;
+        abortWriteData();
+        return;
+      }
+
+      this.msr |= MSR_RQM;
+      this.dataOffset = 0;
+      this.removeEvent(this.timeoutEventHandler);
+      this.registerEvent(400, this.timeoutEventHandler, this);
+      return;
+    }
+
+    function abortWriteData (): void {
+      fdc.operationPhase = OperationPhase.Result;
+      fdc.resultBytesLeft = fdc.command.resultLength;
+      // --- End of cylinder is set if:
+      // --- 1: sector data is read completely (i.e. no other errors occur like no data).
+      // --- 2: sector being read is same specified by EOT
+      // --- 3: terminal count is not received
+      // --- Note: in +3 uPD765 never got TC
+      fdc.sr0 |= SR0_AT;
+      fdc.sr1 |= SR1_EN;
+      fdc.msr &= ~MSR_RQM;
+      fdc.intReq = IntRequest.Result;
+      fdc.signCommandResult();
+    }
+  }
+
   // --- Handles the timeout event
   private timeoutEventHandler (data: any): void {
     const fdc = data as FloppyControllerDevice;
@@ -1567,8 +1793,7 @@ export class FloppyControllerDevice
       } else if (cmdId === Command.ReadId) {
         fdc.startReadId();
       } else if (cmdId === Command.WriteData) {
-        // TODO: Implement this
-        // fdc.startWriteData();
+        fdc.startWriteData();
       }
     } else if (fdc.msr & 0x03) {
       // --- Seek/Recalibrate active, make a new seek step (continue previous seek)
@@ -1578,8 +1803,7 @@ export class FloppyControllerDevice
     } else if (cmdId === Command.ReadId) {
       fdc.startReadId();
     } else if (cmdId === Command.WriteData) {
-      // TODO: Implement this
-      // fdc.startWriteData();
+      fdc.startWriteData();
     }
   }
 
@@ -1738,6 +1962,7 @@ export enum Command {
   // --- | Computer WRITE at execution phase
   //     V
   WriteData,
+  WriteId,
   Scan,
 
   // --- | No data transfer at execution phase
@@ -1798,7 +2023,7 @@ export type CommandDescriptor = {
   mask: number;
   // --- Value to test with mask
   value: number;
-  // --- Command paremeter length
+  // --- Command length
   length: number;
   // --- Result length
   resultLength: number;
@@ -1926,6 +2151,16 @@ const commandTable: CommandDescriptor[] = [
     mask: 0xbf,
     value: 0x0a,
     length: 0x01,
+    resultLength: 0x07,
+    paramNames: ["HD/US"],
+    resultLabels: readDataResults
+  },
+  {
+    id: Command.WriteId,
+    name: "Format",
+    mask: 0xbf,
+    value: 0x0d,
+    length: 0x08,
     resultLength: 0x07,
     paramNames: ["HD/US"],
     resultLabels: readDataResults
