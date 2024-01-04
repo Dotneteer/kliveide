@@ -77,6 +77,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     //this.doReadWeak = this.disk.hasWeakSectors;
     this.setDataToCurrentCylinder(LOAD_RND_FACTOR);
     this.ready = this.motorOn && this.motorSpeed === 100 && this.hasDiskLoaded;
+
   }
 
   // --- Ejects the disk from the drive
@@ -90,6 +91,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     if (this.selected) {
       this.loadHead(false);
     }
+    this.ready = false;
   }
 
   // --- The "write protection" state of the disk
@@ -188,6 +190,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
         delete this.motorAccelerating;
       }
     }
+    this.ready = this.motorSpeed === 100 && this.hasDiskLoaded;
   }
 
   // --- Step one cylinder into the specified direction
@@ -337,7 +340,6 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       this.atIndexWhole = this.dataPosInTrack >= trackSurface.trackLength;
       return;
     }
-    console.log(`pos: ${this.dataPosInTrack}, old: ${trackSurface.trackData[this.dataPosInTrack]}, new: ${this.currentData & 0x00ff}`)
     trackSurface.trackData[this.dataPosInTrack] = this.currentData & 0x00ff;
     trackSurface.clockData.setBit(this.dataPosInTrack,!!(this.currentData & 0xff00)); 
     trackSurface.fmData.setBit(this.dataPosInTrack,!!(this.marks & 0x01)); 

@@ -612,12 +612,28 @@ export class FloppyControllerDevice
 
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
-    this.currentDrive.turnOnMotor();
+    if (!this.currentDrive.motorOn) {
+      this.currentDrive.turnOnMotor();
+      this.log({
+        addr: this.machine.opStartAddress,
+        opType: PortOperationType.MotorEvent,
+        data: this.currentDrive.motorSpeed,
+        comment: "Motor on"
+      });
+    }
   }
 
   // --- Turn off the floppy drive's motor
   turnOffMotor (): void {
-    this.currentDrive.turnOffMotor();
+    if (this.currentDrive.motorOn) {
+      this.currentDrive.turnOffMotor();
+      this.log({
+        addr: this.machine.opStartAddress,
+        opType: PortOperationType.MotorEvent,
+        data: this.currentDrive.motorSpeed,
+        comment: "Motor off"
+      });
+    }
   }
 
   // --- Get the floppy drive's motor speed
@@ -1079,7 +1095,6 @@ export class FloppyControllerDevice
           driveIndex = j;
         }
       }
-
       // --- Here, driveIndex points to the drive with the oldest seek operation
       if (
         this.seekStatus[driveIndex] === SeekStatus.None ||

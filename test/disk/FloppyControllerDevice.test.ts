@@ -1387,7 +1387,6 @@ describe("FloppyControllerDevice", () => {
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Execution);
     expect(fdt.intReq).toBe(IntRequest.None);
-
   });
 
   it("Read Data, Seek, and Write data again #2", async () => {
@@ -1494,7 +1493,6 @@ describe("FloppyControllerDevice", () => {
     for (let i = 0; i < 100; i++) {
       updm.emulateFrameCompletion(1);
       if ((fdt.msr & (MSR_RQM | MSR_DIO)) === MSR_RQM) {
-        console.log(i);
         while (fdt.operationPhase === OperationPhase.Execution) {
           fd.writeDataRegister(0xac);
         }
@@ -1502,13 +1500,11 @@ describe("FloppyControllerDevice", () => {
     }
 
     expect(fdt.command.id).toBe(Command.WriteData);
-    expect(fdt.commandBytesReceived).toBe(8);
+    expect(fdt.commandBytesReceived).toBe(0);
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
-    expect(fdt.operationPhase).toBe(OperationPhase.Execution);
-    expect(fdt.intReq).toBe(IntRequest.None);
-
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
   });
-
 });
 
 export function readTestFile (filename: string): Uint8Array {
