@@ -2,7 +2,11 @@ import { DiskSurface, createDiskSurface } from "./DiskSurface";
 import { DiskInformation } from "./DiskInformation";
 import { readDiskData } from "./disk-readers";
 import { FloppyControllerDevice } from "./FloppyControllerDevice";
-import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
+import {
+  IFloppyDiskDrive,
+  SectorChange,
+  SectorChangeMap
+} from "@emu/abstractions/IFloppyDiskDrive";
 
 // --- Percentage of motor speed increment in a single complete frame
 const MOTOR_SPEED_INCREMENT = 2;
@@ -10,14 +14,16 @@ const MOTOR_SPEED_DECREMENT = 2;
 
 // --- Random factors when positioning the drive's head
 const LOAD_RND_FACTOR = 2;
-const HEAD_RND_FACTOR = 16;
 const STEP_RND_FACTOR = 34;
 
 /**
  * This class represents a single floppy disk device
  */
 export class FloppyDiskDrive implements IFloppyDiskDrive {
-  constructor (public readonly controller: FloppyControllerDevice, public readonly unitNumber: number) {
+  constructor (
+    public readonly controller: FloppyControllerDevice,
+    public readonly unitNumber: number
+  ) {
     this.reset();
   }
 
@@ -42,8 +48,9 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.dataPosInTrack = 0;
     this.currentData = 0;
     this.currentTrackIndex = -1;
+    this.currentSectorIndex = -1;
     this.marks = MarkFlags.None;
-    this.dirty = false;
+    this.dirtySectors = new Map<number, SectorChange>();
   }
 
   // --- Indicates if the drive is selected for active operation
@@ -143,11 +150,14 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   // --- The current track index within the surface data
   currentTrackIndex: number;
 
+  // --- The current sector index within the track
+  currentSectorIndex: number;
+
   // --- The type of marks found when reading data
   marks: number;
 
   // --- Signs that drive data has been changed
-  dirty: boolean;
+  dirtySectors: SectorChangeMap;
 
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
@@ -182,6 +192,9 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       if (this.motorSpeed > 0) {
         this.motorSpeed = Math.max(0, this.motorSpeed - MOTOR_SPEED_DECREMENT);
       } else {
+        if (this.dirtySectors.size > 0) {
+          console.log("dirty", this.dirtySectors);
+        }
         delete this.motorAccelerating;
       }
     }
@@ -352,13 +365,20 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     );
     trackSurface.fmData.setBit(this.dataPosInTrack, !!(this.marks & 0x01));
     trackSurface.fmData.setBit(this.dataPosInTrack, false);
-    this.dirty = true;
+    this.dirtySectors.set(this.sectorKey(), {
+      oldData: new Uint8Array(0),
+      newData: new Uint8Array(0)
+    });
 
     this.dataPosInTrack++;
     if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
       this.dataPosInTrack = 0;
     }
     this.atIndexWhole = !this.dataPosInTrack;
+  }
+
+  private sectorKey (): number {
+    return this.currentTrackIndex * 100 + this.currentSectorIndex;
   }
 }
 

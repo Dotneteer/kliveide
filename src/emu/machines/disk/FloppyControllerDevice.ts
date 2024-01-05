@@ -1561,6 +1561,7 @@ export class FloppyControllerDevice
           if (this.seekId() === SeekIdResult.Found) {
             // --- We have just found the sector, so we can exit the loop
             this.revCounter = 0;
+            this.currentDrive.currentSectorIndex = this.idSector;
           } else {
             // --- We have not found the sector yet, so the ID mark is not found
             this.idMarkFound = false;
@@ -1795,6 +1796,7 @@ export class FloppyControllerDevice
           if (this.seekId() === SeekIdResult.Found) {
             // --- We have just found the sector, so we can exit the loop
             this.revCounter = 0;
+            this.currentDrive.currentSectorIndex = this.idSector;
           } else {
             // --- We have not found the sector yet, so the ID mark is not found
             this.idMarkFound = false;
