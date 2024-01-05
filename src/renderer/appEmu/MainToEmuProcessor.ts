@@ -3,7 +3,9 @@ import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import {
   DISK_A_DATA,
+  DISK_A_WP,
   DISK_B_DATA,
+  DISK_B_WP,
   REWIND_REQUESTED,
   TAPE_DATA
 } from "@emu/machines/machine-props";
@@ -12,6 +14,7 @@ import { TzxReader } from "@emu/machines/tape/TzxReader";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import {
   EmuSetDiskFileRequest,
+  EmuSetDiskWriteProtectionRequest,
   EmuSetTapeFileRequest
 } from "@messaging/main-to-emu";
 import {
@@ -116,6 +119,10 @@ export async function processMainToEmuMessages (
 
     case "EmuSetDiskFile":
       await setDiskFile(message);
+      break;
+
+    case "EmuSetDiskWriteProtection":
+      setDiskWriteProtection(message);
       break;
 
     case "EmuGetCpuState": {
@@ -486,7 +493,7 @@ export async function processMainToEmuMessages (
     }
   }
 
-  // --- Parses and sets the tape file
+  // --- Parses and sets the specified disk file
   async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
     // --- Get disk information
     const controller = machineService.getMachineController();
@@ -495,7 +502,7 @@ export async function processMainToEmuMessages (
     // --- Try to parse the disk file
     try {
       // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(propName, message.contents);
+      controller.machine.setMachineProperty(propName, message.contents ?? null);
 
       // --- Done.
       if (message.confirm) {
@@ -529,5 +536,12 @@ export async function processMainToEmuMessages (
       }
       return;
     }
+  }
+
+  // --- Sets or removes write protection
+  function setDiskWriteProtection(message: EmuSetDiskWriteProtectionRequest): void {
+    const controller = machineService.getMachineController();
+    const propName = message.diskIndex ? DISK_B_WP : DISK_A_WP;
+    controller.machine.setMachineProperty(propName, message.protect);
   }
 }

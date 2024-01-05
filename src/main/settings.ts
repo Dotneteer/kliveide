@@ -34,7 +34,7 @@ export type AppSettings = {
   machineSpecific?: Record<string, any>;
   clockMultiplier?: number;
   soundLevel?: number;
-  lastTapeFile?: string;
+  media?: Record<string, any>;
   folders?: Record<string, string>;
   excludedProjectItems?: string[];
   keyMappingFile?: string;
@@ -76,7 +76,7 @@ export function saveAppSettings (): void {
     appSettings.machineSpecific = state.emulatorState?.machineSpecific;
     appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
     appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
-    appSettings.lastTapeFile = state.emulatorState?.tapeFile;
+    appSettings.media = state.media ?? {};
     appSettings.keyMappingFile = state.keyMappingFile;
   }
 

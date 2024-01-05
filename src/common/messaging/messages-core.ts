@@ -87,7 +87,8 @@ import {
   EmuGetNecUpd765Response,
   EmuSetDiskFileRequest,
   EmuGetBlinkStateRequest,
-  EmuGetBlinkStateResponse
+  EmuGetBlinkStateResponse,
+  EmuSetDiskWriteProtectionRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -166,6 +167,7 @@ export type RequestMessage =
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
   | EmuSetDiskFileRequest
+  | EmuSetDiskWriteProtectionRequest
   | EmuGetCpuStateRequest
   | EmuGetUlaStateRequest
   | EmuGetPsgStateRequest

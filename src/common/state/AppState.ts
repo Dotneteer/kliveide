@@ -22,6 +22,7 @@ export type AppState = {
   ideView?: IdeView;
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
+  media?: MediaState;
   project?: IdeProject;
   compilation?: CompilationState;
   projectSettings?: Record<string, any>;
@@ -86,9 +87,7 @@ export type EmulatorState = {
   fastLoad?: boolean;
   clockMultiplier?: number;
   audioSampleRate?: number;
-  tapeFile?: string;
   breakpointsVersion: number;
-  floppyDisks?: FloppyDiskState[];
 };
 
 export type FloppyDiskState = {
@@ -123,6 +122,11 @@ export type CompilationState = {
   failed?: string;
   injectionVersion?: number;
 };
+
+/**
+ * The current state of removable media
+ */
+export type MediaState = Record<string, any>;
 
 /**
  * The initial application state
@@ -170,9 +174,9 @@ export const initialAppState: AppState = {
     savedSoundLevel: 0.8,
     fastLoad: true,
     clockMultiplier: 1,
-    breakpointsVersion: 0,
-    floppyDisks: []
+    breakpointsVersion: 0
   },
+  media: {},
   project: {
     projectFileVersion: 1,
     projectViewStateVersion: 1

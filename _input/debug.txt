@@ -1,12 +1,9 @@
-C 07 01
-C 08
-R 21 00
-C 08 
-R 80
-C 4A 01
-R 01 00 00 00 00 07 02
-C 08
-R 80
-C 66 01 00 00 01 02 01 2A FF
-R 01 00 00 01 00 01 02 
-C 0F 01
+* tapeFile 
+* "SET_TAPE_FILE"
+* setTapeFileAction
+* "EmuSetTapeFile"
+* floppyDisks
+* setDiskFileAction
+* "SET_DISK_FILE"
+* "PROTECT_DISK"
+* protectDiskAction

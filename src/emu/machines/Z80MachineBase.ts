@@ -92,7 +92,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   setMachineProperty (key: string, value?: any): void {
     if (value === undefined) {
       if (!this._machineProps.get(key)) return;
-
       this._machineProps.delete(key);
       this.machinePropertyChanged?.fire({ propertyName: key });
     } else {

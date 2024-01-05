@@ -65,6 +65,15 @@ export interface EmuSetDiskFileRequest extends MessageBase {
 }
 
 /**
+ * The main process sends a disk file to the emulator
+ */
+export interface EmuSetDiskWriteProtectionRequest extends MessageBase {
+  type: "EmuSetDiskWriteProtection";
+  diskIndex: number;
+  protect: boolean;
+}
+
+/**
  * The Ide process asks the emu process for CPU state information
  */
 export interface EmuGetCpuStateRequest extends MessageBase {

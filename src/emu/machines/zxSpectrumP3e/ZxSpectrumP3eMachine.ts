@@ -25,7 +25,6 @@ import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
-import { setDiskFileAction } from "@common/state/actions";
 import { PagedMemory } from "../memory/PagedMemory";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -33,6 +32,8 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import { setMediaAction } from "@common/state/actions";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -75,8 +76,8 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   constructor (store: Store<AppState>, model: MachineModel) {
     try {
       super();
-      store.dispatch(setDiskFileAction(0, null), "emu");
-      store.dispatch(setDiskFileAction(1, null), "emu");
+      store.dispatch(setMediaAction(MEDIA_DISK_A, {}), "emu");
+      store.dispatch(setMediaAction(MEDIA_DISK_B, {}), "emu");
 
       switch (model?.config?.[MC_DISK_SUPPORT]) {
         case 1:

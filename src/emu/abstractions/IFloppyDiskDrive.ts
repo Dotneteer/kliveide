@@ -19,7 +19,7 @@ export interface IFloppyDiskDrive {
   readonly hasDiskLoaded: boolean;
 
   // --- Loads the disk with the specified contents into the drive
-  loadDisk(contents: Uint8Array): void;
+  loadDisk(contents: Uint8Array, writeProtected: boolean): void;
 
   // --- Ejects the disk from the drive
   ejectDisk(): void;

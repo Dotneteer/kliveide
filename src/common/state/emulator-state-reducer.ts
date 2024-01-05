@@ -74,37 +74,11 @@ export function emulatorStateReducer (
         audioSampleRate: payload.numValue
       };
 
-    case "SET_TAPE_FILE":
-      return {
-        ...state,
-        tapeFile: payload.file
-      };
-
     case "INC_BPS_VERSION":
       return {
         ...state,
         breakpointsVersion: (state.breakpointsVersion ?? 0) + 1
       };
-
-    case "SET_DISK_FILE": {
-      const disks = state.floppyDisks ?? [];
-      if (!payload.file) {
-        delete disks[payload.index];
-      } else {
-        disks[payload.index] = {
-          diskFile: payload.file
-        };
-      }
-      return { ...state, floppyDisks: [...disks] };
-    }
-
-    case "PROTECT_DISK": {
-      const disks = state.floppyDisks ?? [];
-      if (disks[payload.index]) {
-        disks[payload.index].writeProtected = payload.flag;
-      }
-      return { ...state, floppyDisks: [...disks] };
-    }
 
     default:
       return state;

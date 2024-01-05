@@ -10,7 +10,7 @@ export type KliveProjectStructure = {
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;
-  tapeFile?: string;
+  media?: Record<string, any>;
   fastLoad?: boolean;
   machineSpecific?: Record<string, any>;
   keyMappingFile?: string;
