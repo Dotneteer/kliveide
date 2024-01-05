@@ -91,7 +91,7 @@ export interface IFloppyDiskDrive {
   marks: number;
 
   // --- Signs that drive data has been changed
-  dirtySectors: SectorChangeMap;
+  dirtySectors: ChangedSectors;
 
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void;
@@ -119,13 +119,13 @@ export interface IFloppyDiskDrive {
 
   // --- Wait while the revolution reaches the index hole
   waitIndexHole(): void;
+
+  // --- Reads the data of changed sectors from the disk surface
+  getChangedSectors(): SectorChanges;
 }
 
-// --- Represents the change of a particular sector
-export type SectorChange = {
-  oldData: Uint8Array;
-  newData: Uint8Array;
-};
+// --- The keys of the changes sectors
+export type ChangedSectors = Set<number>;
 
-// --- Represent the changed sectors of a disk
-export type SectorChangeMap = Map<number, SectorChange>;
+// --- The contents of the changed sectors
+export type SectorChanges = Map<number, Uint8Array>;

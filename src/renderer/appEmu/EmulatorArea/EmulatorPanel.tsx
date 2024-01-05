@@ -14,7 +14,6 @@ import {
   getBeeperContext,
   releaseBeeperContext
 } from "./AudioRenderer";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
 import {
@@ -271,6 +270,16 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           );
         }
       })();
+    }
+
+    // --- There is a change in Disk A
+    if (args.diskAChanges) {
+      console.log("Disk A changes: ", args.diskAChanges);
+    }
+
+    // --- There is a change in Disk B
+    if (args.diskBChanges) {
+      console.log("Disk B changes: ", args.diskBChanges);
     }
   }
 

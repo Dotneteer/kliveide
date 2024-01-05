@@ -4,8 +4,8 @@ import { readDiskData } from "./disk-readers";
 import { FloppyControllerDevice } from "./FloppyControllerDevice";
 import {
   IFloppyDiskDrive,
-  SectorChange,
-  SectorChangeMap
+  ChangedSectors,
+  SectorChanges
 } from "@emu/abstractions/IFloppyDiskDrive";
 
 // --- Percentage of motor speed increment in a single complete frame
@@ -50,7 +50,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.currentTrackIndex = -1;
     this.currentSectorIndex = -1;
     this.marks = MarkFlags.None;
-    this.dirtySectors = new Map<number, SectorChange>();
+    this.dirtySectors = new Set<number>();
   }
 
   // --- Indicates if the drive is selected for active operation
@@ -157,7 +157,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   marks: number;
 
   // --- Signs that drive data has been changed
-  dirtySectors: SectorChangeMap;
+  dirtySectors: ChangedSectors;
 
   // --- Turn on the floppy drive's motor
   turnOnMotor (): void {
@@ -192,9 +192,6 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       if (this.motorSpeed > 0) {
         this.motorSpeed = Math.max(0, this.motorSpeed - MOTOR_SPEED_DECREMENT);
       } else {
-        if (this.dirtySectors.size > 0) {
-          console.log("dirty", this.dirtySectors);
-        }
         delete this.motorAccelerating;
       }
     }
@@ -292,6 +289,22 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.atIndexWhole = true;
   }
 
+  // --- Reads the data of changed sectors from the disk surface and immediately clears
+  // --- the change sector information
+  getChangedSectors(): SectorChanges {
+    const changes = new Map<number, Uint8Array>();
+    for (const sectorKey of this.dirtySectors) {
+      const trackIndex = Math.floor(sectorKey / 100);
+      const sectorIndex = sectorKey % 100;
+      const track = this.surface.tracks[trackIndex];
+      const sector = track.sectors[sectorIndex - 1];
+      changes.set(sectorKey, sector.sectordata.view());
+    }
+    this.dirtySectors.clear();
+    return changes;
+  }
+
+
   // --- Helpers
 
   // --- Positions the data to the specified operation
@@ -365,10 +378,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     );
     trackSurface.fmData.setBit(this.dataPosInTrack, !!(this.marks & 0x01));
     trackSurface.fmData.setBit(this.dataPosInTrack, false);
-    this.dirtySectors.set(this.sectorKey(), {
-      oldData: new Uint8Array(0),
-      newData: new Uint8Array(0)
-    });
+    this.dirtySectors.add(this.sectorKey());
 
     this.dataPosInTrack++;
     if (this.dataPosInTrack >= this.surface.bytesPerTrack) {

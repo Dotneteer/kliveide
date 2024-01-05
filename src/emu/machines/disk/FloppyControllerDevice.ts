@@ -4,8 +4,10 @@ import {
 } from "@abstractions/FloppyLogEntry";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import {
+  DISK_A_CHANGES,
   DISK_A_DATA,
   DISK_A_WP,
+  DISK_B_CHANGES,
   DISK_B_DATA,
   DISK_B_WP
 } from "../machine-props";
@@ -649,7 +651,15 @@ export class FloppyControllerDevice
   // --- Carry out chores when a machine frame has been completed
   onFrameCompleted (): void {
     this.driveA?.onFrameCompleted();
+    const driveAChanges = this.driveA?.getChangedSectors();
+    if (driveAChanges && driveAChanges.size > 0) {
+      this.machine.setMachineProperty(DISK_A_CHANGES, driveAChanges);
+    }
     this.driveB?.onFrameCompleted();
+    const driveBChanges = this.driveB?.getChangedSectors();
+    if (driveBChanges && driveBChanges.size > 0) {
+      this.machine.setMachineProperty(DISK_B_CHANGES, driveBChanges);
+    }
   }
 
   // ==========================================================================
