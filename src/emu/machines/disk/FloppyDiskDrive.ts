@@ -275,7 +275,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
 
   // --- Wait while the revolution reaches the index hole
   waitIndexHole (): void {
-    if (!this.selected || this.ready) {
+    if (!this.selected || !this.ready) {
       return;
     }
 

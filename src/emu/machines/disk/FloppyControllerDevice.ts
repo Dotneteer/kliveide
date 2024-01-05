@@ -385,6 +385,7 @@ export class FloppyControllerDevice
           data: value
         });
         this.processDataWhileWriting(value);
+
       } else {
         this.processDataWhileScanning();
       }
@@ -910,45 +911,45 @@ export class FloppyControllerDevice
         drive.currentData = 0xffa1;
         for (let i = 3; i > 0; i--) {
           // --- Write 3 0xa1 with clock mark
-          drive.writeData;
+          drive.writeData();
           this.crcAdd();
         }
       }
 
       // --- Write ID mark
       drive.currentData = 0x00fe | (this.mf ? 0x0000 : 0xff00);
-      drive.writeData;
+      drive.writeData();
       this.crcAdd();
 
       // --- Write ID fields
       for (let i = 0; i < 4; i++) {
         drive.currentData = this.dataRegister[i + 5];
-        drive.writeData;
+        drive.writeData();
         this.crcAdd();
       }
 
       // --- Write CRC
       drive.currentData = this.crc.high;
-      drive.writeData;
+      drive.writeData();
       drive.currentData = this.crc.low;
-      drive.writeData;
+      drive.writeData();
 
       // --- Write 11 GAP bytes
       drive.currentData = this.mf ? 0x4e : 0xff;
       for (let i = 11; i > 0; i--) {
-        drive.writeData;
+        drive.writeData();
       }
       if (this.mf) {
         // --- MFM, write another 11 GAP byte
         for (let i = 11; i > 0; i--) {
-          drive.writeData;
+          drive.writeData();
         }
       }
 
       // --- Write 6/12 zero
       drive.currentData = 0x00;
       for (let i = this.mf ? 12 : 6; i > 0; i--) {
-        drive.writeData;
+        drive.writeData();
       }
 
       // --- Write clock/data mark
@@ -959,33 +960,33 @@ export class FloppyControllerDevice
 
         // --- write 3 0xa1 with clock mark */
         for (let i = 3; i > 0; i--) {
-          drive.writeData;
+          drive.writeData();
           this.crcAdd();
         }
       }
 
       // --- Write data mark
       drive.currentData = 0x00fb | (this.mf ? 0x0000 : 0xff00);
-      drive.writeData;
+      drive.writeData();
       this.crcAdd();
 
       // --- Write filler byte
       drive.currentData = this.dataRegister[4];
       for (let i = this.expRecordLength; i > 0; i--) {
-        drive.writeData;
+        drive.writeData();
         this.crcAdd();
       }
 
       // --- Write CRC
       drive.currentData = this.crc.high;
-      drive.writeData;
+      drive.writeData();
       drive.currentData = this.crc.low;
-      drive.writeData;
+      drive.writeData();
 
       // --- Write GAP3
       drive.currentData = this.mf ? 0x4e : 0xff;
       for (let i = this.dataRegister[3]; i > 0; i--) {
-        drive.writeData;
+        drive.writeData();
       }
 
       // --- Prepare next sector
