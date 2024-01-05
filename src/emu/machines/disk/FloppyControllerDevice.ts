@@ -159,6 +159,9 @@ export class FloppyControllerDevice
   // --- The last CRC value
   crc: DiskCrc;
 
+  // --- Type of scan to use
+  scan: ScanType;
+
   // --- Initializes the controller
   constructor (
     public readonly machine: IZxSpectrumMachine,
@@ -171,10 +174,10 @@ export class FloppyControllerDevice
   }
 
   // --- Drive A
-  driveA?: IFloppyDiskDrive = new FloppyDiskDrive(this);
+  driveA?: IFloppyDiskDrive = new FloppyDiskDrive(this, 0);
 
   // --- Drive B
-  driveB?: IFloppyDiskDrive = new FloppyDiskDrive(this);
+  driveB?: IFloppyDiskDrive = new FloppyDiskDrive(this, 1);
 
   // --- Resets the device
   reset (): void {
@@ -385,9 +388,8 @@ export class FloppyControllerDevice
           data: value
         });
         this.processDataWhileWriting(value);
-
       } else {
-        this.processDataWhileScanning();
+        this.processDataWhileScanning(value);
       }
       return;
     }
@@ -515,41 +517,11 @@ export class FloppyControllerDevice
           break;
 
         case Command.Specify:
-          // --- Immediate execution: store the parameters
-          this.stepRate = 0x10 - (this.dataRegister[0] >> 4);
-          this.headUnloadTime = (this.dataRegister[0] & 0x0f) << 4;
-          if (this.headUnloadTime === 0) this.headUnloadTime = 128;
-          this.headLoadTime = this.dataRegister[1] & 0xfe;
-          if (this.headLoadTime === 0) this.headLoadTime = 256;
-          this.nonDmaMode = !!(this.dataRegister[1] & 0x01);
-          this.operationPhase = OperationPhase.Command;
+          this.processSpecify();
           break;
 
         case Command.SenseDrive:
-          if (this.us & 0x01) {
-            if (this.hasDriveB) {
-              this.sr3 = this.driveB.currentHead ? SR3_HD : 0x00;
-              this.sr3 |=
-                !this.driveB.hasDiskLoaded || this.driveB.writeProtected
-                  ? SR3_WP
-                  : 0x00;
-              this.sr3 |= this.driveB.track0Mark ? SR3_T0 : 0x00;
-              this.sr3 |= this.driveB.hasTwoHeads ? SR3_TS : 0x00;
-              this.sr3 |= this.driveB.ready ? SR3_RD : 0x00;
-              this.sr3 |= SR3_US0;
-            } else {
-              this.sr3 = 0x00;
-            }
-          } else {
-            this.sr3 = this.driveA.currentHead ? SR3_HD : 0x00;
-            this.sr3 |=
-              !this.driveA.hasDiskLoaded || this.driveA.writeProtected
-                ? SR3_WP
-                : 0x00;
-            this.sr3 |= this.driveA.track0Mark ? SR3_T0 : 0x00;
-            this.sr3 |= this.driveA.hasTwoHeads ? SR3_TS : 0x00;
-            this.sr3 |= this.driveA.ready ? SR3_RD : 0x00;
-          }
+          this.processSenseDrive();
           break;
 
         case Command.SenseInt:
@@ -591,15 +563,17 @@ export class FloppyControllerDevice
           return;
       }
 
+      // --- Complete the last executed command
       if (this.command.id < Command.ReadId && !terminated) {
-        // --- We have execution phase
+        // --- We have execution phase, this command goes on. It may convey data to the CPU or
+        // --- expect data to pass to the FDC
         this.msr |= MSR_RQM;
         if (this.command.id < Command.WriteData) {
           // --- Data goes from FDC to CPU
           this.msr |= MSR_DIO;
         }
       } else {
-        // --- We have result phase
+        // --- The command has completed, operation goes to result phase
         this.signCommandResult();
       }
     } else {
@@ -706,6 +680,45 @@ export class FloppyControllerDevice
     this.mf = !!((this.commandRegister >> 6) & 0x01);
     this.sk = !!((this.commandRegister >> 5) & 0x01);
     this.command = cmd;
+  }
+
+  // --- Handle the Specify command
+  private processSpecify (): void {
+    this.stepRate = 0x10 - (this.dataRegister[0] >> 4);
+    this.headUnloadTime = (this.dataRegister[0] & 0x0f) << 4;
+    if (this.headUnloadTime === 0) this.headUnloadTime = 128;
+    this.headLoadTime = this.dataRegister[1] & 0xfe;
+    if (this.headLoadTime === 0) this.headLoadTime = 256;
+    this.nonDmaMode = !!(this.dataRegister[1] & 0x01);
+    this.operationPhase = OperationPhase.Command;
+  }
+
+  // --- Handle the Sense Drive Status command
+  private processSenseDrive (): void {
+    if (this.us & 0x01) {
+      if (this.hasDriveB) {
+        this.sr3 = this.driveB.currentHead ? SR3_HD : 0x00;
+        this.sr3 |=
+          !this.driveB.hasDiskLoaded || this.driveB.writeProtected
+            ? SR3_WP
+            : 0x00;
+        this.sr3 |= this.driveB.track0Mark ? SR3_T0 : 0x00;
+        this.sr3 |= this.driveB.hasTwoHeads ? SR3_TS : 0x00;
+        this.sr3 |= this.driveB.ready ? SR3_RD : 0x00;
+        this.sr3 |= SR3_US0;
+      } else {
+        this.sr3 = 0x00;
+      }
+    } else {
+      this.sr3 = this.driveA.currentHead ? SR3_HD : 0x00;
+      this.sr3 |=
+        !this.driveA.hasDiskLoaded || this.driveA.writeProtected
+          ? SR3_WP
+          : 0x00;
+      this.sr3 |= this.driveA.track0Mark ? SR3_T0 : 0x00;
+      this.sr3 |= this.driveA.hasTwoHeads ? SR3_TS : 0x00;
+      this.sr3 |= this.driveA.ready ? SR3_RD : 0x00;
+    }
   }
 
   // --- Handle the Sense Interrupt Status command
@@ -844,19 +857,19 @@ export class FloppyControllerDevice
 
   // --- Handle the Scan command
   private processScan (): void {
-    // // --- & 0x0c >> 2 == 00 - equal, 10 - low, 11 - high
-    // this.scan =
-    //   (this.commandRegister & 0x0c) >> 2 === 0
-    //     ? ScanType.Eq
-    //     : (this.commandRegister & 0x0c) >> 2 === 0x03
-    //     ? ScanType.Hi
-    //     : ScanType.Lo;
-    // this.rlen =
-    //   0x80 <<
-    //   (this.dataRegister[4] > MAX_SIZE_CODE
-    //     ? MAX_SIZE_CODE
-    //     : this.dataRegister[4]);
-    // this.loadHead();
+    // --- & 0x0c >> 2 == 00 - equal, 10 - low, 11 - high
+    this.scan =
+      (this.commandRegister & 0x0c) >> 2 === 0
+        ? ScanType.Eq
+        : (this.commandRegister & 0x0c) >> 2 === 0x03
+        ? ScanType.Hi
+        : ScanType.Lo;
+    this.expRecordLength =
+      0x80 <<
+      (this.dataRegister[4] > MAX_SIZE_CODE
+        ? MAX_SIZE_CODE
+        : this.dataRegister[4]);
+    this.commandWithLoadHead();
   }
 
   // --- Processes the data coming from the CPU while a Write Data command is in progress
@@ -890,6 +903,7 @@ export class FloppyControllerDevice
     }
   }
 
+  // --- Processes the data coming from the CPU while a Write ID command is in progress
   private processDataWhileFormatting (value: number): void {
     this.dataRegister[this.dataOffset + 5] = value; // --- Read ID fields
     this.dataOffset++;
@@ -1015,56 +1029,57 @@ export class FloppyControllerDevice
     this.registerEvent(20, this.timeoutEventHandler, this);
   }
 
-  private processDataWhileScanning (): void {
-    // // --- SCAN
-    // this.dataOffset++;
-    // d.readData();
-    // this.crcAdd();
-    // if (this.dataOffset === 0 && d.data === value) {
-    //   // --- "Scan hit"
-    //   this.sr2 |= SR2_SH;
-    // }
-    // if (d.data !== value) {
-    //   // --- "Scan not hit"
-    //   this.sr2 &= ~SR2_SH;
-    // }
-    // if (
-    //   (this.scan === ScanType.Eq && d.data !== value) ||
-    //   (this.scan === ScanType.Lo && d.data > value) ||
-    //   (this.scan === ScanType.Hi && d.data < value)
-    // ) {
-    //   // --- Scan not satisfied
-    //   this.sr2 |= SR2_SN;
-    // }
-    // if (this.dataOffset === this.sectorLength) {
-    //   // --- Read the CRC
-    //   d.readData();
-    //   this.crcAdd();
-    //   d.readData();
-    //   this.crcAdd();
-    //   if (this.crc !== 0x0000) {
-    //     this.sr2 |= SR2_DD;
-    //     this.sr1 |= SR1_DE;
-    //   }
-    //   this.dataRegister[3] += this.dataRegister[7]; // --- FIXME: what about STP>2 or STP<1
-    //   if (this.ddam != this.deletedData) {
-    //     // --- We read a not 'wanted' sector... so
-    //     if (this.dataRegister[5] >= this.dataRegister[3]) {
-    //       // --- If we want to read more...
-    //       this.sr0 |= SR0_AT;
-    //     }
-    //     this.cmdResult();
-    //     return;
-    //   }
-    //   if (this.sr2 & SR2_SH || (this.sr2 & SR2_SN) === 0x00) {
-    //     // --- FIXME sure?
-    //     this.cmdResult();
-    //     return;
-    //   }
-    //   this.revCounter = 2;
-    //   this.msr &= ~MSR_RQM;
-    //   this.startReadData();
-    // }
+  // --- Processes the data coming from the CPU while a Scan command is in progress
+  private processDataWhileScanning (value: number): void {
+    const d = this.currentDrive;
+    this.dataOffset++;
+    d.readData();
+    this.crcAdd();
+    if (this.dataOffset === 0 && d.currentData === value) {
+      // --- "Scan hit"
+      this.sr2 |= SR2_SH;
+    }
+    if (d.currentData !== value) {
+      // --- "Scan not hit"
+      this.sr2 &= ~SR2_SH;
+    }
+    if (
+      (this.scan === ScanType.Eq && d.currentData !== value) ||
+      (this.scan === ScanType.Lo && d.currentData > value) ||
+      (this.scan === ScanType.Hi && d.currentData < value)
+    ) {
+      // --- Scan not satisfied
+      this.sr2 |= SR2_SN;
+    }
+    if (this.dataOffset === this.sectorLength) {
+      // --- Read the CRC
+      d.readData();
+      this.crcAdd();
+      d.readData();
+      this.crcAdd();
+      if (this.crc.value !== 0x0000) {
+        this.sr2 |= SR2_DD;
+        this.sr1 |= SR1_DE;
+      }
+      this.dataRegister[3] += this.dataRegister[7]; // --- FIXME: what about STP>2 or STP<1
+      if (this.ddam != this.deletedData) {
+        // --- We read a not 'wanted' sector... so
+        if (this.dataRegister[5] >= this.dataRegister[3]) {
+          // --- If we want to read more...
+          this.sr0 |= SR0_AT;
+        }
+        this.signCommandResult();
+        return;
+      }
+      if (this.sr2 & SR2_SH || (this.sr2 & SR2_SN) === 0x00) {
+        // --- FIXME sure?
+        this.signCommandResult();
+        return;
+      }
+      this.revCounter = 2;
+      this.msr &= ~MSR_RQM;
+      this.startReadData();
+    }
   }
 
   // --- Turn the operation phase to sending back result
@@ -1180,7 +1195,7 @@ export class FloppyControllerDevice
     }
 
     // --- Select the drive used in the seek operation
-    const drive = driveIndex % 1 ? this.driveB : this.driveA;
+    const drive = driveIndex & 0x01 ? this.driveB : this.driveA;
 
     // --- There is need to seek?
     if (
@@ -1621,7 +1636,7 @@ export class FloppyControllerDevice
       // --- 2: sector being read is same specified by EOT
       // --- 3: terminal count is not received
       // --- Note: in +3 uPD765 never got TC
-      if (!fdc.sr0 && !fdc.sr1) {
+      if (!(fdc.sr0 & 0xfc) && !fdc.sr1) {
         fdc.sr0 |= SR0_AT;
         fdc.sr1 |= SR1_EN;
       }
@@ -1883,28 +1898,28 @@ export class FloppyControllerDevice
       drive.writeData();
     }
 
-    // --- Write clock 
+    // --- Write clock
     this.crcPreset();
     if (this.mf) {
       // --- MFM
       drive.currentData = 0xffc2;
-      for(let i = 3; i > 0; i-- ) {
+      for (let i = 3; i > 0; i--) {
         drive.writeData();
       }
     }
 
     // --- Write index mark
-    drive.currentData = 0x00fc | (this.mf ? 0x0000 : 0xff00 );
+    drive.currentData = 0x00fc | (this.mf ? 0x0000 : 0xff00);
     drive.writeData();
 
     // --- Postindex GAP
     drive.currentData = this.mf ? 0x4e : 0xff;
-    for(let i = 26; i > 0; i-- ) {
+    for (let i = 26; i > 0; i--) {
       drive.writeData();
     }
-    if(this.mf) {
+    if (this.mf) {
       // --- MFM
-      for(let i = 24; i > 0; i-- ) {
+      for (let i = 24; i > 0; i--) {
         drive.writeData();
       }
     }
@@ -2096,7 +2111,7 @@ const MAX_LOG_ENTRIES = 10240;
 const MAX_SIZE_CODE = 8;
 
 // --- Available scan types
-enum ScanType {
+export enum ScanType {
   Eq,
   Lo,
   Hi

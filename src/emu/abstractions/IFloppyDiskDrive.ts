@@ -9,6 +9,9 @@ export interface IFloppyDiskDrive {
   // --- The controller managing this drive
   controller: IFloppyControllerDevice;
 
+  // --- Dive Unit Number
+  readonly unitNumber: number;
+
   // --- Resets the drive
   reset(): void;
 
