@@ -61,13 +61,13 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Loads the disk with the specified contents into the drive
-  loadDisk (contents: Uint8Array): void {
+  loadDisk (contents: Uint8Array, writeProtected: boolean): void {
     // --- Load the disk data
     this.contents = contents;
     this.disk = readDiskData(contents);
     this.surface = createDiskSurface(this.disk);
 
-    this.writeProtected = false;
+    this.writeProtected = writeProtected;
     if (this.selected) {
       this.loadHead(true);
     }

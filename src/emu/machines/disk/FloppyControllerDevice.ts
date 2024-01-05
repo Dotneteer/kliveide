@@ -3,7 +3,12 @@ import {
   PortOperationType
 } from "@abstractions/FloppyLogEntry";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { DISK_A_DATA, DISK_B_DATA } from "../machine-props";
+import {
+  DISK_A_DATA,
+  DISK_A_WP,
+  DISK_B_DATA,
+  DISK_B_WP
+} from "../machine-props";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
@@ -232,26 +237,38 @@ export class FloppyControllerDevice
     propertyName: string;
     newValue?: any;
   }): void {
-    if (args.propertyName === DISK_A_DATA) {
-      if (!(args.newValue instanceof Uint8Array)) return;
+    switch (args.propertyName) {
+      case DISK_A_DATA:
+        const newDiskA = args.newValue;
+        if (!newDiskA) {
+          this.driveA.ejectDisk();
+        } else {
+          if (newDiskA instanceof Uint8Array) {
+            this.driveA.loadDisk(newDiskA, !!this.machine.getMachineProperty(DISK_A_WP));
+            this.driveA.turnOnMotor();
+          }
+        }
+        break;
 
-      const newDiskA = args.newValue;
-      if (newDiskA === undefined) {
-        this.driveA.ejectDisk();
-      } else {
-        this.driveA.loadDisk(newDiskA);
-        this.driveA.turnOnMotor();
-      }
-    } else if (args.propertyName === DISK_B_DATA) {
-      if (!(args.newValue instanceof Uint8Array)) return;
+      case DISK_A_WP:
+        this.driveA.writeProtected = !!args.newValue;
+        break;
 
-      const newDiskB = args.newValue;
-      if (newDiskB === undefined) {
-        this.driveB.ejectDisk();
-      } else {
-        this.driveB.loadDisk(newDiskB);
-        this.driveB.turnOnMotor();
-      }
+      case DISK_B_DATA:
+        const newDiskB = args.newValue;
+        if (!newDiskB) {
+          this.driveB.ejectDisk();
+        } else {
+          if (newDiskB instanceof Uint8Array) {
+            this.driveB.loadDisk(newDiskB, !!this.machine.getMachineProperty(DISK_B_WP));
+            this.driveB.turnOnMotor();
+          }
+        }
+        break;
+
+      case DISK_B_WP:
+        this.driveB.writeProtected = !!args.newValue;
+        break;
     }
   }
 

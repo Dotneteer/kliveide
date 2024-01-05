@@ -30,7 +30,8 @@ import {
   TEMPLATES,
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
-  KLIVE_PROJECT_ROOT
+  KLIVE_PROJECT_ROOT,
+  MEDIA_TAPE
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -103,7 +104,7 @@ export async function createKliveProject (
  * @param browserWindow Host browser window
  */
 export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
-  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const lastFile = mainStore.getState()?.media?.[MEDIA_TAPE];
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
@@ -333,7 +334,7 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
     soundLevel: state.emulatorState.soundLevel,
     soundMuted: state.emulatorState.soundMuted,
     savedSoundLevel: state.emulatorState.savedSoundLevel,
-    tapeFile: state.emulatorState.tapeFile,
+    media: state.media,
     fastLoad: state.emulatorState.fastLoad,
     machineSpecific: state.emulatorState.machineSpecific,
     ide: {

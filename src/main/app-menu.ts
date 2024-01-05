@@ -24,7 +24,6 @@ import {
   changeToolVisibilityAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  setTapeFileAction,
   showIdeToolbarAction,
   showIdeStatusBarAction,
   closeFolderAction,
@@ -995,7 +994,7 @@ export function setupMenu (
  * @returns The key mappings file is set in the app state
  */
 async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
-  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const lastFile = appSettings.keyMappingFile;
   const defaultPath =
     appSettings?.folders?.[KEY_MAPPING_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));

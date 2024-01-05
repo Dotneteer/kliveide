@@ -54,7 +54,6 @@ export interface ActionTypes {
   SET_FAST_LOAD: null;
   SET_CLOCK_MULTIPLIER: null;
   SET_AUDIO_SAMPLE_RATE: null;
-  SET_TAPE_FILE: null;
   SET_DISK_FILE: null;
   PROTECT_DISK: null;
 
@@ -89,4 +88,5 @@ export interface ActionTypes {
 
   START_SCREEN_DISPLAYED: null;
   SET_KEY_MAPPINGS: null;
+  SET_MEDIA: null;
 }

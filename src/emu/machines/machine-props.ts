@@ -6,6 +6,8 @@ export const TAPE_SAVED = "SavedToTape";
 export const TAPE_MODE = "TapeMode";
 export const DISK_A_DATA = "DiskAData";
 export const DISK_B_DATA = "DiskBData";
+export const DISK_A_WP = "DiskAWp";
+export const DISK_B_WP = "DiskBWp";
 
 export const FILE_PROVIDER = "FileProvider";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";

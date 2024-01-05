@@ -8,6 +8,7 @@ import { emuViewOptionsReducer } from "./emu-view-options-reducer";
 import { emulatorStateReducer } from "./emulator-state-reducer";
 import { projectReducer } from "./project-reducer";
 import { compilationReducer } from "./compilation-reducer";
+import { mediaReducer } from "./media-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -39,6 +40,7 @@ function appReducer (state: AppState, action: Action): AppState {
     compilationReducer,
     (a, n) => (a.compilation = n)
   );
+  invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
   return state;
 
   /**

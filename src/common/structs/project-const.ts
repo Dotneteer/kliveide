@@ -4,3 +4,7 @@ export const PROJECT_FILE = "klive.project";
 export const LAST_PROJECT_FOLDER = "lastProjectFolder";
 export const TEMPLATES = "project-templates";
 export const KEY_MAPPINGS = "keymappings";
+
+export const MEDIA_TAPE = "tape";
+export const MEDIA_DISK_A = "diskA";
+export const MEDIA_DISK_B = "diskB";
