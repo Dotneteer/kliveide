@@ -17,7 +17,7 @@ const STEP_RND_FACTOR = 34;
  * This class represents a single floppy disk device
  */
 export class FloppyDiskDrive implements IFloppyDiskDrive {
-  constructor (public readonly controller: FloppyControllerDevice) {
+  constructor (public readonly controller: FloppyControllerDevice, public readonly unitNumber: number) {
     this.reset();
   }
 
@@ -67,21 +67,17 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.disk = readDiskData(contents);
     this.surface = createDiskSurface(this.disk);
 
-    // REVIEW this
     this.writeProtected = false;
     if (this.selected) {
       this.loadHead(true);
     }
 
-    // TODO: Implement this
-    //this.doReadWeak = this.disk.hasWeakSectors;
     this.setDataToCurrentCylinder(LOAD_RND_FACTOR);
     this.ready = this.motorOn && this.motorSpeed === 100 && this.hasDiskLoaded;
   }
 
   // --- Ejects the disk from the drive
   ejectDisk (): void {
-    // TODO: Set drive info to empty
     delete this.contents;
     delete this.disk;
     delete this.surface;

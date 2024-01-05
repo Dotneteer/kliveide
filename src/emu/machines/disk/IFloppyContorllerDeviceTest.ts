@@ -4,6 +4,7 @@ import {
   CommandDescriptor,
   IntRequest,
   OperationPhase,
+  ScanType,
   SeekStatus
 } from "./FloppyControllerDevice";
 
@@ -151,4 +152,7 @@ export interface IFloppyControllerDeviceTest {
 
   // --- Offset of data byte during read and write operations
   dataOffset: number;
+
+  // --- Type of scan to use
+  scan: ScanType;
 }

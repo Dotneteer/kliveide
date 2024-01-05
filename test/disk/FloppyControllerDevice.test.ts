@@ -12,7 +12,7 @@ import {
   MSR_RQM,
   OperationPhase
 } from "@emu/machines/disk/FloppyControllerDevice";
-import { DISK_A_DATA } from "@emu/machines/machine-props";
+import { DISK_A_DATA, DISK_B_DATA } from "@emu/machines/machine-props";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -1102,9 +1102,9 @@ describe("FloppyControllerDevice", () => {
     fd.writeDataRegister(0x00);
     fd.writeDataRegister(0x02);
     fd.writeDataRegister(0x00);
-    fd.writeDataRegister(0x09);
+    fd.writeDataRegister(0x08);
     fd.writeDataRegister(0x02);
-    fd.writeDataRegister(0x01);
+    fd.writeDataRegister(0x08);
     fd.writeDataRegister(0x2a);
     fd.writeDataRegister(0xff);
 
@@ -1138,7 +1138,7 @@ describe("FloppyControllerDevice", () => {
     expect(st2).toBe(0x00);
     expect(c).toBe(0x02);
     expect(h).toBe(0x00);
-    expect(r).toBe(0x09);
+    expect(r).toBe(0x08);
     expect(n).toBe(0x02);
   });
 
@@ -1504,6 +1504,195 @@ describe("FloppyControllerDevice", () => {
     expect(fdt.msr & MSR_CB).toBe(MSR_CB);
     expect(fdt.operationPhase).toBe(OperationPhase.Result);
     expect(fdt.intReq).toBe(IntRequest.Result);
+  });
+
+  it("Load disk B: and read ID #1", () => {
+    const updm = new TestUpd765Machine(true);
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_B_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x01);
+
+    // --- Allow finding Track 0
+    updm.emulateFrameCompletion(60);
+
+    // --- Sense interrupt and read calibration result
+    fd.writeDataRegister(0x08);
+    let r1 = fd.readDataRegister();
+    let r2 = fd.readDataRegister();
+
+    expect(r1).toBe(0x21);
+    expect(r2).toBe(0x00);
+
+    // --- Read ID
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x01);
+
+    // --- Allow reading the ID
+    updm.emulateFrameCompletion(60);
+
+    expect(fdt.command.id).toBe(Command.ReadId);
+    expect(fdt.commandBytesReceived).toBe(0);
+    expect(fdt.msr & MSR_CB).toBe(MSR_CB);
+    expect(fdt.operationPhase).toBe(OperationPhase.Result);
+    expect(fdt.intReq).toBe(IntRequest.Result);
+
+    const st0 = fd.readDataRegister();
+    const st1 = fd.readDataRegister();
+    const st2 = fd.readDataRegister();
+    const c = fd.readDataRegister();
+    const h = fd.readDataRegister();
+    const r = fd.readDataRegister();
+    const n = fd.readDataRegister();
+
+    expect(st0).toBe(0x01);
+    expect(st1).toBe(0x00);
+    expect(st2).toBe(0x00);
+    expect(c).toBe(0x00);
+    expect(h).toBe(0x00);
+    expect(r).toBe(0x07);
+    expect(n).toBe(0x02);
+  });
+
+  it("Read Data (B:), Seek, and Read data again", async () => {
+    const updm = new TestUpd765Machine(true);
+    const fd = updm.floppyDevice;
+    const fdt = fd as unknown as IFloppyControllerDeviceTest;
+    const diskData = readTestFile("blank180K.dsk");
+    updm.setMachineProperty(DISK_B_DATA, diskData);
+
+    // --- Allow the motor to spin up
+    updm.emulateFrameCompletion(60);
+
+    // --- Recalibrate
+    fd.writeDataRegister(0x07);
+    fd.writeDataRegister(0x01);
+
+    // --- Allow finding Track 0
+    updm.emulateFrameCompletion(60);
+
+    // --- Sense interrupt and read calibration result
+    fd.writeDataRegister(0x08);
+    fd.readDataRegister();
+    fd.readDataRegister();
+
+    // --- Read ID
+    fd.writeDataRegister(0x4a);
+    fd.writeDataRegister(0x01);
+
+    // --- Allow reading the ID
+    updm.emulateFrameCompletion(20);
+
+    // --- Retrieve the ID
+    fd.readDataRegister(); // st0
+    fd.readDataRegister(); // st1
+    fd.readDataRegister(); // st2
+    fd.readDataRegister(); // c
+    fd.readDataRegister(); // h
+    fd.readDataRegister(); // r
+    fd.readDataRegister(); // n
+
+    // --- Read Data (first block)
+    fd.writeDataRegister(0x66);
+    fd.writeDataRegister(0x01);
+    fd.writeDataRegister(0x00);
+    fd.writeDataRegister(0x00);
+    fd.writeDataRegister(0x08);
+    fd.writeDataRegister(0x02);
+    fd.writeDataRegister(0x08);
+    fd.writeDataRegister(0x2a);
+    fd.writeDataRegister(0xff);
+
+    // --- Wait for data
+    const dataReceived: number[] = [];
+    let sum = 0;
+    for (let i = 0; i < 100; i++) {
+      updm.emulateFrameCompletion(1);
+      if ((fdt.msr & (MSR_RQM | MSR_DIO)) === (MSR_RQM | MSR_DIO)) {
+        while (fdt.operationPhase === OperationPhase.Execution) {
+          const data = fd.readDataRegister();
+          dataReceived.push(data);
+          sum += data;
+        }
+      }
+    }
+
+    // --- Read back result
+    fd.readDataRegister();
+    fd.readDataRegister();
+    fd.readDataRegister();
+    fd.readDataRegister();
+    fd.readDataRegister();
+    fd.readDataRegister();
+    fd.readDataRegister();
+
+    // --- Seek track 2
+    fd.writeDataRegister(0x0f);
+    fd.writeDataRegister(0x01);
+    fd.writeDataRegister(0x02);
+
+    // --- Allow seek to happen
+    updm.emulateFrameCompletion(30);
+
+    // --- Wait for seek result
+    fd.writeDataRegister(0x08);
+
+    const r1 = fd.readDataRegister();
+    const r2 = fd.readDataRegister();
+
+    expect(r1).toBe(0x21);
+    expect(r2).toBe(0x02);
+
+    // --- Read Data (first block)
+    fd.writeDataRegister(0x66);
+    fd.writeDataRegister(0x01);
+    fd.writeDataRegister(0x02);
+    fd.writeDataRegister(0x00);
+    fd.writeDataRegister(0x08);
+    fd.writeDataRegister(0x02);
+    fd.writeDataRegister(0x08);
+    fd.writeDataRegister(0x2a);
+    fd.writeDataRegister(0xff);
+
+    // --- Wait for data
+    dataReceived.length = 0;
+    sum = 0;
+    for (let i = 0; i < 100; i++) {
+      updm.emulateFrameCompletion(1);
+      if ((fdt.msr & (MSR_RQM | MSR_DIO)) === (MSR_RQM | MSR_DIO)) {
+        while (fdt.operationPhase === OperationPhase.Execution) {
+          const data = fd.readDataRegister();
+          dataReceived.push(data);
+          sum += data;
+        }
+      }
+    }
+    expect(dataReceived.length).toBe(512);
+    expect(sum).toBe(0xe5 * 512);
+
+    // --- Read back result
+    const st0 = fd.readDataRegister();
+    const st1 = fd.readDataRegister();
+    const st2 = fd.readDataRegister();
+    const c = fd.readDataRegister();
+    const h = fd.readDataRegister();
+    const r = fd.readDataRegister();
+    const n = fd.readDataRegister();
+
+    expect(st0).toBe(0x41);
+    expect(st1).toBe(0x80);
+    expect(st2).toBe(0x00);
+    expect(c).toBe(0x02);
+    expect(h).toBe(0x00);
+    expect(r).toBe(0x08);
+    expect(n).toBe(0x02);
   });
 });
 
