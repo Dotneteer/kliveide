@@ -24,6 +24,7 @@ import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -274,12 +275,26 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     // --- There is a change in Disk A
     if (args.diskAChanges) {
-      console.log("Disk A changes: ", args.diskAChanges);
+      saveDiskChanges(0, args.diskAChanges);
     }
 
     // --- There is a change in Disk B
     if (args.diskBChanges) {
-      console.log("Disk B changes: ", args.diskBChanges);
+      saveDiskChanges(1, args.diskBChanges);
+    }
+
+    // --- Sends disk changes to the main process
+    async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
+      const response = await messenger.sendMessage({
+        type: "MainSaveDiskChanges",
+        diskIndex,
+        changes,
+      });
+      if (response.type === "ErrorResponse") {
+        reportMessagingError(
+          `Saving disk changes failed: ${response.message}.`
+        );
+      }
     }
   }
 

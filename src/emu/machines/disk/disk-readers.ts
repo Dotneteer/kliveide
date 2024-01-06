@@ -1,6 +1,6 @@
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { BinaryReader } from "../../../common/utils/BinaryReader";
 import { DiskInformation, SectorInformation } from "./DiskInformation";
-import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
+import { FloppyDiskFormat } from "../../../emu/abstractions/FloppyDiskFormat";
 
 /**
  * Reads disk information from the specified disk contents
@@ -120,7 +120,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
     }
 
     // --- Read the track header of a formatted track
-    reader.seek(getTrackPointer(trackIndex));
+    reader.seek(getTrackPosition(trackIndex));
     const trackHeader = reader.readBytes(12);
     if (!compareHeader(trackHeader, DSK_TRACK_HEADER)) {
       throw new Error("Invalid DSK track header");
@@ -151,7 +151,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
     ) {
       // --- Point to the beginning of the sector header
       const sectorPointer =
-        getTrackPointer(trackIndex) +
+        getTrackPosition(trackIndex) +
         DSK_TRACK_HEADER_SIZE +
         sectorIndex * DSK_SECTOR_HEADER_SIZE;
       let sectorSize: number;
@@ -177,6 +177,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
 
       // --- Go back to the beginning of the sector header and read sector header
       reader.seek(sectorPointer);
+      const sectorDataPosition = getSectorDataPosition(trackIndex, sectorIndex);
       const sector: SectorInformation = {
         C: reader.readByte(),
         H: reader.readByte(),
@@ -185,7 +186,8 @@ function readDsk (contents: Uint8Array): DiskInformation {
         SR1: reader.readByte(),
         SR2: reader.readByte(),
         actualLength: sectorSize,
-        sectorData: new Uint8Array(sectorSize)
+        sectorData: new Uint8Array(sectorSize),
+        sectorDataPosition
       };
 
       // --- Test if the format has multiple weak sector
@@ -207,8 +209,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
       sector.multipleWeakSectors = multipleWeakSectors;
 
       // --- Copy the data
-      const sectorDataPointer = getSectorDataPointer(trackIndex, sectorIndex);
-      reader.seek(sectorDataPointer);
+      reader.seek(sectorDataPosition);
       const sectorData = reader.readBytes(sector.actualLength);
       for (let i = 0; i < sector.actualLength; i++) {
         sector.sectorData[i] = sectorData[i];
@@ -222,7 +223,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
   return diskInformation;
 
   // --- Gets the stream index to the beginning of the specified track's data
-  function getTrackPointer (trackIndex: number): number {
+  function getTrackPosition (trackIndex: number): number {
     return (
       DSK_START_DISK_TRACK_POINTER +
       (trackIndex
@@ -232,7 +233,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
   }
 
   // --- Gets the stream index that points to the beginning of the specified sector's data
-  function getSectorDataPointer (
+  function getSectorDataPosition (
     trackIndex: number,
     sectorIndex: number
   ): number {
@@ -244,7 +245,7 @@ function readDsk (contents: Uint8Array): DiskInformation {
             .slice(0, sectorIndex)
             .map(item => item.actualLength)
             .reduce((a, b) => a + b, 0));
-    return getTrackPointer(trackIndex) + startSectorPointer;
+    return getTrackPosition(trackIndex) + startSectorPointer;
   }
 }
 

@@ -79,4 +79,7 @@ export type SectorInformation = {
 
   // --- Has this sector multiple weak sectors?
   multipleWeakSectors?: boolean;
+
+  // --- The position of the sector data in the file
+  sectorDataPosition: number;
 };

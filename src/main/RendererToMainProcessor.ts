@@ -7,6 +7,7 @@ import {
   defaultResponse,
   errorResponse,
   flagResponse,
+  MessageBase,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
@@ -50,6 +51,9 @@ import {
 } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
+import { SectorChanges } from "../emu/abstractions/IFloppyDiskDrive";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "../common/structs/project-const";
+import { readDiskData } from "../emu/machines/disk/disk-readers";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -383,6 +387,9 @@ export async function processRendererToMainMessages (
         };
       }
 
+    case "MainSaveDiskChanges":
+      return saveDiskChanges(message.diskIndex, message.changes);
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -506,4 +513,47 @@ function resolveMessagePath (inputPath: string, resolveIn?: string): string {
     }
   }
   return inputPath;
+}
+
+// --- Save disk changes to their corresponding disk file
+function saveDiskChanges (
+  diskIndex: number,
+  changes: SectorChanges
+): ResponseMessage {
+  // --- Get the disk file from the store
+  const diskFile =
+    mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]
+      ?.diskFile;
+
+  // --- The disk file must exist    
+  if (!diskFile) {
+    return errorResponse(`No disk file found for disk ${diskIndex}`);
+  }
+
+  try {
+    const contents = fs.readFileSync(diskFile);
+    const diskInfo = readDiskData(contents);
+    
+    const handle = fs.openSync(diskFile, "r+");
+    try {
+      for (const change of changes.keys()) {
+        const trackIndex = Math.floor(change/100);
+        const sectorIndex = change % 100;
+        const track = diskInfo.tracks[trackIndex];
+        const sector = track.sectors.find(s => s.R === sectorIndex);
+        if (!sector) {
+          throw Error(`Sector with index #${sectorIndex} cannot be found on track #${trackIndex}`);
+        }
+        const data = changes.get(change);
+        fs.writeSync(handle, data, 0, data.length, sector.sectorDataPosition);
+      }
+    } finally {
+      fs.closeSync(handle);
+    }
+  } catch (err) {
+    return errorResponse(`Saving disk changes failed: ${err.message}`);
+  }
+
+  // --- Done.
+  return defaultResponse();
 }
