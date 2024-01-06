@@ -2,6 +2,7 @@ import { ProjectNodeWithChildren } from "@appIde/project/project-node";
 import { MessageBase } from "./messages-core";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/IZ80CompilerService";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 /**
  * The client sends a text file read request
@@ -250,6 +251,15 @@ export interface MainShowWebsiteRequest extends MessageBase {
 export interface MainCheckZ88CardRequest extends MessageBase {
   type: "MainCheckZ88Card";
   path: string;
+}
+
+/**
+ * The client wants to save the current disk changes
+ */
+export interface MainSaveDiskChangesRequest extends MessageBase {
+  type: "MainSaveDiskChanges";
+  diskIndex: number;
+  changes: SectorChanges
 }
 
 /**

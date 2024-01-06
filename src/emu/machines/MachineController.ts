@@ -21,10 +21,11 @@ import { setDebuggingAction, setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
-import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
+import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { delay } from "@renderer/utils/timing";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -434,19 +435,39 @@ export class MachineController implements IMachineController {
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
         const frameCompleted = termination === FrameTerminationMode.Normal;
-        let savedInfo: SavedFileInfo | null = null;
+        let savedFileInfo: SavedFileInfo;
+        let diskAChanges: SectorChanges;
+        let diskBChanges: SectorChanges;
         if (frameCompleted) {
           // --- Check for file to save
-          savedInfo = this.machine.getMachineProperty(
+          savedFileInfo = this.machine.getMachineProperty(
             SAVED_TO_TAPE
-          ) as SavedFileInfo | null;
-          if (savedInfo) {
+          ) as SavedFileInfo;
+          if (savedFileInfo) {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
+          }
+
+          // --- Check for disk A changes
+          diskAChanges = this.machine.getMachineProperty(
+            DISK_A_CHANGES
+          ) as SectorChanges;
+          if (diskAChanges) {
+            this.machine.setMachineProperty(DISK_A_CHANGES);
+          }
+
+          // --- Check for disk B changes
+          diskBChanges = this.machine.getMachineProperty(
+            DISK_B_CHANGES
+          ) as SectorChanges;
+          if (diskBChanges) {
+            this.machine.setMachineProperty(DISK_B_CHANGES);
           }
         }
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
-          savedFileInfo: savedInfo
+          savedFileInfo,
+          diskAChanges,
+          diskBChanges
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

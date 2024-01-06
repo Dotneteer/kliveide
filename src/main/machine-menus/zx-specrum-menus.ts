@@ -106,7 +106,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   ];
 
   function createDiskMenu (index: number, suffix: string): void {
-    const state = appState?.media?.[index ? MEDIA_DISK_A : MEDIA_DISK_B] ?? {};
+    const state = appState?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A] ?? {};
     floppySubMenu.push({ type: "separator" });
     if (state?.diskFile) {
       floppySubMenu.push({
@@ -123,7 +123,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
         label: `Write Protected Disk in Drive ${suffix.toUpperCase()}`,
         click: async () => {
           mainStore.dispatch(
-            setMediaAction(index ? MEDIA_DISK_A : MEDIA_DISK_B, {
+            setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
               ...state,
               writeProtected: !state.writeProtected
             })
@@ -243,7 +243,7 @@ async function setDiskFile (
 ): Promise<void> {
   const DISK_FILE_FOLDER = "diskFileFolder";
   const lastFile =
-    mainStore.getState()?.media?.[index ? MEDIA_DISK_A : MEDIA_DISK_B];
+    mainStore.getState()?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A];
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
@@ -264,7 +264,7 @@ async function setDiskFile (
 
   // --- Store the last selected tape file
   mainStore.dispatch(
-    setMediaAction(index ? MEDIA_DISK_A : MEDIA_DISK_B, {
+    setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
       diskFile: filename,
       writeProtected: false
     })
@@ -300,7 +300,7 @@ async function setDiskFile (
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
 async function ejectDiskFile (index: number, suffix: string): Promise<void> {
-  mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_A : MEDIA_DISK_B, {}));
+  mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {}));
   try {
     await sendFromMainToEmu({
       type: "EmuSetDiskFile",

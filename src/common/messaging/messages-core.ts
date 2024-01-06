@@ -55,7 +55,8 @@ import {
   MainMoveSettingsRequest,
   MainShowWebsiteRequest,
   MainCheckZ88CardRequest,
-  MainCheckZ88CardResponse
+  MainCheckZ88CardResponse,
+  MainSaveDiskChangesRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -214,6 +215,7 @@ export type RequestMessage =
   | MainPathExistsRequest
   | MainShowWebsiteRequest
   | MainCheckZ88CardRequest
+  | MainSaveDiskChangesRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
