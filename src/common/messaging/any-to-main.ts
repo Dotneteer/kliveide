@@ -263,6 +263,16 @@ export interface MainSaveDiskChangesRequest extends MessageBase {
 }
 
 /**
+ * The client wants to create a disk file
+ */
+export interface MainCreateDiskFileRequest extends MessageBase {
+  type: "MainCreateDiskFile";
+  diskFolder: string;
+  filename: string;
+  diskType: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -340,6 +350,15 @@ export interface MainCheckZ88CardResponse extends MessageBase {
   type: "MainCheckZ88CardResponse";
   message?: string;
   content?: Uint8Array;
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainCreateDiskFileResponse extends MessageBase {
+  type: "MainCreateDiskFileResponse";
+  path?: string;
+  errorMessage?: string;
 }
 
 
