@@ -113,7 +113,6 @@ const EmuApp = () => {
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
-          onCreate={async () => console.log("Creating disk")}
         />
       )}
     </div>

@@ -392,8 +392,11 @@ export async function processRendererToMainMessages (
       return saveDiskChanges(message.diskIndex, message.changes);
 
     case "MainCreateDiskFile":
-      createDiskFile(message.diskFolder, message.filename, message.diskType);
-      break;
+      const diskCreated = createDiskFile(message.diskFolder, message.filename, message.diskType);
+      return {
+        type: "MainCreateDiskFileResponse",
+        path: diskCreated
+      }
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

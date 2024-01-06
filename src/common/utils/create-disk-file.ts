@@ -12,7 +12,7 @@ export function createDiskFile (
   foldername: string,
   filename: string,
   diskFormat: string
-): void {
+): string {
   const writer = new BinaryWriter();
   createDisk(writer, diskFormat);
   const fileExt = path.extname(filename);
@@ -22,11 +22,12 @@ export function createDiskFile (
   const fileWithPath = foldername ? `${foldername}/${filename}` : filename;
   const fullPath = resolveHomeFilePath(fileWithPath);
   fs.writeFileSync(fullPath, writer.buffer);
+  return fullPath;
 }
 
 function createDisk (writer: BinaryWriter, diskFormat: string): void {
-  const isExtended = diskFormat.startsWith("cpce-");
-  const isDoubleSided = diskFormat.endsWith("-d");
+  const isExtended = diskFormat.endsWith("e");
+  const isDoubleSided = diskFormat.endsWith("d");
 
   // --- Write out disk header
   const head = isExtended ? CPC_EXT_HEAD : CPC_HEAD;

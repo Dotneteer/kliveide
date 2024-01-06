@@ -14,23 +14,22 @@ import { useEffect, useRef, useState } from "react";
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
 
 const diskTypesIds = [
-  { value: "cpc-s", label: "Single-sided CPC (180K)" },
-  { value: "cpc-d", label: "Double-sided CPC (360K)" },
-  { value: "cpce-s", label: "Single-sided ECPC (180K)" },
-  { value: "cpce-d", label: "Double-sided ECPC (360K)" }
+  { value: "ss", label: "Single-sided CPC (180K)" },
+  { value: "ds", label: "Double-sided CPC (360K)" },
+  { value: "sse", label: "Single-sided ECPC (180K)" },
+  { value: "dse", label: "Double-sided ECPC (360K)" }
 ];
 
 type Props = {
   onClose: () => void;
-  onCreate: (name: string, format: string) => Promise<void>;
 };
 
-export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
+export const CreateDiskDialog = ({ onClose }: Props) => {
   const modalApi = useRef<ModalApi>(null);
   const { messenger } = useRendererContext();
   const { validationService } = useAppServices();
 
-  const [diskType, setDiskType] = useState<string>("cpc-d");
+  const [diskType, setDiskType] = useState<string>("ss");
   const [diskFileFolder, setDiskFileFolder] = useState("");
   const [filename, setFilename] = useState("");
   const [folderIsValid, setFolderIsValid] = useState(true);
@@ -102,7 +101,7 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
           <Dropdown
             placeholder='Select...'
             options={diskTypesIds}
-            value={"cpc-d"}
+            value={"ss"}
             width={240}
             onSelectionChanged={option => {
               setDiskType(option);

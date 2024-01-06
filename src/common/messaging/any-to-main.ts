@@ -357,7 +357,6 @@ export interface MainCheckZ88CardResponse extends MessageBase {
  */
 export interface MainCreateDiskFileResponse extends MessageBase {
   type: "MainCreateDiskFileResponse";
-  diskFolder: string;
   path?: string;
   errorMessage?: string;
 }
