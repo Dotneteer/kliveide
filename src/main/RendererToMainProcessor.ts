@@ -54,6 +54,7 @@ import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import { SectorChanges } from "../emu/abstractions/IFloppyDiskDrive";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "../common/structs/project-const";
 import { readDiskData } from "../emu/machines/disk/disk-readers";
+import { createDiskFile } from "../common/utils/create-disk-file";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -391,8 +392,7 @@ export async function processRendererToMainMessages (
       return saveDiskChanges(message.diskIndex, message.changes);
 
     case "MainCreateDiskFile":
-      // TODO: Implement this
-      console.log(JSON.stringify(message, null, 2));
+      createDiskFile(message.diskFolder, message.filename, message.diskType);
       break;
 
     case "EmuMachineCommand":

@@ -25,12 +25,14 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
   newState: MachineControllerState;
 }[] = [];
 let machineStateProcessing = false;
+let currentDialogId = 0;
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -57,6 +59,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowCanvasHeight = useRef(0);
   const audioSampleRate = useSelector(s => s.emulatorState?.audioSampleRate);
   const fastLoad = useSelector(s => s.emulatorState?.fastLoad);
+  const dialogToDisplay = useSelector(s => s.ideView?.dialogToDisplay);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector(s => s.keyMappings);
@@ -72,10 +75,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
   const _handleKeyDown = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, true);
+    handleKey(e, currentKeyMappings.current, currentDialogId, true);
   };
   const _handleKeyUp = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, false);
+    handleKey(e, currentKeyMappings.current, currentDialogId, false);
   };
 
   // --- Variables for audio management
@@ -104,6 +107,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     updateKeyMappings();
   }, [keyMappings]);
+
+  // --- Let the key handler know about the current dialog
+  useEffect(() => {
+    currentDialogId = dialogToDisplay ?? 0;
+  }, [dialogToDisplay]);
 
   // --- Set up keyboard handling
   useEffect(() => {
@@ -247,7 +255,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Stop sound rendering when fast load has been invoked
     // --- Do we need to render sound samples?
     if (args.fullFrame && beeperRenderer.current) {
-      const sampleGetter = (controller.machine as any).getAudioSamples
+      const sampleGetter = (controller.machine as any).getAudioSamples;
       if (typeof sampleGetter === "function") {
         const samples = sampleGetter.call(controller.machine) as number[];
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
@@ -284,11 +292,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     // --- Sends disk changes to the main process
-    async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
+    async function saveDiskChanges (
+      diskIndex: number,
+      changes: SectorChanges
+    ): Promise<void> {
       const response = await messenger.sendMessage({
         type: "MainSaveDiskChanges",
         diskIndex,
-        changes,
+        changes
       });
       if (response.type === "ErrorResponse") {
         reportMessagingError(
@@ -382,9 +393,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   function handleKey (
     e: KeyboardEvent,
     mapping: KeyMapping,
+    dialogToDisplay: number,
     isDown: boolean
   ): void {
-    if (!e || controllerRef.current?.state !== MachineControllerState.Running)
+    if (
+      !e ||
+      controllerRef.current?.state !== MachineControllerState.Running ||
+      dialogToDisplay > EMU_DIALOG_BASE
+    )
       return;
     // --- Special key: both Shift released
     if (

@@ -86,7 +86,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   const floppySubMenu: MachineMenuItem[] = [
     {
       id: "create_disk_file",
-      label: "Create Disk File",
+      label: "Create Disk File...",
       click: async () => {
         mainStore.dispatch(displayDialogAction(CREATE_DISK_DIALOG));
       }

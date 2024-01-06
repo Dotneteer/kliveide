@@ -55,11 +55,13 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
       primaryEnabled={true}
       initialFocus='none'
       onPrimaryClicked={async result => {
+        const name = result ? result[0] : filename;
+        const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
         const response = await messenger.sendMessage({
           type: "MainCreateDiskFile",
-          diskFolder: diskFileFolder,
-          filename,
+          diskFolder: folder,
+          filename: name,
           diskType
         });
         if (response.type === "ErrorResponse") {
