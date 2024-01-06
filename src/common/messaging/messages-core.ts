@@ -56,7 +56,9 @@ import {
   MainShowWebsiteRequest,
   MainCheckZ88CardRequest,
   MainCheckZ88CardResponse,
-  MainSaveDiskChangesRequest
+  MainSaveDiskChangesRequest,
+  MainCreateDiskFileRequest,
+  MainCreateDiskFileResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -216,6 +218,7 @@ export type RequestMessage =
   | MainShowWebsiteRequest
   | MainCheckZ88CardRequest
   | MainSaveDiskChangesRequest
+  | MainCreateDiskFileRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -242,6 +245,7 @@ export type ResponseMessage =
   | MainGetSettingsResponse
   | MainCompileResponse
   | MainCheckZ88CardResponse
+  | MainCreateDiskFileResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

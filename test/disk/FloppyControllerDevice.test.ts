@@ -213,7 +213,7 @@ describe("FloppyControllerDevice", () => {
     expect(msr).toBe(0xd0);
 
     const result = fd.readDataRegister();
-    expect(result).toBe(0x51);
+    expect(result).toBe(0x59);
   });
 
   it("Turn motor on #1", () => {
@@ -1279,7 +1279,7 @@ describe("FloppyControllerDevice", () => {
     expect(msr).toBe(0xd0);
 
     const result = fd.readDataRegister();
-    expect(result).toBe(0x20);
+    expect(result).toBe(0x28);
   });
 
   it("Read Data, Seek, and Write data again #1", async () => {

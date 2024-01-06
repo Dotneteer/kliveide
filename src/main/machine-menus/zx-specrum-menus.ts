@@ -15,7 +15,8 @@ import { AppState } from "../../common/state/AppState";
 import {
   setFastLoadAction,
   setVolatileDocStateAction,
-  setMediaAction
+  setMediaAction,
+  displayDialogAction
 } from "../../common/state/actions";
 import { BASIC_PANEL_ID } from "../../common/state/common-ids";
 import { mainStore } from "../../main/main-store";
@@ -28,6 +29,7 @@ import {
   MEDIA_DISK_B,
   MEDIA_TAPE
 } from "../../common/structs/project-const";
+import { CREATE_DISK_DIALOG } from "../../common/messaging/dialog-ids";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
@@ -84,9 +86,9 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   const floppySubMenu: MachineMenuItem[] = [
     {
       id: "create_disk_file",
-      label: "Create Disk File...",
+      label: "Create Disk File",
       click: async () => {
-        console.log("Create Disk File");
+        mainStore.dispatch(displayDialogAction(CREATE_DISK_DIALOG));
       }
     },
     { type: "separator" }
@@ -266,7 +268,7 @@ async function setDiskFile (
   mainStore.dispatch(
     setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {
       diskFile: filename,
-      writeProtected: false
+      writeProtected: true
     })
   );
 

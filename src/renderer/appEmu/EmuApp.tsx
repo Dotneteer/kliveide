@@ -27,9 +27,14 @@ import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
-import { FIRST_STARTUP_DIALOG_EMU, Z88_CARDS_DIALOG } from "@common/messaging/dialog-ids";
+import {
+  CREATE_DISK_DIALOG,
+  FIRST_STARTUP_DIALOG_EMU,
+  Z88_CARDS_DIALOG
+} from "@common/messaging/dialog-ids";
 import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
 import { Z88CardsDialog } from "./dialogs/Z88CardsDialog";
+import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -86,7 +91,7 @@ const EmuApp = () => {
         <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
       )}
       <EmulatorArea />
-      <EmuStatusBar show={showStatusBar}/>
+      <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
 
       {dialogId === FIRST_STARTUP_DIALOG_EMU && (
@@ -101,6 +106,14 @@ const EmuApp = () => {
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
+        />
+      )}
+      {dialogId === CREATE_DISK_DIALOG && (
+        <CreateDiskDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+          onCreate={async () => console.log("Creating disk")}
         />
       )}
     </div>

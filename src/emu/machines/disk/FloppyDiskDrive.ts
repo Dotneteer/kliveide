@@ -36,7 +36,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
 
     this.writeProtected = false;
     this.track0Mark = true;
-    this.hasTwoHeads = false;
+    this.hasTwoHeads = true;
     this.currentHead = 0;
     this.maxCylinders = 42;
     this.currentCylinder = 0;
