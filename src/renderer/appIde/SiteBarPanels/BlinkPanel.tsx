@@ -111,38 +111,38 @@ const BlinkPanel = () => {
       <Separator />
       <ValueFieldRow
         label='TIM0'
-        tooltip='Timer register (5ms ticks)'
+        tooltip='5ms period counter register (0-199)'
         value={blinkState?.TIM0}
       />
       <ValueFieldRow
         label='TIM1'
-        tooltip='Timer register (1 second)'
+        tooltip='1sec period counter register (0-59)'
         value={blinkState?.TIM1}
       />
       <ValueFieldRow
         label='TIM2'
-        tooltip='Timer register (1 minute)'
+        tooltip='1min period counter register (0-255)'
         value={blinkState?.TIM2}
       />
       <ValueFieldRow
         label='TIM3'
-        tooltip='Timer register (256 minutes)'
+        tooltip='256min period counter register (0-255)'
         value={blinkState?.TIM3}
       />
       <ValueFieldRow
         label='TIM4'
-        tooltip='Timer register (64K minutes)'
+        tooltip='64Kmin period counter register (0-31)'
         value={blinkState?.TIM4}
       />
       <FlagFieldRow
         label='TSTA'
-        tooltip='Timer interrupt status'
+        tooltip='Timer Interrupt Status'
         value={blinkState?.TSTA}
         flagDescriptions={TSTADescription}
       />
       <FlagFieldRow
         label='TMK'
-        tooltip='Timer interrupt mask'
+        tooltip='Timer Interrupt Mask'
         value={blinkState?.TMK}
         flagDescriptions={TMKDescription}
       />
@@ -348,28 +348,56 @@ const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
 export const blinkPanelRenderer = () => <BlinkPanel />;
 
 const COMDescription = [
-  "LCDON - Set to turn LCD ON, clear to turn LCD OFF",
+  "LCDON - Set to turn LCD ON, clear to turn LCD OFF", // bit 0
   "VPPON - Set to turn programming voltage ON",
   "RAMS - Binding of lower 8K of segment 0: 0=bank 0, 1=bank 20",
   "PROGRAM - Set to enable EPROM programming",
   "RESTIM - Set to reset the RTC, clear to continue",
   "OVERP - Set to overprogram EPROMs",
   "SBIT - SRUN=0: 0=low, 1=high; SRUN=1: 0=3200 Hz, 1=TxD",
-  "SRUN - Speaker source (0=SBIT, 1=TxD or 3200 Hz)"
+  "SRUN - Speaker source (0=SBIT, 1=TxD or 3200 Hz)" // bit 7
 ];
 
 const INTDescription = [
-  // TODO
+  "GINT - If clear (0), no interrupts get out of Blink", // bit 0
+  "TIME - If set (1), Real Time Clock interrupts are enabled",
+  "KEY - If set (1), keyboard interrupts (Snooze or Coma) are enabled",
+  "BTL - If set (1), battery low interrupts are enabled",
+  "UART - If set (1), UART interrupts are enabled",
+  "FLAP - If set (1), flap interrupts are enabled",
+  "A19 - If set (1), an active high on A19 will exit Coma",
+  "KWAIT - If set (1), reading the keyboard will Snooze CPU" // bit 7
 ];
 
 const STADescription = [
-  // TODO
+  "TIME - If set (1), an enabled TIME interrupt is active", // bit 0
+  "Not Used",
+  "KEY - If set (1), a column has gone low in snooze (or coma)",
+  "BTL - If set (1), battery low pin is active",
+  "UART - If set (1), an enabled UART interrupt is active",
+  "FLAP - If set (1), positive edge has occurred on FLAPOPEN",
+  "A19 - If set (1), high level on A19 occurred during coma",
+  "FLAPOPEN - If set (1), flap open else flap closed" // bit 7
 ];
 
 const TSTADescription = [
-  // TODO
+  "TICK - If set (1), a tick interrupt has occurred", // bit 0
+  "SEC - If Set (1), a second interrupt has occurred",
+  "MIN - If set (1), a minute interrupt has occurred",
+  "Not Used",
+  "Not Used",
+  "Not Used",
+  "Not Used",
+  "Not Used", // bit 7
 ];
 
 const TMKDescription = [
-  // TODO
+  "TICK - If set (1), enable tick interrupts", // bit 0
+  "SEC - If Set (1), enable second interrupts",
+  "MIN - If set (1), enable minute interrupts",
+  "Not Used",
+  "Not Used",
+  "Not Used",
+  "Not Used",
+  "Not Used", // bit 7
 ];
