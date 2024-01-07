@@ -1,5 +1,7 @@
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 import { DisassemblyItem, FetchResult, MemorySection, intToX2 } from "./disassembly-helper";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 
 /**
  * Custom disassembler for the Cambridge Z88 model
@@ -13,7 +15,8 @@ export class Z88CustomDisassembler
 
   /**
    * Klive passes the disassembly API to the custom disassembler
-   * @param api
+   * @param api API to use for disassembly
+   * @param machine The virtual machine instance
    */
   setDisassemblyApi(api: IDisassemblyApi): void {
     this._api = api;
@@ -42,6 +45,7 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
+        partition: this.getExtendedAddressFor?.(peekResult.offset) ?? undefined,
         opCodes: `${intToX2(peekResult.opcode)} ${intToX2(opByte)}`,
         instruction: `fpp ${apiName}`,
       };
@@ -62,6 +66,7 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
+        partition: this.getExtendedAddressFor?.(peekResult.offset) ?? undefined,
         opCodes,
         instruction: `oz ${apiName}`,
       };
@@ -98,6 +103,7 @@ export class Z88CustomDisassembler
         } while (ch);
         const strItem: DisassemblyItem = {
           address: peekResult.offset,
+          partition: this.getExtendedAddressFor?.(peekResult.offset) ?? undefined,
           opCodes: "",
           instruction: str,
         };
@@ -119,6 +125,7 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
+        partition: this.getExtendedAddressFor?.(peekResult.offset) ?? undefined,
         opCodes: `${intToX2(peekResult.opcode)} ${intToX2(byte1)} ${intToX2(
           byte2
         )} ${intToX2(byte3)}`,
@@ -135,6 +142,7 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
+        partition: this.getExtendedAddressFor?.(peekResult.offset) ?? undefined,
         opCodes: `${intToX2(peekResult.opcode)}`,
         instruction: "rst oz_mbp",
       };
@@ -152,6 +160,14 @@ export class Z88CustomDisassembler
    * @param _item Disassembled item
    */
   afterInstruction(_item: DisassemblyItem): void {}
+
+  /**
+   * Gets the extended address for the specified address, if there is any
+   * @param address Address to get the extended address for
+   */
+  getExtendedAddressFor(address: number): number | string | undefined {
+    return "BA";
+  }
 }
 
 /**

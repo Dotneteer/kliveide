@@ -5,7 +5,7 @@ import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   toHexa4,
   writeSuccessMessage,
-  commandSuccess,
+  commandSuccess
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import {
@@ -15,7 +15,10 @@ import {
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
 
 let disassemblyIndex = 1;
 
@@ -47,7 +50,8 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     const lines = buffer.getContents();
     const bufferText = buffer.getBufferText();
     const title = `Result of running '${context.commandtext.trim()}'`;
-    const documentHubService = context.service.projectService.getActiveDocumentHubService();
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
     await documentHubService.openDocument(
       {
         id: `disOutput-${disassemblyIndex++}`,
@@ -73,15 +77,16 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
 
   async getDisassembly (context: IdeCommandContext): Promise<OutputPaneBuffer> {
     // --- Get the memory
-    const response = await context.messenger.sendMessage({
+    const getMemoryResponse = await context.messenger.sendMessage({
       type: "EmuGetMemory"
     });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetMemory call failed: ${response.message}`);
-    } else if (response.type !== "EmuGetMemoryResponse") {
-      reportUnexpectedMessageType(response.type);
+    if (getMemoryResponse.type === "ErrorResponse") {
+      reportMessagingError(`EmuGetMemory call failed: ${getMemoryResponse.message}`);
+    } else if (getMemoryResponse.type !== "EmuGetMemoryResponse") {
+      reportUnexpectedMessageType(getMemoryResponse.type);
     } else {
-      const memory = response.memory;
+      const memory = getMemoryResponse.memory;
+      const partitions = getMemoryResponse.partitions;
 
       // --- Specify memory sections to disassemble
       const memSections: MemorySection[] = [];
@@ -96,7 +101,12 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       );
 
       // --- Disassemble the specified memory segments
-      const disassembler = new Z80Disassembler(memSections, memory, {});
+      const disassembler = new Z80Disassembler(
+        memSections,
+        memory,
+        partitions,
+        {}
+      );
       const disassItems = (
         await disassembler.disassemble(this.startAddress, this.endAddress)
       ).outputItems;

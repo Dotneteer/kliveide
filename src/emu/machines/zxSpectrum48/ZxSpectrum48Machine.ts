@@ -35,7 +35,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   constructor (public readonly modelInfo?: MachineModel) {
     super();
-    
+
     // --- Set up machine attributes
     this._is16KModel = modelInfo?.config?.[MC_MEM_SIZE] === 16;
     const isNtsc = modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
@@ -156,6 +156,13 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
     throw new Error(
       "This operation is not supported in the ZX Spectrum 48K model"
     );
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return [];
   }
 
   /**

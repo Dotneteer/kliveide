@@ -34,6 +34,7 @@ export class Z80Disassembler {
   constructor (
     public readonly memorySections: MemorySection[],
     public readonly memoryContents: Uint8Array,
+    public readonly partitions?: number[],
     public readonly options?: DisassemblyOptions
   ) {
     this.memorySections = memorySections;
@@ -144,6 +145,7 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
+        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress) ?? undefined,
         address: startAddress,
         instruction: ".defb " + bytes.join(", ")
       });
@@ -173,6 +175,7 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
+        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress) ?? undefined,
         address: startAddress,
         instruction: ".defw " + words.join(", ")
       });
@@ -190,6 +193,7 @@ export class Z80Disassembler {
    */
   private _generateSkipOutput (section: MemorySection): void {
     this._output.addItem({
+      partition: this._customDisassembler?.getExtendedAddressFor?.(section.startAddress) ?? undefined,
       address: section.startAddress,
       instruction: `.skip $${intToX4(
         section.endAddress - section.startAddress + 1
@@ -281,7 +285,7 @@ export class Z80Disassembler {
   private _disassembleIndexedOperation (): string | undefined {
     if (this._opCode !== 0xcb) {
       let decodeInfo =
-        indexedInstrcutions[this._opCode] ?? standardInstructions[this._opCode];
+        indexedInstructions[this._opCode] ?? standardInstructions[this._opCode];
       if (decodeInfo && decodeInfo.indexOf("^D") >= 0) {
         // --- The instruction used displacement, get it
         this._displacement = this._fetch();
@@ -399,6 +403,7 @@ export class Z80Disassembler {
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
+      partition: this._customDisassembler?.getExtendedAddressFor?.(address) ?? undefined,
       address,
       opCodes: this._currentOpCodes,
       instruction: "nop"
@@ -549,12 +554,12 @@ export class Z80Disassembler {
 /**
  * 8-bit register pairs for the ^s pragma
  */
-export const q8Regs: string[] = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
+const q8Regs: string[] = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
 
 /**
  * Disassembly keywords that cannot be used as label names or other symbols
  */
-export const disasmKeywords: string[] = [
+const disasmKeywords: string[] = [
   "A",
   "B",
   "C",
@@ -650,7 +655,7 @@ export const disasmKeywords: string[] = [
 /**
  * Disassembly stumps for standard instrcutions
  */
-export const standardInstructions: string[] = [
+const standardInstructions: string[] = [
   /* 0x00 */ "nop",
   /* 0x01 */ "ld bc,^W",
   /* 0x02 */ "ld (bc),a",
@@ -927,7 +932,7 @@ export const standardInstructions: string[] = [
 /**
  * Extended instructions available for ZX Spectrum Next only
  */
-export const z80NextSet: { [key: number]: boolean } = {
+const z80NextSet: { [key: number]: boolean } = {
   0x23: true,
   0x24: true,
   0x27: true,
@@ -959,7 +964,7 @@ export const z80NextSet: { [key: number]: boolean } = {
   0xbc: true
 };
 
-export const extendedInstructions: { [key: number]: string } = {
+const extendedInstructions: { [key: number]: string } = {
   0x23: "swapnib",
   0x24: "mirror a",
   0x27: "test ^B",
@@ -1069,7 +1074,7 @@ export const extendedInstructions: { [key: number]: string } = {
   0xbc: "lddrx"
 };
 
-export const indexedInstrcutions: { [key: number]: string } = {
+const indexedInstructions: { [key: number]: string } = {
   0x09: "add ^X,bc",
   0x19: "add ^X,de",
   0x21: "ld ^X,^W",
@@ -1156,85 +1161,3 @@ export const indexedInstrcutions: { [key: number]: string } = {
   0xe9: "jp (^X)",
   0xf9: "ld sp,^X"
 };
-
-/**
- * RST 28 calculations
- */
-export const calcOps: { [key: number]: string } = {
-  0x00: "jump-true",
-  0x01: "exchange",
-  0x02: "delete",
-  0x03: "subtract",
-  0x04: "multiply",
-  0x05: "division",
-  0x06: "to-power",
-  0x07: "or",
-  0x08: "no-&-no",
-  0x09: "no-l-eql",
-  0x0a: "no-gr-eq",
-  0x0b: "nos-neql",
-  0x0c: "no-grtr",
-  0x0d: "no-less",
-  0x0e: "nos-eql",
-  0x0f: "addition",
-  0x10: "str-&-no",
-  0x11: "str-l-eql",
-  0x12: "str-gr-eq",
-  0x13: "strs-neql",
-  0x14: "str-grtr",
-  0x15: "str-less",
-  0x16: "strs-eql",
-  0x17: "strs-add",
-  0x18: "val$",
-  0x19: "usr-$",
-  0x1a: "read-in",
-  0x1b: "negate",
-  0x1c: "code",
-  0x1d: "val",
-  0x1e: "len",
-  0x1f: "sin",
-  0x20: "cos",
-  0x21: "tan",
-  0x22: "asn",
-  0x23: "acs",
-  0x24: "atn",
-  0x25: "ln",
-  0x26: "exp",
-  0x27: "int",
-  0x28: "sqr",
-  0x29: "sgn",
-  0x2a: "abs",
-  0x2b: "peek",
-  0x2c: "in",
-  0x2d: "usr-no",
-  0x2e: "str$",
-  0x2f: "chr$",
-  0x30: "not",
-  0x31: "duplicate",
-  0x32: "n-mod-m",
-  0x33: "jump",
-  0x34: "stk-data",
-  0x35: "dec-jr-nz",
-  0x36: "less-0",
-  0x37: "greater-0",
-  0x38: "end-calc",
-  0x39: "get-argt",
-  0x3a: "truncate",
-  0x3b: "fp-calc-2",
-  0x3c: "e-to-fp",
-  0x3d: "re-stack",
-  0x3e: "series-06|series-08|series-0C",
-  0x3f: "stk-zero|stk-one|stk-half|stk-pi-half|stk-ten",
-  0x40: "st-mem-0|st-mem-1|st-mem-2|st-mem-3|st-mem-4|st-mem-5",
-  0x41: "get-mem-0|get-mem-1|get-mem-2|get-mem-3|get-mem-4|get-mem-5"
-};
-
-/**
- * Spectrum-specific disassembly mode
- */
-export enum SpectrumSpecificMode {
-  None = 0,
-  Spectrum48Rst08,
-  Spectrum48Rst28,
-  Spectrum128Rst8
-}

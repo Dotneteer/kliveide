@@ -40,7 +40,13 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     this.tapeDevice.reset();
     this.floppyDevice.reset();
     this._frameCompleted = true;
-    (this.floppyDevice as unknown as IFloppyControllerDeviceTest).disableRandomSeek = true;
+    (
+      this.floppyDevice as unknown as IFloppyControllerDeviceTest
+    ).disableRandomSeek = true;
+  }
+
+  getCurrentPartitions (): number[] {
+    return [];
   }
 
   /**

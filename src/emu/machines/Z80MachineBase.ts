@@ -248,6 +248,31 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract injectCodeToRun(codeToInject: CodeToInject): number;
 
   /**
+   * Get the 64K of addressable memory of the ZX Spectrum computer
+   * @returns Bytes of the flat memory
+   */
+  abstract get64KFlatMemory(): Uint8Array;
+
+  /**
+   * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
+   * @param index Partition index
+   *
+   * Less than zero: ROM pages
+   * 0..7: RAM bank with the specified index
+   */
+  abstract get16KPartition(index: number): Uint8Array;
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  abstract getCurrentPartitions(): number[];
+
+  /**
+   * Indicates if the machine's operating system is initialized
+   */
+  abstract get isOsInitialized(): boolean;
+
+  /**
    * Registers and event to execute at the specified tact
    * @param eventTact Tact when the event should be executed
    * @param eventFn Event function with event data passed

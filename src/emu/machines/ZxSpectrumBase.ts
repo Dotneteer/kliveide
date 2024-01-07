@@ -131,21 +131,6 @@ export abstract class ZxSpectrumBase
   abstract readScreenMemory(offset: number): number;
 
   /**
-   * Get the 64K of addressable memory of the ZX Spectrum computer
-   * @returns Bytes of the flat memory
-   */
-  abstract get64KFlatMemory(): Uint8Array;
-
-  /**
-   * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
-   * @param index Partition index
-   *
-   * Less than zero: ROM pages
-   * 0..7: RAM bank with the specified index
-   */
-  abstract get16KPartition(index: number): Uint8Array;
-
-  /**
    * Gets the audio samples rendered in the current frame
    */
   abstract getAudioSamples(): number[];

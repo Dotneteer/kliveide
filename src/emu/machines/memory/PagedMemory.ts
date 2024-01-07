@@ -46,6 +46,13 @@ export class PagedMemory {
   }
 
   /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getPartitions(): number[] {
+    return this.bankData.map((b) => b.partition);
+  }
+
+  /**
    * Sets the page information for the specified 8K memory page
    * @param pageIndex Page index
    * @param offset Memory offset for the page

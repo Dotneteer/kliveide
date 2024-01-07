@@ -1,3 +1,4 @@
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { DisassemblyItem, FetchResult, MemorySection } from "./disassembly-helper";
 
 /**
@@ -65,7 +66,8 @@ export interface IDisassemblyApi {
 export interface ICustomDisassembler {
   /**
    * Klive passes the disassembly API to the custom disassembler
-   * @param api
+   * @param api API to use for disassembly
+   * @param machine The virtual machine instance
    */
   setDisassemblyApi(api: IDisassemblyApi): void;
 
@@ -90,4 +92,10 @@ export interface ICustomDisassembler {
    * @param item Disassembled item
    */
   afterInstruction(item: DisassemblyItem): void;
+
+  /**
+   * Gets the extended address for the specified address, if there is any
+   * @param address Address to get the extended address for
+   */
+  getExtendedAddressFor?: (address: number) => number | string | undefined;
 }

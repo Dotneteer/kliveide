@@ -365,9 +365,10 @@ export async function processMainToEmuMessages (
         iy: m.iy,
         ir: m.ir,
         wz: m.wz,
+        partitions: controller.machine.getCurrentPartitions(),
         memBreakpoints: controller.debugSupport.breakpoints,
         osInitialized:
-          (controller.machine as ZxSpectrumBase)?.isOsInitialized ?? false
+          controller.machine?.isOsInitialized ?? false
       };
     }
 

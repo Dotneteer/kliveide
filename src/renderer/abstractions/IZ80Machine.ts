@@ -19,7 +19,6 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   machineId: string;
 
-
   /**
    * The machine configuration
    */
@@ -170,4 +169,27 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * @param command Command to execute
    */
   executeCustomCommand(command: string): Promise<void>;
+
+  /**
+   * Get the 64K of addressable memory of the computer
+   * @returns Bytes of the flat memory
+   */
+  get64KFlatMemory(): Uint8Array;
+
+  /**
+   * Get the specified 16K partition (page or bank) of the computer
+   * @param index Partition index
+   * @returns Bytes of the partition
+   */
+  get16KPartition(index: number): Uint8Array;
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions(): number[];
+
+  /**
+   * Indicates if the machine's operating system is initialized
+   */
+  get isOsInitialized(): boolean;
 }

@@ -1,7 +1,6 @@
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { MF_TAPE_SUPPORT } from "./constants";
 
 /**
  * This type stores common information about a particular emulated machine

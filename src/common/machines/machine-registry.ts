@@ -13,7 +13,8 @@ import {
   MF_BLINK,
   MF_PSG,
   MC_Z88_INTROM,
-  CT_DISASSEMBLER
+  CT_DISASSEMBLER,
+  CT_DISASSEMBLER_VIEW
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
@@ -134,7 +135,11 @@ export const machineRegistry: MachineInfo[] = [
       }
     ],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler()
+      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
     }
   }
 ];

@@ -91,7 +91,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
         default:
           this.hasFloppy = false;
           this.hasDriveB = false;
-          break;  
+          break;
       }
 
       // --- Set up machine attributes
@@ -267,6 +267,13 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    */
   get16KPartition (index: number): Uint8Array {
     return this.memory.get16KPartition(index);
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return this.memory.getPartitions();
   }
 
   /**

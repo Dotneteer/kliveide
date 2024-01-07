@@ -81,6 +81,7 @@ const BreakpointsPanel = () => {
                 new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)
               ],
               mem,
+              undefined,
               {
                 noLabelPrefix: false
               }
