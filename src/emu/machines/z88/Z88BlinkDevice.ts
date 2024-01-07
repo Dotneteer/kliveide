@@ -45,7 +45,8 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
 
   /**
    * Slot behavior for slots #0-3 (3 byte values)
-   * (Slot 0 is the chip socket for a 512K ROM or Flash chip)
+   * (Slot 0 is the chip socket for a 128K ROM or optionally a 512K Flash chip, slots
+   * 1 - 3 are for insertable memory cards with size up to 1Mb)
    */
   private readonly _slotTypes: CardType[] = [
     CardType.None,
