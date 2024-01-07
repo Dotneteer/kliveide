@@ -1,16 +1,44 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./AddressInput.module.scss";
 import { TooltipFactory } from "./Tooltip";
+import classnames from "@renderer/utils/classnames";
+import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
   label: string;
+  eightBit?: boolean;
+  initialValue?: number;
+  clearOnEnter?: boolean;
   onAddressSent?: (addr: number) => Promise<void>;
 };
 
-export const AddressInput = ({ label, onAddressSent }: Props) => {
+export const AddressInput = ({
+  label,
+  eightBit,
+  initialValue,
+  clearOnEnter = true,
+  onAddressSent
+}: Props) => {
   const inputRef = useRef<HTMLInputElement>();
-  const spanRef= useRef<HTMLSpanElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
   const [radix, setRadix] = useState(16);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      if (inputRef.current && initialValue !== undefined) {
+        console.log("change to initial value", initialValue)
+        inputRef.current.value =
+          radix === 16
+            ? eightBit
+              ? toHexa2(initialValue)
+              : toHexa4(initialValue)
+            : initialValue.toString(10);
+      }
+    }
+  });
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (
       !(
@@ -27,25 +55,33 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
       e.preventDefault();
     }
 
-    if ((e.code === "Enter" || e.code == "NumpadEnter") && inputRef.current.value?.trim()) {
+    if (
+      (e.code === "Enter" || e.code == "NumpadEnter") &&
+      inputRef.current.value?.trim()
+    ) {
       setTimeout(async () => {
         const address = parseInt(inputRef.current.value.trim(), radix);
         if (!isNaN(address)) {
           if (onAddressSent) {
             await onAddressSent(address);
           }
-          inputRef.current.value = "";
+          if (clearOnEnter) {
+            inputRef.current.value = "";
+          }
         }
       });
     }
   };
+
   return (
     <div className={styles.addressInput}>
       <span className={styles.headerLabel}>{label}</span>
       <input
         ref={inputRef}
-        className={styles.addressPrompt}
-        maxLength={radix === 10 ? 5 : 4}
+        className={classnames(styles.addressPrompt, {
+          [styles.eightBit]: eightBit
+        })}
+        maxLength={radix === 10 ? (eightBit ? 3 : 5) : eightBit ? 2 : 4}
         onKeyDown={handleKeyPress}
       />
       <span
@@ -61,13 +97,15 @@ export const AddressInput = ({ label, onAddressSent }: Props) => {
           } else {
             const value = parseInt(inputRef.current.value.trim(), 10);
             if (!isNaN(value))
-            inputRef.current.value = value.toString(16);
+              inputRef.current.value = eightBit
+                ? toHexa2(value)
+                : toHexa4(value);
             setRadix(16);
           }
           inputRef.current.focus();
         }}
       >
-        {radix === 16 ? "16" : "10"}
+        {radix === 16 ? "$" : "D"}
         <TooltipFactory
           refElement={spanRef.current}
           placement='right'

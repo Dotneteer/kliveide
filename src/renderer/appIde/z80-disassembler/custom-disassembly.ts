@@ -96,6 +96,7 @@ export interface ICustomDisassembler {
   /**
    * Gets the extended address for the specified address, if there is any
    * @param address Address to get the extended address for
+   * @param partitions Current memory partitions
    */
-  getExtendedAddressFor?: (address: number) => number | string | undefined;
+  getExtendedAddressFor?: (address: number, partitions: number[]) => number | string | undefined;
 }

@@ -145,7 +145,7 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
-        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress) ?? undefined,
+        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress, this.partitions) ?? undefined,
         address: startAddress,
         instruction: ".defb " + bytes.join(", ")
       });
@@ -175,7 +175,7 @@ export class Z80Disassembler {
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
-        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress) ?? undefined,
+        partition: this._customDisassembler?.getExtendedAddressFor?.(startAddress, this.partitions) ?? undefined,
         address: startAddress,
         instruction: ".defw " + words.join(", ")
       });
@@ -193,7 +193,7 @@ export class Z80Disassembler {
    */
   private _generateSkipOutput (section: MemorySection): void {
     this._output.addItem({
-      partition: this._customDisassembler?.getExtendedAddressFor?.(section.startAddress) ?? undefined,
+      partition: this._customDisassembler?.getExtendedAddressFor?.(section.startAddress, this.partitions) ?? undefined,
       address: section.startAddress,
       instruction: `.skip $${intToX4(
         section.endAddress - section.startAddress + 1
@@ -403,7 +403,7 @@ export class Z80Disassembler {
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
-      partition: this._customDisassembler?.getExtendedAddressFor?.(address) ?? undefined,
+      partition: this._customDisassembler?.getExtendedAddressFor?.(address, this.partitions) ?? undefined,
       address,
       opCodes: this._currentOpCodes,
       instruction: "nop"

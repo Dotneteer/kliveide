@@ -17,7 +17,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
-import { toHexa4 } from "../services/ide-commands";
+import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import {
   DisassemblyItem,
@@ -39,7 +39,7 @@ import {
   CT_DISASSEMBLER,
   CT_DISASSEMBLER_VIEW,
   MF_BANK,
-  MF_ROM,
+  MF_ROM
 } from "@common/machines/constants";
 import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 
@@ -60,6 +60,7 @@ const DisassemblyPanel = ({
   const dispatch = useDispatch();
   const { messenger } = useRendererContext();
   const documentHubService = useDocumentHubService();
+  const headerRef = useRef<HTMLDivElement>(null);
 
   const [topAddress, setTopAddress] = useState(viewState?.topAddress ?? 0);
 
@@ -302,7 +303,7 @@ const DisassemblyPanel = ({
 
   return (
     <div className={styles.disassemblyPanel}>
-      <div className={styles.header}>
+      <div ref={headerRef} className={styles.header} tabIndex={0}>
         <SmallIconButton
           iconName='refresh'
           title={"Refresh now"}
@@ -374,6 +375,8 @@ const DisassemblyPanel = ({
           onAddressSent={async address => {
             setTopAddress(address);
             setScrollVersion(scrollVersion + 1);
+            await new Promise(resolve => setTimeout(resolve, 20));
+            if (headerRef.current) headerRef.current.focus();
           }}
         />
       </div>
@@ -433,12 +436,21 @@ const DisassemblyPanel = ({
                   current={execPoint}
                   disabled={breakpoint?.disabled ?? false}
                 />
-                {bankInfo && (
+                {bankInfo && viewMode === "full" && (
                   <>
+                    <LabelSeparator width={4} />
                     <Label
-                      text={`${item?.partition ? item.partition + ":" : ""}`}
-                      width={40}
+                      text={item?.partition?.toString() ?? ""}
+                      width={18}
                     />
+                    <Label text=':' width={6} />
+                  </>
+                )}
+                {bankInfo && viewMode !== "full" && (
+                  <>
+                    <LabelSeparator width={4} />
+                    <Label text={toHexa2(ramBank ?? 0)} width={18} />
+                    <Label text=':' width={6} />
                   </>
                 )}
                 <LabelSeparator width={4} />
