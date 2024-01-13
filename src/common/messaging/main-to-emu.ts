@@ -256,6 +256,9 @@ export interface EmuGetMemoryResponse extends MessageBase {
   iy: number;
   ir: number;
   wz: number;
+  partitionLabels: string[];
+  selectedRom?: number;
+  selectedBank?: number;
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
 }

@@ -40,19 +40,6 @@ export interface IZ88Machine extends IZ80Machine {
   beeperDevice: IZ88BeeperDevice;
 
   /**
-   * Get the 64K of addressable memory of the Z88 computer
-   * @returns Bytes of the flat memory
-   */
-  get64KFlatMemory(): Uint8Array;
-
-  /**
-   * Get the specified 16K partition (page or bank) of the Z88 computer
-   * @param index Partition index
-   * @returns Bytes of the partition
-   */
-  get16KPartition(index: number): Uint8Array;
-
-  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

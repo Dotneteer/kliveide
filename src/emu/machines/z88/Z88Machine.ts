@@ -112,6 +112,20 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return this.memory.getPartitions();
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels (): string[] {
+    return this.memory.getPartitionLabels();
+  }
+
+  /**
    * Sets up the machine (async)
    */
   async setup (): Promise<void> {

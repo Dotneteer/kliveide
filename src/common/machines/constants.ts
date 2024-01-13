@@ -27,3 +27,4 @@ export const MF_BLINK = "blink";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
+export const CT_DISASSEMBLER_VIEW = "disassemblyView";

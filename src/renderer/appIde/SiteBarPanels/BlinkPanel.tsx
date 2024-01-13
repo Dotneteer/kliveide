@@ -18,9 +18,9 @@ import styles from "./BlinkPanel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 
 const FLAG_WIDTH = 12;
-const LAB_WIDTH = 40;
+const LAB_WIDTH = 48;
 const VALUE_WIDTH = 40;
-const KEY_LAB_WIDTH = 38;
+const KEY_LAB_WIDTH = 46;
 
 const BlinkPanel = () => {
   const { messenger } = useRendererContext();
