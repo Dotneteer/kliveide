@@ -132,8 +132,9 @@ export class MachineController implements IMachineController {
    * Start the machine in debug mode.
    */
   async startDebug (): Promise<void> {
-    await this.sendOutput("Machine started in debug mode", "green");
     this.isDebugging = true;
+    this.machine?.awakeCpu();
+    await this.sendOutput("Machine started in debug mode", "green");
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
   }
 
@@ -218,6 +219,7 @@ export class MachineController implements IMachineController {
    */
   async stepInto (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -230,6 +232,7 @@ export class MachineController implements IMachineController {
    */
   async stepOver (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -242,6 +245,7 @@ export class MachineController implements IMachineController {
    */
   async stepOut (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
