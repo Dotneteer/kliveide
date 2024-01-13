@@ -199,6 +199,7 @@ export interface EmuGetCpuStateResponse extends MessageBase {
   iff2: boolean;
   sigINT: boolean;
   halted: boolean;
+  snoozed: boolean;
 }
 
 /**

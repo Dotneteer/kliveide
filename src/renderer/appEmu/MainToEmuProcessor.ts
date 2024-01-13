@@ -151,7 +151,8 @@ export async function processMainToEmuMessages (
         iff1: cpu.iff1,
         iff2: cpu.iff2,
         sigINT: cpu.sigINT,
-        halted: cpu.halted
+        halted: cpu.halted,
+        snoozed: cpu.isCpuSnoozed()
       };
     }
 
