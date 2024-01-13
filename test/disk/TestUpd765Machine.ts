@@ -142,22 +142,33 @@ export class TestUpd765Machine extends ZxSpectrumBase {
   readScreenMemory (offset: number): number {
     throw new Error("Method not implemented.");
   }
+
   get64KFlatMemory (): Uint8Array {
     throw new Error("Method not implemented.");
   }
+
   get16KPartition (index: number): Uint8Array {
     throw new Error("Method not implemented.");
   }
+
   getAudioSamples (): number[] {
     throw new Error("Method not implemented.");
   }
+
   get sysVars (): SysVar[] {
     throw new Error("Method not implemented.");
   }
+
   getCodeInjectionFlow (model: string): CodeInjectionFlow {
     throw new Error("Method not implemented.");
   }
+
   setup (): Promise<void> {
     throw new Error("Method not implemented.");
   }
+
+  getCurrentPartitionLabels(): string[] {
+    throw new Error("Method not implemented.");
+  }
+
 }

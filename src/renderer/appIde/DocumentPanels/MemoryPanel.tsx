@@ -26,6 +26,7 @@ import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MachineInfo } from "@common/machines/info-types";
 
 type MemoryViewState = {
   topAddress?: number;
@@ -61,6 +62,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const [prevViewMode, setPrevViewMode] = useState<ViewMode>("rom");
   const [currentRomPage, setCurrentRomPage] = useState<number>();
   const [currentRamBank, setCurrentRamBank] = useState<number>();
+  const partitionLabels = useRef<string[]>([]);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -73,9 +75,8 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
-  const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
-  const romsNum = machineInfo.features?.[MF_ROM] ?? 1;
-  const banksNum = machineInfo.features?.[MF_BANK] ?? 0;
+  const [romsNum, setRomsNum] = useState<number>(); 
+  const [banksNum, setBanksNum] = useState<number>();
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
 
   const refreshInProgress = useRef(false);
@@ -85,7 +86,17 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const vlApi = useRef<VirtualizedListApi>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
   const pointedRegs = useRef<Record<number, string>>({});
-  const showBankInfoOption = machineInfo?.features?.[MF_BANK] ?? false;
+  const [showBankInfoOption, setShowBankInfoOption] = useState(false);
+
+  // --- Respond to machine changes
+  useEffect(() => {
+    const machine = machineRegistry.find(mi => mi.machineId === machineId);
+    const roms = machine.features?.[MF_ROM] ?? 1;
+    const banks = machine.features?.[MF_BANK] ?? 0
+    setRomsNum(roms);
+    setBanksNum(banks);
+    setShowBankInfoOption(roms + banks > 1);
+  }, [machineId]);
 
   // --- Creates the addresses to represent dump sections
   const createDumpSections = (length: number) => {
@@ -125,6 +136,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
         reportUnexpectedMessageType(response.type);
       } else {
         memory.current = response.memory;
+        partitionLabels.current = response.partitionLabels;
 
         // --- Calculate tooltips for pointed addresses
         pointedRegs.current = {};
@@ -361,6 +373,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
               >
                 <DumpSection
                   showPartitions={bankInfo && showBankInfoOption}
+                  partitionLabel={partitionLabels.current?.[memoryItems[idx] >> 13]}
                   address={memoryItems[idx]}
                   memory={memory.current}
                   charDump={charDump}
@@ -369,6 +382,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
                 {twoColumns && (
                   <DumpSection
                     showPartitions={bankInfo && showBankInfoOption}
+                    partitionLabel={partitionLabels.current?.[memoryItems[idx] >> 13]}
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}

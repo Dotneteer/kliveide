@@ -42,7 +42,6 @@ import {
   MF_ROM
 } from "@common/machines/constants";
 import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
-import { MachineInfo } from "@common/machines/info-types";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -68,7 +67,6 @@ const DisassemblyPanel = ({
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
-  const [machineInfo, setMachineInfo] = useState<MachineInfo>();
   const [romsNum, setRomsNum] = useState<number>(); 
   const [banksNum, setBanksNum] = useState<number>();
   const [customDisassembly, setCustomDisassembly] = useState<any>();
@@ -81,7 +79,7 @@ const DisassemblyPanel = ({
     viewState?.autoRefresh ?? true
   );
   const [ram, setRam] = useState(viewState?.ram ?? true);
-  const [screen, setScreen] = useState(viewState?.screen ?? false);
+  const [screen, setScreen] = useState(viewState?.screen ?? true);
   const [pausedPc, setPausedPc] = useState(0);
   const [bankInfo, setBankInfo] = useState(true);
 
@@ -89,7 +87,7 @@ const DisassemblyPanel = ({
   const [showRamOption, setShowRamOption] = useState(false);
   const [showScreenOption, setShowScreenOption] = useState(false);
   const [showBankInfoOption, setShowBankInfoOption] = useState(false);
-  const [segmentedDisassembly, setSegmentedDisassembly] = useState(false);
+  const [segmentedDisassembly, setSegmentedDisassembly] = useState(true);
 
   const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
   const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
@@ -120,16 +118,20 @@ const DisassemblyPanel = ({
   const [scrollVersion, setScrollVersion] = useState(0);
   const [viewVersion, setViewVersion] = useState(0);
 
+  // --- Respond to machine change
   useEffect(() => {
     if (!machineId) return;
     const machine = machineRegistry.find(mi => mi.machineId === machineId);
-    setMachineInfo(machine);
-    setRomsNum(machine.features?.[MF_ROM] ?? 1);
-    setBanksNum(machine.features?.[MF_BANK] ?? 0);
+    const roms = machine.features?.[MF_ROM] ?? 1;
+    const banks = machine.features?.[MF_BANK] ?? 0
+    const showRamOption = machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showRamOption ?? true;
+    const showScreenOption = machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showScreenOption ?? true;
+    setRomsNum(roms);
+    setBanksNum(banks);
     setCustomDisassembly(machine.toolInfo?.[CT_DISASSEMBLER]);
-    setShowRamOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showRamOption ?? true);
-    setShowScreenOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showScreenOption ?? true);
-    setShowBankInfoOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showBankInfoOption ?? true);
+    setShowRamOption(showRamOption);
+    setShowScreenOption(showScreenOption);
+    setShowBankInfoOption(roms + banks > 1);
     setSegmentedDisassembly(showRamOption || showScreenOption);
     (async () => {
       await refreshDisassembly();
@@ -181,6 +183,7 @@ const DisassemblyPanel = ({
             )
           );
         } else if (segmentedDisassembly) {
+          console.log("segmented disassembly");
           // --- Use the memory segments according to the "ram" and "screen" flags
           memSections.push(
             new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
@@ -208,7 +211,6 @@ const DisassemblyPanel = ({
         }
 
         // --- Disassemble the specified memory segments
-        console.log("pl", getMemoryResponse.partitionLabels);
         const disassembler = new Z80Disassembler(
           memSections,
           memory,

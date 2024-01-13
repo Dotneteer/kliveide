@@ -15,12 +15,27 @@ type DumpProps = {
   pointedInfo?: Record<number, string>;
 };
 
-export const DumpSection = ({ showPartitions, partitionLabel, address, memory, charDump, pointedInfo }: DumpProps) => {
+export const DumpSection = ({
+  showPartitions,
+  partitionLabel,
+  address,
+  memory,
+  charDump,
+  pointedInfo
+}: DumpProps) => {
   if (!memory) return null;
 
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
+      {showPartitions && partitionLabel && (
+        <>
+          <LabelSeparator width={4} />
+          <Label text={partitionLabel} width={18} />
+          <Label text=':' width={6} />
+          <LabelSeparator width={4} />
+        </>
+      )}
       <Label text={toHexa4(address)} width={40} />
       <ByteValue
         address={address + 0}
@@ -120,7 +135,7 @@ type ByteValueProps = {
 
 const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
   // --- Do not display non-existing values
-  if (value === undefined) return <div style={{width: 20}}></div>;
+  if (value === undefined) return <div style={{ width: 20 }}></div>;
 
   const ref = useRef<HTMLDivElement>(null);
   const pointedHint = pointedInfo?.[address];
