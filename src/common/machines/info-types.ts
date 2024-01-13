@@ -32,6 +32,11 @@ export type MachineInfo = {
   models?: MachineModel[];
 
   /**
+   * IDs of attached media devices
+   */
+  mediaIds?: string[];
+
+  /**
    * Information about custom tools
    */
   toolInfo?: Record<string, any>;

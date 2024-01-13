@@ -2,12 +2,9 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import {
-  DISK_A_DATA,
   DISK_A_WP,
-  DISK_B_DATA,
   DISK_B_WP,
-  REWIND_REQUESTED,
-  TAPE_DATA
+  REWIND_REQUESTED
 } from "@emu/machines/machine-props";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
@@ -37,6 +34,12 @@ import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
 import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  MEDIA_TAPE
+} from "@common/structs/project-const";
+import { mediaStore } from "@emu/machines/media/media-info";
 
 const borderColors = [
   "Black",
@@ -68,7 +71,11 @@ export async function processMainToEmuMessages (
 
     case "EmuSetMachineType":
       // --- Change the current machine type to a new one
-      await machineService.setMachineType(message.machineId, message.modelId, message.config);
+      await machineService.setMachineType(
+        message.machineId,
+        message.modelId,
+        message.config
+      );
       break;
 
     case "EmuMachineCommand": {
@@ -87,7 +94,7 @@ export async function processMainToEmuMessages (
           break;
         case "reset":
           await controller.cpuReset();
-          break;  
+          break;
         case "restart":
           await controller.restart();
           break;
@@ -212,10 +219,14 @@ export async function processMainToEmuMessages (
     case "EmuGetBlinkState":
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const blinkDevice = (controller.machine as any).blinkDevice as IZ88BlinkDevice;
-      const keyboardDevice = (controller.machine as any).keyboardDevice as IZ88KeyboardDevice;
-      const beeperDevice = (controller.machine as any).beeperDevice as IZ88BeeperDevice;
-      const screenDevice = (controller.machine as any).screenDevice as IZ88ScreenDevice; 
+      const blinkDevice = (controller.machine as any)
+        .blinkDevice as IZ88BlinkDevice;
+      const keyboardDevice = (controller.machine as any)
+        .keyboardDevice as IZ88KeyboardDevice;
+      const beeperDevice = (controller.machine as any)
+        .beeperDevice as IZ88BeeperDevice;
+      const screenDevice = (controller.machine as any)
+        .screenDevice as IZ88ScreenDevice;
       if (!blinkDevice || !keyboardDevice || !beeperDevice || !screenDevice) {
         break;
       }
@@ -255,8 +266,7 @@ export async function processMainToEmuMessages (
         SBR: screenDevice.SBR,
         SCW: screenDevice.SCW,
         SCH: screenDevice.SCH
-      }
-
+      };
 
     case "EmuListBreakpoints": {
       const controller = machineService.getMachineController();
@@ -370,8 +380,7 @@ export async function processMainToEmuMessages (
         selectedRom: controller.machine.getCurrentPartitions()?.[0],
         selectedBank: controller.machine.getCurrentPartitions()?.[6],
         memBreakpoints: controller.debugSupport.breakpoints,
-        osInitialized:
-          controller.machine?.isOsInitialized ?? false
+        osInitialized: controller.machine?.isOsInitialized ?? false
       };
     }
 
@@ -477,9 +486,16 @@ export async function processMainToEmuMessages (
         .filter(b => b);
     }
 
-    // --- Ok, pass the tape file data blocks to the machine
+    // --- Store the tape file in the media store
+    mediaStore.addMedia({
+      id: MEDIA_TAPE,
+      mediaFile: message.file,
+      mediaContents: dataBlocks
+    });
+
+    // --- Pass the tape file data blocks to the machine
     const controller = machineService.getMachineController();
-    controller.machine.setMachineProperty(TAPE_DATA, dataBlocks);
+    controller.machine.setMachineProperty(MEDIA_TAPE, dataBlocks);
 
     // --- Done.
     if (message.confirm) {
@@ -501,12 +517,19 @@ export async function processMainToEmuMessages (
   async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
     // --- Get disk information
     const controller = machineService.getMachineController();
-    const propName = message.diskIndex ? DISK_B_DATA : DISK_A_DATA;
+    const mediaId = message.diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     const drive = message.diskIndex ? "B" : "A";
     // --- Try to parse the disk file
     try {
+      // --- Store the tape file in the media store
+      mediaStore.addMedia({
+        id: mediaId,
+        mediaFile: message.file,
+        mediaContents: message.contents
+      });
+
       // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(propName, message.contents ?? null);
+      controller.machine.setMachineProperty(mediaId, message.contents ?? null);
 
       // --- Done.
       if (message.confirm) {
@@ -543,7 +566,9 @@ export async function processMainToEmuMessages (
   }
 
   // --- Sets or removes write protection
-  function setDiskWriteProtection(message: EmuSetDiskWriteProtectionRequest): void {
+  function setDiskWriteProtection (
+    message: EmuSetDiskWriteProtectionRequest
+  ): void {
     const controller = machineService.getMachineController();
     const propName = message.diskIndex ? DISK_B_WP : DISK_A_WP;
     controller.machine.setMachineProperty(propName, message.protect);

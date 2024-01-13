@@ -5,10 +5,8 @@ import {
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import {
   DISK_A_CHANGES,
-  DISK_A_DATA,
   DISK_A_WP,
   DISK_B_CHANGES,
-  DISK_B_DATA,
   DISK_B_WP
 } from "../machine-props";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
@@ -17,6 +15,7 @@ import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
 import { DiskCrc } from "./DiskCrc";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice
@@ -240,7 +239,7 @@ export class FloppyControllerDevice
     newValue?: any;
   }): void {
     switch (args.propertyName) {
-      case DISK_A_DATA:
+      case MEDIA_DISK_A:
         const newDiskA = args.newValue;
         if (!newDiskA) {
           this.driveA.ejectDisk();
@@ -256,7 +255,7 @@ export class FloppyControllerDevice
         this.driveA.writeProtected = !!args.newValue;
         break;
 
-      case DISK_B_DATA:
+      case MEDIA_DISK_B:
         const newDiskB = args.newValue;
         if (!newDiskB) {
           this.driveB.ejectDisk();
