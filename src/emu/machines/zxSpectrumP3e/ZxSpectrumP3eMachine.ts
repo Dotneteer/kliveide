@@ -73,12 +73,9 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor (store: Store<AppState>, model: MachineModel) {
+  constructor (private readonly store: Store<AppState>, model: MachineModel) {
     try {
       super();
-      store.dispatch(setMediaAction(MEDIA_DISK_A, {}), "emu");
-      store.dispatch(setMediaAction(MEDIA_DISK_B, {}), "emu");
-
       switch (model?.config?.[MC_DISK_SUPPORT]) {
         case 1:
           this.hasFloppy = true;
@@ -227,7 +224,11 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
     // --- Empty the queue of emulated keystrokes
     this.emulatedKeyStrokes.length = 0;
-  }
+
+    // --- Reset media
+    this.setMachineProperty(MEDIA_DISK_A);
+    this.setMachineProperty(MEDIA_DISK_B);
+ }
 
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
