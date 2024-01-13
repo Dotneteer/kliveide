@@ -1,4 +1,3 @@
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,

@@ -154,16 +154,6 @@ export class Z88CustomDisassembler
    * @param _item Disassembled item
    */
   afterInstruction(_item: DisassemblyItem): void {}
-
-  /**
-   * Gets the extended address for the specified address, if there is any
-   * @param address Address to get the extended address for
-   * @param partitions Current memory partitions
-   */
-  getExtendedAddressFor(address: number, partitions: number[]): number | string | undefined {
-    const partition = partitions?.[address >> 13];
-    return partition === undefined ? "" : toHexa2(partition);
-  }
 }
 
 /**

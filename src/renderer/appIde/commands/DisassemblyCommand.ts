@@ -86,7 +86,7 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       reportUnexpectedMessageType(getMemoryResponse.type);
     } else {
       const memory = getMemoryResponse.memory;
-      const partitions = getMemoryResponse.partitions;
+      const partitions = getMemoryResponse.partitionLabels;
 
       // --- Specify memory sections to disassemble
       const memSections: MemorySection[] = [];

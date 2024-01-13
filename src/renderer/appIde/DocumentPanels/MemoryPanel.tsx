@@ -55,6 +55,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
   const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
   const [ramBank, setRamBank] = useState(viewState?.ramBank ?? 0);
+  const [bankInfo, setBankInfo] = useState(true);
 
   // --- These state variables store values for "rom" and "ram" views
   const [prevViewMode, setPrevViewMode] = useState<ViewMode>("rom");
@@ -84,6 +85,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
   const vlApi = useRef<VirtualizedListApi>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
   const pointedRegs = useRef<Record<number, string>>({});
+  const showBankInfoOption = machineInfo?.features?.[MF_BANK] ?? false;
 
   // --- Creates the addresses to represent dump sections
   const createDumpSections = (length: number) => {
@@ -300,6 +302,18 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
           title='Show characters dump?'
           clicked={setCharDump}
         />
+        {showBankInfoOption && (
+          <>
+            <ToolbarSeparator small={true} />
+            <LabeledSwitch
+              value={bankInfo}
+              label='Bank:'
+              title='Display bank information?'
+              clicked={setBankInfo}
+            />
+          </>
+        )}
+
         <ToolbarSeparator small={true} />
         <AddressInput
           label='Go To:'
@@ -346,6 +360,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
                 })}
               >
                 <DumpSection
+                  showPartitions={bankInfo && showBankInfoOption}
                   address={memoryItems[idx]}
                   memory={memory.current}
                   charDump={charDump}
@@ -353,6 +368,7 @@ const MemoryPanel = ({ viewState }: DocumentProps<MemoryViewState>) => {
                 />
                 {twoColumns && (
                   <DumpSection
+                    showPartitions={bankInfo && showBankInfoOption}
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}

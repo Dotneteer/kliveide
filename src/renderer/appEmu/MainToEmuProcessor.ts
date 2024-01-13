@@ -365,7 +365,9 @@ export async function processMainToEmuMessages (
         iy: m.iy,
         ir: m.ir,
         wz: m.wz,
-        partitions: controller.machine.getCurrentPartitions(),
+        partitionLabels: controller.machine.getCurrentPartitionLabels(),
+        selectedRom: controller.machine.getCurrentPartitions()?.[0],
+        selectedBank: controller.machine.getCurrentPartitions()?.[6],
         memBreakpoints: controller.debugSupport.breakpoints,
         osInitialized:
           controller.machine?.isOsInitialized ?? false

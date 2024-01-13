@@ -7,13 +7,15 @@ import { ZxSpectrumChars } from "./char-codes";
 import styles from "./DumpSection.module.scss";
 
 type DumpProps = {
+  showPartitions: boolean;
+  partitionLabel?: string;
   address: number;
   memory: Uint8Array;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
 };
 
-export const DumpSection = ({ address, memory, charDump, pointedInfo }: DumpProps) => {
+export const DumpSection = ({ showPartitions, partitionLabel, address, memory, charDump, pointedInfo }: DumpProps) => {
   if (!memory) return null;
 
   return (

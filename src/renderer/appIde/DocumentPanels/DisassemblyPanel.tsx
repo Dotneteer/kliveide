@@ -42,6 +42,7 @@ import {
   MF_ROM
 } from "@common/machines/constants";
 import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
+import { MachineInfo } from "@common/machines/info-types";
 
 type DisassemblyViewState = {
   topAddress?: number;
@@ -67,10 +68,10 @@ const DisassemblyPanel = ({
   // --- Use these app state variables
   const machineState = useSelector(s => s.emulatorState?.machineState);
   const machineId = useSelector(s => s.emulatorState.machineId);
-  const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
-  const romsNum = machineInfo.features?.[MF_ROM] ?? 1;
-  const banksNum = machineInfo.features?.[MF_BANK] ?? 0;
-  const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
+  const [machineInfo, setMachineInfo] = useState<MachineInfo>();
+  const [romsNum, setRomsNum] = useState<number>(); 
+  const [banksNum, setBanksNum] = useState<number>();
+  const [customDisassembly, setCustomDisassembly] = useState<any>();
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
 
@@ -85,12 +86,10 @@ const DisassemblyPanel = ({
   const [bankInfo, setBankInfo] = useState(true);
 
   // --- Options supported by the current machine
-  const showRamOption =
-    machineInfo.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showRamOption ?? true;
-  const showScreenOption =
-    machineInfo.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showScreenOption ?? true;
-  const showBankInfoOption = machineInfo?.features?.[MF_BANK] ?? false;
-  const segmentedDisassembly = showRamOption || showScreenOption;
+  const [showRamOption, setShowRamOption] = useState(false);
+  const [showScreenOption, setShowScreenOption] = useState(false);
+  const [showBankInfoOption, setShowBankInfoOption] = useState(false);
+  const [segmentedDisassembly, setSegmentedDisassembly] = useState(false);
 
   const [viewMode, setViewMode] = useState(viewState?.viewMode ?? "full");
   const [romPage, setRomPage] = useState(viewState?.romPage ?? 0);
@@ -121,6 +120,22 @@ const DisassemblyPanel = ({
   const [scrollVersion, setScrollVersion] = useState(0);
   const [viewVersion, setViewVersion] = useState(0);
 
+  useEffect(() => {
+    if (!machineId) return;
+    const machine = machineRegistry.find(mi => mi.machineId === machineId);
+    setMachineInfo(machine);
+    setRomsNum(machine.features?.[MF_ROM] ?? 1);
+    setBanksNum(machine.features?.[MF_BANK] ?? 0);
+    setCustomDisassembly(machine.toolInfo?.[CT_DISASSEMBLER]);
+    setShowRamOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showRamOption ?? true);
+    setShowScreenOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showScreenOption ?? true);
+    setShowBankInfoOption(machine.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showBankInfoOption ?? true);
+    setSegmentedDisassembly(showRamOption || showScreenOption);
+    (async () => {
+      await refreshDisassembly();
+    })();
+  }, [machineId]);
+
   // --- This function refreshes the disassembly
   const refreshDisassembly = async () => {
     if (isRefreshing.current) return;
@@ -150,8 +165,8 @@ const DisassemblyPanel = ({
         const memory = getMemoryResponse.memory;
         setPausedPc(getMemoryResponse.pc);
         breakpoints.current = getMemoryResponse.memBreakpoints;
-        setCurrentRomPage(-(getMemoryResponse.partitions?.[0] ?? 0) - 1);
-        setCurrentRamBank(getMemoryResponse.partitions?.[6] ?? 0);
+        setCurrentRomPage(-(getMemoryResponse.selectedRom ?? 0) - 1);
+        setCurrentRamBank(getMemoryResponse.selectedBank ?? 0);
 
         // --- Specify memory sections to disassemble
         const memSections: MemorySection[] = [];
@@ -193,10 +208,11 @@ const DisassemblyPanel = ({
         }
 
         // --- Disassemble the specified memory segments
+        console.log("pl", getMemoryResponse.partitionLabels);
         const disassembler = new Z80Disassembler(
           memSections,
           memory,
-          getMemoryResponse.partitions,
+          getMemoryResponse.partitionLabels,
           {
             noLabelPrefix: false
           }
@@ -436,7 +452,7 @@ const DisassemblyPanel = ({
                   current={execPoint}
                   disabled={breakpoint?.disabled ?? false}
                 />
-                {bankInfo && viewMode === "full" && (
+                {bankInfo && showBankInfoOption && viewMode === "full" && (
                   <>
                     <LabelSeparator width={4} />
                     <Label
@@ -446,10 +462,17 @@ const DisassemblyPanel = ({
                     <Label text=':' width={6} />
                   </>
                 )}
-                {bankInfo && viewMode !== "full" && (
+                {bankInfo && showBankInfoOption && viewMode === "ram" && (
                   <>
                     <LabelSeparator width={4} />
                     <Label text={toHexa2(ramBank ?? 0)} width={18} />
+                    <Label text=':' width={6} />
+                  </>
+                )}
+                {bankInfo && showBankInfoOption && viewMode === "rom" && (
+                  <>
+                    <LabelSeparator width={4} />
+                    <Label text={"R" + (romPage ?? 0)} width={18} />
                     <Label text=':' width={6} />
                   </>
                 )}

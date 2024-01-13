@@ -189,6 +189,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   getCurrentPartitions(): number[];
 
   /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels(): string[];
+
+  /**
    * Indicates if the machine's operating system is initialized
    */
   get isOsInitialized(): boolean;

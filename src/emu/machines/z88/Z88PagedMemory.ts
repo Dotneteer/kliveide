@@ -1,3 +1,4 @@
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { PagedMemory } from "../memory/PagedMemory";
 import { AccessType, IZ88BlinkDevice } from "./IZ88BlinkDevice";
 
@@ -46,5 +47,20 @@ export class Z88PagedMemory extends PagedMemory {
       return;
     }
     this.memory[pageInfo.offset + pageOffset] = data;
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getPartitionLabels (): string[] {
+    return this.bankData.map(b => {
+      if (b.partition === undefined) {
+        return "";
+      }
+      if (b.partition < 0) {
+        return `R${-(b.partition + 1)}`;
+      }
+      return toHexa2(b.partition);
+    });
   }
 }

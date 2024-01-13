@@ -166,6 +166,13 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels (): string[] {
+    return [];
+  }
+
+  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
