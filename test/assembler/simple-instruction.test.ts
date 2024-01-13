@@ -52,14 +52,22 @@ describe("Assembler - simple instructions", () => {
     { source: "ldix", emit: 0xeda4 },
     { source: "ldws", emit: 0xeda5 },
     { source: "ldirx", emit: 0xedb4 },
+    { source: "lirx", emit: 0xedb4 },
     { source: "lddx", emit: 0xedac },
     { source: "lddrx", emit: 0xedbc },
+    { source: "ldrx", emit: 0xedbc },
     { source: "ldpirx", emit: 0xedb7 },
+    { source: "lprx", emit: 0xedb7 },
     { source: "outinb", emit: 0xed90 },
+    { source: "otib", emit: 0xed90 },
     { source: "swapnib", emit: 0xed23 },
+    { source: "swap", emit: 0xed23 },
     { source: "pixeldn", emit: 0xed93 },
+    { source: "pxdn", emit: 0xed93 },
     { source: "pixelad", emit: 0xed94 },
-    { source: "setae", emit: 0xed95 }
+    { source: "pxad", emit: 0xed94 },
+    { source: "setae", emit: 0xed95 },
+    { source: "stae", emit: 0xed95 }
   ];
   nextInstructions.forEach(inst => {
     it(inst.source, async () => {
