@@ -56,6 +56,7 @@ export interface MainCreateKliveProjectRequest extends MessageBase {
   type: "MainCreateKliveProject";
   machineId: string;
   modelId?: string;
+  templateId: string;
   projectName: string;
   projectFolder?: string;
 }
@@ -273,6 +274,14 @@ export interface MainCreateDiskFileRequest extends MessageBase {
 }
 
 /**
+ * The client wants to create a disk file
+ */
+export interface MainGetTemplateDirsRequest extends MessageBase {
+  type: "MainGetTemplateDirs";
+  machineId: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -359,6 +368,14 @@ export interface MainCreateDiskFileResponse extends MessageBase {
   type: "MainCreateDiskFileResponse";
   path?: string;
   errorMessage?: string;
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainGetTemplateDirsResponse extends MessageBase {
+  type: "MainGetTemplateDirsResponse";
+  dirs: string[];
 }
 
 

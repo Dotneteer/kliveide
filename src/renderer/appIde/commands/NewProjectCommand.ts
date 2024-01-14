@@ -13,17 +13,19 @@ import {
 export class NewProjectCommand extends IdeCommandBase {
   readonly id = "newp";
   readonly description = "Creates a new Klive project.";
-  readonly usage = "newp <machine ID> <project name> [<project folder>]";
+  readonly usage = "newp <machine ID> <project name> [<template>] [<project folder>]";
   readonly aliases = ["np"];
 
   private machineId: string;
   private modelId: string;
   private projectName: string;
+  private templateId: string;
   private projectFolder: string;
 
   prepareCommand (): void {
     delete this.machineId;
     delete this.modelId;
+    delete this.templateId;
     delete this.projectName;
     delete this.projectFolder;
   }
@@ -33,7 +35,7 @@ export class NewProjectCommand extends IdeCommandBase {
   ): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length !== 2 && args.length !== 3) {
-      return validationError("This command must use 2 or 3 arguments");
+      return validationError("This command must use 2 to 4 arguments");
     }
 
     // --- Extract machine ID
@@ -58,7 +60,10 @@ export class NewProjectCommand extends IdeCommandBase {
     // --- Extract project name
     this.projectName = args[1].text;
     if (args.length > 2) {
-      this.projectFolder = args[2].text;
+      this.templateId = args[2].text;
+      if (args.length > 3) {
+        this.projectFolder = args[3].text;
+      }
     }
     return [];
   }
@@ -68,6 +73,7 @@ export class NewProjectCommand extends IdeCommandBase {
       type: "MainCreateKliveProject",
       machineId: this.machineId,
       modelId: this.modelId,
+      templateId: this.templateId ?? "default",
       projectName: this.projectName,
       projectFolder: this.projectFolder
     });

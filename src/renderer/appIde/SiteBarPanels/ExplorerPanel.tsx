@@ -597,7 +597,7 @@ const ExplorerPanel = () => {
 
         <VirtualizedListView
           items={visibleNodes}
-          approxSize={20}
+          approxSize={24}
           fixItemHeight={true}
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
