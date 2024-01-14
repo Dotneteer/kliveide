@@ -62,7 +62,11 @@ export async function createKliveProject (
 ): Promise<ProjectCreationResult> {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId, templateId);
+  const templateFolder = path.join(
+    resolvePublicFilePath(PROJECT_TEMPLATES),
+    machineId,
+    templateId
+  );
 
   try {
     // --- Check if the folder exists
@@ -94,7 +98,7 @@ export async function createKliveProject (
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    const project = {...await getKliveProjectStructure(), ...mergedProps};
+    const project = { ...(await getKliveProjectStructure()), ...mergedProps };
     project.machineType = machineId;
     project.modelId = modelId;
     project.config = getModelConfig(machineId, modelId);
@@ -307,12 +311,18 @@ export function resolveHomeFilePath (toResolve: string): string {
  * @returns Resolved path
  */
 export function resolveSavedFilePath (toResolve: string): string {
-  return path.isAbsolute(toResolve)
+  const project = mainStore.getState().project;
+  const isKliveProject = project?.isKliveProject ?? false;
+  const projectFolder = project?.folderPath ?? "";
+  const finalPath = path.isAbsolute(toResolve)
     ? toResolve
+    : isKliveProject
+    ? path.join(projectFolder, "SavedFiles", toResolve)
     : path.join(
         path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"),
         toResolve
       );
+  return finalPath;
 }
 
 /**

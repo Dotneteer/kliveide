@@ -248,7 +248,6 @@ export async function processRendererToMainMessages (
 
     case "MainSaveBinaryFile":
       try {
-        //throw new Error("Fake Error");
         const filePath = resolveMessagePath(message.path, message.resolveIn);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
