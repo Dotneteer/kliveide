@@ -13,7 +13,9 @@ type Props = {
   options: OptionProps[];
   value?: string;
   width?: number;
-  onSelectionChanged?: (value: string) => boolean | void | Promise<boolean | void>;
+  onSelectionChanged?: (
+    value: string
+  ) => boolean | void | Promise<boolean | void>;
 };
 
 export const Dropdown = ({
@@ -67,7 +69,12 @@ export const Dropdown = ({
     !selectedOption ? false : selectedOption.value === option.value;
 
   return (
-    <div className={styles.dropdownContainer} style={{ width }}>
+    <div
+      className={styles.dropdownContainer}
+      style={{ width }}
+      tabIndex={-1}
+      onBlur={() => setShowMenu(false)}
+    >
       <div className={styles.dropdownInput} onClick={handleInputClick}>
         <div className={styles.dropdownSelectedValue}>
           {selectedLabel ?? placeholder}

@@ -27,11 +27,12 @@ import * as path from "path";
 import { mainStore } from "./main-store";
 import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
 import {
-  TEMPLATES,
+  PROJECT_TEMPLATES,
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
   KLIVE_PROJECT_ROOT,
-  MEDIA_TAPE
+  MEDIA_TAPE,
+  PROJECT_MERGE_FILE
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -39,7 +40,6 @@ import { KliveProjectStructure } from "../common/abstractions/KliveProjectStruct
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { getModelConfig } from "../common/machines/machine-registry";
-import { delay } from "../renderer/utils/timing";
 
 type ProjectCreationResult = {
   path?: string;
@@ -55,12 +55,13 @@ type ProjectCreationResult = {
 export async function createKliveProject (
   machineId: string,
   modelId: string | undefined,
+  templateId: string,
   projectName: string,
   projectFolder?: string
 ): Promise<ProjectCreationResult> {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = resolvePublicFilePath(TEMPLATES);
+  const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId, templateId);
 
   try {
     // --- Check if the folder exists
@@ -76,17 +77,28 @@ export async function createKliveProject (
     // --- Copy templates
     copyFolderSync(templateFolder, fullProjectFolder, false);
 
+    // --- Check project merge file
+    let mergedProps: any = {};
+    try {
+      const mergeFile = path.join(templateFolder, PROJECT_MERGE_FILE);
+      if (fs.existsSync(mergeFile)) {
+        const mergeContents = fs.readFileSync(mergeFile, "utf8");
+        mergedProps = JSON.parse(mergeContents);
+      }
+    } catch {
+      // --- Intentionally ignored
+    }
+
     // --- Create project files
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    const project = await getKliveProjectStructure();
+    console.log(mergedProps);
+    const project = {...await getKliveProjectStructure(), ...mergedProps};
     project.machineType = machineId;
     project.modelId = modelId;
     project.config = getModelConfig(machineId, modelId);
-    project.builder = {
-      roots: ["code/code.kz80.asm"]
-    };
+
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {
@@ -263,6 +275,7 @@ export function copyFolderSync (
   if (fs.lstatSync(source).isDirectory()) {
     files = fs.readdirSync(source);
     files.forEach(function (file) {
+      if (file.startsWith("__$")) return;
       var curSource = path.join(source, file);
       if (fs.lstatSync(curSource).isDirectory()) {
         copyFolderSync(curSource, targetFolder);
