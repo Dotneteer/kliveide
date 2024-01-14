@@ -227,6 +227,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".asm",
+    editor: CODE_EDITOR,
+    subType: "kz80-asm",
+    icon: "@file-kz80-asm"
+  },
+  {
+    matchType: "ends",
     pattern: ".zxb.asm",
     editor: CODE_EDITOR,
     subType: "zxbasm",
@@ -235,6 +242,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".zxbas",
+    editor: CODE_EDITOR,
+    subType: "zxbas",
+    icon: "@file-zxbas"
+  },
+  {
+    matchType: "ends",
+    pattern: ".bas",
     editor: CODE_EDITOR,
     subType: "zxbas",
     icon: "@file-zxbas"
