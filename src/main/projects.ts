@@ -40,6 +40,7 @@ import { KliveProjectStructure } from "../common/abstractions/KliveProjectStruct
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { getModelConfig } from "../common/machines/machine-registry";
+import { fileChangeWatcher } from "./file-watcher";
 
 type ProjectCreationResult = {
   path?: string;
@@ -93,7 +94,6 @@ export async function createKliveProject (
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    console.log(mergedProps);
     const project = {...await getKliveProjectStructure(), ...mergedProps};
     project.machineType = machineId;
     project.modelId = modelId;
@@ -210,6 +210,10 @@ export async function openFolderByPath (
           });
         }
       }
+
+      // --- Start watching project changes in the opened folder
+      fileChangeWatcher.stopWatching();
+      fileChangeWatcher.startWatching(projectFolder);
     } catch {
       // --- Intentionally ingored
     }

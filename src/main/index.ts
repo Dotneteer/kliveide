@@ -71,6 +71,7 @@ import { createSettingsReader } from "../common/utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { fileChangeWatcher } from "./file-watcher";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -137,10 +138,6 @@ const preload = join(__dirname, "../preload/index.js");
 const emuDevUrl = process.env.VITE_DEV_SERVER_URL + EMU_QP;
 const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
-
-// --- Start watching file changes
-// const homeDir = path.join(app.getPath("home"), "KliveProjects");
-//fileChangeWatcher.startWatching(homeDir);
 
 async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation

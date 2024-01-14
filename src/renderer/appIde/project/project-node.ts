@@ -131,7 +131,8 @@ export function getNodeExtension (node: ProjectNode | string): string {
 }
 
 export function buildProjectTree (
-  root: ProjectNodeWithChildren
+  root: ProjectNodeWithChildren,
+  expandedList?: string[]
 ): ITreeView<ProjectNode> {
   return new TreeView<ProjectNode>(toTreeNode(root), false);
 
@@ -177,8 +178,12 @@ export function buildProjectTree (
       rootNode.appendChild(cn);
     });
 
-    let isVisible = !node.isFolder && fileTypeEntry || visibleChildrenCount > 0;
+    // --- Handle visibility
+    let isVisible = !node.isFolder && fileTypeEntry || node.isFolder;
     rootNode.isHidden = !isVisible;
+
+    // --- Handle expanded state
+    rootNode.isExpanded = node === root || (expandedList?.includes(node.projectPath ?? "") ?? true);
 
     // --- Done
     return rootNode;

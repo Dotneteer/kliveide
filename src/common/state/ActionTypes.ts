@@ -89,4 +89,6 @@ export interface ActionTypes {
   START_SCREEN_DISPLAYED: null;
   SET_KEY_MAPPINGS: null;
   SET_MEDIA: null;
+
+  INC_EXPLORER_VIEW_VERSION: null;
 }
