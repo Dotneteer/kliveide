@@ -702,6 +702,7 @@ export class TreeView<TNode> implements ITreeView<TNode> {
     function visitNode (node: ITreeNode<TNode>): void {
       if (node.isHidden) return;
       indexes.push(node);
+
       if (!node.isExpanded) return;
       node.children.forEach(child => visitNode(child));
     }
