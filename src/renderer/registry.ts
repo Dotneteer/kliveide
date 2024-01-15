@@ -4,8 +4,21 @@ import {
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
-  TAP_EDITOR,
-  DSK_EDITOR
+  TAP_VIEWER,
+  DSK_VIEWER,
+  NEX_VIEWER,
+  Z80_VIEWER,
+  SNA_VIEWER,
+  SCR_VIEWER,
+  SHC_VIEWER,
+  SHR_VIEWER,
+  SLR_VIEWER,
+  SL2_VIEWER,
+  PAL_EDITOR,
+  NPL_EDITOR,
+  NXI_EDITOR,
+  SPR_EDITOR,
+  VID_VIEWER
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -42,6 +55,19 @@ import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import { MC_DISK_SUPPORT, MF_BLINK, MF_PSG, MF_ULA } from "@common/machines/constants";
 import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
+import { createNexFileViewerPanel } from "./appIde/DocumentPanels/NexFileViewerPanel";
+import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Z80FileViewerPanel";
+import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/SnaFileViewerPanel";
+import { createScrFileViewerPanel } from "./appIde/DocumentPanels/ScrFileViewerPanel";
+import { createShcFileViewerPanel } from "./appIde/DocumentPanels/ShcFileViewerPanel";
+import { createShrFileViewerPanel } from "./appIde/DocumentPanels/ShrFileViewerPanel";
+import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/SlrFileViewerPanel";
+import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Sl2FileViewerPanel";
+import { createPalFileEditorPanel } from "./appIde/DocumentPanels/PalFileEditorPanel";
+import { createNplFileEditorPanel } from "./appIde/DocumentPanels/NplFileEditorPanel";
+import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/NxiFileEditorPanel";
+import { createSprFileEditorPanel } from "./appIde/DocumentPanels/SprFileEditorPanel";
+import { createVidFileViewerPanel } from "./appIde/DocumentPanels/VidFileViewerPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -195,17 +221,95 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     iconFill: "--console-ansi-bright-magenta"
   },
   {
-    id: TAP_EDITOR,
+    id: TAP_VIEWER,
     renderer: createTapViewerPanel,
     icon: "@file-tap-tzx",
     iconFill: "--console-ansi-bright-cyan"
   },
   {
-    id: DSK_EDITOR,
+    id: DSK_VIEWER,
     renderer: createDskViewerPanel,
     icon: "floppy",
     iconFill: "--console-ansi-bright-blue"
-  }
+  },
+  {
+    id: NEX_VIEWER,
+    renderer: createNexFileViewerPanel,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-blue",
+  },
+  {
+    id: Z80_VIEWER,
+    renderer: createZ80FileViewerPanel,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-magenta",
+  },
+  {
+    id: SNA_VIEWER,
+    renderer: createSnaFileViewerPanel,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-magenta",
+  },
+  {
+    id: SCR_VIEWER,
+    renderer: createScrFileViewerPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-blue",
+  },
+  {
+    id: SHC_VIEWER,
+    renderer: createShcFileViewerPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-green",
+  },
+  {
+    id: SHR_VIEWER,
+    renderer: createShrFileViewerPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-cyan",
+  },
+  {
+    id: SLR_VIEWER,
+    renderer: createSlrFileViewerPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-red",
+  },
+  {
+    id: SL2_VIEWER,
+    renderer: createSl2FileViewerPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-yellow",
+  },
+  {
+    id: PAL_EDITOR,
+    renderer: createPalFileEditorPanel,
+    icon: "palette",
+    iconFill: "--console-ansi-bright-blue",
+  },
+  {
+    id: NPL_EDITOR,
+    renderer: createNplFileEditorPanel,
+    icon: "palette",
+    iconFill: "--console-ansi-bright-magenta",
+  },
+  {
+    id: NXI_EDITOR,
+    renderer: createNxiFileEditorPanel,
+    icon: "layers",
+    iconFill: "--console-ansi-bright-blue",
+  },
+  {
+    id: SPR_EDITOR,
+    renderer: createSprFileEditorPanel,
+    icon: "sprite",
+    iconFill: "--console-ansi-bright-green",
+  },
+  {
+    id: VID_VIEWER,
+    renderer: createVidFileViewerPanel,
+    icon: "video",
+    iconFill: "--console-ansi-bright-cyan",
+  },
 ];
 
 // --- The registry of ile types
@@ -263,25 +367,153 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".tzx",
-    editor: TAP_EDITOR,
+    editor: TAP_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
+    isReadOnly: true,
     openPermanent: true
   },
   {
     matchType: "ends",
     pattern: ".tap",
-    editor: TAP_EDITOR,
+    editor: TAP_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
+    isReadOnly: true,
     openPermanent: true
   },
   {
     matchType: "ends",
     pattern: ".dsk",
-    editor: DSK_EDITOR,
+    editor: DSK_VIEWER,
     icon: "floppy",
     iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".nex",
+    editor: NEX_VIEWER,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".z80",
+    editor: Z80_VIEWER,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-magenta",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".sna",
+    editor: SNA_VIEWER,
+    icon: "chip",
+    iconFill: "--console-ansi-bright-magenta",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".scr",
+    editor: SCR_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".shc",
+    editor: SHC_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-green",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".shr",
+    editor: SHR_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".slr",
+    editor: SLR_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-bright-red",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".sl2",
+    editor: SL2_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-yellow",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".pal",
+    editor: PAL_EDITOR,
+    icon: "palette",
+    iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".npl",
+    editor: NPL_EDITOR,
+    icon: "palette",
+    iconFill: "--console-ansi-bright-magenta",
+    isBinary: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".nxi",
+    editor: NXI_EDITOR,
+    icon: "layers",
+    iconFill: "--console-ansi-bright-blue",
+    isBinary: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".spr",
+    editor: SPR_EDITOR,
+    icon: "sprite",
+    iconFill: "--console-ansi-bright-green",
+    isBinary: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".vid",
+    editor: VID_VIEWER,
+    icon: "video",
+    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     openPermanent: true
   },
