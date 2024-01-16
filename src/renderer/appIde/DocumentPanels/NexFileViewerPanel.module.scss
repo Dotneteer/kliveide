@@ -16,3 +16,14 @@
   flex-shrink: 0;
   flex-grow: 0;
 }
+
+.invalid {
+  @include fill-parent-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1em;
+  font-family: var(--monospace-font);
+  color: var(--console-ansi-bright-red);
+}
+
