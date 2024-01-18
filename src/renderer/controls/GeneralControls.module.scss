@@ -1,0 +1,82 @@
+@import "@styles/core.scss";
+
+.panel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  padding: 0.2em;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.2em 0
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0.2em 0
+} 
+
+.label {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-label);
+  margin-left: 0.4em;
+  margin-right: 0.4em;
+}
+
+.value {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-value);
+  margin-right: 0.8em;
+}
+
+.flag {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding: 0 0.4em 0 0.2em;
+}
+
+.expandableRow {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+
+  & .expandableRowHeading {
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    align-items: center;
+    margin: 0.2em 0;
+    padding: 0.2em 0;
+    background-color: var(--bgcolor-disass-even-row);
+    cursor: pointer;
+  
+    & .headingText {
+      color: var(--color-secondary-label);
+      padding: 0.2em 0.4em;
+      text-overflow: ellipsis;
+    }
+
+    & .expandable {
+      cursor: pointer
+    }
+  } 
+}
+
+
+

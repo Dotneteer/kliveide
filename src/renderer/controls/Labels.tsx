@@ -107,7 +107,7 @@ export const Flag = ({
           value === undefined
             ? "close"
             : value
-            ? "circle-filled"
+            ? "circle-large-filled"
             : "circle-outline"
         }
         width={16}
@@ -180,3 +180,4 @@ export const FlagRow = ({ value, flagDescriptions }: FlagRowProps) => {
     </div>
   );
 };
+
