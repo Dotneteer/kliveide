@@ -1,10 +1,7 @@
 @import "@styles/core.scss";
 
-.panel {
-  @include fill-parent-flex;
-  box-sizing: border-box;
-  flex-direction: column;
-  user-select: none;
+.panelFont {
+  font-family: var(--monospace-font);
   font-size: 0.8em;
 }
 

@@ -12,6 +12,8 @@ import {
   Row
 } from "@renderer/controls/GeneralControls";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
+import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
+import { NextBankViewer } from "@renderer/controls/NextBankViewer";
 
 const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
   const [fileInfo, setFileInfo] = useState<NexFileContents>();
@@ -34,7 +36,7 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
 
   const h = fileInfo?.header;
   return initialized ? (
-    <Panel>
+    <Panel xclass={styles.panelFont}>
       {!valid && (
         <div className={styles.invalid}>
           File content is not a valid: {fileError}
@@ -42,70 +44,120 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
       )}
       {valid && (
         <>
-          <Row>
-            <LabeledText
-              label='Version:'
-              value={`V${h.versionMajor}.${h.versionMinor}`}
-              tooltip='.NEX file version'
-            />
-            <LabeledText
-              label='RAM Required:'
-              value={h.fullRamRequired ? "1792K" : "768K"}
-            />
-            <LabeledText
-              label='#of 16K Banks to Load:'
-              value={h.numOf16KBanks.toString(10)}
-            />
-            <LabeledText
-              label='Border Color:'
-              value={h.borderColor.toString(10)}
-            />
-          </Row>
-          <Row>
-            <Label text='Loading screen flags:' />
-            <LabeledFlag
-              label='No Palette:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)}
-            />
-            <LabeledFlag
-              label='HiColor:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)}
-            />
-            <LabeledFlag
-              label='HiRes:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)}
-            />
-            <LabeledFlag
-              label='LoRes:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)}
-            />
-            <LabeledFlag
-              label='ULA:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)}
-            />
-            <LabeledFlag
-              label='Layer2:'
-              value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)}
-            />
-          </Row>
-          <Row>
-            <LabeledText
-              label='SP:'
-              value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(
-                10
-              )})`}
-            />
-            <LabeledText
-              label='PC:'
-              value={`$${toHexa4(
-                h.programCounter
-              )} (${h.programCounter.toString(10)})`}
-            />
-            <LabeledText
-              label='#of Extra Files:'
-              value={h.numOfExtraBytes.toString(10)}
-            />
-          </Row>
+          <ExpandableRow heading='Header attributes' expanded={true}>
+            <Row>
+              <LabeledText
+                label='Version:'
+                value={`V${h.versionMajor}.${h.versionMinor}`}
+                tooltip='.NEX file version'
+              />
+              <LabeledText
+                label='RAM Required:'
+                value={h.fullRamRequired ? "1792K" : "768K"}
+              />
+              <LabeledText
+                label='#of 16K Banks to Load:'
+                value={h.numOf16KBanks.toString(10)}
+              />
+              <LabeledText
+                label='Border Color:'
+                value={h.borderColor.toString(10)}
+              />
+            </Row>
+            <Row>
+              <Label text='Loading screen flags:' />
+              <LabeledFlag
+                label='No Palette:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.NoPalette)}
+              />
+              <LabeledFlag
+                label='HiColor:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.HiColor)}
+              />
+              <LabeledFlag
+                label='HiRes:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.HiRes)}
+              />
+              <LabeledFlag
+                label='LoRes:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.LoRes)}
+              />
+              <LabeledFlag
+                label='ULA:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.Ula)}
+              />
+              <LabeledFlag
+                label='Layer2:'
+                value={!!(h.screenBlockFlags & ScreenBlockFlags.Layer2)}
+              />
+            </Row>
+            <Row>
+              <LabeledText
+                label='SP:'
+                value={`$${toHexa4(h.stackPointer)} (${h.stackPointer.toString(
+                  10
+                )})`}
+              />
+              <LabeledText
+                label='PC:'
+                value={`$${toHexa4(
+                  h.programCounter
+                )} (${h.programCounter.toString(10)})`}
+              />
+              <LabeledText
+                label='#of Extra Files:'
+                value={h.numOfExtraBytes.toString(10)}
+              />
+            </Row>
+            <Row>
+              <LabeledFlag
+                label='Layer2 Loading Bar:'
+                value={!!h.layer2LoadingBar}
+              />
+              <LabeledText
+                label='Bar Color:'
+                value={`$${toHexa2(
+                  h.loadingBarColorFor
+                )} (${h.loadingBarColorFor.toString(10)})`}
+              />
+              <LabeledText
+                label='Loading Delay/Bank:'
+                value={h.loadingDelayPerBank.toString(10)}
+              />
+              <LabeledText
+                label='Start Delay:'
+                value={h.startDelay.toString(10)}
+              />
+            </Row>
+            <Row>
+              <LabeledFlag
+                label='Preserve Next Register Values:'
+                value={!!h.preserveNextRegisters}
+              />
+              <LabeledText
+                label='Required Core Version:'
+                value={`V${h.requiredCoreVersionMajor}.${h.requiredCoreVersionMinor}.${h.requiredCoreVersionSubMinor}`}
+              />
+              <LabeledText
+                label='Timex HiRes Color:'
+                value={`$${toHexa2(
+                  h.timexHiresModeColor
+                )} (${h.timexHiresModeColor.toString(10)})`}
+              />
+            </Row>
+            <Row>
+              <LabeledText
+                label='Entry Bank:'
+                value={`$${toHexa2(h.entryBank)} (${h.entryBank.toString(10)})`}
+              />
+              <LabeledText
+                label='File Handle Address:'
+                value={`$${toHexa4(
+                  h.fileHandleAddress
+                )} (${h.fileHandleAddress.toString(10)})`}
+              />
+            </Row>
+          </ExpandableRow>
           <ExpandableRow heading='Bank flags' expanded={false}>
             <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
             <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
@@ -122,26 +174,55 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
             <BankFlags startIndex={96} flags={h.bankFlags.slice(96, 104)} />
             <BankFlags startIndex={104} flags={h.bankFlags.slice(104, 112)} />
           </ExpandableRow>
-          <Row>
-            <LabeledFlag
-              label='Layer2 Loading Bar:'
-              value={!!h.layer2LoadingBar}
-            />
-            <LabeledText
-              label='Bar Color:'
-              value={`$${toHexa2(
-                h.loadingBarColorFor
-              )} (${h.loadingBarColorFor.toString(10)})`}
-            />
-            <LabeledText
-              label='Loading Delay/Bank:'
-              value={h.loadingDelayPerBank.toString(10)}
-            />
-            <LabeledText
-              label='Start Delay:'
-              value={h.startDelay.toString(10)}
-            />
-          </Row>
+          {fileInfo.palette?.length > 0 && (
+            <ExpandableRow
+              heading='Palette (Layer2, LoRes or Tilemap screen)'
+              expanded={false}
+            >
+              <NextPaletteViewer palette={fileInfo?.palette} />
+            </ExpandableRow>
+          )}
+          {fileInfo.layer2LoadingScreen?.length > 0 && (
+            <ExpandableRow heading='Layer 2 Loading Screen' expanded={false}>
+              <NextBankViewer contents={fileInfo?.layer2LoadingScreen} />
+            </ExpandableRow>
+          )}
+          {fileInfo.ulaLoadingScreen?.length > 0 && (
+            <ExpandableRow heading='ULA Loading Screen' expanded={false}>
+              <NextBankViewer contents={fileInfo?.ulaLoadingScreen} />
+            </ExpandableRow>
+          )}
+          {fileInfo.loResLoadingScreen?.length > 0 && (
+            <ExpandableRow heading='LoRes Loading Screen' expanded={false}>
+              <NextBankViewer contents={fileInfo?.loResLoadingScreen} />
+            </ExpandableRow>
+          )}
+          {fileInfo.timexHiResLoadingScreen?.length > 0 && (
+            <ExpandableRow
+              heading='Timex HiRes Loading Screen'
+              expanded={false}
+            >
+              <NextBankViewer contents={fileInfo?.timexHiResLoadingScreen} />
+            </ExpandableRow>
+          )}
+          {fileInfo.timexHiColLoadingScreen?.length > 0 && (
+            <ExpandableRow
+              heading='Timex HiCol Loading Screen'
+              expanded={false}
+            >
+              <NextBankViewer contents={fileInfo?.timexHiColLoadingScreen} />
+            </ExpandableRow>
+          )}
+          {fileInfo.bankData.map(entry => {
+            return (
+              <ExpandableRow
+                heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(10)})`}
+                expanded={false}
+              >
+                <NextBankViewer contents={entry[1]} bank={entry[0]} />
+              </ExpandableRow>
+            );
+          })}
         </>
       )}
     </Panel>
@@ -150,7 +231,6 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
   function loadNexFile (): NexFileContents {
     const reader = new BinaryReader(contents);
     const header: NexHeader = {} as NexHeader;
-    const bankData: Uint8Array[] = [];
 
     // --- Read the header
     // --- Check for the 'Next' token
@@ -207,10 +287,84 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
     header.entryBank = reader.readByte();
     header.fileHandleAddress = reader.readUint16();
 
+    // --- Skip 370 unused bytes
+    reader.readBytes(370);
+
+    // --- Read the palette
+    const palette: number[] = [];
+    const sbFlags = header.screenBlockFlags;
+    const hasPalette =
+      !(sbFlags & ScreenBlockFlags.NoPalette) &&
+      (sbFlags & ScreenBlockFlags.Layer2 || sbFlags & ScreenBlockFlags.LoRes);
+
+    if (hasPalette) {
+      for (let i = 0; i < 256; i++) {
+        palette.push(reader.readUint16());
+      }
+    }
+
+    // --- Read the loading screens
+    let layer2LoadingScreen: Uint8Array | undefined;
+    if (sbFlags & ScreenBlockFlags.Layer2) {
+      layer2LoadingScreen = new Uint8Array(reader.readBytes(0xc000));
+    }
+    let ulaLoadingScreen: Uint8Array | undefined;
+    if (sbFlags & ScreenBlockFlags.Ula) {
+      ulaLoadingScreen = new Uint8Array(reader.readBytes(0x1b00));
+    }
+    let loResLoadingScreen: Uint8Array | undefined;
+    if (sbFlags & ScreenBlockFlags.LoRes) {
+      loResLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+    }
+    let timexHiresLoadingScreen: Uint8Array | undefined;
+    if (sbFlags & ScreenBlockFlags.HiRes) {
+      timexHiresLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+    }
+    let timexHiColLoadingScreen: Uint8Array | undefined;
+    if (sbFlags & ScreenBlockFlags.HiColor) {
+      timexHiColLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+    }
+
+    // --- Read banks
+    const bankData: [number, Uint8Array][] = [];
+    for (let i = 0; i < header.bankFlags.length; i++) {
+      if (!header.bankFlags[i]) {
+        continue;
+      }
+      const bankContents = new Uint8Array(reader.readBytes(0x4000));
+      bankData.push([getBankIndex(i), bankContents]);
+    }
+
     return {
       header,
+      palette,
+      layer2LoadingScreen,
+      ulaLoadingScreen,
+      loResLoadingScreen,
+      timexHiResLoadingScreen: timexHiresLoadingScreen,
+      timexHiColLoadingScreen,
       bankData
     };
+  }
+
+  // --- Get the bank index from the bank flag index
+  function getBankIndex (bank: number): number {
+    switch (bank) {
+      case 0x00:
+        return 5;
+      case 0x01:
+        return 2;
+      case 0x02:
+        return 0;
+      case 0x03:
+        return 1;
+      case 0x04:
+        return 3;
+      case 0x05:
+        return 4;
+      default:
+        return bank;
+    }
   }
 };
 
@@ -253,12 +407,9 @@ export type NexFileContents = {
   layer2LoadingScreen?: Uint8Array;
   ulaLoadingScreen?: Uint8Array;
   loResLoadingScreen?: Uint8Array;
-  timexHiresLoadingScreen?: Uint8Array;
+  timexHiResLoadingScreen?: Uint8Array;
   timexHiColLoadingScreen?: Uint8Array;
-  layer2ExtendedLoadingScreen?: Uint8Array;
-  copperCode?: Uint8Array;
-  bankData: Uint8Array[];
-  optionalData?: Uint8Array;
+  bankData: [number, Uint8Array][];
 };
 
 // --- The header of a .nex file

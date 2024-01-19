@@ -3,9 +3,15 @@ import styles from "./GeneralControls.module.scss";
 import { ScrollViewer } from "./ScrollViewer";
 import { TooltipFactory } from "./Tooltip";
 import { Icon } from "./Icon";
+import classnames from "@renderer/utils/classnames";
 
-export const Panel = ({ children }: { children?: React.ReactNode }) => (
-  <div className={styles.panel}>
+type PanelProps = {
+  xclass?: string;
+  children?: React.ReactNode
+}
+
+export const Panel = ({ children, xclass }: PanelProps) => (
+  <div className={classnames(styles.panel, xclass)}>
     <ScrollViewer>{children}</ScrollViewer>
   </div>
 );
@@ -14,7 +20,7 @@ export const Row = ({ children }: { children?: React.ReactNode }) => (
   <div className={styles.row}>{children}</div>
 );
 
-export const Column = ({ children }: { children: React.ReactNode }) => (
+export const Column = ({ children }: { children?: React.ReactNode }) => (
   <div className={styles.column}>{children}</div>
 );
 
