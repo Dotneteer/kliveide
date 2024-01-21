@@ -27,10 +27,12 @@ import * as path from "path";
 import { mainStore } from "./main-store";
 import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
 import {
-  TEMPLATES,
+  PROJECT_TEMPLATES,
   PROJECT_FILE,
   LAST_PROJECT_FOLDER,
-  KLIVE_PROJECT_ROOT
+  KLIVE_PROJECT_ROOT,
+  MEDIA_TAPE,
+  PROJECT_MERGE_FILE
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -38,7 +40,7 @@ import { KliveProjectStructure } from "../common/abstractions/KliveProjectStruct
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { getModelConfig } from "../common/machines/machine-registry";
-import { delay } from "../renderer/utils/timing";
+import { fileChangeWatcher } from "./file-watcher";
 
 type ProjectCreationResult = {
   path?: string;
@@ -54,12 +56,17 @@ type ProjectCreationResult = {
 export async function createKliveProject (
   machineId: string,
   modelId: string | undefined,
+  templateId: string,
   projectName: string,
   projectFolder?: string
 ): Promise<ProjectCreationResult> {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = resolvePublicFilePath(TEMPLATES);
+  const templateFolder = path.join(
+    resolvePublicFilePath(PROJECT_TEMPLATES),
+    machineId,
+    templateId
+  );
 
   try {
     // --- Check if the folder exists
@@ -75,17 +82,27 @@ export async function createKliveProject (
     // --- Copy templates
     copyFolderSync(templateFolder, fullProjectFolder, false);
 
+    // --- Check project merge file
+    let mergedProps: any = {};
+    try {
+      const mergeFile = path.join(templateFolder, PROJECT_MERGE_FILE);
+      if (fs.existsSync(mergeFile)) {
+        const mergeContents = fs.readFileSync(mergeFile, "utf8");
+        mergedProps = JSON.parse(mergeContents);
+      }
+    } catch {
+      // --- Intentionally ignored
+    }
+
     // --- Create project files
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    const project = await getKliveProjectStructure();
+    const project = { ...(await getKliveProjectStructure()), ...mergedProps };
     project.machineType = machineId;
     project.modelId = modelId;
     project.config = getModelConfig(machineId, modelId);
-    project.builder = {
-      roots: ["code/code.kz80.asm"]
-    };
+
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {
@@ -103,7 +120,7 @@ export async function createKliveProject (
  * @param browserWindow Host browser window
  */
 export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
-  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const lastFile = mainStore.getState()?.media?.[MEDIA_TAPE];
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
@@ -197,6 +214,10 @@ export async function openFolderByPath (
           });
         }
       }
+
+      // --- Start watching project changes in the opened folder
+      fileChangeWatcher.stopWatching();
+      fileChangeWatcher.startWatching(projectFolder);
     } catch {
       // --- Intentionally ingored
     }
@@ -262,6 +283,7 @@ export function copyFolderSync (
   if (fs.lstatSync(source).isDirectory()) {
     files = fs.readdirSync(source);
     files.forEach(function (file) {
+      if (file.startsWith("__$")) return;
       var curSource = path.join(source, file);
       if (fs.lstatSync(curSource).isDirectory()) {
         copyFolderSync(curSource, targetFolder);
@@ -289,12 +311,18 @@ export function resolveHomeFilePath (toResolve: string): string {
  * @returns Resolved path
  */
 export function resolveSavedFilePath (toResolve: string): string {
-  return path.isAbsolute(toResolve)
+  const project = mainStore.getState().project;
+  const isKliveProject = project?.isKliveProject ?? false;
+  const projectFolder = project?.folderPath ?? "";
+  const finalPath = path.isAbsolute(toResolve)
     ? toResolve
+    : isKliveProject
+    ? path.join(projectFolder, "SavedFiles", toResolve)
     : path.join(
         path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"),
         toResolve
       );
+  return finalPath;
 }
 
 /**
@@ -333,7 +361,7 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
     soundLevel: state.emulatorState.soundLevel,
     soundMuted: state.emulatorState.soundMuted,
     savedSoundLevel: state.emulatorState.savedSoundLevel,
-    tapeFile: state.emulatorState.tapeFile,
+    media: state.media,
     fastLoad: state.emulatorState.fastLoad,
     machineSpecific: state.emulatorState.machineSpecific,
     ide: {

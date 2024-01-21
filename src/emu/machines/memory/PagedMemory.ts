@@ -1,3 +1,5 @@
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+
 /**
  * Memory information about a 8K page
  */
@@ -43,6 +45,28 @@ export class PagedMemory {
     for (let i = 0; i < this.memory.length; i++) {
       this.memory[i] = dataByte;
     }
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getPartitions (): number[] {
+    return this.bankData.map(b => b.partition);
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getPartitionLabels (): string[] {
+    return this.bankData.map(b => {
+      if (b.partition === undefined) {
+        return "";
+      }
+      if (b.partition < 0) {
+        return `R${-(b.partition + 1)}`;
+      }
+      return toHexa2(b.partition);
+    });
   }
 
   /**

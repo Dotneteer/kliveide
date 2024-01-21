@@ -12,12 +12,17 @@ import {
   displayDialogAction,
   emuSetKeyboardLayoutAction,
   incMenuVersionAction,
+  setMachineConfigAction,
   setMachineSpecificAction
 } from "../../common/state/actions";
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
 import { getModelConfig } from "../../common/machines/machine-registry";
-import { MC_SCREEN_SIZE, MC_Z88_INTROM } from "../../common/machines/constants";
+import {
+  MC_SCREEN_SIZE,
+  MC_Z88_INTRAM,
+  MC_Z88_INTROM
+} from "../../common/machines/constants";
 import { setMachineType } from "../../main/registeredMachines";
 import { Z88_CARDS_DIALOG } from "../../common/messaging/dialog-ids";
 
@@ -72,9 +77,8 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
     { id: "z88_800_320", label: "800 x 320" },
     { id: "z88_800_480", label: "800 x 480" }
   ];
-  const machineSpecific =
-    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
-  const lcdState = machineSpecific.lcd;
+  const config = mainStore.getState()?.emulatorState?.config ?? {};
+  const lcdState = config?.[MC_SCREEN_SIZE];
   return [
     {
       id: "z88_lcd",
@@ -87,7 +91,7 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
         checked: lcd.label.replaceAll(" ", "") === lcdState,
         click: async () => {
           const newLcd = lcd.label.replaceAll(" ", "");
-          if (machineSpecific.lcd !== newLcd) {
+          if (config.lcd !== newLcd) {
             setLcd(newLcd);
             await saveKliveProject();
           }
@@ -104,11 +108,13 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
     const config = getModelConfig(machineId, modelId);
     config[MC_SCREEN_SIZE] = lcdId;
     setMachineType(machineId, modelId, config);
-    saveRecentLcdInfo(lcdId);
     mainStore.dispatch(incMenuVersionAction());
   }
 };
 
+/**
+ * Renders reset-related menus
+ */
 export const z88ResetRenderer: MachineMenuRenderer = () => {
   const execState = mainStore.getState()?.emulatorState?.machineState;
   return [
@@ -150,15 +156,20 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
   ];
 };
 
+/**
+ * Renders RAM, ROM, and card-related menus
+ */
 export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   const emuWindow = windowInfo.emuWindow;
-  const execState = mainStore.getState()?.emulatorState?.machineState;
   const romsSubmenu: MachineMenuItem[] = [];
+  const config = mainStore.getState()?.emulatorState?.config ?? {};
+  const intRam = config?.[MC_Z88_INTRAM] ?? 0x01;
   const machineSpecific =
     mainStore.getState()?.emulatorState?.machineSpecific ?? {};
   recentRoms = machineSpecific.recentRoms ?? [];
   recentRomSelected = machineSpecific.recentRomSelected ?? false;
   usedRomFile = machineSpecific.usedRomFile;
+
   romsSubmenu.push({
     id: "z88_use_default_rom",
     label: "Use default ROM",
@@ -207,6 +218,33 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   return [
     { type: "separator" },
     {
+      id: "z88_internal_ram",
+      label: "Internal RAM size",
+      submenu: [
+        {
+          id: "z88_ram_32k",
+          label: "32K",
+          type: "radio",
+          checked: intRam === 0x01,
+          click: async () => setIntRam(0x01)
+        },
+        {
+          id: "z88_ram_128k",
+          label: "128K",
+          type: "radio",
+          checked: intRam === 0x07,
+          click: async () => setIntRam(0x07)
+        },
+        {
+          id: "z88_ram_512k",
+          label: "512K",
+          type: "radio",
+          checked: intRam === 0x1f,
+          click: async () => setIntRam(0x1f)
+        }
+      ]
+    },
+    {
       id: "select_z88_rom",
       label: "Select ROM",
       submenu: romsSubmenu
@@ -230,6 +268,21 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     saveRecentRomInfo();
     setMachineType(machineId, modelId, config);
   }
+
+  // --- Sets the internal ROM
+  function setIntRam (ramSize?: number): void {
+    const emulatorState = mainStore.getState()?.emulatorState;
+    const machineId = emulatorState?.machineId;
+    const modelId = emulatorState?.modelId;
+    const config = emulatorState?.config ?? {};
+    if (config[MC_Z88_INTRAM] === ramSize) {
+      return;
+    }
+    config[MC_Z88_INTRAM] = ramSize;
+    mainStore.dispatch(setMachineConfigAction({ ...config }));
+
+    setMachineType(machineId, modelId, config);
+  }
 };
 
 /**
@@ -237,7 +290,9 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
  * @param filename File to check
  * @returns File contents or error message
  */
-export async function checkZ88SlotFile(filename: string): Promise<string | Uint8Array> {
+export async function checkZ88SlotFile (
+  filename: string
+): Promise<string | Uint8Array> {
   try {
     const contents = Uint8Array.from(fs.readFileSync(filename));
 
@@ -264,13 +319,14 @@ export async function checkZ88SlotFile(filename: string): Promise<string | Uint8
   }
 }
 
-
-
 // --- The current ROM file (null, if default is used)
 let usedRomFile: string | null = null;
 
 // --- The list of recently used ROMs
 let recentRoms: string[] = [];
+
+// --- The size of the most recent ROM
+let recentRomSize: number;
 
 // ---Indicates that a recent ROM is selected. If false, we use the default ROM
 let recentRomSelected = false;
@@ -322,6 +378,7 @@ async function selectRomFileToUse (
   usedRomFile = filename;
   recentRoms.unshift(filename);
   recentRoms.splice(4);
+  recentRomSize = contents.length;
 
   // --- Now set the ROM name and refresh the menu
   recentRomSelected = true;
@@ -400,20 +457,12 @@ function isOZRom (contents: Uint8Array): boolean {
  * Saves the recent ROM information to the store
  */
 function saveRecentRomInfo (): void {
-  const machineSpecific =
-    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
-  machineSpecific.recentRoms = recentRoms;
-  machineSpecific.recentRomSelected = recentRomSelected;
-  machineSpecific.usedRomFile = usedRomFile;
-  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
-}
-
-/**
- * Saves the recent ROM information to the store
- */
-function saveRecentLcdInfo (lcdId: string): void {
-  const machineSpecific =
-    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
-  machineSpecific.lcd = lcdId;
+  const machineSpecific = {
+    ...(mainStore.getState()?.emulatorState?.machineSpecific ?? {}),
+    recentRoms,
+    recentRomSelected,
+    usedRomFile,
+    recentRomSize
+  };
   mainStore.dispatch(setMachineSpecificAction(machineSpecific));
 }

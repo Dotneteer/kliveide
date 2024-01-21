@@ -1,5 +1,4 @@
 import { SysVar } from "@abstractions/SysVar";
-import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
@@ -26,13 +25,15 @@ import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
-import { setDiskFileAction } from "@common/state/actions";
 import { PagedMemory } from "../memory/PagedMemory";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
+import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import { setMediaAction } from "@common/state/actions";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -72,12 +73,9 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor (store: Store<AppState>, model: MachineModel) {
+  constructor (private readonly store: Store<AppState>, model: MachineModel) {
     try {
       super();
-      store.dispatch(setDiskFileAction(0, null), "emu");
-      store.dispatch(setDiskFileAction(1, null), "emu");
-
       switch (model?.config?.[MC_DISK_SUPPORT]) {
         case 1:
           this.hasFloppy = true;
@@ -90,7 +88,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
         default:
           this.hasFloppy = false;
           this.hasDriveB = false;
-          break;  
+          break;
       }
 
       // --- Set up machine attributes
@@ -110,9 +108,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
       this.beeperDevice = new SpectrumBeeperDevice(this);
       this.psgDevice = new ZxSpectrum128PsgDevice(this);
       if (this.hasFloppy) {
-        this.floppyDevice = new FloppyControllerDevice(this);
-        this.floppyDevice.isDriveAPresent = true;
-        this.floppyDevice.isDriveBPresent = this.hasDriveB;
+        this.floppyDevice = new FloppyControllerDevice(this, this.hasDriveB);
       }
       this.floatingBusDevice = new ZxSpectrumP3eFloatingBusDevice(this);
       this.tapeDevice = new TapeDevice(this);
@@ -228,7 +224,11 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
     // --- Empty the queue of emulated keystrokes
     this.emulatedKeyStrokes.length = 0;
-  }
+
+    // --- Reset media
+    this.setMachineProperty(MEDIA_DISK_A);
+    this.setMachineProperty(MEDIA_DISK_B);
+ }
 
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
@@ -268,6 +268,20 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    */
   get16KPartition (index: number): Uint8Array {
     return this.memory.get16KPartition(index);
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return this.memory.getPartitions();
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels (): string[] {
+    return this.memory.getPartitionLabels();
   }
 
   /**

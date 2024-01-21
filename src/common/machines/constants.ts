@@ -11,6 +11,7 @@ export const MC_SCREEN_FREQ = "screenFreq";
 export const MC_MEM_SIZE = "memSize";
 export const MC_SCREEN_SIZE = "screenSize";
 export const MC_Z88_INTROM = "intROM";
+export const MC_Z88_INTROM_SIZE = "intROMSize";
 export const MC_Z88_INTRAM = "intRAM";
 export const MC_Z88_SLOT1 = "slot1";
 export const MC_Z88_SLOT2 = "slot2";
@@ -26,3 +27,4 @@ export const MF_BLINK = "blink";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
+export const CT_DISASSEMBLER_VIEW = "disassemblyView";

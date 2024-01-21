@@ -5,7 +5,7 @@ import { MonacoAwareCustomLanguageInfo } from "../../abstractions/CustomLanguage
  */
 export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
-  extensions: [".zxbas"],
+  extensions: [".zxbas", ".bas"],
   icon: "file-zxbas",
   depensOn: ["zxbasm"],
   allowBuildRoot: true,

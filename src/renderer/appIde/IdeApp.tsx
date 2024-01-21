@@ -91,6 +91,7 @@ import {
 } from "./commands/SettingCommands";
 import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { FirstStartDialog } from "./dialogs/FirstStartDialog";
+import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -313,4 +314,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ListSettingsCommand());
   cmdSrv.registerCommand(new MoveSettingsCommand());
   cmdSrv.registerCommand(new ResetZxbCommand());
+
+  cmdSrv.registerCommand(new CreateDiskFileCommand());
+
 }

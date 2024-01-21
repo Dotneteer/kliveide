@@ -55,7 +55,12 @@ import {
   MainMoveSettingsRequest,
   MainShowWebsiteRequest,
   MainCheckZ88CardRequest,
-  MainCheckZ88CardResponse
+  MainCheckZ88CardResponse,
+  MainSaveDiskChangesRequest,
+  MainCreateDiskFileRequest,
+  MainCreateDiskFileResponse,
+  MainGetTemplateDirsResponse,
+  MainGetTemplateDirsRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -87,7 +92,8 @@ import {
   EmuGetNecUpd765Response,
   EmuSetDiskFileRequest,
   EmuGetBlinkStateRequest,
-  EmuGetBlinkStateResponse
+  EmuGetBlinkStateResponse,
+  EmuSetDiskWriteProtectionRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -166,6 +172,7 @@ export type RequestMessage =
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
   | EmuSetDiskFileRequest
+  | EmuSetDiskWriteProtectionRequest
   | EmuGetCpuStateRequest
   | EmuGetUlaStateRequest
   | EmuGetPsgStateRequest
@@ -212,6 +219,9 @@ export type RequestMessage =
   | MainPathExistsRequest
   | MainShowWebsiteRequest
   | MainCheckZ88CardRequest
+  | MainSaveDiskChangesRequest
+  | MainCreateDiskFileRequest
+  | MainGetTemplateDirsRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -238,6 +248,8 @@ export type ResponseMessage =
   | MainGetSettingsResponse
   | MainCompileResponse
   | MainCheckZ88CardResponse
+  | MainCreateDiskFileResponse
+  | MainGetTemplateDirsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

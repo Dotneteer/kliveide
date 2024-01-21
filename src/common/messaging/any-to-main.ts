@@ -2,6 +2,7 @@ import { ProjectNodeWithChildren } from "@appIde/project/project-node";
 import { MessageBase } from "./messages-core";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/IZ80CompilerService";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 /**
  * The client sends a text file read request
@@ -55,6 +56,7 @@ export interface MainCreateKliveProjectRequest extends MessageBase {
   type: "MainCreateKliveProject";
   machineId: string;
   modelId?: string;
+  templateId: string;
   projectName: string;
   projectFolder?: string;
 }
@@ -253,6 +255,33 @@ export interface MainCheckZ88CardRequest extends MessageBase {
 }
 
 /**
+ * The client wants to save the current disk changes
+ */
+export interface MainSaveDiskChangesRequest extends MessageBase {
+  type: "MainSaveDiskChanges";
+  diskIndex: number;
+  changes: SectorChanges
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainCreateDiskFileRequest extends MessageBase {
+  type: "MainCreateDiskFile";
+  diskFolder: string;
+  filename: string;
+  diskType: string;
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainGetTemplateDirsRequest extends MessageBase {
+  type: "MainGetTemplateDirs";
+  machineId: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -330,6 +359,23 @@ export interface MainCheckZ88CardResponse extends MessageBase {
   type: "MainCheckZ88CardResponse";
   message?: string;
   content?: Uint8Array;
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainCreateDiskFileResponse extends MessageBase {
+  type: "MainCreateDiskFileResponse";
+  path?: string;
+  errorMessage?: string;
+}
+
+/**
+ * The client wants to create a disk file
+ */
+export interface MainGetTemplateDirsResponse extends MessageBase {
+  type: "MainGetTemplateDirsResponse";
+  dirs: string[];
 }
 
 

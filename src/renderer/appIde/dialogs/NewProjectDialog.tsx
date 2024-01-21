@@ -12,8 +12,12 @@ import {
 import { useAppServices } from "../services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
+import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
+const INITIAL_MACHINE_IDE = "sp48";
+const INITIAL_MODEL_ID = "pal";
+const INITAIL_TEMPLATE_ID = "default";
 
 const machineIds = getAllMachineModels().map(m => ({
   value: `${m.machineId}${m.modelId ? ":" + m.modelId : ""}`,
@@ -33,13 +37,44 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
   const { messenger } = useRendererContext();
   const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
-  const [machineId, setMachineId] = useState<string>("sp48");
+  const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
   const [modelId, setmodelId] = useState<string>(undefined);
   const [projectFolder, setProjectFolder] = useState("");
   const [projectName, setProjectName] = useState("");
   const [folderIsValid, setFolderIsValid] = useState(true);
   const [projectIsValid, setProjectIsValid] = useState(true);
+  const [templateDirs, setTemplateDirs] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [templateId, setTemplateId] = useState<string>(INITAIL_TEMPLATE_ID);
 
+  // --- Refresh the template list according to the current machine id
+  const refreshTemplateList = async () => {
+    if (!machineId) return;
+    const response = await messenger.sendMessage({
+      type: "MainGetTemplateDirs",
+      machineId
+    });
+    if (response.type === "ErrorResponse") {
+      setTemplateDirs([]);
+    } else if (response.type !== "MainGetTemplateDirsResponse") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      setTemplateDirs(response.dirs.map(d => ({ value: d, label: d })));
+    }
+  };
+  useInitializeAsync(async () => {
+    await refreshTemplateList();
+  });
+
+  // --- Read the template names for a particular machine ID
+  useEffect(() => {
+    (async () => {
+      await refreshTemplateList();
+    })();
+  }, [machineId]);
+
+  // --- Validate the folder and project name
   useEffect(() => {
     const fValid = validationService.isValidPath(projectFolder);
     setFolderIsValid(fValid);
@@ -60,15 +95,18 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
       primaryEnabled={folderIsValid && projectIsValid}
       initialFocus='none'
       onPrimaryClicked={async result => {
-        const name = result ? result[0] : projectName;
-        const folder = result ? result[1] : projectFolder;
+        const machine = result ? result[0] : machineId;
+        const template = result ? result[1] : templateId;
+        const name = result ? result[2] : projectName;
+        const folder = result ? result[3] : projectFolder;
 
         // --- Create the project
-        console.log("Create project", machineId, modelId);
+        console.log("project", machineId, modelId, templateId, name, folder)
         const response = await messenger.sendMessage({
           type: "MainCreateKliveProject",
-          machineId,
+          machineId: machine,
           modelId,
+          templateId: template,
           projectName: name,
           projectFolder: folder
         });
@@ -121,12 +159,26 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           <Dropdown
             placeholder='Select...'
             options={machineIds}
-            value={"sp48:pal"}
+            value={`${INITIAL_MACHINE_IDE}:${INITIAL_MODEL_ID}`}
             width={468}
-            onSelectionChanged={option => {
+            onSelectionChanged={async option => {
               const [machineId, modelId] = split(option, ":");
               setMachineId(machineId);
               setmodelId(modelId);
+              console.log("machine", machineId, modelId);
+            }}
+          />
+        </div>
+      </DialogRow>
+      <DialogRow label='Project Template: *'>
+        <div className={styles.dropdownWrapper}>
+          <Dropdown
+            placeholder='Select...'
+            options={templateDirs}
+            value={"default"}
+            width={468}
+            onSelectionChanged={option => {
+              setTemplateId(option);
             }}
           />
         </div>
@@ -172,7 +224,8 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
               if (folderIsValid && projectIsValid) {
                 e.preventDefault();
                 e.stopPropagation();
-                modalApi.current.triggerPrimary([projectName, projectFolder]);
+                console.log("tp", templateId, projectName, projectFolder);
+                modalApi.current.triggerPrimary([machineId, templateId, projectName, projectFolder]);
               }
             }
           }}

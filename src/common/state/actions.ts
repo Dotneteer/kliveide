@@ -204,10 +204,11 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
   payload: { numValue }
 });
 
-export const setTapeFileAction: ActionCreator = (file: string) => ({
-  type: "SET_TAPE_FILE",
-  payload: { file }
+export const setMediaAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_MEDIA",
+  payload: { id, value }
 });
+
 
 export const activateOutputPaneAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_OUTPUT_PANE",
@@ -326,16 +327,6 @@ export const incEditorVersionAction: ActionCreator = () => ({
   type: "INC_EDITOR_VERSION"
 });
 
-export const setDiskFileAction: ActionCreator = (index, file) => ({
-  type: "SET_DISK_FILE",
-  payload: { index, file }
-});
-
-export const protectDiskAction: ActionCreator = (index, flag) => ({
-  type: "PROTECT_DISK",
-  payload: { index, flag }
-});
-
 export const syncSourceBreakpointsAction: ActionCreator = flag => ({
   type: "SYNC_SOURCE_BREAKPOINTS",
   payload: { flag }
@@ -387,4 +378,8 @@ export const incMenuVersionAction: ActionCreator = () => ({
 export const setMachineSpecificAction: ActionCreator = (value: any) => ({
   type: "SET_MACHINE_SPECIFIC",
   payload: { value }
+});
+
+export const incExploreViewVersionAction: ActionCreator = () => ({
+  type: "INC_EXPLORER_VIEW_VERSION"
 });

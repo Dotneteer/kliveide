@@ -21,10 +21,19 @@ import { setDebuggingAction, setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
-import { FAST_LOAD, TAPE_SAVED as SAVED_TO_TAPE } from "./machine-props";
+import {
+  DISK_A_CHANGES,
+  DISK_B_CHANGES,
+  FAST_LOAD,
+  SAVED_TO_TAPE
+} from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { delay } from "@renderer/utils/timing";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { MachineInfo } from "@common/machines/info-types";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { mediaStore } from "./media/media-info";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -34,6 +43,7 @@ export class MachineController implements IMachineController {
   private _machineTask: Promise<void>;
   private _machineState: MachineControllerState;
   private _loggedEventNo = 0;
+  private readonly _machineInfo: MachineInfo;
 
   /**
    * Initializes the controller to manage the specified machine.
@@ -54,6 +64,11 @@ export class MachineController implements IMachineController {
       avgCpuFrameTimeInMs: 0
     };
     this.state = MachineControllerState.None;
+
+    // --- Get machine information
+    this._machineInfo = machineRegistry.find(
+      m => m.machineId === machine.machineId
+    ) as MachineInfo;
   }
 
   /**
@@ -131,8 +146,9 @@ export class MachineController implements IMachineController {
    * Start the machine in debug mode.
    */
   async startDebug (): Promise<void> {
-    await this.sendOutput("Machine started in debug mode", "green");
     this.isDebugging = true;
+    this.machine?.awakeCpu();
+    await this.sendOutput("Machine started in debug mode", "green");
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StopAtBreakpoint);
   }
 
@@ -217,6 +233,7 @@ export class MachineController implements IMachineController {
    */
   async stepInto (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-into (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -229,6 +246,7 @@ export class MachineController implements IMachineController {
    */
   async stepOver (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-over (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -241,6 +259,7 @@ export class MachineController implements IMachineController {
    */
   async stepOut (): Promise<void> {
     this.isDebugging = true;
+    this.machine?.awakeCpu();
     await this.sendOutput(
       `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -391,6 +410,14 @@ export class MachineController implements IMachineController {
       case MachineControllerState.Stopped:
         // --- First start (after stop), reset the machine
         this.machine.reset();
+
+        // --- Check for supported media, attach media contents to the machine
+        this._machineInfo.mediaIds?.forEach(mediaId => {
+          const mediaInfo = mediaStore.getMedia(mediaId);
+          if (mediaInfo?.mediaContents) {
+            this.machine.setMachineProperty(mediaId, mediaInfo.mediaContents);
+          }
+        });
         break;
     }
 
@@ -434,19 +461,39 @@ export class MachineController implements IMachineController {
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
         const frameCompleted = termination === FrameTerminationMode.Normal;
-        let savedInfo: SavedFileInfo | null = null;
+        let savedFileInfo: SavedFileInfo;
+        let diskAChanges: SectorChanges;
+        let diskBChanges: SectorChanges;
         if (frameCompleted) {
           // --- Check for file to save
-          savedInfo = this.machine.getMachineProperty(
+          savedFileInfo = this.machine.getMachineProperty(
             SAVED_TO_TAPE
-          ) as SavedFileInfo | null;
-          if (savedInfo) {
+          ) as SavedFileInfo;
+          if (savedFileInfo) {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
+          }
+
+          // --- Check for disk A changes
+          diskAChanges = this.machine.getMachineProperty(
+            DISK_A_CHANGES
+          ) as SectorChanges;
+          if (diskAChanges) {
+            this.machine.setMachineProperty(DISK_A_CHANGES);
+          }
+
+          // --- Check for disk B changes
+          diskBChanges = this.machine.getMachineProperty(
+            DISK_B_CHANGES
+          ) as SectorChanges;
+          if (diskBChanges) {
+            this.machine.setMachineProperty(DISK_B_CHANGES);
           }
         }
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
-          savedFileInfo: savedInfo
+          savedFileInfo,
+          diskAChanges,
+          diskBChanges
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

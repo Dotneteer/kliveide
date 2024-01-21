@@ -28,6 +28,11 @@ export type DisassemblyOptions = {
  */
 export interface DisassemblyItem {
   /**
+   * Optional partition of an extended address
+   */
+  partition?: string;
+  
+  /**
    * The memory address of the disassembled instruction
    */
   address: number;

@@ -6,7 +6,7 @@ import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from "@state/actions";
+import { setMachineConfigAction, setMachineTypeAction, setMediaAction, setModelTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
@@ -18,6 +18,7 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import { mediaStore } from "@emu/machines/media/media-info";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();

@@ -22,7 +22,7 @@ export class Z80Tester {
 
     const disassembler = new Z80Disassembler(
       map.sections,
-      new Uint8Array(opCodes)
+      new Uint8Array(opCodes),
     );
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
@@ -53,6 +53,7 @@ export class Z80Tester {
     const disassembler = new Z80Disassembler(
       map.sections,
       new Uint8Array(opCodes),
+      undefined,
       {
         allowExtendedSet: true
       }

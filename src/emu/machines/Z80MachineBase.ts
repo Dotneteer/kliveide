@@ -12,25 +12,34 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
+import { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
  */
 export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   // --- Store the start tact of the next machine frame
-  private _nextFrameStartTact = 0;
+  protected _nextFrameStartTact = 0;
 
   // --- Store machine-specific properties here
   private readonly _machineProps = new Map<string, any>();
 
   // --- This flag indicates that the last machine frame has been completed.
-  private _frameCompleted: boolean;
+  protected _frameCompleted: boolean;
 
   // --- Shows the number of frame tacts that overflow to the subsequent machine frame.
-  private _frameOverflow = 0;
+  protected _frameOverflow = 0;
 
   // --- Events queued for execution
-  private _queuedEvents?: QueuedEvent[];
+  protected _queuedEvents?: QueuedEvent[];
+
+  /**
+   * Initialize the machine using the specified configuration
+   * @param config Machine configuration
+   */
+  constructor (readonly config: MachineConfigSet = {}) {
+    super();
+  }
 
   /**
    * The unique identifier of the machine type
@@ -83,7 +92,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   setMachineProperty (key: string, value?: any): void {
     if (value === undefined) {
       if (!this._machineProps.get(key)) return;
-
       this._machineProps.delete(key);
       this.machinePropertyChanged?.fire({ propertyName: key });
     } else {
@@ -238,6 +246,36 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param codeToInject Code to inject into the machine
    */
   abstract injectCodeToRun(codeToInject: CodeToInject): number;
+
+  /**
+   * Get the 64K of addressable memory of the ZX Spectrum computer
+   * @returns Bytes of the flat memory
+   */
+  abstract get64KFlatMemory(): Uint8Array;
+
+  /**
+   * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
+   * @param index Partition index
+   *
+   * Less than zero: ROM pages
+   * 0..7: RAM bank with the specified index
+   */
+  abstract get16KPartition(index: number): Uint8Array;
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  abstract getCurrentPartitions(): number[];
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  abstract getCurrentPartitionLabels(): string[];
+
+  /**
+   * Indicates if the machine's operating system is initialized
+   */
+  abstract get isOsInitialized(): boolean;
 
   /**
    * Registers and event to execute at the specified tact

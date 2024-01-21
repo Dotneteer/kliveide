@@ -11,6 +11,7 @@ import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -46,9 +47,9 @@ export interface IMachineController {
    */
   debugSupport?: IDebugSupport;
 
-  /// <summary>
-  /// Get or set the current state of the machine controller.
-  /// </summary>
+  /**
+   * Get or set the current state of the machine controller.
+   */
   readonly state: MachineControllerState;
 
   /**
@@ -157,5 +158,7 @@ export interface IMachineController {
 
 export type FrameCompletedArgs = {
   fullFrame: boolean;
-  savedFileInfo: SavedFileInfo | null;
+  savedFileInfo?: SavedFileInfo;
+  diskAChanges?: SectorChanges;
+  diskBChanges?: SectorChanges;
 };

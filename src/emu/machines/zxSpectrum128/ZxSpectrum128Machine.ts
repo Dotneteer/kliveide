@@ -214,6 +214,20 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return this.memory.getPartitions();
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels (): string[] {
+    return this.memory.getPartitionLabels();
+  }
+
+  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

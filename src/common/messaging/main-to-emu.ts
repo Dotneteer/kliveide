@@ -65,6 +65,15 @@ export interface EmuSetDiskFileRequest extends MessageBase {
 }
 
 /**
+ * The main process sends a disk file to the emulator
+ */
+export interface EmuSetDiskWriteProtectionRequest extends MessageBase {
+  type: "EmuSetDiskWriteProtection";
+  diskIndex: number;
+  protect: boolean;
+}
+
+/**
  * The Ide process asks the emu process for CPU state information
  */
 export interface EmuGetCpuStateRequest extends MessageBase {
@@ -190,6 +199,7 @@ export interface EmuGetCpuStateResponse extends MessageBase {
   iff2: boolean;
   sigINT: boolean;
   halted: boolean;
+  snoozed: boolean;
 }
 
 /**
@@ -247,6 +257,9 @@ export interface EmuGetMemoryResponse extends MessageBase {
   iy: number;
   ir: number;
   wz: number;
+  partitionLabels: string[];
+  selectedRom?: number;
+  selectedBank?: number;
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
 }

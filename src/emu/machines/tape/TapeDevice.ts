@@ -18,14 +18,14 @@ import {
   TAPE_MODE,
   FAST_LOAD,
   TAPE_SAVER,
-  TAPE_DATA,
   REWIND_REQUESTED,
-  TAPE_SAVED
+  SAVED_TO_TAPE
 } from "../machine-props";
 import { ITapeSaver } from "./ITapeSaver";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { TzxHeader } from "./TzxHeader";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 
 // --- Pilot pulses in the header blcok
 const HEADER_PILOT_COUNT = 8063;
@@ -645,7 +645,7 @@ export class TapeDevice implements ITapeDevice {
         }
         break;
 
-      case TAPE_DATA:
+      case MEDIA_TAPE:
         if (Array.isArray(handler.newValue)) {
           device._blocks = handler.newValue as TapeDataBlock[];
           device._currentBlockIndex = -1;
@@ -695,7 +695,7 @@ export class TapeSaver implements ITapeSaver {
       block.writeTo(writer);
 
       // --- Store the last saved file
-      this.tapeDevice.machine.setMachineProperty(TAPE_SAVED, {
+      this.tapeDevice.machine.setMachineProperty(SAVED_TO_TAPE, {
         name: `${this._name}.tzx`,
         contents: writer.buffer
       });

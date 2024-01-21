@@ -1,7 +1,7 @@
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
-import { DskDiskReader, DskTrackInformationBlock } from "./DskDiskReader";
 import { DiskCrc } from "./DiskCrc";
+import { DiskInformation, TrackInformation } from "./DiskInformation";
 
 // --- Gap type indexes
 const GAP_MINIMAL_FM = 0;
@@ -10,15 +10,17 @@ const GAP_MINIMAL_MFM = 1;
 /**
  * The surface view of a disk
  */
-export interface DiskSurfaceView {
+export interface DiskSurface {
   density: DiskDensity;
+  bytesPerTrack: number;
   tracks: TrackSurface[];
 }
 
 /**
  * Surface of a single track
  */
-export interface TrackSurface {
+interface TrackSurface {
+  trackLength: number;
   trackData: Uint8Array;
   header: BufferSpan;
   sectors: SectorSurface[];
@@ -30,22 +32,27 @@ export interface TrackSurface {
 /**
  * Surface of a single sector
  */
-export interface SectorSurface {
+interface SectorSurface {
   headerData: BufferSpan;
   sectorPrefix: BufferSpan;
   sectordata: BufferSpan;
   tailData: BufferSpan;
 }
 
-export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
-  const reader = new DskDiskReader(contents);
+/**
+ * Creates a surface view of the specified disk file contents
+ * @param contents Disk contents or a reader parsing the contents
+ * @returns The surface view of the disk
+ */
+export function createDiskSurface (
+  diskInfo: DiskInformation): DiskSurface {
 
   // --- Get the longest track
   let maxBytesPerTrack = 0;
   let gapType = GAP_MINIMAL_FM;
 
   // --- All tracks should have the same gap type. Calculate track header length.
-  const track0 = reader.tracks[0];
+  const track0 = diskInfo.tracks[0];
   if (track0.gap3 !== 0xff) {
     gapType = GAP_MINIMAL_MFM;
   }
@@ -57,7 +64,7 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
     gapInfo.len[1]; // --- Gap 1
 
   // --- Iterate through all tracks to find the longest track size
-  reader.tracks.forEach(t => {
+  diskInfo.tracks.forEach(t => {
     let trackDataLength = 0;
 
     // --- Iterate through all sectors
@@ -125,7 +132,7 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
 
   // --- Now, let's allocate the space for the surface view
   const tracks: TrackSurface[] = [];
-  for (let i = 0; i < reader.tracks.length; i++) {
+  for (let i = 0; i < diskInfo.tracks.length; i++) {
     const trackData = new Uint8Array(trackLength);
     const sectorSpan = new BufferSpan(
       trackData,
@@ -137,9 +144,10 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
     const clockOffset = fmOffset - bitArrayLength;
     const clockData = new BufferSpan(trackData, clockOffset, bitArrayLength);
     const track = (tracks[i] = {
+      trackLength: bytesPerTrack,
       trackData,
       header: new BufferSpan(trackData, 0, trackHeaderLength),
-      sectors: setSectorData(reader.tracks[i], sectorSpan, gapInfo, clockData),
+      sectors: setSectorData(diskInfo.tracks[i], sectorSpan, gapInfo, clockData),
       clockData,
       fmData: new BufferSpan(trackData, fmOffset, bitArrayLength),
       weakSectorData: new BufferSpan(trackData, weakOffset, bitArrayLength)
@@ -174,6 +182,7 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
   // --- Done.
   return {
     density,
+    bytesPerTrack,
     tracks
   };
 }
@@ -187,7 +196,7 @@ export function createDiskSurfaceView (contents: Uint8Array): DiskSurfaceView {
  * @returns
  */
 function setSectorData (
-  track: DskTrackInformationBlock,
+  track: TrackInformation,
   sectorSpan: BufferSpan,
   gapInfo: DiskGap,
   clockData: BufferSpan
@@ -304,7 +313,11 @@ function setSectorData (
       ),
       tailData: new BufferSpan(
         sectorSpan.buffer,
-        sectorSpan.startOffset + sectorOffset + headerLength + prefixLength + storedDataLenght,
+        sectorSpan.startOffset +
+          sectorOffset +
+          headerLength +
+          prefixLength +
+          storedDataLenght,
         tailLength
       )
     });

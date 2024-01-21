@@ -242,31 +242,20 @@ const CpuPanel = () => {
       </div>
       <Separator />
       <div className={styles.cols}>
-        <Label text='CLK' width={LAB_WIDTH} />
-        <Value
-          text={cpuState?.tacts?.toString() ?? "---"}
-          width={TACT_WIDTH}
-          tooltip='Curent CPU clock'
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text='TSP' width={LAB_WIDTH} />
-        <Value
-          text={
-            (
-              (cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)
-            ).toString() ?? "---"
-          }
-          width={TACT_WIDTH}
-          tooltip='T-States since last start after pause'
-        />
-      </div>
-      <div className={styles.cols}>
         <Label text='IM' width={LAB_WIDTH} />
         <Value
           text={cpuState?.interruptMode?.toString() ?? "-"}
-          width={R16_WIDTH}
+          width={FLAG_WIDTH + 4}
           tooltip='Interrupt Mode'
+        />
+        <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
+        <Label text='SNZ' width={LAB_WIDTH-3} />
+        <Flag
+          value={cpuState?.snoozed}
+          width={FLAG_WIDTH}
+          adjustLeft={false}
+          center={false}
+          tooltip='Is the CPU snoozed?'
         />
       </div>
       <div className={styles.cols}>
@@ -305,6 +294,26 @@ const CpuPanel = () => {
           adjustLeft={false}
           center={false}
           tooltip='Halted'
+        />
+      </div>
+      <div className={styles.cols}>
+        <Label text='CLK' width={LAB_WIDTH} />
+        <Value
+          text={cpuState?.tacts?.toString() ?? "---"}
+          width={TACT_WIDTH}
+          tooltip='Curent CPU clock'
+        />
+      </div>
+      <div className={styles.cols}>
+        <Label text='TSP' width={LAB_WIDTH} />
+        <Value
+          text={
+            (
+              (cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)
+            ).toString() ?? "---"
+          }
+          width={TACT_WIDTH}
+          tooltip='T-States since last start after pause'
         />
       </div>
     </div>

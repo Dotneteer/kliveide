@@ -24,7 +24,6 @@ import {
   changeToolVisibilityAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  setTapeFileAction,
   showIdeToolbarAction,
   showIdeStatusBarAction,
   closeFolderAction,
@@ -59,6 +58,7 @@ import { createSettingsReader } from "../common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "../common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { fileChangeWatcher } from "./file-watcher";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -208,6 +208,7 @@ export function setupMenu (
           ensureIdeWindow();
           await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
           mainStore.dispatch(closeFolderAction());
+          fileChangeWatcher.stopWatching();
           await saveKliveProject();
         }
       },
@@ -995,7 +996,7 @@ export function setupMenu (
  * @returns The key mappings file is set in the app state
  */
 async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
-  const lastFile = mainStore.getState()?.emulatorState?.tapeFile;
+  const lastFile = appSettings.keyMappingFile;
   const defaultPath =
     appSettings?.folders?.[KEY_MAPPING_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));

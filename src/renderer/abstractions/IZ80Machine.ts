@@ -7,6 +7,7 @@ import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "./KeyMapping";
+import { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
@@ -17,6 +18,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * The unique identifier of the machine type
    */
   machineId: string;
+
+  /**
+   * The machine configuration
+   */
+  readonly config: MachineConfigSet;
 
   /**
    * This property stores the execution context where the emulated machine runs its execution loop.
@@ -163,4 +169,32 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * @param command Command to execute
    */
   executeCustomCommand(command: string): Promise<void>;
+
+  /**
+   * Get the 64K of addressable memory of the computer
+   * @returns Bytes of the flat memory
+   */
+  get64KFlatMemory(): Uint8Array;
+
+  /**
+   * Get the specified 16K partition (page or bank) of the computer
+   * @param index Partition index
+   * @returns Bytes of the partition
+   */
+  get16KPartition(index: number): Uint8Array;
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions(): number[];
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels(): string[];
+
+  /**
+   * Indicates if the machine's operating system is initialized
+   */
+  get isOsInitialized(): boolean;
 }

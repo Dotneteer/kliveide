@@ -13,11 +13,13 @@ import {
   MF_BLINK,
   MF_PSG,
   MC_Z88_INTROM,
-  CT_DISASSEMBLER
+  CT_DISASSEMBLER,
+  CT_DISASSEMBLER_VIEW
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
 
 /**
  * The registry of available machine types with their available models
@@ -54,6 +56,7 @@ export const machineRegistry: MachineInfo[] = [
         }
       }
     ],
+    mediaIds: [MEDIA_TAPE],
     toolInfo: {
       [CT_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
     }
@@ -67,7 +70,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_PSG]: true,
       [MF_ROM]: 2,
       [MF_BANK]: 8
-    }
+    },
+    mediaIds: [MEDIA_TAPE],
   },
   {
     machineId: MI_SPECTRUM_3E,
@@ -79,6 +83,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 4,
       [MF_BANK]: 8
     },
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     models: [
       {
         modelId: "nofdd",
@@ -134,7 +139,11 @@ export const machineRegistry: MachineInfo[] = [
       }
     ],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler()
+      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
     }
   }
 ];

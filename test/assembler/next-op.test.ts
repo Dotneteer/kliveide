@@ -13,10 +13,13 @@ describe("Assembler - NEXT operations", async () => {
   it("nextreg", async () => {
     await testNextCodeEmit("nextreg #12, #34", 0xed, 0x91, 0x12, 0x34);
     await testNextCodeEmit("nextreg #12, a", 0xed, 0x92, 0x12);
+    await testNextCodeEmit("nreg #12, #34", 0xed, 0x91, 0x12, 0x34);
+    await testNextCodeEmit("nreg #12, a", 0xed, 0x92, 0x12);
   });
 
   it("mirror a", async () => {
     await testNextCodeEmit("mirror a", 0xed, 0x24);
+    await testNextCodeEmit("mirr a", 0xed, 0x24);
   });
 
   it("bsla de,b", async () => {

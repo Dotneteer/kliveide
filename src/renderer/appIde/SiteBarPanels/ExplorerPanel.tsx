@@ -32,7 +32,11 @@ import {
 import { RenameDialog } from "../dialogs/RenameDialog";
 import { DeleteDialog } from "../dialogs/DeleteDialog";
 import { NewItemDialog } from "../dialogs/NewItemDialog";
-import { displayDialogAction, setBuildRootAction } from "@state/actions";
+import {
+  displayDialogAction,
+  incExploreViewVersionAction,
+  setBuildRootAction
+} from "@state/actions";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
@@ -45,7 +49,6 @@ import {
   NEW_PROJECT_DIALOG
 } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
-import { delay } from "@renderer/utils/timing";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -104,6 +107,10 @@ const ExplorerPanel = () => {
   const svApi = useRef<ScrollViewerApi>();
   const vlApi = useRef<VirtualizedListApi>();
 
+  // --- State used for tree refresh
+  const [lastExpanded, setLastExpanded] = useState<string[]>(null);
+  const explorerViewVersion = useSelector(s => s.ideView?.explorerViewVersion);
+
   // --- This function refreshes the Explorer tree
   const refreshTree = () => {
     tree.buildIndex();
@@ -111,22 +118,17 @@ const ExplorerPanel = () => {
     vlApi.current.refresh();
   };
 
-  const [forceRefresh, setForceRefresh] = useState(0);
-
   // --- Let's use this context menu when clicking a project tree node
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
-    <ContextMenu
-      state={contextMenuState}
-      onClickAway={contextMenuApi.conceal}
-    >
+    <ContextMenu state={contextMenuState} onClickAway={contextMenuApi.conceal}>
       {selectedNodeIsRoot && (
         <>
           <ContextMenuItem
             text='Refresh'
-            clicked={()=> {
+            clicked={() => {
               folderCache.clear();
-              setForceRefresh(forceRefresh + 1);
+              store.dispatch(incExploreViewVersionAction());
             }}
           />
         </>
@@ -166,12 +168,14 @@ const ExplorerPanel = () => {
         </>
       )}
       <ContextMenuItem
-        text={`Reveal in ${isWindows ? "File Explorer": "Finder"}`}
+        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
         disabled={!selectedContextNode?.data.fullPath}
-        clicked={() => messenger.postMessage({
-          type:"MainShowItemInFolder",
-          itemPath:selectedContextNode.data.fullPath
-        })}
+        clicked={() =>
+          messenger.postMessage({
+            type: "MainShowItemInFolder",
+            itemPath: selectedContextNode.data.fullPath
+          })
+        }
       />
       <ContextMenuSeparator />
       <ContextMenuItem
@@ -181,7 +185,9 @@ const ExplorerPanel = () => {
       />
       <ContextMenuItem
         text='Exclude'
-        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject}
+        disabled={
+          selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject
+        }
         clicked={async () => {
           await ideCommandsService.executeCommand(
             `p:x "${selectedContextNode.data.fullPath}"`
@@ -227,9 +233,7 @@ const ExplorerPanel = () => {
       onRename={async (newName: string) => {
         // --- Start renaming the item
         const newFullName = path.join(
-          getNodeDir(
-            selectedContextNode.data.fullPath
-          ),
+          getNodeDir(selectedContextNode.data.fullPath),
           newName
         );
         await projectService.performAllDelayedSavesNow();
@@ -412,6 +416,7 @@ const ExplorerPanel = () => {
           node.isExpanded = !node.isExpanded;
           tree.buildIndex();
           setVisibleNodes(tree.getVisibleNodes());
+          setLastExpanded(getExpandedItems(tree.rootNode));
 
           if (!node.data.isFolder) {
             await ideCommandsService.executeCommand(
@@ -446,7 +451,7 @@ const ExplorerPanel = () => {
         {!node.data.isFolder && (
           <Icon
             iconName={node.data.icon ?? "file-code"}
-            fill={node.data.iconFill ?? '--fill-explorer-icon'}
+            fill={node.data.iconFill ?? "--fill-explorer-icon"}
             width={16}
             height={16}
           />
@@ -492,6 +497,45 @@ const ExplorerPanel = () => {
           )}
       </div>
     );
+  };
+
+  const refreshProjectFolder = async (useCache: boolean) => {
+    // --- No open folder
+    if (!folderPath) {
+      setSelected(-1);
+      return;
+    }
+
+    // --- Check the cache for the folder
+    lastExplorerPath = folderPath;
+    const cachedTree = folderCache.get(folderPath);
+    if (cachedTree && useCache) {
+      // --- Folder tree found in the cache
+      setTree(cachedTree);
+      setVisibleNodes(cachedTree.getVisibleNodes());
+      projectService.setProjectTree(cachedTree);
+      return;
+    }
+
+    // --- Read the folder tree
+    const response = await messenger.sendMessage({
+      type: "MainGetDirectoryContent",
+      directory: folderPath
+    });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(
+        `MainGetDirectoryContent call failed: ${response.message}`
+      );
+    } else if (response.type !== "MainGetDirectoryContentResponse") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      // --- Build the folder tree
+      const projectTree = buildProjectTree(response.contents, lastExpanded);
+      setTree(projectTree);
+      setVisibleNodes(projectTree.getVisibleNodes());
+      projectService.setProjectTree(projectTree);
+      folderCache.set(folderPath, projectTree);
+    }
   };
 
   // --- Set up the project service to handle project events
@@ -541,44 +585,16 @@ const ExplorerPanel = () => {
   // --- Get the current project tree when the project path changes
   useEffect(() => {
     (async () => {
-      // --- No open folder
-      if (!folderPath) {
-        setSelected(-1);
-        return;
-      }
-
-      // --- Check the cache for the folder
-      lastExplorerPath = folderPath;
-      const cachedTree = folderCache.get(folderPath);
-      if (cachedTree) {
-        // --- Folder tree found in the cache
-        setTree(cachedTree);
-        setVisibleNodes(cachedTree.getVisibleNodes());
-        projectService.setProjectTree(cachedTree);
-        return;
-      }
-
-      // --- Read the folder tree
-      const response = await messenger.sendMessage({
-        type: "MainGetDirectoryContent",
-        directory: folderPath
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `MainGetDirectoryContent call failed: ${response.message}`
-        );
-      } else if (response.type !== "MainGetDirectoryContentResponse") {
-        reportUnexpectedMessageType(response.type);
-      } else {
-        // --- Build the folder tree
-        const projectTree = buildProjectTree(response.contents);
-        setTree(projectTree);
-        setVisibleNodes(projectTree.getVisibleNodes());
-        projectService.setProjectTree(projectTree);
-        folderCache.set(folderPath, projectTree);
-      }
+      refreshProjectFolder(true);
     })();
-  }, [folderPath, excludedItems, forceRefresh]);
+  }, [folderPath, excludedItems, explorerViewVersion]);
+
+  // --- Get the current project tree when file system changes
+  useEffect(() => {
+    (async () => {
+      refreshProjectFolder(false);
+    })();
+  }, [explorerViewVersion]);
 
   // --- Render the Explorer panel
   return folderPath ? (
@@ -597,7 +613,7 @@ const ExplorerPanel = () => {
 
         <VirtualizedListView
           items={visibleNodes}
-          approxSize={20}
+          approxSize={24}
           fixItemHeight={true}
           svApiLoaded={api => (svApi.current = api)}
           vlApiLoaded={api => (vlApi.current = api)}
@@ -638,5 +654,21 @@ const ExplorerPanel = () => {
     </>
   );
 };
+
+function getExpandedItems (root: ITreeNode<ProjectNode>): string[] {
+  const result: string[] = [];
+  getExpandedItemsRecursive(root, result);
+  return result;
+
+  function getExpandedItemsRecursive (
+    node: ITreeNode<ProjectNode>,
+    results: string[]
+  ) {
+    if (node.isExpanded && node.data.isFolder) {
+      result.push(node.data.projectPath);
+      node.children.forEach(child => getExpandedItemsRecursive(child, results));
+    }
+  }
+}
 
 export const explorerPanelRenderer = () => <ExplorerPanel />;

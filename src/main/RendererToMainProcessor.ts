@@ -7,6 +7,7 @@ import {
   defaultResponse,
   errorResponse,
   flagResponse,
+  MessageBase,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
@@ -50,6 +51,14 @@ import {
 } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
+import { SectorChanges } from "../emu/abstractions/IFloppyDiskDrive";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  PROJECT_TEMPLATES
+} from "../common/structs/project-const";
+import { readDiskData } from "../emu/machines/disk/disk-readers";
+import { createDiskFile } from "../common/utils/create-disk-file";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -151,6 +160,7 @@ export async function processRendererToMainMessages (
       const createFolderResponse = await createKliveProject(
         message.machineId,
         message.modelId,
+        message.templateId,
         message.projectName,
         message.projectFolder
       );
@@ -238,7 +248,6 @@ export async function processRendererToMainMessages (
 
     case "MainSaveBinaryFile":
       try {
-        //throw new Error("Fake Error");
         const filePath = resolveMessagePath(message.path, message.resolveIn);
         const dir = path.dirname(filePath);
         if (!fs.existsSync(dir)) {
@@ -383,6 +392,30 @@ export async function processRendererToMainMessages (
         };
       }
 
+    case "MainSaveDiskChanges":
+      return saveDiskChanges(message.diskIndex, message.changes);
+
+    case "MainCreateDiskFile":
+      const diskCreated = createDiskFile(
+        message.diskFolder,
+        message.filename,
+        message.diskType
+      );
+      return {
+        type: "MainCreateDiskFileResponse",
+        path: diskCreated
+      };
+
+    case "MainGetTemplateDirs":
+      try {
+        return {
+          type: "MainGetTemplateDirsResponse",
+          dirs: getTemplateDirs(message.machineId)
+        };
+      } catch (err) {
+        return errorResponse(err.toString());
+      }
+
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
       // --- Send this message to the emulator
@@ -506,4 +539,68 @@ function resolveMessagePath (inputPath: string, resolveIn?: string): string {
     }
   }
   return inputPath;
+}
+
+// --- Save disk changes to their corresponding disk file
+function saveDiskChanges (
+  diskIndex: number,
+  changes: SectorChanges
+): ResponseMessage {
+  // --- Get the disk file from the store
+  const diskFile =
+    mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]
+      ?.diskFile;
+
+  // --- The disk file must exist
+  if (!diskFile) {
+    return errorResponse(`No disk file found for disk ${diskIndex}`);
+  }
+
+  try {
+    const contents = fs.readFileSync(diskFile);
+    const diskInfo = readDiskData(contents);
+
+    const handle = fs.openSync(diskFile, "r+");
+    try {
+      for (const change of changes.keys()) {
+        const trackIndex = Math.floor(change / 100);
+        const sectorIndex = change % 100;
+        const track = diskInfo.tracks[trackIndex];
+        const sector = track.sectors.find(s => s.R === sectorIndex);
+        if (!sector) {
+          throw Error(
+            `Sector with index #${sectorIndex} cannot be found on track #${trackIndex}`
+          );
+        }
+        const data = changes.get(change);
+        fs.writeSync(handle, data, 0, data.length, sector.sectorDataPosition);
+      }
+    } finally {
+      fs.closeSync(handle);
+    }
+  } catch (err) {
+    return errorResponse(`Saving disk changes failed: ${err.message}`);
+  }
+
+  // --- Done.
+  return defaultResponse();
+}
+
+function getTemplateDirs (machineId: string): string[] {
+  // --- Check if we have a template folder for the machine at all
+  const templateFolder = path.join(
+    resolvePublicFilePath(PROJECT_TEMPLATES),
+    machineId
+  );
+  if (
+    fs.existsSync(templateFolder) &&
+    !fs.statSync(templateFolder).isDirectory()
+  ) {
+    return [];
+  }
+
+  // --- Ok, read the subfolders of the machine template folder
+  return fs
+    .readdirSync(templateFolder)
+    .filter(f => fs.statSync(path.join(templateFolder, f)).isDirectory());
 }

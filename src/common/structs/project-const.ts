@@ -1,6 +1,11 @@
 export const KLIVE_PROJECT_ROOT = "KliveProjects";
 export const CODE_FOLDER = "code";
 export const PROJECT_FILE = "klive.project";
+export const PROJECT_MERGE_FILE = "__$klive.project";
 export const LAST_PROJECT_FOLDER = "lastProjectFolder";
-export const TEMPLATES = "project-templates";
+export const PROJECT_TEMPLATES = "project-templates";
 export const KEY_MAPPINGS = "keymappings";
+
+export const MEDIA_TAPE = "tape";
+export const MEDIA_DISK_A = "diskA";
+export const MEDIA_DISK_B = "diskB";
