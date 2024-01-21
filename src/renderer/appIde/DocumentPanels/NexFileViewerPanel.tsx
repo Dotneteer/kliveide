@@ -213,9 +213,10 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
               <NextBankViewer contents={fileInfo?.timexHiColLoadingScreen} />
             </ExpandableRow>
           )}
-          {fileInfo.bankData.map(entry => {
+          {fileInfo.bankData.map((entry, idx) => {
             return (
               <ExpandableRow
+                key={idx}
                 heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(10)})`}
                 expanded={false}
               >
