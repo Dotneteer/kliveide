@@ -11,7 +11,7 @@ export type DocumentProps<T = any> = {
   document?: ProjectDocumentState;
   contents?: any;
   viewState?: T;
-  apiLoaded: (api: DocumentApi) => void;
+  apiLoaded?: (api: DocumentApi) => void;
 };
 
 export const DocumentsContainer = ({

@@ -1,6 +1,6 @@
 import styles from "./SprFileEditorPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const SprFileEditorPanel = ({ document, contents }: DocumentProps) => {
   return (

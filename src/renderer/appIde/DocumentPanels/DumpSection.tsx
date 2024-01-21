@@ -7,7 +7,7 @@ import { ZxSpectrumChars } from "./char-codes";
 import styles from "./DumpSection.module.scss";
 
 type DumpProps = {
-  showPartitions: boolean;
+  showPartitions?: boolean;
   partitionLabel?: string;
   address: number;
   memory: Uint8Array;

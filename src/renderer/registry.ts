@@ -18,7 +18,8 @@ import {
   NPL_EDITOR,
   NXI_EDITOR,
   SPR_EDITOR,
-  VID_VIEWER
+  VID_VIEWER,
+  STATIC_MEMORY_DUMP_VIEWER
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -55,19 +56,20 @@ import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import { MC_DISK_SUPPORT, MF_BLINK, MF_PSG, MF_ULA } from "@common/machines/constants";
 import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
-import { createNexFileViewerPanel } from "./appIde/DocumentPanels/NexFileViewerPanel";
-import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Z80FileViewerPanel";
-import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/SnaFileViewerPanel";
-import { createScrFileViewerPanel } from "./appIde/DocumentPanels/ScrFileViewerPanel";
-import { createShcFileViewerPanel } from "./appIde/DocumentPanels/ShcFileViewerPanel";
-import { createShrFileViewerPanel } from "./appIde/DocumentPanels/ShrFileViewerPanel";
-import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/SlrFileViewerPanel";
-import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Sl2FileViewerPanel";
-import { createPalFileEditorPanel } from "./appIde/DocumentPanels/PalFileEditorPanel";
-import { createNplFileEditorPanel } from "./appIde/DocumentPanels/NplFileEditorPanel";
-import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/NxiFileEditorPanel";
-import { createSprFileEditorPanel } from "./appIde/DocumentPanels/SprFileEditorPanel";
-import { createVidFileViewerPanel } from "./appIde/DocumentPanels/VidFileViewerPanel";
+import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
+import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
+import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/Next/SnaFileViewerPanel";
+import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileViewerPanel";
+import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
+import { createShrFileViewerPanel } from "./appIde/DocumentPanels/Next/ShrFileViewerPanel";
+import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/Next/SlrFileViewerPanel";
+import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileViewerPanel";
+import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
+import { createNplFileEditorPanel } from "./appIde/DocumentPanels/Next/NplFileEditorPanel";
+import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
+import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SprFileEditorPanel";
+import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
+import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -218,6 +220,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: COMMAND_RESULT_EDITOR,
     renderer: createCommandResultPanel,
     icon: "code",
+    iconFill: "--console-ansi-bright-magenta"
+  },
+  {
+    id: STATIC_MEMORY_DUMP_VIEWER,
+    renderer: createStaticMemoryDump,
+    icon: "memory-icon",
     iconFill: "--console-ansi-bright-magenta"
   },
   {

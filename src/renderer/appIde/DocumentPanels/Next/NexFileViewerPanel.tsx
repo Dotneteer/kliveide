@@ -1,8 +1,7 @@
 import styles from "./NexFileViewerPanel.module.scss";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { useState } from "react";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
+import { useEffect, useState } from "react";
 import {
   ExpandableRow,
   Label,
@@ -11,9 +10,11 @@ import {
   Panel,
   Row
 } from "@renderer/controls/GeneralControls";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
+import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { NextBankViewer } from "@renderer/controls/NextBankViewer";
+import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
+import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 
 const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
   const [fileInfo, setFileInfo] = useState<NexFileContents>();
@@ -21,18 +22,19 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
 
-  // --- Initialize the panel
-  useInitializeAsync(async () => {
+  useEffect(() => {
+    console.log(document.path);
     try {
       const fileInfo = loadNexFile();
       setFileInfo(fileInfo);
+      setValid(true);
     } catch (err) {
       setFileError(err.message);
       setValid(false);
     } finally {
       setInitialized(true);
     }
-  });
+  }, [document]);
 
   const h = fileInfo?.header;
   return initialized ? (
@@ -184,7 +186,11 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
           )}
           {fileInfo.layer2LoadingScreen?.length > 0 && (
             <ExpandableRow heading='Layer 2 Loading Screen' expanded={false}>
-              <NextBankViewer contents={fileInfo?.layer2LoadingScreen} />
+              <Layer2Screen
+                documentSource={document.id}
+                data={fileInfo?.layer2LoadingScreen}
+                palette={fileInfo.palette.map(v => getAbrgForPaletteCode(v))}
+              />
             </ExpandableRow>
           )}
           {fileInfo.ulaLoadingScreen?.length > 0 && (
@@ -217,7 +223,9 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
             return (
               <ExpandableRow
                 key={idx}
-                heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(10)})`}
+                heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(
+                  10
+                )})`}
                 expanded={false}
               >
                 <NextBankViewer contents={entry[1]} bank={entry[0]} />

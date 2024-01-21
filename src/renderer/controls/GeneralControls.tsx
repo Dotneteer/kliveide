@@ -7,8 +7,8 @@ import classnames from "@renderer/utils/classnames";
 
 type PanelProps = {
   xclass?: string;
-  children?: React.ReactNode
-}
+  children?: React.ReactNode;
+};
 
 export const Panel = ({ children, xclass }: PanelProps) => (
   <div className={classnames(styles.panel, xclass)}>
@@ -16,8 +16,18 @@ export const Panel = ({ children, xclass }: PanelProps) => (
   </div>
 );
 
-export const Row = ({ children }: { children?: React.ReactNode }) => (
-  <div className={styles.row}>{children}</div>
+type RowProps = {
+  xclass?: string;
+  children?: React.ReactNode;
+  height?: string | number;
+};
+
+export const Row = ({ children, xclass, height }: RowProps) => (
+  <div className={classnames(styles.row, xclass)} style={{height}}>{children}</div>
+);
+
+export const HeaderRow = ({ children }: RowProps) => (
+  <Row xclass={styles.headerRow}>{children}</Row>
 );
 
 export const Column = ({ children }: { children?: React.ReactNode }) => (
@@ -219,6 +229,7 @@ export const ExpandableRow = ({
           iconName={isExpanded ? "chevron-down" : "chevron-right"}
           width={16}
           height={16}
+          fill="--color-command-icon"
         />
       </div>
       {isExpanded && <Column>{children}</Column>}

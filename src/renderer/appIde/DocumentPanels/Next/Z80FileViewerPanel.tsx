@@ -1,6 +1,6 @@
 import styles from "./Z80FileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const Z80FileViewerPanel = ({ document, contents }: DocumentProps) => {
   return (

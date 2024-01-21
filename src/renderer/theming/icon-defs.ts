@@ -451,4 +451,16 @@ export const iconLibrary: IconInfo[] = [
     width: 16,
     height: 16
   },
+  {
+    name: "preview",
+    path: "M2 2h12l1 1v10l-1 1H2l-1-1V3l1-1zm0 11h12V3H2v10zm11-9H3v3h10V4zm-1 2H4V5h8v1zm-3 6h4V8H9v4zm1-3h2v2h-2V9zM7 8H3v1h4V8zm-4 3h4v1H3v-1z",
+    width: 16,
+    height: 16
+  },
+  {
+    name: "dump",
+    path: "M2 3H1v1h1V3zm0 3H1v1h1V6zM1 9h1v1H1V9zm1 3H1v1h1v-1zm2-9h11v1H4V3zm11 3H4v1h11V6zM4 9h11v1H4V9zm11 3H4v1h11v-1z",
+    width: 16,
+    height: 16
+  },
 ];

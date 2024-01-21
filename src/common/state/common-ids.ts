@@ -6,6 +6,7 @@ export const MEMORY_EDITOR = "Memory";
 export const BASIC_PANEL_ID = "$basic";
 export const BASIC_EDITOR = "Basic";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
+export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";
 export const TAP_VIEWER = "TapViewer";
 export const DSK_VIEWER = "DskViewer";
 export const NEX_VIEWER = "NexViewer";

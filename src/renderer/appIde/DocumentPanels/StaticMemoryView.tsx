@@ -8,12 +8,13 @@ import { Label } from "@controls/Labels";
 type MemoryViewProps = {
   memory: Uint8Array;
   initialShowAll?: boolean
+  maxBytesInConciseView?: number;
 };
 
 const MAX_BYTES = 64;
 
-export const StaticMemoryView = ({ memory, initialShowAll = false }: MemoryViewProps) => {
-  const needsLabel = memory.length > MAX_BYTES;
+export const StaticMemoryView = ({ memory, initialShowAll = false, maxBytesInConciseView = MAX_BYTES }: MemoryViewProps) => {
+  const needsLabel = memory.length > maxBytesInConciseView;
   const [showAll, setShowAll] = useState(initialShowAll);
   const [bytesDisplayed, setBytesDisplayed] = useState(0);
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
@@ -21,7 +22,7 @@ export const StaticMemoryView = ({ memory, initialShowAll = false }: MemoryViewP
     const items: number[] = [];
     const displayLength = showAll
       ? memory.length
-      : Math.min(MAX_BYTES, memory.length);
+      : Math.min(maxBytesInConciseView, memory.length);
     for (let addr = 0; addr < displayLength; addr += 0x10) {
       items.push(addr);
     }
@@ -40,7 +41,7 @@ export const StaticMemoryView = ({ memory, initialShowAll = false }: MemoryViewP
               clicked={v => setShowAll(v)}
             />
             {needsLabel && !showAll && (
-              <Label text={`(Showing only the leading ${MAX_BYTES} bytes)`} />
+              <Label text={`(Showing only the leading ${maxBytesInConciseView} bytes)`} />
             )}
           </div>
         )}
