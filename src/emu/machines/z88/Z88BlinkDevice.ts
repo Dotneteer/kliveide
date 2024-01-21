@@ -9,11 +9,12 @@ import {
   TMKFlags,
   TSTAFlags
 } from "./IZ88BlinkDevice";
+import { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 
 /**
  * Represents the Blink device of Cambridge Z88
  */
-export class Z88BlinkDevice implements IZ88BlinkDevice {
+export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   /**
    * Chip size masks describing the chip size (5 byte values)
    * 0: Internal ROM size
@@ -103,7 +104,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
     this.TSTA = 0;
   }
 
-  private resetRtc (): void {
+  resetRtc (): void {
     this.TIM0 = 0;
     this.TIM1 = 0;
     this.TIM2 = 0;
@@ -220,7 +221,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
       1,
       pageOffset,
       bank,
-      this._bankAccess[bank] === AccessType.Rom
+      this._bankAccess[bank] !== AccessType.Ram
     );
   }
 
@@ -542,21 +543,21 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
       } else if (bank <= 0x7f) {
         // --- Card Slot 1 RAM
         accessType = this._chipMasks[2]
-          ? this._slotTypes[0]
+          ? this._slotTypes[0] === CardType.EPROM
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else if (bank <= 0xbf) {
         // --- Card Slot 2 RAM
         accessType = this._chipMasks[3]
-          ? this._slotTypes[1]
+          ? this._slotTypes[1] === CardType.EPROM
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else {
         // --- Card Slot 3 RAM/EPROM
         accessType = this._chipMasks[4]
-          ? this._slotTypes[2]
+          ? this._slotTypes[2] === CardType.EPROM
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
@@ -591,5 +592,12 @@ export class Z88BlinkDevice implements IZ88BlinkDevice {
 
     // --- No interrupt
     this.interruptSignalActive = false;
+  }
+
+  // ==========================================================================
+  // IZ88BlinkTestDevice implementation
+
+  getChipMask (chip: number): number {
+    return this._chipMasks[chip];
   }
 }
