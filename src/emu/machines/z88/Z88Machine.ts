@@ -18,6 +18,7 @@ import { PagedMemory } from "../memory/PagedMemory";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88PagedMemory } from "./Z88PagedMemory";
 
@@ -106,6 +107,28 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
     this.memory = new Z88PagedMemory(256, this.blinkDevice);
+
+    // --- Set up the screen size
+    let scw = 0xff;
+    let sch = 8;
+    switch (this.config?.[MC_SCREEN_SIZE]) {
+      case "640x320":
+        scw = 0xff;
+        sch = 40;
+        break;
+      case "640x480":
+        scw = 0xff;
+        sch = 60;
+        break;
+      case "800x320":
+        scw = 100;
+        sch = 40;
+        break;
+      case "800x480":
+        scw = 100;
+        sch = 60;
+        break;
+    }
 
     // --- Now, reset the machine
     this.reset();
