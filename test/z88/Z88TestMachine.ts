@@ -1,10 +1,12 @@
+import { machineRegistry } from "@common/machines/machine-registry";
 import { CardType } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 
 export class Z88TestMachine extends Z88Machine {
   constructor () {
-    super();
+    const model = machineRegistry.find(m => m.machineId === "z88").models[0];
+    super(model, {});
   }
 
   private get blinkTestDevice (): IZ88BlinkTestDevice {
