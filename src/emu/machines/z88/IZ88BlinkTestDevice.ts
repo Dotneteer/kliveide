@@ -12,4 +12,7 @@ export interface IZ88BlinkTestDevice {
 
   // --- Sets the slot mask for the specified slot
   setSlotMask (slot: number, cardType: CardType): void
+
+  // --- Increments the RTC
+  incrementRtc (): void;
 }
