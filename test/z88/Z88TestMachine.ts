@@ -104,7 +104,7 @@ export class Z88TestMachine extends Z88Machine {
   setSlotMask (slot: number, isRom: boolean) {
     this.blinkTestDevice.setSlotMask(
       slot,
-      isRom ? CardType.EPROM : CardType.RAM
+      isRom ? CardType.Rom : CardType.Ram
     );
   }
 

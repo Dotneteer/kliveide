@@ -1,6 +1,6 @@
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { PagedMemory } from "../memory/PagedMemory";
-import { AccessType, IZ88BlinkDevice } from "./IZ88BlinkDevice";
+import { PagedMemory } from "../../memory/PagedMemory";
+import { AccessType, IZ88BlinkDevice } from "../IZ88BlinkDevice";
 
 export class Z88PagedMemory extends PagedMemory {
   private _rndSeed: number;

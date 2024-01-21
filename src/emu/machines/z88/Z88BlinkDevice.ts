@@ -34,7 +34,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * repeat the upper 16K of the 32K memory.
    *
    * Mask Values:
-   * $00: Chip nop present
+   * $00: Chip not present
    * $01: 32K
    * $03: 64K
    * $07: 128K
@@ -326,9 +326,8 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * @param cardType Indicates if the slot is ROM
    */
   setSlotMask (slot: number, cardType: CardType): void {
-    if (slot < 1) slot = 1;
     if (slot > 3) slot = 3;
-    this._slotTypes[slot - 1] = cardType;
+    this._slotTypes[slot] = cardType;
     this.recalculateBankInfo();
   }
 
@@ -572,21 +571,21 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       } else if (bank <= 0x7f) {
         // --- Card Slot 1 RAM
         accessType = this._chipMasks[2]
-          ? this._slotTypes[0] === CardType.EPROM
+          ? this._slotTypes[1] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else if (bank <= 0xbf) {
         // --- Card Slot 2 RAM
         accessType = this._chipMasks[3]
-          ? this._slotTypes[1] === CardType.EPROM
+          ? this._slotTypes[2] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else {
         // --- Card Slot 3 RAM/EPROM
         accessType = this._chipMasks[4]
-          ? this._slotTypes[2] === CardType.EPROM
+          ? this._slotTypes[3] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;

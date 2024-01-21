@@ -20,7 +20,7 @@ import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
-import { Z88PagedMemory } from "./Z88PagedMemory";
+import { Z88PagedMemory } from "./memory/Z88PagedMemory";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
