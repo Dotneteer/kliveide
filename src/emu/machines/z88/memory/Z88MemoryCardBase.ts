@@ -1,5 +1,6 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
+import { CardType } from "../IZ88BlinkDevice";
 
 /**
  * The base class of all Z88 memory cards
@@ -46,50 +47,15 @@ export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
   }
 
   /**
+   * Gets the type of the memory card
+   */
+  abstract readonly type: CardType;
+
+  /**
    * Gets the chip mask (address line mask) of the card calculated from its size
    */
   get chipMask (): number {
     return this._chipMask;
-  }
-
-  /**
-   * Inserts the card into the specified slot
-   * @memory The object responsible for memory management
-   * @param slot The index of the slot to insert the card into
-   * @param initialContent The initial content of the card (ROM/EPROM/EEROM, other read-only memory)
-   */
-  insert (slot: number, initialContent?: Uint8Array): void {
-    // --- Check if the card fits into the slot
-    if (slot < 0 || slot > 3) {
-      throw new Error("Invalid slot index");
-    }
-
-    // TODO: Sign the card is inserted into the slot
-
-    if (initialContent) {
-      // --- Check for right content size  
-      if (initialContent.length !== this.size) {
-        throw new Error("Invalid initial content size");
-      }
-
-      // --- Write the contents directly into the memory
-      const memory = this.host.memory.memory;
-      const cardOffset = slot * 0x10_0000;
-      for (let i = 0; i < this.size; i++) {
-        memory[cardOffset + i] = initialContent[i];
-      }
-    }
-  }
-
-  /**
-   * Removes the card from the current slot
-   */
-  remove (): void {
-    if (this._slot < 0) {
-      throw new Error("The card is not inserted into any slot");
-    }
-    // TODO: Implement this
-    // --- Set the slot's chip mask to 0 indicating the card is not there
   }
 
   /**

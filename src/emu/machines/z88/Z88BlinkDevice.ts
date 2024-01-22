@@ -11,6 +11,7 @@ import {
 } from "./IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 import { MC_Z88_INTRAM, MC_Z88_INTROM_SIZE } from "@common/machines/constants";
+import { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 
 /**
  * Represents the Blink device of Cambridge Z88
@@ -43,6 +44,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * $3f: 1M
    */
   private readonly _chipMasks: number[] = [0, 0, 0, 0, 0];
+
+  // --- Memory card instances for slots #0-3
+  private readonly _cards: (IZ88MemoryCard | null)[] = [];
 
   /**
    * Slot behavior for slots #0-3 (3 byte values)
@@ -81,6 +85,13 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.setSR1(0);
     this.setSR2(0);
     this.setSR3(0);
+
+    // --- Initialize cards (no cards in any slot)
+    this._cards[0] = null;
+    this._cards[1] = null;
+    this._cards[2] = null;
+    this._cards[3] = null;
+
 
     // --- Internal ROM size
     const intRomSize = this.machine.config?.[MC_Z88_INTROM_SIZE];
@@ -243,6 +254,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       bank,
       this._bankAccess[bank] !== AccessType.Ram
     );
+
+    // --- SR0 changed, recalculate the memory page info
+    this.recalculateMemoryPageInfo();
   }
 
   /**
@@ -260,6 +274,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
 
     // --- Offset for 0x6000-0x7fff
     mem.setPageInfo(3, pageOffset + 0x2000, bank, romKind);
+
+    // --- SR1 changed, recalculate the memory page info
+    this.recalculateMemoryPageInfo();
   }
 
   /**
@@ -277,6 +294,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
 
     // --- Offset for 0xa000-0xbfff
     mem.setPageInfo(5, pageOffset + 0x2000, bank, romKind);
+
+    // --- SR2 changed, recalculate the memory page info
+    this.recalculateMemoryPageInfo();
   }
 
   /**
@@ -294,6 +314,9 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
 
     // --- Offset for 0xe000-0xffff
     mem.setPageInfo(7, pageOffset + 0x2000, bank, romKind);
+
+    // --- SR3 changed, recalculate the memory page info
+    this.recalculateMemoryPageInfo();
   }
 
   /**
@@ -544,6 +567,67 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   }
 
   /**
+   * Inserts the card into the specified slot
+   * @memory The object responsible for memory management
+   * @param slot The index of the slot to insert the card into
+   * @param memoryCard The memory card to insert
+   * @param initialContent The initial content of the card (ROM/EPROM/EEROM, other read-only memory)
+   */
+  insert (slot: number, memoryCard: IZ88MemoryCard, initialContent?: Uint8Array): void {
+    // --- Check the slot index
+    if (slot < 0 || slot > 3) {
+      throw new Error("Invalid slot index");
+    }
+
+    // --- Memory card must be defined
+    if (!memoryCard) {
+      throw new Error("The memory card must be defined");
+    }
+
+    // --- Insert the card into the slot
+    this._cards[slot] = memoryCard;
+
+    // --- Set up the memory pages as a new card is inserted
+    this.recalculateMemoryPageInfo();
+
+    if (initialContent) {
+      // --- Check for right content size  
+      if (initialContent.length !== memoryCard.size) {
+        throw new Error("Invalid initial content size");
+      }
+
+      // // --- Write the contents directly into the memory
+      // const memory = this.host.memory.memory;
+      // const cardOffset = slot * 0x10_0000;
+      // for (let i = 0; i < this.size; i++) {
+      //   memory[cardOffset + i] = initialContent[i];
+      // }
+    }
+  }
+
+  /**
+   * Removes the card from the specified slot
+   * @param slot The index of the slot to remove the card from
+   */
+  remove(slot: number): void {
+    // --- Check the slot index
+    if (slot < 0 || slot > 3) {
+      throw new Error("Invalid slot index");
+    }
+
+    // --- There must be a memory card to remove
+    if (!this._cards[slot]) {
+      throw new Error("The card is not inserted into any slot");
+    }
+
+    // --- Remove the card from the slot
+    this._cards[slot] = null;
+    this.recalculateMemoryPageInfo();
+  }
+
+
+
+  /**
    * Sets the size of the internal RAM
    * @param value Ram size value
    */
@@ -554,6 +638,10 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
 
   // ==========================================================================
   // Helpers
+
+  recalculateMemoryPageInfo(): void {
+    // TODO: Implement this method
+  }
 
   /**
    * Recalculates the ROM information from the current state
