@@ -21,6 +21,7 @@ import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88PagedMemory } from "./memory/Z88PagedMemory";
+import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -50,6 +51,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * The physical memory of the machine
    */
   memory: PagedMemory;
+
+  /**
+   * (Z88) The physical memory of the machine
+   */
+  z88Memory: Z88BankedMemory;
 
   /**
    * Represents the real time clock device of Z88
@@ -99,6 +105,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
 
+    // --- Create the memory (new pattern using memory cards)
+    this.z88Memory = new Z88BankedMemory(this);
+
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
@@ -107,6 +116,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
     this.memory = new Z88PagedMemory(256, this.blinkDevice);
+
 
     // --- Set up the screen size
     let scw = 0xff;

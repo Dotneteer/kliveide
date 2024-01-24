@@ -60,17 +60,24 @@ export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
 
   /**
    * Reads the byte at the specified memory address
-   * @param page The 16K page within the card
-   * @param offset The address offset within the 16K page (0x0000-0x3fff)
+   * @param memOffset The start offset of the memory card in the 4MB memory space
+   * @param bank The bank mapped into the page
+   * @param address 16-bit memory address to read
    * @returns The read byte
    */
-  abstract readMemory(page: number, offset: number): number;
+  abstract readMemory(memOffset: number, bank: number, address: number): number;
 
   /**
    * Writes the specified data byte at the given 16-bit memory address
-   * @param page The 16K page within the card
-   * @param offset The address offset within the 16K page (0x0000-0x3fff)
+   * @param memOffset The start offset of the memory card in the 4MB memory space
+   * @param bank The bank mapped into the page
+   * @param address 16-bit memory address to read
    * @param data Byte to write
    */
-  abstract writeMemory(page: number, offset: number, data: number): void;
+  abstract writeMemory(
+    memOffset: number,
+    bank: number,
+    address: number,
+    data: number
+  ): void;
 }

@@ -155,25 +155,6 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
    * @param address Address to obtain the access type for
    */
   getAccessTypeOfAddress(address: number): AccessType;
-
-  /**
-   * Inserts the card into the specified slot
-   * @memory The object responsible for memory management
-   * @param slot The index of the slot to insert the card into
-   * @param memoryCard The memory card to insert
-   * @param initialContent The initial content of the card (ROM/EPROM/EEROM, other read-only memory)
-   */
-  insert(
-    slot: number,
-    memoryCard: IZ88MemoryCard,
-    initialContent?: Uint8Array
-  ): void;
-
-  /**
-   * Removes the card from the specified slot
-   * @param slot The index of the slot to remove the card from
-   */
-  remove(slot: number): void;
 }
 
 /**

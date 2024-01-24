@@ -1,29 +1,32 @@
-import { MachineConfigSet } from "@common/machines/info-types";
-import { IZ88BlinkDevice } from "../IZ88BlinkDevice";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { Z88PageInfo } from "./Z88PageInfo";
 import { IZ88MemoryOperation } from "./IZ88MemoryOperation";
+import { IZ88MemoryCard } from "./IZ88MemoryCard";
+import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { MC_Z88_INTRAM } from "@common/machines/constants";
+import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
+import { COMFlags } from "../IZ88BlinkDevice";
 
 /**
  * This object represents the Z88 banked memory. Its responsibility is to carry out memory
  * read and write operations through the memory cards inserted into the Z88 slots.
  * When a particular slot is not available, it generates random values for memory read and ignores
  * memory writes.
- * 
+ *
  * The BlinkDevice takes care of setting up memory card information.
  */
 export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   private _rndSeed: number;
+  private readonly _cards: (IZ88MemoryCard | null)[] = [];
+  private _intRamCard: IZ88MemoryCard | null = null;
+
   private readonly _bankData: Z88PageInfo[];
   private readonly _memory: Uint8Array;
 
-  constructor (
-    private readonly blink: IZ88BlinkDevice,
-    public readonly config: MachineConfigSet,
-    rndSeed = 0
-  ) {
+  constructor (public readonly machine: IZ88Machine, rndSeed = 0) {
     // --- We allocate the entire 4MB memory
-    this._memory = new Uint8Array(0x10_0000);
+    this._memory = new Uint8Array(0x40_0000);
 
     // --- Set up memory data (needs configuration)
     this._bankData = [];
@@ -36,6 +39,19 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
 
     // --- Use this random seed to generate random memory read values
     this._rndSeed = rndSeed;
+
+    // --- Reset cards
+    this._cards[0] = null;
+    this._cards[1] = null;
+    this._cards[2] = null;
+    this._cards[3] = null;
+
+    // --- Let's assume 512K internal ROM
+    this._cards[0] = new Z88RomMemoryCard(this.machine, 0x08_0000);
+
+    // --- Get the internal RAM size (assume 512K by default)
+    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x08_0000;
+    this._intRamCard = new Z88RamMemoryCard(this.machine, intRamSize);
   }
 
   /**
@@ -49,42 +65,131 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   }
 
   /**
-   * Sets the specified page with the provided attributes
-   * @param page Page index
-   * @param offset The start offset of the slot in the 4MB memory space
-   * @param bank The bank mapped into the slot
-   * @param handler The object handling the memory access for the slot (through a memory card)
+   * Sets up the memory page information for the specified slot
+   * @param slot Slot ID (0..3)
+   * @param bank Bank number to set up
+   * Undefined means both pages.
    */
-  setPageInfo (
-    page: number,
-    offset: number,
-    bank: number,
-    handler?: IZ88MemoryOperation
-  ): void {
-    if (page < 0 || page > 7) {
-      throw new Error("Invalid page index");
+  setMemoryPageInfo (slot: number, bank: number): void {
+    const thisObj = this;
+
+    // --- Check the slot index
+    if (slot < 0 || slot > 3) {
+      throw new Error("Invalid slot index");
     }
 
-    // --- Truncate bank to 8-bit
-    bank &= 0xff;
+    // --- Get the RAMS flag
+    const RAMS = this.machine.blinkDevice.COM & COMFlags.RAMS;
 
-    // --- Set the slot info
-    this._bankData[page] = {
-      offset,
-      bank,
-      handler
-    };
+    // --- Set up the memory pages
+    if (slot === 0) {
+      // --- SR0, special case. Set up the lower 8K page
+      if (RAMS) {
+        this.setPageInfo(0, 0x08_0000, 0x20, this._intRamCard);
+      } else {
+        this.setPageInfo(1, 0x00_0000, 0x00, this._cards[0]);
+      }
+
+      // --- Set up the upper 8K page
+      const pageOffset =
+        calculatePageOffset(bank & 0xfe) + (bank & 0x01) * 0x2000;
+      this.setPageInfo(1, pageOffset, bank, this._cards[slot]);
+    } else {
+      // --- Use the same pattern for SR1, SR2, and SR3
+      const pageOffset = calculatePageOffset(bank);
+  
+      // --- Set up the lower page of the slot
+      this.setPageInfo(2 * slot, pageOffset, bank, this._cards[slot]);
+  
+      // --- Set up the upper page of the slot
+      this.setPageInfo(2 * slot + 1, pageOffset + 0x2000, bank, this._cards[slot]);
+    }
+
+    // --- Helper function to calculate the page offset for the specified bank.
+    // --- Use the current slot's chip mask to calculate the offset.
+    function calculatePageOffset (bank: number): number {
+      let sizeMask = thisObj._cards[slot]?.chipMask ?? 0x00;
+      return (
+        ((bank < 0x40 ? bank & 0xe0 : bank & 0xc0) |
+          (bank & sizeMask & 0x3f)) <<
+        14
+      );
+    }
   }
 
   /**
-   * Gets the current partition values for all 16K slots
+   * Inserts the card into the specified slot
+   * @memory The object responsible for memory management
+   * @param slot The index of the slot to insert the card into
+   * @param memoryCard The memory card to insert
+   * @param initialContent The initial content of the card (ROM/EPROM/EEROM, other read-only memory)
+   */
+  insertCard (
+    slot: number,
+    memoryCard: IZ88MemoryCard,
+    initialContent?: Uint8Array
+  ): void {
+    // --- Check the slot index
+    if (slot < 0 || slot > 3) {
+      throw new Error("Invalid slot index");
+    }
+
+    // --- Memory card must be defined
+    if (!memoryCard) {
+      throw new Error("The memory card must be defined");
+    }
+
+    // --- Insert the card into the slot
+    this._cards[slot] = memoryCard;
+
+    // --- Set up the memory pages as a new card is inserted
+    this.recalculateMemoryPageInfo();
+
+    if (initialContent) {
+      // --- Check for right content size
+      if (initialContent.length !== memoryCard.size) {
+        throw new Error("Invalid initial content size");
+      }
+
+      // --- Write the contents directly into the memory
+      const cardOffset = slot * 0x10_0000;
+      for (let i = 0; i < memoryCard.size; i++) {
+        this._memory[cardOffset + i] = initialContent[i];
+      }
+    }
+  }
+
+  /**
+   * Removes the card from the specified slot
+   * @param slot The index of the slot to remove the card from
+   */
+  removeCard (slot: number): void {
+    // --- Check the slot index
+    if (slot < 0 || slot > 3) {
+      throw new Error("Invalid slot index");
+    }
+
+    // --- There must be a memory card to remove
+    if (!this._cards[slot]) {
+      throw new Error("The card is not inserted into any slot");
+    }
+
+    // --- Remove the card from the slot
+    this._cards[slot] = null;
+    this.recalculateMemoryPageInfo();
+  }
+
+  /**
+   * Gets the current partition values for all 8K slots. This method is used by the IDE to display memory
+   * partition information.
    */
   getPartitions (): number[] {
     return this.bankData.map(b => b.bank);
   }
 
   /**
-   * Gets the current partition labels for all 16K slots
+   * Gets the current partition labels for all 8K slots. This method is used by the IDE to display memory
+   * partition information.
    */
   getPartitionLabels (): string[] {
     return this.bankData.map(b => {
@@ -128,6 +233,46 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     pageInfo.handler.writeMemory(pageInfo.offset, pageInfo.bank, address, data);
   }
 
+  /**
+   * Sets the specified page with the provided attributes
+   * @param page Page index
+   * @param offset The start offset of the slot in the 4MB memory space
+   * @param bank The bank mapped into the slot
+   * @param handler The object handling the memory access for the slot (through a memory card)
+   */
+  private setPageInfo (
+    page: number,
+    offset: number,
+    bank: number,
+    handler?: IZ88MemoryOperation
+  ): void {
+    if (page < 0 || page > 7) {
+      throw new Error("Invalid page index");
+    }
+
+    // --- Truncate bank to 8-bit
+    bank &= 0xff;
+
+    // --- Set the slot info
+    this._bankData[page] = {
+      offset,
+      bank,
+      handler
+    };
+  }
+
+  /**
+   * Recalculates the memory page information to reflect the current memory card configuration
+   */
+  private recalculateMemoryPageInfo (): void {
+    // --- A card might be inserted/removed, so we need to recalculate the memory page info
+    // --- for all slots
+    this.setMemoryPageInfo(0, this._bankData[0].bank);
+    this.setMemoryPageInfo(1, this._bankData[2].bank);
+    this.setMemoryPageInfo(2, this._bankData[4].bank);
+    this.setMemoryPageInfo(3, this._bankData[6].bank);
+  }
+
   // ==========================================================================
   // IZ88BankedMemoryTestSupport implementation
 
@@ -154,4 +299,3 @@ export interface IZ88BankedMemoryTestSupport {
    */
   readonly bankData: Z88PageInfo[];
 }
-
