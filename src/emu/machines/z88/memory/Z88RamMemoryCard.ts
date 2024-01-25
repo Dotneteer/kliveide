@@ -3,7 +3,7 @@ import { CardType } from "../IZ88BlinkDevice";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88RamMemoryCard extends Z88MemoryCardBase {
-  type: CardType = CardType.Rom;
+  type: CardType = CardType.Ram;
 
   constructor (public readonly host: IZ88Machine, public readonly size: number) {
     super(host, size);

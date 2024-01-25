@@ -221,7 +221,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * @param bank Bank value to set
    */
   setSR0 (bank: number): void {
-    try {
     // --- Store SR0 value
     this.SR0 = bank & 0xff;
 
@@ -230,11 +229,11 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     if (this.COM & COMFlags.RAMS) {
       // --- Bank $20, RAM
       mem.setPageInfo(0, 0x08_0000, 0x20, false);
-      this.machine.z88Memory.setMemoryPageInfo(0, 0x20);
+      this.machine.z88Memory.setMemoryPageInfo(0, 0x20, false);
     } else {
       // --- Bank $00, ROM
       mem.setPageInfo(0, 0x00_0000, 0x00, true);
-      this.machine.z88Memory.setMemoryPageInfo(0, 0x00);
+      this.machine.z88Memory.setMemoryPageInfo(0, 0x00, false);
     }
 
     // --- Upper 8K of SR0
@@ -246,10 +245,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       bank,
       this._bankAccess[bank] !== AccessType.Ram
     );
-    this.machine.z88Memory.setMemoryPageInfo(0, bank);
-    } catch (err) {
-      console.log(err);
-    }
+    this.machine.z88Memory.setMemoryPageInfo(0, bank, true);
   }
 
   /**

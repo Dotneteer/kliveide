@@ -1,6 +1,5 @@
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { Z88PageInfo } from "./Z88PageInfo";
-import { IZ88MemoryOperation } from "./IZ88MemoryOperation";
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
@@ -72,7 +71,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
    * @param bank Bank number to set up
    * Undefined means both pages.
    */
-  setMemoryPageInfo (slot: number, bank: number): void {
+  setMemoryPageInfo (slot: number, bank: number, upper?: boolean): void {
     const thisObj = this;
 
     // --- Check the slot index
@@ -85,37 +84,46 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
 
     // --- Set up the memory pages
     if (slot === 0) {
-      // --- SR0, special case. Set up the lower 8K page
-      if (RAMS) {
-        this.setPageInfo(0, 0x08_0000, 0x20, this._intRamCard);
+      if (!upper) {
+        // --- SR0, special case. Set up the lower 8K page
+        if (RAMS) {
+          this.setPageInfo(0, 0x08_0000, 0x20, this._intRamCard);
+        } else {
+          this.setPageInfo(0, 0x00_0000, 0x00, this._cards[0]);
+        }
       } else {
-        this.setPageInfo(0, 0x00_0000, 0x00, this._cards[0]);
+        // --- SR0, Set up the upper 8K page
+        const pageOffset =
+          calculatePageOffset(bank & 0xfe) + (bank & 0x01) * 0x2000;
+        const card = bank >= 0x20 && bank <= 0x3f ? this._intRamCard : this._cards[bank >> 6];  
+        this.setPageInfo(1, pageOffset, bank, card);
       }
-
-      // --- Set up the upper 8K page
-      const pageOffset =
-        calculatePageOffset(bank & 0xfe) + (bank & 0x01) * 0x2000;
-      this.setPageInfo(1, pageOffset, bank, this._cards[slot]);
     } else {
       // --- Use the same pattern for SR1, SR2, and SR3
       const pageOffset = calculatePageOffset(bank);
 
       // --- Set up the lower page of the slot
-      this.setPageInfo(2 * slot, pageOffset, bank, this._cards[slot]);
+      this.setPageInfo(2 * slot, pageOffset, bank, this._cards[bank >> 6]);
 
       // --- Set up the upper page of the slot
       this.setPageInfo(
         2 * slot + 1,
         pageOffset + 0x2000,
         bank,
-        this._cards[slot]
+        this._cards[bank >> 6]
       );
     }
 
     // --- Helper function to calculate the page offset for the specified bank.
     // --- Use the current slot's chip mask to calculate the offset.
     function calculatePageOffset (bank: number): number {
-      let sizeMask = thisObj._cards[slot]?.chipMask ?? 0x00;
+      // --- Obtain the chip mask for the current bank
+      let sizeMask = thisObj._cards[bank >> 6]?.chipMask ?? 0x00;
+
+      // --- We're using the internal RAM card
+      if (bank >= 0x20 && bank <= 0x3f) {
+        sizeMask = thisObj._intRamCard?.chipMask ?? 0x00;
+      }
       return (
         ((bank < 0x40 ? bank & 0xe0 : bank & 0xc0) |
           (bank & sizeMask & 0x3f)) <<
@@ -251,7 +259,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     page: number,
     offset: number,
     bank: number,
-    handler?: IZ88MemoryOperation
+    handler?: IZ88MemoryCard
   ): void {
     if (page < 0 || page > 7) {
       throw new Error("Invalid page index");
@@ -274,7 +282,8 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   private recalculateMemoryPageInfo (): void {
     // --- A card might be inserted/removed, so we need to recalculate the memory page info
     // --- for all slots
-    this.setMemoryPageInfo(0, this._bankData[0].bank);
+    this.setMemoryPageInfo(0, this._bankData[0].bank, false);
+    this.setMemoryPageInfo(0, this._bankData[0].bank, true);
     this.setMemoryPageInfo(1, this._bankData[2].bank);
     this.setMemoryPageInfo(2, this._bankData[4].bank);
     this.setMemoryPageInfo(3, this._bankData[6].bank);
@@ -297,7 +306,15 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
 
   get cards (): IZ88MemoryCard[] | null {
     return this._cards.slice(0);
-  } 
+  }
+
+  get intRamCard (): IZ88MemoryCard | null {
+    return this._intRamCard;
+  }
+
+  setRamCard (card: IZ88MemoryCard): void {
+    this._intRamCard = card;
+  }
 }
 
 /**
@@ -323,4 +340,15 @@ export interface IZ88BankedMemoryTestSupport {
    * Gets the memory cards
    */
   readonly cards: IZ88MemoryCard[] | null;
+
+  /**
+   * Gets the internal RAM card
+   */
+  readonly intRamCard: IZ88MemoryCard | null;
+
+  /**
+   * Sets the internal RAM card
+   * @param card The new internal RAM card
+   */
+  setRamCard(card: IZ88MemoryCard): void;
 }
