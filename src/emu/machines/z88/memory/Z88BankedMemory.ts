@@ -52,6 +52,8 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     // --- Get the internal RAM size (assume 512K by default)
     const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x08_0000;
     this._intRamCard = new Z88RamMemoryCard(this.machine, intRamSize);
+
+    this.reset();
   }
 
   /**
@@ -87,7 +89,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
       if (RAMS) {
         this.setPageInfo(0, 0x08_0000, 0x20, this._intRamCard);
       } else {
-        this.setPageInfo(1, 0x00_0000, 0x00, this._cards[0]);
+        this.setPageInfo(0, 0x00_0000, 0x00, this._cards[0]);
       }
 
       // --- Set up the upper 8K page
@@ -97,12 +99,17 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     } else {
       // --- Use the same pattern for SR1, SR2, and SR3
       const pageOffset = calculatePageOffset(bank);
-  
+
       // --- Set up the lower page of the slot
       this.setPageInfo(2 * slot, pageOffset, bank, this._cards[slot]);
-  
+
       // --- Set up the upper page of the slot
-      this.setPageInfo(2 * slot + 1, pageOffset + 0x2000, bank, this._cards[slot]);
+      this.setPageInfo(
+        2 * slot + 1,
+        pageOffset + 0x2000,
+        bank,
+        this._cards[slot]
+      );
     }
 
     // --- Helper function to calculate the page offset for the specified bank.
@@ -283,6 +290,14 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   get bankData (): Z88PageInfo[] {
     return this._bankData.slice(0);
   }
+
+  get rndSeed (): number {
+    return this._rndSeed;
+  }
+
+  get cards (): IZ88MemoryCard[] | null {
+    return this._cards.slice(0);
+  } 
 }
 
 /**
@@ -298,4 +313,14 @@ export interface IZ88BankedMemoryTestSupport {
    * Gets the bank data
    */
   readonly bankData: Z88PageInfo[];
+
+  /**
+   * Gets the random seed
+   */
+  readonly rndSeed: number;
+
+  /*
+   * Gets the memory cards
+   */
+  readonly cards: IZ88MemoryCard[] | null;
 }
