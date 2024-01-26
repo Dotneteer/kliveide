@@ -4,7 +4,7 @@ import { Z88TestMachine } from "./Z88TestMachine";
 import { INTFlags, TMKFlags, TSTAFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
 
-describe("Cambridge Z88 - RTC", function () {
+describe("Z88 - RTC", function () {
   this.timeout(10_000);
 
   it("blink reset", () => {

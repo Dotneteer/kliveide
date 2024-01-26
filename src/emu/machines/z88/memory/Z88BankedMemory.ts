@@ -283,7 +283,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     // --- A card might be inserted/removed, so we need to recalculate the memory page info
     // --- for all slots
     this.setMemoryPageInfo(0, this._bankData[0].bank, false);
-    this.setMemoryPageInfo(0, this._bankData[0].bank, true);
+    this.setMemoryPageInfo(0, this._bankData[1].bank, true);
     this.setMemoryPageInfo(1, this._bankData[2].bank);
     this.setMemoryPageInfo(2, this._bankData[4].bank);
     this.setMemoryPageInfo(3, this._bankData[6].bank);
