@@ -1,4 +1,4 @@
-import { CardType } from "../IZ88BlinkDevice";
+import { CardType } from "./CardType";
 import { IZ88MemoryOperation } from "./IZ88MemoryOperation";
 
 /**

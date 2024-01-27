@@ -1,5 +1,5 @@
 import { machineRegistry } from "@common/machines/machine-registry";
-import { CardType } from "@emu/machines/z88/IZ88BlinkDevice";
+import { CardType } from "@emu/machines/z88/memory/CardType";
 import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";

@@ -2,7 +2,6 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import {
   AccessType,
   COMFlags,
-  CardType,
   INTFlags,
   IZ88BlinkDevice,
   STAFlags,
@@ -11,6 +10,7 @@ import {
 } from "./IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 import { MC_Z88_INTRAM, MC_Z88_INTROM_SIZE } from "@common/machines/constants";
+import { CardType } from "./memory/CardType";
 
 /**
  * Represents the Blink device of Cambridge Z88

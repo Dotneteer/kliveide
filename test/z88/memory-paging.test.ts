@@ -4,7 +4,8 @@ import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedM
 import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
 import { Z88TestMachine } from "./Z88TestMachine";
 import { Z88RamMemoryCard } from "@emu/machines/z88/memory/Z88RamMemoryCard";
-import { COMFlags, CardType } from "@emu/machines/z88/IZ88BlinkDevice";
+import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
+import { CardType } from "@emu/machines/z88/memory/CardType";
 
 describe("Z88 - Banked Memory", function () {
   this.timeout(10_000);
