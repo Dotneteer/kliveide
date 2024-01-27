@@ -73,31 +73,10 @@ export interface IZxSpectrumMachine extends IZ80Machine {
   readScreenMemory(offset: number): number;
 
   /**
-   * Get the 64K of addressable memory of the ZX Spectrum computer
-   * @returns Bytes of the flat memory
-   */
-  get64KFlatMemory(): Uint8Array;
-
-  /**
-   * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
-   * @param index Partition index
-   * @returns Bytes of the partition
-   *
-   * Less than zero: ROM pages
-   * 0..7: RAM bank with the specified index
-   */
-  get16KPartition(index: number): Uint8Array;
-
-  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
   getAudioSamples(): number[];
-
-  /**
-   * Indicates if the machine's operating system is initialized
-   */
-  get isOsInitialized(): boolean;
 
   /**
    * Gets the current cursor mode

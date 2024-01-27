@@ -152,6 +152,13 @@ export function ideViewReducer (
       }
     }
 
+    case "INC_EXPLORER_VIEW_VERSION": {
+      return {
+        ...state,
+        explorerViewVersion: (state.explorerViewVersion ?? 0) + 1
+      }
+    }
+    
     default:
       return state;
   }

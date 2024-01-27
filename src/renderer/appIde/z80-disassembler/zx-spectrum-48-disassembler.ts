@@ -25,7 +25,8 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
 
   /**
    * Klive passes the disassembly API to the custom disassembler
-   * @param api
+   * @param api API to use for disassembly
+   * @param machine The virtual machine instance
    */
   setDisassemblyApi (api: IDisassemblyApi): void {
     this._api = api;

@@ -58,6 +58,7 @@ import { createSettingsReader } from "../common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "../common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { fileChangeWatcher } from "./file-watcher";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -207,6 +208,7 @@ export function setupMenu (
           ensureIdeWindow();
           await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
           mainStore.dispatch(closeFolderAction());
+          fileChangeWatcher.stopWatching();
           await saveKliveProject();
         }
       },

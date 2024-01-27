@@ -1,8 +1,14 @@
 import * as fs from "fs";
 import { FSWatcher } from "original-fs";
+import { mainStore } from "./main-store";
+import { AppState } from "../common/state/AppState";
+import { Store } from "../common/state/redux-light";
+import { incExploreViewVersionAction } from "../common/state/actions";
 
 class FileChangeWatcher {
   private _watcher: FSWatcher | null = null;
+
+  constructor (private readonly store: Store<AppState>) {}
 
   /**
    * Start watching the changes in the specified folder
@@ -16,7 +22,9 @@ class FileChangeWatcher {
       recursive: true,
       persistent: true
     }, (event, filename) => {
-      console.log(event, filename);
+      if (event === "rename") {
+        this.store.dispatch(incExploreViewVersionAction(), "main");
+      }
     });
   }
 
@@ -28,4 +36,4 @@ class FileChangeWatcher {
   }
 }
 
-export const fileChangeWatcher = new FileChangeWatcher();
+export const fileChangeWatcher = new FileChangeWatcher(mainStore);

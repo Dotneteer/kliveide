@@ -4,6 +4,7 @@ import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
 import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import { PagedMemory } from "@emu/machines/memory/PagedMemory";
+import { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
 
 /**
  * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the emulator
@@ -15,9 +16,9 @@ export interface IZ88Machine extends IZ80Machine {
   get romId(): string;
 
   /**
-   * The physical memory of the machine
+   * (Z88) The physical memory of the machine
    */
-  readonly memory: PagedMemory;
+  readonly memory: Z88BankedMemory;
 
   /**
    * Represents the Blink device of Z88
@@ -38,19 +39,6 @@ export interface IZ88Machine extends IZ80Machine {
    * Represents the beeper device of Z88
    */
   beeperDevice: IZ88BeeperDevice;
-
-  /**
-   * Get the 64K of addressable memory of the Z88 computer
-   * @returns Bytes of the flat memory
-   */
-  get64KFlatMemory(): Uint8Array;
-
-  /**
-   * Get the specified 16K partition (page or bank) of the Z88 computer
-   * @param index Partition index
-   * @returns Bytes of the partition
-   */
-  get16KPartition(index: number): Uint8Array;
 
   /**
    * Gets the audio samples rendered in the current frame

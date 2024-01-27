@@ -14,12 +14,13 @@ import { Z88KeyboardDevice } from "./Z88KeyboardDevice";
 import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
-import { PagedMemory } from "../memory/PagedMemory";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
-import { Z88PagedMemory } from "./Z88PagedMemory";
+import { Z88BankedMemory } from "./memory/Z88BankedMemory";
+import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -46,9 +47,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   readonly uiFrameFrequency = 8;
 
   /**
-   * The physical memory of the machine
+   * The physical memory of the machine (memory card model)
    */
-  memory: PagedMemory;
+  memory: Z88BankedMemory;
 
   /**
    * Represents the real time clock device of Z88
@@ -90,6 +91,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- config overrides model.config
     this.config = config ?? model?.config;
+    console.log("Z88", config)
 
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
@@ -98,17 +100,53 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Z88 address bus is not delayed?
     this.delayedAddressBus = false;
 
+    // --- Create the memory (new pattern using memory cards)
+    this.memory = new Z88BankedMemory(this, 0xac23);
+
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
     this.beeperDevice = new Z88BeeperDevice(this);
 
-    // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
-    this.memory = new Z88PagedMemory(256, this.blinkDevice);
+    // --- Set up the screen size
+    let scw = 0xff;
+    let sch = 8;
+    switch (this.config?.[MC_SCREEN_SIZE]) {
+      case "640x320":
+        scw = 0xff;
+        sch = 40;
+        break;
+      case "640x480":
+        scw = 0xff;
+        sch = 60;
+        break;
+      case "800x320":
+        scw = 100;
+        sch = 40;
+        break;
+      case "800x480":
+        scw = 100;
+        sch = 60;
+        break;
+    }
 
     // --- Now, reset the machine
     this.reset();
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getCurrentPartitions (): number[] {
+    return this.memory.getPartitions();
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getCurrentPartitionLabels (): string[] {
+    return this.memory.getPartitionLabels();
   }
 
   /**
@@ -125,7 +163,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     }
 
     // --- Initialize the Z88 machine's default ROM
-    this.uploadRomBytes(romContents);
+    const romCard = new Z88RomMemoryCard(this, romContents.length);
+    this.memory.insertCard(0, romCard, romContents);
   }
 
   /**
@@ -633,16 +672,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       await new Promise(r => setTimeout(r, 400));
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
-    }
-  }
-
-  /**
-   * Uploades the specified ROM information to the Z88 ROM memory (slot 0)
-   * @param data ROM contents
-   */
-  private uploadRomBytes (data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      this.memory.directWrite(i, data[i]);
     }
   }
 }

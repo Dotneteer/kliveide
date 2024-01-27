@@ -1,3 +1,4 @@
+import { toHexa2 } from "../services/ide-commands";
 import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
 import { DisassemblyItem, FetchResult, MemorySection, intToX2 } from "./disassembly-helper";
 
@@ -13,7 +14,8 @@ export class Z88CustomDisassembler
 
   /**
    * Klive passes the disassembly API to the custom disassembler
-   * @param api
+   * @param api API to use for disassembly
+   * @param machine The virtual machine instance
    */
   setDisassemblyApi(api: IDisassemblyApi): void {
     this._api = api;

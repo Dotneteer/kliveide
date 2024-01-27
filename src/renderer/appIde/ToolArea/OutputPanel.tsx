@@ -70,8 +70,8 @@ const OutputPanel = () => {
       {activePane && (
         <VirtualizedListView
           items={contents ?? []}
-          approxSize={20}
-          fixItemHeight={true}
+          approxSize={24}
+          fixItemHeight={false}
           vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
             return <OutputLine spans={contents?.[idx]?.spans} />;

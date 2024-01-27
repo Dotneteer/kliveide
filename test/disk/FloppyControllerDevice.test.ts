@@ -12,7 +12,7 @@ import {
   MSR_RQM,
   OperationPhase
 } from "@emu/machines/disk/FloppyControllerDevice";
-import { DISK_A_DATA, DISK_B_DATA } from "@emu/machines/machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 describe("FloppyControllerDevice", () => {
   it("constructor works", () => {
@@ -641,7 +641,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     expect(fdt.driveA.hasDiskLoaded).toBe(true);
     expect(fdt.driveA.contents).toBe(diskData);
@@ -655,7 +655,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     expect(fdt.driveA.hasDiskLoaded).toBe(true);
     expect(fdt.driveA.contents).toBe(diskData);
@@ -676,7 +676,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -699,7 +699,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -751,7 +751,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -807,7 +807,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -896,7 +896,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -946,7 +946,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1013,7 +1013,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1147,7 +1147,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1287,7 +1287,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1394,7 +1394,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_A_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_A, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1511,7 +1511,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_B_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_B, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
@@ -1566,7 +1566,7 @@ describe("FloppyControllerDevice", () => {
     const fd = updm.floppyDevice;
     const fdt = fd as unknown as IFloppyControllerDeviceTest;
     const diskData = readTestFile("blank180K.dsk");
-    updm.setMachineProperty(DISK_B_DATA, diskData);
+    updm.setMachineProperty(MEDIA_DISK_B, diskData);
 
     // --- Allow the motor to spin up
     updm.emulateFrameCompletion(60);
