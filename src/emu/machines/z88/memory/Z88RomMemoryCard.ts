@@ -17,7 +17,7 @@ export class Z88RomMemoryCard extends Z88MemoryCardBase {
    * @returns The read byte
    */
   readMemory (memOffset: number, _bank: number, address: number): number {
-    return this.host.z88Memory.memory[memOffset + (address & 0x1fff)];
+    return this.host.memory.memory[memOffset + (address & 0x1fff)];
   }
 
   /**

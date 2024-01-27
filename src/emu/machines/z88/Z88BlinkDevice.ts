@@ -225,15 +225,15 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR0 = bank & 0xff;
 
     // --- Lower 8K of SR0
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
     if (this.COM & COMFlags.RAMS) {
       // --- Bank $20, RAM
       mem.setPageInfo(0, 0x08_0000, 0x20, false);
-      this.machine.z88Memory.setMemoryPageInfo(0, 0x20, false);
+      this.machine.memory.setMemoryPageInfo(0, 0x20, false);
     } else {
       // --- Bank $00, ROM
       mem.setPageInfo(0, 0x00_0000, 0x00, true);
-      this.machine.z88Memory.setMemoryPageInfo(0, 0x00, false);
+      this.machine.memory.setMemoryPageInfo(0, 0x00, false);
     }
 
     // --- Upper 8K of SR0
@@ -245,7 +245,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       bank,
       this._bankAccess[bank] !== AccessType.Ram
     );
-    this.machine.z88Memory.setMemoryPageInfo(0, bank, true);
+    this.machine.memory.setMemoryPageInfo(0, bank, true);
   }
 
   /**
@@ -256,7 +256,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR1 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0x4000-0x5fff
     mem.setPageInfo(2, pageOffset, bank, romKind);
@@ -265,7 +265,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     mem.setPageInfo(3, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
-    this.machine.z88Memory.setMemoryPageInfo(1, bank);
+    this.machine.memory.setMemoryPageInfo(1, bank);
   }
 
   /**
@@ -276,7 +276,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR2 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0x8000-0x9fff
     mem.setPageInfo(4, pageOffset, bank, romKind);
@@ -285,7 +285,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     mem.setPageInfo(5, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
-    this.machine.z88Memory.setMemoryPageInfo(2, bank);
+    this.machine.memory.setMemoryPageInfo(2, bank);
   }
 
   /**
@@ -296,7 +296,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR3 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0xc000-0xdfff
     mem.setPageInfo(6, pageOffset, bank, romKind);
@@ -305,7 +305,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     mem.setPageInfo(7, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
-    this.machine.z88Memory.setMemoryPageInfo(3, bank);
+    this.machine.memory.setMemoryPageInfo(3, bank);
   }
 
   /**

@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
-import { Z88TestMachine } from "./Z88TestMachineNew";
+import { Z88TestMachine } from "./Z88TestMachine";
 import { Z88RamMemoryCard } from "@emu/machines/z88/memory/Z88RamMemoryCard";
 import { COMFlags, CardType } from "@emu/machines/z88/IZ88BlinkDevice";
 
@@ -10,7 +10,7 @@ describe("Z88 - Banked Memory", function () {
   this.timeout(10_000);
 
   it("constructor works", () => {
-    const m = new Z88TestMachine().z88Memory;
+    const m = new Z88TestMachine().memory;
     const mt = m as IZ88BankedMemoryTestSupport;
     expect(m).toBeDefined();
 
@@ -387,7 +387,7 @@ describe("Z88 - Banked Memory", function () {
         : new Z88RamMemoryCard(m, pat.c4);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -548,7 +548,7 @@ describe("Z88 - Banked Memory", function () {
       m.blinkDevice.setCOM(COMFlags.RAMS);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -706,7 +706,7 @@ describe("Z88 - Banked Memory", function () {
         : new Z88RamMemoryCard(m, pat.c4);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -854,7 +854,7 @@ describe("Z88 - Banked Memory", function () {
         : new Z88RamMemoryCard(m, pat.c4);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -1002,7 +1002,7 @@ describe("Z88 - Banked Memory", function () {
         : new Z88RamMemoryCard(m, pat.c4);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -1153,7 +1153,7 @@ describe("Z88 - Banked Memory", function () {
       m.blinkDevice.setCOM(COMFlags.RAMS);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);

@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
-import { Z88TestMachine } from "./Z88TestMachineNew";
+import { Z88TestMachine } from "./Z88TestMachine";
 import { Z88RamMemoryCard } from "@emu/machines/z88/memory/Z88RamMemoryCard";
 import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 
@@ -26,7 +26,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -35,8 +35,8 @@ describe("Z88 - Memory write", function () {
       mem.insertCard(3, card3);
 
       // --- Write to ROM
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       expect(value).toBe(0);
     });
   });
@@ -54,7 +54,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -65,8 +65,8 @@ describe("Z88 - Memory write", function () {
       // --- Set RAMS
       m.blinkDevice.setCOM(COMFlags.RAMS);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if (addr <= 0x1fff) {
         // --- RAM area
         expect(value).toBe(0x23);
@@ -90,7 +90,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -101,8 +101,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0x20 into slot 1
       m.blinkDevice.setSR1(0x20);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0x4000) {
         // --- RAM area
         expect(value).toBe(0x23);
@@ -126,7 +126,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -137,8 +137,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0x40 into slot 1
       m.blinkDevice.setSR1(0x40);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0x4000) {
         // --- RAM area
         expect(value).toBe(0x23);
@@ -162,7 +162,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -173,8 +173,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0x80 into slot 2
       m.blinkDevice.setSR2(0x80);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0x8000) {
         // RAM area
         expect(value).toBe(0x23);
@@ -198,7 +198,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -209,8 +209,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0xc0);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0xc000) {
         // --- RAM area
         expect(value).toBe(0x23);
@@ -234,7 +234,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -245,8 +245,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0x80 into slot 3
       m.blinkDevice.setSR3(0x80);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0xc000) {
         // RAM area
         expect(value).toBe(0x23);
@@ -270,7 +270,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RomMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -281,8 +281,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0xc0);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       expect(value).toBe(0);
     });
   });
@@ -300,7 +300,7 @@ describe("Z88 - Memory write", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -314,8 +314,8 @@ describe("Z88 - Memory write", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0x80);
 
-      m.z88Memory.writeMemory(addr, 0x23);
-      const value = m.z88Memory.readMemory(addr);
+      m.memory.writeMemory(addr, 0x23);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) >= 0x8000) {
         // RAM area
         expect(value).toBe(0x23);
@@ -362,7 +362,7 @@ describe("Z88 - Memory write", function () {
         const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
         // --- Insert cards
-        const mem = m.z88Memory;
+        const mem = m.memory;
         const memt = mem as IZ88BankedMemoryTestSupport;
         mem.insertCard(0, card0);
         memt.setRamCard(ramCard);
@@ -373,16 +373,16 @@ describe("Z88 - Memory write", function () {
         // --- Even banks
         for (let i = 0x40; i < 0x80; i += size + 1) {
           m.setSR1(i);
-          m.z88Memory.writeMemory(addr, 0x23);
-          const value = m.z88Memory.readMemory(addr);
+          m.memory.writeMemory(addr, 0x23);
+          const value = m.memory.readMemory(addr);
           expect(value).toBe(0x23);
           for (let j = 0x40 + (size + 1); j < 0x80; j += size + 1) {
             m.setSR1(j);
-            const value = m.z88Memory.readMemory(addr);
+            const value = m.memory.readMemory(addr);
             expect(value).toBe(0x23);
             for (let k = j + 2; k < j + size + 1; k += 2) {
               m.setSR1(k);
-              const value = m.z88Memory.readMemory(addr);
+              const value = m.memory.readMemory(addr);
               expect(value).toBe(0x00);
             }
           }
@@ -391,16 +391,16 @@ describe("Z88 - Memory write", function () {
         // --- Odd banks
         for (let i = 0x41; i < 0x80; i += size + 1) {
           m.setSR1(i);
-          m.z88Memory.writeMemory(addr, 0x23);
-          const value = m.z88Memory.readMemory(addr);
+          m.memory.writeMemory(addr, 0x23);
+          const value = m.memory.readMemory(addr);
           expect(value).toBe(0x23);
           for (let j = 0x41 + (size + 1); j < 0x80; j += size + 1) {
             m.setSR1(j);
-            const value = m.z88Memory.readMemory(addr);
+            const value = m.memory.readMemory(addr);
             expect(value).toBe(0x23);
             for (let k = j + 2; k < j + size + 1; k += 2) {
               m.setSR1(k);
-              const value = m.z88Memory.readMemory(addr);
+              const value = m.memory.readMemory(addr);
               expect(value).toBe(0x00);
             }
           }

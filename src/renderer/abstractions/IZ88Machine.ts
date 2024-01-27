@@ -18,12 +18,12 @@ export interface IZ88Machine extends IZ80Machine {
   /**
    * The physical memory of the machine
    */
-  readonly memory: PagedMemory;
+  readonly oldMemory: PagedMemory;
 
   /**
    * (Z88) The physical memory of the machine
    */
-  readonly z88Memory: Z88BankedMemory;
+  readonly memory: Z88BankedMemory;
 
   /**
    * Represents the Blink device of Z88

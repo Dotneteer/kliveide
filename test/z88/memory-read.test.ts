@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
-import { Z88TestMachine } from "./Z88TestMachineNew";
+import { Z88TestMachine } from "./Z88TestMachine";
 import { Z88RamMemoryCard } from "@emu/machines/z88/memory/Z88RamMemoryCard";
 
 /**
@@ -30,7 +30,7 @@ describe("Z88 - Memory read", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -38,7 +38,7 @@ describe("Z88 - Memory read", function () {
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       expect(value).toBe(0);
     });
   });
@@ -55,7 +55,7 @@ describe("Z88 - Memory read", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -66,7 +66,7 @@ describe("Z88 - Memory read", function () {
       // --- Page in Bank 0x40 into slot 1
       m.blinkDevice.setSR1(0x40);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0x4000) {
         // --- Random read (pseudo random)
         expect(value).toBe(RANDOM_SEQ[0]);
@@ -89,7 +89,7 @@ describe("Z88 - Memory read", function () {
       const card3 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -100,7 +100,7 @@ describe("Z88 - Memory read", function () {
       // --- Page in Bank 0x80 into slot 2
       m.blinkDevice.setSR2(0x80);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0x8000) {
         // --- Random read (pseudo random)
         expect(value).toBe(RANDOM_SEQ[0]);
@@ -123,7 +123,7 @@ describe("Z88 - Memory read", function () {
       const card2 = new Z88RamMemoryCard(m, 0x10_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -134,7 +134,7 @@ describe("Z88 - Memory read", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0xc0);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) === 0xc000) {
         // --- Random read (pseudo random)
         expect(value).toBe(RANDOM_SEQ[0]);
@@ -155,7 +155,7 @@ describe("Z88 - Memory read", function () {
       const ramCard = new Z88RamMemoryCard(m, 0x08_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -172,7 +172,7 @@ describe("Z88 - Memory read", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0xc0);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) !== 0x0000) {
         // --- Random read (pseudo random)
         expect(value).toBe(RANDOM_SEQ[0]);
@@ -193,7 +193,7 @@ describe("Z88 - Memory read", function () {
       const ramCard = new Z88RamMemoryCard(m, 0x08_0000);
 
       // --- Insert cards
-      const mem = m.z88Memory;
+      const mem = m.memory;
       const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
       memt.setRamCard(ramCard);
@@ -210,7 +210,7 @@ describe("Z88 - Memory read", function () {
       // --- Page in Bank 0xc0 into slot 3
       m.blinkDevice.setSR3(0xc0);
 
-      const value = m.z88Memory.readMemory(addr);
+      const value = m.memory.readMemory(addr);
       if ((addr & 0xc000) !== 0x0000) {
         // --- Random read (pseudo random)
         expect(value).toBe(RANDOM_SEQ[0]);
@@ -219,7 +219,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(0);
       }
 
-      const value1 = m.z88Memory.readMemory(addr);
+      const value1 = m.memory.readMemory(addr);
       if ((addr & 0xc000) !== 0x0000) {
         // --- Random read (pseudo random)
         expect(value1).toBe(RANDOM_SEQ[1]);
@@ -228,7 +228,7 @@ describe("Z88 - Memory read", function () {
         expect(value1).toBe(0);
       }
 
-      const value2 = m.z88Memory.readMemory(addr);
+      const value2 = m.memory.readMemory(addr);
       if ((addr & 0xc000) !== 0x0000) {
         // --- Random read (pseudo random)
         expect(value2).toBe(RANDOM_SEQ[2]);

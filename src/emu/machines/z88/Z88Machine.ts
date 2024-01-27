@@ -48,14 +48,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   readonly uiFrameFrequency = 8;
 
   /**
-   * The physical memory of the machine
+   * The physical memory of the machine (legacy)
    */
-  memory: PagedMemory;
+  oldMemory: PagedMemory;
 
   /**
-   * (Z88) The physical memory of the machine
+   * The physical memory of the machine (memory card model)
    */
-  z88Memory: Z88BankedMemory;
+  memory: Z88BankedMemory;
 
   /**
    * Represents the real time clock device of Z88
@@ -106,7 +106,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.delayedAddressBus = false;
 
     // --- Create the memory (new pattern using memory cards)
-    this.z88Memory = new Z88BankedMemory(this, 0xac23);
+    this.memory = new Z88BankedMemory(this, 0xac23);
 
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
@@ -115,7 +115,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.beeperDevice = new Z88BeeperDevice(this);
 
     // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
-    this.memory = new Z88PagedMemory(256, this.blinkDevice);
+    this.oldMemory = new Z88PagedMemory(256, this.blinkDevice);
 
 
     // --- Set up the screen size
@@ -148,14 +148,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the current partition values for all 16K/8K partitions
    */
   getCurrentPartitions (): number[] {
-    return this.memory.getPartitions();
+    return this.oldMemory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   getCurrentPartitionLabels (): string[] {
-    return this.memory.getPartitionLabels();
+    return this.oldMemory.getPartitionLabels();
   }
 
   /**
@@ -189,7 +189,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   async hardReset (): Promise<void> {
     await super.hardReset();
-    this.memory.reset();
+    this.oldMemory.reset();
     await this.setup();
     this.reset();
   }
@@ -229,7 +229,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    return this.memory.get64KFlatMemory();
+    return this.oldMemory.get64KFlatMemory();
   }
 
   /**
@@ -238,7 +238,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the partition
    */
   get16KPartition (index: number): Uint8Array {
-    return this.memory.get16KPartition(index);
+    return this.oldMemory.get16KPartition(index);
   }
 
   /**
@@ -246,7 +246,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param absAddress Absolute memory address
    */
   directReadMemory (absAddress: number): number {
-    return this.memory.directRead(absAddress);
+    return this.oldMemory.directRead(absAddress);
   }
 
   /**
@@ -263,7 +263,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this.memory.readMemory(address);
+    return this.oldMemory.readMemory(address);
   }
 
   /**
@@ -272,7 +272,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    this.memory.writeMemory(address, value);
+    this.oldMemory.writeMemory(address, value);
   }
 
   /**
@@ -689,7 +689,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   private uploadRomBytes (data: Uint8Array): void {
     for (let i = 0; i < data.length; i++) {
-      this.memory.directWrite(i, data[i]);
+      this.oldMemory.directWrite(i, data[i]);
     }
   }
 }
