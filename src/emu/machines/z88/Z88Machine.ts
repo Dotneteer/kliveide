@@ -148,14 +148,16 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the current partition values for all 16K/8K partitions
    */
   getCurrentPartitions (): number[] {
-    return this.oldMemory.getPartitions();
+    //return this.oldMemory.getPartitions();
+    return this.memory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   getCurrentPartitionLabels (): string[] {
-    return this.oldMemory.getPartitionLabels();
+    //return this.oldMemory.getPartitionLabels();
+    return this.memory.getPartitionLabels();
   }
 
   /**
@@ -190,6 +192,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   async hardReset (): Promise<void> {
     await super.hardReset();
     this.oldMemory.reset();
+    this.memory.reset();
     await this.setup();
     this.reset();
   }
@@ -229,7 +232,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    return this.oldMemory.get64KFlatMemory();
+    //return this.oldMemory.get64KFlatMemory();
+    return this.memory.get64KFlatMemory();
   }
 
   /**
@@ -238,7 +242,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the partition
    */
   get16KPartition (index: number): Uint8Array {
-    return this.oldMemory.get16KPartition(index);
+    //return this.oldMemory.get16KPartition(index);
+    return this.memory.get16KPartition(index);
   }
 
   /**
@@ -246,7 +251,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param absAddress Absolute memory address
    */
   directReadMemory (absAddress: number): number {
-    return this.oldMemory.directRead(absAddress);
+    //return this.oldMemory.directRead(absAddress);
+    return this.memory.directRead(absAddress);
   }
 
   /**
@@ -263,7 +269,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this.oldMemory.readMemory(address);
+    //return this.oldMemory.readMemory(address);
+    return this.memory.readMemory(address);
   }
 
   /**
@@ -272,7 +279,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    this.oldMemory.writeMemory(address, value);
+    //this.oldMemory.writeMemory(address, value);
+    this.memory.writeMemory(address, value);
   }
 
   /**
@@ -689,7 +697,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   private uploadRomBytes (data: Uint8Array): void {
     for (let i = 0; i < data.length; i++) {
-      this.oldMemory.directWrite(i, data[i]);
+      //this.oldMemory.directWrite(i, data[i]);
+      this.memory.directWrite(i, data[i]);
     }
   }
 }
