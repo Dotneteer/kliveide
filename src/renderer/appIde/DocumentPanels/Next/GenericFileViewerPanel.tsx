@@ -10,38 +10,39 @@ type GenericFileViewerViewState = {
 };
 
 // --- Context to pass for concrete file panel renderers
-type GenericFileViewerContext<T extends GenericFileViewerViewState> = {
-  fileInfo?: T;
+type GenericFileViewerContext<TFile, TState extends GenericFileViewerViewState> = {
+  fileInfo?: TFile;
   fileError?: string;
   valid: boolean;
   initialized: boolean;
-  currentViewState: T;
-  changeViewState: (setter: (vs: T) => void) => void;
+  currentViewState: TState;
+  changeViewState: (setter: (vs: TState) => void) => void;
 };
 
 // --- Properties of a generic file panel renderer
-type GenericFileViewerProps<T extends GenericFileViewerViewState> =
-  DocumentProps<T> & {
-    context: GenericFileViewerContext<T>;
-    fileLoader: (contents: Uint8Array) => T;
-    invalidRenderer?: (context: GenericFileViewerContext<T>) => JSX.Element;
-    validRenderer: (context: GenericFileViewerContext<T>) => JSX.Element;
+type GenericFileViewerProps<TFile, TState extends GenericFileViewerViewState> =
+  DocumentProps<TState> & {
+    fileLoader: (
+      contents: Uint8Array,
+    ) => {fileInfo?: TFile, error?: string};
+    invalidRenderer?: (context: GenericFileViewerContext<TFile, TState>) => JSX.Element;
+    validRenderer?: (context: GenericFileViewerContext<TFile, TState>) => JSX.Element;
   };
 
 // --- Generic file viewer panel renderer function
-export function GenericFileViewerPanel<T extends GenericFileViewerViewState> ({
+export function GenericFileViewerPanel<TFile, TState extends GenericFileViewerViewState> ({
   document,
   contents,
   viewState,
   fileLoader,
   invalidRenderer,
   validRenderer
-}: GenericFileViewerProps<T>) {
+}: GenericFileViewerProps<TFile, TState>) {
   // --- Initial view state
-  const [currentViewState, setCurrentViewState] = useState<T>(viewState);
+  const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
   const documentHubService = useDocumentHubService();
 
-  const [fileInfo, setFileInfo] = useState<T>();
+  const [fileInfo, setFileInfo] = useState<TFile>();
   const [fileError, setFileError] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
@@ -49,9 +50,9 @@ export function GenericFileViewerPanel<T extends GenericFileViewerViewState> ({
   // --- Obtain the document file whenever it changes
   useEffect(() => {
     try {
-      const fileInfo = fileLoader(contents);
-      setFileInfo(fileInfo);
-      setValid(true);
+      const result = fileLoader(contents);
+      setFileInfo(result.fileInfo);
+      setValid(!result.error);
     } catch (err) {
       setFileError(err.message);
       setValid(false);
@@ -68,13 +69,13 @@ export function GenericFileViewerPanel<T extends GenericFileViewerViewState> ({
   }, [currentViewState]);
 
   // --- Create the context to pass
-  const context: GenericFileViewerContext<T> = {
+  const context: GenericFileViewerContext<TFile, TState> = {
     fileInfo,
     fileError,
     valid,
     initialized,
     currentViewState,
-    changeViewState: (setter: (vs: T) => void) => {
+    changeViewState: (setter: (vs: TState) => void) => {
       const newViewState = { ...currentViewState };
       setter(newViewState);
       setCurrentViewState(newViewState);
@@ -86,7 +87,9 @@ export function GenericFileViewerPanel<T extends GenericFileViewerViewState> ({
     <Panel
       xclass={styles.panelFont}
       initialScrollPosition={currentViewState?.scrollPosition}
-      onScrolled={pos => context.changeViewState(vs => (vs.scrollPosition = pos))}
+      onScrolled={pos =>
+        context.changeViewState(vs => (vs.scrollPosition = pos))
+      }
     >
       {!valid && (
         <div className={styles.invalid}>

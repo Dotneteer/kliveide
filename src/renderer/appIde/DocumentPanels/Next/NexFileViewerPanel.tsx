@@ -1,13 +1,10 @@
-import styles from "./NexFileViewerPanel.module.scss";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { useEffect, useState } from "react";
 import {
   ExpandableRow,
   Label,
   LabeledFlag,
   LabeledText,
-  Panel,
   Row
 } from "@renderer/controls/GeneralControls";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
@@ -15,7 +12,7 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { NextBankViewer } from "@renderer/controls/NextBankViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
-import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { GenericFileViewerPanel } from "./GenericFileViewerPanel";
 
 type NexFileViewState = {
   headerAttrExpanded?: boolean;
@@ -35,59 +32,22 @@ const NexFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<NexFileViewState>) => {
-  // --- Initial view state
-  const [currentViewState, setCurrentViewState] =
-    useState<NexFileViewState>(viewState);
-
-  const documentHubService = useDocumentHubService();
-
-  const [fileInfo, setFileInfo] = useState<NexFileContents>();
-  const [fileError, setFileError] = useState<string>();
-  const [initialized, setInitialized] = useState<boolean>(false);
-  const [valid, setValid] = useState<boolean>(true);
-
-  // --- Obtain the document file whenever it changes
-  useEffect(() => {
-    try {
-      const fileInfo = loadNexFile();
-      setFileInfo(fileInfo);
-      setValid(true);
-    } catch (err) {
-      setFileError(err.message);
-      setValid(false);
-    } finally {
-      setInitialized(true);
-    }
-  }, [document]);
-
-  // --- Save the view state whenever it changes
-  useEffect(() => {
-    if (currentViewState) {
-      documentHubService.saveActiveDocumentState(currentViewState);
-    }
-  }, [currentViewState]);
-
-  // --- Render the view
-  const h = fileInfo?.header;
-  return initialized ? (
-    <Panel
-      xclass={styles.panelFont}
-      initialScrollPosition={currentViewState?.scrollPosition}
-      onScrolled={pos => changeViewState(vs => (vs.scrollPosition = pos))}
-    >
-      {!valid && (
-        <div className={styles.invalid}>
-          File content is not a valid: {fileError}
-        </div>
-      )}
-      {valid && (
+  return GenericFileViewerPanel<NexFileContents, NexFileViewState>({
+    document,
+    contents,
+    viewState,
+    fileLoader: loadNexFile,
+    validRenderer: context => {
+      const fi = context.fileInfo;
+      const cvs = context.currentViewState;
+      const change = context.changeViewState;
+      const h = context.fileInfo?.header;
+      return (
         <>
           <ExpandableRow
             heading='Header attributes'
-            expanded={currentViewState?.headerAttrExpanded ?? true}
-            onExpanded={exp =>
-              changeViewState(vs => (vs.headerAttrExpanded = exp))
-            }
+            expanded={cvs?.headerAttrExpanded ?? true}
+            onExpanded={exp => change(vs => (vs.headerAttrExpanded = exp))}
           >
             <Row>
               <LabeledText
@@ -204,10 +164,8 @@ const NexFileViewerPanel = ({
           </ExpandableRow>
           <ExpandableRow
             heading='Bank flags'
-            expanded={currentViewState?.bankFlagsExpanded ?? false}
-            onExpanded={exp =>
-              changeViewState(vs => (vs.bankFlagsExpanded = exp))
-            }
+            expanded={cvs?.bankFlagsExpanded ?? false}
+            onExpanded={exp => change(vs => (vs.bankFlagsExpanded = exp))}
           >
             <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
             <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
@@ -224,94 +182,86 @@ const NexFileViewerPanel = ({
             <BankFlags startIndex={96} flags={h.bankFlags.slice(96, 104)} />
             <BankFlags startIndex={104} flags={h.bankFlags.slice(104, 112)} />
           </ExpandableRow>
-          {fileInfo.palette?.length > 0 && (
+          {fi.palette?.length > 0 && (
             <ExpandableRow
               heading='Palette (Layer2, LoRes or Tilemap screen)'
-              expanded={currentViewState?.paletteExpanded ?? false}
+              expanded={context.currentViewState?.paletteExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(vs => (vs.paletteExpanded = exp))
+                context.changeViewState(vs => (vs.paletteExpanded = exp))
               }
             >
-              <NextPaletteViewer palette={fileInfo?.palette} />
+              <NextPaletteViewer palette={context.fileInfo?.palette} />
             </ExpandableRow>
           )}
-          {fileInfo.layer2LoadingScreen?.length > 0 && (
+          {fi.layer2LoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='Layer 2 Loading Screen'
-              expanded={currentViewState?.layer2LoadingScreenExpanded ?? false}
+              expanded={cvs?.layer2LoadingScreenExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(vs => (vs.layer2LoadingScreenExpanded = exp))
+                change(vs => (vs.layer2LoadingScreenExpanded = exp))
               }
             >
               <Layer2Screen
                 documentSource={document.id}
-                data={fileInfo?.layer2LoadingScreen}
-                palette={fileInfo.palette.map(v => getAbrgForPaletteCode(v))}
+                data={fi?.layer2LoadingScreen}
+                palette={fi.palette.map(v => getAbrgForPaletteCode(v))}
               />
             </ExpandableRow>
           )}
-          {fileInfo.ulaLoadingScreen?.length > 0 && (
+          {fi.ulaLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='ULA Loading Screen'
-              expanded={currentViewState?.ulaLoadingScreenExpanded ?? false}
+              expanded={cvs?.ulaLoadingScreenExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(vs => (vs.ulaLoadingScreenExpanded = exp))
+                change(vs => (vs.ulaLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fileInfo?.ulaLoadingScreen} />
+              <NextBankViewer contents={fi?.ulaLoadingScreen} />
             </ExpandableRow>
           )}
-          {fileInfo.loResLoadingScreen?.length > 0 && (
+          {fi.loResLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='LoRes Loading Screen'
-              expanded={currentViewState?.loResLoadingScreenExpanded ?? false}
+              expanded={cvs?.loResLoadingScreenExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(vs => (vs.loResLoadingScreenExpanded = exp))
+                change(vs => (vs.loResLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fileInfo?.loResLoadingScreen} />
+              <NextBankViewer contents={fi?.loResLoadingScreen} />
             </ExpandableRow>
           )}
-          {fileInfo.timexHiResLoadingScreen?.length > 0 && (
+          {fi.timexHiResLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='Timex HiRes Loading Screen'
-              expanded={
-                currentViewState?.timexHiResLoadingScreenExpanded ?? false
-              }
+              expanded={cvs?.timexHiResLoadingScreenExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(
-                  vs => (vs.timexHiResLoadingScreenExpanded = exp)
-                )
+                change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fileInfo?.timexHiResLoadingScreen} />
+              <NextBankViewer contents={fi?.timexHiResLoadingScreen} />
             </ExpandableRow>
           )}
-          {fileInfo.timexHiColLoadingScreen?.length > 0 && (
+          {fi.timexHiColLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='Timex HiCol Loading Screen'
-              expanded={
-                currentViewState?.timexHiColLoadingScreenExpanded ?? false
-              }
+              expanded={cvs?.timexHiColLoadingScreenExpanded ?? false}
               onExpanded={exp =>
-                changeViewState(
-                  vs => (vs.timexHiColLoadingScreenExpanded = exp)
-                )
+                change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fileInfo?.timexHiColLoadingScreen} />
+              <NextBankViewer contents={fi?.timexHiColLoadingScreen} />
             </ExpandableRow>
           )}
-          {fileInfo.bankData.map((entry, idx) => {
+          {fi.bankData.map((entry, idx) => {
             return (
               <ExpandableRow
                 key={idx}
                 heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(
                   10
                 )})`}
-                expanded={currentViewState?.bankExpanded?.[idx] ?? false}
+                expanded={cvs?.bankExpanded?.[idx] ?? false}
                 onExpanded={exp =>
-                  changeViewState(vs => {
+                  change(vs => {
                     vs.bankExpanded ??= {};
                     vs.bankExpanded![idx] = exp;
                   })
@@ -322,118 +272,120 @@ const NexFileViewerPanel = ({
             );
           })}
         </>
-      )}
-    </Panel>
-  ) : null;
-
-  function loadNexFile (): NexFileContents {
-    const reader = new BinaryReader(contents);
-    const header: NexHeader = {} as NexHeader;
-
-    // --- Read the header
-    // --- Check for the 'Next' token
-    const startToken = reader.readUint32();
-    if (startToken !== 0x7478654e) {
-      // 'Next'
-      setValid(false);
-      setFileError("Missing 'Next' token in file header");
+      );
     }
+  });
+};
 
-    // --- Read the version number
-    if (reader.readByte() !== 0x56) {
-      // 'V'
-      setValid(false);
-      setFileError("Missing 'V' in version number");
+function loadNexFile (contents: Uint8Array): {
+  fileInfo?: NexFileContents;
+  error?: string;
+} {
+  const reader = new BinaryReader(contents);
+  const header: NexHeader = {} as NexHeader;
+
+  // --- Read the header
+  // --- Check for the 'Next' token
+  const startToken = reader.readUint32();
+  if (startToken !== 0x7478654e) {
+    // 'Next'
+    return { error: "Missing 'Next' token in file header" };
+  }
+
+  // --- Read the version number
+  if (reader.readByte() !== 0x56) {
+    // 'V'
+    return { error: "Missing 'V' in version number" };
+  }
+  header.versionMajor = reader.readByte() - 0x30;
+  if (reader.readByte() !== 0x2e) {
+    // '.'
+    return { error: "Missing '.' in version number" };
+  }
+  header.versionMinor = reader.readByte() - 0x30;
+
+  // --- RAM, bank, and screen flag information
+  header.fullRamRequired = reader.readByte() !== 0;
+  header.numOf16KBanks = reader.readByte();
+  header.screenBlockFlags = reader.readByte();
+  header.borderColor = reader.readByte();
+
+  // --- Stack and program counter
+  header.stackPointer = reader.readUint16();
+  header.programCounter = reader.readUint16();
+
+  // --- Extra bytes
+  header.numOfExtraBytes = reader.readUint16();
+
+  // --- Bank flags
+  header.bankFlags = [];
+  for (let i = 0; i < 112; i++) {
+    header.bankFlags.push(reader.readByte() !== 0);
+  }
+
+  // --- Miscellanous header props
+  header.layer2LoadingBar = reader.readByte() !== 0;
+  header.loadingBarColorFor = reader.readByte();
+  header.loadingDelayPerBank = reader.readByte();
+  header.startDelay = reader.readByte();
+  header.preserveNextRegisters = reader.readByte() !== 0;
+  header.requiredCoreVersionMajor = reader.readByte();
+  header.requiredCoreVersionMinor = reader.readByte();
+  header.requiredCoreVersionSubMinor = reader.readByte();
+  header.timexHiresModeColor = reader.readByte();
+  header.entryBank = reader.readByte();
+  header.fileHandleAddress = reader.readUint16();
+
+  // --- Skip 370 unused bytes
+  reader.readBytes(370);
+
+  // --- Read the palette
+  const palette: number[] = [];
+  const sbFlags = header.screenBlockFlags;
+  const hasPalette =
+    !(sbFlags & ScreenBlockFlags.NoPalette) &&
+    (sbFlags & ScreenBlockFlags.Layer2 || sbFlags & ScreenBlockFlags.LoRes);
+
+  if (hasPalette) {
+    for (let i = 0; i < 256; i++) {
+      palette.push(reader.readUint16());
     }
-    header.versionMajor = reader.readByte() - 0x30;
-    if (reader.readByte() !== 0x2e) {
-      // '.'
-      setValid(false);
-      setFileError("Missing '.' in version number");
+  }
+
+  // --- Read the loading screens
+  let layer2LoadingScreen: Uint8Array | undefined;
+  if (sbFlags & ScreenBlockFlags.Layer2) {
+    layer2LoadingScreen = new Uint8Array(reader.readBytes(0xc000));
+  }
+  let ulaLoadingScreen: Uint8Array | undefined;
+  if (sbFlags & ScreenBlockFlags.Ula) {
+    ulaLoadingScreen = new Uint8Array(reader.readBytes(0x1b00));
+  }
+  let loResLoadingScreen: Uint8Array | undefined;
+  if (sbFlags & ScreenBlockFlags.LoRes) {
+    loResLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+  }
+  let timexHiresLoadingScreen: Uint8Array | undefined;
+  if (sbFlags & ScreenBlockFlags.HiRes) {
+    timexHiresLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+  }
+  let timexHiColLoadingScreen: Uint8Array | undefined;
+  if (sbFlags & ScreenBlockFlags.HiColor) {
+    timexHiColLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
+  }
+
+  // --- Read banks
+  const bankData: [number, Uint8Array][] = [];
+  for (let i = 0; i < header.bankFlags.length; i++) {
+    if (!header.bankFlags[i]) {
+      continue;
     }
-    header.versionMinor = reader.readByte() - 0x30;
+    const bankContents = new Uint8Array(reader.readBytes(0x4000));
+    bankData.push([getBankIndex(i), bankContents]);
+  }
 
-    // --- RAM, bank, and screen flag information
-    header.fullRamRequired = reader.readByte() !== 0;
-    header.numOf16KBanks = reader.readByte();
-    header.screenBlockFlags = reader.readByte();
-    header.borderColor = reader.readByte();
-
-    // --- Stack and program counter
-    header.stackPointer = reader.readUint16();
-    header.programCounter = reader.readUint16();
-
-    // --- Extra bytes
-    header.numOfExtraBytes = reader.readUint16();
-
-    // --- Bank flags
-    header.bankFlags = [];
-    for (let i = 0; i < 112; i++) {
-      header.bankFlags.push(reader.readByte() !== 0);
-    }
-
-    // --- Miscellanous header props
-    header.layer2LoadingBar = reader.readByte() !== 0;
-    header.loadingBarColorFor = reader.readByte();
-    header.loadingDelayPerBank = reader.readByte();
-    header.startDelay = reader.readByte();
-    header.preserveNextRegisters = reader.readByte() !== 0;
-    header.requiredCoreVersionMajor = reader.readByte();
-    header.requiredCoreVersionMinor = reader.readByte();
-    header.requiredCoreVersionSubMinor = reader.readByte();
-    header.timexHiresModeColor = reader.readByte();
-    header.entryBank = reader.readByte();
-    header.fileHandleAddress = reader.readUint16();
-
-    // --- Skip 370 unused bytes
-    reader.readBytes(370);
-
-    // --- Read the palette
-    const palette: number[] = [];
-    const sbFlags = header.screenBlockFlags;
-    const hasPalette =
-      !(sbFlags & ScreenBlockFlags.NoPalette) &&
-      (sbFlags & ScreenBlockFlags.Layer2 || sbFlags & ScreenBlockFlags.LoRes);
-
-    if (hasPalette) {
-      for (let i = 0; i < 256; i++) {
-        palette.push(reader.readUint16());
-      }
-    }
-
-    // --- Read the loading screens
-    let layer2LoadingScreen: Uint8Array | undefined;
-    if (sbFlags & ScreenBlockFlags.Layer2) {
-      layer2LoadingScreen = new Uint8Array(reader.readBytes(0xc000));
-    }
-    let ulaLoadingScreen: Uint8Array | undefined;
-    if (sbFlags & ScreenBlockFlags.Ula) {
-      ulaLoadingScreen = new Uint8Array(reader.readBytes(0x1b00));
-    }
-    let loResLoadingScreen: Uint8Array | undefined;
-    if (sbFlags & ScreenBlockFlags.LoRes) {
-      loResLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
-    }
-    let timexHiresLoadingScreen: Uint8Array | undefined;
-    if (sbFlags & ScreenBlockFlags.HiRes) {
-      timexHiresLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
-    }
-    let timexHiColLoadingScreen: Uint8Array | undefined;
-    if (sbFlags & ScreenBlockFlags.HiColor) {
-      timexHiColLoadingScreen = new Uint8Array(reader.readBytes(0x3000));
-    }
-
-    // --- Read banks
-    const bankData: [number, Uint8Array][] = [];
-    for (let i = 0; i < header.bankFlags.length; i++) {
-      if (!header.bankFlags[i]) {
-        continue;
-      }
-      const bankContents = new Uint8Array(reader.readBytes(0x4000));
-      bankData.push([getBankIndex(i), bankContents]);
-    }
-
-    return {
+  return {
+    fileInfo: {
       header,
       palette,
       layer2LoadingScreen,
@@ -442,36 +394,29 @@ const NexFileViewerPanel = ({
       timexHiResLoadingScreen: timexHiresLoadingScreen,
       timexHiColLoadingScreen,
       bankData
-    };
-  }
-
-  // --- Get the bank index from the bank flag index
-  function getBankIndex (bank: number): number {
-    switch (bank) {
-      case 0x00:
-        return 5;
-      case 0x01:
-        return 2;
-      case 0x02:
-        return 0;
-      case 0x03:
-        return 1;
-      case 0x04:
-        return 3;
-      case 0x05:
-        return 4;
-      default:
-        return bank;
     }
-  }
+  };
+}
 
-  // --- Save the view state invoking the optional setter
-  function changeViewState (setter: (vs: NexFileViewState) => void): void {
-    const newViewState = { ...currentViewState };
-    setter(newViewState);
-    setCurrentViewState(newViewState);
+// --- Get the bank index from the bank flag index
+function getBankIndex (bank: number): number {
+  switch (bank) {
+    case 0x00:
+      return 5;
+    case 0x01:
+      return 2;
+    case 0x02:
+      return 0;
+    case 0x03:
+      return 1;
+    case 0x04:
+      return 3;
+    case 0x05:
+      return 4;
+    default:
+      return bank;
   }
-};
+}
 
 type BankFlagsProps = {
   startIndex: number;
