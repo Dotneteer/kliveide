@@ -49,9 +49,26 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     this._cards[0] = new Z88RomMemoryCard(this.machine, 0x08_0000);
 
     // --- Get the internal RAM size (assume 512K by default)
-    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x08_0000;
-    this._intRamCard = new Z88RamMemoryCard(this.machine, intRamSize);
-
+    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x1f;
+    let ramSizeInBytes = 0x08_0000;
+    switch (intRamSize) {
+      case 0x00:
+        ramSizeInBytes = 0x00_0000;
+        break;
+      case 0x01:
+        ramSizeInBytes = 0x00_8000;
+        break;
+      case 0x03:
+        ramSizeInBytes = 0x01_0000;
+        break;
+      case 0x07:
+        ramSizeInBytes = 0x02_0000;
+        break;
+      case 0x0f:
+        ramSizeInBytes = 0x04_0000;
+        break;
+    }
+    this._intRamCard = new Z88RamMemoryCard(this.machine, ramSizeInBytes);
     this.reset();
   }
 

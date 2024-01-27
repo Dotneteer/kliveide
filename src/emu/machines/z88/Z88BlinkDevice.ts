@@ -90,7 +90,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     } else if (intRomSize <= 128 * 1024) {
       intRomMask = 0x07;
     }
-    this.setChipMask(0, intRomMask);
 
     // --- Set up internal RAM size
     const intRamSize = this.machine.config?.[MC_Z88_INTRAM];
@@ -225,26 +224,15 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR0 = bank & 0xff;
 
     // --- Lower 8K of SR0
-    const mem = this.machine.oldMemory;
     if (this.COM & COMFlags.RAMS) {
       // --- Bank $20, RAM
-      mem.setPageInfo(0, 0x08_0000, 0x20, false);
       this.machine.memory.setMemoryPageInfo(0, 0x20, false);
     } else {
       // --- Bank $00, ROM
-      mem.setPageInfo(0, 0x00_0000, 0x00, true);
       this.machine.memory.setMemoryPageInfo(0, 0x00, false);
     }
 
     // --- Upper 8K of SR0
-    const pageOffset =
-      this.calculatePageOffset(bank & 0xfe) + (bank & 0x01) * 0x2000;
-    mem.setPageInfo(
-      1,
-      pageOffset,
-      bank,
-      this._bankAccess[bank] !== AccessType.Ram
-    );
     this.machine.memory.setMemoryPageInfo(0, bank, true);
   }
 
@@ -254,15 +242,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    */
   setSR1 (bank: number): void {
     this.SR1 = bank;
-    const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.oldMemory;
-
-    // --- Offset for 0x4000-0x5fff
-    mem.setPageInfo(2, pageOffset, bank, romKind);
-
-    // --- Offset for 0x6000-0x7fff
-    mem.setPageInfo(3, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
     this.machine.memory.setMemoryPageInfo(1, bank);
@@ -274,15 +253,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    */
   setSR2 (bank: number): void {
     this.SR2 = bank;
-    const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.oldMemory;
-
-    // --- Offset for 0x8000-0x9fff
-    mem.setPageInfo(4, pageOffset, bank, romKind);
-
-    // --- Offset for 0xa000-0xbfff
-    mem.setPageInfo(5, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
     this.machine.memory.setMemoryPageInfo(2, bank);
@@ -294,15 +264,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    */
   setSR3 (bank: number): void {
     this.SR3 = bank;
-    const pageOffset = this.calculatePageOffset(bank);
-    const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.oldMemory;
-
-    // --- Offset for 0xc000-0xdfff
-    mem.setPageInfo(6, pageOffset, bank, romKind);
-
-    // --- Offset for 0xe000-0xffff
-    mem.setPageInfo(7, pageOffset + 0x2000, bank, romKind);
 
     // --- Set up the memory page info for this slot
     this.machine.memory.setMemoryPageInfo(3, bank);
@@ -555,15 +516,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     return this._bankAccess[srValue];
   }
 
-  /**
-   * Sets the size of the internal RAM
-   * @param value Ram size value
-   */
-  setInternalRamSize (value: number): void {
-    this.setChipMask(1, value);
-    console.log(`Internal RAM size set to ${value}`);
-  }
-
   // ==========================================================================
   // Helpers
 
@@ -607,19 +559,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     }
   }
 
-  /**
-   * Calculates the page offset for the specified bank
-   * @param bank Bank index
-   * @returns The page offset
-   */
-  calculatePageOffset (bank: number): number {
-    let sizeMask = this._chipMasks[bank <= 0x1f ? 0 : 1 + (bank >> 6)];
-    return (
-      ((bank < 0x40 ? bank & 0xe0 : bank & 0xc0) | (bank & sizeMask & 0x3f)) <<
-      14
-    );
-  }
-
   // Tests if the maskable interrupt has been requested
   checkMaskableInterruptRequested (): void {
     // --- Is the BM_INTGINT flag set?
@@ -632,12 +571,5 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
 
     // --- No interrupt
     this.interruptSignalActive = false;
-  }
-
-  // ==========================================================================
-  // IZ88BlinkTestDevice implementation
-
-  getChipMask (chip: number): number {
-    return this._chipMasks[chip];
   }
 }
