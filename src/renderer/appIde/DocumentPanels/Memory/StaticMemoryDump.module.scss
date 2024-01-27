@@ -1,1 +1,18 @@
 @import "@styles/core.scss";
+
+.item {
+  display: flex;
+  flex-direction: column;
+
+  &.twoSections {
+    flex-direction: row;
+  }
+
+  &.even {
+    background: var(--bgcolor-disass-even-row);
+  }
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+  }
+}

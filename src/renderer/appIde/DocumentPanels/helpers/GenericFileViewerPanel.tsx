@@ -1,8 +1,8 @@
-import styles from "./GenericFileViewerPanel.module.scss";
+import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { useEffect, useState } from "react";
-import { Panel } from "@renderer/controls/GeneralControls";
+import { Panel } from "@renderer/controls/generic/Panel";
 
 // --- Generic file viewer panel state
 type GenericFileViewerViewState = {

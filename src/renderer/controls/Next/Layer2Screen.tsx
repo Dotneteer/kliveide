@@ -1,9 +1,9 @@
 import styles from "./Layer2Screen.module.scss";
 import { useEffect, useRef } from "react";
-import { HeaderRow, Row } from "../GeneralControls";
 import { SmallIconButton } from "../IconButton";
 import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { HeaderRow, Row } from "../generic/Row";
 
 type Props = {
   documentSource?: string;
@@ -12,9 +12,14 @@ type Props = {
   zoomFactor?: number;
 };
 
-export const Layer2Screen = ({ documentSource, data, palette, zoomFactor = 2 }: Props) => {
+export const Layer2Screen = ({
+  documentSource,
+  data,
+  palette,
+  zoomFactor = 2
+}: Props) => {
   const { projectService } = useAppServices();
-
+  
   const screenElement = useRef<HTMLCanvasElement>();
   const shadowScreenElement = useRef<HTMLCanvasElement>();
   const shadowScreenWidth = 256;
@@ -83,6 +88,7 @@ export const Layer2Screen = ({ documentSource, data, palette, zoomFactor = 2 }: 
           iconName='dump'
           title='Display loading screen data dump'
           clicked={async () => {
+            console.log("Dumping screen data", data?.length)
             if (!documentSource) return;
             await openStaticMemoryDump(
               projectService.getActiveDocumentHubService(),

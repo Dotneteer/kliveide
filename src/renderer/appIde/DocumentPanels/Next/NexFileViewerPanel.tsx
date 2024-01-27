@@ -1,18 +1,16 @@
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import {
-  ExpandableRow,
-  Label,
-  LabeledFlag,
-  LabeledText,
-  Row
-} from "@renderer/controls/GeneralControls";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { NextBankViewer } from "@renderer/controls/NextBankViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
-import { GenericFileViewerPanel } from "./GenericFileViewerPanel";
+import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
+import { Row } from "@renderer/controls/generic/Row";
+import { Label } from "@renderer/controls/generic/Label";
+import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
+import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
 
 type NexFileViewState = {
   headerAttrExpanded?: boolean;

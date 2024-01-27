@@ -1,5 +1,6 @@
-import { Column, Label } from "./GeneralControls";
 import styles from "./NextBankViewer.module.scss";
+import { Label } from "./Labels";
+import { Column } from "./generic/Column";
 
 type Props = {
   contents: Uint8Array;

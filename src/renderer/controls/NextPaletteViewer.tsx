@@ -1,5 +1,4 @@
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { Column, Row } from "./GeneralControls";
 import styles from "./NextPaletteViewer.module.scss";
 import {
   getCssStringForPaletteCode,
@@ -8,6 +7,8 @@ import {
 import { TooltipFactory } from "./Tooltip";
 import { useRef, useState } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
+import { Row } from "./generic/Row";
+import { Column } from "./generic/Column";
 
 type Props = {
   palette: number[];
