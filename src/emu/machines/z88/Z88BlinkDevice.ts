@@ -34,7 +34,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * repeat the upper 16K of the 32K memory.
    *
    * Mask Values:
-   * $00: Chip nop present
+   * $00: Chip not present
    * $01: 32K
    * $03: 64K
    * $07: 128K
@@ -100,14 +100,14 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
         this.setChipMask(1, intRamSize);
         break;
       default:
-        this.setChipMask(1, 0x01);
+        this.setChipMask(1, 0x1f);
         break;
     }
 
     // --- No cards in any slot
-    this.setChipMask(2, 0x1f);
-    this.setChipMask(3, 0x3f);
-    this.setChipMask(4, 0x0f);
+    this.setChipMask(2, 0x00);
+    this.setChipMask(3, 0x00);
+    this.setChipMask(4, 0x00);
 
     // --- Card 1 is RAM
     this.setSlotMask(1, CardType.None);
@@ -225,13 +225,15 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR0 = bank & 0xff;
 
     // --- Lower 8K of SR0
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
     if (this.COM & COMFlags.RAMS) {
       // --- Bank $20, RAM
       mem.setPageInfo(0, 0x08_0000, 0x20, false);
+      this.machine.memory.setMemoryPageInfo(0, 0x20, false);
     } else {
       // --- Bank $00, ROM
       mem.setPageInfo(0, 0x00_0000, 0x00, true);
+      this.machine.memory.setMemoryPageInfo(0, 0x00, false);
     }
 
     // --- Upper 8K of SR0
@@ -243,6 +245,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       bank,
       this._bankAccess[bank] !== AccessType.Ram
     );
+    this.machine.memory.setMemoryPageInfo(0, bank, true);
   }
 
   /**
@@ -253,13 +256,16 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR1 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0x4000-0x5fff
     mem.setPageInfo(2, pageOffset, bank, romKind);
 
     // --- Offset for 0x6000-0x7fff
     mem.setPageInfo(3, pageOffset + 0x2000, bank, romKind);
+
+    // --- Set up the memory page info for this slot
+    this.machine.memory.setMemoryPageInfo(1, bank);
   }
 
   /**
@@ -270,13 +276,16 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR2 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0x8000-0x9fff
     mem.setPageInfo(4, pageOffset, bank, romKind);
 
     // --- Offset for 0xa000-0xbfff
     mem.setPageInfo(5, pageOffset + 0x2000, bank, romKind);
+
+    // --- Set up the memory page info for this slot
+    this.machine.memory.setMemoryPageInfo(2, bank);
   }
 
   /**
@@ -287,13 +296,16 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.SR3 = bank;
     const pageOffset = this.calculatePageOffset(bank);
     const romKind = this._bankAccess[bank] === AccessType.Rom;
-    const mem = this.machine.memory;
+    const mem = this.machine.oldMemory;
 
     // --- Offset for 0xc000-0xdfff
     mem.setPageInfo(6, pageOffset, bank, romKind);
 
     // --- Offset for 0xe000-0xffff
     mem.setPageInfo(7, pageOffset + 0x2000, bank, romKind);
+
+    // --- Set up the memory page info for this slot
+    this.machine.memory.setMemoryPageInfo(3, bank);
   }
 
   /**
@@ -326,9 +338,8 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * @param cardType Indicates if the slot is ROM
    */
   setSlotMask (slot: number, cardType: CardType): void {
-    if (slot < 1) slot = 1;
     if (slot > 3) slot = 3;
-    this._slotTypes[slot - 1] = cardType;
+    this._slotTypes[slot] = cardType;
     this.recalculateBankInfo();
   }
 
@@ -572,21 +583,21 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
       } else if (bank <= 0x7f) {
         // --- Card Slot 1 RAM
         accessType = this._chipMasks[2]
-          ? this._slotTypes[0] === CardType.EPROM
+          ? this._slotTypes[1] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else if (bank <= 0xbf) {
         // --- Card Slot 2 RAM
         accessType = this._chipMasks[3]
-          ? this._slotTypes[1] === CardType.EPROM
+          ? this._slotTypes[2] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;
       } else {
         // --- Card Slot 3 RAM/EPROM
         accessType = this._chipMasks[4]
-          ? this._slotTypes[2] === CardType.EPROM
+          ? this._slotTypes[3] === CardType.Rom
             ? AccessType.Rom
             : AccessType.Ram
           : AccessType.Unavailable;

@@ -2,6 +2,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { CardType } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
+import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 
 export class Z88TestMachine extends Z88Machine {
   constructor () {
@@ -17,95 +18,99 @@ export class Z88TestMachine extends Z88Machine {
     this.blinkTestDevice.setChipMask(slot, mask);
   }
 
+  setSlotMask (slot: number, isRom: boolean) {
+    this.blinkTestDevice.setSlotMask(
+      slot,
+      isRom ? CardType.Rom : CardType.Ram
+    );
+  }
+
+  private get memTestDevice (): IZ88BankedMemoryTestSupport {
+    return this.memory as unknown as IZ88BankedMemoryTestSupport;
+  }
+
   get chipMask0 (): number {
-    return this.blinkTestDevice.getChipMask(0);
+    return this.memTestDevice.cards[0]?.chipMask ?? 0x00;
   }
 
   get chipMask1 (): number {
-    return this.blinkTestDevice.getChipMask(1);
+    return this.memTestDevice.cards[1]?.chipMask ?? 0x00;
   }
 
   get chipMask2 (): number {
-    return this.blinkTestDevice.getChipMask(2);
+    return this.memTestDevice.cards[2]?.chipMask ?? 0x00;
   }
 
   get chipMask3 (): number {
-    return this.blinkTestDevice.getChipMask(3);
+    return this.memTestDevice.cards[3]?.chipMask ?? 0x00;
   }
 
-  get chipMask4 (): number {
-    return this.blinkTestDevice.getChipMask(4);
+  get chipMaskIntRam (): number {
+    return this.memTestDevice.intRamCard?.chipMask ?? 0x00;
   }
 
   get s0OffsetL (): number {
     return this.memory.bankData[0].offset;
   }
 
-  get s0ReadonlyL (): boolean {
-    return this.memory.bankData[0].isReadOnly;
+  get s0TypeL (): CardType {
+    return this.memory.bankData[0].handler?.type ?? CardType.None;
   }
 
   get s0OffsetH (): number {
     return this.memory.bankData[1].offset;
   }
 
-  get s0ReadonlyH (): boolean {
-    return this.memory.bankData[1].isReadOnly;
+  get s0TypeH (): CardType {
+    return this.memory.bankData[1].handler?.type ?? CardType.None;
   }
 
   get s1OffsetL (): number {
     return this.memory.bankData[2].offset;
   }
 
-  get s1ReadonlyL (): boolean {
-    return this.memory.bankData[2].isReadOnly;
+  get s1TypeL (): CardType {
+    return this.memory.bankData[2].handler?.type ?? CardType.None;
   }
 
   get s1OffsetH (): number {
     return this.memory.bankData[3].offset;
   }
 
-  get s1ReadonlyH (): boolean {
-    return this.memory.bankData[3].isReadOnly;
+  get s1TypeH (): CardType {
+    return this.memory.bankData[3].handler?.type ?? CardType.None;
   }
 
   get s2OffsetL (): number {
     return this.memory.bankData[4].offset;
   }
 
-  get s2ReadonlyL (): boolean {
-    return this.memory.bankData[4].isReadOnly;
+  get s2TypeL (): CardType {
+    return this.memory.bankData[4].handler?.type ?? CardType.None;
   }
 
   get s2OffsetH (): number {
     return this.memory.bankData[5].offset;
   }
 
-  get s2ReadonlyH (): boolean {
-    return this.memory.bankData[5].isReadOnly;
+  get s2TypeH (): CardType {
+    return this.memory.bankData[5].handler?.type ?? CardType.None;
   }
 
   get s3OffsetL (): number {
     return this.memory.bankData[6].offset;
   }
 
-  get s3ReadonlyL (): boolean {
-    return this.memory.bankData[6].isReadOnly;
+  get s3TypeL (): CardType {
+    return this.memory.bankData[6].handler?.type ?? CardType.None;
   }
 
   get s3OffsetH (): number {
     return this.memory.bankData[7].offset;
   }
 
-  get s3ReadonlyH (): boolean {
-    return this.memory.bankData[7].isReadOnly;
-  }
-
-  setSlotMask (slot: number, isRom: boolean) {
-    this.blinkTestDevice.setSlotMask(
-      slot,
-      isRom ? CardType.EPROM : CardType.RAM
-    );
+  get s3TypeH (): CardType {
+    return this.memory.bankData[7].handler?.type ?? CardType.None;
   }
 
   setSR0 (value: number) {
