@@ -14,14 +14,13 @@ import { Z88KeyboardDevice } from "./Z88KeyboardDevice";
 import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
-import { PagedMemory } from "../memory/PagedMemory";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
-import { Z88PagedMemory } from "./memory/Z88PagedMemory";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
+import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -46,11 +45,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency = 8;
-
-  /**
-   * The physical memory of the machine (legacy)
-   */
-  oldMemory: PagedMemory;
 
   /**
    * The physical memory of the machine (memory card model)
@@ -97,6 +91,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- config overrides model.config
     this.config = config ?? model?.config;
+    console.log("Z88", config)
 
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
@@ -113,10 +108,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
     this.beeperDevice = new Z88BeeperDevice(this);
-
-    // --- Initialize the memory contents (256 pages of 16K, no special ROM pages)
-    this.oldMemory = new Z88PagedMemory(256, this.blinkDevice);
-
 
     // --- Set up the screen size
     let scw = 0xff;
@@ -148,14 +139,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the current partition values for all 16K/8K partitions
    */
   getCurrentPartitions (): number[] {
-    return this.oldMemory.getPartitions();
+    return this.memory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   getCurrentPartitionLabels (): string[] {
-    return this.oldMemory.getPartitionLabels();
+    return this.memory.getPartitionLabels();
   }
 
   /**
@@ -172,7 +163,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     }
 
     // --- Initialize the Z88 machine's default ROM
-    this.uploadRomBytes(romContents);
+    const romCard = new Z88RomMemoryCard(this, romContents.length);
+    this.memory.insertCard(0, romCard, romContents);
   }
 
   /**
@@ -189,7 +181,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   async hardReset (): Promise<void> {
     await super.hardReset();
-    this.oldMemory.reset();
+    this.memory.reset();
     await this.setup();
     this.reset();
   }
@@ -229,7 +221,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the flat memory
    */
   get64KFlatMemory (): Uint8Array {
-    return this.oldMemory.get64KFlatMemory();
+    return this.memory.get64KFlatMemory();
   }
 
   /**
@@ -238,7 +230,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns Bytes of the partition
    */
   get16KPartition (index: number): Uint8Array {
-    return this.oldMemory.get16KPartition(index);
+    return this.memory.get16KPartition(index);
   }
 
   /**
@@ -246,7 +238,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param absAddress Absolute memory address
    */
   directReadMemory (absAddress: number): number {
-    return this.oldMemory.directRead(absAddress);
+    return this.memory.directRead(absAddress);
   }
 
   /**
@@ -263,7 +255,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this.oldMemory.readMemory(address);
+    return this.memory.readMemory(address);
   }
 
   /**
@@ -272,7 +264,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param value Byte to write into the memory
    */
   doWriteMemory (address: number, value: number): void {
-    this.oldMemory.writeMemory(address, value);
+    this.memory.writeMemory(address, value);
   }
 
   /**
@@ -680,16 +672,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       await new Promise(r => setTimeout(r, 400));
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
-    }
-  }
-
-  /**
-   * Uploades the specified ROM information to the Z88 ROM memory (slot 0)
-   * @param data ROM contents
-   */
-  private uploadRomBytes (data: Uint8Array): void {
-    for (let i = 0; i < data.length; i++) {
-      this.oldMemory.directWrite(i, data[i]);
     }
   }
 }

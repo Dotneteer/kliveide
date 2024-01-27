@@ -49,9 +49,26 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     this._cards[0] = new Z88RomMemoryCard(this.machine, 0x08_0000);
 
     // --- Get the internal RAM size (assume 512K by default)
-    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x08_0000;
-    this._intRamCard = new Z88RamMemoryCard(this.machine, intRamSize);
-
+    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x1f;
+    let ramSizeInBytes = 0x08_0000;
+    switch (intRamSize) {
+      case 0x00:
+        ramSizeInBytes = 0x00_0000;
+        break;
+      case 0x01:
+        ramSizeInBytes = 0x00_8000;
+        break;
+      case 0x03:
+        ramSizeInBytes = 0x01_0000;
+        break;
+      case 0x07:
+        ramSizeInBytes = 0x02_0000;
+        break;
+      case 0x0f:
+        ramSizeInBytes = 0x04_0000;
+        break;
+    }
+    this._intRamCard = new Z88RamMemoryCard(this.machine, ramSizeInBytes);
     this.reset();
   }
 
@@ -242,6 +259,78 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
 
     // --- Let the memory card handler do the job
     pageInfo.handler.writeMemory(pageInfo.offset, pageInfo.bank, address, data);
+  }
+
+  /**
+   * Get the 64K of addressable memory of the ZX Spectrum computer
+   * @returns Bytes of the flat memory
+   */
+  get64KFlatMemory (): Uint8Array {
+    const flat64 = new Uint8Array(0x1_0000);
+    const page0OffsL = this.getPartitionOffset(this.bankData[0].bank);
+    for (let i = 0; i < 0x2000; i++) {
+      flat64[i + 0x0000] = this.memory[page0OffsL + i];
+    }
+    const page0OffsH = this.getPartitionOffset(this.bankData[1].bank);
+    for (let i = 0; i < 0x2000; i++) {
+      flat64[i + 0x2000] = this.memory[page0OffsH + i];
+    }
+    const page1Offs = this.getPartitionOffset(this.bankData[2].bank);
+    for (let i = 0; i < 0x4000; i++) {
+      flat64[i + 0x4000] = this.memory[page1Offs + i];
+    }
+    const page2Offs = this.getPartitionOffset(this.bankData[4].bank);
+    for (let i = 0; i < 0x4000; i++) {
+      flat64[i + 0x8000] = this.memory[page2Offs + i];
+    }
+    const page3Offs = this.getPartitionOffset(this.bankData[6].bank);
+    for (let i = 0; i < 0x4000; i++) {
+      flat64[i + 0xc000] = this.memory[page3Offs + i];
+    }
+    return flat64;
+  }
+
+  /**
+   * Get the specified 16K partition of memory
+   * @param index Partition index
+   * @returns Bytes of the partition
+   *
+   * < 0 : ROM pages
+   * >= 0: RAM bank with the specified index
+   */
+  get16KPartition (index: number): Uint8Array {
+    const flat16 = new Uint8Array(0x1_0000);
+    const pageOffs = this.getPartitionOffset(index);
+    for (let i = 0; i < 0x4000; i++) {
+      flat16[i + 0x0000] = this.memory[pageOffs + i];
+    }
+    return flat16;
+  }
+
+  /**
+   * Get value directly from the physical memory
+   * @param index Absoulte memory address
+   * @returns Memory value
+   */
+  directRead (index: number): number {
+    return this.memory[index];
+  }
+
+  /**
+   * Set value directly into the physical memory
+   * @param index Absolute memory address
+   * @param value Value to set
+   */
+  directWrite (index: number, value: number): void {
+    this.memory[index] = value;
+  }
+
+  /**
+   * Gets the offset of the specified partition
+   * @param partition ROM index (from 0 to numRoms)
+   */
+  getPartitionOffset (partition: number): number {
+    return partition * 0x4000;
   }
 
   /**

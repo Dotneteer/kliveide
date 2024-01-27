@@ -148,12 +148,6 @@ export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
    * @param value value to set
    */
   setCOM(value: number): void;
-
-  /**
-   * Gets the access type of the specified address
-   * @param address Address to obtain the access type for
-   */
-  getAccessTypeOfAddress(address: number): AccessType;
 }
 
 /**

@@ -16,11 +16,6 @@ export interface IZ88Machine extends IZ80Machine {
   get romId(): string;
 
   /**
-   * The physical memory of the machine
-   */
-  readonly oldMemory: PagedMemory;
-
-  /**
    * (Z88) The physical memory of the machine
    */
   readonly memory: Z88BankedMemory;
