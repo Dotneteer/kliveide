@@ -1,20 +1,42 @@
 import { useRef, useState } from "react";
 import styles from "./GeneralControls.module.scss";
-import { ScrollViewer } from "./ScrollViewer";
+import { ScrollViewer, ScrollViewerApi } from "./ScrollViewer";
 import { TooltipFactory } from "./Tooltip";
 import { Icon } from "./Icon";
 import classnames from "@renderer/utils/classnames";
+import { useInitialize } from "@renderer/core/useInitializeAsync";
 
 type PanelProps = {
   xclass?: string;
   children?: React.ReactNode;
+  initialScrollPosition?: number;
+  onScrolled?: (pos: number) => void;
 };
 
-export const Panel = ({ children, xclass }: PanelProps) => (
-  <div className={classnames(styles.panel, xclass)}>
-    <ScrollViewer>{children}</ScrollViewer>
-  </div>
-);
+export const Panel = ({
+  children,
+  xclass,
+  initialScrollPosition,
+  onScrolled
+}: PanelProps) => {
+  const scrollApi = useRef<ScrollViewerApi>(null);
+
+  useInitialize( () => {
+    if (scrollApi.current && initialScrollPosition !== undefined)
+      scrollApi.current.scrollToVertical(initialScrollPosition);
+  });
+
+  return (
+    <div className={classnames(styles.panel, xclass)}>
+      <ScrollViewer
+        onScrolled={pos => onScrolled?.(pos)}
+        apiLoaded={api => (scrollApi.current = api)}
+      >
+        {children}
+      </ScrollViewer>
+    </div>
+  );
+};
 
 type RowProps = {
   xclass?: string;
@@ -23,7 +45,9 @@ type RowProps = {
 };
 
 export const Row = ({ children, xclass, height }: RowProps) => (
-  <div className={classnames(styles.row, xclass)} style={{height}}>{children}</div>
+  <div className={classnames(styles.row, xclass)} style={{ height }}>
+    {children}
+  </div>
 );
 
 export const HeaderRow = ({ children }: RowProps) => (
@@ -208,12 +232,14 @@ type ExpandableRowProps = {
   heading: string;
   children?: React.ReactNode;
   expanded?: boolean;
+  onExpanded?: (expanded: boolean) => void;
 };
 
 export const ExpandableRow = ({
   heading,
   children,
-  expanded
+  expanded,
+  onExpanded
 }: ExpandableRowProps) => {
   const [isExpanded, setIsExpanded] = useState(expanded ?? false);
   return (
@@ -222,6 +248,7 @@ export const ExpandableRow = ({
         className={styles.expandableRowHeading}
         onClick={() => {
           setIsExpanded(!isExpanded);
+          onExpanded?.(!isExpanded);
         }}
       >
         <span className={styles.headingText}>{heading}</span>
@@ -229,7 +256,7 @@ export const ExpandableRow = ({
           iconName={isExpanded ? "chevron-down" : "chevron-right"}
           width={16}
           height={16}
-          fill="--color-command-icon"
+          fill='--color-command-icon'
         />
       </div>
       {isExpanded && <Column>{children}</Column>}

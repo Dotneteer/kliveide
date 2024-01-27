@@ -1,5 +1,5 @@
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { Column, Label, Row } from "./GeneralControls";
+import { Column, Row } from "./GeneralControls";
 import styles from "./NextPaletteViewer.module.scss";
 import {
   getCssStringForPaletteCode,
@@ -7,10 +7,7 @@ import {
 } from "@emu/machines/zxNext/palette";
 import { TooltipFactory } from "./Tooltip";
 import { useRef, useState } from "react";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-
-const ROW_LABEL_WIDTH = 20;
-const PAL_ENTRY_WIDTH = 22;
+import { useInitialize } from "@renderer/core/useInitializeAsync";
 
 type Props = {
   palette: number[];
@@ -67,7 +64,7 @@ const PaletteItem = ({ index, value }: PaletteItemProps) => {
   const [g, setG] = useState(null);
   const [b, setB] = useState(null);
 
-  useInitializeAsync(async () => {
+  useInitialize(() => {
     const [rC, gC, bC] = getRgbPartsForPaletteCode(value);
     setR(rC);
     setG(gC); 

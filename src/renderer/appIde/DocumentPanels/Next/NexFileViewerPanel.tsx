@@ -15,15 +15,39 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { NextBankViewer } from "@renderer/controls/NextBankViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
+import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 
-const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
+type NexFileViewState = {
+  headerAttrExpanded?: boolean;
+  bankFlagsExpanded?: boolean;
+  paletteExpanded?: boolean;
+  layer2LoadingScreenExpanded?: boolean;
+  ulaLoadingScreenExpanded?: boolean;
+  loResLoadingScreenExpanded?: boolean;
+  timexHiResLoadingScreenExpanded?: boolean;
+  timexHiColLoadingScreenExpanded?: boolean;
+  bankExpanded?: Record<number, boolean>;
+  scrollPosition?: number;
+};
+
+const NexFileViewerPanel = ({
+  document,
+  contents,
+  viewState
+}: DocumentProps<NexFileViewState>) => {
+  // --- Initial view state
+  const [currentViewState, setCurrentViewState] =
+    useState<NexFileViewState>(viewState);
+
+  const documentHubService = useDocumentHubService();
+
   const [fileInfo, setFileInfo] = useState<NexFileContents>();
   const [fileError, setFileError] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
 
+  // --- Obtain the document file whenever it changes
   useEffect(() => {
-    console.log(document.path);
     try {
       const fileInfo = loadNexFile();
       setFileInfo(fileInfo);
@@ -36,9 +60,21 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
     }
   }, [document]);
 
+  // --- Save the view state whenever it changes
+  useEffect(() => {
+    if (currentViewState) {
+      documentHubService.saveActiveDocumentState(currentViewState);
+    }
+  }, [currentViewState]);
+
+  // --- Render the view
   const h = fileInfo?.header;
   return initialized ? (
-    <Panel xclass={styles.panelFont}>
+    <Panel
+      xclass={styles.panelFont}
+      initialScrollPosition={currentViewState?.scrollPosition}
+      onScrolled={pos => changeViewState(vs => (vs.scrollPosition = pos))}
+    >
       {!valid && (
         <div className={styles.invalid}>
           File content is not a valid: {fileError}
@@ -46,7 +82,13 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
       )}
       {valid && (
         <>
-          <ExpandableRow heading='Header attributes' expanded={true}>
+          <ExpandableRow
+            heading='Header attributes'
+            expanded={currentViewState?.headerAttrExpanded ?? true}
+            onExpanded={exp =>
+              changeViewState(vs => (vs.headerAttrExpanded = exp))
+            }
+          >
             <Row>
               <LabeledText
                 label='Version:'
@@ -160,7 +202,13 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
               />
             </Row>
           </ExpandableRow>
-          <ExpandableRow heading='Bank flags' expanded={false}>
+          <ExpandableRow
+            heading='Bank flags'
+            expanded={currentViewState?.bankFlagsExpanded ?? false}
+            onExpanded={exp =>
+              changeViewState(vs => (vs.bankFlagsExpanded = exp))
+            }
+          >
             <BankFlags startIndex={0} flags={h.bankFlags.slice(0, 8)} />
             <BankFlags startIndex={8} flags={h.bankFlags.slice(8, 16)} />
             <BankFlags startIndex={16} flags={h.bankFlags.slice(16, 24)} />
@@ -179,13 +227,22 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
           {fileInfo.palette?.length > 0 && (
             <ExpandableRow
               heading='Palette (Layer2, LoRes or Tilemap screen)'
-              expanded={false}
+              expanded={currentViewState?.paletteExpanded ?? false}
+              onExpanded={exp =>
+                changeViewState(vs => (vs.paletteExpanded = exp))
+              }
             >
               <NextPaletteViewer palette={fileInfo?.palette} />
             </ExpandableRow>
           )}
           {fileInfo.layer2LoadingScreen?.length > 0 && (
-            <ExpandableRow heading='Layer 2 Loading Screen' expanded={false}>
+            <ExpandableRow
+              heading='Layer 2 Loading Screen'
+              expanded={currentViewState?.layer2LoadingScreenExpanded ?? false}
+              onExpanded={exp =>
+                changeViewState(vs => (vs.layer2LoadingScreenExpanded = exp))
+              }
+            >
               <Layer2Screen
                 documentSource={document.id}
                 data={fileInfo?.layer2LoadingScreen}
@@ -194,19 +251,38 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
             </ExpandableRow>
           )}
           {fileInfo.ulaLoadingScreen?.length > 0 && (
-            <ExpandableRow heading='ULA Loading Screen' expanded={false}>
+            <ExpandableRow
+              heading='ULA Loading Screen'
+              expanded={currentViewState?.ulaLoadingScreenExpanded ?? false}
+              onExpanded={exp =>
+                changeViewState(vs => (vs.ulaLoadingScreenExpanded = exp))
+              }
+            >
               <NextBankViewer contents={fileInfo?.ulaLoadingScreen} />
             </ExpandableRow>
           )}
           {fileInfo.loResLoadingScreen?.length > 0 && (
-            <ExpandableRow heading='LoRes Loading Screen' expanded={false}>
+            <ExpandableRow
+              heading='LoRes Loading Screen'
+              expanded={currentViewState?.loResLoadingScreenExpanded ?? false}
+              onExpanded={exp =>
+                changeViewState(vs => (vs.loResLoadingScreenExpanded = exp))
+              }
+            >
               <NextBankViewer contents={fileInfo?.loResLoadingScreen} />
             </ExpandableRow>
           )}
           {fileInfo.timexHiResLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='Timex HiRes Loading Screen'
-              expanded={false}
+              expanded={
+                currentViewState?.timexHiResLoadingScreenExpanded ?? false
+              }
+              onExpanded={exp =>
+                changeViewState(
+                  vs => (vs.timexHiResLoadingScreenExpanded = exp)
+                )
+              }
             >
               <NextBankViewer contents={fileInfo?.timexHiResLoadingScreen} />
             </ExpandableRow>
@@ -214,7 +290,14 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
           {fileInfo.timexHiColLoadingScreen?.length > 0 && (
             <ExpandableRow
               heading='Timex HiCol Loading Screen'
-              expanded={false}
+              expanded={
+                currentViewState?.timexHiColLoadingScreenExpanded ?? false
+              }
+              onExpanded={exp =>
+                changeViewState(
+                  vs => (vs.timexHiColLoadingScreenExpanded = exp)
+                )
+              }
             >
               <NextBankViewer contents={fileInfo?.timexHiColLoadingScreen} />
             </ExpandableRow>
@@ -226,7 +309,13 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
                 heading={`Bank $${toHexa2(entry[0])} (${entry[0].toString(
                   10
                 )})`}
-                expanded={false}
+                expanded={currentViewState?.bankExpanded?.[idx] ?? false}
+                onExpanded={exp =>
+                  changeViewState(vs => {
+                    vs.bankExpanded ??= {};
+                    vs.bankExpanded![idx] = exp;
+                  })
+                }
               >
                 <NextBankViewer contents={entry[1]} bank={entry[0]} />
               </ExpandableRow>
@@ -375,6 +464,13 @@ const NexFileViewerPanel = ({ document, contents }: DocumentProps) => {
         return bank;
     }
   }
+
+  // --- Save the view state invoking the optional setter
+  function changeViewState (setter: (vs: NexFileViewState) => void): void {
+    const newViewState = { ...currentViewState };
+    setter(newViewState);
+    setCurrentViewState(newViewState);
+  }
 };
 
 type BankFlagsProps = {
@@ -400,11 +496,13 @@ const BankFlags = ({ flags, startIndex }: BankFlagsProps) => {
 
 export const createNexFileViewerPanel = ({
   document,
-  contents
+  contents,
+  viewState
 }: DocumentProps) => (
   <NexFileViewerPanel
     document={document}
     contents={contents}
+    viewState={viewState}
     apiLoaded={() => {}}
   />
 );
