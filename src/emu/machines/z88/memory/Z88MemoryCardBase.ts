@@ -1,6 +1,6 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
-import { CardType } from "../IZ88BlinkDevice";
+import { CardType } from "@emu/machines/z88/memory/CardType";
 
 /**
  * The base class of all Z88 memory cards

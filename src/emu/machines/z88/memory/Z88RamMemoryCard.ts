@@ -1,5 +1,5 @@
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { CardType } from "../IZ88BlinkDevice";
+import { CardType } from "@emu/machines/z88/memory/CardType";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88RamMemoryCard extends Z88MemoryCardBase {
