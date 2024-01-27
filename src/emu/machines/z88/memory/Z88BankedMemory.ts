@@ -95,23 +95,24 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
         // --- SR0, Set up the upper 8K page
         const pageOffset =
           calculatePageOffset(bank & 0xfe) + (bank & 0x01) * 0x2000;
-        const card = bank >= 0x20 && bank <= 0x3f ? this._intRamCard : this._cards[bank >> 6];  
-        this.setPageInfo(1, pageOffset, bank, card);
+        this.setPageInfo(1, pageOffset, bank, getCard(bank));
       }
     } else {
       // --- Use the same pattern for SR1, SR2, and SR3
       const pageOffset = calculatePageOffset(bank);
 
       // --- Set up the lower page of the slot
-      this.setPageInfo(2 * slot, pageOffset, bank, this._cards[bank >> 6]);
+      this.setPageInfo(2 * slot, pageOffset, bank, getCard(bank));
 
       // --- Set up the upper page of the slot
-      this.setPageInfo(
-        2 * slot + 1,
-        pageOffset + 0x2000,
-        bank,
-        this._cards[bank >> 6]
-      );
+      this.setPageInfo(2 * slot + 1, pageOffset + 0x2000, bank, getCard(bank));
+    }
+
+    function getCard (bank: number): IZ88MemoryCard | null {
+      if (bank >= 0x20 && bank <= 0x3f) {
+        return thisObj._intRamCard;
+      }
+      return thisObj._cards[bank >> 6];
     }
 
     // --- Helper function to calculate the page offset for the specified bank.
@@ -184,11 +185,6 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
       throw new Error("Invalid slot index");
     }
 
-    // --- There must be a memory card to remove
-    if (!this._cards[slot]) {
-      throw new Error("The card is not inserted into any slot");
-    }
-
     // --- Remove the card from the slot
     this._cards[slot] = null;
     this.recalculateMemoryPageInfo();
@@ -238,7 +234,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
    */
   writeMemory (address: number, data: number): void {
     address &= 0xffff;
-    const pageInfo = this.bankData[address >>> 14];
+    const pageInfo = this.bankData[address >>> 13];
     if (!pageInfo.handler) {
       // --- Memory unavailable, ignore write
       return;

@@ -106,7 +106,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.delayedAddressBus = false;
 
     // --- Create the memory (new pattern using memory cards)
-    this.z88Memory = new Z88BankedMemory(this);
+    this.z88Memory = new Z88BankedMemory(this, 0xac23);
 
     // --- Create and initialize devices
     this.blinkDevice = new Z88BlinkDevice(this);
