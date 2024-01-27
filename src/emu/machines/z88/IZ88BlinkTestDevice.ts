@@ -1,4 +1,4 @@
-import { CardType } from "./IZ88BlinkDevice";
+import { CardType } from "./memory/CardType";
 
 export interface IZ88BlinkTestDevice {
   // --- Resets the RTC  

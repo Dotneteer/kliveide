@@ -1,13 +1,13 @@
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
 
 /**
- * Represents information about a particular Z88 slot
+ * Represents information about a particular Z88 8K page
  */
 export type Z88PageInfo = {
-  // --- The start offset of the slot in the 4MB memory space
+  // --- The start offset of the 8K Page in the 4MB memory space
   offset: number;
 
-  // --- The bank mapped into the slot
+  // --- The bank mapped into the 8k Page
   bank: number;
 
   // --- The object handling the memory access for the slot (through a memory card)
