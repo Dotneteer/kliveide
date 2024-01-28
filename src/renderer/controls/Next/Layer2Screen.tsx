@@ -85,7 +85,8 @@ export const Layer2Screen = ({
     <div className={styles.panel}>
       <HeaderRow>
         <SmallIconButton
-          iconName='dump'
+          iconName='pop-out'
+          fill="--color-value"
           title='Display loading screen data dump'
           clicked={async () => {
             console.log("Dumping screen data", data?.length)
@@ -93,7 +94,7 @@ export const Layer2Screen = ({
             await openStaticMemoryDump(
               projectService.getActiveDocumentHubService(),
               `layer2ScreenDump${documentSource}`,
-              `${documentSource} - Layer2 Screen Dump`,
+              `${documentSource} - Layer2`,
               data
             );
           }}

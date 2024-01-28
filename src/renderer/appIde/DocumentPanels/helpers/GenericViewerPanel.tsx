@@ -18,14 +18,16 @@ type GenericViewerContext<TState extends GenericViewerViewState> = {
 // --- Properties of a generic file panel renderer
 type GenericViewerProps<TState extends GenericViewerViewState> =
   DocumentProps<TState> & {
+    saveScrollTop?: boolean;
+    headerRenderer?: (context: GenericViewerContext<TState>) => JSX.Element;
     renderer?: (context: GenericViewerContext<TState>) => JSX.Element;
   };
 
 // --- Generic file viewer panel renderer function
 export function GenericViewerPanel<TState extends GenericViewerViewState> ({
-  document,
-  contents,
+  saveScrollTop = true,
   viewState,
+  headerRenderer,
   renderer
 }: GenericViewerProps<TState>) {
   // --- Initial view state
@@ -51,14 +53,18 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
 
   // --- Render the view
   return (
-    <Panel
-      xclass={styles.panelFont}
-      initialScrollPosition={currentViewState?.scrollPosition}
-      onScrolled={pos =>
-        context.changeViewState(vs => (vs.scrollPosition = pos))
-      }
-    >
-      {renderer(context)}
+    <Panel xclass={styles.panelFont}>
+      {headerRenderer && headerRenderer(context)}
+      <Panel
+        initialScrollPosition={currentViewState?.scrollPosition}
+        onScrolled={pos => {
+          if (saveScrollTop) {
+            context.changeViewState(vs => (vs.scrollPosition = pos));
+          }
+        }}
+      >
+        {renderer(context)}
+      </Panel>
     </Panel>
   );
 }

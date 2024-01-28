@@ -192,6 +192,7 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-disass-hover": "#383838",
 
   // --- Memory panel
+  "--bgcolor-memory-hover": "#606060",
   "--bgcolor-memory-pointed": "#3b8eea",
   "--bgcolor-memory-pc-pointed": "#0DBC79",
   "--color-memory-pointed": "#ffffff",

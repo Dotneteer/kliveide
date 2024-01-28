@@ -189,6 +189,7 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-disass-hover": "#b8b8b8",
 
   // --- Memory panel
+  "--bgcolor-memory-hover": "#a0a0a0",
   "--bgcolor-memory-pointed": "#0451a5",
   "--bgcolor-memory-pc-pointed": "#00BC00",
   "--color-memory-pointed": "#ffffff",

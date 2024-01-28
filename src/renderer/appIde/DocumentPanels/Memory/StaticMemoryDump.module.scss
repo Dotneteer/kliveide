@@ -3,11 +3,8 @@
 .item {
   display: flex;
   flex-direction: column;
-
-  &.twoSections {
-    flex-direction: row;
-  }
-
+  height: 22px;
+  justify-content: center;
   &.even {
     background: var(--bgcolor-disass-even-row);
   }

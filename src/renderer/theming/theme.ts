@@ -192,6 +192,7 @@ export type ThemeProperties = {
   "--bgcolor-disass-hover"?: string;
 
   // --- Memory panel
+  "--bgcolor-memory-hover"?: string;
   "--bgcolor-memory-pointed"?: string;
   "--bgcolor-memory-pc-pointed"?: string;
   "--color-memory-pointed"?: string;

@@ -200,7 +200,7 @@ const NexFileViewerPanel = ({
               }
             >
               <Layer2Screen
-                documentSource={document.id}
+                documentSource={document.node.projectPath}
                 data={fi?.layer2LoadingScreen}
                 palette={fi.palette.map(v => getAbrgForPaletteCode(v))}
               />
