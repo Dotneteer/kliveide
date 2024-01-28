@@ -1,6 +1,6 @@
 import styles from "./VidFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const VidFileViewerPanel = ({ document, contents }: DocumentProps) => {
   return (

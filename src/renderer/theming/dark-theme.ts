@@ -171,6 +171,7 @@ export const darkTheme: ThemeProperties = {
   "--color-readonly-icon-active": "rgb(252, 165, 3)",
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
   "--color-button-separator": "#606060",
+  "--bgcolor-expandable": "#101010",
 
   // --- Tool area
   "--bgcolor-toolarea": "#181818",
@@ -192,6 +193,7 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-disass-hover": "#383838",
 
   // --- Memory panel
+  "--bgcolor-memory-hover": "#606060",
   "--bgcolor-memory-pointed": "#3b8eea",
   "--bgcolor-memory-pc-pointed": "#0DBC79",
   "--color-memory-pointed": "#ffffff",

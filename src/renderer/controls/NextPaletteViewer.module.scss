@@ -1,0 +1,22 @@
+@import "@styles/core.scss";
+
+.paletteColumnLabel {
+  width: 30px;
+  margin-left: 2px;
+  color: var(--color-label);
+}
+
+.paletteRowLabel {
+  width: 32px;
+  margin-left: 6px;
+  color: var(--color-label);
+}
+
+.paletteItem {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 26px;
+  height: 16px;
+  margin-right: 6px;
+}

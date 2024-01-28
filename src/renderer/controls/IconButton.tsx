@@ -84,6 +84,7 @@ type SmallProps = {
   title?: string;
   enable?: boolean;
   selected?: boolean;
+  fill?: string;
   clicked?: () => void;
 };
 
@@ -92,6 +93,7 @@ export const SmallIconButton = ({
   title,
   enable,
   selected,
+  fill = "--color-command-icon",
   clicked
 }: SmallProps) => {
   return (
@@ -104,7 +106,7 @@ export const SmallIconButton = ({
       enable={enable}
       selected={selected}
       clicked={clicked}
-      fill='--color-command-icon'
+      fill={fill}
       noPadding={true}
     />
   );

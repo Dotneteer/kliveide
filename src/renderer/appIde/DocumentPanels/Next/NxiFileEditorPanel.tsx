@@ -1,6 +1,6 @@
 import styles from "./NxiFileEditorPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const NxiFileEditorPanel = ({ document, contents }: DocumentProps) => {
   return (

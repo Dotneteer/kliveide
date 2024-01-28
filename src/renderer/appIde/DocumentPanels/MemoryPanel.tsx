@@ -26,7 +26,6 @@ import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { CachedRefreshState, MemoryBankBar, ViewMode } from "./MemoryBankBar";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
-import { MachineInfo } from "@common/machines/info-types";
 
 type MemoryViewState = {
   topAddress?: number;

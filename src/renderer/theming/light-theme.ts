@@ -168,6 +168,7 @@ export const lightTheme: ThemeProperties = {
   "--color-readonly-icon-active": "rgb(252, 165, 3)",
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
   "--color-button-separator": "#a0a0a0",
+  "--bgcolor-expandable": "#d0d0d0",
 
   // --- Tool area
   "--bgcolor-toolarea": "#e8e8e8",
@@ -189,6 +190,7 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-disass-hover": "#b8b8b8",
 
   // --- Memory panel
+  "--bgcolor-memory-hover": "#a0a0a0",
   "--bgcolor-memory-pointed": "#0451a5",
   "--bgcolor-memory-pc-pointed": "#00BC00",
   "--color-memory-pointed": "#ffffff",

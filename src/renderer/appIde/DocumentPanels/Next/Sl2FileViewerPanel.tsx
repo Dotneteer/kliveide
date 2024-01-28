@@ -1,6 +1,6 @@
 import styles from "./Sl2FileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
-import { DocumentProps } from "../DocumentArea/DocumentsContainer";
+import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const Sl2FileViewerPanel = ({ document, contents }: DocumentProps) => {
   return (

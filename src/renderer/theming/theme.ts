@@ -171,6 +171,7 @@ export type ThemeProperties = {
   "--color-readonly-icon-active"?: string;
   "--color-readonly-icon-inactive"?: string;
   "--color-button-separator"?: string;
+  "--bgcolor-expandable"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;
@@ -192,6 +193,7 @@ export type ThemeProperties = {
   "--bgcolor-disass-hover"?: string;
 
   // --- Memory panel
+  "--bgcolor-memory-hover"?: string;
   "--bgcolor-memory-pointed"?: string;
   "--bgcolor-memory-pc-pointed"?: string;
   "--color-memory-pointed"?: string;

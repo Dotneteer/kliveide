@@ -5,7 +5,7 @@ import { Store } from "@state/redux-light";
 import { Token } from "@appIde/services/command-parser";
 import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import { MessageSource } from "@common/messaging/messages-core";
-import { MachineInfo } from "./MachineInfo";
+import { MachineInfo } from "@common/machines/info-types";
 
 /**
  * Describes the execution context of a command
