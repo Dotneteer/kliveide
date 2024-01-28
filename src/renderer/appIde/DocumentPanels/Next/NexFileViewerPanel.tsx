@@ -34,7 +34,7 @@ const NexFileViewerPanel = ({
     document,
     contents,
     viewState,
-    fileLoader: loadNexFile,
+    fileLoader: loadNexFileContents,
     validRenderer: context => {
       const fi = context.fileInfo;
       const cvs = context.currentViewState;
@@ -279,7 +279,7 @@ const NexFileViewerPanel = ({
   });
 };
 
-function loadNexFile (contents: Uint8Array): {
+function loadNexFileContents (contents: Uint8Array): {
   fileInfo?: NexFileContents;
   error?: string;
 } {
