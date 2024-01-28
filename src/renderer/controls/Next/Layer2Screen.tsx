@@ -4,8 +4,7 @@ import { SmallIconButton } from "../IconButton";
 import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { HeaderRow, Row } from "../generic/Row";
-import { LabelSeparator } from "../Labels";
-import { Label } from "../generic/Label";
+import { ScreenCanvas } from "./ScreenCanvas";
 
 type Props = {
   documentSource?: string;
@@ -22,66 +21,18 @@ export const Layer2Screen = ({
 }: Props) => {
   const { projectService } = useAppServices();
   
-  const screenElement = useRef<HTMLCanvasElement>();
-  const shadowScreenElement = useRef<HTMLCanvasElement>();
-  const shadowScreenWidth = 256;
-  const shadowScreenHeight = 192;
-  const canvasWidth = shadowScreenWidth * zoomFactor;
-  const canvasHeight = shadowScreenHeight * zoomFactor;
-
-  // --- Variables for display management
-  const dataLen = shadowScreenWidth * shadowScreenHeight * 4;
-  const imageBuffer = new ArrayBuffer(dataLen);
-  const imageBuffer8 = new Uint8Array(imageBuffer);
-  const pixelData = new Uint32Array(imageBuffer);
-
-  // --- Displays the screen
-  const displayScreenData = () => {
-    const screenEl = screenElement.current;
-    const shadowScreenEl = shadowScreenElement.current;
-    if (!screenEl || !shadowScreenEl) {
-      return;
-    }
-
-    const shadowCtx = shadowScreenEl.getContext("2d", {
-      willReadFrequently: true
-    });
-    if (!shadowCtx) return;
-
-    shadowCtx.imageSmoothingEnabled = false;
-    const shadowImageData = shadowCtx.getImageData(
-      0,
-      0,
-      shadowScreenEl.width,
-      shadowScreenEl.height
-    );
-
-    const screenCtx = screenEl.getContext("2d", {
-      willReadFrequently: true
-    });
+  // --- Create the Layer2 screen from the data provided
+  const createPixelData = (
+    data: Uint8Array,
+    palette: number[],
+    target: Uint32Array
+  ) => {
     let j = 0;
-
-    const endIndex = shadowScreenEl.width * shadowScreenEl.height;
+    const endIndex = 256 * 192;
     for (let i = 0; i < endIndex; i++) {
-      pixelData[j++] = palette[data[i] & 0x0f];
+      target[j++] = palette[data[i] & 0xff];
     }
-    shadowImageData.data.set(imageBuffer8);
-    shadowCtx.putImageData(shadowImageData, 0, 0);
-    if (screenCtx) {
-      screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(
-        shadowScreenEl,
-        0,
-        0,
-        screenEl.width,
-        screenEl.height
-      );
-    }
-  };
-
-  useEffect(() => {
-    displayScreenData();
-  }, [data]);
+  }
 
   return (
     <div className={styles.panel}>
@@ -101,15 +52,14 @@ export const Layer2Screen = ({
           }}
         />
       </HeaderRow>
-      <Row>
-        <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
-        <canvas
-          ref={shadowScreenElement}
-          style={{ display: "none" }}
-          width={shadowScreenWidth}
-          height={shadowScreenHeight}
-        />
-      </Row>
+      <ScreenCanvas 
+        data={data}
+        palette={palette}
+        zoomFactor={zoomFactor}
+        screenWidth={256}
+        screenHeight={192}
+        createPixelData={createPixelData}
+      />
     </div>
   );
 };

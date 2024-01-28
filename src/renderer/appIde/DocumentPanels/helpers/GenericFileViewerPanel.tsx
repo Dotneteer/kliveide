@@ -53,6 +53,9 @@ export function GenericFileViewerPanel<TFile, TState extends GenericFileViewerVi
       const result = fileLoader(contents);
       setFileInfo(result.fileInfo);
       setValid(!result.error);
+      if (result.error) {
+        setFileError(result.error);
+      }
     } catch (err) {
       setFileError(err.message);
       setValid(false);
