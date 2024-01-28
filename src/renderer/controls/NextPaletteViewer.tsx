@@ -86,7 +86,7 @@ const PaletteItem = ({ index, value }: PaletteItemProps) => {
           offsetY={32}
           showDelay={100}
         >
-          <div>{`R: ${r}, G: ${g}, B: ${b}`}</div>
+          <div>{`$${toHexa2(index)} - R: ${r}, G: ${g}, B: ${b}`}</div>
         </TooltipFactory>
       </div>
     </>

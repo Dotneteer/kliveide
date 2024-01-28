@@ -14,6 +14,8 @@ export const Row = ({ children, xclass, height }: Props) => (
   </div>
 );
 
-export const HeaderRow = ({ children }: Props) => (
-  <Row xclass={styles.headerRow}>{children}</Row>
+export const HeaderRow = ({ children, xclass, height }: Props) => (
+  <Row xclass={classnames(xclass || styles.headerRow)} height={height}>
+    {children}
+  </Row>
 );

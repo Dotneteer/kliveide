@@ -171,6 +171,7 @@ export type ThemeProperties = {
   "--color-readonly-icon-active"?: string;
   "--color-readonly-icon-inactive"?: string;
   "--color-button-separator"?: string;
+  "--bgcolor-expandable"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;

@@ -4,6 +4,8 @@ import { SmallIconButton } from "../IconButton";
 import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { HeaderRow, Row } from "../generic/Row";
+import { LabelSeparator } from "../Labels";
+import { Label } from "../generic/Label";
 
 type Props = {
   documentSource?: string;
@@ -89,7 +91,6 @@ export const Layer2Screen = ({
           fill="--color-value"
           title='Display loading screen data dump'
           clicked={async () => {
-            console.log("Dumping screen data", data?.length)
             if (!documentSource) return;
             await openStaticMemoryDump(
               projectService.getActiveDocumentHubService(),

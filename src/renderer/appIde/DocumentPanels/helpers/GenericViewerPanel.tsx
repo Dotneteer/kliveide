@@ -13,6 +13,9 @@ type GenericViewerViewState = {
 type GenericViewerContext<TState extends GenericViewerViewState> = {
   currentViewState: TState;
   changeViewState: (setter: (vs: TState) => void) => void;
+  version: number;
+  contextData?: any;
+  update: (data?: any) => void;
 };
 
 // --- Properties of a generic file panel renderer
@@ -30,6 +33,10 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
   headerRenderer,
   renderer
 }: GenericViewerProps<TState>) {
+  // --- Version to update the view
+  const [version, setVersion] = useState<number>(1);
+  const [contextData, setContextData] = useState<any>(undefined);
+
   // --- Initial view state
   const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
   const documentHubService = useDocumentHubService();
@@ -48,6 +55,14 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
       const newViewState = { ...currentViewState };
       setter(newViewState);
       setCurrentViewState(newViewState);
+    },
+    version,
+    contextData,
+    update: (data?: any) => {
+      setVersion(version + 1);
+      if (data) {
+        setContextData(data);
+      }
     }
   };
 

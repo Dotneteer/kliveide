@@ -1,10 +1,11 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "@renderer/utils/classnames";
-import { memo, useRef } from "react";
+import { memo, useRef, useState } from "react";
 import styles from "./DumpSection.module.scss";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { ZxSpectrumChars } from "../char-codes";
+import { useInitialize } from "@renderer/core/useInitializeAsync";
 
 type DumpSectionProps = {
   address: number;
@@ -51,6 +52,12 @@ const ByteValue = ({ address, value }: ByteValueProps) => {
   // --- Do not display non-existing values
   if (value === undefined) return <div style={{ width: 20 }}></div>;
 
+  // --- Hack to force the component to re-render because of the tooltip
+  const [version, setVersion] = useState(1);
+  useInitialize(() => {
+    setVersion(version + 1);
+  });
+
   const ref = useRef<HTMLDivElement>(null);
   const title = `Value at $${toHexa4(address)} (${address}):\n${
     tooltipCache[value]
@@ -86,6 +93,13 @@ const CharValue = ({ address, value }: ByteValueProps) => {
   }`;
   value;
   const toolTipLines = (title ?? "").split("\n");
+
+  // --- Hack to force the component to re-render because of the tooltip
+  const [version, setVersion] = useState(1);
+  useInitialize(() => {
+    setVersion(version + 1);
+  });
+
   return (
     <div ref={ref} className={styles.char}>
       {text}

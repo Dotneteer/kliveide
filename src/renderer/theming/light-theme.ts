@@ -168,6 +168,7 @@ export const lightTheme: ThemeProperties = {
   "--color-readonly-icon-active": "rgb(252, 165, 3)",
   "--color-readonly-icon-inactive": "rgb(204, 127, 3)",
   "--color-button-separator": "#a0a0a0",
+  "--bgcolor-expandable": "#d0d0d0",
 
   // --- Tool area
   "--bgcolor-toolarea": "#e8e8e8",

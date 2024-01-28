@@ -12,15 +12,15 @@ import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import classnames from "@renderer/utils/classnames";
 import { LabelSeparator } from "@renderer/controls/Labels";
-import {
-  useInitializeAsync
-} from "@renderer/core/useInitializeAsync";
+import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";
 
 type MemoryDumpViewState = {
   twoColumns?: boolean;
   charDump?: boolean;
   scrollPosition?: number;
+  version?: number;
+  topAddress?: number;
 };
 
 const StaticMemoryDump = ({
@@ -39,6 +39,8 @@ const StaticMemoryDump = ({
           <AddressInput
             label='Go to address:'
             onAddressSent={async address => {
+              context.changeViewState(vs => (vs.topAddress = address));
+              context.update(address);
               // setTopAddress(Math.floor(address / 8));
               // setScrollVersion(scrollVersion + 1);
             }}
@@ -65,9 +67,7 @@ const StaticMemoryDump = ({
       }, [contents]);
 
       useInitializeAsync(async () => {
-        console.log("INITIALIZE");
         if (context.currentViewState?.scrollPosition) {
-          console.log("SCROLL TO", context.currentViewState.scrollPosition);
           await new Promise(resolve => setTimeout(resolve, 40));
           vlApi.current?.scrollToOffset(
             context.currentViewState.scrollPosition
@@ -75,12 +75,19 @@ const StaticMemoryDump = ({
         }
       });
 
+      // --- Update the scroll position according to the address set
+      useEffect(() => {
+        if (!vlApi.current || typeof context.contextData !== "number") return;
+        vlApi.current.scrollToIndex(Math.floor(context.contextData / 16), {
+          align: "start"
+        });
+      }, [context.version]);
+
       return contents ? (
         <VirtualizedListView
           items={items}
           approxSize={22}
           fixItemHeight={true}
-          
           scrolled={() => {
             if (!vlApi.current) return;
             const topPos = vlApi.current.getScrollTop();
@@ -143,3 +150,42 @@ export async function openStaticMemoryDump (
     );
   }
 }
+
+type MiniDumpProps = {
+  contents: Uint8Array;
+  length?: number;
+};
+
+export const MiniMemoryDump = ({ contents, length = 64 }: MiniDumpProps) => {
+  const [items, setItems] = useState<number[]>([]);
+
+  // --- Process the contents when it changes
+  useEffect(() => {
+    const newItems: number[] = [];
+    for (let i = 0; i < length; i += 16) {
+      newItems.push(i);
+    }
+    setItems(newItems);
+  }, [contents]);
+
+  return items?.length ? (
+    <>
+      <div style={{ height: 4 }} />
+      {items.map((item, idx) => {
+        return (
+          <div
+            key={idx}
+            className={classnames(styles.item, {
+              [styles.even]: idx % 2 == 0
+            })}
+          >
+            <Row>
+              <DumpSection memory={contents} address={item} />
+              <DumpSection memory={contents} address={item + 8} />
+            </Row>
+          </div>
+        );
+      })}
+    </>
+  ) : null;
+};

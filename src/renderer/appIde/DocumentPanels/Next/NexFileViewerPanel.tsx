@@ -265,7 +265,11 @@ const NexFileViewerPanel = ({
                   })
                 }
               >
-                <NextBankViewer contents={entry[1]} bank={entry[0]} />
+                <NextBankViewer
+                  documentSource={document.node.projectPath}
+                  contents={entry[1]}
+                  bank={entry[0]}
+                />
               </ExpandableRow>
             );
           })}
