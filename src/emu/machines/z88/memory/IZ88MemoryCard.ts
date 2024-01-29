@@ -19,4 +19,15 @@ export interface IZ88MemoryCard extends IZ88MemoryOperation {
    * Gets the chip mask (address line mask) of the card calculated from its size
    */
   readonly chipMask: number;
+
+  /**
+   * This method is invoked when the card is inserted into the memory
+   * @param memOffset Memory offset where the card is inserted
+   */
+  onInserted(memOffset: number): void;
+
+  /**
+   * This method is invoked when the card is removed from the memory
+   */
+  onRemoved(): void;
 }

@@ -112,4 +112,12 @@ export class Z88TestMachine extends Z88Machine {
   setSR3 (value: number) {
     this.blinkDevice.setSR3(value);
   }
+
+  directMemoryRead (memOffset: number): number {
+    return this.memory.readMemory(memOffset);
+  }
+
+  directMemoryWrite (memOffset: number, value: number): void {
+    this.memory.writeMemory(memOffset, value);
+  }
 }
