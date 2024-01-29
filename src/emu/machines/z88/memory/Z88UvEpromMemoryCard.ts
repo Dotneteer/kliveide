@@ -15,18 +15,19 @@ import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
   type: CardType;
 
-  constructor (
-    public readonly host: IZ88Machine,
-    public readonly size: number
-  ) {
+  /**
+   * The memory offset where the card is inserted
+   */
+  memOffset = -1;
+
+  /**
+   * Initializes the card with the specified size
+   */
+  constructor (public readonly host: IZ88Machine, public readonly size: number) {
     super(host, size);
 
-    if (size == 0x8000) {
-      this.type = CardType.EpromVpp32KB;
-    } else {
-      // any other UV Eprom size (128K or 256K)
-      this.type = CardType.EpromVpp128KB;
-    }
+    this.type =
+      size === 0x8000 ? CardType.EpromVpp32KB : CardType.EpromVpp128KB;
   }
 
   /**
@@ -51,30 +52,30 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
    */
   writeMemory (
     memOffset: number,
-    bank: number,       // the bank of current address
-    address: number,    // the 64K logical address from Z80
-    byte: number        // the byte to blow to UV Eprom (if H/W is active)
+    bank: number, // the bank of current address
+    address: number, // the 64K logical address from Z80
+    byte: number // the byte to blow to UV Eprom (if H/W is active)
   ): void {
     const blinkEpr = this.host.blinkDevice.EPR;
     const blinkCom = this.host.blinkDevice.COM;
 
     // are we in slot 3?
-    if (bank < 0xC0) {
+    if (bank < 0xc0) {
       return; // no, ignore write operation (no effect anyway - it's a ROM)
     }
 
     if (
-          ((blinkCom & COMFlags.LCDON) == 0) &&
-          ((blinkCom & COMFlags.VPPON) != 0) &&
-          (((blinkCom & COMFlags.PROGRAM) != 0) || ((blinkCom & COMFlags.OVERP) != 0))
+      (blinkCom & COMFlags.LCDON) == 0 &&
+      (blinkCom & COMFlags.VPPON) != 0 &&
+      ((blinkCom & COMFlags.PROGRAM) != 0 || (blinkCom & COMFlags.OVERP) != 0)
     ) {
       // We're somwhere in slot 3, LCD turned off, VPP enabled and either programming or overprogramming enabled
 
-      switch(this.type) {
+      switch (this.type) {
         case CardType.EpromVpp32KB:
           if (blinkEpr !== 0x48) {
-              // Blink EPR register setting doesn't fit for this "chip"; byte cannot be blown on 32K Eprom
-              return;
+            // Blink EPR register setting doesn't fit for this "chip"; byte cannot be blown on 32K Eprom
+            return;
           }
           break;
 
@@ -90,6 +91,27 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
       const byte0 = this.host.memory.memory[memOffset + (address & 0x1fff)];
       // blow byte according to Eprom hardware rule (Eprom memory bit pattern can be changed from 1 to 0)
       this.host.memory.memory[memOffset + (address & 0x1fff)] = byte & byte0;
+    }
+  }
+
+  /**
+   * This method is invoked when the card is inserted into the memory
+   * @param memOffset Memory offset where the card is inserted
+   */
+  onInserted (memOffset: number): void {
+    this.memOffset = memOffset;
+
+    // TODO: Init the card after insertion
+    this.setPristineState();
+  }
+
+  /**
+   * Sets the card to its pristine state
+   */
+  setPristineState (): void {
+    // TODO: Change it to the pristine state
+    for (let i = 0; i < this.size; i++) {
+      this.host.memory.memory[this.memOffset + i] = 0xff;
     }
   }
 }

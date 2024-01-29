@@ -80,4 +80,19 @@ export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
     address: number,
     data: number
   ): void;
+
+  /**
+   * This method is invoked when the card is inserted into the memory
+   * @param memOffset Memory offset where the card is inserted
+   */
+  onInserted (memOffset: number): void {
+    // --- This method is intentionally empty; override in derived classes
+  }
+
+  /**
+   * This method is invoked when the card is removed from the memory
+   */
+  onRemoved (): void {
+    // --- This method is intentionally empty; override in derived classes
+  }
 }

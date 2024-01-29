@@ -190,6 +190,11 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
         this._memory[cardOffset + i] = initialContent[i];
       }
     }
+
+    // --- Notify the card about the insertion
+    if (memoryCard) {
+      memoryCard.onInserted(slot * 0x10_0000);
+    }
   }
 
   /**
@@ -202,9 +207,17 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
       throw new Error("Invalid slot index");
     }
 
+    // --- Get the card to remove
+    const card = this._cards[slot];
+
     // --- Remove the card from the slot
     this._cards[slot] = null;
     this.recalculateMemoryPageInfo();
+
+    // --- Notify the card about the removal
+    if (card) {
+      card.onRemoved();
+    }
   }
 
   /**

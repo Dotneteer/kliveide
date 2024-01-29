@@ -29,7 +29,7 @@ describe("Z88 - Memory read (32K EPROM)", function () {
       m.blinkDevice.setSR3(0xff);
 
       const value = m.memory.readMemory(addr);
-      expect(value).toBe(0); // TO DO : this has to be FFh
+      expect(value).toBe(0xff);
     });
   });
 
