@@ -2,7 +2,7 @@ import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { toHexa2, toHexa4 } from "../../services/ide-commands";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
-import { NextBankViewer } from "@renderer/controls/NextBankViewer";
+import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { Layer2Screen } from "@renderer/controls/Next/Layer2Screen";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
@@ -214,7 +214,17 @@ const NexFileViewerPanel = ({
                 change(vs => (vs.ulaLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fi?.ulaLoadingScreen} />
+              <MemoryDumpViewer
+                documentSource={document.node.projectPath}
+                contents={fi?.ulaLoadingScreen}
+                iconTitle='Display ULA dump'
+                idFactory={(documentSource: string) =>
+                  `ulaDump${documentSource}`
+                }
+                titleFactory={(documentSource: string) =>
+                  `${documentSource} - ULA`
+                }
+              />
             </ExpandableRow>
           )}
           {fi.loResLoadingScreen?.length > 0 && (
@@ -225,7 +235,17 @@ const NexFileViewerPanel = ({
                 change(vs => (vs.loResLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fi?.loResLoadingScreen} />
+              <MemoryDumpViewer
+                documentSource={document.node.projectPath}
+                contents={fi?.loResLoadingScreen}
+                iconTitle='Display LoRes dump'
+                idFactory={(documentSource: string) =>
+                  `loResDump${documentSource}`
+                }
+                titleFactory={(documentSource: string) =>
+                  `${documentSource} - LoRes`
+                }
+              />
             </ExpandableRow>
           )}
           {fi.timexHiResLoadingScreen?.length > 0 && (
@@ -236,7 +256,17 @@ const NexFileViewerPanel = ({
                 change(vs => (vs.timexHiResLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fi?.timexHiResLoadingScreen} />
+              <MemoryDumpViewer
+                documentSource={document.node.projectPath}
+                contents={fi?.timexHiResLoadingScreen}
+                iconTitle='Display Timex HiRes dump'
+                idFactory={(documentSource: string) =>
+                  `timexHiResDump${documentSource}`
+                }
+                titleFactory={(documentSource: string) =>
+                  `${documentSource} - Timex HiRes`
+                }
+              />
             </ExpandableRow>
           )}
           {fi.timexHiColLoadingScreen?.length > 0 && (
@@ -247,7 +277,17 @@ const NexFileViewerPanel = ({
                 change(vs => (vs.timexHiColLoadingScreenExpanded = exp))
               }
             >
-              <NextBankViewer contents={fi?.timexHiColLoadingScreen} />
+              <MemoryDumpViewer
+                documentSource={document.node.projectPath}
+                contents={fi?.timexHiColLoadingScreen}
+                iconTitle='Display Timex HiCol dump'
+                idFactory={(documentSource: string) =>
+                  `timexHiColDump${documentSource}`
+                }
+                titleFactory={(documentSource: string) =>
+                  `${documentSource} - Timex Hicol`
+                }
+              />
             </ExpandableRow>
           )}
           {fi.bankData.map((entry, idx) => {
@@ -265,10 +305,17 @@ const NexFileViewerPanel = ({
                   })
                 }
               >
-                <NextBankViewer
+                <MemoryDumpViewer
                   documentSource={document.node.projectPath}
                   contents={entry[1]}
                   bank={entry[0]}
+                  iconTitle='Display bank data dump'
+                  idFactory={(documentSource: string, bank: number) =>
+                    `bankDump${documentSource}:${bank}`
+                  }
+                  titleFactory={(documentSource: string, bank: number) =>
+                    `${documentSource} - Bank: ${bank}`
+                  }
                 />
               </ExpandableRow>
             );

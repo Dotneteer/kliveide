@@ -3,6 +3,8 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { useEffect, useState } from "react";
 import { Panel } from "@renderer/controls/generic/Panel";
+import { AppServices } from "@renderer/abstractions/AppServices";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 // --- Generic file viewer panel state
 type GenericFileViewerViewState = {
@@ -16,6 +18,7 @@ type GenericFileViewerContext<TFile, TState extends GenericFileViewerViewState> 
   valid: boolean;
   initialized: boolean;
   currentViewState: TState;
+  appServices: AppServices;
   changeViewState: (setter: (vs: TState) => void) => void;
 };
 
@@ -46,6 +49,9 @@ export function GenericFileViewerPanel<TFile, TState extends GenericFileViewerVi
   const [fileError, setFileError] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
+
+  // --- We pass AppServices to the context
+  const appServices = useAppServices();
 
   // --- Obtain the document file whenever it changes
   useEffect(() => {
@@ -78,6 +84,7 @@ export function GenericFileViewerPanel<TFile, TState extends GenericFileViewerVi
     valid,
     initialized,
     currentViewState,
+    appServices,
     changeViewState: (setter: (vs: TState) => void) => {
       const newViewState = { ...currentViewState };
       setter(newViewState);

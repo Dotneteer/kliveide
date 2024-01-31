@@ -3,7 +3,6 @@ import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 import { GenericFileViewerPanel } from "../helpers/GenericFileViewerPanel";
 import { HeaderRow } from "@renderer/controls/generic/Row";
 import { openStaticMemoryDump } from "../Memory/StaticMemoryDump";
-import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { Panel } from "@renderer/controls/generic/Panel";
 import { Column } from "@renderer/controls/generic/Column";
@@ -17,13 +16,14 @@ const ScrFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<ScrFileViewState>) => {
+  console.log("Render", document.node.projectPath);
   return GenericFileViewerPanel<ScrFileContents, ScrFileViewState>({
     document,
     contents,
     viewState,
     fileLoader: loadScrFileContents,
     validRenderer: context => {
-      const { projectService } = useAppServices();
+      const projectService = context.appServices.projectService;
       const documentSource = document.node.projectPath;
 
       // --- Create the Layer2 screen from the data provided
@@ -32,8 +32,8 @@ const ScrFileViewerPanel = ({
         palette: number[],
         target: Uint32Array
       ) => {
-        const pixels = context.fileInfo.pixels;
-        const attrs = context.fileInfo.attrs;
+        const pixels = data.slice(0, 0x1800);
+        const attrs = data.slice(0x1800, 0x1b00);
 
         let j = 0;
         for (let y = 0; y < 192; y++) {
@@ -95,11 +95,13 @@ const ScrFileViewerPanel = ({
 
 export const createScrFileViewerPanel = ({
   document,
-  contents
+  contents,
+  viewState
 }: DocumentProps) => (
   <ScrFileViewerPanel
     document={document}
     contents={contents}
+    viewState={viewState}
     apiLoaded={() => {}}
   />
 );
@@ -114,7 +116,6 @@ function loadScrFileContents (contents: Uint8Array): {
       error: "Invalid file size, an .SCR file should be 6912 bytes long."
     };
   }
-  console.log("Loading SCR file");
   const pixels = contents.slice(0, 0x1800);
   const attrs = contents.slice(0x1800, 0x1b00);
   return { fileInfo: { pixels, attrs } };
