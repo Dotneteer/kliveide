@@ -87,6 +87,7 @@ type Z80FileViewState = {
   registersExpanded?: boolean;
   flags1Expanded?: boolean;
   soundRegsExpanded?: boolean;
+  keyMappingsExpanded?: boolean;
 };
 
 const Z80FileViewerPanel = ({
@@ -359,6 +360,28 @@ const Z80FileViewerPanel = ({
                         value={fi.upper8KIsRam}
                       />
                     </Row>
+                    <Row>
+                      <LabeledText
+                        label='Disciple inhibit button:'
+                        value={fi.discipleInhibitButtonsStatus ? "In" : "Out"}
+                      />
+                      <LabeledText
+                        label='Disciple inhibit flag:'
+                        value={
+                          fi.discipleInhibitButtonsStatus
+                            ? "Pageable"
+                            : "Not pageable"
+                        }
+                      />
+                      {(true || fi.useLastOut1ffd) && (
+                        <LabeledText
+                          label='Last OUT $1FFD:'
+                          value={`$${
+                            fi.lastOut1ffdValue
+                          } (${fi.lastOut1ffdValue.toString(10)})`}
+                        />
+                      )}
+                    </Row>
                   </>
                 )}
               </>
@@ -368,7 +391,7 @@ const Z80FileViewerPanel = ({
             <>
               <ExpandableRow
                 heading='Sound Registers'
-                expanded={cvs?.soundRegsExpanded ?? true}
+                expanded={cvs?.soundRegsExpanded ?? false}
                 onExpanded={exp => change(vs => (vs.soundRegsExpanded = exp))}
               >
                 <Row>
@@ -454,6 +477,86 @@ const Z80FileViewerPanel = ({
               </ExpandableRow>
             </>
           )}
+          {fi.version === 3 && (
+            <>
+              <ExpandableRow
+                heading='Key Mappings'
+                expanded={cvs?.keyMappingsExpanded ?? false}
+                onExpanded={exp => change(vs => (vs.keyMappingsExpanded = exp))}
+              >
+                <Row>
+                  <LabeledText
+                    label='Key #1 Row:'
+                    value={`$${toHexa2(fi.userJoystickMappings[1])}`}
+                  />
+                  <LabeledText
+                    label='Key #1 Mask:'
+                    value={`$${toHexa2(fi.userJoystickMappings[0])}`}
+                  />
+                  <LabeledText
+                    label='Key #1 Value:'
+                    value={`$${toHexa2(fi.keysMappings[0])}`}
+                  />
+                </Row>
+                <Row>
+                  <LabeledText
+                    label='Key #2 Row:'
+                    value={`$${toHexa2(fi.userJoystickMappings[3])}`}
+                  />
+                  <LabeledText
+                    label='Key #2 Mask:'
+                    value={`$${toHexa2(fi.userJoystickMappings[2])}`}
+                  />
+                  <LabeledText
+                    label='Key #2 Value:'
+                    value={`$${toHexa2(fi.keysMappings[2])}`}
+                  />
+                </Row>
+                <Row>
+                  <LabeledText
+                    label='Key #3 Row:'
+                    value={`$${toHexa2(fi.userJoystickMappings[5])}`}
+                  />
+                  <LabeledText
+                    label='Key #3 Mask:'
+                    value={`$${toHexa2(fi.userJoystickMappings[4])}`}
+                  />
+                  <LabeledText
+                    label='Key #3 Value:'
+                    value={`$${toHexa2(fi.keysMappings[4])}`}
+                  />
+                </Row>
+                <Row>
+                  <LabeledText
+                    label='Key #4 Row:'
+                    value={`$${toHexa2(fi.userJoystickMappings[7])}`}
+                  />
+                  <LabeledText
+                    label='Key #4 Mask:'
+                    value={`$${toHexa2(fi.userJoystickMappings[6])}`}
+                  />
+                  <LabeledText
+                    label='Key #4 Value:'
+                    value={`$${toHexa2(fi.keysMappings[6])}`}
+                  />
+                </Row>
+                <Row>
+                  <LabeledText
+                    label='Key #5 Row:'
+                    value={`$${toHexa2(fi.userJoystickMappings[9])}`}
+                  />
+                  <LabeledText
+                    label='Key #5 Mask:'
+                    value={`$${toHexa2(fi.userJoystickMappings[8])}`}
+                  />
+                  <LabeledText
+                    label='Key #5 Value:'
+                    value={`$${toHexa2(fi.keysMappings[8])}`}
+                  />
+                </Row>
+              </ExpandableRow>
+            </>
+          )}
         </>
       );
     }
@@ -502,7 +605,7 @@ function loadZ80FileContents (contents: Uint8Array): {
   const regFSec = reader.readByte();
   const regIY = reader.readUint16();
   const regIX = reader.readUint16();
-  const intFlipflop = !!reader.readByte();
+  const iff1 = !!reader.readByte();
   const iff2 = !!reader.readByte();
   const flag2 = reader.readByte();
   const interruptMode = flag2 & 0x03;
@@ -514,6 +617,7 @@ function loadZ80FileContents (contents: Uint8Array): {
   let spectrumMemoryData: Uint8Array | undefined;
 
   // --- Check the version
+  let useLastOut1ffd = false;
   if (regPC) {
     // --- This is version 1
     spectrumMemoryData = readDataBlock();
@@ -524,6 +628,7 @@ function loadZ80FileContents (contents: Uint8Array): {
       version = 2;
     } else if (additionalLength === 54 || additionalLength === 55) {
       version = 3;
+      useLastOut1ffd = additionalLength === 55;
     } else {
       return {
         error: `Invalid .Z80 file. Additional header length should be 23, 54, or 55 (not ${additionalLength})`
@@ -554,14 +659,15 @@ function loadZ80FileContents (contents: Uint8Array): {
     regFSec,
     regIY,
     regIX,
-    iff1: intFlipflop,
+    iff1,
     iff2,
     interruptMode,
     issue2Emulation,
     doubleIntFreq,
     videoSyncMode,
     joystickType,
-    spectrumMemoryData
+    spectrumMemoryData,
+    useLastOut1ffd
   };
 
   if (version === 1) {
@@ -581,18 +687,6 @@ function loadZ80FileContents (contents: Uint8Array): {
   const modifyHwFlag = !!(flags3 & 0x80);
   const lastSoundRegister = reader.readByte();
   const soundRegisters = reader.readBytes(16);
-  const lowTStateCounter = reader.readUint16();
-  const highTStateCounter = reader.readByte();
-  const spectatorFlagByte = reader.readByte();
-  const mgtRomPagedIn = reader.readByte() === 0xff;
-  const multifaceRomPagedIn = reader.readByte() === 0xff;
-  const lower8KIsRam = reader.readByte() !== 0xff;
-  const upper8KIsRam = reader.readByte() !== 0xff;
-  const userJoystickMappings = reader.readBytes(10);
-  const keysMappings = reader.readBytes(10);
-  const mgtType = reader.readByte();
-  const discipleInhibitButtonsStatus = !!(reader.readByte() === 0xff);
-  const discipleInhibitFlag = !!(reader.readByte() === 0xff);
 
   fileInfo = {
     ...fileInfo,
@@ -606,19 +700,60 @@ function loadZ80FileContents (contents: Uint8Array): {
     modifyHwFlag,
     lastSoundRegister,
     soundRegisters,
-    lowTStateCounter,
-    highTStateCounter,
-    spectatorFlagByte,
-    mgtRomPagedIn,
-    multifaceRomPagedIn,
-    lower8KIsRam,
-    upper8KIsRam,
-    userJoystickMappings,
-    keysMappings,
-    mgtType,
-    discipleInhibitButtonsStatus,
-    discipleInhibitFlag
+
+    // --- Set these values for testability
+
+    lowTStateCounter: 0,
+    highTStateCounter: 0,
+    spectatorFlagByte: 0,
+    mgtRomPagedIn: false,
+    multifaceRomPagedIn: false,
+    lower8KIsRam: false,
+    upper8KIsRam: false,
+    userJoystickMappings: [
+      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+    ],
+    keysMappings: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09],
+    mgtType: 0,
+    discipleInhibitButtonsStatus: false,
+    discipleInhibitFlag: false,
+    lastOut1ffdValue: 0
   };
+
+  if (version === 3) {
+    const lowTStateCounter = reader.readUint16();
+    const highTStateCounter = reader.readByte();
+    const spectatorFlagByte = reader.readByte();
+    const mgtRomPagedIn = reader.readByte() === 0xff;
+    const multifaceRomPagedIn = reader.readByte() === 0xff;
+    const lower8KIsRam = reader.readByte() !== 0xff;
+    const upper8KIsRam = reader.readByte() !== 0xff;
+    const userJoystickMappings = reader.readBytes(10);
+    const keysMappings = reader.readBytes(10);
+    const mgtType = reader.readByte();
+    const discipleInhibitButtonsStatus = !!(reader.readByte() === 0xff);
+    const discipleInhibitFlag = !!(reader.readByte() === 0xff);
+
+    fileInfo = {
+      ...fileInfo,
+      lowTStateCounter,
+      highTStateCounter,
+      spectatorFlagByte,
+      mgtRomPagedIn,
+      multifaceRomPagedIn,
+      lower8KIsRam,
+      upper8KIsRam,
+      userJoystickMappings,
+      keysMappings,
+      mgtType,
+      discipleInhibitButtonsStatus,
+      discipleInhibitFlag
+    };
+
+    if (useLastOut1ffd) {
+      fileInfo.lastOut1ffdValue = reader.readByte();
+    }
+  }
 
   // --- Calculate the hardware type
   let hwTypes = version === 2 ? HW_MODE_V2 : HW_MODE_V3;
@@ -706,7 +841,7 @@ type Z80FileContents = {
   discipleInhibitFlag?: boolean;
 
   // --- Only for version 3
-  lastOut1fffValue?: number;
+  lastOut1ffdValue?: number;
 
   // --- ZX Spectrum 48 data
   spectrumMemoryData?: Uint8Array;
@@ -715,6 +850,7 @@ type Z80FileContents = {
   dataBlocks?: Z80DataBlock[];
 
   // --- Calculated fields
+  useLastOut1ffd?: boolean;
   hwType?: string;
   modeSamRam?: boolean;
   mode128K?: boolean;
