@@ -52,7 +52,7 @@ export const Layer2Screen = ({
           }}
         />
       </HeaderRow>
-      <ScreenCanvas 
+      <ScreenCanvas
         data={data}
         palette={palette}
         zoomFactor={zoomFactor}

@@ -570,7 +570,7 @@ const Z80FileViewerPanel = ({
                 heading={`Data Block Page #${db.pageNumber}: ${
                   db.dataLength
                 } bytes ${db.compressed ? "(compressed)" : ""}`}
-                expanded={cvs?.datablocksExpanded[index] ?? false}
+                expanded={cvs?.datablocksExpanded?.[index] ?? false}
                 onExpanded={exp =>
                   change(vs => {
                     vs.datablocksExpanded ??= {};
