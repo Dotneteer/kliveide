@@ -6,6 +6,8 @@ import { ExpandableRow } from "@renderer/controls/generic/ExpandableRow";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
+import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
+import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 
 const REG_LABEL_WIDTH = 32;
 const REG_PAIR_VALUE_WIDTH = 108;
@@ -88,6 +90,7 @@ type Z80FileViewState = {
   flags1Expanded?: boolean;
   soundRegsExpanded?: boolean;
   keyMappingsExpanded?: boolean;
+  datablocksExpanded?: Record<number, boolean>;
 };
 
 const Z80FileViewerPanel = ({
@@ -475,88 +478,120 @@ const Z80FileViewerPanel = ({
                   />
                 </Row>
               </ExpandableRow>
+              {fi.version === 3 && (
+                <>
+                  <ExpandableRow
+                    heading='Key Mappings'
+                    expanded={cvs?.keyMappingsExpanded ?? false}
+                    onExpanded={exp =>
+                      change(vs => (vs.keyMappingsExpanded = exp))
+                    }
+                  >
+                    <Row>
+                      <LabeledText
+                        label='Key #1 Row:'
+                        value={`$${toHexa2(fi.userJoystickMappings[1])}`}
+                      />
+                      <LabeledText
+                        label='Key #1 Mask:'
+                        value={`$${toHexa2(fi.userJoystickMappings[0])}`}
+                      />
+                      <LabeledText
+                        label='Key #1 Value:'
+                        value={`$${toHexa2(fi.keysMappings[0])}`}
+                      />
+                    </Row>
+                    <Row>
+                      <LabeledText
+                        label='Key #2 Row:'
+                        value={`$${toHexa2(fi.userJoystickMappings[3])}`}
+                      />
+                      <LabeledText
+                        label='Key #2 Mask:'
+                        value={`$${toHexa2(fi.userJoystickMappings[2])}`}
+                      />
+                      <LabeledText
+                        label='Key #2 Value:'
+                        value={`$${toHexa2(fi.keysMappings[2])}`}
+                      />
+                    </Row>
+                    <Row>
+                      <LabeledText
+                        label='Key #3 Row:'
+                        value={`$${toHexa2(fi.userJoystickMappings[5])}`}
+                      />
+                      <LabeledText
+                        label='Key #3 Mask:'
+                        value={`$${toHexa2(fi.userJoystickMappings[4])}`}
+                      />
+                      <LabeledText
+                        label='Key #3 Value:'
+                        value={`$${toHexa2(fi.keysMappings[4])}`}
+                      />
+                    </Row>
+                    <Row>
+                      <LabeledText
+                        label='Key #4 Row:'
+                        value={`$${toHexa2(fi.userJoystickMappings[7])}`}
+                      />
+                      <LabeledText
+                        label='Key #4 Mask:'
+                        value={`$${toHexa2(fi.userJoystickMappings[6])}`}
+                      />
+                      <LabeledText
+                        label='Key #4 Value:'
+                        value={`$${toHexa2(fi.keysMappings[6])}`}
+                      />
+                    </Row>
+                    <Row>
+                      <LabeledText
+                        label='Key #5 Row:'
+                        value={`$${toHexa2(fi.userJoystickMappings[9])}`}
+                      />
+                      <LabeledText
+                        label='Key #5 Mask:'
+                        value={`$${toHexa2(fi.userJoystickMappings[8])}`}
+                      />
+                      <LabeledText
+                        label='Key #5 Value:'
+                        value={`$${toHexa2(fi.keysMappings[8])}`}
+                      />
+                    </Row>
+                  </ExpandableRow>
+                </>
+              )}
             </>
           )}
-          {fi.version === 3 && (
-            <>
+
+          {fi.dataBlocks.length > 0 &&
+            fi.dataBlocks.map((db, index) => (
               <ExpandableRow
-                heading='Key Mappings'
-                expanded={cvs?.keyMappingsExpanded ?? false}
-                onExpanded={exp => change(vs => (vs.keyMappingsExpanded = exp))}
+                key={index}
+                heading={`Data Block Page #${db.pageNumber}: ${
+                  db.dataLength
+                } bytes ${db.compressed ? "(compressed)" : ""}`}
+                expanded={cvs?.datablocksExpanded[index] ?? false}
+                onExpanded={exp =>
+                  change(vs => {
+                    vs.datablocksExpanded ??= {};
+                    vs.datablocksExpanded[index] = exp;
+                  })
+                }
               >
-                <Row>
-                  <LabeledText
-                    label='Key #1 Row:'
-                    value={`$${toHexa2(fi.userJoystickMappings[1])}`}
-                  />
-                  <LabeledText
-                    label='Key #1 Mask:'
-                    value={`$${toHexa2(fi.userJoystickMappings[0])}`}
-                  />
-                  <LabeledText
-                    label='Key #1 Value:'
-                    value={`$${toHexa2(fi.keysMappings[0])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Key #2 Row:'
-                    value={`$${toHexa2(fi.userJoystickMappings[3])}`}
-                  />
-                  <LabeledText
-                    label='Key #2 Mask:'
-                    value={`$${toHexa2(fi.userJoystickMappings[2])}`}
-                  />
-                  <LabeledText
-                    label='Key #2 Value:'
-                    value={`$${toHexa2(fi.keysMappings[2])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Key #3 Row:'
-                    value={`$${toHexa2(fi.userJoystickMappings[5])}`}
-                  />
-                  <LabeledText
-                    label='Key #3 Mask:'
-                    value={`$${toHexa2(fi.userJoystickMappings[4])}`}
-                  />
-                  <LabeledText
-                    label='Key #3 Value:'
-                    value={`$${toHexa2(fi.keysMappings[4])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Key #4 Row:'
-                    value={`$${toHexa2(fi.userJoystickMappings[7])}`}
-                  />
-                  <LabeledText
-                    label='Key #4 Mask:'
-                    value={`$${toHexa2(fi.userJoystickMappings[6])}`}
-                  />
-                  <LabeledText
-                    label='Key #4 Value:'
-                    value={`$${toHexa2(fi.keysMappings[6])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Key #5 Row:'
-                    value={`$${toHexa2(fi.userJoystickMappings[9])}`}
-                  />
-                  <LabeledText
-                    label='Key #5 Mask:'
-                    value={`$${toHexa2(fi.userJoystickMappings[8])}`}
-                  />
-                  <LabeledText
-                    label='Key #5 Value:'
-                    value={`$${toHexa2(fi.keysMappings[8])}`}
-                  />
-                </Row>
+                <MemoryDumpViewer
+                  documentSource={document.node.projectPath}
+                  contents={db.data}
+                  bank={db.pageNumber}
+                  iconTitle='Display Data Block Dump'
+                  idFactory={(documentSource: string) =>
+                    `z80DataBlockDump${documentSource}`
+                  }
+                  titleFactory={(documentSource: string, bank: number) =>
+                    `${documentSource} - Data Block #${bank}`
+                  }
+                />
               </ExpandableRow>
-            </>
-          )}
+            ))}
         </>
       );
     }
@@ -620,7 +655,9 @@ function loadZ80FileContents (contents: Uint8Array): {
   let useLastOut1ffd = false;
   if (regPC) {
     // --- This is version 1
-    spectrumMemoryData = readDataBlock();
+    spectrumMemoryData = new Uint8Array(
+      reader.readBytes(reader.length - reader.position)
+    );
   } else {
     // --- This is version 2 or 3
     const additionalLength = reader.readUint16();
@@ -771,14 +808,26 @@ function loadZ80FileContents (contents: Uint8Array): {
 
   // --- Read the data blocks
   const dataBlocks: Z80DataBlock[] = [];
+  while (!reader.eof) {
+    let dataLength = reader.readUint16();
+    let compressed = true;
+    if (dataLength === 0xffff) {
+      dataLength = 0x4000;
+      compressed = false;
+    }
+    const pageNumber = reader.readByte();
+    let data = new Uint8Array(reader.readBytes(dataLength));
+    if (compressed) {
+      data = decompressZ80DataBlock(data);
+    }
+    dataBlocks.push({ dataLength, pageNumber, compressed, data });
+  }
+
+  fileInfo.dataBlocks = dataBlocks;
 
   return {
     fileInfo
   };
-
-  function readDataBlock (): Uint8Array {
-    return new Uint8Array(reader.readBytes(reader.length - reader.position));
-  }
 }
 
 type Z80FileContents = {
@@ -860,5 +909,6 @@ type Z80FileContents = {
 type Z80DataBlock = {
   dataLength: number;
   pageNumber: number;
+  compressed: boolean;
   data: Uint8Array;
 };
