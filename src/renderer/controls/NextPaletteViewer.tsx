@@ -2,6 +2,7 @@ import styles from "./NextPaletteViewer.module.scss";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import {
   getCssStringForPaletteCode,
+  getLuminanceForPaletteCode,
   getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
 import { TooltipFactory } from "./Tooltip";
@@ -139,8 +140,7 @@ const PaletteItem = ({
   });
 
   const color = getCssStringForPaletteCode(value, use8Bit);
-  const midColor =
-    0.2126 * r + 0.7152 * g + 0.0722 * b < 3.5 ? "white" : "black";
+  const midColor = getLuminanceForPaletteCode(value) < 3.5 ? "white" : "black";
   const hasPriority = usePriority && !!(value & 0x8000);
   return (
     <>
@@ -169,8 +169,9 @@ const PaletteItem = ({
               r={5}
               stroke={midColor}
               strokeWidth={2}
-              fillOpacity={0.5}
-              strokeOpacity={0.5}
+              fillOpacity={0.25}
+              fill={midColor}
+              strokeOpacity={0.75}
             />
           )}
         </svg>

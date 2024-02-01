@@ -52,3 +52,15 @@ export function getCssStringForPaletteCode (
   }
   return `rgba(${colorIntensity[r]},${colorIntensity[g]},${colorIntensity[b]})`;
 }
+
+export function getLuminanceForPaletteCode (
+  code: number,
+): number {
+  const r = (code >> 5) & 0x07;
+  const g = (code >> 2) & 0x07;
+  let b = (code & 0x03) << 1;
+  if (code & 0x100) {
+    b |= 0x01;
+  }
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
