@@ -100,16 +100,13 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
    */
   onInserted (memOffset: number): void {
     this.memOffset = memOffset;
-
-    // TODO: Init the card after insertion
     this.setPristineState();
   }
 
   /**
-   * Sets the card to its pristine state
+   * Sets the UV Eprom card to it's pristine state (FFh)
    */
   setPristineState (): void {
-    // TODO: Change it to the pristine state
     for (let i = 0; i < this.size; i++) {
       this.host.memory.memory[this.memOffset + i] = 0xff;
     }
