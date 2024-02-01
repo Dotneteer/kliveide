@@ -1,13 +1,13 @@
 @import "@styles/core.scss";
 
 .paletteColumnLabel {
-  width: 30px;
+  width: 28px;
   margin-left: 2px;
   color: var(--color-label);
 }
 
 .paletteRowLabel {
-  width: 32px;
+  width: 26px;
   margin-left: 6px;
   color: var(--color-label);
 }
@@ -16,7 +16,9 @@
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
-  width: 26px;
-  height: 16px;
+  width: 22px;
+  height: 20px;
   margin-right: 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
 }

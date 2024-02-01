@@ -1,5 +1,5 @@
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import styles from "./NextPaletteViewer.module.scss";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import {
   getCssStringForPaletteCode,
   getRgbPartsForPaletteCode
@@ -12,10 +12,25 @@ import { Column } from "./generic/Column";
 
 type Props = {
   palette: number[];
+  use8Bit?: boolean;
+  usePriority?: boolean;
+  transparencyIndex?: number;
+  allowSelection?: boolean;
+  onSelection?: (index: number) => void;
+  selectedIndex?: number;
 };
 
-export const NextPaletteViewer = ({ palette }: Props) => {
+export const NextPaletteViewer = ({
+  palette,
+  use8Bit = false,
+  usePriority = false,
+  transparencyIndex = 0xe3,
+  allowSelection,
+  onSelection,
+  selectedIndex
+}: Props) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const [selected, setSelected] = useState<number>(selectedIndex);
   return (
     <Column>
       <Row>
@@ -27,7 +42,22 @@ export const NextPaletteViewer = ({ palette }: Props) => {
         ))}
       </Row>
       {indexes.map(idx => (
-        <PaletteRow key={idx} palette={palette} firstIndex={idx * 0x10} />
+        <PaletteRow
+          key={idx}
+          palette={palette}
+          firstIndex={idx * 0x10}
+          use8Bit={use8Bit}
+          usePriority={usePriority}
+          transparencyIndex={transparencyIndex}
+          allowSelection={allowSelection}
+          onSelection={idx => {
+            if (allowSelection) {
+              setSelected(idx);
+              onSelection?.(idx);
+            }
+          }}
+          selectedIndex={selected}
+        />
       ))}
     </Column>
   );
@@ -36,9 +66,24 @@ export const NextPaletteViewer = ({ palette }: Props) => {
 type PaletteRowProps = {
   firstIndex: number;
   palette: number[];
+  use8Bit?: boolean;
+  usePriority?: boolean;
+  transparencyIndex?: number;
+  allowSelection?: boolean;
+  onSelection?: (index: number) => void;
+  selectedIndex?: number;
 };
 
-const PaletteRow = ({ firstIndex, palette }: PaletteRowProps) => {
+const PaletteRow = ({
+  firstIndex,
+  palette,
+  use8Bit,
+  usePriority,
+  transparencyIndex,
+  allowSelection,
+  onSelection,
+  selectedIndex
+}: PaletteRowProps) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   return (
     <Row>
@@ -48,6 +93,12 @@ const PaletteRow = ({ firstIndex, palette }: PaletteRowProps) => {
           key={idx}
           index={firstIndex + idx}
           value={palette[firstIndex + idx]}
+          use8Bit={use8Bit}
+          usePriority={usePriority}
+          transparencyIndex={transparencyIndex}
+          allowSelection={allowSelection}
+          onSelection={onSelection}
+          selectedIndex={selectedIndex}
         />
       ))}
     </Row>
@@ -57,28 +108,71 @@ const PaletteRow = ({ firstIndex, palette }: PaletteRowProps) => {
 type PaletteItemProps = {
   index: number;
   value: number;
+  use8Bit?: boolean;
+  usePriority?: boolean;
+  transparencyIndex?: number;
+  allowSelection?: boolean;
+  onSelection?: (index: number) => void;
+  selectedIndex?: number;
 };
 
-const PaletteItem = ({ index, value }: PaletteItemProps) => {
+const PaletteItem = ({
+  index,
+  value,
+  use8Bit,
+  usePriority,
+  transparencyIndex,
+  allowSelection,
+  onSelection,
+  selectedIndex
+}: PaletteItemProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [r, setR] = useState(null);
   const [g, setG] = useState(null);
   const [b, setB] = useState(null);
 
   useInitialize(() => {
-    const [rC, gC, bC] = getRgbPartsForPaletteCode(value);
+    const [rC, gC, bC] = getRgbPartsForPaletteCode(value, use8Bit);
     setR(rC);
-    setG(gC); 
+    setG(gC);
     setB(bC);
   });
 
+  const color = getCssStringForPaletteCode(value, use8Bit);
+  const midColor =
+    0.2126 * r + 0.7152 * g + 0.0722 * b < 3.5 ? "white" : "black";
   return (
     <>
       <div
         ref={ref}
         className={styles.paletteItem}
-        style={{ backgroundColor: getCssStringForPaletteCode(value) }}
+        style={{
+          borderColor: usePriority ? color : undefined,
+          cursor: allowSelection ? "pointer" : undefined
+        }}
+        onClick={() => {
+          if (allowSelection) {
+            onSelection?.(index);
+          }
+        }}
       >
+        <svg>
+          <circle cx={11} cy={10} r={9} fill={color} />
+          {index === transparencyIndex && (
+            <circle cx={11} cy={10} r={4} fill={midColor} fillOpacity={0.5} />
+          )}
+          {allowSelection && index === selectedIndex && (
+            <circle
+              cx={11}
+              cy={10}
+              r={5}
+              stroke={midColor}
+              strokeWidth={2}
+              fillOpacity={0.5}
+              strokeOpacity={0.5}
+            />
+          )}
+        </svg>
         <TooltipFactory
           refElement={ref.current}
           placement='right'
@@ -86,7 +180,9 @@ const PaletteItem = ({ index, value }: PaletteItemProps) => {
           offsetY={32}
           showDelay={100}
         >
-          <div>{`$${toHexa2(index)} - R: ${r}, G: ${g}, B: ${b}`}</div>
+          <div>{`$${toHexa2(index)} - R: ${r}, G: ${g}, B: ${b}${
+            usePriority ? " (priority)" : ""
+          }${index === transparencyIndex ? " (transparency)" : ""}`}</div>
         </TooltipFactory>
       </div>
     </>

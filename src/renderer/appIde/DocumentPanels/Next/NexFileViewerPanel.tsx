@@ -188,7 +188,11 @@ const NexFileViewerPanel = ({
                 context.changeViewState(vs => (vs.paletteExpanded = exp))
               }
             >
-              <NextPaletteViewer palette={context.fileInfo?.palette} />
+              <NextPaletteViewer
+                palette={context.fileInfo?.palette}
+                allowSelection={true}
+                onSelection={idx => console.log(idx)}
+              />
             </ExpandableRow>
           )}
           {fi.layer2LoadingScreen?.length > 0 && (

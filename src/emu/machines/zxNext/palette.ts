@@ -5,12 +5,13 @@ const colorIntensity = [0x00, 0x25, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff];
  * @param code Palette code
  */
 export function getRgbPartsForPaletteCode (
-  code: number
+  code: number,
+  use8Bit?: boolean
 ): [number, number, number] {
   const r = (code >> 5) & 0x07;
   const g = (code >> 2) & 0x07;
   let b = (code & 0x03) << 1;
-  if (code & 0x100) {
+  if (code & 0x100 && !use8Bit) {
     b |= 0x01;
   }
   return [r, g, b];
@@ -20,15 +21,15 @@ export function getRgbPartsForPaletteCode (
  * Get the 32-bit ABRG color for the specified palette code
  * @param code Palette code
  */
-export function getAbrgForPaletteCode (code: number): number {
+export function getAbrgForPaletteCode (code: number, use8Bit?: boolean, a = 0xff): number {
   const r = (code >> 5) & 0x07;
   const g = (code >> 2) & 0x07;
   let b = (code & 0x03) << 1;
-  if (code & 0x100) {
+  if (code & 0x100 && !use8Bit) {
     b |= 0x01;
   }
   return (
-    0xff000000 |
+    (a << 24) |
     (colorIntensity[b] << 16) |
     (colorIntensity[g] << 8) |
     colorIntensity[r]
@@ -39,12 +40,15 @@ export function getAbrgForPaletteCode (code: number): number {
  * Get the CSS string for the specified palette code
  * @param code Palette code
  */
-export function getCssStringForPaletteCode (code: number): string {
+export function getCssStringForPaletteCode (
+  code: number,
+  use8Bit?: boolean
+): string {
   const r = (code >> 5) & 0x07;
   const g = (code >> 2) & 0x07;
   let b = (code & 0x03) << 1;
-  if (code & 0x100) {
+  if (code & 0x100 && !use8Bit) {
     b |= 0x01;
   }
-  return `rgb(${colorIntensity[r]},${colorIntensity[g]},${colorIntensity[b]})`;
+  return `rgba(${colorIntensity[r]},${colorIntensity[g]},${colorIntensity[b]})`;
 }
