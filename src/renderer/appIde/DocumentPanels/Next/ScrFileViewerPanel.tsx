@@ -16,7 +16,6 @@ const ScrFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<ScrFileViewState>) => {
-  console.log("Render", document.node.projectPath);
   return GenericFileViewerPanel<ScrFileContents, ScrFileViewState>({
     document,
     contents,

@@ -141,13 +141,14 @@ const PaletteItem = ({
   const color = getCssStringForPaletteCode(value, use8Bit);
   const midColor =
     0.2126 * r + 0.7152 * g + 0.0722 * b < 3.5 ? "white" : "black";
+  const hasPriority = usePriority && !!(value & 0x8000);
   return (
     <>
       <div
         ref={ref}
         className={styles.paletteItem}
         style={{
-          borderColor: usePriority ? color : undefined,
+          borderColor: hasPriority ? color : undefined,
           cursor: allowSelection ? "pointer" : undefined
         }}
         onClick={() => {
@@ -181,7 +182,7 @@ const PaletteItem = ({
           showDelay={100}
         >
           <div>{`$${toHexa2(index)} - R: ${r}, G: ${g}, B: ${b}${
-            usePriority ? " (priority)" : ""
+            hasPriority ? " (priority)" : ""
           }${index === transparencyIndex ? " (transparency)" : ""}`}</div>
         </TooltipFactory>
       </div>
