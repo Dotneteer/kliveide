@@ -1,7 +1,7 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { Panel } from "@renderer/controls/generic/Panel";
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -12,28 +12,37 @@ type GenericFileEditorViewState = {
 };
 
 // --- Context to pass for concrete file panel renderers
-type GenericFileEditorContext<TFile, TState extends GenericFileEditorViewState> = {
+export type GenericFileEditorContext<
+  TFile,
+  TState extends GenericFileEditorViewState
+> = {
   fileInfo?: TFile;
   fileError?: string;
   valid: boolean;
   initialized: boolean;
-  currentViewState: TState;
   appServices: AppServices;
   changeViewState: (setter: (vs: TState) => void) => void;
 };
 
 // --- Properties of a generic file panel renderer
-type GenericFileEditorProps<TFile, TState extends GenericFileEditorViewState> =
-  DocumentProps<TState> & {
-    fileLoader: (
-      contents: Uint8Array,
-    ) => {fileInfo?: TFile, error?: string};
-    invalidRenderer?: (context: GenericFileEditorContext<TFile, TState>) => JSX.Element;
-    validRenderer?: (context: GenericFileEditorContext<TFile, TState>) => JSX.Element;
-  };
+type GenericFileEditorProps<
+  TFile,
+  TState extends GenericFileEditorViewState
+> = DocumentProps<TState> & {
+  fileLoader: (contents: Uint8Array) => { fileInfo?: TFile; error?: string };
+  invalidRenderer?: (
+    context: GenericFileEditorContext<TFile, TState>
+  ) => JSX.Element;
+  validRenderer?: (
+    context: GenericFileEditorContext<TFile, TState>
+  ) => JSX.Element;
+};
 
 // --- Generic file viewer panel renderer function
-export function GenericFileEditorPanel<TFile, TState extends GenericFileEditorViewState> ({
+export function GenericFileEditorPanel<
+  TFile,
+  TState extends GenericFileEditorViewState
+> ({
   document,
   contents,
   viewState,
@@ -49,6 +58,8 @@ export function GenericFileEditorPanel<TFile, TState extends GenericFileEditorVi
   const [fileError, setFileError] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
+  const [context, setContext] =
+    useState<GenericFileEditorContext<TFile, TState>>(null);
 
   // --- We pass AppServices to the context
   const appServices = useAppServices();
@@ -72,28 +83,35 @@ export function GenericFileEditorPanel<TFile, TState extends GenericFileEditorVi
 
   // --- Save the view state whenever it changes
   useEffect(() => {
-    if (currentViewState) {
-      documentHubService.saveActiveDocumentState(currentViewState);
+    if (document.id) {
+      console.log("Save viewState", document.id, currentViewState);
+      documentHubService.setDocumentViewState(document.id, currentViewState);
     }
   }, [currentViewState]);
 
-  // --- Create the context to pass
-  const context: GenericFileEditorContext<TFile, TState> = {
-    fileInfo,
-    fileError,
-    valid,
-    initialized,
-    currentViewState,
-    appServices,
-    changeViewState: (setter: (vs: TState) => void) => {
-      const newViewState = { ...currentViewState };
-      setter(newViewState);
-      setCurrentViewState(newViewState);
+  // --- Refresh the context
+  useEffect(() => {
+    if (initialized) {
+      const newContext = 
+      {
+        fileInfo,
+        fileError,
+        valid,
+        initialized,
+        currentViewState,
+        appServices,
+        changeViewState: (setter: (vs: TState) => void) => {
+          const newViewState = { ...currentViewState };
+          setter(newViewState);
+          setCurrentViewState(newViewState);
+        }
+      };
+      setContext(newContext);
     }
-  };
+  }, [fileInfo, fileError, valid, initialized, currentViewState]);
 
   // --- Render the view
-  return initialized ? (
+  return context ? (
     <Panel
       xclass={styles.panelFont}
       initialScrollPosition={currentViewState?.scrollPosition}
@@ -103,12 +121,11 @@ export function GenericFileEditorPanel<TFile, TState extends GenericFileEditorVi
     >
       {!valid && (
         <div className={styles.invalid}>
-          {invalidRenderer?.(context) ?? (
-            <>File content is not a valid: {fileError}</>
-          )}
+          {invalidRenderer && createElement(invalidRenderer, context)}
+          {!invalidRenderer && <>File content is not a valid: {fileError}</>}
         </div>
       )}
-      {valid && validRenderer(context)}
+      {valid && createElement(validRenderer, context)}
     </Panel>
   ) : null;
 }

@@ -25,7 +25,7 @@ export const NextPaletteViewer = ({
   palette,
   use8Bit = false,
   usePriority = false,
-  transparencyIndex = 0xe3,
+  transparencyIndex,
   allowSelection,
   onSelection,
   selectedIndex

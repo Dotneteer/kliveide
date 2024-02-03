@@ -1,46 +1,66 @@
-import styles from "./PalFileEditorPanel.module.scss";
-import { Label } from "@renderer/controls/Labels";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
-import { Panel } from "@renderer/controls/generic/Panel";
-import { Column } from "@renderer/controls/generic/Column";
-import { HeaderRow } from "@renderer/controls/generic/Row";
-import { GenericFileEditorPanel } from "../helpers/GenericFileEditorPanel";
+import {
+  GenericFileEditorContext,
+  GenericFileEditorPanel
+} from "../helpers/GenericFileEditorPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { PaletteEditor } from "./PaletteEditor";
+import { createElement, useState } from "react";
 
 type PalFileViewState = {
   scrollPosition?: number;
+  selectedIndex?: number;
 };
 
-const PalFileEditorPanel = ({ document, contents, viewState }: DocumentProps) => {
-  return GenericFileEditorPanel<PalFileContents, PalFileViewState>({
-    document,
-    contents,
-    viewState,
-    fileLoader: loadPalFileContents,
-    validRenderer: context => {
-      const projectService = context.appServices.projectService;
-      const documentSource = document.node.projectPath;
-      const palette = context.fileInfo?.palette;
-      const transparencyIndex = context.fileInfo?.transparencyIndex;
-      return (
-        <PaletteEditor palette={palette} transparencyIndex={transparencyIndex}  />
-      );
+const PalFileEditorPanel = ({
+  document,
+  contents,
+  viewState
+}: DocumentProps) => {
+  const validRenderer: (
+    context: GenericFileEditorContext<PalFileContents, PalFileViewState>
+  ) => JSX.Element = context => {
+    console.log("validRenderer", viewState);
+    const projectService = context.appServices.projectService;
+    const documentSource = document.node.projectPath;
+    return (
+      <PaletteEditor
+        palette={context.fileInfo?.palette}
+        transparencyIndex={context.fileInfo?.transparencyIndex}
+        initialIndex={viewState?.selectedIndex}
+        onChange={index =>
+          context.changeViewState(vs => (vs.selectedIndex = index))
+        }
+      />
+    );
+  };
+  return createElement(
+    GenericFileEditorPanel<PalFileContents, PalFileViewState>,
+    {
+      document,
+      contents,
+      viewState,
+      fileLoader: loadPalFileContents,
+      validRenderer
     }
-  });
-
+  );
 };
 
 export const createPalFileEditorPanel = ({
   document,
-  contents
-}: DocumentProps) => (
-  <PalFileEditorPanel
-    document={document}
-    contents={contents}
-    apiLoaded={() => {}}
-  />
-);
+  contents,
+  viewState
+}: DocumentProps) => {
+  console.log("createPalFileEditorPanel", document.id, viewState);
+  return (
+    <PalFileEditorPanel
+      document={document}
+      contents={contents}
+      viewState={viewState}
+      apiLoaded={() => {}}
+    />
+  );
+};
 
 function loadPalFileContents (contents: Uint8Array): {
   fileInfo?: PalFileContents;

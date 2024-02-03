@@ -15,7 +15,6 @@
   flex-direction: column;
   flex-shrink: 0;
   flex-grow: 0;
-  width: 300px;
   padding: 8px;
 }
 
@@ -26,15 +25,17 @@
 
 .colorRow {
   align-items: start;
+  margin-left: 32px;
 }
 
 .colorBar {
-  width: 160px;
-  height: 24px;
+  width: 240px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 24px;
+  margin: 0.6em 0;
 }
 
 .colorScale {
@@ -62,5 +63,15 @@
   width: 100%;
   height: 100%;
   align-items: center;
+  justify-content: center;
+}
+
+.checkbox {
+  justify-content: center;
+  color: var(--color-label);
+}
+
+.trIndex {
+  padding-top: 0.4em;
   justify-content: center;
 }

@@ -296,7 +296,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: NPL_EDITOR,
-    renderer: createNplFileEditorPanel,
+    renderer: createPalFileEditorPanel,
     icon: "palette",
     iconFill: "--console-ansi-bright-magenta",
   },
