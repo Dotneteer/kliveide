@@ -6,6 +6,7 @@ import { openStaticMemoryDump } from "../Memory/StaticMemoryDump";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { Panel } from "@renderer/controls/generic/Panel";
 import { Column } from "@renderer/controls/generic/Column";
+import { createElement } from "react";
 
 type ScrFileViewState = {
   scrollPosition?: number;
@@ -16,80 +17,86 @@ const ScrFileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<ScrFileViewState>) => {
-  return GenericFileViewerPanel<ScrFileContents, ScrFileViewState>({
-    document,
-    contents,
-    viewState,
-    fileLoader: loadScrFileContents,
-    validRenderer: context => {
-      const projectService = context.appServices.projectService;
-      const documentSource = document.node.projectPath;
+  return createElement(
+    GenericFileViewerPanel<ScrFileContents, ScrFileViewState>,
+    {
+      document,
+      contents,
+      viewState,
+      fileLoader: loadScrFileContents,
+      validRenderer: context => {
+        const projectService = context.appServices.projectService;
+        const documentSource = document.node.projectPath;
 
-      // --- Create the Layer2 screen from the data provided
-      const createPixelData = (
-        data: Uint8Array,
-        palette: number[],
-        target: Uint32Array
-      ) => {
-        const pixels = data.slice(0, 0x1800);
-        const attrs = data.slice(0x1800, 0x1b00);
+        // --- Create the Layer2 screen from the data provided
+        const createPixelData = (
+          data: Uint8Array,
+          palette: number[],
+          target: Uint32Array
+        ) => {
+          const pixels = data.slice(0, 0x1800);
+          const attrs = data.slice(0x1800, 0x1b00);
 
-        let j = 0;
-        for (let y = 0; y < 192; y++) {
-          for (let x = 0; x < 256; x++) {
-            const addr = pixelAddress(x, y);
-            const pixelMask = 0x80 >> (x & 0x07);
-            const pixelOn = (pixels[addr] & pixelMask) !== 0;
-            const attr = attrs[attrAddress(x, y)];
-            const ink = attr & 0x07;
-            const paper = (attr & 0x78) >> 3;
-            target[j++] = pixelOn ? palette[ink] : palette[paper];
+          let j = 0;
+          for (let y = 0; y < 192; y++) {
+            for (let x = 0; x < 256; x++) {
+              const addr = pixelAddress(x, y);
+              const pixelMask = 0x80 >> (x & 0x07);
+              const pixelOn = (pixels[addr] & pixelMask) !== 0;
+              const attr = attrs[attrAddress(x, y)];
+              const ink = attr & 0x07;
+              const paper = (attr & 0x78) >> 3;
+              target[j++] = pixelOn ? palette[ink] : palette[paper];
+            }
           }
-        }
 
-        function pixelAddress (x: number, y: number) {
-          return (
-            ((y & 0xc0) << 5) + ((y & 0x07) << 8) + ((y & 0x38) << 2) + (x >> 3)
-          );
-        }
+          function pixelAddress (x: number, y: number) {
+            return (
+              ((y & 0xc0) << 5) +
+              ((y & 0x07) << 8) +
+              ((y & 0x38) << 2) +
+              (x >> 3)
+            );
+          }
 
-        function attrAddress (x: number, y: number) {
-          return (x >> 3) + 32 * (y >> 3);
-        }
-      };
+          function attrAddress (x: number, y: number) {
+            return (x >> 3) + 32 * (y >> 3);
+          }
+        };
 
-      return (
-        <Panel>
-          <Column>
-            <HeaderRow>
-              <SmallIconButton
-                iconName='pop-out'
-                fill='--color-value'
-                title='Display screen data dump'
-                clicked={async () => {
-                  await openStaticMemoryDump(
-                    projectService.getActiveDocumentHubService(),
-                    `scrData${documentSource}`,
-                    `${documentSource} - Dump`,
-                    contents
-                  );
-                }}
+        return (
+          <Panel>
+            <Column>
+              <HeaderRow>
+                <SmallIconButton
+                  iconName='pop-out'
+                  fill='--color-value'
+                  title='Display screen data dump'
+                  clicked={async () => {
+                    await openStaticMemoryDump(
+                      projectService.getActiveDocumentHubService(),
+                      `scrData${documentSource}`,
+                      `${documentSource} - Dump`,
+                      contents
+                    );
+                  }}
+                />
+              </HeaderRow>
+
+              <ScreenCanvas
+                data={contents}
+                palette={spectrum48Colors}
+                zoomFactor={2}
+                screenWidth={256}
+                screenHeight={192}
+                createPixelData={createPixelData}
               />
-            </HeaderRow>
-
-            <ScreenCanvas
-              data={contents}
-              palette={spectrum48Colors}
-              zoomFactor={2}
-              screenWidth={256}
-              screenHeight={192}
-              createPixelData={createPixelData}
-            />
-          </Column>
-        </Panel>
-      );
+            </Column>
+          </Panel>
+        );
+      }
     }
-  });
+  );
 };
 
 export const createScrFileViewerPanel = ({

@@ -81,7 +81,6 @@ export const ScreenCanvas = ({
         screenEl.width,
         screenEl.height
       );
-      console.log("Screen updated");
     }
   }, [data]);
 

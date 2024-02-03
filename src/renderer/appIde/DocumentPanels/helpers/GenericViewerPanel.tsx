@@ -1,7 +1,7 @@
 import styles from "./GenericViewerPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
-import { useEffect, useState } from "react";
+import { createElement, useEffect, useState } from "react";
 import { Panel } from "@renderer/controls/generic/Panel";
 
 // --- Generic file viewer panel state
@@ -11,7 +11,6 @@ type GenericViewerViewState = {
 
 // --- Context to pass for concrete file panel renderers
 type GenericViewerContext<TState extends GenericViewerViewState> = {
-  currentViewState: TState;
   changeViewState: (setter: (vs: TState) => void) => void;
   version: number;
   contextData?: any;
@@ -50,7 +49,6 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
 
   // --- Create the context to pass
   const context: GenericViewerContext<TState> = {
-    currentViewState,
     changeViewState: (setter: (vs: TState) => void) => {
       const newViewState = { ...currentViewState };
       setter(newViewState);
@@ -69,7 +67,7 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
   // --- Render the view
   return (
     <Panel xclass={styles.panelFont}>
-      {headerRenderer && headerRenderer(context)}
+      {headerRenderer && createElement(headerRenderer, context)}
       <Panel
         initialScrollPosition={currentViewState?.scrollPosition}
         onScrolled={pos => {
@@ -78,7 +76,7 @@ export function GenericViewerPanel<TState extends GenericViewerViewState> ({
           }
         }}
       >
-        {renderer(context)}
+        {createElement(renderer, context)}
       </Panel>
     </Panel>
   );
