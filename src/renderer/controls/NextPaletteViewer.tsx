@@ -35,40 +35,74 @@ export const NextPaletteViewer = ({
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   const [selected, setSelected] = useState<number>(selectedIndex);
   return (
-    <Column width={520}>
-      <Row >
-        <div className={styles.paletteRowLabel} />
+    <div
+      tabIndex={0}
+      className={styles.palettePanel}
+      onKeyDown={e => {
+        if (selected == undefined) return;
+        console.log("key", e.code);
+        let newSelected = selected;
+        switch (e.code) {
+          case "ArrowUp":
+            newSelected = selected - 16;
+            if (newSelected < 0) newSelected += 256;
+            break;
+          case "ArrowDown":
+            newSelected = selected + 16;
+            if (newSelected > 256) newSelected -= 256;
+            break;
+          case "ArrowLeft":
+            newSelected = (selected & 0xf0) + ((selected - 1) & 0x0f);
+            break;
+          case "ArrowRight":
+            newSelected = (selected & 0xf0) + ((selected + 1) & 0x0f);
+            break;
+          case "Enter":
+          case "Space":
+            onPriority?.(selected);
+            break;
+          default:
+            break;
+        }
+        setSelected(newSelected);
+        onSelection?.(newSelected);
+      }}
+    >
+      <Column width={520}>
+        <Row>
+          <div className={styles.paletteRowLabel} />
+          {indexes.map(idx => (
+            <div key={idx} className={styles.paletteColumnLabel}>
+              {toHexa2(idx)}
+            </div>
+          ))}
+        </Row>
         {indexes.map(idx => (
-          <div key={idx} className={styles.paletteColumnLabel}>
-            {toHexa2(idx)}
-          </div>
+          <PaletteRow
+            key={idx}
+            palette={palette}
+            firstIndex={idx * 0x10}
+            use8Bit={use8Bit}
+            usePriority={usePriority}
+            transparencyIndex={transparencyIndex}
+            allowSelection={allowSelection}
+            onSelection={idx => {
+              if (allowSelection) {
+                setSelected(idx);
+                onSelection?.(idx);
+              }
+            }}
+            onPriority={(idx: number) => {
+              if (allowSelection) {
+                setSelected(idx);
+                onPriority?.(idx);
+              }
+            }}
+            selectedIndex={selected}
+          />
         ))}
-      </Row>
-      {indexes.map(idx => (
-        <PaletteRow
-          key={idx}
-          palette={palette}
-          firstIndex={idx * 0x10}
-          use8Bit={use8Bit}
-          usePriority={usePriority}
-          transparencyIndex={transparencyIndex}
-          allowSelection={allowSelection}
-          onSelection={idx => {
-            if (allowSelection) {
-              setSelected(idx);
-              onSelection?.(idx);
-            }
-          }}
-          onPriority={(idx: number) => {
-            if (allowSelection) {
-              setSelected(idx);
-              onPriority?.(idx);
-            }
-          }}
-          selectedIndex={selected}
-        />
-      ))}
-    </Column>
+      </Column>
+    </div>
   );
 };
 
