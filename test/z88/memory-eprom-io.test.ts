@@ -3,6 +3,7 @@ import { expect } from "expect";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88TestMachine } from "./Z88TestMachine";
 import { Z88UvEpromMemoryCard } from "@emu/machines/z88/memory/Z88UvEpromMemoryCard";
+import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 
 describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
 
@@ -34,6 +35,29 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
     it(`32K EPROM read pristine content (${addr})`, () => {
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
+    });
+  });
+
+  // define PROGRAM & OVERP characteristics for 32K UV EPROM
+  m.blinkDevice.EPR = 0x48;
+
+  addr32K.forEach(addr => {
+    it(`32K EPROM blow content (${addr})`, () => {
+      // blowing 0 bits (from 1)...
+      // (on real H/W, more than 70 iterations of PROGRAM and OVERP are done.
+      //  here, we simply test that conditions are met, once)
+
+      // switch LCD off and VPP pin ON, then UV Eprom PROGRAM
+      m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.PROGRAM);
+      m.memory.writeMemory(addr, 0xf0);
+      const valuePROGRAM = m.memory.readMemory(addr);
+      expect(valuePROGRAM).toBe(0xf0);
+
+      // switch LCD off and VPP pin ON, then UV Eprom OVERP
+      m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.OVERP);
+      m.memory.writeMemory(addr, 0x0f);
+      const valueOVERP = m.memory.readMemory(addr);
+      expect(valueOVERP).toBe(0x00);
     });
   });
 
