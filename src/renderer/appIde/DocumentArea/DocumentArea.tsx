@@ -24,7 +24,6 @@ export const DocumentArea = () => {
     const doc = documentHubService?.getActiveDocument()
     setActiveDoc(doc);
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
-    console.log("Obtain viewState", doc?.id, viewState);
     setViewState(viewState);
     setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);

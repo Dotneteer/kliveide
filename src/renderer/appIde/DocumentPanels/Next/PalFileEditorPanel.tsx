@@ -20,7 +20,6 @@ const PalFileEditorPanel = ({
   const validRenderer: (
     context: GenericFileEditorContext<PalFileContents, PalFileViewState>
   ) => JSX.Element = context => {
-    console.log("validRenderer", viewState);
     const projectService = context.appServices.projectService;
     const documentSource = document.node.projectPath;
     return (
@@ -51,7 +50,6 @@ export const createPalFileEditorPanel = ({
   contents,
   viewState
 }: DocumentProps) => {
-  console.log("createPalFileEditorPanel", document.id, viewState);
   return (
     <PalFileEditorPanel
       document={document}

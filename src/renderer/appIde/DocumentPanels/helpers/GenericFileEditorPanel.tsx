@@ -84,7 +84,6 @@ export function GenericFileEditorPanel<
   // --- Save the view state whenever it changes
   useEffect(() => {
     if (document.id) {
-      console.log("Save viewState", document.id, currentViewState);
       documentHubService.setDocumentViewState(document.id, currentViewState);
     }
   }, [currentViewState]);
@@ -98,7 +97,6 @@ export function GenericFileEditorPanel<
         fileError,
         valid,
         initialized,
-        currentViewState,
         appServices,
         changeViewState: (setter: (vs: TState) => void) => {
           const newViewState = { ...currentViewState };

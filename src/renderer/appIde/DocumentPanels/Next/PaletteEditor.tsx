@@ -35,7 +35,7 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
   const [selectedR, setSelectedR] = useState<number>(null);
   const [selectedG, setSelectedG] = useState<number>(null);
   const [selectedB, setSelectedB] = useState<number>(null);
-  const [midColor, setMidColor] = useState<string>();
+  const [midColor, setMidColor] = useState<string>("white");
 
   useEffect(() => {
     const colorCode = palette[selectedIndex];
@@ -81,7 +81,7 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
                   10
                 )}): RGB(${selectedR}, ${selectedG}, ${selectedB})`}</span>
               )}
-              {selectedIndex === null && <Label text='No color selected' />}
+              {selectedIndex == undefined && <Label text='No color selected' />}
             </div>
           </Row>
           <Row xclass={styles.colorRow}>
