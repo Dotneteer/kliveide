@@ -1,4 +1,3 @@
-import { Panel } from "@renderer/controls/generic/Panel";
 import styles from "./PaletteEditor.module.scss";
 import { Row } from "@renderer/controls/generic/Row";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
@@ -10,8 +9,9 @@ import {
   getCssStringForPaletteCode,
   getLuminanceForPaletteCode
 } from "@emu/machines/zxNext/palette";
-import { Checkbox } from "@renderer/controls/Checkbox";
 import { Label } from "@renderer/controls/generic/Label";
+import { useInitialize } from "@renderer/core/useInitializeAsync";
+import classnames from "@renderer/utils/classnames";
 
 const paletteTypeIds = [
   { value: "9", label: "9-bit (RRR-GGG-BBB)" },
@@ -28,34 +28,80 @@ type Props = {
 const levels9 = [0, 1, 2, 3, 4, 5, 6, 7];
 const levels8 = [0, 2, 4, 6];
 
-export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChange }: Props) => {
+export const PaletteEditor = ({
+  palette,
+  transparencyIndex,
+  initialIndex,
+  onChange
+}: Props) => {
   const [use8Bit, setUse8Bit] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(initialIndex);
   const [selectedColor, setSelectedColor] = useState<string>(null);
   const [selectedR, setSelectedR] = useState<number>(null);
   const [selectedG, setSelectedG] = useState<number>(null);
   const [selectedB, setSelectedB] = useState<number>(null);
-  const [midColor, setMidColor] = useState<string>("white");
+  const [midColor, setMidColor] = useState<string>(null);
+  const [ready, setReady] = useState<boolean>(false);
+  const [priority, setPriority] = useState<boolean>(false);
+  const [version, setVersion] = useState(1);
 
+  // --- Refresht the UI contents
+  const refreshContents = () => {
+    if (selectedIndex !== undefined) {
+      const colorCode = palette[selectedIndex];
+      setSelectedColor(getCssStringForPaletteCode(colorCode));
+      setSelectedR((colorCode >> 5) & 0x07);
+      setSelectedG((colorCode >> 2) & 0x07);
+      setSelectedB(
+        ((colorCode & 0x03) << 1) | (use8Bit ? 0x00 : (colorCode & 0x100) >> 8)
+      );
+      setPriority(!!(colorCode & 0x8000));
+      console.log("priority", !!(colorCode & 0x8000));
+      setMidColor(
+        selectedIndex !== null
+          ? getLuminanceForPaletteCode(palette[selectedIndex]) < 3.5
+            ? "white"
+            : "black"
+          : "transparent"
+      );
+    } else {
+      setSelectedColor(null);
+      setSelectedR(null);
+      setSelectedG(null);
+      setSelectedB(null);
+      setMidColor(null);
+      setPriority(null);
+    }
+    setReady(true);
+  };
+
+  // --- Set the initial UI state
+  useInitialize(() => refreshContents());
+
+  // --- Refresh the UI when the selected index changes
   useEffect(() => {
-    const colorCode = palette[selectedIndex];
-    setSelectedColor(getCssStringForPaletteCode(colorCode));
-    setSelectedR((colorCode >> 5) & 0x07);
-    setSelectedG((colorCode >> 2) & 0x07);
-    setSelectedB(
-      ((colorCode & 0x03) << 1) | (use8Bit ? 0x00 : (colorCode & 0x100) >> 8)
-    );
-    setMidColor(
-      selectedIndex !== null
-        ? getLuminanceForPaletteCode(palette[selectedIndex]) < 3.5
-          ? "white"
-          : "black"
-        : "transparent"
-    );
-  }, [selectedIndex, palette, transparencyIndex]);
+    refreshContents();
+  }, [version, selectedIndex, palette, transparencyIndex]);
 
-  return (
-    <Panel>
+  // --- Update the color value of the selected index
+  const updateColorValue = (
+    r: number,
+    g: number,
+    b: number,
+    priority: boolean
+  ) => {
+    const colorValue =
+      (priority ? 0x8000 : 0x0000) |
+      (r << 5) |
+      (g << 2) |
+      ((b >> 1) & 0x03) |
+      ((b & 0x01) << 8);
+    palette[selectedIndex] = colorValue;
+    setVersion(version + 1);
+  };
+
+  return ready ? (
+    <>
       <Row xclass={styles.editorPanel}>
         <div className={styles.editorArea}>
           <div className={styles.dropdownWrapper}>
@@ -97,8 +143,11 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
                   key={level}
                   component='R'
                   level={level}
-                  use8Bit={use8Bit}
+                  allowSelection={selectedIndex !== undefined}
                   selected={selectedR === level}
+                  onSelected={() =>
+                    updateColorValue(level, selectedG, selectedB, priority)
+                  }
                 />
               ))}
             </ColorScale>
@@ -114,8 +163,11 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
                   key={level}
                   component='G'
                   level={level}
-                  use8Bit={use8Bit}
+                  allowSelection={selectedIndex !== undefined}
                   selected={selectedG === level}
+                  onSelected={() =>
+                    updateColorValue(selectedR, level, selectedB, priority)
+                  }
                 />
               ))}
             </ColorScale>
@@ -131,18 +183,14 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
                   key={level}
                   component='B'
                   level={level}
-                  use8Bit={use8Bit}
+                  allowSelection={selectedIndex !== undefined}
                   selected={selectedB === level}
+                  onSelected={() =>
+                    updateColorValue(selectedR, selectedG, level, priority)
+                  }
                 />
               ))}
             </ColorScale>
-          </Row>
-          <Row xclass={styles.checkbox}>
-            <Checkbox
-              label='Use priority'
-              initialValue={false}
-              onChange={value => {}}
-            />
           </Row>
           <Row xclass={styles.trIndex}>
             <LabeledText
@@ -165,10 +213,14 @@ export const PaletteEditor = ({ palette, transparencyIndex, initialIndex, onChan
             setSelectedIndex(index);
             onChange?.(index);
           }}
+          onPriority={index => {
+            setPriority(!priority);
+            updateColorValue(selectedR, selectedG, selectedB, !priority);
+          }}
         />
       </Row>
-    </Panel>
-  );
+    </>
+  ) : null;
 };
 
 const ColorScale = ({ children }: { children?: React.ReactNode }) => {
@@ -178,16 +230,16 @@ const ColorScale = ({ children }: { children?: React.ReactNode }) => {
 type ColorItemProps = {
   component: "R" | "G" | "B";
   level: number;
-  use8Bit: boolean;
   selected?: boolean;
+  allowSelection: boolean;
   onSelected?: () => void;
 };
 
 const ColorItem = ({
   component,
   level,
-  use8Bit,
   selected,
+  allowSelection,
   onSelected
 }: ColorItemProps) => {
   const colorValue =
@@ -202,9 +254,16 @@ const ColorItem = ({
     getLuminanceForPaletteCode(colorValue) < 3.5 ? "white" : "black";
   return (
     <div
-      className={styles.colorItem}
+      className={classnames(styles.colorItem, {
+        [styles.allowSelect]: allowSelection
+      })}
       style={{
         borderColor: selected ? "var(--color-text-hilite)" : undefined
+      }}
+      onClick={() => {
+        if (allowSelection) {
+          onSelected?.();
+        }
       }}
     >
       <div className={styles.colorTag} style={{ backgroundColor: color }}>

@@ -1,13 +1,14 @@
 @import "@styles/core.scss";
 
 .editorPanel {
-  @include fill-parent-flex;
+  display: flex;
   box-sizing: border-box;
   flex-direction: row;
   user-select: none;
   font-size: 0.8em;
   align-items: start;
   font-size: 1em;
+  margin-bottom: 1em;
 }
 
 .editorArea {
@@ -56,6 +57,11 @@
   padding: 3px;
   margin: 2px;
   border: 2px solid transparent;
+  cursor: not-allowed;
+
+  &.allowSelect {
+    cursor: pointer;
+  }
 }
 
 .colorTag {

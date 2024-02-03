@@ -19,6 +19,7 @@ type Props = {
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
   selectedIndex?: number;
+  onPriority?: (index: number) => void;
 };
 
 export const NextPaletteViewer = ({
@@ -28,13 +29,14 @@ export const NextPaletteViewer = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onPriority,
   selectedIndex
 }: Props) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   const [selected, setSelected] = useState<number>(selectedIndex);
   return (
-    <Column>
-      <Row>
+    <Column width={520}>
+      <Row >
         <div className={styles.paletteRowLabel} />
         {indexes.map(idx => (
           <div key={idx} className={styles.paletteColumnLabel}>
@@ -57,6 +59,12 @@ export const NextPaletteViewer = ({
               onSelection?.(idx);
             }
           }}
+          onPriority={(idx: number) => {
+            if (allowSelection) {
+              setSelected(idx);
+              onPriority?.(idx);
+            }
+          }}
           selectedIndex={selected}
         />
       ))}
@@ -72,6 +80,7 @@ type PaletteRowProps = {
   transparencyIndex?: number;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
+  onPriority?: (index: number) => void;
   selectedIndex?: number;
 };
 
@@ -83,11 +92,12 @@ const PaletteRow = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onPriority,
   selectedIndex
 }: PaletteRowProps) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   return (
-    <Row>
+    <Row xclass={styles.panelColumn}>
       <div className={styles.paletteRowLabel}>{toHexa2(firstIndex)}</div>
       {indexes.map(idx => (
         <PaletteItem
@@ -99,6 +109,7 @@ const PaletteRow = ({
           transparencyIndex={transparencyIndex}
           allowSelection={allowSelection}
           onSelection={onSelection}
+          onPriority={onPriority}
           selectedIndex={selectedIndex}
         />
       ))}
@@ -114,6 +125,7 @@ type PaletteItemProps = {
   transparencyIndex?: number;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
+  onPriority?: (index: number) => void;
   selectedIndex?: number;
 };
 
@@ -125,6 +137,7 @@ const PaletteItem = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onPriority,
   selectedIndex
 }: PaletteItemProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -154,6 +167,11 @@ const PaletteItem = ({
         onClick={() => {
           if (allowSelection) {
             onSelection?.(index);
+          }
+        }}
+        onDoubleClick={() => {
+          if (allowSelection) {
+            onPriority?.(index);
           }
         }}
       >
