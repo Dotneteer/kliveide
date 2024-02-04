@@ -65,11 +65,10 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
     }
 
     if (
-      (blinkCom & COMFlags.LCDON) == 0 &&
       (blinkCom & COMFlags.VPPON) != 0 &&
       ((blinkCom & COMFlags.PROGRAM) != 0 || (blinkCom & COMFlags.OVERP) != 0)
     ) {
-      // We're somwhere in slot 3, LCD turned off, VPP enabled and either programming or overprogramming enabled
+      // We're somwhere in slot 3, VPP enabled and either programming or overprogramming enabled
 
       switch (this.type) {
         case CardType.EpromVpp32KB:
@@ -100,16 +99,13 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
    */
   onInserted (memOffset: number): void {
     this.memOffset = memOffset;
-
-    // TODO: Init the card after insertion
     this.setPristineState();
   }
 
   /**
-   * Sets the card to its pristine state
+   * Sets the UV Eprom card to it's pristine state (FFh)
    */
   setPristineState (): void {
-    // TODO: Change it to the pristine state
     for (let i = 0; i < this.size; i++) {
       this.host.memory.memory[this.memOffset + i] = 0xff;
     }

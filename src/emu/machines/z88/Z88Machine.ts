@@ -21,6 +21,7 @@ import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
+import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -165,6 +166,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     // --- Initialize the Z88 machine's default ROM
     const romCard = new Z88RomMemoryCard(this, romContents.length);
     this.memory.insertCard(0, romCard, romContents);
+
+    // --- Insert 128K Eprom card in slot 3 (reset to FFh)
+    const uvepr128k = new Z88UvEpromMemoryCard(this, 0x02_0000);
+    this.memory.insertCard(3, uvepr128k);
   }
 
   /**
@@ -352,7 +357,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   doWritePort (port: number, value: number): void {
     const addr8 = port & 0xff;
-
     // --- No ports below address 0x70 are handled
     if (addr8 < 0x70) {
       return;
@@ -408,7 +412,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
         blink.setINT(value);
         return;
 
-      case 0xb2:
+      case 0xb3:
         blink.EPR = value;
         return;
 

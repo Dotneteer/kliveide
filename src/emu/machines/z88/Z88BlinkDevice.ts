@@ -357,7 +357,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   }
 
   /**
-   * Sets the TCOM register value
+   * Sets the COM register value
    * @param value value to set
    */
   setCOM (value: number): void {
