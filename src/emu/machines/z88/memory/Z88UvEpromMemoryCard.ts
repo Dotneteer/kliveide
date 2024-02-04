@@ -65,11 +65,10 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
     }
 
     if (
-      (blinkCom & COMFlags.LCDON) == 0 &&
       (blinkCom & COMFlags.VPPON) != 0 &&
       ((blinkCom & COMFlags.PROGRAM) != 0 || (blinkCom & COMFlags.OVERP) != 0)
     ) {
-      // We're somwhere in slot 3, LCD turned off, VPP enabled and either programming or overprogramming enabled
+      // We're somwhere in slot 3, VPP enabled and either programming or overprogramming enabled
 
       switch (this.type) {
         case CardType.EpromVpp32KB:
