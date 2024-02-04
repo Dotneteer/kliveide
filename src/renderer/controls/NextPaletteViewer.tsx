@@ -6,7 +6,7 @@ import {
   getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
 import { TooltipFactory } from "./Tooltip";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
@@ -33,7 +33,12 @@ export const NextPaletteViewer = ({
   selectedIndex
 }: Props) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-  const [selected, setSelected] = useState<number>(selectedIndex);
+  const [selected, setSelected] = useState<number>();
+
+  useEffect(() => {
+    setSelected(selectedIndex);
+  }, [selectedIndex]);
+
   return (
     <div
       tabIndex={0}

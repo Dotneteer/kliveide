@@ -12,6 +12,7 @@ import {
 import { Label } from "@renderer/controls/generic/Label";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import classnames from "@renderer/utils/classnames";
+import { SmallIconButton } from "@renderer/controls/IconButton";
 
 const paletteTypeIds = [
   { value: "9", label: "9-bit (RRR-GGG-BBB)" },
@@ -45,6 +46,9 @@ export const PaletteEditor = ({
   const [priority, setPriority] = useState<boolean>(false);
   const [version, setVersion] = useState(1);
 
+  const [editStack, setEditStack] = useState<EditInfo[]>([]);
+  const [editStackIndex, setEditStackIndex] = useState<number>(-1);
+
   // --- Refresht the UI contents
   const refreshContents = () => {
     if (selectedIndex !== undefined) {
@@ -56,7 +60,6 @@ export const PaletteEditor = ({
         ((colorCode & 0x03) << 1) | (use8Bit ? 0x00 : (colorCode & 0x100) >> 8)
       );
       setPriority(!!(colorCode & 0x8000));
-      console.log("priority", !!(colorCode & 0x8000));
       setMidColor(
         selectedIndex !== null
           ? getLuminanceForPaletteCode(palette[selectedIndex]) < 3.5
@@ -90,6 +93,8 @@ export const PaletteEditor = ({
     b: number,
     priority: boolean
   ) => {
+    const oldColorValue = palette[selectedIndex];
+
     const colorValue =
       (priority ? 0x8000 : 0x0000) |
       (r << 5) |
@@ -98,10 +103,70 @@ export const PaletteEditor = ({
       ((b & 0x01) << 8);
     palette[selectedIndex] = colorValue;
     setVersion(version + 1);
+
+    if (oldColorValue === colorValue) {
+      return;
+    }
+    // --- Add the edit step to the stack
+    if (editStack.length === 0) {
+      setEditStack([
+        { index: selectedIndex, oldValue: oldColorValue, newValue: colorValue }
+      ]);
+      setEditStackIndex(0);
+    } else {
+      const clonedStack = editStack.slice(0);
+      clonedStack.push({
+        index: selectedIndex,
+        oldValue: oldColorValue,
+        newValue: colorValue
+      });
+      setEditStack(clonedStack);
+      setEditStackIndex(clonedStack.length - 1);
+    }
+  };
+
+  const undo = () => {
+    if (editStackIndex < 0) {
+      return;
+    }
+    const edit = editStack[editStackIndex];
+    palette[edit.index] = edit.oldValue;
+    setEditStackIndex(editStackIndex - 1);
+    setSelectedIndex(edit.index);
+    setVersion(version + 1);
+  };
+
+  const redo = () => {
+    if (editStackIndex >= editStack.length - 1) {
+      return;
+    }
+    const edit = editStack[editStackIndex + 1];
+    palette[edit.index] = edit.newValue;
+    setEditStackIndex(editStackIndex + 1);
+    setSelectedIndex(edit.index);
+    setVersion(version + 1);
   };
 
   return ready ? (
     <>
+      <Row>
+        <SmallIconButton
+          iconName='undo'
+          title={"Undo"}
+          enable={editStackIndex >= 0}
+          clicked={async () => {
+            undo();
+          }}
+        />
+        <SmallIconButton
+          iconName='redo'
+          title={"Redo"}
+          enable={editStackIndex < editStack.length - 1}
+          clicked={async () => {
+            redo();
+          }}
+        />
+      </Row>
       <Row xclass={styles.editorPanel}>
         <div className={styles.editorArea}>
           <div className={styles.dropdownWrapper}>
@@ -184,7 +249,9 @@ export const PaletteEditor = ({
                   component='B'
                   level={level}
                   allowSelection={selectedIndex !== undefined}
-                  selected={selectedB === level}
+                  selected={
+                    use8Bit ? (selectedB & 0x06) === level : selectedB === level
+                  }
                   onSelected={() =>
                     updateColorValue(selectedR, selectedG, level, priority)
                   }
@@ -217,6 +284,7 @@ export const PaletteEditor = ({
             setPriority(!priority);
             updateColorValue(selectedR, selectedG, selectedB, !priority);
           }}
+          selectedIndex={selectedIndex}
         />
       </Row>
     </>
@@ -271,4 +339,11 @@ const ColorItem = ({
       </div>
     </div>
   );
+};
+
+// --- Represents an edit step
+type EditInfo = {
+  index: number;
+  oldValue: number;
+  newValue: number;
 };
