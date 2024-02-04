@@ -1,5 +1,13 @@
 @import "@styles/core.scss";
 
+.headerRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  outline: none;
+  border-top: none;
+}
+
 .editorPanel {
   display: flex;
   box-sizing: border-box;
@@ -16,7 +24,7 @@
   flex-direction: column;
   flex-shrink: 0;
   flex-grow: 0;
-  padding: 8px;
+  padding: 0 8px;
 }
 
 .dropdownWrapper {
@@ -26,21 +34,20 @@
 
 .colorRow {
   align-items: start;
-  margin-left: 32px;
+  margin-left: -4px;
 }
 
 .colorBar {
-  width: 240px;
+  width: 200px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 24px;
-  margin: 0.6em 0;
+  margin: 0 0.6em;
 }
 
 .colorScale {
-  width: 40px;
+  width: 56px;
   display: flex;
   flex-direction: column;
   padding: 8px;
@@ -54,8 +61,8 @@
 .colorItem {
   width: 20px;
   height: 20px;
-  padding: 3px;
-  margin: 2px;
+  padding: 1px;
+  //margin: 2px;
   border: 2px solid transparent;
   cursor: not-allowed;
 
@@ -79,5 +86,5 @@
 
 .trIndex {
   padding-top: 0.4em;
-  justify-content: center;
+  justify-content: start;
 }

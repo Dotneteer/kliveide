@@ -25,7 +25,8 @@ const PalFileEditorPanel = ({
     return (
       <PaletteEditor
         palette={context.fileInfo?.palette}
-        transparencyIndex={context.fileInfo?.transparencyIndex}
+        initialTransparencyIndex={context.fileInfo?.transparencyIndex}
+        allowTransparencySelection={document.id.endsWith(".npl")}
         initialIndex={viewState?.selectedIndex}
         onChange={index =>
           context.changeViewState(vs => (vs.selectedIndex = index))

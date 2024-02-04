@@ -1,7 +1,6 @@
 import styles from "./PaletteEditor.module.scss";
 import { Row } from "@renderer/controls/generic/Row";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
-import { Dropdown } from "@renderer/controls/Dropdown";
 import { useEffect, useState } from "react";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
@@ -13,17 +12,17 @@ import { Label } from "@renderer/controls/generic/Label";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import classnames from "@renderer/utils/classnames";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-
-const paletteTypeIds = [
-  { value: "9", label: "9-bit (RRR-GGG-BBB)" },
-  { value: "8", label: "8-bit (RRR-GGG-BB)" }
-];
+import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
+import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
+import { Column } from "@renderer/controls/generic/Column";
 
 type Props = {
   palette: number[];
-  transparencyIndex?: number;
+  initialTransparencyIndex?: number;
   initialIndex?: number;
   onChange?: (index: number) => void;
+  allowTransparencySelection?: boolean;
 };
 
 const levels9 = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -31,12 +30,14 @@ const levels8 = [0, 2, 4, 6];
 
 export const PaletteEditor = ({
   palette,
-  transparencyIndex,
+  initialTransparencyIndex,
   initialIndex,
-  onChange
+  onChange,
+  allowTransparencySelection = true
 }: Props) => {
   const [use8Bit, setUse8Bit] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(initialIndex);
+  const [transparencyIndex, setTransparencyIndex] = useState<number>(null);
   const [selectedColor, setSelectedColor] = useState<string>(null);
   const [selectedR, setSelectedR] = useState<number>(null);
   const [selectedG, setSelectedG] = useState<number>(null);
@@ -79,7 +80,10 @@ export const PaletteEditor = ({
   };
 
   // --- Set the initial UI state
-  useInitialize(() => refreshContents());
+  useInitialize(() => {
+    refreshContents();
+    setTransparencyIndex(initialTransparencyIndex);
+  });
 
   // --- Refresh the UI when the selected index changes
   useEffect(() => {
@@ -125,6 +129,7 @@ export const PaletteEditor = ({
     }
   };
 
+  // --- Implement Undo operation
   const undo = () => {
     if (editStackIndex < 0) {
       return;
@@ -136,6 +141,7 @@ export const PaletteEditor = ({
     setVersion(version + 1);
   };
 
+  // --- Implement Redo operation
   const redo = () => {
     if (editStackIndex >= editStack.length - 1) {
       return;
@@ -147,39 +153,73 @@ export const PaletteEditor = ({
     setVersion(version + 1);
   };
 
+  // --- Handle common keys
+  const handleCommonKeys = (key: string) => {
+    switch (key) {
+      case "Digit8":
+        setUse8Bit(true);
+        break;
+      case "Digit9":
+        setUse8Bit(false);
+        break;
+      case "KeyT":
+        if (allowTransparencySelection && selectedIndex !== undefined) {
+          setTransparencyIndex(selectedIndex);
+        }
+        break;
+      case "KeyC":
+        if (allowTransparencySelection) {
+          setTransparencyIndex(null);
+        }
+        break;
+    }
+  };
+
   return ready ? (
     <>
       <Row>
-        <SmallIconButton
-          iconName='undo'
-          title={"Undo"}
-          enable={editStackIndex >= 0}
-          clicked={async () => {
-            undo();
-          }}
-        />
-        <SmallIconButton
-          iconName='redo'
-          title={"Redo"}
-          enable={editStackIndex < editStack.length - 1}
-          clicked={async () => {
-            redo();
-          }}
-        />
+        <KeyHandler
+          xclass={styles.headerRow}
+          onKey={handleCommonKeys}
+          autofocus={true}
+        >
+          <SmallIconButton
+            iconName='undo'
+            title={"Undo"}
+            enable={editStackIndex >= 0}
+            clicked={async () => {
+              undo();
+            }}
+          />
+          <SmallIconButton
+            iconName='redo'
+            title={"Redo"}
+            enable={editStackIndex < editStack.length - 1}
+            clicked={async () => {
+              redo();
+            }}
+          />
+          <ToolbarSeparator small={true} />
+
+          <LabeledSwitch
+            value={use8Bit}
+            label='Use 8-Bit Palette:'
+            title='Use an 8-bit palette instead of a 9-bit palette'
+            clicked={setUse8Bit}
+          />
+          <ToolbarSeparator small={true} />
+          <LabeledText
+            label='Transparency Color:'
+            value={
+              typeof transparencyIndex === "number"
+                ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
+                : "(none)"
+            }
+          />
+        </KeyHandler>
       </Row>
       <Row xclass={styles.editorPanel}>
         <div className={styles.editorArea}>
-          <div className={styles.dropdownWrapper}>
-            <Dropdown
-              placeholder='Select...'
-              options={paletteTypeIds}
-              value={"9"}
-              width={240}
-              onSelectionChanged={option => {
-                setUse8Bit(option === "8");
-              }}
-            />
-          </div>
           <Row>
             <div
               className={styles.colorBar}
@@ -188,15 +228,21 @@ export const PaletteEditor = ({
               {selectedIndex != undefined && (
                 <span style={{ color: midColor }}>{`Color $${toHexa2(
                   selectedIndex
-                )} (${selectedIndex.toString(
-                  10
-                )}): RGB(${selectedR}, ${selectedG}, ${selectedB})`}</span>
+                )} (${selectedIndex.toString(10)})`}</span>
               )}
               {selectedIndex == undefined && <Label text='No color selected' />}
             </div>
           </Row>
           <Row xclass={styles.colorRow}>
-            <ColorScale>
+            <ColorScale
+              useIncrement2={false}
+              level={selectedR}
+              onLevelChanged={level => {
+                setSelectedR(level);
+                updateColorValue(level, selectedG, selectedB, priority);
+              }}
+              onOtherKey={handleCommonKeys}
+            >
               <div
                 className={styles.colorScaleLabel}
                 style={{ color: "var(--console-ansi-bright-red)" }}
@@ -216,7 +262,15 @@ export const PaletteEditor = ({
                 />
               ))}
             </ColorScale>
-            <ColorScale>
+            <ColorScale
+              useIncrement2={false}
+              level={selectedG}
+              onLevelChanged={level => {
+                setSelectedG(level);
+                updateColorValue(selectedR, level, selectedB, priority);
+              }}
+              onOtherKey={handleCommonKeys}
+            >
               <div
                 className={styles.colorScaleLabel}
                 style={{ color: "var(--console-ansi-bright-green)" }}
@@ -236,7 +290,15 @@ export const PaletteEditor = ({
                 />
               ))}
             </ColorScale>
-            <ColorScale>
+            <ColorScale
+              useIncrement2={use8Bit}
+              level={selectedB}
+              onLevelChanged={level => {
+                setSelectedB(level);
+                updateColorValue(selectedR, selectedG, level, priority);
+              }}
+              onOtherKey={handleCommonKeys}
+            >
               <div
                 className={styles.colorScaleLabel}
                 style={{ color: "var(--console-ansi-bright-blue)" }}
@@ -250,7 +312,9 @@ export const PaletteEditor = ({
                   level={level}
                   allowSelection={selectedIndex !== undefined}
                   selected={
-                    use8Bit ? (selectedB & 0x06) === level : selectedB === level
+                    use8Bit && selectedIndex !== undefined
+                      ? (selectedB & 0x06) === level
+                      : selectedB === level
                   }
                   onSelected={() =>
                     updateColorValue(selectedR, selectedG, level, priority)
@@ -259,16 +323,29 @@ export const PaletteEditor = ({
               ))}
             </ColorScale>
           </Row>
-          <Row xclass={styles.trIndex}>
-            <LabeledText
-              label='Transparency Color:'
-              value={
-                typeof transparencyIndex === "number"
-                  ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
-                  : "(none)"
-              }
-            />
-          </Row>
+          <Column xclass={styles.trIndex}>
+            <Row>
+              <LabeledText label='Click palette:' value='Select color' />
+            </Row>
+            <Row>
+              <LabeledText label='Click R, G, B:' value='Select channel' />
+            </Row>
+            <Row>
+              <LabeledText label='Arrows:' value='Change selection' />
+            </Row>
+            <Row>
+              <LabeledText label='Key 8:' value='Use 8-bit palette' />
+            </Row>
+            <Row>
+              <LabeledText label='Key 9:' value='Use 8-bit palette' />
+            </Row>
+            <Row>
+              <LabeledText label='Space/Enter:' value='Toggle priority' />
+            </Row>
+            <Row>
+              <LabeledText label='Key T, C:' value='Set/Reset transparency' />
+            </Row>
+          </Column>
         </div>
         <NextPaletteViewer
           palette={palette}
@@ -280,19 +357,61 @@ export const PaletteEditor = ({
             setSelectedIndex(index);
             onChange?.(index);
           }}
-          onPriority={index => {
+          onPriority={() => {
             setPriority(!priority);
             updateColorValue(selectedR, selectedG, selectedB, !priority);
           }}
           selectedIndex={selectedIndex}
+          onOtherKey={handleCommonKeys}
         />
       </Row>
     </>
   ) : null;
 };
 
-const ColorScale = ({ children }: { children?: React.ReactNode }) => {
-  return <div className={styles.colorScale}>{children}</div>;
+type ColorScaleProps = {
+  children: React.ReactNode;
+  useIncrement2: boolean;
+  level?: number;
+  onOtherKey?: (key: string) => void;
+  onLevelChanged: (level: number) => void;
+};
+
+const ColorScale = ({
+  children,
+  useIncrement2,
+  level,
+  onOtherKey,
+  onLevelChanged
+}: ColorScaleProps) => {
+  return (
+    <KeyHandler
+      xclass={styles.colorScale}
+      onKey={key => {
+        switch (key) {
+          case "ArrowUp":
+            if (typeof level === "number") {
+              onLevelChanged(
+                useIncrement2 ? ((level & 0x06) - 2) & 0x07 : (level - 1) & 0x07
+              );
+            }
+            break;
+          case "ArrowDown":
+            if (typeof level === "number") {
+              onLevelChanged(
+                useIncrement2 ? ((level & 0x06) + 2) & 0x07 : (level + 1) & 0x07
+              );
+            }
+            break;
+          default:
+            onOtherKey?.(key);
+            break;
+        }
+      }}
+    >
+      {children}
+    </KeyHandler>
+  );
 };
 
 type ColorItemProps = {

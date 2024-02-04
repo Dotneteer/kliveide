@@ -1,18 +1,27 @@
 @import "@styles/core.scss";
 
-.palettePanel:focus {
-  outline: 1px solid green;
+.palettePanel {
+  outline: none;
+  border-top: 1px solid transparent;
+
+  &:focus {
+    border-color: var(--color-text-hilite);
+  }
+}
+
+.paletteRow {
+  height: 22px;
 }
 
 .paletteColumnLabel {
-  width: 28px;
-  margin-left: 2px;
+  width: 26px;
+  margin-left: 4px;
   color: var(--color-label);
 }
 
 .paletteRowLabel {
   width: 26px;
-  margin-left: 6px;
+  margin-left: 4px;
   color: var(--color-label);
 }
 
@@ -20,9 +29,9 @@
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
-  width: 22px;
-  height: 20px;
-  margin-right: 6px;
+  width: 24px;
+  height: 22px;
+  margin-right: 4px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  //border-radius: 12px;
 }

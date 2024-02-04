@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
+import { KeyHandler } from "./generic/KeyHandler";
 
 type Props = {
   palette: number[];
@@ -17,9 +18,11 @@ type Props = {
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
+  allowTransparencySelection?: boolean;
   onSelection?: (index: number) => void;
   selectedIndex?: number;
   onPriority?: (index: number) => void;
+  onOtherKey?: (code: string) => void;
 };
 
 export const NextPaletteViewer = ({
@@ -28,8 +31,10 @@ export const NextPaletteViewer = ({
   usePriority = false,
   transparencyIndex,
   allowSelection,
+  allowTransparencySelection,
   onSelection,
   onPriority,
+  onOtherKey,
   selectedIndex
 }: Props) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
@@ -40,14 +45,12 @@ export const NextPaletteViewer = ({
   }, [selectedIndex]);
 
   return (
-    <div
+    <KeyHandler
       tabIndex={0}
-      className={styles.palettePanel}
-      onKeyDown={e => {
+      onKey={code => {
         if (selected == undefined) return;
-        console.log("key", e.code);
         let newSelected = selected;
-        switch (e.code) {
+        switch (code) {
           case "ArrowUp":
             newSelected = selected - 16;
             if (newSelected < 0) newSelected += 256;
@@ -67,13 +70,14 @@ export const NextPaletteViewer = ({
             onPriority?.(selected);
             break;
           default:
+            onOtherKey?.(code);
             break;
         }
         setSelected(newSelected);
         onSelection?.(newSelected);
       }}
     >
-      <Column width={520}>
+      <Column width={510}>
         <Row>
           <div className={styles.paletteRowLabel} />
           {indexes.map(idx => (
@@ -107,7 +111,7 @@ export const NextPaletteViewer = ({
           />
         ))}
       </Column>
-    </div>
+    </KeyHandler>
   );
 };
 
@@ -136,7 +140,7 @@ const PaletteRow = ({
 }: PaletteRowProps) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   return (
-    <Row xclass={styles.panelColumn}>
+    <Row xclass={styles.paletteRow}>
       <div className={styles.paletteRowLabel}>{toHexa2(firstIndex)}</div>
       {indexes.map(idx => (
         <PaletteItem
@@ -215,15 +219,16 @@ const PaletteItem = ({
         }}
       >
         <svg>
-          <circle cx={11} cy={10} r={9} fill={color} />
+          <rect x={2} y={2} width={20} height={18} fill={color} />
           {index === transparencyIndex && (
-            <circle cx={11} cy={10} r={4} fill={midColor} fillOpacity={0.5} />
+            <circle cx={12} cy={11} r={5.5} fill={midColor} fillOpacity={0.5} />
           )}
           {allowSelection && index === selectedIndex && (
-            <circle
-              cx={11}
-              cy={10}
-              r={5}
+            <rect
+              x={7}
+              y={6}
+              width={10}
+              height={10}
               stroke={midColor}
               strokeWidth={2}
               fillOpacity={0.25}
