@@ -200,22 +200,25 @@ export const PaletteEditor = ({
             }}
           />
           <ToolbarSeparator small={true} />
-
           <LabeledSwitch
             value={use8Bit}
             label='Use 8-Bit Palette:'
             title='Use an 8-bit palette instead of a 9-bit palette'
             clicked={setUse8Bit}
           />
-          <ToolbarSeparator small={true} />
-          <LabeledText
-            label='Transparency Color:'
-            value={
-              typeof transparencyIndex === "number"
-                ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
-                : "(none)"
-            }
-          />
+          {allowTransparencySelection && (
+            <>
+              <ToolbarSeparator small={true} />
+              <LabeledText
+                label='Transparency Color:'
+                value={
+                  typeof transparencyIndex === "number"
+                    ? `$${toHexa2(transparencyIndex)} (${transparencyIndex})`
+                    : "(none)"
+                }
+              />
+            </>
+          )}
         </KeyHandler>
       </Row>
       <Row xclass={styles.editorPanel}>
@@ -342,9 +345,11 @@ export const PaletteEditor = ({
             <Row>
               <LabeledText label='Space/Enter:' value='Toggle priority' />
             </Row>
-            <Row>
-              <LabeledText label='Key T, C:' value='Set/Reset transparency' />
-            </Row>
+            {allowTransparencySelection && (
+              <Row>
+                <LabeledText label='Key T, C:' value='Set/Reset transparency' />
+              </Row>
+            )}
           </Column>
         </div>
         <NextPaletteViewer
