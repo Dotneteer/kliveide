@@ -12,9 +12,9 @@ export enum CardType {
   // (motherboards have been seen with NEC 128K Uv Eproms fitted in slot 0 for "OZ" ROM V2.2 release)
   EpromVpp128KB = 0x007c,
 
-  // Manufacturer+Device Code for Intel Flash 512Kb memory, 8 x 64K erasable sectors, 32 x 16K banks
+  // Manufacturer+Device Code for Intel Flash 512Kb memory (2nd gen. 5V), 8 x 64K erasable sectors, 32 x 16K banks
   FlashIntel28F004S5 = 0x89a7,
-  // Manufacturer+Device Code for Intel Flash 1Mb memory, 16 x 64K erasable sectors, 64 x 16K banks
+  // Manufacturer+Device Code for Intel Flash 1Mb memory (2nd gen. 5V), 16 x 64K erasable sectors, 64 x 16K banks
   FlashIntel28F008S5 = 0x89a6,
 
   // Manufacturer+Device code for AMD Flash 512Kb memory, 8 x 64K erasable sectors, 32 x 16K banks

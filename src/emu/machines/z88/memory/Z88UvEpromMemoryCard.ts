@@ -18,7 +18,7 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
   /**
    * The memory offset where the card is inserted
    */
-  memOffset = -1;
+  private memOffset = -1;
 
   /**
    * Initializes the card with the specified size
@@ -33,12 +33,12 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
   /**
    * Reads the byte at the specified memory address
    *
-   * @param memOffset The start offset of the memory card in the 4MB memory space
-   * @param _bank The bank mapped into the page
-   * @param address 16-bit memory address to read
+   * @param memOffset The 8K page base address of bound CPU <address> (in 4Mb range)
+   * @param bank The (absolute) 16K bank, of bound CPU <address>
+   * @param address 16-bit (64K) CPU logical address
    * @returns The read byte
    */
-  readMemory (memOffset: number, _bank: number, address: number): number {
+  readMemory (memOffset: number, bank: number, address: number): number {
     // Read behaviour of an UV Eprom is just like ROM or RAM...
     return this.host.memory.memory[memOffset + (address & 0x1fff)];
   }
@@ -49,12 +49,17 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
    * Blink hardware has turned off screen, enabled VPP pin and EPR register semantics.
    *
    * If all conditions are not met, the write operation is ignored (cannot blow byte)
+   *
+   * @param memOffset The 8K page base address of bound CPU <address> (in 4Mb range)
+   * @param bank The (absolute) 16K bank, of bound CPU <address>
+   * @param address 16-bit (64K) CPU logical address
+   * @param byte the byte to blow to UV Eprom (if H/W is active)
    */
   writeMemory (
     memOffset: number,
-    bank: number, // the bank of current address
-    address: number, // the 64K logical address from Z80
-    byte: number // the byte to blow to UV Eprom (if H/W is active)
+    bank: number,
+    address: number,
+    byte: number
   ): void {
     const blinkEpr = this.host.blinkDevice.EPR;
     const blinkCom = this.host.blinkDevice.COM;
@@ -94,8 +99,8 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
   }
 
   /**
-   * This method is invoked when the card is inserted into the memory
-   * @param memOffset Memory offset where the card is inserted
+   * This method is invoked when the UV Eprom card is inserted into the memory
+   * @param memOffset the 22bit-address of the bottom the slot where the card is inserted
    */
   onInserted (memOffset: number): void {
     this.memOffset = memOffset;
