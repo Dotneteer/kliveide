@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.scss";
+import { s } from "nextra/dist/types-c8e621b7";
 
 export interface ModalApi {
   enablePrimaryButton: (flag: boolean) => void;
@@ -117,6 +118,13 @@ export const Modal = ({
       doClose();
     }
   };
+
+  useEffect(() => {
+    setButton1Enabled(primaryEnabled);
+    setButton2Enabled(secondaryEnabled);
+    setCancelButtonEnabled(cancelButtonEnabled);
+  },
+  [primaryEnabled, secondaryEnabled, cancelButtonEnabled]);
 
   useEffect(() => {
     onApiLoaded?.({

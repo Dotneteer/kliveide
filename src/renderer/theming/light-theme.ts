@@ -33,6 +33,7 @@ export const lightTheme: ThemeProperties = {
   "--color-dropdown-menu": "#000000",
   "--bg-color-dropdown-menu-pointed": "#a0a0a0",
   "--bg-color-dropdown-menu-selected": "#007acc",
+  "--border-color-dropdown-menu": "#007acc",
 
   // --- Checkbox
   "--bgcolor-checkbox": "#d8d8d8",

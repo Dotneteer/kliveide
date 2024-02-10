@@ -252,6 +252,7 @@ export interface MainShowWebsiteRequest extends MessageBase {
 export interface MainCheckZ88CardRequest extends MessageBase {
   type: "MainCheckZ88Card";
   path: string;
+  expectedSize?: number;
 }
 
 /**
