@@ -321,7 +321,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   }
 
   /**
-   * Get value directly from the physical memory
+   * Get value directly from the physical 4Mb memory
    * @param index Absoulte memory address
    * @returns Memory value
    */
@@ -330,7 +330,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   }
 
   /**
-   * Set value directly into the physical memory
+   * Set value directly into the physical 4Mb memory
    * @param index Absolute memory address
    * @param value Value to set
    */
