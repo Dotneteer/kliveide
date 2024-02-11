@@ -23,11 +23,18 @@ import {
   CARD_SIZE_1M,
   CARD_SIZE_32K,
   CARD_SIZE_512K,
+  CARD_SIZE_EMPTY,
   CT_EPROM,
   CT_INTEL_FLASH,
   CT_RAM,
   CT_ROM
 } from "@emu/machines/z88/memory/CardType";
+import { useMachineController } from "@renderer/core/useMachineController";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { IMachineController } from "@renderer/abstractions/IMachineController";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 // --- ID of the open file dialog path
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
@@ -40,7 +47,7 @@ type OptionProps = {
 };
 
 const cardSizeOptions = [
-  { value: "-", label: "(empty)", physicalSize: 0 },
+  { value: CARD_SIZE_EMPTY, label: "(empty)", physicalSize: 0 },
   { value: CARD_SIZE_32K, label: "32K", physicalSize: 32 * 1024 },
   { value: CARD_SIZE_128K, label: "128K", physicalSize: 128 * 1024 },
   { value: CARD_SIZE_512K, label: "512K", physicalSize: 512 * 1024 },
@@ -75,13 +82,14 @@ type Props = {
 };
 
 export const Z88CardsDialog = ({ onClose }: Props) => {
+  const { machineService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const { store, messageSource } = useRendererContext();
   const machineConfig = store.getState().emulatorState?.config ?? {};
   const initialState = {
-    [MC_Z88_SLOT1]: machineConfig[MC_Z88_SLOT1] ?? { size: "-" },
-    [MC_Z88_SLOT2]: machineConfig[MC_Z88_SLOT2] ?? { size: "-" },
-    [MC_Z88_SLOT3]: machineConfig[MC_Z88_SLOT3] ?? { size: "-" }
+    [MC_Z88_SLOT1]: machineConfig[MC_Z88_SLOT1] ?? { size: CARD_SIZE_EMPTY },
+    [MC_Z88_SLOT2]: machineConfig[MC_Z88_SLOT2] ?? { size: CARD_SIZE_EMPTY },
+    [MC_Z88_SLOT3]: machineConfig[MC_Z88_SLOT3] ?? { size: CARD_SIZE_EMPTY }
   };
   const [newState, setNewState] = useState<Z88CardsState>(
     initialState as Z88CardsState
@@ -102,8 +110,8 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       initialFocus='cancel'
       primaryEnabled={saveEnabled}
       onPrimaryClicked={async () => {
-        if (slotStateChanged()) {
-          applyCardStateChange();
+        if (hasCardConfigChanged()) {
+          applyCardStateChange(machineService.getMachineController());
         }
         return false;
       }}
@@ -139,26 +147,29 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
     </Modal>
   );
 
-  function slotStateChanged (): boolean {
+  function hasCardConfigChanged (): boolean {
     return (
-      initialState.slot1.content !== newState.slot1.content ||
-      initialState.slot1.epromFile !== newState.slot1.file ||
-      initialState.slot2.content !== newState.slot2.content ||
-      initialState.slot2.epromFile !== newState.slot2.file ||
-      initialState.slot3.content !== newState.slot3.content ||
-      initialState.slot3.epromFile !== newState.slot3.file
+      hasSlotChanged(initialState.slot1, newState.slot1) ||
+      hasSlotChanged(initialState.slot2, newState.slot2) ||
+      hasSlotChanged(initialState.slot3, newState.slot3)
     );
+
+    function hasSlotChanged (a: SlotState, b: SlotState): boolean {
+      return a.size !== b.size || a.content !== b.content || a.file !== b.file;
+    }
   }
 
   function slotStateValid (): boolean {
     return (
-      (newState.slot1.isValid ?? true) &&
-      (newState.slot2.isValid ?? true) &&
-      (newState.slot3.isValid ?? true)
+      isValidSlot(newState.slot1) &&
+      isValidSlot(newState.slot2) &&
+      isValidSlot(newState.slot3)
     );
   }
 
-  async function applyCardStateChange (): Promise<void> {
+  async function applyCardStateChange (
+    controller: IMachineController
+  ): Promise<void> {
     // --- Save the new change
     const machineConfig = store.getState().emulatorState.config ?? {};
     store.dispatch(
@@ -166,9 +177,14 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       messageSource
     );
 
-    // TODO: Apply the card state change
-    let changed = false;
-    let useSoftReset = true;
+    const machine = controller.machine as IZ88Machine;
+    machine.dynamicConfig = newState;
+    if (controller.state === MachineControllerState.Running) {
+      machine.signalFlapOpened();
+      await delay(1000);
+      await machine.configure();
+      machine.signalFlapClosed();
+    }
   }
 };
 
@@ -181,26 +197,21 @@ type CardColumnProps = {
 const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
   const { messenger } = useRendererContext();
   const [slotState, setSlotState] = useState<SlotState>(initialState);
-  const [cardTypes, setCardTypes] = useState<OptionProps[]>([]);
-
-  useEffect(() => {
-    if (!initialState) return;
-    setSlotState(initialState);
-    setCardTypes(getCardTypes(initialState.size));
-  }, [initialState]);
-
-  const hasNewState = () =>
-    slotState.size !== initialState.size ||
-    slotState.content !== initialState.content ||
-    slotState.file !== initialState.file;
-
-  const isValidState = (st: SlotState) => st.size && st.content !== "-";
 
   const getCardTypes = (size: string) => {
     return cardTypeOptions.filter(
       co => !!size && (!co.dependsOn || co.dependsOn.includes(size))
     );
   };
+
+  const [cardTypes, setCardTypes] = useState<OptionProps[]>(
+    getCardTypes(initialState.size)
+  );
+
+  const hasNewState = () =>
+    slotState.size !== initialState.size ||
+    slotState.content !== initialState.content ||
+    slotState.file !== initialState.file;
 
   return (
     <div className={styles.column}>
@@ -209,7 +220,7 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
         <Icon
           iconName={hasNewState() ? "circle-filled" : "empty-icon"}
           fill={
-            slotState.isValid
+            isValidSlot(slotState)
               ? "--color-text-hilite"
               : "--console-ansi-bright-red"
           }
@@ -255,19 +266,18 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
               );
               if (!newCard || newCard.hasContent) {
                 // --- The old content is not valid for the new size
-                newSlotState.content = "-";
+                delete newSlotState.content;
                 delete newSlotState.file;
               }
             }
-            setCardTypes(getCardTypes(option));
+            setCardTypes(newCardTypes);
 
             // --- Now, validate the slot again
-            newSlotState.isValid = isValidState(newSlotState);
             setSlotState(newSlotState);
             changed?.(newSlotState);
           }}
         />
-        {slotState.size && slotState.size !== "-" && (
+        {slotState.size && slotState.size !== CARD_SIZE_EMPTY && (
           <>
             <LabelSeparator width={16} />
             <Dropdown
@@ -293,7 +303,6 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
                 };
 
                 // --- Now, validate the slot again
-                newSlotState.isValid = isValidState(newSlotState);
                 setSlotState(newSlotState);
                 changed?.(newSlotState);
               }}
@@ -392,7 +401,6 @@ export type SlotState = {
   size: string;
   content: string;
   file?: string;
-  isValid?: boolean;
 };
 
 /**
@@ -411,3 +419,8 @@ export type CardContent = {
   ramSize?: number;
   eprom?: Uint8Array;
 };
+
+// --- Helper function to check if a slot state is valid
+function isValidSlot (st: SlotState) {
+  return st.size === CARD_SIZE_EMPTY || (st.size && !!st.content);
+}

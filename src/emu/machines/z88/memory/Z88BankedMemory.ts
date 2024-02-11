@@ -178,6 +178,11 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     // --- Set up the memory pages as a new card is inserted
     this.recalculateMemoryPageInfo();
 
+    // --- Notify the card about the insertion
+    if (memoryCard) {
+      memoryCard.onInserted(slot * 0x10_0000);
+    }
+
     if (initialContent) {
       // --- Check for right content size
       if (initialContent.length !== memoryCard.size) {
@@ -189,11 +194,6 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
       for (let i = 0; i < memoryCard.size; i++) {
         this._memory[cardOffset + i] = initialContent[i];
       }
-    }
-
-    // --- Notify the card about the insertion
-    if (memoryCard) {
-      memoryCard.onInserted(slot * 0x10_0000);
     }
   }
 

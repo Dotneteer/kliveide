@@ -1,11 +1,10 @@
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
 
+export const CARD_SIZE_EMPTY = "-";
 export const CARD_SIZE_32K = "32K";
 export const CARD_SIZE_128K = "128K";
 export const CARD_SIZE_512K = "512K";
@@ -22,11 +21,11 @@ export const CT_INTEL_FLASH = "FLASH";
  * @param type The type of the card
  * @returns The new memory card
  */
-export async function createZ88MemoryCard (
+export function createZ88MemoryCard (
   host: IZ88Machine,
   size: string,
   type: string,
-): Promise<IZ88MemoryCard> {
+): IZ88MemoryCard {
   // --- Get the physical size of the card
   let cardSize = 0;
   switch (size) {
@@ -53,12 +52,15 @@ export async function createZ88MemoryCard (
       card = new Z88RamMemoryCard(host, cardSize);
       break;
     case CT_ROM:
-      card = new Z88RomMemoryCard(host, cardSize);  
+      card = new Z88RomMemoryCard(host, cardSize); 
+      break; 
     case CT_EPROM:
       card = new Z88UvEpromMemoryCard(host, cardSize);
       break;
     case CT_INTEL_FLASH:
       break;
+    default:
+      console.log(`Unknown card type: ${type}`);
   }
   return card;
 }

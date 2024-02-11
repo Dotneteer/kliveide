@@ -25,6 +25,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   readonly config: MachineConfigSet;
 
   /**
+   * The dynamic machine configuration (can be set after the machine is created)
+   */
+  dynamicConfig?: MachineConfigSet;
+
+  /**
    * This property stores the execution context where the emulated machine runs its execution loop.
    */
   executionContext: ExecutionContext;
@@ -33,6 +38,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Sets up the machine (async)
    */
   setup(): Promise<void>;
+
+  /**
+   * Configures the machine after setting it up
+   */
+  configure(): Promise<void>;
 
   /**
    * Dispose the resources held by the machine

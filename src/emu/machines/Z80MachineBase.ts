@@ -42,6 +42,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * The dynamic machine configuration (can be set after the machine is created)
+   */
+  dynamicConfig?: MachineConfigSet;
+
+  /**
    * The unique identifier of the machine type
    */
   abstract readonly machineId: string;
@@ -59,6 +64,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Sets up the machine (async)
    */
   abstract setup(): Promise<void>;
+
+  /**
+   * Configures the machine after setting it up
+   */
+  async configure (): Promise<void> {
+    // --- Override in derived classes
+  }
 
   /**
    * Dispose the resources held by the machine
@@ -128,7 +140,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param page Optional ROM page for multi-rom machines
    * @returns The byte array that represents the ROM contents
    */
-  protected loadRomFromResource (
+  protected async loadRomFromResource (
     romName: string,
     page = -1
   ): Promise<Uint8Array> {
@@ -142,7 +154,22 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     const filename = romName.startsWith("/")
       ? romName
       : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
-    return fileProvider.readBinaryFile(filename);
+    return await fileProvider.readBinaryFile(filename);
+  }
+
+  /**
+   * Load the specified ROM from a file
+   * @returns The byte array that represents the ROM contents
+   */
+  protected async loadRomFromFile (filename: string): Promise<Uint8Array> {
+    // --- Obtain the IFileProvider instance
+    const fileProvider = this.getMachineProperty(
+      FILE_PROVIDER
+    ) as IFileProvider;
+    if (!fileProvider) {
+      throw new Error("Could not obtain file provider instance");
+    }
+    return await fileProvider.readBinaryFile(filename);
   }
 
   /**

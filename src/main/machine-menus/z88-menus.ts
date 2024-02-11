@@ -152,7 +152,23 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("custom", "battery_low"));
       }
-    }
+    },
+    {
+      id: "z88_flap_open",
+      label: "Flap open",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "flap_open"));
+      }
+    },
+    {
+      id: "z88_flap_close",
+      label: "Flap close",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "flap_close"));
+      }
+    },
   ];
 };
 

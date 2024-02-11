@@ -17,11 +17,17 @@ import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
-import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import {
+  MC_SCREEN_SIZE,
+  MC_Z88_SLOT1,
+  MC_Z88_SLOT2,
+  MC_Z88_SLOT3
+} from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
-import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
+import { CARD_SIZE_EMPTY, createZ88MemoryCard } from "./memory/CardType";
+import { SlotState } from "@renderer/appEmu/dialogs/Z88CardsDialog";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -84,15 +90,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Initialize the machine
    */
-  constructor (
-    private readonly model: MachineModel,
-    public readonly config: MachineConfigSet
-  ) {
+  constructor (model: MachineModel, public readonly config: MachineConfigSet) {
     super(config);
 
     // --- config overrides model.config
     this.config = config ?? model?.config;
-    console.log("Z88", config)
 
     // --- Set up machine attributes
     this.baseClockFrequency = 3_276_800;
@@ -167,9 +169,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     const romCard = new Z88RomMemoryCard(this, romContents.length);
     this.memory.insertCard(0, romCard, romContents);
 
-    // --- Insert 128K Eprom card in slot 3 (reset to FFh)
-    const uvepr128k = new Z88UvEpromMemoryCard(this, 0x02_0000);
-    this.memory.insertCard(3, uvepr128k);
+    this.configure();
   }
 
   /**
@@ -179,6 +179,43 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.keyboardDevice?.dispose();
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
+  }
+
+  /**
+   * Configures the machine after setting it up
+   */
+  async configure (): Promise<void> {
+    // --- Use the dynamic configuation, too
+    const config = { ...this.config, ...this.dynamicConfig };
+
+    // --- Configure Slots
+    const machine = this;
+    handleSlot(1, config?.[MC_Z88_SLOT1]);
+    handleSlot(2, config?.[MC_Z88_SLOT2]);
+    handleSlot(3, config?.[MC_Z88_SLOT3]);
+
+    // --- Handle the specified slot
+    async function handleSlot (slotId: number, slot: SlotState): Promise<void> {
+      if (!slot || !slot.size || slot.size === CARD_SIZE_EMPTY) {
+        // --- No slot info
+        machine.memory.removeCard(slotId);
+        return;
+      }
+
+      // --- There is a card in the slot
+      let contents: Uint8Array | undefined;
+      let type = slot.content;
+      if (type.endsWith("-C")) {
+        type = type.substring(0, type.length - 2);
+      }
+      const card = createZ88MemoryCard(machine, slot.size, type);
+      if (slot.file) {
+        contents = await machine.loadRomFromFile(slot.file);
+        console.log("Contents", contents);
+      }
+      machine.memory.insertCard(slotId, card, contents);
+      console.log(machine.memory.cards);
+    }
   }
 
   /**
@@ -668,6 +705,12 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       case "press_shifts":
         await pressShifts();
         break;
+      case "flap_open":
+        this.signalFlapOpened();
+        break;
+      case "flap_close":
+        this.signalFlapClosed();
+        break;
     }
 
     async function pressShifts (): Promise<void> {
@@ -677,5 +720,38 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
     }
+  }
+
+  /**
+   * The Blink only fires an IM 1 interrupt when the flap is opened and when
+   * INT.FLAP is enabled. Both STA.FLAPOPEN and STA.FLAP is set at the time of
+   * the interrupt. As long as the flap is open, no STA.TIME interrupts gets
+   * out of the Blink (even though INT.TIME may be enabled and signals it to
+   * fire those RTC interrupts). The Flap interrupt is only fired once; when
+   * the flap is closed, and then opened. STA.FLAPOPEN remains enabled as long
+   * as the flap is open; when the flap is closed, NO interrupt is fired -
+   * only STA.FLAPOPEN is set to 0.
+   */
+  signalFlapOpened (): void {
+    const blink = this.blinkDevice;
+    const INT = this.blinkDevice.INT;
+    if (!!(INT & INTFlags.FLAP) && !!(INT & INTFlags.GINT)) {
+      // --- When flap is opened, time int's no longer come out..
+      blink.setSTA(blink.STA | STAFlags.FLAP);
+      this.awakeCpu();
+      blink.setSTA(blink.STA | STAFlags.FLAPOPEN);
+    }
+  }
+
+  /**
+   * Signal that the flap was closed.<p> The Blink will start to fire STA.TIME
+   * interrupts again if the INT.TIME is enabled and TMK has been setup to
+   * fire Minute, Second or TICK's.
+   *
+   * This is not an interrupt (but Z80 goes out of snooze), only the STA.FLAPOPEN bit set to 0
+   */
+  signalFlapClosed (): void {
+    this.blinkDevice.setACK(STAFlags.FLAPOPEN);
+    this.awakeCpu();
   }
 }

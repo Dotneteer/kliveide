@@ -18,7 +18,6 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
-import { mediaStore } from "@emu/machines/media/media-info";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
