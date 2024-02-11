@@ -8,11 +8,10 @@ import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledFlag } from "@renderer/controls/generic/LabeledFlag";
 import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
 import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
+import { createElement } from "react";
 
 const REG_LABEL_WIDTH = 32;
 const REG_PAIR_VALUE_WIDTH = 108;
-const SOUND_REG_LABEL_WIDTH = 48;
-const SOUND_REG_VALUE_WIDTH = 48;
 
 const VIDEO_SYNC_MODES = ["Normal", "High", "Normal", "Low"];
 const JOYSTICKS = [
@@ -98,504 +97,516 @@ const Z80FileViewerPanel = ({
   contents,
   viewState
 }: DocumentProps<Z80FileViewState>) => {
-  return GenericFileViewerPanel<Z80FileContents, Z80FileViewState>({
-    document,
-    contents,
-    viewState,
-    fileLoader: loadZ80FileContents,
-    validRenderer: context => {
-      const fi = context.fileInfo;
-      const cvs = context.currentViewState;
-      const change = context.changeViewState;
+  return createElement(
+    GenericFileViewerPanel<Z80FileContents, Z80FileViewState>,
+    {
+      document,
+      contents,
+      viewState,
+      fileLoader: loadZ80FileContents,
+      validRenderer: context => {
+        const fi = context.fileInfo;
+        const cvs = viewState;
+        const change = context.changeViewState;
 
-      return (
-        <>
-          <Row>
-            <LabeledText
-              label='Z80 file version:'
-              value={fi.version.toString(10)}
-            />
-            <LabeledText
-              label='File length:'
-              value={contents.length.toString(10)}
-            />
-          </Row>
-          <ExpandableRow
-            heading='Registers'
-            expanded={cvs?.registersExpanded ?? true}
-            onExpanded={exp => change(vs => (vs.registersExpanded = exp))}
-          >
+        return (
+          <>
             <Row>
               <LabeledText
-                label='AF:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regA * 256 + fi.regF)} (${(
-                  fi.regA * 256 +
-                  fi.regF
-                ).toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
+                label='Z80 file version:'
+                value={fi.version.toString(10)}
               />
               <LabeledText
-                label='BC:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regBC)} (${fi.regBC.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='DE:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regDE)} (${fi.regDE.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='HL:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regHL)} (${fi.regHL.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='PC:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regPC)} (${fi.regPC.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
+                label='File length:'
+                value={contents.length.toString(10)}
               />
             </Row>
-            <Row>
-              <LabeledText
-                label="AF':"
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regASec * 256 + fi.regFSec)} (${(
-                  fi.regASec * 256 +
-                  fi.regFSec
-                ).toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label="BC':"
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regBCSec)} (${fi.regBCSec.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label="DE':"
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regDESec)} (${fi.regDESec.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label="HL':"
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regHLSec)} (${fi.regHLSec.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='SP:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regSP)} (${fi.regSP.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-            </Row>
-            <Row>
-              <LabeledText
-                label='IR:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regI * 256 + fi.regR)} (${(
-                  fi.regI * 256 +
-                  fi.regR
-                ).toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='IX:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regIX)} (${fi.regIX.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-              <LabeledText
-                label='IY:'
-                labelWidth={REG_LABEL_WIDTH}
-                value={`$${toHexa4(fi.regIY)} (${fi.regIY.toString(10)})`}
-                valueWidth={REG_PAIR_VALUE_WIDTH}
-              />
-            </Row>
-          </ExpandableRow>
-          <ExpandableRow
-            heading='Various Flags & Values'
-            expanded={cvs?.flags1Expanded ?? true}
-            onExpanded={exp => change(vs => (vs.flags1Expanded = exp))}
-          >
-            <Row>
-              <LabeledFlag label='Bit 7 of R:' value={fi.bit7R} />
-              <LabeledFlag
-                label='SamRom Switched In:'
-                value={fi.samRomSwitchedIn}
-              />
-              <LabeledFlag
-                label='Datablock compressed:'
-                value={fi.dataCompressed}
-              />
-              <LabeledText
-                label='Border color:'
-                value={fi.borderColor.toString(10)}
-              />
-            </Row>
-            <Row>
-              <LabeledFlag label='IFF1:' value={fi.iff1} />
-              <LabeledFlag label='IFF2:' value={fi.iff2} />
-              <LabeledFlag
-                label='Issue 2 Emulation:'
-                value={fi.issue2Emulation}
-              />
-              <LabeledFlag
-                label='Double INT Frequency:'
-                value={fi.doubleIntFreq}
-              />
-              <LabeledText label='IM:' value={fi.interruptMode.toString(10)} />
-            </Row>
-            <Row>
-              <LabeledText
-                label='Video Sync Mode:'
-                value={VIDEO_SYNC_MODES[fi.videoSyncMode]}
-              />
-              <LabeledText
-                label='Cursor/Joystick:'
-                value={JOYSTICKS[fi.videoSyncMode]}
-              />
-            </Row>
+            <ExpandableRow
+              heading='Registers'
+              expanded={cvs?.registersExpanded ?? true}
+              onExpanded={exp => change(vs => (vs.registersExpanded = exp))}
+            >
+              <Row>
+                <LabeledText
+                  label='AF:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regA * 256 + fi.regF)} (${(
+                    fi.regA * 256 +
+                    fi.regF
+                  ).toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='BC:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regBC)} (${fi.regBC.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='DE:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regDE)} (${fi.regDE.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='HL:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regHL)} (${fi.regHL.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='PC:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regPC)} (${fi.regPC.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+              </Row>
+              <Row>
+                <LabeledText
+                  label="AF':"
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regASec * 256 + fi.regFSec)} (${(
+                    fi.regASec * 256 +
+                    fi.regFSec
+                  ).toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label="BC':"
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regBCSec)} (${fi.regBCSec.toString(
+                    10
+                  )})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label="DE':"
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regDESec)} (${fi.regDESec.toString(
+                    10
+                  )})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label="HL':"
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regHLSec)} (${fi.regHLSec.toString(
+                    10
+                  )})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='SP:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regSP)} (${fi.regSP.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+              </Row>
+              <Row>
+                <LabeledText
+                  label='IR:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regI * 256 + fi.regR)} (${(
+                    fi.regI * 256 +
+                    fi.regR
+                  ).toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='IX:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regIX)} (${fi.regIX.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+                <LabeledText
+                  label='IY:'
+                  labelWidth={REG_LABEL_WIDTH}
+                  value={`$${toHexa4(fi.regIY)} (${fi.regIY.toString(10)})`}
+                  valueWidth={REG_PAIR_VALUE_WIDTH}
+                />
+              </Row>
+            </ExpandableRow>
+            <ExpandableRow
+              heading='Various Flags & Values'
+              expanded={cvs?.flags1Expanded ?? true}
+              onExpanded={exp => change(vs => (vs.flags1Expanded = exp))}
+            >
+              <Row>
+                <LabeledFlag label='Bit 7 of R:' value={fi.bit7R} />
+                <LabeledFlag
+                  label='SamRom Switched In:'
+                  value={fi.samRomSwitchedIn}
+                />
+                <LabeledFlag
+                  label='Datablock compressed:'
+                  value={fi.dataCompressed}
+                />
+                <LabeledText
+                  label='Border color:'
+                  value={fi.borderColor.toString(10)}
+                />
+              </Row>
+              <Row>
+                <LabeledFlag label='IFF1:' value={fi.iff1} />
+                <LabeledFlag label='IFF2:' value={fi.iff2} />
+                <LabeledFlag
+                  label='Issue 2 Emulation:'
+                  value={fi.issue2Emulation}
+                />
+                <LabeledFlag
+                  label='Double INT Frequency:'
+                  value={fi.doubleIntFreq}
+                />
+                <LabeledText
+                  label='IM:'
+                  value={fi.interruptMode.toString(10)}
+                />
+              </Row>
+              <Row>
+                <LabeledText
+                  label='Video Sync Mode:'
+                  value={VIDEO_SYNC_MODES[fi.videoSyncMode]}
+                />
+                <LabeledText
+                  label='Cursor/Joystick:'
+                  value={JOYSTICKS[fi.videoSyncMode]}
+                />
+              </Row>
+              {fi.version > 1 && (
+                <>
+                  <Row>
+                    <LabeledText label='Hardware type:' value={fi.hwType} />
+                    {fi.modeSamRam && (
+                      <LabeledText
+                        label='74LS259 State:'
+                        value={fi.lastOutValue1.toString()}
+                      />
+                    )}
+                    {fi.mode128K && (
+                      <LabeledText
+                        label='Last OUT to $7FFD:'
+                        value={`$${toHexa2(
+                          fi.lastOutValue1
+                        )} (${fi.lastOutValue1.toString(10)})`}
+                      />
+                    )}
+                    {fi.modeTimex && (
+                      <LabeledText
+                        label='Last OUT to $F4:'
+                        value={`$${toHexa2(
+                          fi.lastOutValue1
+                        )} (${fi.lastOutValue1.toString(10)})`}
+                      />
+                    )}
+                    {!fi.modeTimex && (
+                      <LabeledFlag
+                        label='Interface 1 ROM Paged:'
+                        value={fi.lastOutValue2 === 0xff}
+                      />
+                    )}
+                    {fi.modeTimex && (
+                      <LabeledText
+                        label='Last OUT to $FF:'
+                        value={`$${toHexa2(
+                          fi.lastOutValue2
+                        )} (${fi.lastOutValue2.toString(10)})`}
+                      />
+                    )}
+                  </Row>
+                  <Row>
+                    <LabeledFlag
+                      label='R emulation on:'
+                      value={fi.regREmulationIsOn}
+                    />
+                    <LabeledFlag
+                      label='LDIR emulation on:'
+                      value={fi.ldirEmulationIsOn}
+                    />
+                    <LabeledFlag
+                      label='AY Sound in use:'
+                      value={fi.aySoundInUse}
+                    />
+                    {fi.aySoundInUse && (
+                      <LabeledFlag
+                        label='Fuller Audio:'
+                        value={fi.fullerAudioEmulationIsOn}
+                      />
+                    )}
+                  </Row>
+                  {fi.version === 3 && (
+                    <>
+                      <Row>
+                        <LabeledText
+                          label='Low TState Counter:'
+                          value={`$${toHexa2(
+                            fi.lowTStateCounter
+                          )} (${fi.lowTStateCounter.toString(10)})`}
+                        />
+                        <LabeledText
+                          label='High TState Counter:'
+                          value={`$${toHexa2(
+                            fi.highTStateCounter
+                          )} (${fi.highTStateCounter.toString(10)})`}
+                        />
+                        <LabeledText
+                          label='Spectator Flag Byte:'
+                          value={`$${toHexa2(
+                            fi.spectatorFlagByte
+                          )} (${fi.spectatorFlagByte.toString(10)})`}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledFlag
+                          label='MGT ROM Paged In:'
+                          value={fi.mgtRomPagedIn}
+                        />
+                        <LabeledFlag
+                          label='Multiface ROM Paged In:'
+                          value={fi.multifaceRomPagedIn}
+                        />
+                        <LabeledFlag
+                          label='Lower 8K Is RAM:'
+                          value={fi.lower8KIsRam}
+                        />
+                        <LabeledFlag
+                          label='Upper 8K Is RAM:'
+                          value={fi.upper8KIsRam}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledText
+                          label='Disciple inhibit button:'
+                          value={fi.discipleInhibitButtonsStatus ? "In" : "Out"}
+                        />
+                        <LabeledText
+                          label='Disciple inhibit flag:'
+                          value={
+                            fi.discipleInhibitButtonsStatus
+                              ? "Pageable"
+                              : "Not pageable"
+                          }
+                        />
+                        {(true || fi.useLastOut1ffd) && (
+                          <LabeledText
+                            label='Last OUT $1FFD:'
+                            value={`$${
+                              fi.lastOut1ffdValue
+                            } (${fi.lastOut1ffdValue.toString(10)})`}
+                          />
+                        )}
+                      </Row>
+                    </>
+                  )}
+                </>
+              )}
+            </ExpandableRow>
             {fi.version > 1 && (
               <>
-                <Row>
-                  <LabeledText label='Hardware type:' value={fi.hwType} />
-                  {fi.modeSamRam && (
+                <ExpandableRow
+                  heading='Sound Registers'
+                  expanded={cvs?.soundRegsExpanded ?? false}
+                  onExpanded={exp => change(vs => (vs.soundRegsExpanded = exp))}
+                >
+                  <Row>
                     <LabeledText
-                      label='74LS259 State:'
-                      value={fi.lastOutValue1.toString()}
-                    />
-                  )}
-                  {fi.mode128K && (
-                    <LabeledText
-                      label='Last OUT to $7FFD:'
+                      label='Last OUT to $FFFD:'
                       value={`$${toHexa2(
-                        fi.lastOutValue1
-                      )} (${fi.lastOutValue1.toString(10)})`}
+                        fi.lastSoundRegister
+                      )} (${fi.lastSoundRegister.toString(10)})`}
                     />
-                  )}
-                  {fi.modeTimex && (
+                  </Row>
+                  <Row>
                     <LabeledText
-                      label='Last OUT to $F4:'
-                      value={`$${toHexa2(
-                        fi.lastOutValue1
-                      )} (${fi.lastOutValue1.toString(10)})`}
+                      label='Tone A (Low):'
+                      value={`$${toHexa2(fi.soundRegisters[0])}`}
                     />
-                  )}
-                  {!fi.modeTimex && (
-                    <LabeledFlag
-                      label='Interface 1 ROM Paged:'
-                      value={fi.lastOutValue2 === 0xff}
-                    />
-                  )}
-                  {fi.modeTimex && (
                     <LabeledText
-                      label='Last OUT to $FF:'
-                      value={`$${toHexa2(
-                        fi.lastOutValue2
-                      )} (${fi.lastOutValue2.toString(10)})`}
+                      label='Tone A (High):'
+                      value={`$${toHexa2(fi.soundRegisters[1])}`}
                     />
-                  )}
-                </Row>
-                <Row>
-                  <LabeledFlag
-                    label='R emulation on:'
-                    value={fi.regREmulationIsOn}
-                  />
-                  <LabeledFlag
-                    label='LDIR emulation on:'
-                    value={fi.ldirEmulationIsOn}
-                  />
-                  <LabeledFlag
-                    label='AY Sound in use:'
-                    value={fi.aySoundInUse}
-                  />
-                  {fi.aySoundInUse && (
-                    <LabeledFlag
-                      label='Fuller Audio:'
-                      value={fi.fullerAudioEmulationIsOn}
+                    <LabeledText
+                      label='Tone B (Low):'
+                      value={`$${toHexa2(fi.soundRegisters[2])}`}
                     />
-                  )}
-                </Row>
+                    <LabeledText
+                      label='Tone B (High):'
+                      value={`$${toHexa2(fi.soundRegisters[3])}`}
+                    />
+                  </Row>
+                  <Row>
+                    <LabeledText
+                      label='Tone C (Low):'
+                      value={`$${toHexa2(fi.soundRegisters[4])}`}
+                    />
+                    <LabeledText
+                      label='Tone C (High):'
+                      value={`$${toHexa2(fi.soundRegisters[5])}`}
+                    />
+                    <LabeledText
+                      label='Noise:'
+                      value={`$${toHexa2(fi.soundRegisters[6])}`}
+                    />
+                    <LabeledText
+                      label='Mixer:'
+                      value={`$${toHexa2(fi.soundRegisters[7])}`}
+                    />
+                  </Row>
+                  <Row>
+                    <LabeledText
+                      label='Volume A:'
+                      value={`$${toHexa2(fi.soundRegisters[8])}`}
+                    />
+                    <LabeledText
+                      label='Volume B:'
+                      value={`$${toHexa2(fi.soundRegisters[9])}`}
+                    />
+                    <LabeledText
+                      label='Volume C:'
+                      value={`$${toHexa2(fi.soundRegisters[10])}`}
+                    />
+                    <LabeledText
+                      label='Env Freq (Low):'
+                      value={`$${toHexa2(fi.soundRegisters[11])}`}
+                    />
+                  </Row>
+                  <Row>
+                    <LabeledText
+                      label='Env Freq (High):'
+                      value={`$${toHexa2(fi.soundRegisters[12])}`}
+                    />
+                    <LabeledText
+                      label='Env Shape:'
+                      value={`$${toHexa2(fi.soundRegisters[13])}`}
+                    />
+                    <LabeledText
+                      label='I/O Port A:'
+                      value={`$${toHexa2(fi.soundRegisters[14])}`}
+                    />
+                    <LabeledText
+                      label='I/O Port B:'
+                      value={`$${toHexa2(fi.soundRegisters[15])}`}
+                    />
+                  </Row>
+                </ExpandableRow>
                 {fi.version === 3 && (
                   <>
-                    <Row>
-                      <LabeledText
-                        label='Low TState Counter:'
-                        value={`$${toHexa2(
-                          fi.lowTStateCounter
-                        )} (${fi.lowTStateCounter.toString(10)})`}
-                      />
-                      <LabeledText
-                        label='High TState Counter:'
-                        value={`$${toHexa2(
-                          fi.highTStateCounter
-                        )} (${fi.highTStateCounter.toString(10)})`}
-                      />
-                      <LabeledText
-                        label='Spectator Flag Byte:'
-                        value={`$${toHexa2(
-                          fi.spectatorFlagByte
-                        )} (${fi.spectatorFlagByte.toString(10)})`}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledFlag
-                        label='MGT ROM Paged In:'
-                        value={fi.mgtRomPagedIn}
-                      />
-                      <LabeledFlag
-                        label='Multiface ROM Paged In:'
-                        value={fi.multifaceRomPagedIn}
-                      />
-                      <LabeledFlag
-                        label='Lower 8K Is RAM:'
-                        value={fi.lower8KIsRam}
-                      />
-                      <LabeledFlag
-                        label='Upper 8K Is RAM:'
-                        value={fi.upper8KIsRam}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledText
-                        label='Disciple inhibit button:'
-                        value={fi.discipleInhibitButtonsStatus ? "In" : "Out"}
-                      />
-                      <LabeledText
-                        label='Disciple inhibit flag:'
-                        value={
-                          fi.discipleInhibitButtonsStatus
-                            ? "Pageable"
-                            : "Not pageable"
-                        }
-                      />
-                      {(true || fi.useLastOut1ffd) && (
+                    <ExpandableRow
+                      heading='Key Mappings'
+                      expanded={cvs?.keyMappingsExpanded ?? false}
+                      onExpanded={exp =>
+                        change(vs => (vs.keyMappingsExpanded = exp))
+                      }
+                    >
+                      <Row>
                         <LabeledText
-                          label='Last OUT $1FFD:'
-                          value={`$${
-                            fi.lastOut1ffdValue
-                          } (${fi.lastOut1ffdValue.toString(10)})`}
+                          label='Key #1 Row:'
+                          value={`$${toHexa2(fi.userJoystickMappings[1])}`}
                         />
-                      )}
-                    </Row>
+                        <LabeledText
+                          label='Key #1 Mask:'
+                          value={`$${toHexa2(fi.userJoystickMappings[0])}`}
+                        />
+                        <LabeledText
+                          label='Key #1 Value:'
+                          value={`$${toHexa2(fi.keysMappings[0])}`}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledText
+                          label='Key #2 Row:'
+                          value={`$${toHexa2(fi.userJoystickMappings[3])}`}
+                        />
+                        <LabeledText
+                          label='Key #2 Mask:'
+                          value={`$${toHexa2(fi.userJoystickMappings[2])}`}
+                        />
+                        <LabeledText
+                          label='Key #2 Value:'
+                          value={`$${toHexa2(fi.keysMappings[2])}`}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledText
+                          label='Key #3 Row:'
+                          value={`$${toHexa2(fi.userJoystickMappings[5])}`}
+                        />
+                        <LabeledText
+                          label='Key #3 Mask:'
+                          value={`$${toHexa2(fi.userJoystickMappings[4])}`}
+                        />
+                        <LabeledText
+                          label='Key #3 Value:'
+                          value={`$${toHexa2(fi.keysMappings[4])}`}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledText
+                          label='Key #4 Row:'
+                          value={`$${toHexa2(fi.userJoystickMappings[7])}`}
+                        />
+                        <LabeledText
+                          label='Key #4 Mask:'
+                          value={`$${toHexa2(fi.userJoystickMappings[6])}`}
+                        />
+                        <LabeledText
+                          label='Key #4 Value:'
+                          value={`$${toHexa2(fi.keysMappings[6])}`}
+                        />
+                      </Row>
+                      <Row>
+                        <LabeledText
+                          label='Key #5 Row:'
+                          value={`$${toHexa2(fi.userJoystickMappings[9])}`}
+                        />
+                        <LabeledText
+                          label='Key #5 Mask:'
+                          value={`$${toHexa2(fi.userJoystickMappings[8])}`}
+                        />
+                        <LabeledText
+                          label='Key #5 Value:'
+                          value={`$${toHexa2(fi.keysMappings[8])}`}
+                        />
+                      </Row>
+                    </ExpandableRow>
                   </>
                 )}
               </>
             )}
-          </ExpandableRow>
-          {fi.version > 1 && (
-            <>
-              <ExpandableRow
-                heading='Sound Registers'
-                expanded={cvs?.soundRegsExpanded ?? false}
-                onExpanded={exp => change(vs => (vs.soundRegsExpanded = exp))}
-              >
-                <Row>
-                  <LabeledText
-                    label='Last OUT to $FFFD:'
-                    value={`$${toHexa2(
-                      fi.lastSoundRegister
-                    )} (${fi.lastSoundRegister.toString(10)})`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Tone A (Low):'
-                    value={`$${toHexa2(fi.soundRegisters[0])}`}
-                  />
-                  <LabeledText
-                    label='Tone A (High):'
-                    value={`$${toHexa2(fi.soundRegisters[1])}`}
-                  />
-                  <LabeledText
-                    label='Tone B (Low):'
-                    value={`$${toHexa2(fi.soundRegisters[2])}`}
-                  />
-                  <LabeledText
-                    label='Tone B (High):'
-                    value={`$${toHexa2(fi.soundRegisters[3])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Tone C (Low):'
-                    value={`$${toHexa2(fi.soundRegisters[4])}`}
-                  />
-                  <LabeledText
-                    label='Tone C (High):'
-                    value={`$${toHexa2(fi.soundRegisters[5])}`}
-                  />
-                  <LabeledText
-                    label='Noise:'
-                    value={`$${toHexa2(fi.soundRegisters[6])}`}
-                  />
-                  <LabeledText
-                    label='Mixer:'
-                    value={`$${toHexa2(fi.soundRegisters[7])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Volume A:'
-                    value={`$${toHexa2(fi.soundRegisters[8])}`}
-                  />
-                  <LabeledText
-                    label='Volume B:'
-                    value={`$${toHexa2(fi.soundRegisters[9])}`}
-                  />
-                  <LabeledText
-                    label='Volume C:'
-                    value={`$${toHexa2(fi.soundRegisters[10])}`}
-                  />
-                  <LabeledText
-                    label='Env Freq (Low):'
-                    value={`$${toHexa2(fi.soundRegisters[11])}`}
-                  />
-                </Row>
-                <Row>
-                  <LabeledText
-                    label='Env Freq (High):'
-                    value={`$${toHexa2(fi.soundRegisters[12])}`}
-                  />
-                  <LabeledText
-                    label='Env Shape:'
-                    value={`$${toHexa2(fi.soundRegisters[13])}`}
-                  />
-                  <LabeledText
-                    label='I/O Port A:'
-                    value={`$${toHexa2(fi.soundRegisters[14])}`}
-                  />
-                  <LabeledText
-                    label='I/O Port B:'
-                    value={`$${toHexa2(fi.soundRegisters[15])}`}
-                  />
-                </Row>
-              </ExpandableRow>
-              {fi.version === 3 && (
-                <>
-                  <ExpandableRow
-                    heading='Key Mappings'
-                    expanded={cvs?.keyMappingsExpanded ?? false}
-                    onExpanded={exp =>
-                      change(vs => (vs.keyMappingsExpanded = exp))
-                    }
-                  >
-                    <Row>
-                      <LabeledText
-                        label='Key #1 Row:'
-                        value={`$${toHexa2(fi.userJoystickMappings[1])}`}
-                      />
-                      <LabeledText
-                        label='Key #1 Mask:'
-                        value={`$${toHexa2(fi.userJoystickMappings[0])}`}
-                      />
-                      <LabeledText
-                        label='Key #1 Value:'
-                        value={`$${toHexa2(fi.keysMappings[0])}`}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledText
-                        label='Key #2 Row:'
-                        value={`$${toHexa2(fi.userJoystickMappings[3])}`}
-                      />
-                      <LabeledText
-                        label='Key #2 Mask:'
-                        value={`$${toHexa2(fi.userJoystickMappings[2])}`}
-                      />
-                      <LabeledText
-                        label='Key #2 Value:'
-                        value={`$${toHexa2(fi.keysMappings[2])}`}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledText
-                        label='Key #3 Row:'
-                        value={`$${toHexa2(fi.userJoystickMappings[5])}`}
-                      />
-                      <LabeledText
-                        label='Key #3 Mask:'
-                        value={`$${toHexa2(fi.userJoystickMappings[4])}`}
-                      />
-                      <LabeledText
-                        label='Key #3 Value:'
-                        value={`$${toHexa2(fi.keysMappings[4])}`}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledText
-                        label='Key #4 Row:'
-                        value={`$${toHexa2(fi.userJoystickMappings[7])}`}
-                      />
-                      <LabeledText
-                        label='Key #4 Mask:'
-                        value={`$${toHexa2(fi.userJoystickMappings[6])}`}
-                      />
-                      <LabeledText
-                        label='Key #4 Value:'
-                        value={`$${toHexa2(fi.keysMappings[6])}`}
-                      />
-                    </Row>
-                    <Row>
-                      <LabeledText
-                        label='Key #5 Row:'
-                        value={`$${toHexa2(fi.userJoystickMappings[9])}`}
-                      />
-                      <LabeledText
-                        label='Key #5 Mask:'
-                        value={`$${toHexa2(fi.userJoystickMappings[8])}`}
-                      />
-                      <LabeledText
-                        label='Key #5 Value:'
-                        value={`$${toHexa2(fi.keysMappings[8])}`}
-                      />
-                    </Row>
-                  </ExpandableRow>
-                </>
-              )}
-            </>
-          )}
 
-          {fi.dataBlocks.length > 0 &&
-            fi.dataBlocks.map((db, index) => (
-              <ExpandableRow
-                key={index}
-                heading={`Data Block Page #${db.pageNumber}: ${
-                  db.dataLength
-                } bytes ${db.compressed ? "(compressed)" : ""}`}
-                expanded={cvs?.datablocksExpanded?.[index] ?? false}
-                onExpanded={exp =>
-                  change(vs => {
-                    vs.datablocksExpanded ??= {};
-                    vs.datablocksExpanded[index] = exp;
-                  })
-                }
-              >
-                <MemoryDumpViewer
-                  documentSource={document.node.projectPath}
-                  contents={db.data}
-                  bank={db.pageNumber}
-                  iconTitle='Display Data Block Dump'
-                  idFactory={(documentSource: string) =>
-                    `z80DataBlockDump${documentSource}`
+            {fi.dataBlocks.length > 0 &&
+              fi.dataBlocks.map((db, index) => (
+                <ExpandableRow
+                  key={index}
+                  heading={`Data Block Page #${db.pageNumber}: ${
+                    db.dataLength
+                  } bytes ${db.compressed ? "(compressed)" : ""}`}
+                  expanded={cvs?.datablocksExpanded?.[index] ?? false}
+                  onExpanded={exp =>
+                    change(vs => {
+                      vs.datablocksExpanded ??= {};
+                      vs.datablocksExpanded[index] = exp;
+                    })
                   }
-                  titleFactory={(documentSource: string, bank: number) =>
-                    `${documentSource} - Data Block #${bank}`
-                  }
-                />
-              </ExpandableRow>
-            ))}
-        </>
-      );
+                >
+                  <MemoryDumpViewer
+                    documentSource={document.node.projectPath}
+                    contents={db.data}
+                    bank={db.pageNumber}
+                    iconTitle='Display Data Block Dump'
+                    idFactory={(documentSource: string) =>
+                      `z80DataBlockDump${documentSource}`
+                    }
+                    titleFactory={(documentSource: string, bank: number) =>
+                      `${documentSource} - Data Block #${bank}`
+                    }
+                  />
+                </ExpandableRow>
+              ))}
+          </>
+        );
+      }
     }
-  });
+  );
 };
 
 export const createZ80FileViewerPanel = ({

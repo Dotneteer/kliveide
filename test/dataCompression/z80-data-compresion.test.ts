@@ -1,6 +1,8 @@
 import "mocha";
+import * as fs from "fs";
 import { expect } from "expect";
 import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
 
 describe(".z80 file data compression", () => {
   it("Data compression without end marker #1", () => {
@@ -145,4 +147,14 @@ describe(".z80 file data compression", () => {
 
     expect(decomp).toStrictEqual(new Uint8Array([0x01, 0x3c, 0x3c, 0x3c, 0x3c, 0x02, 0x1a, 0x1a, 0x1a, 0xaa, 0xbb]));
   });
+
+  // it("Create Palette", () => {
+  //   const writer = new BinaryWriter();
+  //   for (let i = 0; i < 256; i++) {
+  //     writer.writeUint16(i);
+  //   }
+  //   fs.writeFileSync("myPalette.pal", writer.buffer);
+  //   writer.writeByte(0xe3);
+  //   fs.writeFileSync("myPalette.npl", writer.buffer);
+  // })
 });

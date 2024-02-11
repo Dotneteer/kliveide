@@ -16,14 +16,17 @@ export const DocumentArea = () => {
   const hubVersion = useDocumentHubServiceVersion(documentHubService);
   const projectViewStateVersion = useSelector(s => s.project?.projectViewStateVersion);
   const [activeDoc, setActiveDoc] = useState<ProjectDocumentState>(null);
+  const [viewState, setViewState] = useState<any>(null);
+  const [data, setData] = useState<string |Uint8Array>(null);
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    setActiveDoc(documentHubService?.getActiveDocument());
+    const doc = documentHubService?.getActiveDocument()
+    setActiveDoc(doc);
+    const viewState = documentHubService?.getDocumentViewState(doc?.id);
+    setViewState(viewState);
+    setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);
-
-  const data = activeDoc?.contents;
-  const viewState = documentHubService.getDocumentViewState(activeDoc?.id);
 
   return (
     <DocumentHubServiceProvider value={documentHubService}>

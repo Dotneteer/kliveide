@@ -7,41 +7,42 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 // --- Generic file viewer panel state
-type GenericFileViewerViewState = {
+type GenericFileEditorViewState = {
   scrollPosition?: number;
 };
 
 // --- Context to pass for concrete file panel renderers
-type GenericFileViewerContext<
+export type GenericFileEditorContext<
   TFile,
-  TState extends GenericFileViewerViewState
+  TState extends GenericFileEditorViewState
 > = {
   fileInfo?: TFile;
   fileError?: string;
   valid: boolean;
   initialized: boolean;
   appServices: AppServices;
+  saveToFile: (contents: Uint8Array) => Promise<void>;
   changeViewState: (setter: (vs: TState) => void) => void;
 };
 
 // --- Properties of a generic file panel renderer
-type GenericFileViewerProps<
+type GenericFileEditorProps<
   TFile,
-  TState extends GenericFileViewerViewState
+  TState extends GenericFileEditorViewState
 > = DocumentProps<TState> & {
   fileLoader: (contents: Uint8Array) => { fileInfo?: TFile; error?: string };
   invalidRenderer?: (
-    context: GenericFileViewerContext<TFile, TState>
+    context: GenericFileEditorContext<TFile, TState>
   ) => JSX.Element;
   validRenderer?: (
-    context: GenericFileViewerContext<TFile, TState>
+    context: GenericFileEditorContext<TFile, TState>
   ) => JSX.Element;
 };
 
 // --- Generic file viewer panel renderer function
-export function GenericFileViewerPanel<
+export function GenericFileEditorPanel<
   TFile,
-  TState extends GenericFileViewerViewState
+  TState extends GenericFileEditorViewState
 > ({
   document,
   contents,
@@ -49,17 +50,18 @@ export function GenericFileViewerPanel<
   fileLoader,
   invalidRenderer,
   validRenderer
-}: GenericFileViewerProps<TFile, TState>) {
+}: GenericFileEditorProps<TFile, TState>) {
   // --- Initial view state
   const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
   const documentHubService = useDocumentHubService();
+  const { projectService } = useAppServices();
 
   const [fileInfo, setFileInfo] = useState<TFile>();
   const [fileError, setFileError] = useState<string>();
   const [initialized, setInitialized] = useState<boolean>(false);
   const [valid, setValid] = useState<boolean>(true);
   const [context, setContext] =
-    useState<GenericFileViewerContext<TFile, TState>>();
+    useState<GenericFileEditorContext<TFile, TState>>(null);
 
   // --- We pass AppServices to the context
   const appServices = useAppServices();
@@ -88,10 +90,11 @@ export function GenericFileViewerPanel<
     }
   }, [currentViewState]);
 
-  // --- Update the context
+  // --- Refresh the context
   useEffect(() => {
     if (initialized) {
-      setContext({
+      const newContext = 
+      {
         fileInfo,
         fileError,
         valid,
@@ -101,8 +104,12 @@ export function GenericFileViewerPanel<
           const newViewState = { ...currentViewState };
           setter(newViewState);
           setCurrentViewState(newViewState);
+        },
+        saveToFile: async (contents: Uint8Array) => {
+          await projectService.saveFileContent(document.id, contents);
         }
-      });
+      };
+      setContext(newContext);
     }
   }, [fileInfo, fileError, valid, initialized, currentViewState]);
 

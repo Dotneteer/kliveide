@@ -21,9 +21,9 @@ export const DocumentsContainer = ({
   apiLoaded
 }: DocumentProps) => {
   // --- Get the document's renderer from the registry
-  const docRenderer = documentPanelRegistry.find(
+  const docRenderer = {...documentPanelRegistry.find(
     dp => dp.id === document?.type
-  );
+  )};
 
   if (docRenderer) {
     document.iconName ||= docRenderer.icon;

@@ -7,7 +7,7 @@ import { Row } from "@renderer/controls/generic/Row";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
-import { useEffect, useRef, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import classnames from "@renderer/utils/classnames";
@@ -28,7 +28,7 @@ const StaticMemoryDump = ({
   contents,
   viewState
 }: DocumentProps<MemoryDumpViewState>) => {
-  return GenericViewerPanel<MemoryDumpViewState>({
+  return createElement(GenericViewerPanel<MemoryDumpViewState>, {
     saveScrollTop: false,
     document,
     contents,
@@ -41,8 +41,6 @@ const StaticMemoryDump = ({
             onAddressSent={async address => {
               context.changeViewState(vs => (vs.topAddress = address));
               context.update(address);
-              // setTopAddress(Math.floor(address / 8));
-              // setScrollVersion(scrollVersion + 1);
             }}
           />
           <LabelSeparator width={8} />
@@ -67,10 +65,10 @@ const StaticMemoryDump = ({
       }, [contents]);
 
       useInitializeAsync(async () => {
-        if (context.currentViewState?.scrollPosition) {
+        if (viewState?.scrollPosition) {
           await new Promise(resolve => setTimeout(resolve, 40));
           vlApi.current?.scrollToOffset(
-            context.currentViewState.scrollPosition
+            viewState.scrollPosition
           );
         }
       });
