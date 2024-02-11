@@ -21,6 +21,7 @@ export type GenericFileEditorContext<
   valid: boolean;
   initialized: boolean;
   appServices: AppServices;
+  saveToFile: (contents: Uint8Array) => Promise<void>;
   changeViewState: (setter: (vs: TState) => void) => void;
 };
 
@@ -53,6 +54,7 @@ export function GenericFileEditorPanel<
   // --- Initial view state
   const [currentViewState, setCurrentViewState] = useState<TState>(viewState);
   const documentHubService = useDocumentHubService();
+  const { projectService } = useAppServices();
 
   const [fileInfo, setFileInfo] = useState<TFile>();
   const [fileError, setFileError] = useState<string>();
@@ -102,6 +104,9 @@ export function GenericFileEditorPanel<
           const newViewState = { ...currentViewState };
           setter(newViewState);
           setCurrentViewState(newViewState);
+        },
+        saveToFile: async (contents: Uint8Array) => {
+          await projectService.saveFileContent(document.id, contents);
         }
       };
       setContext(newContext);

@@ -6,6 +6,7 @@ import {
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { PaletteEditor } from "./PaletteEditor";
 import { createElement, useState } from "react";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
 
 type PalFileViewState = {
   scrollPosition?: number;
@@ -20,8 +21,6 @@ const PalFileEditorPanel = ({
   const validRenderer: (
     context: GenericFileEditorContext<PalFileContents, PalFileViewState>
   ) => JSX.Element = context => {
-    const projectService = context.appServices.projectService;
-    const documentSource = document.node.projectPath;
     return (
       <PaletteEditor
         palette={context.fileInfo?.palette}
@@ -31,6 +30,9 @@ const PalFileEditorPanel = ({
         onChange={index =>
           context.changeViewState(vs => (vs.selectedIndex = index))
         }
+        onUpdated={async (palette, transparencyIndex) => {
+          await context.saveToFile(savePalFileContents(palette, transparencyIndex));
+        }}
       />
     );
   };
@@ -79,6 +81,17 @@ function loadPalFileContents (contents: Uint8Array): {
     return { error: err.message };
   }
   return { fileInfo: { palette, transparencyIndex } };
+}
+
+function savePalFileContents (palette: number[], transparencyIndex?: number): Uint8Array {
+  const writer = new BinaryWriter();
+  for (let i = 0; i < 256; i++) {
+    writer.writeUint16(palette[i]);
+  }
+  if (transparencyIndex !== undefined && transparencyIndex !== null) {
+    writer.writeByte(transparencyIndex);
+  }
+  return new Uint8Array(writer.buffer);
 }
 
 type PalFileContents = {

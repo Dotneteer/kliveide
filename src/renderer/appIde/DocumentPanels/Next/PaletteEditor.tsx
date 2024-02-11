@@ -22,6 +22,7 @@ type Props = {
   initialTransparencyIndex?: number;
   initialIndex?: number;
   onChange?: (index: number) => void;
+  onUpdated?: (palette: number[], transparencyIndex?: number) => void;
   allowTransparencySelection?: boolean;
 };
 
@@ -33,6 +34,7 @@ export const PaletteEditor = ({
   initialTransparencyIndex,
   initialIndex,
   onChange,
+  onUpdated,
   allowTransparencySelection = true
 }: Props) => {
   const [use8Bit, setUse8Bit] = useState(false);
@@ -114,12 +116,13 @@ export const PaletteEditor = ({
     // --- Add the edit step to the stack
     if (editStack.length === 0) {
       setEditStack([
-        { index: selectedIndex, oldValue: oldColorValue, newValue: colorValue }
+        { type: "color", index: selectedIndex, oldValue: oldColorValue, newValue: colorValue }
       ]);
       setEditStackIndex(0);
     } else {
       const clonedStack = editStack.slice(0);
       clonedStack.push({
+        type: "color",
         index: selectedIndex,
         oldValue: oldColorValue,
         newValue: colorValue
@@ -127,6 +130,38 @@ export const PaletteEditor = ({
       setEditStack(clonedStack);
       setEditStackIndex(clonedStack.length - 1);
     }
+    onUpdated?.(palette, transparencyIndex);
+  };
+
+  const updateTransparencyIndex = (index: number | null) => {
+    if (index === transparencyIndex) {
+      return;
+    }
+
+    // --- Add the edit step to the stack
+    if (editStack.length === 0) {
+      setEditStack([
+        {
+          type: "transparency",
+          index: index,
+          oldValue: transparencyIndex,
+          newValue: index
+        }
+      ]);
+      setEditStackIndex(0);
+    } else {
+      const clonedStack = editStack.slice(0);
+      clonedStack.push({
+        type: "transparency",
+        index: index,
+        oldValue: transparencyIndex,
+        newValue: index
+      });
+      setEditStack(clonedStack);
+      setEditStackIndex(clonedStack.length - 1);
+    }
+    setTransparencyIndex(index);
+    onUpdated?.(palette, index);
   };
 
   // --- Implement Undo operation
@@ -135,7 +170,11 @@ export const PaletteEditor = ({
       return;
     }
     const edit = editStack[editStackIndex];
-    palette[edit.index] = edit.oldValue;
+    if (edit.type === "transparency") {
+      setTransparencyIndex(edit.oldValue);
+    } else {
+      palette[edit.index] = edit.oldValue;
+    }
     setEditStackIndex(editStackIndex - 1);
     setSelectedIndex(edit.index);
     setVersion(version + 1);
@@ -147,7 +186,11 @@ export const PaletteEditor = ({
       return;
     }
     const edit = editStack[editStackIndex + 1];
-    palette[edit.index] = edit.newValue;
+    if (edit.type === "transparency") {
+      setTransparencyIndex(edit.newValue);
+    } else {
+      palette[edit.index] = edit.newValue;
+    }
     setEditStackIndex(editStackIndex + 1);
     setSelectedIndex(edit.index);
     setVersion(version + 1);
@@ -164,12 +207,12 @@ export const PaletteEditor = ({
         break;
       case "KeyT":
         if (allowTransparencySelection && selectedIndex !== undefined) {
-          setTransparencyIndex(selectedIndex);
+          updateTransparencyIndex(selectedIndex);
         }
         break;
       case "KeyC":
         if (allowTransparencySelection) {
-          setTransparencyIndex(null);
+          updateTransparencyIndex(null);
         }
         break;
     }
@@ -350,6 +393,9 @@ export const PaletteEditor = ({
                 <LabeledText label='Key T, C:' value='Set/Reset transparency' />
               </Row>
             )}
+            <Row>
+              <LabeledText label='(Shift +) TAB:' value='Move focus' />
+            </Row>
           </Column>
         </div>
         <NextPaletteViewer
@@ -467,7 +513,8 @@ const ColorItem = ({
 
 // --- Represents an edit step
 type EditInfo = {
+  type: "color" | "transparency";
   index: number;
-  oldValue: number;
-  newValue: number;
+  oldValue?: number;
+  newValue?: number;
 };
