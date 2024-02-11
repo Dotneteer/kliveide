@@ -1,18 +1,22 @@
 @import "@styles/core.scss";
 
-.panel {
-  @include fill-parent-flex;
+.editorPanel {
+  display: flex;
   box-sizing: border-box;
-  flex-direction: column;
+  flex-direction: row;
   user-select: none;
   font-size: 0.8em;
+  align-items: start;
+  font-size: 1em;
+  padding-top: 0;
+  padding-bottom: 0;
+  background-color: var(--bgcolor-editors);
 }
 
-.header {
-  @include fix-height-panel(30px);
+.headerRow {
+  display: flex;
   flex-direction: row;
   align-items: center;
-  padding-left: 4px;
-  flex-shrink: 0;
-  flex-grow: 0;
+  outline: none;
+  border-top: none;
 }
