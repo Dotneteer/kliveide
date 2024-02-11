@@ -16,7 +16,7 @@ export interface IZ88Machine extends IZ80Machine {
   get romId(): string;
 
   /**
-   * (Z88) The physical memory of the machine
+   * The physical memory of the machine
    */
   readonly memory: Z88BankedMemory;
 
@@ -61,4 +61,25 @@ export interface IZ88Machine extends IZ80Machine {
    * @param absAddress Absolute memory address
    */
   directReadMemory(absAddress: number): number;
+
+  /**
+   * The Blink only fires an IM 1 interrupt when the flap is opened and when
+   * INT.FLAP is enabled. Both STA.FLAPOPEN and STA.FLAP is set at the time of
+   * the interrupt. As long as the flap is open, no STA.TIME interrupts gets
+   * out of the Blink (even though INT.TIME may be enabled and signals it to
+   * fire those RTC interrupts). The Flap interrupt is only fired once; when
+   * the flap is closed, and then opened. STA.FLAPOPEN remains enabled as long
+   * as the flap is open; when the flap is closed, NO interrupt is fired -
+   * only STA.FLAPOPEN is set to 0.
+   */
+  signalFlapOpened(): void;
+
+  /**
+   * Signal that the flap was closed.<p> The Blink will start to fire STA.TIME
+   * interrupts again if the INT.TIME is enabled and TMK has been setup to
+   * fire Minute, Second or TICK's.
+   *
+   * This is not an interrupt (but Z80 goes out of snooze), only the STA.FLAPOPEN bit set to 0
+   */
+  signalFlapClosed(): void;
 }

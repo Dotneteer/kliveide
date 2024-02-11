@@ -1,3 +1,72 @@
+import { IZ88MemoryCard } from "./IZ88MemoryCard";
+import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
+import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
+import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";
+
+export const CARD_SIZE_EMPTY = "-";
+export const CARD_SIZE_32K = "32K";
+export const CARD_SIZE_128K = "128K";
+export const CARD_SIZE_512K = "512K";
+export const CARD_SIZE_1M = "1M";
+export const CT_ROM = "ROM";
+export const CT_RAM = "RAM";
+export const CT_EPROM = "EPROM";
+export const CT_INTEL_FLASH = "FLASH";
+
+/**
+ * Creates a new memory card for the Z88
+ * @param host The host machine
+ * @param size The size of the card
+ * @param type The type of the card
+ * @returns The new memory card
+ */
+export function createZ88MemoryCard (
+  host: IZ88Machine,
+  size: string,
+  type: string,
+): IZ88MemoryCard {
+  // --- Get the physical size of the card
+  let cardSize = 0;
+  switch (size) {
+    case CARD_SIZE_32K:
+      cardSize = 32 * 1024;
+      break;
+    case CARD_SIZE_128K:
+      cardSize = 128 * 1024;
+      break;
+    case CARD_SIZE_512K:
+      cardSize = 512 * 1024;
+      break;
+    case CARD_SIZE_1M:
+      cardSize = 1024 * 1024;
+      break;
+    default:
+      throw new Error(`Invalid card size: ${size}`);
+  }
+
+  // --- Instantiate the card
+  let card: IZ88MemoryCard | undefined
+  switch (type) {
+    case CT_RAM:
+      card = new Z88RamMemoryCard(host, cardSize);
+      break;
+    case CT_ROM:
+      card = new Z88RomMemoryCard(host, cardSize); 
+      break; 
+    case CT_EPROM:
+      card = new Z88UvEpromMemoryCard(host, cardSize);
+      break;
+    case CT_INTEL_FLASH:
+      card = new Z88IntelFlashMemoryCard(host, cardSize);
+      break;
+    default:
+      throw new Error(`Unknown card type: ${type}`);
+  }
+  return card;
+}
+
 /**
  * Hardware card (types), manufactured for the Cambridge Z88
  */

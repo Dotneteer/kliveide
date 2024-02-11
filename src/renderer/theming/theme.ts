@@ -33,6 +33,7 @@ export type ThemeProperties = {
   "--color-dropdown-menu"?: string;
   "--bg-color-dropdown-menu-pointed"?: string;
   "--bg-color-dropdown-menu-selected"?: string;
+  "--border-color-dropdown-menu"?: string;
 
   // --- checkbox
   "--bgcolor-checkbox"?: string;

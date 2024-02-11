@@ -152,7 +152,23 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("custom", "battery_low"));
       }
-    }
+    },
+    {
+      id: "z88_flap_open",
+      label: "Flap open",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "flap_open"));
+      }
+    },
+    {
+      id: "z88_flap_close",
+      label: "Flap close",
+      enabled: execState === MachineControllerState.Running,
+      click: async () => {
+        await sendFromMainToEmu(createMachineCommand("custom", "flap_close"));
+      }
+    },
   ];
 };
 
@@ -251,7 +267,7 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     },
     {
       id: "z88_insert_card",
-      label: "Insert or remove card",
+      label: "Insert or remove card...",
       click: async () => {
         mainStore.dispatch(displayDialogAction(Z88_CARDS_DIALOG));
       }
@@ -291,20 +307,15 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
  * @returns File contents or error message
  */
 export async function checkZ88SlotFile (
-  filename: string
+  filename: string,
+  expectedSize?: number
 ): Promise<string | Uint8Array> {
   try {
     const contents = Uint8Array.from(fs.readFileSync(filename));
 
     // --- Check contents length
-    if (
-      contents.length !== 0x10_0000 &&
-      contents.length !== 0x08_0000 &&
-      contents.length !== 0x04_0000 &&
-      contents.length !== 0x02_0000 &&
-      contents.length !== 0x00_8000
-    ) {
-      return `Invalid card file length: ${contents.length}. The card file length can be 32K, 128K, 256K, 512K, or 1M.`;
+    if (expectedSize && expectedSize !== contents.length) {
+      return `Invalid card file length: ${contents.length}. The card file length should be ${expectedSize} bytes.`;
     }
 
     // --- Done: valid ROM

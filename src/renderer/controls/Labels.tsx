@@ -107,7 +107,7 @@ export const Flag = ({
           value === undefined
             ? "close"
             : value
-            ? "circle-large-filled"
+            ? "circle-filled"
             : "circle-outline"
         }
         width={16}

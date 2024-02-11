@@ -9,28 +9,64 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { delay } from "@renderer/utils/timing";
-import {
-  setMachineConfigAction,
-  setMachineSpecificAction
-} from "@common/state/actions";
+import { setMachineConfigAction } from "@common/state/actions";
 import {
   MC_Z88_SLOT1,
   MC_Z88_SLOT2,
   MC_Z88_SLOT3
 } from "@common/machines/constants";
+import { LabelSeparator } from "@renderer/controls/Labels";
+import {
+  CARD_SIZE_128K,
+  CARD_SIZE_1M,
+  CARD_SIZE_32K,
+  CARD_SIZE_512K,
+  CARD_SIZE_EMPTY,
+  CT_EPROM,
+  CT_INTEL_FLASH,
+  CT_RAM,
+  CT_ROM
+} from "@emu/machines/z88/memory/CardType";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { IMachineController } from "@renderer/abstractions/IMachineController";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 // --- ID of the open file dialog path
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
-const cardData = [
-  { value: "empty", label: "<no card>" },
-  { value: "32K", label: "32K RAM" },
-  { value: "128K", label: "128K RAM" },
-  { value: "512K", label: "512K RAM" },
-  { value: "1M", label: "1M RAM" },
-  { value: "eprom", label: "EPROM" }
+type OptionProps = {
+  label: string;
+  value: string;
+  dependsOn?: string[];
+  hasContent?: boolean;
+};
+
+const cardSizeOptions = [
+  { value: CARD_SIZE_EMPTY, label: "(empty)", physicalSize: 0 },
+  { value: CARD_SIZE_32K, label: "32K", physicalSize: 32 * 1024 },
+  { value: CARD_SIZE_128K, label: "128K", physicalSize: 128 * 1024 },
+  { value: CARD_SIZE_512K, label: "512K", physicalSize: 512 * 1024 },
+  { value: CARD_SIZE_1M, label: "1M", physicalSize: 1024 * 1024 }
+];
+
+const cardTypeOptions: OptionProps[] = [
+  { value: CT_RAM, label: "RAM" },
+  { value: CT_ROM, label: "ROM", hasContent: true },
+  {
+    value: CT_EPROM,
+    label: "Eprom",
+    dependsOn: ["32K", "128K"],
+    hasContent: true
+  },
+  {
+    value: CT_INTEL_FLASH,
+    label: "Intel Flash",
+    dependsOn: ["512K", "1M"],
+    hasContent: true
+  }
 ];
 
 type Props = {
@@ -38,17 +74,24 @@ type Props = {
 };
 
 export const Z88CardsDialog = ({ onClose }: Props) => {
+  const { machineService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const { store, messageSource } = useRendererContext();
   const machineConfig = store.getState().emulatorState?.config ?? {};
   const initialState = {
-    [MC_Z88_SLOT1]: machineConfig[MC_Z88_SLOT1] ?? { content: "empty" },
-    [MC_Z88_SLOT2]: machineConfig[MC_Z88_SLOT2] ?? { content: "empty" },
-    [MC_Z88_SLOT3]: machineConfig[MC_Z88_SLOT3] ?? { content: "empty" }
+    [MC_Z88_SLOT1]: machineConfig[MC_Z88_SLOT1] ?? { size: CARD_SIZE_EMPTY },
+    [MC_Z88_SLOT2]: machineConfig[MC_Z88_SLOT2] ?? { size: CARD_SIZE_EMPTY },
+    [MC_Z88_SLOT3]: machineConfig[MC_Z88_SLOT3] ?? { size: CARD_SIZE_EMPTY }
   };
   const [newState, setNewState] = useState<Z88CardsState>(
     initialState as Z88CardsState
   );
+  const [saveEnabled, setSaveEnabled] = useState(false);
+
+  useEffect(() => {
+    setSaveEnabled(slotStateValid());
+  }, [newState]);
+
   return (
     <Modal
       title='Insert or Remove Z88 Cards'
@@ -57,9 +100,10 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       width={600}
       onApiLoaded={api => (modalApi.current = api)}
       initialFocus='cancel'
+      primaryEnabled={saveEnabled}
       onPrimaryClicked={async () => {
-        if (slotStateChanged()) {
-          applyCardStateChange();
+        if (hasCardConfigChanged()) {
+          applyCardStateChange(machineService.getMachineController());
         }
         return false;
       }}
@@ -95,18 +139,29 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
     </Modal>
   );
 
-  function slotStateChanged (): boolean {
+  function hasCardConfigChanged (): boolean {
     return (
-      initialState.slot1.content !== newState.slot1.content ||
-      initialState.slot1.epromFile !== newState.slot1.epromFile ||
-      initialState.slot2.content !== newState.slot2.content ||
-      initialState.slot2.epromFile !== newState.slot2.epromFile ||
-      initialState.slot3.content !== newState.slot3.content ||
-      initialState.slot3.epromFile !== newState.slot3.epromFile
+      hasSlotChanged(initialState.slot1, newState.slot1) ||
+      hasSlotChanged(initialState.slot2, newState.slot2) ||
+      hasSlotChanged(initialState.slot3, newState.slot3)
+    );
+
+    function hasSlotChanged (a: SlotState, b: SlotState): boolean {
+      return a.size !== b.size || a.content !== b.content || a.file !== b.file;
+    }
+  }
+
+  function slotStateValid (): boolean {
+    return (
+      isValidSlot(newState.slot1) &&
+      isValidSlot(newState.slot2) &&
+      isValidSlot(newState.slot3)
     );
   }
 
-  async function applyCardStateChange (): Promise<void> {
+  async function applyCardStateChange (
+    controller: IMachineController
+  ): Promise<void> {
     // --- Save the new change
     const machineConfig = store.getState().emulatorState.config ?? {};
     store.dispatch(
@@ -114,22 +169,14 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       messageSource
     );
 
-    // TODO: Apply the card state change
-    let changed = false;
-    let useSoftReset = true;
-  }
-
-  // --- Check if slot content change requires a soft reset
-  function requiresSoftReset (
-    oldContent: SlotContent,
-    newContent: SlotContent
-  ): boolean {
-    return (
-      (oldContent === "eprom" && newContent === "empty") ||
-      (oldContent === "empty" && newContent === "eprom") ||
-      (oldContent === "empty" && newContent === "empty") ||
-      (oldContent === "eprom" && newContent === "eprom")
-    );
+    const machine = controller.machine as IZ88Machine;
+    machine.dynamicConfig = newState;
+    if (controller.state === MachineControllerState.Running) {
+      machine.signalFlapOpened();
+      await delay(1000);
+      await machine.configure();
+      machine.signalFlapClosed();
+    }
   }
 };
 
@@ -143,71 +190,131 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
   const { messenger } = useRendererContext();
   const [slotState, setSlotState] = useState<SlotState>(initialState);
 
+  const getCardTypes = (size: string) => {
+    return cardTypeOptions.filter(
+      co => !!size && (!co.dependsOn || co.dependsOn.includes(size))
+    );
+  };
+
+  const [cardTypes, setCardTypes] = useState<OptionProps[]>(
+    getCardTypes(initialState.size)
+  );
+
   const hasNewState = () =>
+    slotState.size !== initialState.size ||
     slotState.content !== initialState.content ||
-    slotState.epromFile !== initialState.epromFile;
+    slotState.file !== initialState.file;
+
   return (
     <div className={styles.column}>
       <div className={styles.labelRow}>
         <div className={styles.slotLabel}>Slot {slot}</div>
-        {hasNewState() && (
-          <Icon
-            iconName='circle-filled'
-            fill='--color-text-hilite'
-            width={16}
-            height={16}
+        <Icon
+          iconName={hasNewState() ? "circle-filled" : "empty-icon"}
+          fill={
+            isValidSlot(slotState)
+              ? "--color-text-hilite"
+              : "--console-ansi-bright-red"
+          }
+          width={16}
+          height={16}
+        />
+        {slotState.file && (
+          <Filename
+            file={slotState.file}
+            size={slotState.size}
+            changed={async (name: string) => {
+              const newSlotState: SlotState = {
+                ...slotState,
+                file: name
+              };
+              setSlotState(newSlotState);
+              changed?.(newSlotState);
+            }}
           />
         )}
       </div>
       <div className={styles.row}>
         <Dropdown
-          placeholder='Select...'
-          options={cardData}
-          value={initialState.content}
-          width={168}
+          placeholder='Size...'
+          options={cardSizeOptions}
+          value={slotState.size}
+          width={100}
           onSelectionChanged={async option => {
+            // --- Back if size is the same
             if (option === slotState.content) return;
-            let filename: string | undefined;
-            if (option === "eprom") {
-              await delay(10);
-              filename = await getCardFile(messenger);
-              if (!filename) {
-                return true;
-              }
-            }
+
+            // --- Prepare the new slot record
             const newSlotState: SlotState = {
               ...slotState,
-              content: option as SlotContent,
-              epromFile: filename
+              size: option
             };
 
+            const newCardTypes = getCardTypes(option);
+            if (slotState.size !== newSlotState.size) {
+              // --- This is a new size
+              const newCard = newCardTypes.find(
+                ct => ct.value === slotState.content
+              );
+              if (!newCard || newCard.hasContent) {
+                // --- The old content is not valid for the new size
+                delete newSlotState.content;
+                delete newSlotState.file;
+              }
+            }
+            setCardTypes(newCardTypes);
+
+            // --- Now, validate the slot again
             setSlotState(newSlotState);
             changed?.(newSlotState);
           }}
         />
-        <Filename
-          file={slotState.epromFile}
-          changed={async (name: string) => {
-            const newSlotState: SlotState = {
-              ...slotState,
-              epromFile: name
-            };
-            setSlotState(newSlotState);
-            changed?.(newSlotState);
-          }}
-        />
+        {slotState.size && slotState.size !== CARD_SIZE_EMPTY && (
+          <>
+            <LabelSeparator width={16} />
+            <Dropdown
+              placeholder='Type...'
+              options={cardTypes}
+              value={slotState.content}
+              width={180}
+              onSelectionChanged={async option => {
+                if (option === slotState.content) return;
+                const card = cardTypeOptions.find(ct => ct.value === option);
+                let filename: string | undefined;
+                if (card?.hasContent) {
+                  await delay(10);
+                  filename = await getCardFile(messenger, slotState.size);
+                  if (!filename) {
+                    return true;
+                  }
+                }
+                const newSlotState: SlotState = {
+                  ...slotState,
+                  content: option,
+                  file: filename
+                };
+
+                // --- Now, validate the slot again
+                setSlotState(newSlotState);
+                changed?.(newSlotState);
+              }}
+            />
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 async function getCardFile (
-  messenger: MessengerBase
+  messenger: MessengerBase,
+  size: string
 ): Promise<string | undefined> {
   const response = await messenger.sendMessage({
     type: "MainShowOpenFileDialog",
     filters: [
-      { name: "ROM files", extensions: ["bin", "rom"] },
+      { name: "ROM files", extensions: ["bin", "rom", "epr"] },
+      { name: "EPROM files", extensions: ["epr"] },
       { name: "All Files", extensions: ["*"] }
     ],
     settingsId: Z88_CARDS_FOLDER_ID
@@ -220,9 +327,13 @@ async function getCardFile (
     reportUnexpectedMessageType(response.type);
   } else {
     // --- Check the selected file
+    const expectedSize = cardSizeOptions.find(
+      co => co.value === size
+    )?.physicalSize;
     const checkResponse = await messenger.sendMessage({
       type: "MainCheckZ88Card",
-      path: response.file
+      path: response.file,
+      expectedSize
     });
     if (checkResponse.type === "ErrorResponse") {
       reportMessagingError(
@@ -250,10 +361,11 @@ async function getCardFile (
 
 type FileNameProps = {
   file?: string;
+  size: string;
   changed: (name: string) => void;
 };
 
-const Filename = ({ file, changed }: FileNameProps) => {
+const Filename = ({ file, size, changed }: FileNameProps) => {
   const { messenger } = useRendererContext();
   return (
     <div
@@ -261,7 +373,7 @@ const Filename = ({ file, changed }: FileNameProps) => {
       style={{ cursor: file ? "pointer" : undefined }}
       onClick={async () => {
         if (!file) return;
-        const filename = await getCardFile(messenger);
+        const filename = await getCardFile(messenger, size);
         if (filename) changed?.(filename);
       }}
     >
@@ -276,16 +388,12 @@ const Filename = ({ file, changed }: FileNameProps) => {
 };
 
 /**
- * Available Z88 card slot states
- */
-export type SlotContent = "empty" | "32K" | "128K" | "512K" | "1M" | "eprom";
-
-/**
  * State of a particular slot
  */
 export type SlotState = {
-  content: SlotContent;
-  epromFile?: string;
+  size: string;
+  content: string;
+  file?: string;
 };
 
 /**
@@ -304,3 +412,8 @@ export type CardContent = {
   ramSize?: number;
   eprom?: Uint8Array;
 };
+
+// --- Helper function to check if a slot state is valid
+function isValidSlot (st: SlotState) {
+  return st.size === CARD_SIZE_EMPTY || (st.size && !!st.content);
+}

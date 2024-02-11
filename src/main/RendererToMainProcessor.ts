@@ -379,7 +379,7 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainCheckZ88Card":
-      const cardResult = await checkZ88SlotFile(message.path);
+      const cardResult = await checkZ88SlotFile(message.path, message.expectedSize);
       if (typeof cardResult === "string") {
         return {
           type: "MainCheckZ88CardResponse",
