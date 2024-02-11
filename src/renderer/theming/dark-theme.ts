@@ -212,5 +212,8 @@ export const darkTheme: ThemeProperties = {
 
   // --- Debugging
   "--bgcolor-debug-active-bp": "#ffff0032",
-  "--color-debug-unreachable-bp": "orange"
+  "--color-debug-unreachable-bp": "orange",
+
+  // --- Editors
+  "--bgcolor-editors": "#282828",
 };

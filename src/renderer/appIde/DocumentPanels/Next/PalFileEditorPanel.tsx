@@ -5,7 +5,7 @@ import {
 } from "../helpers/GenericFileEditorPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { PaletteEditor } from "./PaletteEditor";
-import { createElement, useState } from "react";
+import { createElement } from "react";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 
 type PalFileViewState = {

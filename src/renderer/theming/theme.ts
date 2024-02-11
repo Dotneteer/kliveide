@@ -210,8 +210,11 @@ export type ThemeProperties = {
   "--border-explorer-focused"?: string;
 
   // --- Debugging
-  "--bgcolor-debug-active-bp": string;
-  "--color-debug-unreachable-bp": string;
+  "--bgcolor-debug-active-bp"?: string;
+  "--color-debug-unreachable-bp"?: string;
+
+  // --- Editors
+  "--bgcolor-editors"?: string;
 };
 
 /**

@@ -16,6 +16,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Column } from "@renderer/controls/generic/Column";
+import { Panel } from "@renderer/controls/generic/Panel";
 
 type Props = {
   palette: number[];
@@ -264,7 +265,8 @@ export const PaletteEditor = ({
           )}
         </KeyHandler>
       </Row>
-      <Row xclass={styles.editorPanel}>
+      <Panel xclass={styles.editorPanel}>
+        <Row>
         <div className={styles.editorArea}>
           <Row>
             <div
@@ -390,7 +392,7 @@ export const PaletteEditor = ({
             </Row>
             {allowTransparencySelection && (
               <Row>
-                <LabeledText label='Key T, C:' value='Set/Reset transparency' />
+                <LabeledText label='Key T, C:' value='Set/reset transp.' />
               </Row>
             )}
             <Row>
@@ -415,7 +417,8 @@ export const PaletteEditor = ({
           selectedIndex={selectedIndex}
           onOtherKey={handleCommonKeys}
         />
-      </Row>
+        </Row>
+      </Panel>
     </>
   ) : null;
 };

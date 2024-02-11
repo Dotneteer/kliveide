@@ -208,5 +208,8 @@ export const lightTheme: ThemeProperties = {
 
   // --- Debugging
   "--bgcolor-debug-active-bp": "#ffff0032",
-  "--color-debug-unreachable-bp": "orange"
+  "--color-debug-unreachable-bp": "orange",
+
+  // --- Editors
+  "--bgcolor-editors": "#d8d8d8"
 };

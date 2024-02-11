@@ -11,14 +11,16 @@ import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
 import { KeyHandler } from "./generic/KeyHandler";
+import classnames from "@renderer/utils/classnames";
+import { s } from "nextra/dist/types-c8e621b7";
 
 type Props = {
   palette: number[];
+  smallDisplay?: boolean;
   use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
-  allowTransparencySelection?: boolean;
   onSelection?: (index: number) => void;
   selectedIndex?: number;
   onPriority?: (index: number) => void;
@@ -27,11 +29,11 @@ type Props = {
 
 export const NextPaletteViewer = ({
   palette,
+  smallDisplay = false,
   use8Bit = false,
   usePriority = false,
   transparencyIndex,
   allowSelection,
-  allowTransparencySelection,
   onSelection,
   onPriority,
   onOtherKey,
@@ -77,11 +79,20 @@ export const NextPaletteViewer = ({
         onSelection?.(newSelected);
       }}
     >
-      <Column width={510}>
+      <Column width={smallDisplay ? 346 : 480}>
         <Row>
-          <div className={styles.paletteRowLabel} />
+          <div
+            className={classnames(styles.paletteRowLabel, {
+              [styles.small]: smallDisplay
+            })}
+          />
           {indexes.map(idx => (
-            <div key={idx} className={styles.paletteColumnLabel}>
+            <div
+              key={idx}
+              className={classnames(styles.paletteColumnLabel, {
+                [styles.small]: smallDisplay
+              })}
+            >
               {toHexa2(idx)}
             </div>
           ))}
@@ -90,6 +101,7 @@ export const NextPaletteViewer = ({
           <PaletteRow
             key={idx}
             palette={palette}
+            smallDisplay={smallDisplay}
             firstIndex={idx * 0x10}
             use8Bit={use8Bit}
             usePriority={usePriority}
@@ -118,6 +130,7 @@ export const NextPaletteViewer = ({
 type PaletteRowProps = {
   firstIndex: number;
   palette: number[];
+  smallDisplay?: boolean;
   use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
@@ -130,6 +143,7 @@ type PaletteRowProps = {
 const PaletteRow = ({
   firstIndex,
   palette,
+  smallDisplay,
   use8Bit,
   usePriority,
   transparencyIndex,
@@ -140,13 +154,22 @@ const PaletteRow = ({
 }: PaletteRowProps) => {
   const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
   return (
-    <Row xclass={styles.paletteRow}>
-      <div className={styles.paletteRowLabel}>{toHexa2(firstIndex)}</div>
+    <Row
+      xclass={classnames(styles.paletteRow, { [styles.small]: smallDisplay })}
+    >
+      <div
+        className={classnames(styles.paletteRowLabel, {
+          [styles.small]: smallDisplay
+        })}
+      >
+        {toHexa2(firstIndex)}
+      </div>
       {indexes.map(idx => (
         <PaletteItem
           key={idx}
           index={firstIndex + idx}
           value={palette[firstIndex + idx]}
+          smallDisplay={smallDisplay}
           use8Bit={use8Bit}
           usePriority={usePriority}
           transparencyIndex={transparencyIndex}
@@ -163,6 +186,7 @@ const PaletteRow = ({
 type PaletteItemProps = {
   index: number;
   value: number;
+  smallDisplay?: boolean;
   use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
@@ -175,6 +199,7 @@ type PaletteItemProps = {
 const PaletteItem = ({
   index,
   value,
+  smallDisplay,
   use8Bit,
   usePriority,
   transparencyIndex,
@@ -187,6 +212,16 @@ const PaletteItem = ({
   const [r, setR] = useState(null);
   const [g, setG] = useState(null);
   const [b, setB] = useState(null);
+
+  const colorRect = smallDisplay
+    ? { x: 4, y: 2, width: 16, height: 12 }
+    : { x: 2, y: 2, width: 20, height: 18 };
+  const transpCircle = smallDisplay
+    ? { cx: 11, cy: 8, r: 4.5 }
+    : { cx: 12, cy: 11, r: 5.5 };
+  const selectionRect = smallDisplay
+    ? { x: 7, y: 4, width: 8, height: 8 }
+    : { x: 7, y: 6, width: 10, height: 10 };
 
   useInitialize(() => {
     const [rC, gC, bC] = getRgbPartsForPaletteCode(value, use8Bit);
@@ -202,7 +237,9 @@ const PaletteItem = ({
     <>
       <div
         ref={ref}
-        className={styles.paletteItem}
+        className={classnames(styles.paletteItem, {
+          [styles.small]: smallDisplay
+        })}
         style={{
           borderColor: hasPriority ? color : undefined,
           cursor: allowSelection ? "pointer" : undefined
@@ -219,16 +256,28 @@ const PaletteItem = ({
         }}
       >
         <svg>
-          <rect x={2} y={2} width={20} height={18} fill={color} />
+          <rect
+            x={colorRect.x}
+            y={colorRect.y}
+            width={colorRect.width}
+            height={colorRect.height}
+            fill={color}
+          />
           {index === transparencyIndex && (
-            <circle cx={12} cy={11} r={5.5} fill={midColor} fillOpacity={0.5} />
+            <circle
+              cx={transpCircle.cx}
+              cy={transpCircle.cy}
+              r={transpCircle.r}
+              fill={midColor}
+              fillOpacity={0.5}
+            />
           )}
           {allowSelection && index === selectedIndex && (
             <rect
-              x={7}
-              y={6}
-              width={10}
-              height={10}
+              x={selectionRect.x}
+              y={selectionRect.y}
+              width={selectionRect.width}
+              height={selectionRect.height}
               stroke={midColor}
               strokeWidth={2}
               fillOpacity={0.25}
