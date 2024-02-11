@@ -29,9 +29,7 @@ import {
   CT_RAM,
   CT_ROM
 } from "@emu/machines/z88/memory/CardType";
-import { useMachineController } from "@renderer/core/useMachineController";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { IMachineController } from "@renderer/abstractions/IMachineController";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -57,21 +55,15 @@ const cardSizeOptions = [
 const cardTypeOptions: OptionProps[] = [
   { value: CT_RAM, label: "RAM" },
   { value: CT_ROM, label: "ROM", hasContent: true },
-  { value: CT_EPROM, label: "Eprom (empty)", dependsOn: ["32K", "128K"] },
   {
-    value: CT_EPROM + "-C",
-    label: "Eprom (content)",
+    value: CT_EPROM,
+    label: "Eprom",
     dependsOn: ["32K", "128K"],
     hasContent: true
   },
   {
     value: CT_INTEL_FLASH,
-    label: "Intel Flash (empty)",
-    dependsOn: ["512K", "1M"]
-  },
-  {
-    value: CT_INTEL_FLASH + "-C",
-    label: "Intel Flash (content)",
+    label: "Intel Flash",
     dependsOn: ["512K", "1M"],
     hasContent: true
   }
@@ -321,7 +313,8 @@ async function getCardFile (
   const response = await messenger.sendMessage({
     type: "MainShowOpenFileDialog",
     filters: [
-      { name: "ROM files", extensions: ["bin", "rom"] },
+      { name: "ROM files", extensions: ["bin", "rom", "epr"] },
+      { name: "EPROM files", extensions: ["epr"] },
       { name: "All Files", extensions: ["*"] }
     ],
     settingsId: Z88_CARDS_FOLDER_ID

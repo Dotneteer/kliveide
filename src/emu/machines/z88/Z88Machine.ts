@@ -28,6 +28,8 @@ import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { CARD_SIZE_EMPTY, createZ88MemoryCard } from "./memory/CardType";
 import { SlotState } from "@renderer/appEmu/dialogs/Z88CardsDialog";
+import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
+import { Z88IntelFlashMemoryCard } from "./memory/Z88IntelFlashMemoryCard";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -169,6 +171,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     const romCard = new Z88RomMemoryCard(this, romContents.length);
     this.memory.insertCard(0, romCard, romContents);
 
+    // --- Configure the machine (using the dynamic configuration, too)
     this.configure();
   }
 
@@ -205,16 +208,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       // --- There is a card in the slot
       let contents: Uint8Array | undefined;
       let type = slot.content;
-      if (type.endsWith("-C")) {
-        type = type.substring(0, type.length - 2);
-      }
       const card = createZ88MemoryCard(machine, slot.size, type);
       if (slot.file) {
         contents = await machine.loadRomFromFile(slot.file);
-        console.log("Contents", contents);
       }
       machine.memory.insertCard(slotId, card, contents);
-      console.log(machine.memory.cards);
     }
   }
 

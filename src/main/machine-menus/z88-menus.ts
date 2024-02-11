@@ -267,7 +267,7 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     },
     {
       id: "z88_insert_card",
-      label: "Insert or remove card",
+      label: "Insert or remove card...",
       click: async () => {
         mainStore.dispatch(displayDialogAction(Z88_CARDS_DIALOG));
       }
