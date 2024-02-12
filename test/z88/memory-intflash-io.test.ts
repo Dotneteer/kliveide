@@ -24,7 +24,7 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
       // --- Insert 512K card in slot 3 (reset to FFh)
       mem.insertCard(3, i28F004S5);
 
-      // bind bottom bank of slot 3 into logical address space
+      // bind bottom bank of slot 3 into logical address space (SR3)
       m.blinkDevice.setSR3(0xc0);
 
       const value = m.memory.readMemory(addr);
@@ -51,10 +51,10 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
 
       // --- Create a 512K Intel 28F004S5 Flash Card
       const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
-      // --- Insert 512K card in slot 3 (reset to FFh)
+      // --- Insert 512K card in slot 2 (reset to FFh)
       mem.insertCard(2, i28F004S5);
 
-      // bind bottom bank of slot 2 into logical address space
+      // bind bottom bank of slot 2 into logical address space (SR3)
       m.blinkDevice.setSR3(0x80);
 
       const value = m.memory.readMemory(addr);
