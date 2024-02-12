@@ -136,6 +136,111 @@ const SprFileEditorPanel = ({
                 // TODO: Implement
               }}
             />
+            <SmallIconButton
+              iconName='@paste'
+              title={"Paste copied area"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@rotate'
+              title={"Rotate counter-clockwise"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@rotate-clockwise'
+              title={"Rotate clockwise"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@flip-vertical'
+              title={"Rotate clockwise"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@flip-horizontal'
+              title={"Rotate clockwise"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+          </KeyHandler>
+        </Row>
+        <Row>
+          <KeyHandler
+            xclass={styles.headerRow}
+            onKey={handleCommonKeys}
+            autofocus={true}
+          >
+            <SmallIconButton
+              iconName='@zoom-in'
+              title={"Zoom-in"}
+              enable={true}
+              clicked={() => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@zoom-out'
+              title={"Zoom-out"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <ToolbarSeparator small={true} />
+            <SmallIconButton
+              iconName='@duplicate'
+              title={"Duplicate sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@cut'
+              title={"Cut sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@move-left'
+              title={"Move sprite left"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@move-right'
+              title={"Move sprite right"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@plus'
+              title={"Add new sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
           </KeyHandler>
         </Row>
         <Panel xclass={styles.editorPanel}>
