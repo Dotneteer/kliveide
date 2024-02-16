@@ -20,3 +20,31 @@
   outline: none;
   border-top: none;
 }
+
+.editorArea {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
+  align-items: start;
+  padding: 0.2em;
+}
+
+.spriteGridWrapper {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow: auto;
+  padding-left: 8px;
+  padding-top: 8px;
+}
+
+.spriteEditorGrid {
+  background-color: var(--bgcolor-sprite-editor);
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow: auto;
+}

@@ -9,6 +9,7 @@ type Props = {
   fill?: string;
   rotate?: number;
   style?: CSSProperties;
+  opacity?: number;
 };
 
 /**
@@ -21,7 +22,8 @@ export const Icon = ({
   height = 24,
   fill,
   rotate,
-  style
+  style,
+  opacity = 1.0
 }: Props) => {
   const theme = useTheme();
 
@@ -37,6 +39,7 @@ export const Icon = ({
       width: `${width}px`,
       height: `${height}px`,
       fill: `${fillValue}`,
+      fillOpacity: opacity,
       transform: `rotate(${rotate ?? 0}deg)`,
       flexShrink: 0,
       flexGrow: 0
@@ -50,7 +53,7 @@ export const Icon = ({
         <img
           className={xclass}
           src={`data:image/${imageInfo.type};base64,${imageInfo.data}`}
-          style={{ ...styleValue, ...style }}
+          style={{ ...styleValue, ...style, opacity }}
         />
       );
     }

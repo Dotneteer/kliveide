@@ -114,7 +114,8 @@ export type ThemeProperties = {
   "--color-toolbarbutton-red"?: string;
   "--color-toolbar-separator"?: string;
   "--color-toolbarbutton-selected"?: string;
-
+  "--bgcolor-toolbarbutton-hover"?: string;
+  
   // --- Statusbar
   "--bgcolor-statusbar"?: string;
   "--color-statusbar-label"?: string;
@@ -215,6 +216,11 @@ export type ThemeProperties = {
 
   // --- Editors
   "--bgcolor-editors"?: string;
+
+  // --- Sprite editor
+  "--bgcolor-sprite-editor"?: string;
+  "--color-ruler-sprite-editor"?: string;
+  "--color-dash-sprite-editor"?: string;
 };
 
 /**

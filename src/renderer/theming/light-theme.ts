@@ -105,13 +105,14 @@ export const lightTheme: ThemeProperties = {
   // --- Toolbar
   "--bgcolor-toolbar": "#d8d8d8",
   "--bgcolor-keydown-toolbarbutton": "#d0d0d0",
-  "--bgcolor-toolbarbutton-disabled": "#a0a0a0",
+  "--bgcolor-toolbarbutton-disabled": "#303030",
   "--color-toolbarbutton": "#000000",
   "--color-toolbarbutton-green": "darkgreen",
   "--color-toolbarbutton-blue": "#007acc",
   "--color-toolbarbutton-red": "darkred",
   "--color-toolbar-separator": "#b0b0b0",
   "--color-toolbarbutton-selected": "#61a4d0",
+  "--bgcolor-toolbarbutton-hover": "#00000010",
 
   // --- Statusbar
   "--bgcolor-statusbar": "#61a4d0",
@@ -211,5 +212,10 @@ export const lightTheme: ThemeProperties = {
   "--color-debug-unreachable-bp": "orange",
 
   // --- Editors
-  "--bgcolor-editors": "#d8d8d8"
+  "--bgcolor-editors": "#d8d8d8",
+
+  // --- Sprite editor
+  "--bgcolor-sprite-editor": "#c0c0c0",
+  "--color-ruler-sprite-editor": "#606060",
+  "--color-dash-sprite-editor": "#e0e0e0"
 };

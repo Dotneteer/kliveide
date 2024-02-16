@@ -21,6 +21,7 @@ export type GenericFileEditorContext<
   valid: boolean;
   initialized: boolean;
   appServices: AppServices;
+  viewState: TState;
   saveToFile: (contents: Uint8Array) => Promise<void>;
   changeViewState: (setter: (vs: TState) => void) => void;
 };
@@ -100,6 +101,7 @@ export function GenericFileEditorPanel<
         valid,
         initialized,
         appServices,
+        viewState: currentViewState,
         changeViewState: (setter: (vs: TState) => void) => {
           const newViewState = { ...currentViewState };
           setter(newViewState);

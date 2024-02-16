@@ -35,7 +35,6 @@ export const darkTheme: ThemeProperties = {
   "--bg-color-dropdown-menu-selected": "#007acc",
   "--border-color-dropdown-menu": "#007acc",
 
-
   // --- Checkbox
   "--bgcolor-checkbox": "#282828",
   "--color-checkbox": "#00a0ff",
@@ -108,13 +107,14 @@ export const darkTheme: ThemeProperties = {
   // --- Toolbar
   "--bgcolor-toolbar": "#383838",
   "--bgcolor-keydown-toolbarbutton": "#303030",
-  "--bgcolor-toolbarbutton-disabled": "#606060",
+  "--bgcolor-toolbarbutton-disabled": "#d0d0d0",
   "--color-toolbarbutton": "white",
   "--color-toolbarbutton-green": "lightgreen",
   "--color-toolbarbutton-blue": "cyan",
   "--color-toolbarbutton-red": "red",
   "--color-toolbar-separator": "#686868",
   "--color-toolbarbutton-selected": "#007acc",
+  "--bgcolor-toolbarbutton-hover": "#ffffff10",
 
   // --- Statusbar
   "--bgcolor-statusbar": "#007acc",
@@ -216,4 +216,9 @@ export const darkTheme: ThemeProperties = {
 
   // --- Editors
   "--bgcolor-editors": "#282828",
+
+  // --- Sprite editor
+  "--bgcolor-sprite-editor": "#383838",
+  "--color-ruler-sprite-editor": "#a0a0a0",
+  "--color-dash-sprite-editor": "#101010"
 };
