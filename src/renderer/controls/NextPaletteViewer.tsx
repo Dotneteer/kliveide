@@ -79,23 +79,26 @@ export const NextPaletteViewer = ({
         onSelection?.(newSelected);
       }}
     >
-      <Column width={smallDisplay ? 346 : 480}>
+      <Column width={smallDisplay ? 324 : 480}>
         <Row>
-          <div
-            className={classnames(styles.paletteRowLabel, {
-              [styles.small]: smallDisplay
-            })}
-          />
-          {indexes.map(idx => (
+          {!smallDisplay && (
             <div
-              key={idx}
-              className={classnames(styles.paletteColumnLabel, {
+              className={classnames(styles.paletteRowLabel, {
                 [styles.small]: smallDisplay
               })}
-            >
-              {toHexa2(idx)}
-            </div>
-          ))}
+            />
+          )}
+          {!smallDisplay &&
+            indexes.map(idx => (
+              <div
+                key={idx}
+                className={classnames(styles.paletteColumnLabel, {
+                  [styles.small]: smallDisplay
+                })}
+              >
+                {toHexa2(idx)}
+              </div>
+            ))}
         </Row>
         {indexes.map(idx => (
           <PaletteRow
@@ -157,13 +160,15 @@ const PaletteRow = ({
     <Row
       xclass={classnames(styles.paletteRow, { [styles.small]: smallDisplay })}
     >
-      <div
-        className={classnames(styles.paletteRowLabel, {
-          [styles.small]: smallDisplay
-        })}
-      >
-        {toHexa2(firstIndex)}
-      </div>
+      {!smallDisplay && (
+        <div
+          className={classnames(styles.paletteRowLabel, {
+            [styles.small]: smallDisplay
+          })}
+        >
+          {toHexa2(firstIndex)}
+        </div>
+      )}
       {indexes.map(idx => (
         <PaletteItem
           key={idx}

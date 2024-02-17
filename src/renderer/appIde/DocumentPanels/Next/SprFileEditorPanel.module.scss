@@ -70,15 +70,19 @@
   border-bottom: 2px solid transparent;
   height: fit-content;
   padding: 2px 0;
+  margin: 0;
 
   &.separated {
-    border-left: 2px solid transparent;
-    border-right: 2px solid transparent;
     padding-left: 2px;
     padding-right: 2px;
+    border-left: 2px solid transparent;
+    border-right: 2px solid transparent;
+    margin-left: 1px;
+    margin-right: 1px;
   }
 
-  &:hover, &.selected {
-    border-color: var(--color-text-hilite)
+  &:hover,
+  &.selected {
+    border-color: var(--color-text-hilite);
   }
 }

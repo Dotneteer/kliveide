@@ -73,6 +73,7 @@ export const ScreenCanvas = ({
     shadowImageData.data.set(imageBuffer8);
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
+      screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
       screenCtx.imageSmoothingEnabled = false;
       screenCtx.drawImage(
         shadowScreenEl,
