@@ -5,7 +5,7 @@ import {
   GenericFileEditorPanel
 } from "../helpers/GenericFileEditorPanel";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { createElement } from "react";
+import { createElement, memo, useRef } from "react";
 import { Row } from "@renderer/controls/generic/Row";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { Panel } from "@renderer/controls/generic/Panel";
@@ -13,11 +13,16 @@ import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
 import { getCssStringForPaletteCode } from "@emu/machines/zxNext/palette";
+import { ScrollViewer } from "@renderer/controls/ScrollViewer";
+import { TooltipFactory } from "@renderer/controls/Tooltip";
+import classnames from "@renderer/utils/classnames";
 
 type SprFileViewState = {
   scrollPosition?: number;
   zoomFactor?: number;
   spriteMap?: Uint8Array;
+  spriteImagesSeparated?: boolean;
+  selectedSpriteIndex?: number;
 };
 
 const defaultPalette: number[] = [];
@@ -40,18 +45,108 @@ const SprFileEditorPanel = ({
       // TODO: Implement
     };
 
+    // --- Get the current view state
     const zoomFactor = context.viewState?.zoomFactor ?? 2;
-    let spriteMap = context.viewState?.spriteMap;
+    const spriteImagesSeparated =
+      context.viewState?.spriteImagesSeparated ?? false;
+    const selectedSpriteIndex = context.viewState?.selectedSpriteIndex ?? 0;
+    let spriteMap = context.fileInfo?.sprites?.[selectedSpriteIndex];
     if (!spriteMap) {
       spriteMap = new Uint8Array(16 * 16);
       for (let i = 0; i < 16 * 16; i++) {
-        spriteMap[i] = i % 9 === 0 ? 0xe3 : i;
+        spriteMap[i] = 0xe3;
       }
     }
     const palette = defaultPalette.slice(0);
 
     return (
       <>
+        <Row>
+          <KeyHandler
+            xclass={styles.headerRow}
+            onKey={handleCommonKeys}
+            autofocus={true}
+          >
+            <ToolbarSeparator small={true} />
+            <SmallIconButton
+              iconName='@duplicate'
+              title={"Duplicate sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@cut'
+              title={"Cut sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@move-left'
+              title={"Move sprite left"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@move-right'
+              title={"Move sprite right"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <SmallIconButton
+              iconName='@plus'
+              title={"Add new sprite"}
+              enable={true}
+              clicked={async () => {
+                // TODO: Implement
+              }}
+            />
+            <ToolbarSeparator small={true} />
+            <SmallIconButton
+              iconName='@separate-vertical'
+              title={"Separate sprites vertically"}
+              selected={spriteImagesSeparated}
+              enable={true}
+              clicked={async () => {
+                context.changeViewState(
+                  vs => (vs.spriteImagesSeparated = !spriteImagesSeparated)
+                );
+              }}
+            />
+          </KeyHandler>
+        </Row>
+        <ScrollViewer
+          xclass={styles.spriteScroller}
+          scrollBarWidth={4}
+          allowVertical={false}
+        >
+          {context.fileInfo?.sprites &&
+            context.fileInfo.sprites.map((spr, idx) => {
+              return (
+                <SpriteImage
+                  key={idx}
+                  spriteMap={spr}
+                  palette={palette}
+                  transparencyIndex={0xe3}
+                  separated={spriteImagesSeparated}
+                  selected={selectedSpriteIndex === idx}
+                  clicked={() => {
+                    context.changeViewState(vs => {
+                      vs.selectedSpriteIndex = idx;
+                      vs.spriteMap = spr;
+                    });
+                  }}
+                />
+              );
+            })}
+        </ScrollViewer>
         <Row>
           <KeyHandler
             xclass={styles.headerRow}
@@ -219,7 +314,7 @@ const SprFileEditorPanel = ({
                 zoomFactor={zoomFactor}
                 spriteMap={spriteMap}
                 palette={palette}
-                tranparencyIndex={0xe3}
+                transparencyIndex={0xe3}
               />
               <NextPaletteViewer
                 palette={defaultPalette}
@@ -228,55 +323,6 @@ const SprFileEditorPanel = ({
                 smallDisplay={true}
               />
             </div>
-          </Row>
-          <Row>
-            <KeyHandler
-              xclass={styles.headerRow}
-              onKey={handleCommonKeys}
-              autofocus={true}
-            >
-              <ToolbarSeparator small={true} />
-              <SmallIconButton
-                iconName='@duplicate'
-                title={"Duplicate sprite"}
-                enable={true}
-                clicked={async () => {
-                  // TODO: Implement
-                }}
-              />
-              <SmallIconButton
-                iconName='@cut'
-                title={"Cut sprite"}
-                enable={true}
-                clicked={async () => {
-                  // TODO: Implement
-                }}
-              />
-              <SmallIconButton
-                iconName='@move-left'
-                title={"Move sprite left"}
-                enable={true}
-                clicked={async () => {
-                  // TODO: Implement
-                }}
-              />
-              <SmallIconButton
-                iconName='@move-right'
-                title={"Move sprite right"}
-                enable={true}
-                clicked={async () => {
-                  // TODO: Implement
-                }}
-              />
-              <SmallIconButton
-                iconName='@plus'
-                title={"Add new sprite"}
-                enable={true}
-                clicked={async () => {
-                  // TODO: Implement
-                }}
-              />
-            </KeyHandler>
           </Row>
         </Panel>
       </>
@@ -334,14 +380,14 @@ type SpriteEditorGridProps = {
   zoomFactor: number;
   spriteMap: Uint8Array;
   palette: number[];
-  tranparencyIndex: number;
+  transparencyIndex: number;
 };
 
 const SpriteEditorGrid = ({
   zoomFactor,
   spriteMap,
   palette,
-  tranparencyIndex
+  transparencyIndex
 }: SpriteEditorGridProps) => {
   const cellSize = (zoomFactor - 1) * 8 + 16;
   const gridSize = 16 * cellSize + 1;
@@ -450,8 +496,9 @@ const SpriteEditorGrid = ({
           {Array.from(spriteMap).map((colorIndex, i) => {
             const row = i >> 4;
             const col = i & 0x0f;
-            return colorIndex === tranparencyIndex ? (
+            return colorIndex === transparencyIndex ? (
               <rect
+                key={i}
                 x={col * cellSize + 1}
                 y={row * cellSize + 1}
                 width={cellSize - 2}
@@ -460,6 +507,7 @@ const SpriteEditorGrid = ({
               />
             ) : (
               <rect
+                key={1000 + i}
                 x={col * cellSize + 1}
                 y={row * cellSize + 1}
                 width={cellSize - 2}
@@ -468,35 +516,80 @@ const SpriteEditorGrid = ({
               />
             );
           })}
-          {/* {gridIndexes.map(i => {
-            return (
-              <>
-                <line
-                  x1={0}
-                  y1={i * cellSize}
-                  x2={gridSize}
-                  y2={i * cellSize}
-                  strokeDasharray={i % 4 !== 0 ? "1,4" : "1,1"}
-                  strokeWidth={1.5}
-                  stroke='var(--color-ruler-sprite-editor)'
-                />
-                <line
-                  x1={i * cellSize}
-                  y1={0}
-                  x2={i * cellSize}
-                  y2={gridSize}
-                  strokeDasharray={i % 4 !== 0 ? "1,4" : "1,1"}
-                  strokeWidth={1}
-                  stroke='var(--color-ruler-sprite-editor)'
-                />
-              </>
-            );
-          })} */}
         </svg>
       </div>
     </div>
   );
 };
+
+type SpriteImageProps = {
+  title?: string;
+  zoom?: number;
+  spriteMap: Uint8Array;
+  palette: number[];
+  transparencyIndex: number;
+  separated?: boolean;
+  selected?: boolean;
+  clicked: () => void;
+};
+
+const SpriteImage = memo(
+  ({
+    title = "No title",
+    zoom = 3,
+    spriteMap,
+    palette,
+    transparencyIndex,
+    separated = false,
+    selected,
+    clicked
+  }: SpriteImageProps) => {
+    const ref = useRef<HTMLDivElement>(null);
+
+    const gridSize = 16 * zoom;
+    return (
+      <div
+        ref={ref}
+        className={classnames(styles.spriteImageWrapper, {
+          [styles.separated]: separated,
+          [styles.selected]: selected
+        })}
+        onClick={clicked}
+      >
+        <div style={{ width: gridSize, height: gridSize }}>
+          <svg viewBox={`0 0 ${gridSize} ${gridSize}`}>
+            {Array.from(spriteMap).map((colorIndex, i) => {
+              const row = i >> 4;
+              const col = i & 0x0f;
+              return (
+                <rect
+                  key={1000 + i}
+                  x={col * zoom}
+                  y={row * zoom}
+                  width={zoom}
+                  height={zoom}
+                  fill={
+                    colorIndex === transparencyIndex
+                      ? "transparent"
+                      : getCssStringForPaletteCode(palette[colorIndex])
+                  }
+                />
+              );
+            })}
+          </svg>
+        </div>
+        <TooltipFactory
+          refElement={ref.current}
+          placement='right'
+          offsetX={-12}
+          offsetY={28}
+        >
+          {title}
+        </TooltipFactory>
+      </div>
+    );
+  }
+);
 
 function rotateCounterClockwise (sprite: Uint8Array): Uint8Array {
   const result = new Uint8Array(16 * 16);
@@ -526,9 +619,9 @@ function flipHorizontal (sprite: Uint8Array): Uint8Array {
     }
   }
   return result;
-} 
+}
 
-function flipVertical (sprite: Uint8Array): Uint8Array {  
+function flipVertical (sprite: Uint8Array): Uint8Array {
   const result = new Uint8Array(16 * 16);
   for (let row = 0; row < 16; row++) {
     for (let col = 0; col < 16; col++) {

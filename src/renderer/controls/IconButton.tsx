@@ -48,7 +48,7 @@ export const IconButton = ({
         [styles.noPadding]: noPadding
       })}
       style={{
-        width: buttonWidth,
+        width: buttonWidth + (noPadding ? 0 : 4),
         height: buttonHeight,
         backgroundColor:
           hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
@@ -118,7 +118,6 @@ export const SmallIconButton = ({
       selected={selected}
       clicked={clicked}
       fill={fill}
-      noPadding={true}
     />
   );
 };

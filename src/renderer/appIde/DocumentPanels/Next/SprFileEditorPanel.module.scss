@@ -48,3 +48,37 @@
   flex-shrink: 0;
   overflow: auto;
 }
+
+.spriteScroller {
+  height: 64px;
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
+  padding-top: 2px;
+  background-color: var(--bgcolor-editors);
+}
+
+.spriteItem {
+  width: 48px;
+  height: 48px;
+}
+
+.spriteImageWrapper {
+  margin: 2px 0;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  height: fit-content;
+  padding: 2px 0;
+
+  &.separated {
+    border-left: 2px solid transparent;
+    border-right: 2px solid transparent;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  &:hover, &.selected {
+    border-color: var(--color-text-hilite)
+  }
+}
