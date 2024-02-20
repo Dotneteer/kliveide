@@ -20,6 +20,7 @@
 .headerRow {
   background-color: var();
 }
+
 .column {
   display: flex;
   flex-direction: column;
@@ -36,6 +37,16 @@
   color: var(--color-label);
   margin-left: 0.4em;
   margin-right: 0.4em;
+}
+
+.text {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-command-icon);
+  margin-left: 0.4em;
+  margin-right: 0.4em;
+  font-family: var(--main-font-family);
 }
 
 .value {

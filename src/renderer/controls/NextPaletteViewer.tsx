@@ -22,6 +22,7 @@ type Props = {
   transparencyIndex?: number;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
+  onRightClick?: (index: number) => void;
   selectedIndex?: number;
   onPriority?: (index: number) => void;
   onOtherKey?: (code: string) => void;
@@ -35,6 +36,7 @@ export const NextPaletteViewer = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onRightClick,
   onPriority,
   onOtherKey,
   selectedIndex
@@ -116,6 +118,11 @@ export const NextPaletteViewer = ({
                 onSelection?.(idx);
               }
             }}
+            onRightClick={idx => {
+              if (allowSelection) {
+                onRightClick?.(idx);
+              }
+            }}
             onPriority={(idx: number) => {
               if (allowSelection) {
                 setSelected(idx);
@@ -139,6 +146,7 @@ type PaletteRowProps = {
   transparencyIndex?: number;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
+  onRightClick?: (index: number) => void;
   onPriority?: (index: number) => void;
   selectedIndex?: number;
 };
@@ -152,6 +160,7 @@ const PaletteRow = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onRightClick,
   onPriority,
   selectedIndex
 }: PaletteRowProps) => {
@@ -180,6 +189,7 @@ const PaletteRow = ({
           transparencyIndex={transparencyIndex}
           allowSelection={allowSelection}
           onSelection={onSelection}
+          onRightClick={onRightClick}
           onPriority={onPriority}
           selectedIndex={selectedIndex}
         />
@@ -197,6 +207,7 @@ type PaletteItemProps = {
   transparencyIndex?: number;
   allowSelection?: boolean;
   onSelection?: (index: number) => void;
+  onRightClick?: (index: number) => void;
   onPriority?: (index: number) => void;
   selectedIndex?: number;
 };
@@ -210,6 +221,7 @@ const PaletteItem = ({
   transparencyIndex,
   allowSelection,
   onSelection,
+  onRightClick,
   onPriority,
   selectedIndex
 }: PaletteItemProps) => {
@@ -252,6 +264,11 @@ const PaletteItem = ({
         onClick={() => {
           if (allowSelection) {
             onSelection?.(index);
+          }
+        }}
+        onContextMenu={() => {
+          if (allowSelection) {
+            onRightClick?.(index);
           }
         }}
         onDoubleClick={() => {
