@@ -221,6 +221,7 @@ export type ThemeProperties = {
   "--bgcolor-sprite-editor"?: string;
   "--color-ruler-sprite-editor"?: string;
   "--color-dash-sprite-editor"?: string;
+  "--color-pos-sprite-editor"?: string;
 };
 
 /**

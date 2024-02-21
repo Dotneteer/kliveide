@@ -220,5 +220,7 @@ export const darkTheme: ThemeProperties = {
   // --- Sprite editor
   "--bgcolor-sprite-editor": "#383838",
   "--color-ruler-sprite-editor": "#a0a0a0",
-  "--color-dash-sprite-editor": "#101010"
+  "--color-dash-sprite-editor": "#101010",
+  "--color-pos-sprite-editor": "#00a0ff",
+
 };

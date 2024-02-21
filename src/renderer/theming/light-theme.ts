@@ -217,5 +217,6 @@ export const lightTheme: ThemeProperties = {
   // --- Sprite editor
   "--bgcolor-sprite-editor": "#c0c0c0",
   "--color-ruler-sprite-editor": "#606060",
-  "--color-dash-sprite-editor": "#e0e0e0"
+  "--color-dash-sprite-editor": "#e0e0e0",
+  "--color-pos-sprite-editor": "#00a0ff",
 };

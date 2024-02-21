@@ -11,11 +11,11 @@ import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { Panel } from "@renderer/controls/generic/Panel";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
-import { KeyHandler } from "@renderer/controls/generic/KeyHandler";
 import {
   getAbrgForPaletteCode,
   getCssStringForPaletteCode,
-  getLuminanceForPaletteCode
+  getLuminanceForPaletteCode,
+  getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
 import { ScrollViewer } from "@renderer/controls/ScrollViewer";
 import { TooltipFactory } from "@renderer/controls/Tooltip";
@@ -25,6 +25,7 @@ import { useTheme } from "@renderer/theming/ThemeProvider";
 import { LabelSeparator, Value } from "@renderer/controls/Labels";
 import { Column } from "@renderer/controls/generic/Column";
 import { Text } from "@renderer/controls/generic/Text";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type SprFileViewState = {
   scrollPosition?: number;
@@ -37,6 +38,8 @@ type SprFileViewState = {
   fillColorIndex?: number;
   currentRow?: string;
   currentColumn?: string;
+  currentColorIndex?: number;
+  currentTool?: SpriteTools;
 };
 
 const defaultPalette: number[] = [];
@@ -52,11 +55,6 @@ const SprFileEditorPanel = ({
   const validRenderer: (
     context: GenericFileEditorContext<SprFileContents, SprFileViewState>
   ) => JSX.Element = context => {
-    // --- Handle common keys
-    const handleCommonKeys = (key: string) => {
-      // TODO: Implement
-    };
-
     // --- Get the current view state
     const zoomFactor = context.viewState?.zoomFactor ?? 2;
     const spriteImagesSeparated =
@@ -76,6 +74,12 @@ const SprFileEditorPanel = ({
     const fillColorIndex = context.viewState?.fillColorIndex ?? 0xe3;
     const currentRow = context.viewState?.currentRow ?? "-";
     const currentColumn = context.viewState?.currentColumn ?? "-";
+    const currentColorIndex = context.viewState?.currentColorIndex ?? -1;
+    const rgbParts =
+      currentColorIndex >= 0
+        ? getRgbPartsForPaletteCode(palette[currentColorIndex])
+        : undefined;
+    const currentTool = context.viewState?.currentTool ?? "pointer";
 
     const updateSpriteMap = (newSpriteMap: Uint8Array) => {
       context.changeViewState(vs => (vs.spriteMap = newSpriteMap));
@@ -249,164 +253,168 @@ const SprFileEditorPanel = ({
             })}
         </ScrollViewer>
         <Row>
-          <KeyHandler
-            xclass={styles.headerRow}
-            onKey={handleCommonKeys}
-            autofocus={true}
-          >
-            <SmallIconButton
-              iconName='undo'
-              title={"Undo"}
-              enable={true}
-              clicked={() => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='redo'
-              title={"Redo"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <ToolbarSeparator small={true} />
-            <SmallIconButton
-              iconName='@zoom-in'
-              title={"Zoom-in"}
-              enable={zoomFactor < 3}
-              clicked={() => {
-                context.changeViewState(vs => {
-                  vs.zoomFactor = zoomFactor + 1;
-                });
-              }}
-            />
-            <SmallIconButton
-              iconName='@zoom-out'
-              title={"Zoom-out"}
-              enable={zoomFactor > 1}
-              clicked={async () => {
-                context.changeViewState(vs => (vs.zoomFactor = zoomFactor - 1));
-              }}
-            />
-            <ToolbarSeparator small={true} />
-            <SmallIconButton
-              iconName='@select'
-              title={"Select area tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@copy'
-              title={"Copy selected area"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@paste'
-              title={"Paste copied area"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <ToolbarSeparator small={true} />
-            <SmallIconButton
-              iconName='@pointer'
-              title={"Pencil tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@pencil'
-              title={"Pencil tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@line'
-              title={"Line tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@rectangle'
-              title={"Rectangle tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@rectangle-filled'
-              title={"Filled rectangle tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@circle'
-              title={"Circle tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@circle-filled'
-              title={"Filled circle tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <SmallIconButton
-              iconName='@paint'
-              title={"Paint tool"}
-              enable={true}
-              clicked={async () => {
-                // TODO: Implement
-              }}
-            />
-            <ToolbarSeparator small={true} />
-            <SmallIconButton
-              iconName='@rotate'
-              title={"Rotate counter-clockwise"}
-              enable={true}
-              clicked={async () =>
-                updateSpriteMap(rotateCounterClockwise(spriteMap))
-              }
-            />
-            <SmallIconButton
-              iconName='@rotate-clockwise'
-              title={"Rotate clockwise"}
-              enable={true}
-              clicked={async () => updateSpriteMap(rotateClockwise(spriteMap))}
-            />
-            <SmallIconButton
-              iconName='@flip-vertical'
-              title={"Flip vertically"}
-              enable={true}
-              clicked={async () => updateSpriteMap(flipVertical(spriteMap))}
-            />
-            <SmallIconButton
-              iconName='@flip-horizontal'
-              title={"Flip horizontally"}
-              enable={true}
-              clicked={async () => updateSpriteMap(flipHorizontal(spriteMap))}
-            />
-          </KeyHandler>
+          <SmallIconButton
+            iconName='undo'
+            title={"Undo"}
+            enable={true}
+            clicked={() => {
+              // TODO: Implement
+            }}
+          />
+          <SmallIconButton
+            iconName='redo'
+            title={"Redo"}
+            enable={true}
+            clicked={async () => {
+              // TODO: Implement
+            }}
+          />
+          <ToolbarSeparator small={true} />
+          <SmallIconButton
+            iconName='@zoom-in'
+            title={"Zoom-in"}
+            enable={zoomFactor < 3}
+            clicked={() => {
+              context.changeViewState(vs => {
+                vs.zoomFactor = zoomFactor + 1;
+              });
+            }}
+          />
+          <SmallIconButton
+            iconName='@zoom-out'
+            title={"Zoom-out"}
+            enable={zoomFactor > 1}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.zoomFactor = zoomFactor - 1));
+            }}
+          />
+          <ToolbarSeparator small={true} />
+          <SmallIconButton
+            iconName='@select'
+            title={"Select area tool"}
+            enable={true}
+            clicked={async () => {
+              // TODO: Implement
+            }}
+          />
+          <SmallIconButton
+            iconName='@copy'
+            title={"Copy selected area"}
+            enable={true}
+            clicked={async () => {
+              // TODO: Implement
+            }}
+          />
+          <SmallIconButton
+            iconName='@paste'
+            title={"Paste copied area"}
+            enable={true}
+            clicked={async () => {
+              // TODO: Implement
+            }}
+          />
+          <ToolbarSeparator small={true} />
+          <SmallIconButton
+            iconName='@pointer'
+            title={"Pencil tool"}
+            selected={currentTool === "pointer"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "pointer"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@pencil'
+            title={"Pencil tool"}
+            selected={currentTool === "pencil"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "pencil"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@line'
+            title={"Line tool"}
+            selected={currentTool === "line"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "line"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@rectangle'
+            title={"Rectangle tool"}
+            selected={currentTool === "rectangle"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "rectangle"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@rectangle-filled'
+            title={"Filled rectangle tool"}
+            selected={currentTool === "rectangle-filled"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(
+                vs => (vs.currentTool = "rectangle-filled")
+              );
+            }}
+          />
+          <SmallIconButton
+            iconName='@circle'
+            title={"Circle tool"}
+            selected={currentTool === "circle"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "circle"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@circle-filled'
+            title={"Filled circle tool"}
+            selected={currentTool === "circle-filled"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "circle-filled"));
+            }}
+          />
+          <SmallIconButton
+            iconName='@paint'
+            title={"Paint tool"}
+            selected={currentTool === "paint"}
+            enable={true}
+            clicked={async () => {
+              context.changeViewState(vs => (vs.currentTool = "paint"));
+            }}
+          />
+          <ToolbarSeparator small={true} />
+          <SmallIconButton
+            iconName='@rotate'
+            title={"Rotate counter-clockwise"}
+            enable={true}
+            clicked={async () =>
+              updateSpriteMap(rotateCounterClockwise(spriteMap))
+            }
+          />
+          <SmallIconButton
+            iconName='@rotate-clockwise'
+            title={"Rotate clockwise"}
+            enable={true}
+            clicked={async () => updateSpriteMap(rotateClockwise(spriteMap))}
+          />
+          <SmallIconButton
+            iconName='@flip-vertical'
+            title={"Flip vertically"}
+            enable={true}
+            clicked={async () => updateSpriteMap(flipVertical(spriteMap))}
+          />
+          <SmallIconButton
+            iconName='@flip-horizontal'
+            title={"Flip horizontally"}
+            enable={true}
+            clicked={async () => updateSpriteMap(flipHorizontal(spriteMap))}
+          />
         </Row>
         <Panel xclass={styles.editorPanel}>
           <Row xclass={styles.editorInfo}>
@@ -439,7 +447,26 @@ const SprFileEditorPanel = ({
             <LabelSeparator width={8} />
             <ToolbarSeparator small={true} />
             <Text text='Position:' />
-            <Value text={`(${currentRow}:${currentColumn})`} />
+            <Value text={`(${currentRow}:${currentColumn})`} width={60} />
+            <Text text='Color:' />
+            <Value
+              text={
+                currentColorIndex >= 0 ? "$" + toHexa2(currentColorIndex) : "-"
+              }
+              width={32}
+            />
+            {currentColorIndex >= 0 && (
+              <ColorSample
+                color={palette[currentColorIndex]}
+                isTransparency={currentColorIndex === 0xe3}
+              />
+            )}
+            <LabelSeparator width={8} />
+            {rgbParts && (
+              <Value
+                text={`(R: ${rgbParts[0]}, G: ${rgbParts[1]}, B: ${rgbParts[2]})`}
+              />
+            )}
           </Row>
           <Row>
             <div className={styles.editorArea}>
@@ -448,10 +475,15 @@ const SprFileEditorPanel = ({
                 spriteMap={spriteMap}
                 palette={palette}
                 transparencyIndex={0xe3}
+                followMouse={currentTool !== "pointer"}
                 onPositionChange={(row, col) => {
                   context.changeViewState(vs => {
                     vs.currentRow = row?.toString() ?? "-";
                     vs.currentColumn = col?.toString() ?? "-";
+                    vs.currentColorIndex =
+                      row !== undefined && col !== undefined
+                        ? spriteMap[row * 16 + col]
+                        : -1;
                   });
                 }}
               />
@@ -528,6 +560,7 @@ type SpriteEditorGridProps = {
   spriteMap: Uint8Array;
   palette: number[];
   transparencyIndex: number;
+  followMouse?: boolean;
   onPositionChange?: (row?: number, col?: number) => void;
 };
 
@@ -536,14 +569,37 @@ const SpriteEditorGrid = ({
   spriteMap,
   palette,
   transparencyIndex,
+  followMouse,
   onPositionChange
 }: SpriteEditorGridProps) => {
   const cellSize = (zoomFactor - 1) * 8 + 16;
   const gridSize = 16 * cellSize + 1;
+
+  const theme = useTheme();
+  const currentCellStroke = theme.getThemeProperty("--color-pos-sprite-editor");
+
+  const [row, setRow] = useState<number | undefined>(undefined);
+  const [col, setCol] = useState<number | undefined>(undefined);
+  const startMousePos = useRef<MouseGridPosition>();
+  const lastPencilPos = useRef<MouseGridPosition>();
+
+  // --- Event handlers for moving the mouse
+  const _move = (e: MouseEvent) => move(e);
+  const _endMove = () => endMove();
+
+  const handleMouseDown = (row: number, col: number, button: number) => {};
+  const handleMouseMove = (row: number, col: number) => {};
+  const handleMouseUp = (row: number, col: number, button: number) => {};
+
   return (
-    <div className={styles.spriteGridWrapper} onMouseLeave={() => {
-      onPositionChange?.();
-    }}>
+    <div
+      className={styles.spriteGridWrapper}
+      onMouseLeave={() => {
+        setRow(undefined);
+        setCol(undefined);
+        onPositionChange?.();
+      }}
+    >
       <div
         className={styles.spriteEditorGrid}
         style={{ width: gridSize, height: gridSize }}
@@ -645,16 +701,52 @@ const SpriteEditorGrid = ({
             </pattern>
           </defs>
           {Array.from(spriteMap).map((colorIndex, i) => {
-            const row = i >> 4;
-            const col = i & 0x0f;
+            const thisRow = i >> 4;
+            const thisCol = i & 0x0f;
             return (
               <rect
-                onMouseMove={() => {
-                  onPositionChange?.(row, col);
+                onMouseEnter={() => {
+                  setRow(thisRow);
+                  setCol(thisCol);
+                  onPositionChange?.(thisRow, thisCol);
+                }}
+                onMouseDown={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  startMove(e);
+                  startMousePos.current = {
+                    row: thisRow,
+                    col: thisCol,
+                    x: e.clientX,
+                    y: e.clientY
+                  };
+                  console.log("start", {
+                    row: thisRow,
+                    col: thisCol,
+                    x: e.clientX,
+                    y: e.clientY
+                  });
+                  handleMouseDown(thisRow, thisCol, e.button);
+                }}
+                onMouseMove={e => {
+                  handleMouseMove(thisRow, thisCol);
+                  if (startMousePos.current) {
+                    _move(e as unknown as MouseEvent);
+                  }
+                  onPositionChange?.(thisRow, thisCol);
+                }}
+                onMouseUp={e => {
+                  endMove();
+                  handleMouseUp(thisRow, thisCol, e.button);
                 }}
                 key={i}
-                x={col * cellSize + 1}
-                y={row * cellSize + 1}
+                x={thisCol * cellSize + 1}
+                y={thisRow * cellSize + 1}
+                stroke={
+                  followMouse && row === thisRow && col === thisCol
+                    ? currentCellStroke
+                    : "none"
+                }
                 width={cellSize - 2}
                 height={cellSize - 2}
                 fill={
@@ -669,6 +761,41 @@ const SpriteEditorGrid = ({
       </div>
     </div>
   );
+
+  // --- Sign the start of operation
+  function startMove (e: React.MouseEvent): void {
+    // --- Capture mouse move via window events
+    window.addEventListener("mouseup", _endMove);
+    window.addEventListener("mousemove", _move);
+    console.log("startMove invoked");
+    document.body.style.cursor = "grabbing";
+  }
+
+  function move (e: MouseEvent): void {
+    const startPos = startMousePos.current;
+    if (startPos) {
+      const row =
+        Math.floor((e.clientX - startPos.x) / cellSize) + startPos.row;
+      const col =
+        Math.floor((e.clientY - startPos.y) / cellSize) + startPos.col;
+      const newPos: MouseGridPosition = {
+        row,
+        col,
+        x: e.clientX,
+        y: e.clientY
+      };
+      console.log("move", newPos);
+    }
+  }
+
+  // --- End moving the splitter
+  function endMove (): void {
+    // --- Release the captured mouse
+    startMousePos.current = undefined;
+    window.removeEventListener("mouseup", _endMove);
+    window.removeEventListener("mousemove", _move);
+    document.body.style.cursor = "default";
+  }
 };
 
 type SpriteImageProps = {
@@ -764,6 +891,23 @@ const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
     </div>
   );
 });
+
+type SpriteTools =
+  | "pointer"
+  | "pencil"
+  | "line"
+  | "rectangle"
+  | "rectangle-filled"
+  | "circle"
+  | "circle-filled"
+  | "paint";
+
+type MouseGridPosition = {
+  row: number;
+  col: number;
+  x: number;
+  y: number;
+};
 
 function rotateCounterClockwise (sprite: Uint8Array): Uint8Array {
   const result = new Uint8Array(16 * 16);
