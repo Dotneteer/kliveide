@@ -26,6 +26,7 @@ import { LabelSeparator, Value } from "@renderer/controls/Labels";
 import { Column } from "@renderer/controls/generic/Column";
 import { Text } from "@renderer/controls/generic/Text";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { last } from "lodash";
 
 type SprFileViewState = {
   scrollPosition?: number;
@@ -475,7 +476,9 @@ const SprFileEditorPanel = ({
                 spriteMap={spriteMap}
                 palette={palette}
                 transparencyIndex={0xe3}
-                followMouse={currentTool !== "pointer"}
+                pencilColorIndex={pencilColorIndex}
+                fillColorIndex={fillColorIndex}
+                tool={currentTool}
                 onPositionChange={(row, col) => {
                   context.changeViewState(vs => {
                     vs.currentRow = row?.toString() ?? "-";
@@ -485,6 +488,9 @@ const SprFileEditorPanel = ({
                         ? spriteMap[row * 16 + col]
                         : -1;
                   });
+                }}
+                onSpriteChange={(newSpriteMap: Uint8Array) => {
+                  updateSpriteMap(newSpriteMap);
                 }}
               />
               <Column>
@@ -560,8 +566,11 @@ type SpriteEditorGridProps = {
   spriteMap: Uint8Array;
   palette: number[];
   transparencyIndex: number;
-  followMouse?: boolean;
+  pencilColorIndex?: number;
+  fillColorIndex?: number;
+  tool: SpriteTools;
   onPositionChange?: (row?: number, col?: number) => void;
+  onSpriteChange?: (sprite: Uint8Array) => void;
 };
 
 const SpriteEditorGrid = ({
@@ -569,8 +578,11 @@ const SpriteEditorGrid = ({
   spriteMap,
   palette,
   transparencyIndex,
-  followMouse,
-  onPositionChange
+  pencilColorIndex,
+  fillColorIndex,
+  tool,
+  onPositionChange,
+  onSpriteChange
 }: SpriteEditorGridProps) => {
   const cellSize = (zoomFactor - 1) * 8 + 16;
   const gridSize = 16 * cellSize + 1;
@@ -580,25 +592,67 @@ const SpriteEditorGrid = ({
 
   const [row, setRow] = useState<number | undefined>(undefined);
   const [col, setCol] = useState<number | undefined>(undefined);
+  const [version, setVersion] = useState(1);
+  const savedSpriteMap = useRef<Uint8Array>();
+  const activeSpriteMap = useRef<Uint8Array>(spriteMap);
+  const inverseColors = useRef<boolean>(false);
   const startMousePos = useRef<MouseGridPosition>();
-  const lastPencilPos = useRef<MouseGridPosition>();
 
   // --- Event handlers for moving the mouse
   const _move = (e: MouseEvent) => move(e);
   const _endMove = () => endMove();
 
-  const handleMouseDown = (row: number, col: number, button: number) => {};
-  const handleMouseMove = (row: number, col: number) => {};
-  const handleMouseUp = (row: number, col: number, button: number) => {};
+  // --- Start the drawing operation with the tool set
+  const handleMouseDown = (row: number, col: number, button: number) => {
+    // --- Save the current sprite map
+    savedSpriteMap.current = activeSpriteMap.current.slice(0);
+    inverseColors.current = button === 2;
+  };
+
+  const handleMouseMove = (row: number, col: number, completed = false) => {
+    if (!savedSpriteMap.current || !startMousePos.current) return;
+    const newMap = updateSpriteMapOperation(
+      savedSpriteMap.current,
+      startMousePos.current.row,
+      startMousePos.current.col,
+      row,
+      col,
+      pencilColorIndex,
+      fillColorIndex,
+      inverseColors.current,
+      tool
+    );
+    if (newMap.sprite) {
+      activeSpriteMap.current = newMap.sprite;
+      if (newMap.immediateUpdate || completed) {
+        savedSpriteMap.current = newMap.sprite;
+        onSpriteChange?.(newMap.sprite);
+      }
+      setVersion(version + 1);
+    }
+  };
+
+  const handleMouseUp = (row?: number, col?: number) => {
+    // --- Complete the operation
+    console.log("Mouse up", row, col);
+    if (row === undefined || col === undefined) {
+      onSpriteChange?.(activeSpriteMap.current);
+    } else {
+      handleMouseMove(row, col, true);
+    }
+    savedSpriteMap.current = undefined;
+  };
 
   return (
     <div
+      tabIndex={0}
       className={styles.spriteGridWrapper}
       onMouseLeave={() => {
         setRow(undefined);
         setCol(undefined);
         onPositionChange?.();
       }}
+      onKeyDown={e => console.log("key", e.key)}
     >
       <div
         className={styles.spriteEditorGrid}
@@ -700,7 +754,7 @@ const SpriteEditorGrid = ({
               />
             </pattern>
           </defs>
-          {Array.from(spriteMap).map((colorIndex, i) => {
+          {Array.from(activeSpriteMap.current).map((colorIndex, i) => {
             const thisRow = i >> 4;
             const thisCol = i & 0x0f;
             return (
@@ -711,6 +765,7 @@ const SpriteEditorGrid = ({
                   onPositionChange?.(thisRow, thisCol);
                 }}
                 onMouseDown={e => {
+                  if (tool === "pointer") return;
                   e.stopPropagation();
                   e.preventDefault();
                   startMove(e);
@@ -720,30 +775,22 @@ const SpriteEditorGrid = ({
                     x: e.clientX,
                     y: e.clientY
                   };
-                  console.log("start", {
-                    row: thisRow,
-                    col: thisCol,
-                    x: e.clientX,
-                    y: e.clientY
-                  });
                   handleMouseDown(thisRow, thisCol, e.button);
                 }}
                 onMouseMove={e => {
-                  handleMouseMove(thisRow, thisCol);
                   if (startMousePos.current) {
                     _move(e as unknown as MouseEvent);
                   }
                   onPositionChange?.(thisRow, thisCol);
                 }}
                 onMouseUp={e => {
-                  endMove();
-                  handleMouseUp(thisRow, thisCol, e.button);
+                  endMove(thisRow, thisCol);
                 }}
                 key={i}
                 x={thisCol * cellSize + 1}
                 y={thisRow * cellSize + 1}
                 stroke={
-                  followMouse && row === thisRow && col === thisCol
+                  tool !== "pointer" && row === thisRow && col === thisCol
                     ? currentCellStroke
                     : "none"
                 }
@@ -767,31 +814,26 @@ const SpriteEditorGrid = ({
     // --- Capture mouse move via window events
     window.addEventListener("mouseup", _endMove);
     window.addEventListener("mousemove", _move);
-    console.log("startMove invoked");
-    document.body.style.cursor = "grabbing";
+    document.body.style.cursor = "crosshair";
   }
 
   function move (e: MouseEvent): void {
     const startPos = startMousePos.current;
     if (startPos) {
       const row =
-        Math.floor((e.clientX - startPos.x) / cellSize) + startPos.row;
+        Math.floor((e.clientY - startPos.y) / cellSize + 0.5) + startPos.row ;
       const col =
-        Math.floor((e.clientY - startPos.y) / cellSize) + startPos.col;
-      const newPos: MouseGridPosition = {
-        row,
-        col,
-        x: e.clientX,
-        y: e.clientY
-      };
-      console.log("move", newPos);
+        Math.floor((e.clientX - startPos.x) / cellSize + 0.5) + startPos.col;
+      handleMouseMove(row, col);
     }
   }
 
   // --- End moving the splitter
-  function endMove (): void {
-    // --- Release the captured mouse
+  function endMove (row?: number, col?: number): void {
+    handleMouseUp(row, col);
     startMousePos.current = undefined;
+
+    // --- Release the captured mouse
     window.removeEventListener("mouseup", _endMove);
     window.removeEventListener("mousemove", _move);
     document.body.style.cursor = "default";
@@ -947,4 +989,69 @@ function flipVertical (sprite: Uint8Array): Uint8Array {
     }
   }
   return result;
+}
+
+function updateSpriteMapOperation (
+  spriteMap: Uint8Array,
+  row1: number,
+  col1: number,
+  row2: number,
+  col2: number,
+  pencilColorIndex: number,
+  fillColorIndex: number,
+  inverseColors: boolean,
+  tool: SpriteTools
+): { sprite: Uint8Array | null; immediateUpdate: boolean } {
+  const newMap = new Uint8Array(spriteMap);
+  if (inverseColors) {
+    [pencilColorIndex, fillColorIndex] = [fillColorIndex, pencilColorIndex];
+  }
+  switch (tool) {
+    case "pencil":
+      newMap[row2 * 16 + col2] = pencilColorIndex;
+      return { sprite: newMap, immediateUpdate: true };
+    case "rectangle":
+      drawRectangle(newMap, row1, col1, row2, col2, pencilColorIndex);
+      break;
+    default:
+      return { sprite: null, immediateUpdate: false };
+  }
+  return { sprite: newMap, immediateUpdate: false };
+}
+
+function drawRectangle (
+  map: Uint8Array,
+  row1: number,
+  col1: number,
+  row2: number,
+  col2: number,
+  pencilColor: number,
+  fillColor?: number
+): void {
+  [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
+  for (let row = row1; row <= row2; row++) {
+    for (let col = col1; col <= col2; col++) {
+      if (row < 0 || row > 15 || col < 0 || col > 15) continue;
+      if (row === row1 || row === row2 || col === col1 || col === col2) {
+        map[row * 16 + col] = pencilColor;
+      } else if (fillColor !== undefined) {
+        map[row * 16 + col] = fillColor;
+      }
+    }
+  }
+}
+
+function normalizeCoords (
+  row1: number,
+  col1: number,
+  row2: number,
+  col2: number
+): [number, number, number, number] {
+  if (row2 < row1) {
+    [row1, row2] = [row2, row1];
+  }
+  if (col2 < col1) {
+    [col1, col2] = [col2, col1];
+  }
+  return [row1, col1, row2, col2];
 }
