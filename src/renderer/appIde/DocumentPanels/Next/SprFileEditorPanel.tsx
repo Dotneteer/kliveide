@@ -26,7 +26,7 @@ import { LabelSeparator, Value } from "@renderer/controls/Labels";
 import { Column } from "@renderer/controls/generic/Column";
 import { Text } from "@renderer/controls/generic/Text";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { last } from "lodash";
+import { last, set } from "lodash";
 
 type SprFileViewState = {
   scrollPosition?: number;
@@ -287,31 +287,6 @@ const SprFileEditorPanel = ({
             enable={zoomFactor > 1}
             clicked={async () => {
               context.changeViewState(vs => (vs.zoomFactor = zoomFactor - 1));
-            }}
-          />
-          <ToolbarSeparator small={true} />
-          <SmallIconButton
-            iconName='@select'
-            title={"Select area tool"}
-            enable={true}
-            clicked={async () => {
-              // TODO: Implement
-            }}
-          />
-          <SmallIconButton
-            iconName='@copy'
-            title={"Copy selected area"}
-            enable={true}
-            clicked={async () => {
-              // TODO: Implement
-            }}
-          />
-          <SmallIconButton
-            iconName='@paste'
-            title={"Paste copied area"}
-            enable={true}
-            clicked={async () => {
-              // TODO: Implement
             }}
           />
           <ToolbarSeparator small={true} />
@@ -597,6 +572,12 @@ const SpriteEditorGrid = ({
   const activeSpriteMap = useRef<Uint8Array>(spriteMap);
   const inverseColors = useRef<boolean>(false);
   const startMousePos = useRef<MouseGridPosition>();
+  let lastMovePos = [-1, -1];
+
+  useEffect(() => {
+    activeSpriteMap.current = spriteMap;
+    setVersion(version + 1);
+  }, [spriteMap])
 
   // --- Event handlers for moving the mouse
   const _move = (e: MouseEvent) => move(e);
@@ -611,6 +592,8 @@ const SpriteEditorGrid = ({
 
   const handleMouseMove = (row: number, col: number, completed = false) => {
     if (!savedSpriteMap.current || !startMousePos.current) return;
+    if (lastMovePos[0] === row && lastMovePos[1] === col) return;
+    lastMovePos = [row, col];
     const newMap = updateSpriteMapOperation(
       savedSpriteMap.current,
       startMousePos.current.row,
@@ -622,11 +605,11 @@ const SpriteEditorGrid = ({
       inverseColors.current,
       tool
     );
+    activeSpriteMap.current = newMap.sprite;
+    onSpriteChange?.(activeSpriteMap.current);
     if (newMap.sprite) {
-      activeSpriteMap.current = newMap.sprite;
       if (newMap.immediateUpdate || completed) {
         savedSpriteMap.current = newMap.sprite;
-        onSpriteChange?.(newMap.sprite);
       }
       setVersion(version + 1);
     }
@@ -634,13 +617,13 @@ const SpriteEditorGrid = ({
 
   const handleMouseUp = (row?: number, col?: number) => {
     // --- Complete the operation
-    console.log("Mouse up", row, col);
     if (row === undefined || col === undefined) {
       onSpriteChange?.(activeSpriteMap.current);
     } else {
       handleMouseMove(row, col, true);
     }
     savedSpriteMap.current = undefined;
+    lastMovePos = [-1, -1];
   };
 
   return (
@@ -821,7 +804,7 @@ const SpriteEditorGrid = ({
     const startPos = startMousePos.current;
     if (startPos) {
       const row =
-        Math.floor((e.clientY - startPos.y) / cellSize + 0.5) + startPos.row ;
+        Math.floor((e.clientY - startPos.y) / cellSize + 0.5) + startPos.row;
       const col =
         Math.floor((e.clientX - startPos.x) / cellSize + 0.5) + startPos.col;
       handleMouseMove(row, col);
@@ -865,8 +848,6 @@ const SpriteImage = ({
 }: SpriteImageProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const [version, setVersion] = useState(0);
-  const theme = useTheme();
-  const transparentRgb = theme.getThemeProperty("--bgcolor-editors");
 
   useEffect(() => {
     setVersion(version + 1);
@@ -1013,6 +994,35 @@ function updateSpriteMapOperation (
     case "rectangle":
       drawRectangle(newMap, row1, col1, row2, col2, pencilColorIndex);
       break;
+    case "rectangle-filled":
+      drawRectangle(
+        newMap,
+        row1,
+        col1,
+        row2,
+        col2,
+        pencilColorIndex,
+        fillColorIndex
+      );
+      break;
+    case "circle":
+      drawEllipse(newMap, row1, col1, row2, col2, pencilColorIndex);
+      break;
+    case "circle-filled":
+      drawEllipse(newMap, row1, col1, row2, col2, pencilColorIndex);
+      const cx = Math.max(
+        0,
+        Math.min(15, Math.floor(Math.abs(row2 - row1) / 2))
+      );
+      const cy = Math.max(
+        0,
+        Math.min(15, Math.floor(Math.abs(col2 - col1) / 2))
+      );
+      boundaryFill(newMap, cx, cy, pencilColorIndex, fillColorIndex);
+      break;
+    case "paint":
+      areaFill(newMap, row2, col2, pencilColorIndex);
+      return { sprite: newMap, immediateUpdate: true };
     default:
       return { sprite: null, immediateUpdate: false };
   }
@@ -1038,6 +1048,258 @@ function drawRectangle (
         map[row * 16 + col] = fillColor;
       }
     }
+  }
+}
+
+function drawEllipse (
+  map: Uint8Array,
+  row1: number,
+  col1: number,
+  row2: number,
+  col2: number,
+  pencilColor: number
+): void {
+  [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
+
+  // --- Single pixel ellipse
+  if (row1 === row2 && col1 === col2) {
+    map[row1 * 16 + col1] = pencilColor;
+    return;
+  }
+
+  const rx = Math.abs(col2 - col1) / 2;
+  const ry = Math.abs(row2 - row1) / 2;
+  const xc = row1 + rx;
+  const yc = col1 + ry;
+
+  if (rx !== ry) {
+    // --- Ellipse with midpoint algorithm
+    let dx = 0,
+      dy = 0,
+      d1 = 0,
+      d2 = 0,
+      x = 0,
+      y = ry;
+
+    // --- Initial decision parameter of region 1
+    d1 = ry * ry - rx * rx * ry + 0.25 * rx * rx;
+    dx = 2 * ry * ry * x;
+    dy = 2 * rx * rx * y;
+
+    // --- For region 1
+    while (dx < dy) {
+      // --- Print points based on 4-way symmetry
+      plotPoint(
+        Math.min(x + up(xc), col2),
+        Math.min(y + up(yc), row2),
+        pencilColor
+      );
+      plotPoint(
+        Math.max(-x + down(xc), col1),
+        Math.min(y + down(yc), row2),
+        pencilColor
+      );
+      plotPoint(
+        Math.min(x + up(xc), col2),
+        Math.max(-y + down(yc), row1),
+        pencilColor
+      );
+      plotPoint(
+        Math.max(-x + down(xc), col1),
+        Math.max(-y + down(yc), row1),
+        pencilColor
+      );
+
+      // --- Checking and updating value of decision parameter based on algorithm
+      if (d1 < 0) {
+        x++;
+        dx = dx + 2 * ry * ry;
+        d1 = d1 + dx + ry * ry;
+      } else {
+        x++;
+        y--;
+        dx = dx + 2 * ry * ry;
+        dy = dy - 2 * rx * rx;
+        d1 = d1 + dx - dy + ry * ry;
+      }
+    }
+
+    // --- Decision parameter of region 2
+    d2 =
+      ry * ry * ((x + 0.5) * (x + 0.5)) +
+      rx * rx * ((y - 1) * (y - 1)) -
+      rx * rx * ry * ry;
+
+    // --- Plotting points of region 2
+    while (y >= 0) {
+      // --- Print points based on 4-way symmetry
+      plotPoint(
+        Math.min(x + up(xc), col2),
+        Math.min(y + up(yc), row2),
+        pencilColor
+      );
+      plotPoint(
+        Math.max(-x + down(xc), col1),
+        Math.min(y + down(yc), row2),
+        pencilColor
+      );
+      plotPoint(
+        Math.min(x + up(xc), col2),
+        Math.max(-y + down(yc), row1),
+        pencilColor
+      );
+      plotPoint(
+        Math.max(-x + down(xc), col1),
+        Math.max(-y + down(yc), row1),
+        pencilColor
+      );
+
+      // --- Checking and updating parameter value based on algorithm
+      if (d2 > 0) {
+        y--;
+        dy = dy - 2 * rx * rx;
+        d2 = d2 + rx * rx - dy;
+      } else {
+        y--;
+        x++;
+        dx = dx + 2 * ry * ry;
+        dy = dy - 2 * rx * rx;
+        d2 = d2 + dx - dy + rx * rx;
+      }
+    }
+  } else {
+    // --- Circle with Bresenham's algorithm
+    let x = 0,
+      y = rx;
+    let d = 3 - 2 * rx;
+    drawCirclePoints(xc, yc, x, y, pencilColor);
+    while (y >= x) {
+      // --- For each pixel we will draw all eight pixels
+      x++;
+
+      // --- Check for decision parameter and correspondingly update d, x, y
+      if (d > 0) {
+        y--;
+        d = d + 4 * (x - y) + 10;
+      } else d = d + 4 * x + 6;
+      drawCirclePoints(xc, yc, x, y, pencilColor);
+    }
+  }
+
+  function down (x: number): number {
+    return Number.isInteger(x) ? x : x - 0.25;
+  }
+
+  function up (x: number): number {
+    return Number.isInteger(x) ? x : x + 0.25;
+  }
+
+  function drawCirclePoints (
+    xc: number,
+    yc: number,
+    x: number,
+    y: number,
+    colorIndex: number
+  ) {
+    plotPoint(
+      Math.min(x + up(xc), col2),
+      Math.min(y + up(yc), row2),
+      colorIndex
+    );
+    plotPoint(
+      Math.max(-x + down(xc), col1),
+      Math.min(y + up(yc), row2),
+      colorIndex
+    );
+    plotPoint(
+      Math.min(x + up(xc), col2),
+      Math.max(-y + down(yc), row1),
+      colorIndex
+    );
+    plotPoint(
+      Math.max(-x + down(xc), col1),
+      Math.max(-y + down(yc), row1),
+      colorIndex
+    );
+    plotPoint(
+      Math.min(y + up(xc), col2),
+      Math.min(x + up(yc), row2),
+      colorIndex
+    );
+    plotPoint(
+      Math.max(-y + down(xc), col1),
+      Math.min(x + up(yc), row2),
+      colorIndex
+    );
+    plotPoint(
+      Math.min(y + up(xc), col2),
+      Math.max(-x + down(yc), row1),
+      colorIndex
+    );
+    plotPoint(
+      Math.max(-y + down(xc), col1),
+      Math.max(-x + down(yc), row1),
+      colorIndex
+    );
+  }
+
+  function plotPoint (col: number, row: number, colorIndex: number) {
+    row = Math.round(row);
+    col = Math.round(col);
+    if (row < 0 || row > 15 || col < 0 || col > 15) return;
+    map[row * 16 + col] = colorIndex;
+  }
+}
+
+function areaFill (
+  map: Uint8Array,
+  row: number,
+  col: number,
+  fillColor: number
+) {
+  const startColor = map[row * 16 + col];
+  fill(row, col);
+
+  function fill (row: number, col: number) {
+    const pixel = map[row * 16 + col];
+    if (row < 0 || row > 15 || col < 0 || col > 15) {
+      return;
+    }
+    if (pixel !== startColor || pixel === fillColor) {
+      return;
+    }
+
+    map[row * 16 + col] = fillColor;
+    fill(row + 1, col);
+    fill(row - 1, col);
+    fill(row, col + 1);
+    fill(row, col - 1);
+  }
+}
+
+function boundaryFill (
+  map: Uint8Array,
+  row: number,
+  col: number,
+  boundaryColor: number,
+  fillColor: number
+) {
+  fill(row, col);
+
+  function fill (row: number, col: number) {
+    const pixel = map[row * 16 + col];
+    if (row < 0 || row > 15 || col < 0 || col > 15) {
+      return;
+    }
+    if (pixel === boundaryColor || pixel === fillColor) {
+      return;
+    }
+
+    map[row * 16 + col] = fillColor;
+    fill(row + 1, col);
+    fill(row - 1, col);
+    fill(row, col + 1);
+    fill(row, col - 1);
   }
 }
 
