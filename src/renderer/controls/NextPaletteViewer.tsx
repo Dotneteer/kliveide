@@ -51,6 +51,7 @@ export const NextPaletteViewer = ({
   return (
     <KeyHandler
       tabIndex={0}
+      xclass={styles.paletteWrapper}
       onKey={code => {
         if (selected == undefined) return;
         let newSelected = selected;

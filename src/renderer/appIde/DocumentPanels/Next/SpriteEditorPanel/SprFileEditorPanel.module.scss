@@ -37,16 +37,13 @@
   flex-shrink: 0;
   overflow: auto;
   padding: 8px;
+  margin-top: 3px;
   outline: none;
-}
+  border-top: 1px solid transparent;
 
-.spriteEditorGrid {
-  background-color: var(--bgcolor-sprite-editor);
-  display: flex;
-  flex-direction: row;
-  flex-grow: 0;
-  flex-shrink: 0;
-  overflow: auto;
+  &:focus {
+    border-color: var(--color-text-hilite);
+  }
 }
 
 .spriteScroller {
