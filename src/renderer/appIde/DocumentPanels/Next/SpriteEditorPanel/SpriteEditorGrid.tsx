@@ -52,6 +52,7 @@ export const SpriteEditorGrid = ({
     // --- Refresh the grid whenever the sprite changes
     activeSpriteMap.current = spriteMap;
     setVersion(version + 1);
+    onSpriteChange?.(spriteMap);
   }, [spriteMap]);
 
   // --- Event handlers for moving the mouse

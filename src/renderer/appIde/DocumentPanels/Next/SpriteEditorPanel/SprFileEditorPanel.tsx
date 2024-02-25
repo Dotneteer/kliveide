@@ -60,7 +60,3 @@ function loadSprFileContents (contents: Uint8Array): {
   }
   return { fileInfo: { sprites } };
 }
-
-function saveSprFileContents (): Uint8Array {
-  return new Uint8Array(0);
-}

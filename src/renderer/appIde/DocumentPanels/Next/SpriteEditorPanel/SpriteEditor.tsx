@@ -23,6 +23,8 @@ import { Row } from "@renderer/controls/generic/Row";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
 import { memo, useEffect, useRef, useState } from "react";
+import { set } from "lodash";
+import { actionAsyncStorage } from "next/dist/client/components/action-async-storage.external";
 
 const defaultPalette: number[] = [];
 for (let i = 0; i < 256; i++) {
@@ -49,6 +51,10 @@ export const SpriteEditor = ({ context }: Props) => {
   const [currentColumn, setCurrentColumn] = useState<string>();
   const [currentColorIndex, setCurrentColorIndex] = useState<number>();
   const [currentTool, setCurrentTool] = useState<SpriteTools>();
+
+  // --- Undo/Redo stack
+  const [editStack, setEditStack] = useState<EditInfo[]>([]);
+  const [editStackIndex, setEditStackIndex] = useState<number>(-1);
 
   // --- Constants used to render the editor
   const palette = defaultPalette.slice(0);
@@ -99,10 +105,73 @@ export const SpriteEditor = ({ context }: Props) => {
   ]);
 
   // --- Update the sprite map whenever the current map changes
-  const updateSpriteMap = (newSpriteMap: Uint8Array) => {
+  const updateSpriteMap = async (
+    newSpriteMap: Uint8Array,
+    selectedIndex?: number
+  ) => {
+    if (selectedIndex) {
+      setSelectedSpriteIndex(selectedIndex);
+    }
     setSpriteMap(newSpriteMap);
     if (context.fileInfo?.sprites) {
-      context.fileInfo.sprites[selectedSpriteIndex] = newSpriteMap;
+      context.fileInfo.sprites[selectedIndex ?? selectedSpriteIndex] =
+        newSpriteMap;
+    }
+
+    // --- Save the file to the project
+    const sprites = new Uint8Array(16 * 16 * context.fileInfo?.sprites?.length);
+    let offset = 0;
+    for (const sprite of context.fileInfo?.sprites) {
+      sprites.set(sprite, offset);
+      offset += 16 * 16;
+    }
+    await context.saveToFile(sprites);
+  };
+
+  // --- Implement Undo operation
+  const undo = () => {
+    if (editStackIndex < 0) {
+      return;
+    }
+    const edit = editStack[editStackIndex];
+    console.log(editStackIndex, editStack.length, editStack, edit);
+    if (edit.type === "SpriteListChange") {
+      context.fileInfo.sprites = edit.oldSpriteList.slice(0);
+      setSelectedSpriteIndex(edit.oldSpriteIndex);
+      updateSpriteMap(context.fileInfo.sprites[edit.oldSpriteIndex]);
+    } else {
+      updateSpriteMap(edit.oldSpriteMap);
+    }
+    setEditStackIndex(editStackIndex - 1);
+  };
+
+  // --- Implement Redo operation
+  const redo = () => {
+    if (editStackIndex >= editStack.length - 1) {
+      return;
+    }
+    const edit = editStack[editStackIndex + 1];
+    console.log(editStackIndex, editStack.length, editStack, edit);
+    if (edit.type === "SpriteListChange") {
+      context.fileInfo.sprites = edit.newSpriteList.slice(0);
+      setSelectedSpriteIndex(edit.newSpriteIndex);
+      updateSpriteMap(context.fileInfo.sprites[edit.newSpriteIndex]);
+    } else {
+      updateSpriteMap(edit.newSpriteMap);
+    }
+    setEditStackIndex(editStackIndex + 1);
+  };
+
+  // --- Push an edit to the stack
+  const pushEdit = (edit: EditInfo) => {
+    if (editStack.length === 0) {
+      setEditStack([edit]);
+      setEditStackIndex(0);
+    } else {
+      const newStack = editStack.slice(0, editStackIndex + 1);
+      newStack.push(edit);
+      setEditStack(newStack);
+      setEditStackIndex(newStack.length - 1);
     }
   };
 
@@ -112,18 +181,14 @@ export const SpriteEditor = ({ context }: Props) => {
       <SmallIconButton
         iconName='undo'
         title={"Undo"}
-        enable={true}
-        clicked={() => {
-          // TODO: Implement
-        }}
+        enable={editStackIndex >= 0}
+        clicked={() => undo()}
       />
       <SmallIconButton
         iconName='redo'
         title={"Redo"}
-        enable={true}
-        clicked={async () => {
-          // TODO: Implement
-        }}
+        enable={editStackIndex < editStack.length - 1}
+        clicked={async () => redo()}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
@@ -132,10 +197,22 @@ export const SpriteEditor = ({ context }: Props) => {
         enable={true}
         clicked={async () => {
           const sprites = context.fileInfo?.sprites;
+
+          const editInfo: EditInfo = {
+            type: "SpriteListChange",
+            oldSpriteIndex: selectedSpriteIndex,
+            oldSpriteList: sprites?.slice?.(0)
+          };
+
           const sprite = sprites[selectedSpriteIndex];
           const newSprite = new Uint8Array(sprite);
           sprites.splice(selectedSpriteIndex, 0, newSprite);
-          updateSpriteMap(newSprite);
+
+          editInfo.newSpriteIndex = selectedSpriteIndex;
+          editInfo.newSpriteList = sprites.slice(0);
+          pushEdit(editInfo);
+
+          await updateSpriteMap(newSprite);
         }}
       />
       <SmallIconButton
@@ -147,11 +224,23 @@ export const SpriteEditor = ({ context }: Props) => {
           if (sprites.length < 2) {
             return;
           }
+
+          const editInfo: EditInfo = {
+            type: "SpriteListChange",
+            oldSpriteIndex: selectedSpriteIndex,
+            oldSpriteList: sprites?.slice?.(0)
+          };
+
           let newIndex = selectedSpriteIndex;
           sprites.splice(newIndex, 1);
           if (newIndex > sprites.length - 1) {
             newIndex = sprites.length - 1;
           }
+
+          editInfo.newSpriteIndex = newIndex;
+          editInfo.newSpriteList = sprites.slice(0);
+          pushEdit(editInfo);
+
           setSpriteMap(sprites[newIndex]);
           setSelectedSpriteIndex(newIndex);
         }}
@@ -162,11 +251,24 @@ export const SpriteEditor = ({ context }: Props) => {
         enable={selectedSpriteIndex > 0}
         clicked={async () => {
           const sprites = context.fileInfo?.sprites;
+
+          const editInfo: EditInfo = {
+            type: "SpriteListChange",
+            oldSpriteIndex: selectedSpriteIndex,
+            oldSpriteList: sprites?.slice?.(0)
+          };
+
           const sprite = sprites[selectedSpriteIndex];
           let newIndex = selectedSpriteIndex - 1;
           sprites[selectedSpriteIndex] = sprites[newIndex];
           sprites[newIndex] = sprite;
+
+          editInfo.newSpriteIndex = newIndex;
+          editInfo.newSpriteList = sprites.slice(0);
+          pushEdit(editInfo);
+
           setSelectedSpriteIndex(newIndex);
+          updateSpriteMap(sprite, newIndex);
         }}
       />
       <SmallIconButton
@@ -175,11 +277,24 @@ export const SpriteEditor = ({ context }: Props) => {
         enable={selectedSpriteIndex < context.fileInfo?.sprites?.length - 1}
         clicked={async () => {
           const sprites = context.fileInfo?.sprites;
+
+          const editInfo: EditInfo = {
+            type: "SpriteListChange",
+            oldSpriteIndex: selectedSpriteIndex,
+            oldSpriteList: sprites?.slice?.(0)
+          };
+
           const sprite = sprites[selectedSpriteIndex];
           let newIndex = selectedSpriteIndex + 1;
           sprites[selectedSpriteIndex] = sprites[newIndex];
           sprites[newIndex] = sprite;
+
+          editInfo.newSpriteIndex = newIndex;
+          editInfo.newSpriteList = sprites.slice(0);
+          pushEdit(editInfo);
+
           setSelectedSpriteIndex(newIndex);
+          updateSpriteMap(sprite, newIndex);
         }}
       />
       <SmallIconButton
@@ -188,13 +303,12 @@ export const SpriteEditor = ({ context }: Props) => {
         enable={true}
         clicked={async () => {
           const sprites = context.fileInfo?.sprites;
-          const sprite = sprites[selectedSpriteIndex];
           const newSprite = new Uint8Array(256);
           for (let i = 0; i < 256; i++) {
             newSprite[i] = 0xe3;
           }
           sprites.splice(selectedSpriteIndex, 0, newSprite);
-          updateSpriteMap(newSprite);
+          await updateSpriteMap(newSprite);
         }}
       />
       <ToolbarSeparator small={true} />
@@ -296,53 +410,53 @@ export const SpriteEditor = ({ context }: Props) => {
       <SmallIconButton
         iconName='@rotate'
         title={"Rotate counter-clockwise"}
-        clicked={() => {
+        clicked={async () => {
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[col * 16 + 15 - row];
             }
           }
-          updateSpriteMap(result);
+          await updateSpriteMap(result);
         }}
       />
       <SmallIconButton
         iconName='@rotate-clockwise'
         title={"Rotate clockwise"}
-        clicked={() => {
+        clicked={async () => {
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[(15 - col) * 16 + row];
             }
           }
-          updateSpriteMap(result);
+          await updateSpriteMap(result);
         }}
       />
       <SmallIconButton
         iconName='@flip-vertical'
         title={"Flip vertically"}
-        clicked={() => {
+        clicked={async () => {
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[row * 16 + (15 - col)];
             }
           }
-          updateSpriteMap(result);
+          await updateSpriteMap(result);
         }}
       />
       <SmallIconButton
         iconName='@flip-horizontal'
         title={"Flip horizontally"}
-        clicked={() => {
+        clicked={async () => {
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[(15 - row) * 16 + col];
             }
           }
-          updateSpriteMap(result);
+          await updateSpriteMap(result);
         }}
       />
     </Row>
@@ -493,3 +607,13 @@ const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
     </div>
   );
 });
+
+type EditInfo = {
+  type: "SpriteListChange" | "SpriteChange";
+  oldSpriteIndex?: number;
+  oldSpriteList?: Uint8Array[];
+  oldSpriteMap?: Uint8Array;
+  newSpriteIndex?: number;
+  newSpriteList?: Uint8Array[];
+  newSpriteMap?: Uint8Array;
+};
