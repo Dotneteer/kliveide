@@ -21,23 +21,9 @@ import { LabelSeparator, Value } from "@renderer/controls/Labels";
 import { Column } from "@renderer/controls/generic/Column";
 import { Text } from "@renderer/controls/generic/Text";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { SpriteEditorGrid, SpriteTools } from "./SpriteEditorGrid";
+import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
-
-type SprFileViewState = {
-  scrollPosition?: number;
-  zoomFactor?: number;
-  spriteMap?: Uint8Array;
-  spriteImagesSeparated?: boolean;
-  showTrancparencyColor?: boolean;
-  selectedSpriteIndex?: number;
-  pencilColorIndex?: number;
-  fillColorIndex?: number;
-  currentRow?: string;
-  currentColumn?: string;
-  currentColorIndex?: number;
-  currentTool?: SpriteTools;
-};
+import { SprFileContents, SprFileViewState } from "./sprite-common";
 
 const defaultPalette: number[] = [];
 for (let i = 0; i < 256; i++) {
@@ -85,9 +71,26 @@ const SprFileEditorPanel = ({
       }
     };
 
+    // --- Render the editor
     return (
       <>
         <Row>
+          <SmallIconButton
+            iconName='undo'
+            title={"Undo"}
+            enable={true}
+            clicked={() => {
+              // TODO: Implement
+            }}
+          />
+          <SmallIconButton
+            iconName='redo'
+            title={"Redo"}
+            enable={true}
+            clicked={async () => {
+              // TODO: Implement
+            }}
+          />
           <ToolbarSeparator small={true} />
           <SmallIconButton
             iconName='@duplicate'
@@ -250,23 +253,6 @@ const SprFileEditorPanel = ({
             })}
         </ScrollViewer>
         <Row>
-          <SmallIconButton
-            iconName='undo'
-            title={"Undo"}
-            enable={true}
-            clicked={() => {
-              // TODO: Implement
-            }}
-          />
-          <SmallIconButton
-            iconName='redo'
-            title={"Redo"}
-            enable={true}
-            clicked={async () => {
-              // TODO: Implement
-            }}
-          />
-          <ToolbarSeparator small={true} />
           <SmallIconButton
             iconName='@zoom-in'
             title={"Zoom-in"}
@@ -531,10 +517,6 @@ function saveSprFileContents (): Uint8Array {
   return new Uint8Array(0);
 }
 
-type SprFileContents = {
-  sprites: Uint8Array[];
-};
-
 type ColorSampleProps = {
   color: number;
   isTransparency?: boolean;
@@ -594,3 +576,9 @@ function flipVertical (sprite: Uint8Array): Uint8Array {
   }
   return result;
 }
+
+type EditInfo = {
+  type: "SpriteFileOperation" | "SpriteMapChange";
+  savedSpriteFile?: SprFileContents;
+  savedSpriteMap?: Uint8Array;
+};

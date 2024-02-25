@@ -2,6 +2,7 @@ import { useTheme } from "@renderer/theming/ThemeProvider";
 import styles from "./SprFileEditorPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { getCssStringForPaletteCode } from "@emu/machines/zxNext/palette";
+import { SpriteTools } from "./sprite-common";
 
 type Props = {
   zoomFactor: number;
@@ -85,9 +86,7 @@ export const SpriteEditorGrid = ({
       row,
       col,
       pencilColorIndex,
-      fillColorIndex,
-      inverseColors.current,
-      tool
+      fillColorIndex
     );
     activeSpriteMap.current = newMap.sprite;
     onSpriteChange?.(activeSpriteMap.current);
@@ -131,18 +130,17 @@ export const SpriteEditorGrid = ({
     document.body.style.cursor = "default";
   };
 
+  // --- Update the sprite map based on the tool when the mouse moves
   const updateSpriteMapOperation = (
     row1: number,
     col1: number,
     row2: number,
     col2: number,
     pencilColorIndex: number,
-    fillColorIndex: number,
-    inverseColors: boolean,
-    tool: SpriteTools
+    fillColorIndex: number
   ): { sprite: Uint8Array | null; immediateUpdate: boolean } => {
     const newMap = new Uint8Array(savedSpriteMap.current);
-    if (inverseColors) {
+    if (inverseColors.current) {
       [pencilColorIndex, fillColorIndex] = [fillColorIndex, pencilColorIndex];
     }
     switch (tool) {
@@ -187,6 +185,338 @@ export const SpriteEditorGrid = ({
         return { sprite: null, immediateUpdate: false };
     }
     return { sprite: newMap, immediateUpdate: false };
+  };
+
+  // --- Draw a line on the sprite map
+  const drawLine = (
+    map: Uint8Array,
+    row1: number,
+    col1: number,
+    row2: number,
+    col2: number,
+    pencilColor: number
+  ) => {
+    const dx = Math.abs(col2 - col1);
+    const dy = Math.abs(row2 - row1);
+    const sx = col1 < col2 ? 1 : -1;
+    const sy = row1 < row2 ? 1 : -1;
+    let err = dx - dy;
+
+    let x = col1;
+    let y = row1;
+
+    while (true) {
+      plotPixel(x, y, pencilColor);
+
+      if (x === col2 && y === row2) break;
+
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+    }
+
+    function plotPixel (col: number, row: number, colorIndex: number) {
+      row = Math.round(row);
+      col = Math.round(col);
+      if (row < 0 || row > 15 || col < 0 || col > 15) return;
+      map[row * 16 + col] = colorIndex;
+    }
+  };
+
+  // --- Draw a rectangle on the sprite map
+  const drawRectangle = (
+    map: Uint8Array,
+    row1: number,
+    col1: number,
+    row2: number,
+    col2: number,
+    pencilColor: number,
+    fillColor?: number
+  ) => {
+    [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
+
+    for (let row = row1; row <= row2; row++) {
+      for (let col = col1; col <= col2; col++) {
+        if (row < 0 || row > 15 || col < 0 || col > 15) continue;
+        if (row === row1 || row === row2 || col === col1 || col === col2) {
+          map[row * 16 + col] = pencilColor;
+        } else if (fillColor !== undefined) {
+          map[row * 16 + col] = fillColor;
+        }
+      }
+    }
+  };
+
+  // --- Draw an ellipse on the sprite map
+  const drawEllipse = (
+    map: Uint8Array,
+    row1: number,
+    col1: number,
+    row2: number,
+    col2: number,
+    pencilColor: number,
+    fillColor?: number
+  ) => {
+    [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
+
+    // --- Single pixel ellipse
+    if (row1 === row2 && col1 === col2) {
+      map[row1 * 16 + col1] = pencilColor;
+      return;
+    }
+
+    // --- Spans by row
+    const rowSpans: [number, number][] = [];
+    for (let row = 0; row < 16; row++) {
+      rowSpans.push([-1, -1]);
+    }
+
+    const rx = Math.abs(col2 - col1) / 2;
+    const ry = Math.abs(row2 - row1) / 2;
+    const xc = col1 + rx;
+    const yc = row1 + ry;
+
+    if (rx !== ry) {
+      // --- Ellipse with midpoint algorithm
+      let dx = 0,
+        dy = 0,
+        d1 = 0,
+        d2 = 0,
+        x = 0,
+        y = ry;
+
+      // --- Initial decision parameter of region 1
+      d1 = ry * ry - rx * rx * ry + 0.25 * rx * rx;
+      dx = 2 * ry * ry * x;
+      dy = 2 * rx * rx * y;
+
+      // --- For region 1
+      while (dx < dy) {
+        // --- Print points based on 4-way symmetry
+        plotPixel(
+          Math.min(x + up(xc), col2),
+          Math.min(y + up(yc), row2),
+          pencilColor
+        );
+        plotPixel(
+          Math.max(-x + down(xc), col1),
+          Math.min(y + down(yc), row2),
+          pencilColor
+        );
+        plotPixel(
+          Math.min(x + up(xc), col2),
+          Math.max(-y + down(yc), row1),
+          pencilColor
+        );
+        plotPixel(
+          Math.max(-x + down(xc), col1),
+          Math.max(-y + down(yc), row1),
+          pencilColor
+        );
+
+        // --- Checking and updating value of decision parameter based on algorithm
+        if (d1 < 0) {
+          x++;
+          dx = dx + 2 * ry * ry;
+          d1 = d1 + dx + ry * ry;
+        } else {
+          x++;
+          y--;
+          dx = dx + 2 * ry * ry;
+          dy = dy - 2 * rx * rx;
+          d1 = d1 + dx - dy + ry * ry;
+        }
+      }
+
+      // --- Decision parameter of region 2
+      d2 =
+        ry * ry * ((x + 0.5) * (x + 0.5)) +
+        rx * rx * ((y - 1) * (y - 1)) -
+        rx * rx * ry * ry;
+
+      // --- Plotting points of region 2
+      while (y >= 0) {
+        // --- Print points based on 4-way symmetry
+        plotPixel(
+          Math.min(x + up(xc), col2),
+          Math.min(y + up(yc), row2),
+          pencilColor
+        );
+        plotPixel(
+          Math.max(-x + down(xc), col1),
+          Math.min(y + down(yc), row2),
+          pencilColor
+        );
+        plotPixel(
+          Math.min(x + up(xc), col2),
+          Math.max(-y + down(yc), row1),
+          pencilColor
+        );
+        plotPixel(
+          Math.max(-x + down(xc), col1),
+          Math.max(-y + down(yc), row1),
+          pencilColor
+        );
+
+        // --- Checking and updating parameter value based on algorithm
+        if (d2 > 0) {
+          y--;
+          dy = dy - 2 * rx * rx;
+          d2 = d2 + rx * rx - dy;
+        } else {
+          y--;
+          x++;
+          dx = dx + 2 * ry * ry;
+          dy = dy - 2 * rx * rx;
+          d2 = d2 + dx - dy + rx * rx;
+        }
+      }
+    } else {
+      // --- Circle with Bresenham's algorithm
+      let x = 0,
+        y = rx;
+      let d = 3 - 2 * rx;
+      drawCirclePoints(xc, yc, x, y, pencilColor);
+      while (y >= x) {
+        // --- For each pixel we will draw all eight pixels
+        x++;
+
+        // --- Check for decision parameter and correspondingly update d, x, y
+        if (d > 0) {
+          y--;
+          d = d + 4 * (x - y) + 10;
+        } else d = d + 4 * x + 6;
+        drawCirclePoints(xc, yc, x, y, pencilColor);
+      }
+    }
+
+    // --- Fill the ellipse
+    for (let row = row1 + 1; row < row2; row++) {
+      const rowSpan = rowSpans[row];
+      for (let col = rowSpan[0] + 1; col < rowSpan[1]; col++) {
+        map[row * 16 + col] = fillColor;
+      }
+    }
+
+    function down (x: number): number {
+      return Number.isInteger(x) ? x : x - 0.25;
+    }
+
+    function up (x: number): number {
+      return Number.isInteger(x) ? x : x + 0.25;
+    }
+
+    function drawCirclePoints (
+      xc: number,
+      yc: number,
+      x: number,
+      y: number,
+      colorIndex: number
+    ) {
+      plotPixel(
+        Math.min(x + up(xc), col2),
+        Math.min(y + up(yc), row2),
+        colorIndex
+      );
+      plotPixel(
+        Math.max(-x + down(xc), col1),
+        Math.min(y + up(yc), row2),
+        colorIndex
+      );
+      plotPixel(
+        Math.min(x + up(xc), col2),
+        Math.max(-y + down(yc), row1),
+        colorIndex
+      );
+      plotPixel(
+        Math.max(-x + down(xc), col1),
+        Math.max(-y + down(yc), row1),
+        colorIndex
+      );
+      plotPixel(
+        Math.min(y + up(xc), col2),
+        Math.min(x + up(yc), row2),
+        colorIndex
+      );
+      plotPixel(
+        Math.max(-y + down(xc), col1),
+        Math.min(x + up(yc), row2),
+        colorIndex
+      );
+      plotPixel(
+        Math.min(y + up(xc), col2),
+        Math.max(-x + down(yc), row1),
+        colorIndex
+      );
+      plotPixel(
+        Math.max(-y + down(xc), col1),
+        Math.max(-x + down(yc), row1),
+        colorIndex
+      );
+    }
+
+    function plotPixel (col: number, row: number, colorIndex: number) {
+      row = Math.round(row);
+      col = Math.round(col);
+      if (row < 0 || row > 15 || col < 0 || col > 15) return;
+      const rowSpan = rowSpans[row];
+      if (rowSpan[0] === -1 || col < rowSpan[0]) {
+        rowSpan[0] = col;
+      }
+      if (col > rowSpan[1]) {
+        rowSpan[1] = col;
+      }
+      map[row * 16 + col] = colorIndex;
+    }
+  };
+
+  // --- Fill an area on the sprite map
+  const areaFill = (
+    map: Uint8Array,
+    row: number,
+    col: number,
+    fillColor: number
+  ) => {
+    const startColor = map[row * 16 + col];
+    fill(row, col);
+
+    function fill (row: number, col: number) {
+      const pixel = map[row * 16 + col];
+      if (row < 0 || row > 15 || col < 0 || col > 15) {
+        return;
+      }
+      if (pixel !== startColor || pixel === fillColor) {
+        return;
+      }
+
+      map[row * 16 + col] = fillColor;
+      fill(row + 1, col);
+      fill(row - 1, col);
+      fill(row, col + 1);
+      fill(row, col - 1);
+    }
+  };
+
+  // --- Normalize the coordinates
+  const normalizeCoords = (
+    row1: number,
+    col1: number,
+    row2: number,
+    col2: number
+  ) => {
+    if (row2 < row1) {
+      [row1, row2] = [row2, row1];
+    }
+    if (col2 < col1) {
+      [col1, col2] = [col2, col1];
+    }
+    return [row1, col1, row2, col2];
   };
 
   // --- Render the sprite grid
@@ -363,346 +693,9 @@ export const SpriteEditorGrid = ({
   );
 };
 
-export type SpriteTools =
-  | "pointer"
-  | "pencil"
-  | "line"
-  | "rectangle"
-  | "rectangle-filled"
-  | "circle"
-  | "circle-filled"
-  | "paint";
-
 type MouseGridPosition = {
   row: number;
   col: number;
   x: number;
   y: number;
 };
-
-function drawLine (
-  map: Uint8Array,
-  row1: number,
-  col1: number,
-  row2: number,
-  col2: number,
-  pencilColor: number
-) {
-  const dx = Math.abs(col2 - col1);
-  const dy = Math.abs(row2 - row1);
-  const sx = col1 < col2 ? 1 : -1;
-  const sy = row1 < row2 ? 1 : -1;
-  let err = dx - dy;
-
-  let x = col1;
-  let y = row1;
-
-  while (true) {
-    plotPixel(x, y, pencilColor);
-
-    if (x === col2 && y === row2) break;
-
-    const e2 = 2 * err;
-    if (e2 > -dy) {
-      err -= dy;
-      x += sx;
-    }
-    if (e2 < dx) {
-      err += dx;
-      y += sy;
-    }
-  }
-
-  function plotPixel (col: number, row: number, colorIndex: number) {
-    row = Math.round(row);
-    col = Math.round(col);
-    if (row < 0 || row > 15 || col < 0 || col > 15) return;
-    map[row * 16 + col] = colorIndex;
-  }
-}
-
-function drawRectangle (
-  map: Uint8Array,
-  row1: number,
-  col1: number,
-  row2: number,
-  col2: number,
-  pencilColor: number,
-  fillColor?: number
-): void {
-  [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
-
-  for (let row = row1; row <= row2; row++) {
-    for (let col = col1; col <= col2; col++) {
-      if (row < 0 || row > 15 || col < 0 || col > 15) continue;
-      if (row === row1 || row === row2 || col === col1 || col === col2) {
-        map[row * 16 + col] = pencilColor;
-      } else if (fillColor !== undefined) {
-        map[row * 16 + col] = fillColor;
-      }
-    }
-  }
-}
-
-function drawEllipse (
-  map: Uint8Array,
-  row1: number,
-  col1: number,
-  row2: number,
-  col2: number,
-  pencilColor: number,
-  fillColor?: number
-): void {
-  [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
-
-  // --- Single pixel ellipse
-  if (row1 === row2 && col1 === col2) {
-    map[row1 * 16 + col1] = pencilColor;
-    return;
-  }
-
-  // --- Spans by row
-  const rowSpans: [number, number][] = [];
-  for (let row = 0; row < 16; row++) {
-    rowSpans.push([-1, -1]);
-  }
-
-  const rx = Math.abs(col2 - col1) / 2;
-  const ry = Math.abs(row2 - row1) / 2;
-  const xc = col1 + rx;
-  const yc = row1 + ry;
-
-  if (rx !== ry) {
-    // --- Ellipse with midpoint algorithm
-    let dx = 0,
-      dy = 0,
-      d1 = 0,
-      d2 = 0,
-      x = 0,
-      y = ry;
-
-    // --- Initial decision parameter of region 1
-    d1 = ry * ry - rx * rx * ry + 0.25 * rx * rx;
-    dx = 2 * ry * ry * x;
-    dy = 2 * rx * rx * y;
-
-    // --- For region 1
-    while (dx < dy) {
-      // --- Print points based on 4-way symmetry
-      plotPixel(
-        Math.min(x + up(xc), col2),
-        Math.min(y + up(yc), row2),
-        pencilColor
-      );
-      plotPixel(
-        Math.max(-x + down(xc), col1),
-        Math.min(y + down(yc), row2),
-        pencilColor
-      );
-      plotPixel(
-        Math.min(x + up(xc), col2),
-        Math.max(-y + down(yc), row1),
-        pencilColor
-      );
-      plotPixel(
-        Math.max(-x + down(xc), col1),
-        Math.max(-y + down(yc), row1),
-        pencilColor
-      );
-
-      // --- Checking and updating value of decision parameter based on algorithm
-      if (d1 < 0) {
-        x++;
-        dx = dx + 2 * ry * ry;
-        d1 = d1 + dx + ry * ry;
-      } else {
-        x++;
-        y--;
-        dx = dx + 2 * ry * ry;
-        dy = dy - 2 * rx * rx;
-        d1 = d1 + dx - dy + ry * ry;
-      }
-    }
-
-    // --- Decision parameter of region 2
-    d2 =
-      ry * ry * ((x + 0.5) * (x + 0.5)) +
-      rx * rx * ((y - 1) * (y - 1)) -
-      rx * rx * ry * ry;
-
-    // --- Plotting points of region 2
-    while (y >= 0) {
-      // --- Print points based on 4-way symmetry
-      plotPixel(
-        Math.min(x + up(xc), col2),
-        Math.min(y + up(yc), row2),
-        pencilColor
-      );
-      plotPixel(
-        Math.max(-x + down(xc), col1),
-        Math.min(y + down(yc), row2),
-        pencilColor
-      );
-      plotPixel(
-        Math.min(x + up(xc), col2),
-        Math.max(-y + down(yc), row1),
-        pencilColor
-      );
-      plotPixel(
-        Math.max(-x + down(xc), col1),
-        Math.max(-y + down(yc), row1),
-        pencilColor
-      );
-
-      // --- Checking and updating parameter value based on algorithm
-      if (d2 > 0) {
-        y--;
-        dy = dy - 2 * rx * rx;
-        d2 = d2 + rx * rx - dy;
-      } else {
-        y--;
-        x++;
-        dx = dx + 2 * ry * ry;
-        dy = dy - 2 * rx * rx;
-        d2 = d2 + dx - dy + rx * rx;
-      }
-    }
-  } else {
-    // --- Circle with Bresenham's algorithm
-    let x = 0,
-      y = rx;
-    let d = 3 - 2 * rx;
-    drawCirclePoints(xc, yc, x, y, pencilColor);
-    while (y >= x) {
-      // --- For each pixel we will draw all eight pixels
-      x++;
-
-      // --- Check for decision parameter and correspondingly update d, x, y
-      if (d > 0) {
-        y--;
-        d = d + 4 * (x - y) + 10;
-      } else d = d + 4 * x + 6;
-      drawCirclePoints(xc, yc, x, y, pencilColor);
-    }
-  }
-
-  // --- Fill the ellipse
-  for (let row = row1 + 1; row < row2; row++) {
-    const rowSpan = rowSpans[row];
-    for (let col = rowSpan[0] + 1; col < rowSpan[1]; col++) {
-      map[row * 16 + col] = fillColor;
-    }
-  }
-
-  function down (x: number): number {
-    return Number.isInteger(x) ? x : x - 0.25;
-  }
-
-  function up (x: number): number {
-    return Number.isInteger(x) ? x : x + 0.25;
-  }
-
-  function drawCirclePoints (
-    xc: number,
-    yc: number,
-    x: number,
-    y: number,
-    colorIndex: number
-  ) {
-    plotPixel(
-      Math.min(x + up(xc), col2),
-      Math.min(y + up(yc), row2),
-      colorIndex
-    );
-    plotPixel(
-      Math.max(-x + down(xc), col1),
-      Math.min(y + up(yc), row2),
-      colorIndex
-    );
-    plotPixel(
-      Math.min(x + up(xc), col2),
-      Math.max(-y + down(yc), row1),
-      colorIndex
-    );
-    plotPixel(
-      Math.max(-x + down(xc), col1),
-      Math.max(-y + down(yc), row1),
-      colorIndex
-    );
-    plotPixel(
-      Math.min(y + up(xc), col2),
-      Math.min(x + up(yc), row2),
-      colorIndex
-    );
-    plotPixel(
-      Math.max(-y + down(xc), col1),
-      Math.min(x + up(yc), row2),
-      colorIndex
-    );
-    plotPixel(
-      Math.min(y + up(xc), col2),
-      Math.max(-x + down(yc), row1),
-      colorIndex
-    );
-    plotPixel(
-      Math.max(-y + down(xc), col1),
-      Math.max(-x + down(yc), row1),
-      colorIndex
-    );
-  }
-
-  function plotPixel (col: number, row: number, colorIndex: number) {
-    row = Math.round(row);
-    col = Math.round(col);
-    if (row < 0 || row > 15 || col < 0 || col > 15) return;
-    const rowSpan = rowSpans[row];
-    if (rowSpan[0] === -1 || col < rowSpan[0]) {
-      rowSpan[0] = col;
-    }
-    if (col > rowSpan[1]) {
-      rowSpan[1] = col;
-    }
-    map[row * 16 + col] = colorIndex;
-  }
-}
-
-function areaFill (
-  map: Uint8Array,
-  row: number,
-  col: number,
-  fillColor: number
-) {
-  const startColor = map[row * 16 + col];
-  fill(row, col);
-
-  function fill (row: number, col: number) {
-    const pixel = map[row * 16 + col];
-    if (row < 0 || row > 15 || col < 0 || col > 15) {
-      return;
-    }
-    if (pixel !== startColor || pixel === fillColor) {
-      return;
-    }
-
-    map[row * 16 + col] = fillColor;
-    fill(row + 1, col);
-    fill(row - 1, col);
-    fill(row, col + 1);
-    fill(row, col - 1);
-  }
-}
-
-function normalizeCoords (
-  row1: number,
-  col1: number,
-  row2: number,
-  col2: number
-): [number, number, number, number] {
-  if (row2 < row1) {
-    [row1, row2] = [row2, row1];
-  }
-  if (col2 < col1) {
-    [col1, col2] = [col2, col1];
-  }
-  return [row1, col1, row2, col2];
-}
