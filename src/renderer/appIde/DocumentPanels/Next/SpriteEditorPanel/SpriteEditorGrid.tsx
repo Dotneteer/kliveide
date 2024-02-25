@@ -1,5 +1,5 @@
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import styles from "./SprFileEditorPanel.module.scss";
+import styles from "./SpriteEditor.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { getCssStringForPaletteCode } from "@emu/machines/zxNext/palette";
 import { SpriteTools } from "./sprite-common";

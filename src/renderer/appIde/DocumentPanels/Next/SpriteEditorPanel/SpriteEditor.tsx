@@ -1,7 +1,15 @@
-import styles from "./SprFileEditorPanel.module.scss";
+import styles from "./SpriteEditor.module.scss";
 import { GenericFileEditorContext } from "../../helpers/GenericFileEditorPanel";
-import { SprFileContents, SprFileViewState } from "./sprite-common";
-import { getCssStringForPaletteCode, getLuminanceForPaletteCode, getRgbPartsForPaletteCode } from "@emu/machines/zxNext/palette";
+import {
+  SprFileContents,
+  SprFileViewState,
+  SpriteTools
+} from "./sprite-common";
+import {
+  getCssStringForPaletteCode,
+  getLuminanceForPaletteCode,
+  getRgbPartsForPaletteCode
+} from "@emu/machines/zxNext/palette";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { LabelSeparator, Value } from "@renderer/controls/Labels";
@@ -14,7 +22,7 @@ import { Panel } from "@renderer/controls/generic/Panel";
 import { Row } from "@renderer/controls/generic/Row";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 const defaultPalette: number[] = [];
 for (let i = 0; i < 256; i++) {
@@ -26,188 +34,324 @@ type Props = {
 };
 
 export const SpriteEditor = ({ context }: Props) => {
-  // --- Get the current view state
-  const zoomFactor = context.viewState?.zoomFactor ?? 2;
-  const spriteImagesSeparated =
-    context.viewState?.spriteImagesSeparated ?? true;
-  const showTrancparencyColor =
-    context.viewState?.showTrancparencyColor ?? false;
-  let selectedSpriteIndex = context.viewState?.selectedSpriteIndex ?? 0;
-  let spriteMap = context.fileInfo?.sprites?.[selectedSpriteIndex];
-  if (!spriteMap) {
-    spriteMap = new Uint8Array(16 * 16);
-    for (let i = 0; i < 16 * 16; i++) {
-      spriteMap[i] = 0xe3;
-    }
-  }
+  // --- Sign the view state is initialized (to avoid flickering)
+  const viewStateInitialized = useRef(false);
+
+  // --- Sprite editor state
+  const [zoomFactor, setZoomFactor] = useState<number>(2);
+  const [spriteImagesSeparated, setSpriteImagesSeparated] = useState<boolean>();
+  const [showTrancparencyColor, setShowTrancparencyColor] = useState<boolean>();
+  const [pencilColorIndex, setPencilColorIndex] = useState<number>();
+  const [fillColorIndex, setFillColorIndex] = useState<number>();
+  const [selectedSpriteIndex, setSelectedSpriteIndex] = useState<number>();
+  const [spriteMap, setSpriteMap] = useState<Uint8Array>();
+  const [currentRow, setCurrentRow] = useState<string>();
+  const [currentColumn, setCurrentColumn] = useState<string>();
+  const [currentColorIndex, setCurrentColorIndex] = useState<number>();
+  const [currentTool, setCurrentTool] = useState<SpriteTools>();
+
+  // --- Constants used to render the editor
   const palette = defaultPalette.slice(0);
-  const pencilColorIndex = context.viewState?.pencilColorIndex ?? 0x0f;
-  const fillColorIndex = context.viewState?.fillColorIndex ?? 0xe3;
-  const currentRow = context.viewState?.currentRow ?? "-";
-  const currentColumn = context.viewState?.currentColumn ?? "-";
-  const currentColorIndex = context.viewState?.currentColorIndex ?? -1;
   const rgbParts =
     currentColorIndex >= 0
       ? getRgbPartsForPaletteCode(palette[currentColorIndex])
       : undefined;
-  const currentTool = context.viewState?.currentTool ?? "pointer";
 
+  // --- Set the current state according to the initial view state of the context
+  useEffect(() => {
+    if (viewStateInitialized.current) return;
+    viewStateInitialized.current = true;
+    setZoomFactor(context.viewState?.zoomFactor ?? 2);
+    setSpriteImagesSeparated(context.viewState?.spriteImagesSeparated ?? true);
+    setShowTrancparencyColor(context.viewState?.showTrancparencyColor ?? false);
+    setPencilColorIndex(context.viewState?.pencilColorIndex ?? 0x0f);
+    setFillColorIndex(context.viewState?.fillColorIndex ?? 0xe3);
+    const spriteIndex = context.viewState?.selectedSpriteIndex ?? 0;
+    setSelectedSpriteIndex(spriteIndex);
+    setSpriteMap(context.fileInfo?.sprites?.[spriteIndex]);
+    setCurrentRow("-");
+    setCurrentColumn("-");
+    setCurrentColorIndex(context.viewState?.currentColorIndex ?? -1);
+    setCurrentTool(context.viewState?.currentTool ?? "pointer");
+  }, [context.viewState]);
+
+  // --- Update the context view state whenever the internal state changes
+  useEffect(() => {
+    context.changeViewState(vs => {
+      vs.zoomFactor = zoomFactor;
+      vs.spriteImagesSeparated = spriteImagesSeparated;
+      vs.showTrancparencyColor = showTrancparencyColor;
+      vs.pencilColorIndex = pencilColorIndex;
+      vs.fillColorIndex = fillColorIndex;
+      vs.selectedSpriteIndex = selectedSpriteIndex;
+      vs.currentColorIndex = currentColorIndex;
+      vs.currentTool = currentTool;
+    });
+  }, [
+    zoomFactor,
+    spriteImagesSeparated,
+    showTrancparencyColor,
+    pencilColorIndex,
+    fillColorIndex,
+    selectedSpriteIndex,
+    currentColorIndex,
+    currentTool
+  ]);
+
+  // --- Update the sprite map whenever the current map changes
   const updateSpriteMap = (newSpriteMap: Uint8Array) => {
-    context.changeViewState(vs => (vs.spriteMap = newSpriteMap));
+    setSpriteMap(newSpriteMap);
     if (context.fileInfo?.sprites) {
       context.fileInfo.sprites[selectedSpriteIndex] = newSpriteMap;
     }
   };
 
+  // --- Render the toolbar for sprites in the file
+  const SpriteFileToolbar = () => (
+    <Row>
+      <SmallIconButton
+        iconName='undo'
+        title={"Undo"}
+        enable={true}
+        clicked={() => {
+          // TODO: Implement
+        }}
+      />
+      <SmallIconButton
+        iconName='redo'
+        title={"Redo"}
+        enable={true}
+        clicked={async () => {
+          // TODO: Implement
+        }}
+      />
+      <ToolbarSeparator small={true} />
+      <SmallIconButton
+        iconName='@duplicate'
+        title={"Duplicate sprite"}
+        enable={true}
+        clicked={async () => {
+          const sprites = context.fileInfo?.sprites;
+          const sprite = sprites[selectedSpriteIndex];
+          const newSprite = new Uint8Array(sprite);
+          sprites.splice(selectedSpriteIndex, 0, newSprite);
+          updateSpriteMap(newSprite);
+        }}
+      />
+      <SmallIconButton
+        iconName='@cut'
+        title={"Cut sprite"}
+        enable={context.fileInfo?.sprites?.length > 1}
+        clicked={async () => {
+          const sprites = context.fileInfo?.sprites;
+          if (sprites.length < 2) {
+            return;
+          }
+          let newIndex = selectedSpriteIndex;
+          sprites.splice(newIndex, 1);
+          if (newIndex > sprites.length - 1) {
+            newIndex = sprites.length - 1;
+          }
+          setSpriteMap(sprites[newIndex]);
+          setSelectedSpriteIndex(newIndex);
+        }}
+      />
+      <SmallIconButton
+        iconName='@move-left'
+        title={"Move sprite left"}
+        enable={selectedSpriteIndex > 0}
+        clicked={async () => {
+          const sprites = context.fileInfo?.sprites;
+          const sprite = sprites[selectedSpriteIndex];
+          let newIndex = selectedSpriteIndex - 1;
+          sprites[selectedSpriteIndex] = sprites[newIndex];
+          sprites[newIndex] = sprite;
+          setSelectedSpriteIndex(newIndex);
+        }}
+      />
+      <SmallIconButton
+        iconName='@move-right'
+        title={"Move sprite right"}
+        enable={selectedSpriteIndex < context.fileInfo?.sprites?.length - 1}
+        clicked={async () => {
+          const sprites = context.fileInfo?.sprites;
+          const sprite = sprites[selectedSpriteIndex];
+          let newIndex = selectedSpriteIndex + 1;
+          sprites[selectedSpriteIndex] = sprites[newIndex];
+          sprites[newIndex] = sprite;
+          setSelectedSpriteIndex(newIndex);
+        }}
+      />
+      <SmallIconButton
+        iconName='@plus'
+        title={"Add new sprite"}
+        enable={true}
+        clicked={async () => {
+          const sprites = context.fileInfo?.sprites;
+          const sprite = sprites[selectedSpriteIndex];
+          const newSprite = new Uint8Array(256);
+          for (let i = 0; i < 256; i++) {
+            newSprite[i] = 0xe3;
+          }
+          sprites.splice(selectedSpriteIndex, 0, newSprite);
+          updateSpriteMap(newSprite);
+        }}
+      />
+      <ToolbarSeparator small={true} />
+      <SmallIconButton
+        iconName='@separate-vertical'
+        title={`${
+          spriteImagesSeparated ? "Merge" : "Separate"
+        } sprites vertically`}
+        selected={spriteImagesSeparated}
+        enable={true}
+        clicked={async () => setSpriteImagesSeparated(!spriteImagesSeparated)}
+      />
+      <SmallIconButton
+        iconName='@transparent'
+        title={`${showTrancparencyColor ? "Hide" : "Show"} transparency color`}
+        selected={showTrancparencyColor}
+        enable={true}
+        clicked={async () => setShowTrancparencyColor(!showTrancparencyColor)}
+      />
+      {selectedSpriteIndex !== undefined &&
+        context?.fileInfo?.sprites?.length > 0 && (
+          <>
+            <ToolbarSeparator small={true} />
+            <LabelSeparator width={8} />
+            <Text
+              text={`Sprite #${selectedSpriteIndex + 1} of ${
+                context.fileInfo.sprites.length
+              }`}
+            />
+          </>
+        )}
+    </Row>
+  );
+
+  const SpriteEditorToolbar = () => (
+    <Row>
+      <SmallIconButton
+        iconName='@zoom-in'
+        title={"Zoom-in"}
+        enable={zoomFactor < 3}
+        clicked={() => setZoomFactor(zoomFactor + 1)}
+      />
+      <SmallIconButton
+        iconName='@zoom-out'
+        title={"Zoom-out"}
+        enable={zoomFactor > 1}
+        clicked={() => setZoomFactor(zoomFactor - 1)}
+      />
+      <ToolbarSeparator small={true} />
+      <SmallIconButton
+        iconName='@pointer'
+        title={"Pencil tool"}
+        selected={currentTool === "pointer"}
+        clicked={() => setCurrentTool("pointer")}
+      />
+      <SmallIconButton
+        iconName='@pencil'
+        title={"Pencil tool"}
+        selected={currentTool === "pencil"}
+        clicked={() => setCurrentTool("pencil")}
+      />
+      <SmallIconButton
+        iconName='@line'
+        title={"Line tool"}
+        selected={currentTool === "line"}
+        clicked={() => setCurrentTool("line")}
+      />
+      <SmallIconButton
+        iconName='@rectangle'
+        title={"Rectangle tool"}
+        selected={currentTool === "rectangle"}
+        clicked={() => setCurrentTool("rectangle")}
+      />
+      <SmallIconButton
+        iconName='@rectangle-filled'
+        title={"Filled rectangle tool"}
+        selected={currentTool === "rectangle-filled"}
+        clicked={() => setCurrentTool("rectangle-filled")}
+      />
+      <SmallIconButton
+        iconName='@circle'
+        title={"Circle tool"}
+        selected={currentTool === "circle"}
+        clicked={() => setCurrentTool("circle")}
+      />
+      <SmallIconButton
+        iconName='@circle-filled'
+        title={"Filled circle tool"}
+        selected={currentTool === "circle-filled"}
+        clicked={() => setCurrentTool("circle-filled")}
+      />
+      <SmallIconButton
+        iconName='@paint'
+        title={"Paint tool"}
+        selected={currentTool === "paint"}
+        clicked={() => setCurrentTool("paint")}
+      />
+      <ToolbarSeparator small={true} />
+      <SmallIconButton
+        iconName='@rotate'
+        title={"Rotate counter-clockwise"}
+        clicked={() => {
+          const result = new Uint8Array(16 * 16);
+          for (let row = 0; row < 16; row++) {
+            for (let col = 0; col < 16; col++) {
+              result[row * 16 + col] = spriteMap[col * 16 + 15 - row];
+            }
+          }
+          updateSpriteMap(result);
+        }}
+      />
+      <SmallIconButton
+        iconName='@rotate-clockwise'
+        title={"Rotate clockwise"}
+        clicked={() => {
+          const result = new Uint8Array(16 * 16);
+          for (let row = 0; row < 16; row++) {
+            for (let col = 0; col < 16; col++) {
+              result[row * 16 + col] = spriteMap[(15 - col) * 16 + row];
+            }
+          }
+          updateSpriteMap(result);
+        }}
+      />
+      <SmallIconButton
+        iconName='@flip-vertical'
+        title={"Flip vertically"}
+        clicked={() => {
+          const result = new Uint8Array(16 * 16);
+          for (let row = 0; row < 16; row++) {
+            for (let col = 0; col < 16; col++) {
+              result[row * 16 + col] = spriteMap[row * 16 + (15 - col)];
+            }
+          }
+          updateSpriteMap(result);
+        }}
+      />
+      <SmallIconButton
+        iconName='@flip-horizontal'
+        title={"Flip horizontally"}
+        clicked={() => {
+          const result = new Uint8Array(16 * 16);
+          for (let row = 0; row < 16; row++) {
+            for (let col = 0; col < 16; col++) {
+              result[row * 16 + col] = spriteMap[(15 - row) * 16 + col];
+            }
+          }
+          updateSpriteMap(result);
+        }}
+      />
+    </Row>
+  );
+
   // --- Render the editor
-  return (
+  return viewStateInitialized.current ? (
     <>
-      <Row>
-        <SmallIconButton
-          iconName='undo'
-          title={"Undo"}
-          enable={true}
-          clicked={() => {
-            // TODO: Implement
-          }}
-        />
-        <SmallIconButton
-          iconName='redo'
-          title={"Redo"}
-          enable={true}
-          clicked={async () => {
-            // TODO: Implement
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName='@duplicate'
-          title={"Duplicate sprite"}
-          enable={true}
-          clicked={async () => {
-            const sprites = context.fileInfo?.sprites;
-            const sprite = sprites[selectedSpriteIndex];
-            const newSprite = new Uint8Array(sprite);
-            sprites.splice(selectedSpriteIndex, 0, newSprite);
-            updateSpriteMap(newSprite);
-          }}
-        />
-        <SmallIconButton
-          iconName='@cut'
-          title={"Cut sprite"}
-          enable={context.fileInfo?.sprites?.length > 1}
-          clicked={async () => {
-            const sprites = context.fileInfo?.sprites;
-            if (sprites.length < 2) {
-              return;
-            }
-            sprites.splice(selectedSpriteIndex, 1);
-            if (selectedSpriteIndex > sprites.length - 1) {
-              selectedSpriteIndex = sprites.length - 1;
-            }
-            spriteMap = sprites[selectedSpriteIndex];
-            context.changeViewState(vs => {
-              vs.selectedSpriteIndex = selectedSpriteIndex;
-              vs.spriteMap = spriteMap.slice(0);
-              if (context.fileInfo?.sprites) {
-                context.fileInfo.sprites[selectedSpriteIndex] = vs.spriteMap;
-              }
-            });
-          }}
-        />
-        <SmallIconButton
-          iconName='@move-left'
-          title={"Move sprite left"}
-          enable={selectedSpriteIndex > 0}
-          clicked={async () => {
-            const sprites = context.fileInfo?.sprites;
-            if (selectedSpriteIndex < 1) {
-              return;
-            }
-            const sprite = sprites[selectedSpriteIndex - 1];
-            sprites[selectedSpriteIndex - 1] = sprites[selectedSpriteIndex];
-            sprites[selectedSpriteIndex] = sprite;
-            selectedSpriteIndex--;
-            context.changeViewState(vs => {
-              vs.selectedSpriteIndex = selectedSpriteIndex;
-              vs.spriteMap = sprites[selectedSpriteIndex].slice(0);
-            });
-          }}
-        />
-        <SmallIconButton
-          iconName='@move-right'
-          title={"Move sprite right"}
-          enable={selectedSpriteIndex < context.fileInfo?.sprites?.length - 1}
-          clicked={async () => {
-            const sprites = context.fileInfo?.sprites;
-            if (selectedSpriteIndex >= context.fileInfo?.sprites?.length - 1) {
-              return;
-            }
-            const sprite = sprites[selectedSpriteIndex + 1];
-            sprites[selectedSpriteIndex + 1] = sprites[selectedSpriteIndex];
-            sprites[selectedSpriteIndex] = sprite;
-            selectedSpriteIndex++;
-            context.changeViewState(vs => {
-              vs.selectedSpriteIndex = selectedSpriteIndex;
-              vs.spriteMap = sprites[selectedSpriteIndex].slice(0);
-            });
-          }}
-        />
-        <SmallIconButton
-          iconName='@plus'
-          title={"Add new sprite"}
-          enable={true}
-          clicked={async () => {
-            const sprites = context.fileInfo?.sprites;
-            const sprite = sprites[selectedSpriteIndex];
-            const newSprite = new Uint8Array(256);
-            for (let i = 0; i < 256; i++) {
-              newSprite[i] = 0xe3;
-            }
-            sprites.splice(selectedSpriteIndex, 0, newSprite);
-            updateSpriteMap(newSprite);
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName='@separate-vertical'
-          title={`${
-            spriteImagesSeparated ? "Merge" : "Separate"
-          } sprites vertically`}
-          selected={spriteImagesSeparated}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(
-              vs => (vs.spriteImagesSeparated = !spriteImagesSeparated)
-            );
-          }}
-        />
-        <SmallIconButton
-          iconName='@transparent'
-          title={`${
-            showTrancparencyColor ? "Hide" : "Show"
-          } transparency color`}
-          selected={showTrancparencyColor}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(
-              vs => (vs.showTrancparencyColor = !showTrancparencyColor)
-            );
-          }}
-        />
-        {selectedSpriteIndex !== undefined &&
-          context?.fileInfo?.sprites?.length > 0 && (
-            <>
-              <ToolbarSeparator small={true} />
-              <LabelSeparator width={8} />
-              <Text
-                text={`Sprite #${selectedSpriteIndex + 1} of ${
-                  context.fileInfo.sprites.length
-                }`}
-              />
-            </>
-          )}
-      </Row>
+      <SpriteFileToolbar />
       <ScrollViewer
         xclass={styles.spriteScroller}
         scrollBarWidth={4}
@@ -228,137 +372,14 @@ export const SpriteEditor = ({ context }: Props) => {
                 showTransparencyColor={showTrancparencyColor}
                 selected={selectedSpriteIndex === idx}
                 clicked={() => {
-                  context.changeViewState(vs => {
-                    vs.selectedSpriteIndex = idx;
-                    vs.spriteMap = spr;
-                  });
+                  setSelectedSpriteIndex(idx);
+                  setSpriteMap(spr);
                 }}
               />
             );
           })}
       </ScrollViewer>
-      <Row>
-        <SmallIconButton
-          iconName='@zoom-in'
-          title={"Zoom-in"}
-          enable={zoomFactor < 3}
-          clicked={() => {
-            context.changeViewState(vs => {
-              vs.zoomFactor = zoomFactor + 1;
-            });
-          }}
-        />
-        <SmallIconButton
-          iconName='@zoom-out'
-          title={"Zoom-out"}
-          enable={zoomFactor > 1}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.zoomFactor = zoomFactor - 1));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName='@pointer'
-          title={"Pencil tool"}
-          selected={currentTool === "pointer"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "pointer"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@pencil'
-          title={"Pencil tool"}
-          selected={currentTool === "pencil"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "pencil"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@line'
-          title={"Line tool"}
-          selected={currentTool === "line"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "line"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@rectangle'
-          title={"Rectangle tool"}
-          selected={currentTool === "rectangle"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "rectangle"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@rectangle-filled'
-          title={"Filled rectangle tool"}
-          selected={currentTool === "rectangle-filled"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(
-              vs => (vs.currentTool = "rectangle-filled")
-            );
-          }}
-        />
-        <SmallIconButton
-          iconName='@circle'
-          title={"Circle tool"}
-          selected={currentTool === "circle"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "circle"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@circle-filled'
-          title={"Filled circle tool"}
-          selected={currentTool === "circle-filled"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "circle-filled"));
-          }}
-        />
-        <SmallIconButton
-          iconName='@paint'
-          title={"Paint tool"}
-          selected={currentTool === "paint"}
-          enable={true}
-          clicked={async () => {
-            context.changeViewState(vs => (vs.currentTool = "paint"));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName='@rotate'
-          title={"Rotate counter-clockwise"}
-          enable={true}
-          clicked={async () =>
-            updateSpriteMap(rotateCounterClockwise(spriteMap))
-          }
-        />
-        <SmallIconButton
-          iconName='@rotate-clockwise'
-          title={"Rotate clockwise"}
-          enable={true}
-          clicked={async () => updateSpriteMap(rotateClockwise(spriteMap))}
-        />
-        <SmallIconButton
-          iconName='@flip-vertical'
-          title={"Flip vertically"}
-          enable={true}
-          clicked={async () => updateSpriteMap(flipVertical(spriteMap))}
-        />
-        <SmallIconButton
-          iconName='@flip-horizontal'
-          title={"Flip horizontally"}
-          enable={true}
-          clicked={async () => updateSpriteMap(flipHorizontal(spriteMap))}
-        />
-      </Row>
+      <SpriteEditorToolbar />
       <Panel xclass={styles.editorPanel}>
         <Row xclass={styles.editorInfo}>
           <LabelSeparator width={8} />
@@ -374,13 +395,11 @@ export const SpriteEditor = ({ context }: Props) => {
             title='Swap colors'
             enable={true}
             clicked={async () => {
-              context.changeViewState(vs => {
-                vs.pencilColorIndex = fillColorIndex;
-                vs.fillColorIndex = pencilColorIndex;
-              });
+              setPencilColorIndex(fillColorIndex);
+              setFillColorIndex(pencilColorIndex);
             }}
           />
-          <LabelSeparator width={8} />
+          <LabelSeparator width={4} />
           <Text text='Fill color:' />
           <LabelSeparator width={8} />
           <ColorSample
@@ -422,14 +441,13 @@ export const SpriteEditor = ({ context }: Props) => {
               fillColorIndex={fillColorIndex}
               tool={currentTool}
               onPositionChange={(row, col) => {
-                context.changeViewState(vs => {
-                  vs.currentRow = row?.toString() ?? "-";
-                  vs.currentColumn = col?.toString() ?? "-";
-                  vs.currentColorIndex =
-                    row !== undefined && col !== undefined
-                      ? spriteMap[row * 16 + col]
-                      : -1;
-                });
+                setCurrentRow(row?.toString() ?? "-");
+                setCurrentColumn(col?.toString() ?? "-");
+                setCurrentColorIndex(
+                  row !== undefined && col !== undefined
+                    ? spriteMap[row * 16 + col]
+                    : -1
+                );
               }}
               onSpriteChange={(newSpriteMap: Uint8Array) => {
                 updateSpriteMap(newSpriteMap);
@@ -444,19 +462,15 @@ export const SpriteEditor = ({ context }: Props) => {
                 transparencyIndex={0xe3}
                 allowSelection={true}
                 smallDisplay={true}
-                onSelection={idx => {
-                  context.changeViewState(vs => (vs.pencilColorIndex = idx));
-                }}
-                onRightClick={idx => {
-                  context.changeViewState(vs => (vs.fillColorIndex = idx));
-                }}
+                onSelection={idx => setPencilColorIndex(idx)}
+                onRightClick={idx => setFillColorIndex(idx)}
               />
             </Column>
           </div>
         </Row>
       </Panel>
     </>
-  );
+  ) : null;
 };
 
 type ColorSampleProps = {
@@ -464,6 +478,7 @@ type ColorSampleProps = {
   isTransparency?: boolean;
 };
 
+// --- Helper component to represent a color sample
 const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
   const backgroundColor = getCssStringForPaletteCode(color);
   const midColor = getLuminanceForPaletteCode(color) < 3.5 ? "white" : "black";
@@ -478,43 +493,3 @@ const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
     </div>
   );
 });
-
-function rotateCounterClockwise (sprite: Uint8Array): Uint8Array {
-  const result = new Uint8Array(16 * 16);
-  for (let row = 0; row < 16; row++) {
-    for (let col = 0; col < 16; col++) {
-      result[row * 16 + col] = sprite[col * 16 + 15 - row];
-    }
-  }
-  return result;
-}
-
-function rotateClockwise (sprite: Uint8Array): Uint8Array {
-  const result = new Uint8Array(16 * 16);
-  for (let row = 0; row < 16; row++) {
-    for (let col = 0; col < 16; col++) {
-      result[row * 16 + col] = sprite[(15 - col) * 16 + row];
-    }
-  }
-  return result;
-}
-
-function flipHorizontal (sprite: Uint8Array): Uint8Array {
-  const result = new Uint8Array(16 * 16);
-  for (let row = 0; row < 16; row++) {
-    for (let col = 0; col < 16; col++) {
-      result[row * 16 + col] = sprite[(15 - row) * 16 + col];
-    }
-  }
-  return result;
-}
-
-function flipVertical (sprite: Uint8Array): Uint8Array {
-  const result = new Uint8Array(16 * 16);
-  for (let row = 0; row < 16; row++) {
-    for (let col = 0; col < 16; col++) {
-      result[row * 16 + col] = sprite[row * 16 + (15 - col)];
-    }
-  }
-  return result;
-}

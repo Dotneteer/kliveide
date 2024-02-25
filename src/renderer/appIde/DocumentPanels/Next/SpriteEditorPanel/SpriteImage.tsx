@@ -1,4 +1,4 @@
-import styles from "./SprFileEditorPanel.module.scss";
+import styles from "./SpriteEditor.module.scss";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { TooltipFactory } from "@renderer/controls/Tooltip";
