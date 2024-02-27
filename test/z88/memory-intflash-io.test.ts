@@ -164,4 +164,152 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     });
   });
 
+  it(`Intel I28F004S5 format sector 0 in slot 1`, () => {
+    // --------------------------------------------------------------------------------------
+    // The objective of the test is to format sector 0 (bottom 64K of Flash chip)
+    // 1. Flash one byte at bottom and one byte at top of sector
+    // 2. Sector is formatted
+    // 3. bytes at bottom and top of sector are validated to be reset to 0xff
+    // --------------------------------------------------------------------------------------
+
+    // --- Create the machine
+    const m = new Z88TestMachine();
+    const mem = m.memory;
+    const memt = mem as IZ88BankedMemoryTestSupport;
+
+    // --- Create a 512K Intel 28F004S5 Flash Card
+    const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+    // --- Insert 512K card in slot 1 (reset to FFh)
+    mem.insertCard(1, i28F004S5);
+
+    // --------------------------------------------------------------------------------------
+    // Blow byte 0x55 at address 0x0001 (bottom of sector 0 of slot 1), from bits 1111 1111 -> 0101 0101
+    // --------------------------------------------------------------------------------------
+    // bind bottom bank of slot 1 (0x40) into logical address space (SR3)
+    m.blinkDevice.setSR3(0x40);
+
+    m.memory.writeMemory(0xc001,0x40); // at (address) execute Blow byte command
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xc001,0x55); // at (address) blow bits 0b01010101
+    m.memory.writeMemory(0xc001, 0x70); // execute Read Status Register command
+    const flashByteStatus = m.memory.readMemory(0xc001);
+    expect(flashByteStatus).toBe(0x80); // Intel Flash command mode has returned "Ready" (byte was flashed)
+    m.memory.writeMemory(0xc001,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+    const flashedByte = m.memory.readMemory(0xc001); // back in read-array mode, load flashed byte from memory
+    expect(flashedByte).toBe(0x55); // which should be 0xff -> 0x55 (0b01010101)
+
+    // --------------------------------------------------------------------------------------
+    // Blow byte 0x55 at address 0xffff (top of sector 0 of slot 1), from bits 1111 1111 -> 0101 0101
+    // --------------------------------------------------------------------------------------
+    // bind top bank of sector 0 in slot 1 (0x43) into logical address space (SR3)
+    m.blinkDevice.setSR3(0x43);
+    m.memory.writeMemory(0xffff,0x40); // at (top address in SR3, also top of sector) execute Blow byte command
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xffff,0x55); // at (address) blow bits 0b01010101
+    m.memory.writeMemory(0xffff, 0x70); // execute Read Status Register command
+    const flashByteStatus2 = m.memory.readMemory(0xffff);
+    expect(flashByteStatus2).toBe(0x80); // Intel Flash command mode has returned "Ready" (byte was flashed)
+    m.memory.writeMemory(0xffff,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+    const flashedByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load flashed byte from memory
+    expect(flashedByte2).toBe(0x55); // which should be 0xff -> 0x55 (0b01010101)
+
+    // --------------------------------------------------------------------------------------
+    // Format sector 0 via address 0x0fff (inside sector 0 of slot 1)
+    // --------------------------------------------------------------------------------------
+    m.memory.writeMemory(0xcfff,0x20); // execute Format sector command (part 1)
+    m.memory.writeMemory(0xcfff,0xd0); // execute Format sector command (part 2)
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xcfff, 0x70); // execute Read Status Register command
+    const formattedSectorStatus = m.memory.readMemory(0xffff);
+    expect(formattedSectorStatus).toBe(0x80); // Intel Flash command mode has returned "Ready" (sector was formatted)
+    m.memory.writeMemory(0xcfff,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+
+    // check previous flashed byte (in bottom address 0x0001 of sector 0) is now reset (from sector format)?
+    m.blinkDevice.setSR3(0x40);
+    const resetByte1 = m.memory.readMemory(0xc001);
+    expect(resetByte1).toBe(0xff);
+
+    // check previous flashed byte (in top address 0xffff of sector 0) is now reset (from sector format)?
+    m.blinkDevice.setSR3(0x43);
+    const resetByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load prev. flashed byte from memory
+    expect(resetByte2).toBe(0xff); // which should be 0xff (from 0x55)
+  });
+
+  it(`Intel I28F004S5 format sector 7 in slot 1`, () => {
+    // --------------------------------------------------------------------------------------
+    // The objective of the test is to format sector 7 (top 64K of Flash chip)
+    // 1. Flash one byte at bottom and one byte at top of sector
+    // 2. Sector is formatted
+    // 3. Bytes at bottom and top of sector are validated to be reset to 0xff
+    // --------------------------------------------------------------------------------------
+
+    // --- Create the machine
+    const m = new Z88TestMachine();
+    const mem = m.memory;
+    const memt = mem as IZ88BankedMemoryTestSupport;
+
+    // --- Create a 512K Intel 28F004S5 Flash Card
+    const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+    // --- Insert 512K card in slot 1 (reset to FFh)
+    mem.insertCard(1, i28F004S5);
+
+    // --------------------------------------------------------------------------------------
+    // Blow byte 0x55 at address 0x0001 (bottom of sector 7 of slot 1), from bits 1111 1111 -> 0101 0101
+    // --------------------------------------------------------------------------------------
+    // bind bottom bank of top sector slot 1 (0x5C) into logical address space (SR3)
+    m.blinkDevice.setSR3(0x5c);
+
+    m.memory.writeMemory(0xc001,0x40); // at (address) execute Blow byte command
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xc001,0x55); // at (address) blow bits 0b01010101
+    m.memory.writeMemory(0xc001, 0x70); // execute Read Status Register command
+    const flashByteStatus = m.memory.readMemory(0xc001);
+    expect(flashByteStatus).toBe(0x80); // Intel Flash command mode has returned "Ready" (byte was flashed)
+    m.memory.writeMemory(0xc001,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+    const flashedByte = m.memory.readMemory(0xc001); // back in read-array mode, load flashed byte from memory
+    expect(flashedByte).toBe(0x55); // which should be 0xff -> 0x55 (0b01010101)
+
+    // --------------------------------------------------------------------------------------
+    // Blow byte 0x55 at address 0xffff (top of sector 7 of slot 1), from bits 1111 1111 -> 0101 0101
+    // --------------------------------------------------------------------------------------
+    // bind top bank of sector 7 in slot 1 (0x5f) into logical address space (SR3)
+    m.blinkDevice.setSR3(0x5f);
+    m.memory.writeMemory(0xffff,0x40); // at (top address in SR3, also top of sector) execute Blow byte command
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xffff,0x55); // at (address) blow bits 0b01010101
+    m.memory.writeMemory(0xffff, 0x70); // execute Read Status Register command
+    const flashByteStatus2 = m.memory.readMemory(0xffff);
+    expect(flashByteStatus2).toBe(0x80); // Intel Flash command mode has returned "Ready" (byte was flashed)
+    m.memory.writeMemory(0xffff,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+    const flashedByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load flashed byte from memory
+    expect(flashedByte2).toBe(0x55); // which should be 0xff -> 0x55 (0b01010101)
+
+    // --------------------------------------------------------------------------------------
+    // Format sector 7 via address 0x0fff (inside sector 7 of slot 1)
+    // --------------------------------------------------------------------------------------
+    m.memory.writeMemory(0xcfff,0x20); // execute Format sector command (part 1)
+    m.memory.writeMemory(0xcfff,0xd0); // execute Format sector command (part 2)
+    expect(i28F004S5.readArrayModeState()).toBe(false);
+    m.memory.writeMemory(0xcfff, 0x70); // execute Read Status Register command
+    const formattedSectorStatus = m.memory.readMemory(0xffff);
+    expect(formattedSectorStatus).toBe(0x80); // Intel Flash command mode has returned "Ready" (sector was formatted)
+    m.memory.writeMemory(0xcfff,0xff); // put Intel Flash chip back to Read Array Mode
+    expect(i28F004S5.readArrayModeState()).toBe(true);
+
+    // check previous flashed byte (in bottom address 0x0001 of sector 0) is now reset (from sector format)?
+    m.blinkDevice.setSR3(0x5c);
+    const resetByte1 = m.memory.readMemory(0xc001);
+    expect(resetByte1).toBe(0xff);
+
+    // check previous flashed byte (in top address 0xffff of sector 0) is now reset (from sector format)?
+    m.blinkDevice.setSR3(0x5f);
+    const resetByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load prev. flashed byte from memory
+    expect(resetByte2).toBe(0xff); // which should be 0xff (from 0x55)
+  });
+
 });
