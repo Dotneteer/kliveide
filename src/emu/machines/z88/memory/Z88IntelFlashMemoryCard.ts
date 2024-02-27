@@ -228,6 +228,15 @@ export class Z88IntelFlashMemoryCard extends Z88MemoryCardBase {
   }
 
   /**
+   * Expose the current Read Array Mode status to the emulating environment
+   *
+   * @returns true if the Intel Flash chip is in Read Array Mode, false when in command mode
+   */
+  public readArrayModeState(): boolean {
+    return this.readArrayMode;
+  }
+
+  /**
    * Reads the byte at the specified memory address of Intel Flash Card
    *
    * @param memOffset The 8K page base address of bound CPU <address> (in 4Mb range)
@@ -276,7 +285,7 @@ export class Z88IntelFlashMemoryCard extends Z88MemoryCardBase {
 
     // When a card is inserted into a slot, the Flash chip is always in Ready Array Mode by default
     this.readArrayMode = true;
-    this.executingCommandCode = this.statusRegister = 0;
+    this.executingCommandCode = this.statusRegister = 0x80;
   }
 
   /**
