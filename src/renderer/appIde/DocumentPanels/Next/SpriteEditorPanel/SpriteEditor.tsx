@@ -109,7 +109,7 @@ export const SpriteEditor = ({ context }: Props) => {
     newSpriteMap: Uint8Array,
     selectedIndex?: number
   ) => {
-    if (selectedIndex) {
+    if (selectedIndex !== undefined) {
       setSelectedSpriteIndex(selectedIndex);
     }
     setSpriteMap(newSpriteMap);
@@ -138,8 +138,9 @@ export const SpriteEditor = ({ context }: Props) => {
     if (edit.type === "SpriteListChange") {
       context.fileInfo.sprites = edit.oldSpriteList.slice(0);
       setSelectedSpriteIndex(edit.oldSpriteIndex);
-      updateSpriteMap(context.fileInfo.sprites[edit.oldSpriteIndex]);
+      setSpriteMap(context.fileInfo.sprites[edit.oldSpriteIndex]);
     } else {
+      console.log(editStackIndex, editStack.length);
       updateSpriteMap(edit.oldSpriteMap);
     }
     setEditStackIndex(editStackIndex - 1);
@@ -155,7 +156,7 @@ export const SpriteEditor = ({ context }: Props) => {
     if (edit.type === "SpriteListChange") {
       context.fileInfo.sprites = edit.newSpriteList.slice(0);
       setSelectedSpriteIndex(edit.newSpriteIndex);
-      updateSpriteMap(context.fileInfo.sprites[edit.newSpriteIndex]);
+      setSpriteMap(context.fileInfo.sprites[edit.newSpriteIndex]);
     } else {
       updateSpriteMap(edit.newSpriteMap);
     }
@@ -303,11 +304,23 @@ export const SpriteEditor = ({ context }: Props) => {
         enable={true}
         clicked={async () => {
           const sprites = context.fileInfo?.sprites;
+
+          const editInfo: EditInfo = {
+            type: "SpriteListChange",
+            oldSpriteIndex: selectedSpriteIndex,
+            oldSpriteList: sprites?.slice?.(0)
+          };
+
           const newSprite = new Uint8Array(256);
           for (let i = 0; i < 256; i++) {
             newSprite[i] = 0xe3;
           }
           sprites.splice(selectedSpriteIndex, 0, newSprite);
+
+          editInfo.newSpriteIndex = selectedSpriteIndex;
+          editInfo.newSpriteList = sprites.slice(0);
+          pushEdit(editInfo);
+
           await updateSpriteMap(newSprite);
         }}
       />
@@ -411,12 +424,21 @@ export const SpriteEditor = ({ context }: Props) => {
         iconName='@rotate'
         title={"Rotate counter-clockwise"}
         clicked={async () => {
+          const editInfo: EditInfo = {
+            type: "SpriteChange",
+            oldSpriteMap: spriteMap.slice(0)
+          };
+
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[col * 16 + 15 - row];
             }
           }
+
+          editInfo.newSpriteMap = result;
+          pushEdit(editInfo);
+
           await updateSpriteMap(result);
         }}
       />
@@ -424,12 +446,21 @@ export const SpriteEditor = ({ context }: Props) => {
         iconName='@rotate-clockwise'
         title={"Rotate clockwise"}
         clicked={async () => {
+          const editInfo: EditInfo = {
+            type: "SpriteChange",
+            oldSpriteMap: spriteMap.slice(0)
+          };
+
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[(15 - col) * 16 + row];
             }
           }
+
+          editInfo.newSpriteMap = result;
+          pushEdit(editInfo);
+
           await updateSpriteMap(result);
         }}
       />
@@ -437,12 +468,21 @@ export const SpriteEditor = ({ context }: Props) => {
         iconName='@flip-vertical'
         title={"Flip vertically"}
         clicked={async () => {
+          const editInfo: EditInfo = {
+            type: "SpriteChange",
+            oldSpriteMap: spriteMap.slice(0)
+          };
+
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[row * 16 + (15 - col)];
             }
           }
+
+          editInfo.newSpriteMap = result;
+          pushEdit(editInfo);
+
           await updateSpriteMap(result);
         }}
       />
@@ -450,12 +490,20 @@ export const SpriteEditor = ({ context }: Props) => {
         iconName='@flip-horizontal'
         title={"Flip horizontally"}
         clicked={async () => {
+          const editInfo: EditInfo = {
+            type: "SpriteChange",
+            oldSpriteMap: spriteMap.slice(0)
+          };
+
           const result = new Uint8Array(16 * 16);
           for (let row = 0; row < 16; row++) {
             for (let col = 0; col < 16; col++) {
               result[row * 16 + col] = spriteMap[(15 - row) * 16 + col];
             }
           }
+          editInfo.newSpriteMap = result;
+          pushEdit(editInfo);
+
           await updateSpriteMap(result);
         }}
       />
@@ -565,6 +613,14 @@ export const SpriteEditor = ({ context }: Props) => {
               }}
               onSpriteChange={(newSpriteMap: Uint8Array) => {
                 updateSpriteMap(newSpriteMap);
+              }}
+              onSpriteOperation={(oldSpriteMap, newSpriteMap) => {
+                console.log("Sprite operation", oldSpriteMap, newSpriteMap);
+                pushEdit({
+                  type: "SpriteChange",
+                  oldSpriteMap,
+                  newSpriteMap
+                });
               }}
               onSignEscape={() =>
                 context.changeViewState(vs => (vs.currentTool = "pointer"))

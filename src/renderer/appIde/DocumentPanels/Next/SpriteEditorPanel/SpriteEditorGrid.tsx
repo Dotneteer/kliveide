@@ -14,6 +14,10 @@ type Props = {
   tool: SpriteTools;
   onPositionChange?: (row?: number, col?: number) => void;
   onSpriteChange?: (sprite: Uint8Array) => void;
+  onSpriteOperation?: (
+    originalSprite: Uint8Array,
+    newSprite: Uint8Array
+  ) => void;
   onSignEscape?: () => void;
 };
 
@@ -27,6 +31,7 @@ export const SpriteEditorGrid = ({
   tool,
   onPositionChange,
   onSpriteChange,
+  onSpriteOperation,
   onSignEscape
 }: Props) => {
   // --- Calculate sizes
@@ -106,6 +111,10 @@ export const SpriteEditorGrid = ({
       onSpriteChange?.(activeSpriteMap.current);
     } else {
       handleMouseMove(row, col, true);
+    }
+
+    if (origSpriteMap.current && activeSpriteMap.current) {
+      onSpriteOperation?.(origSpriteMap.current, activeSpriteMap.current);
     }
     savedSpriteMap.current = undefined;
     origSpriteMap.current = undefined;
@@ -266,6 +275,12 @@ export const SpriteEditorGrid = ({
   ) => {
     [row1, col1, row2, col2] = normalizeCoords(row1, col1, row2, col2);
 
+    if (row2 - row1 < 2 || col2 - col1 < 2) {
+      drawRectangle(map, row1, col1, row2, col2, pencilColor, fillColor);
+      return;
+    }
+
+
     // --- Single pixel ellipse
     if (row1 === row2 && col1 === col2) {
       map[row1 * 16 + col1] = pencilColor;
@@ -273,9 +288,12 @@ export const SpriteEditorGrid = ({
     }
 
     // --- Spans by row
-    const rowSpans: [number, number][] = [];
+    const pixels: boolean[][] = [];
     for (let row = 0; row < 16; row++) {
-      rowSpans.push([-1, -1]);
+      pixels[row] = [];
+      for (let col = 0; col < 16; col++) {
+        pixels[row][col] = false;
+      }
     }
 
     const rx = Math.abs(col2 - col1) / 2;
@@ -398,10 +416,19 @@ export const SpriteEditorGrid = ({
     }
 
     // --- Fill the ellipse
-    for (let row = row1 + 1; row < row2; row++) {
-      const rowSpan = rowSpans[row];
-      for (let col = rowSpan[0] + 1; col < rowSpan[1]; col++) {
-        map[row * 16 + col] = fillColor;
+    if (fillColor !== undefined) {
+      const mid = Math.floor((col1 + col2) / 2);
+      for (let row = row1 + 1; row < row2; row++) {
+        let col = mid;
+        while (!pixels[row][col]) {
+          plotPixel(col, row, fillColor);
+          col--;
+        }
+        col = mid + 1;
+        while (!pixels[row][col]) {
+          plotPixel(col, row, fillColor);
+          col++;
+        }
       }
     }
 
@@ -466,13 +493,7 @@ export const SpriteEditorGrid = ({
       row = Math.round(row);
       col = Math.round(col);
       if (row < 0 || row > 15 || col < 0 || col > 15) return;
-      const rowSpan = rowSpans[row];
-      if (rowSpan[0] === -1 || col < rowSpan[0]) {
-        rowSpan[0] = col;
-      }
-      if (col > rowSpan[1]) {
-        rowSpan[1] = col;
-      }
+      pixels[row][col] = true;
       map[row * 16 + col] = colorIndex;
     }
   };
@@ -534,6 +555,7 @@ export const SpriteEditorGrid = ({
         if (e.key === "Escape" && startMousePos.current) {
           if (origSpriteMap.current) {
             activeSpriteMap.current = origSpriteMap.current.slice(0);
+            origSpriteMap.current = undefined;
           }
           endMove();
           onSignEscape?.();
