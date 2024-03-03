@@ -18,6 +18,7 @@ type Props = {
   allowHorizontal?: boolean;
   allowVertical?: boolean;
   children?: ReactNode;
+  xclass?: string;
   onScrolled?: (pos: number) => void;
   apiLoaded?: (api: ScrollViewerApi) => void;
   getScrollHeightFn?: () => number;
@@ -34,6 +35,7 @@ export const ScrollViewer = ({
   allowHorizontal = true,
   allowVertical = true,
   children,
+  xclass,
   onScrolled,
   apiLoaded,
   getScrollHeightFn,
@@ -302,7 +304,7 @@ export const ScrollViewer = ({
     <>
       <div
         ref={ref}
-        className={styles.scrollViewer}
+        className={classnames(styles.scrollViewer, xclass)}
         onMouseEnter={() => setPointed(true)}
         onMouseLeave={() => setPointed(false)}
         onScroll={() => {

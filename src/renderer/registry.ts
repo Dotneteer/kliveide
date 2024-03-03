@@ -67,7 +67,7 @@ import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileVi
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
 import { createNplFileEditorPanel } from "./appIde/DocumentPanels/Next/NplFileEditorPanel";
 import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
-import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SprFileEditorPanel";
+import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEditorPanel/SprFileEditorPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
 

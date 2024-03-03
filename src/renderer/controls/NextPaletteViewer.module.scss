@@ -9,20 +9,36 @@
   }
 }
 
+.paletteWrapper {
+  width: fit-content;
+}
+
 .paletteRow {
-  height: 22px;
+  height: 24px;
+
+  &.small {
+    padding: 0;
+    height: 16px;
+  }
 }
 
 .paletteColumnLabel {
-  width: 26px;
+  width: 24px;
   margin-left: 4px;
   color: var(--color-label);
+
+  &.small {
+    width: 16px;
+  }
 }
 
 .paletteRowLabel {
   width: 26px;
   margin-left: 4px;
   color: var(--color-label);
+  &.small {
+    width: 20px;
+  }
 }
 
 .paletteItem {
@@ -31,7 +47,12 @@
   flex-shrink: 0;
   width: 24px;
   height: 22px;
-  margin-right: 4px;
+  margin-right: 2px;
   border: 1px solid transparent;
-  //border-radius: 12px;
+
+  &.small {
+    height: 14px;
+    width: 18px;
+    margin-right: 0;
+  }
 }

@@ -5,7 +5,7 @@
   box-sizing: border-box;
   flex-direction: column;
   user-select: none;
-  padding: 0.2em;
+  padding: 0;
 }
 
 .row {
@@ -14,12 +14,13 @@
   flex-grow: 0;
   flex-shrink: 0;
   align-items: center;
-  padding: 0.2em 0
+  padding: 0;
 }
 
 .headerRow {
   background-color: var();
 }
+
 .column {
   display: flex;
   flex-direction: column;
@@ -36,6 +37,16 @@
   color: var(--color-label);
   margin-left: 0.4em;
   margin-right: 0.4em;
+}
+
+.text {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-command-icon);
+  margin-left: 0.4em;
+  margin-right: 0.4em;
+  font-family: var(--main-font-family);
 }
 
 .value {

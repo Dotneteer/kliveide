@@ -34,6 +34,7 @@ export const IconButton = ({
 }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
   const [keyDown, setKeyDown] = useState(null);
+  const [hover, setHover] = useState(false);
   const isActive = enable;
 
   useEffect(() => {
@@ -46,9 +47,18 @@ export const IconButton = ({
         [styles.enabled]: isActive,
         [styles.noPadding]: noPadding
       })}
-      style={{ width: buttonWidth, height: buttonHeight }}
+      style={{
+        width: buttonWidth + (noPadding ? 0 : 4),
+        height: buttonHeight,
+        backgroundColor:
+          hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
+      }}
+      onMouseEnter={() => setHover(true)}
       onMouseDown={() => setKeyDown(true)}
-      onMouseLeave={() => setKeyDown(false)}
+      onMouseLeave={() => {
+        setKeyDown(false);
+        setHover(false);
+      }}
       onClick={() => {
         if (isActive) clicked?.();
         setKeyDown(false);
@@ -73,6 +83,7 @@ export const IconButton = ({
           fill={isActive ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}
           width={size}
           height={size}
+          opacity={isActive ? 1.0 : 0.5}
         />
       </div>
     </div>
@@ -107,7 +118,6 @@ export const SmallIconButton = ({
       selected={selected}
       clicked={clicked}
       fill={fill}
-      noPadding={true}
     />
   );
 };
