@@ -177,6 +177,7 @@ export const Z88CardsDialog = ({ onClose }: Props) => {
       await machine.configure();
       machine.signalFlapClosed();
     }
+    //store.dispatch(setMachineConfigAction({...machine.config ?? {}}), messageSource);
   }
 };
 

@@ -13,7 +13,8 @@ export const CARD_SIZE_1M = "1M";
 export const CT_ROM = "ROM";
 export const CT_RAM = "RAM";
 export const CT_EPROM = "EPROM";
-export const CT_INTEL_FLASH = "FLASH";
+export const CT_INTEL_FLASH = "INTFC";
+export const CT_AMD_FLASH = "AMDFC";
 
 /**
  * Creates a new memory card for the Z88

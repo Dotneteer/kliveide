@@ -243,9 +243,9 @@ export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
 
-export const displayDialogAction: ActionCreator = (index?: number) => ({
+export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
   type: "DISPLAY_DIALOG",
-  payload: { index }
+  payload: { index, value }
 });
 
 export const setRestartTarget: ActionCreator = (id: string) => ({

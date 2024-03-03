@@ -1,3 +1,4 @@
+import { dialog } from "electron";
 import { Action } from "./Action";
 import { IdeView } from "./AppState";
 
@@ -116,7 +117,8 @@ export function ideViewReducer (
     case "DISPLAY_DIALOG":
       return {
         ...state,
-        dialogToDisplay: payload.index
+        dialogToDisplay: payload.index,
+        dialogData: payload.value
       };
 
     case "SET_RESTART_TARGET":

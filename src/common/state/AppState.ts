@@ -72,6 +72,7 @@ export type IdeView = {
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
+  dialogData?: any;
   restartTarget?: string;
 };
 

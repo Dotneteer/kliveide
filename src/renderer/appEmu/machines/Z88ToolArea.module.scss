@@ -1,0 +1,42 @@
+@import "@styles/core.scss";
+
+.machineTools {
+  height: 24px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.slotHandler {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
+  align-items: center;
+  border-radius: 4px;
+  background-color: var(--bgcolor-display);
+  color: var(--color-display);
+  padding: 0 6px;
+  margin-right: 4px;
+  font-size: 0.8em;
+
+  & .slotInfo {
+    margin-left: 4px;
+    color: var(--color-display);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 88px;
+  }
+
+  & .slot0Info {
+    width: 140px;
+  }
+
+  & .button {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+}

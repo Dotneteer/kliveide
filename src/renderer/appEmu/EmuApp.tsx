@@ -30,11 +30,13 @@ import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
-  Z88_CARDS_DIALOG
+  Z88_CARDS_DIALOG,
+  Z88_REMOVE_CARDS_DIALOG
 } from "@common/messaging/dialog-ids";
 import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
 import { Z88CardsDialog } from "./dialogs/Z88CardsDialog";
 import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
+import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -55,6 +57,7 @@ const EmuApp = () => {
   );
   const dimmed = useSelector(s => s.dimMenu ?? false);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
+  const dialogData = useSelector(s => s.ideView?.dialogData);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -103,6 +106,13 @@ const EmuApp = () => {
       )}
       {dialogId === Z88_CARDS_DIALOG && (
         <Z88CardsDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_REMOVE_CARDS_DIALOG && (
+        <Z88RemoveCardDialog slot={dialogData}
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
