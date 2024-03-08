@@ -136,7 +136,7 @@ export const darkTheme: ThemeProperties = {
   "--color-emuoverlay": "lightgreen",
   "--bgcolor-display": "#404040",
   "--color-display": "#e0e0e0",
-  "--color-display-hilite": "#007acc",
+  "--color-display-hilite": "#00baff",
 
   // --- Keyboard
   "--bgcolor-keyboard": "#181818",

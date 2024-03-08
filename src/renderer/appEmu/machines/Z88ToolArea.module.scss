@@ -1,7 +1,6 @@
 @import "@styles/core.scss";
 
 .machineTools {
-  height: 24px;
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -9,28 +8,31 @@
 
 .slotHandler {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-shrink: 0;
   flex-grow: 0;
-  align-items: center;
+  width: 141px;
+  align-items: start;
   border-radius: 4px;
   background-color: var(--bgcolor-display);
   color: var(--color-display);
-  padding: 0 6px;
+  padding: 4px 8px;
   margin-right: 4px;
-  font-size: 0.8em;
+  font-size: 0.7em;
+
+  & .row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    line-height: 16px;
+  }
 
   & .slotInfo {
-    margin-left: 4px;
-    color: var(--color-display);
+    color: var(--color-display-hilite);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 88px;
-  }
-
-  & .slot0Info {
-    width: 140px;
   }
 
   & .button {
