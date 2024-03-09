@@ -131,6 +131,10 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-emuarea": "#909090",
   "--bgcolor-emuoverlay": "#303030",
   "--color-emuoverlay": "lightgreen",
+  "--bgcolor-display": "#c0c0c0",
+  "--color-display": "#202020",
+  "--color-display-hilite": "#2144b0",
+
 
   // --- Keyboard
   "--bgcolor-keyboard": "#202020",

@@ -1,0 +1,39 @@
+.dropdownWrapper {
+  display: flex;
+  padding: 8px 0;
+}
+
+.filenameRow {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  flex-shrink: 0;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.filename {
+  padding-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 354px;
+  direction: rtl;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &.fileSelected {
+    color: var(--color-text-hilite);
+  }
+
+  &.warning {
+    color: var(--console-ansi-bright-red);
+  }
+}
+
+.fileButton {
+  display: flex;  
+  align-items: center;
+  cursor: pointer;
+}

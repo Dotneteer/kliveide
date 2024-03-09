@@ -71,7 +71,7 @@ import { createSettingsReader } from "../common/utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
-import { fileChangeWatcher } from "./file-watcher";
+import { MEDIA_TAPE } from "../common/structs/project-const";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -293,8 +293,8 @@ async function createAppWindows () {
         maximizeToolsAction(appSettings.maximizeTools ?? false)
       );
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
-      if (appSettings.lastTapeFile) {
-        setSelectedTapeFile(appSettings.lastTapeFile);
+      if (appSettings.media[MEDIA_TAPE]) {
+        setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
       }
 
       // --- Set key mappings

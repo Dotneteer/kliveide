@@ -2,10 +2,15 @@
 
 .emulatorPanel {
   @include fill-parent-flex;
+  flex-direction: column;
   background: var(--bgcolor-emuarea);
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
   outline: none;
   user-select: none;
+}
+
+.display {
+  background-color: var(--bgcolor-display);
 }

@@ -5,7 +5,7 @@ import classnames from "@renderer/utils/classnames";
 
 type DialogRowProps = {
   label?: string;
-  children: ReactNode;
+  children?: ReactNode;
   rows?: boolean;
 };
 

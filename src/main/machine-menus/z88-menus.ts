@@ -1,30 +1,19 @@
-import * as path from "path";
 import * as fs from "fs";
 import { BrowserWindow, dialog } from "electron";
 import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import {
-  MachineMenuItem,
-  MachineMenuRenderer
-} from "../../common/machines/info-types";
+import { MachineMenuRenderer } from "../../common/machines/info-types";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
 import {
-  displayDialogAction,
   emuSetKeyboardLayoutAction,
   incMenuVersionAction,
-  setMachineConfigAction,
   setMachineSpecificAction
 } from "../../common/state/actions";
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
 import { getModelConfig } from "../../common/machines/machine-registry";
-import {
-  MC_SCREEN_SIZE,
-  MC_Z88_INTRAM,
-  MC_Z88_INTROM
-} from "../../common/machines/constants";
+import { MC_SCREEN_SIZE } from "../../common/machines/constants";
 import { setMachineType } from "../../main/registeredMachines";
-import { Z88_CARDS_DIALOG } from "../../common/messaging/dialog-ids";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
@@ -152,153 +141,8 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       click: async () => {
         await sendFromMainToEmu(createMachineCommand("custom", "battery_low"));
       }
-    },
-    {
-      id: "z88_flap_open",
-      label: "Flap open",
-      enabled: execState === MachineControllerState.Running,
-      click: async () => {
-        await sendFromMainToEmu(createMachineCommand("custom", "flap_open"));
-      }
-    },
-    {
-      id: "z88_flap_close",
-      label: "Flap close",
-      enabled: execState === MachineControllerState.Running,
-      click: async () => {
-        await sendFromMainToEmu(createMachineCommand("custom", "flap_close"));
-      }
-    },
-  ];
-};
-
-/**
- * Renders RAM, ROM, and card-related menus
- */
-export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
-  const emuWindow = windowInfo.emuWindow;
-  const romsSubmenu: MachineMenuItem[] = [];
-  const config = mainStore.getState()?.emulatorState?.config ?? {};
-  const intRam = config?.[MC_Z88_INTRAM] ?? 0x01;
-  const machineSpecific =
-    mainStore.getState()?.emulatorState?.machineSpecific ?? {};
-  recentRoms = machineSpecific.recentRoms ?? [];
-  recentRomSelected = machineSpecific.recentRomSelected ?? false;
-  usedRomFile = machineSpecific.usedRomFile;
-
-  romsSubmenu.push({
-    id: "z88_use_default_rom",
-    label: "Use default ROM",
-    type: "radio",
-    checked: !recentRomSelected,
-    click: async () => {
-      if (recentRomSelected) {
-        recentRomSelected = false;
-        usedRomFile = null;
-        setIntRom();
-      }
-    }
-  });
-  if (recentRoms.length > 0) {
-    for (let i = 0; i < recentRoms.length; i++) {
-      romsSubmenu.push({
-        id: `z88_use_rom_${i}`,
-        label: path.basename(recentRoms[i]),
-        type: "radio",
-        checked: i === 0 && recentRomSelected,
-        click: async () => {
-          const prevRom = recentRoms[0];
-          await selectRecentRomItem(emuWindow, i);
-          if (prevRom !== recentRoms[0]) {
-            setIntRom(recentRoms[0]);
-          }
-        }
-      });
-    }
-  }
-  romsSubmenu.push(
-    { type: "separator" },
-    {
-      id: "z88_select_rom_file",
-      label: "Select ROM file...",
-      click: async () => {
-        const prevRom = recentRoms[0];
-        await selectRomFileToUse(emuWindow);
-        if (prevRom !== recentRoms[0]) {
-          setIntRom(recentRoms[0]);
-        }
-      }
-    }
-  );
-
-  return [
-    { type: "separator" },
-    {
-      id: "z88_internal_ram",
-      label: "Internal RAM size",
-      submenu: [
-        {
-          id: "z88_ram_32k",
-          label: "32K",
-          type: "radio",
-          checked: intRam === 0x01,
-          click: async () => setIntRam(0x01)
-        },
-        {
-          id: "z88_ram_128k",
-          label: "128K",
-          type: "radio",
-          checked: intRam === 0x07,
-          click: async () => setIntRam(0x07)
-        },
-        {
-          id: "z88_ram_512k",
-          label: "512K",
-          type: "radio",
-          checked: intRam === 0x1f,
-          click: async () => setIntRam(0x1f)
-        }
-      ]
-    },
-    {
-      id: "select_z88_rom",
-      label: "Select ROM",
-      submenu: romsSubmenu
-    },
-    {
-      id: "z88_insert_card",
-      label: "Insert or remove card...",
-      click: async () => {
-        mainStore.dispatch(displayDialogAction(Z88_CARDS_DIALOG));
-      }
     }
   ];
-
-  // --- Sets the internal ROM
-  function setIntRom (romId?: string): void {
-    const emulatorState = mainStore.getState()?.emulatorState;
-    const machineId = emulatorState?.machineId;
-    const modelId = emulatorState?.modelId;
-    const config = getModelConfig(machineId, modelId);
-    config[MC_Z88_INTROM] = romId;
-    saveRecentRomInfo();
-    setMachineType(machineId, modelId, config);
-  }
-
-  // --- Sets the internal ROM
-  function setIntRam (ramSize?: number): void {
-    const emulatorState = mainStore.getState()?.emulatorState;
-    const machineId = emulatorState?.machineId;
-    const modelId = emulatorState?.modelId;
-    const config = emulatorState?.config ?? {};
-    if (config[MC_Z88_INTRAM] === ramSize) {
-      return;
-    }
-    config[MC_Z88_INTRAM] = ramSize;
-    mainStore.dispatch(setMachineConfigAction({ ...config }));
-
-    setMachineType(machineId, modelId, config);
-  }
 };
 
 /**

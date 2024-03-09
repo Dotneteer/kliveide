@@ -19,6 +19,7 @@ import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   MC_SCREEN_SIZE,
+  MC_Z88_SLOT0,
   MC_Z88_SLOT1,
   MC_Z88_SLOT2,
   MC_Z88_SLOT3
@@ -30,6 +31,8 @@ import { CARD_SIZE_EMPTY, createZ88MemoryCard } from "./memory/CardType";
 import { SlotState } from "@renderer/appEmu/dialogs/Z88CardsDialog";
 import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./memory/Z88IntelFlashMemoryCard";
+import { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
+import { CardSlotState } from "./memory/CardSlotState";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -160,15 +163,29 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   async setup (): Promise<void> {
     // --- Get the ROM file
     let romContents: Uint8Array;
-    const intRom = this.config?.[MC_Z88_INTROM];
-    if (intRom) {
-      romContents = await this.loadRomFromResource(intRom);
-    } else {
-      romContents = await this.loadRomFromResource(DEFAULT_ROM);
-    }
+    let romCard: IZ88MemoryCard | undefined;
 
-    // --- Initialize the Z88 machine's default ROM
-    const romCard = new Z88RomMemoryCard(this, romContents.length);
+    // --- Check Slot 0 for the ROM
+    const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
+    if (slot0 && (slot0.size !== undefined && slot0.cardType !== "-")) {
+      // --- There is a card in slot 0
+      romCard = createZ88MemoryCard(this, slot0.size, slot0.cardType);
+      if (slot0.file) {
+        romContents = await this.loadRomFromFile(slot0.file);
+      }
+    } else {
+      console.log("No ROM in slot 0")
+      const intRom = this.config?.[MC_Z88_INTROM];
+      if (intRom) {
+        romContents = await this.loadRomFromResource(intRom);
+      } else {
+        console.log("Use default ROM")
+        romContents = await this.loadRomFromResource(DEFAULT_ROM);
+      }
+
+      // --- Initialize the Z88 machine's default ROM
+      romCard = new Z88RomMemoryCard(this, romContents.length);
+    }
     this.memory.insertCard(0, romCard, romContents);
 
     // --- Configure the machine (using the dynamic configuration, too)
@@ -198,8 +215,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     handleSlot(3, config?.[MC_Z88_SLOT3]);
 
     // --- Handle the specified slot
-    async function handleSlot (slotId: number, slot: SlotState): Promise<void> {
-      if (!slot || !slot.size || slot.size === CARD_SIZE_EMPTY) {
+    async function handleSlot (
+      slotId: number,
+      slot: CardSlotState
+    ): Promise<void> {
+      if (!slot || slot.cardType === "-" || slot.size === undefined) {
         // --- No slot info
         machine.memory.removeCard(slotId);
         return;
@@ -207,7 +227,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
       // --- There is a card in the slot
       let contents: Uint8Array | undefined;
-      let type = slot.content;
+      let type = slot.cardType;
       const card = createZ88MemoryCard(machine, slot.size, type);
       if (slot.file) {
         contents = await machine.loadRomFromFile(slot.file);

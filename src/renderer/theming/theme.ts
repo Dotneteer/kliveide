@@ -134,6 +134,9 @@ export type ThemeProperties = {
   "--bgcolor-emuarea"?: string;
   "--bgcolor-emuoverlay"?: string;
   "--color-emuoverlay"?: string;
+  "--bgcolor-display"?: string;
+  "--color-display"?: string;
+  "--color-display-hilite"?: string;
 
   // --- Keyboard
   "--bgcolor-keyboard"?: string;

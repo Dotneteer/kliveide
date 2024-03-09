@@ -30,11 +30,19 @@ import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
-  Z88_CARDS_DIALOG
+  Z88_CARDS_DIALOG,
+  Z88_CHANGE_RAM_DIALOG,
+  Z88_EXPORT_CARD_DIALOG,
+  Z88_INSERT_CARD_DIALOG,
+  Z88_REMOVE_CARD_DIALOG
 } from "@common/messaging/dialog-ids";
 import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
 import { Z88CardsDialog } from "./dialogs/Z88CardsDialog";
 import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
+import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
+import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
+import { Z88ExportCardDialog } from "./dialogs/Z88ExportCardDialog";
+import { Z88ChangeRamDialog } from "./dialogs/Z88ChangeRamDialog";
 
 // --- Store the singleton instances we use for message processing (out of React)
 let appServicesCached: AppServices;
@@ -55,6 +63,7 @@ const EmuApp = () => {
   );
   const dimmed = useSelector(s => s.dimMenu ?? false);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
+  const dialogData = useSelector(s => s.ideView?.dialogData);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -103,6 +112,34 @@ const EmuApp = () => {
       )}
       {dialogId === Z88_CARDS_DIALOG && (
         <Z88CardsDialog
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_REMOVE_CARD_DIALOG && (
+        <Z88RemoveCardDialog slot={dialogData}
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_INSERT_CARD_DIALOG && (
+        <Z88InsertCardDialog slot={dialogData}
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_EXPORT_CARD_DIALOG && (
+        <Z88ExportCardDialog slot={dialogData}
+          onClose={() => {
+            store.dispatch(displayDialogAction());
+          }}
+        />
+      )}
+      {dialogId === Z88_CHANGE_RAM_DIALOG && (
+        <Z88ChangeRamDialog
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}

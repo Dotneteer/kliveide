@@ -7,7 +7,7 @@ import {
 } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import {
   AudioRenderer,
@@ -26,6 +26,7 @@ import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
+import { machineEmuToolRegistry } from "../tool-registry";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -39,6 +40,9 @@ type Props = {
 };
 
 export const EmulatorPanel = ({ keyStatusSet }: Props) => {
+  // --- Refresh when requested
+  const [version, setVersion] = useState(1);
+  
   // --- Access state information
   const store = useStore();
 
@@ -83,6 +87,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Variables for audio management
   const beeperRenderer = useRef<AudioRenderer>();
+
+  // --- Tools
+  const machineTools = useRef<ReactNode>();
 
   // --- Prepare the machine controller with event handlers
   const controller = useMachineController(
@@ -147,10 +154,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   return (
     <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>
       <div
+        className={styles.display}
         style={{
           width: `${canvasWidth ?? 0}px`,
           height: `${canvasHeight ?? 0}px`,
-          backgroundColor: "#404040"
         }}
         onClick={() => setShowOverlay(true)}
       >
@@ -169,6 +176,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           width={shadowCanvasWidth.current}
           height={shadowCanvasHeight.current}
         />
+        {machineTools.current}
       </div>
     </div>
   );
@@ -201,6 +209,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     keyCodeSet.current = ctrl.machine.getKeyCodeSet();
     defaultKeyMappings.current = ctrl.machine.getDefaultKeyMapping();
     updateKeyMappings();
+
+    // --- Obtain machine tools
+    const toolInfo = machineEmuToolRegistry.find(machine => machine.machineId === ctrl.machine.machineId);
+    if (toolInfo) {
+      machineTools.current = toolInfo.toolFactory(ctrl.machine);
+    } else {
+      machineTools.current = null;
+    }
+    setVersion(version + 1);
   }
 
   // --- Handles machine state changes
