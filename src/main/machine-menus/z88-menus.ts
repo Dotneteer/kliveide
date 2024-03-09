@@ -234,33 +234,6 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
   return [
     { type: "separator" },
     {
-      id: "z88_internal_ram",
-      label: "Internal RAM size",
-      submenu: [
-        {
-          id: "z88_ram_32k",
-          label: "32K",
-          type: "radio",
-          checked: intRam === 0x01,
-          click: async () => setIntRam(0x01)
-        },
-        {
-          id: "z88_ram_128k",
-          label: "128K",
-          type: "radio",
-          checked: intRam === 0x07,
-          click: async () => setIntRam(0x07)
-        },
-        {
-          id: "z88_ram_512k",
-          label: "512K",
-          type: "radio",
-          checked: intRam === 0x1f,
-          click: async () => setIntRam(0x1f)
-        }
-      ]
-    },
-    {
       id: "select_z88_rom",
       label: "Select ROM",
       submenu: romsSubmenu
@@ -282,21 +255,6 @@ export const z88RomAndCardRenderer: MachineMenuRenderer = windowInfo => {
     const config = getModelConfig(machineId, modelId);
     config[MC_Z88_INTROM] = romId;
     saveRecentRomInfo();
-    setMachineType(machineId, modelId, config);
-  }
-
-  // --- Sets the internal ROM
-  function setIntRam (ramSize?: number): void {
-    const emulatorState = mainStore.getState()?.emulatorState;
-    const machineId = emulatorState?.machineId;
-    const modelId = emulatorState?.modelId;
-    const config = emulatorState?.config ?? {};
-    if (config[MC_Z88_INTRAM] === ramSize) {
-      return;
-    }
-    config[MC_Z88_INTRAM] = ramSize;
-    mainStore.dispatch(setMachineConfigAction({ ...config }));
-
     setMachineType(machineId, modelId, config);
   }
 };
