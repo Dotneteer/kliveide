@@ -4,7 +4,7 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";
-import { CardIds } from "@renderer/appEmu/machines/Z88ToolArea";
+import { CardIds } from "./CardIds";
 
 export const CARD_SIZE_EMPTY = "-";
 export const CARD_SIZE_32K = "32K";

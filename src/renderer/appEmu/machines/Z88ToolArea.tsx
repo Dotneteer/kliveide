@@ -3,6 +3,7 @@ import styles from "./Z88ToolArea.module.scss";
 import classnames from "@renderer/utils/classnames";
 import {
   MC_Z88_INTRAM,
+  MC_Z88_SLOT0,
   MC_Z88_SLOT1,
   MC_Z88_SLOT2,
   MC_Z88_SLOT3
@@ -22,40 +23,27 @@ import {
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG
 } from "@common/messaging/dialog-ids";
-import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { IMachineController } from "@renderer/abstractions/IMachineController";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
-import { delay } from "@renderer/utils/timing";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { Z88CardsState } from "../dialogs/Z88CardsDialog";
+import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import { CardIds } from "@emu/machines/z88/memory/CardIds";
 
-export enum CardIds {
-  RAM32 = "RAM32",
-  RAM128 = "RAM128",
-  RAM256 = "RAM256",
-  RAM512 = "RAM512",
-  RAM1024 = "RAM1024",
-  EPROMUV32 = "EPROMUV32",
-  EPROMUV128 = "EPROMUV128",
-  EPROMUV256 = "EPROMUV256",
-  IF28F004S5 = "IF28F004S5",
-  IF28F008S5 = "IF28F008S5",
-  AMDF29F040B = "AMDF29F040B",
-  AMDF29F080B = "AMDF29F080B"
-}
-
-export const epromTypeFallback = [
+const epromTypeFallback = [
   { size: 32, type: CardIds.EPROMUV32 },
   { size: 128, type: CardIds.EPROMUV128 },
   { size: 256, type: CardIds.EPROMUV256 }
 ];
 
-export const intelFlashTypeFallback = [
+const intelFlashTypeFallback = [
   { size: 512, type: CardIds.IF28F004S5 },
   { size: 1024, type: CardIds.IF28F008S5 }
 ];
 
-export const amdFlashTypeFallback = [
+const amdFlashTypeFallback = [
   { size: 512, type: CardIds.AMDF29F040B },
   { size: 1024, type: CardIds.AMDF29F080B }
 ];
@@ -184,6 +172,7 @@ export const Z88ToolArea = () => {
   const ramSizeMask = config?.[MC_Z88_INTRAM];
   const ramSize =
     ramSizeMask === 0x01 ? "32K" : ramSizeMask === 0x07 ? "128K" : "512K";
+  const slot0 = slotDetails(config?.[MC_Z88_SLOT0] as CardSlotState);
   const slot1 = slotDetails(config?.[MC_Z88_SLOT1] as CardSlotState);
   const slot2 = slotDetails(config?.[MC_Z88_SLOT2] as CardSlotState);
   const slot3 = slotDetails(config?.[MC_Z88_SLOT3] as CardSlotState);
@@ -191,28 +180,28 @@ export const Z88ToolArea = () => {
   return (
     <div className={styles.machineTools}>
       <Slot0Display
-        ramSize={ramSize}
-        romSize='512K'
-        romType='AMD Flash 29F040B'
-        isPristine={false}
+        sizeRam={ramSize}
+        sizeRom={slot0?.size}
+        typeRom={slot0?.type}
+        isPristine={slot0?.isPristine}
       />
       <SlotDisplay
         slot={1}
-        size={slot1.size}
-        type={slot1.type}
-        isPristine={slot1.isPristine}
+        size={slot1?.size}
+        type={slot1?.type}
+        isPristine={slot1?.isPristine}
       />
       <SlotDisplay
         slot={2}
-        size={slot2.size}
-        type={slot2.type}
-        isPristine={slot2.isPristine}
+        size={slot2?.size}
+        type={slot2?.type}
+        isPristine={slot2?.isPristine}
       />
       <SlotDisplay
         slot={3}
-        size={slot3.size}
-        type={slot3.type}
-        isPristine={slot3.isPristine}
+        size={slot3?.size}
+        type={slot3?.type}
+        isPristine={slot3?.isPristine}
       />
     </div>
   );
@@ -227,6 +216,8 @@ type SlotDisplayProps = {
 
 const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
   const { store } = useRendererContext();
+  const { machineService } = useAppServices();
+  const machine = machineService.getMachineController().machine as IZ88Machine;
   const isEmpty = !type;
   return (
     <div className={styles.slotHandler}>
@@ -247,7 +238,8 @@ const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
         )}
         <div
           className={styles.button}
-          onClick={() => {
+          onClick={async () => {
+            machine.signalFlapOpened();
             if (isEmpty) {
               store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, slot));
             } else {
@@ -270,19 +262,20 @@ const SlotDisplay = ({ slot, size, type, isPristine }: SlotDisplayProps) => {
 };
 
 type Slot0DisplayProps = {
-  ramSize: string;
-  romSize: string;
-  romType: string;
+  sizeRam: string;
+  sizeRom: string;
+  typeRom: string;
   isPristine?: boolean;
 };
 
 const Slot0Display = ({
-  romSize: sizeRom,
-  ramSize: sizeRam,
-  romType: typeRom,
+  sizeRom,
+  sizeRam,
+  typeRom,
   isPristine
 }: Slot0DisplayProps) => {
   const { store } = useRendererContext();
+  const isEmpty = !typeRom || typeRom === "-";
   return (
     <div className={classnames(styles.slotHandler, styles.slot0)}>
       <div className={styles.row}>
@@ -306,10 +299,12 @@ const Slot0Display = ({
         <div
           className={styles.button}
           onClick={() => {
-            store.dispatch(displayDialogAction(Z88_EXPORT_CARD_DIALOG, 0));
+            store.dispatch(displayDialogAction(Z88_REMOVE_CARD_DIALOG, 0));
           }}
         >
-          <Icon iconName='@export' width={14} height={14} />
+          {!isEmpty && (
+            <Icon iconName='@eject' width={14} height={14} />
+          )}
         </div>
         <div
           className={styles.button}
@@ -317,30 +312,11 @@ const Slot0Display = ({
             store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
           }}
         >
-          <Icon iconName='@replace' width={14} height={14} />
+          <Icon iconName={isEmpty ? "@upload" : '@replace'} width={14} height={14} />
         </div>
       </div>
     </div>
   );
-};
-
-/**
- * State of a particular slot
- */
-export type CardSlotState = {
-  size?: number;
-  cardType: string;
-  file?: string;
-  pristine?: boolean;
-};
-
-/**
- * Represents the Z88 card states
- */
-export type Z88CardsState = {
-  slot1: CardSlotState;
-  slot2: CardSlotState;
-  slot3: CardSlotState;
 };
 
 export async function applyCardStateChange (
@@ -351,18 +327,10 @@ export async function applyCardStateChange (
 ): Promise<void> {
   // --- Save the new change
   const machineConfig = store.getState().emulatorState.config ?? {};
-  store.dispatch(
-    setMachineConfigAction({ ...machineConfig, [slot]: cardState }),
-    "emu"
-  );
+  const newConfig = { ...machineConfig, [slot]: cardState };
+  store.dispatch(setMachineConfigAction(newConfig), "emu");
 
   const machine = controller.machine as IZ88Machine;
-  machine.dynamicConfig = { ...machineConfig, [slot]: cardState };
-  if (controller.state === MachineControllerState.Running) {
-    machine.signalFlapOpened();
-    await delay(1000);
-    await machine.configure();
-    await delay(1000);
-    machine.signalFlapClosed();
-  }
+  machine.dynamicConfig = newConfig;
+  await machine.configure();
 }

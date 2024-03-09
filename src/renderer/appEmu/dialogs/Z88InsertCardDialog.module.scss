@@ -26,6 +26,10 @@
   &.fileSelected {
     color: var(--color-text-hilite);
   }
+
+  &.warning {
+    color: var(--console-ansi-bright-red);
+  }
 }
 
 .fileButton {

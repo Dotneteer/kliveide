@@ -13,6 +13,7 @@ export const MC_SCREEN_SIZE = "screenSize";
 export const MC_Z88_INTROM = "intROM";
 export const MC_Z88_INTROM_SIZE = "intROMSize";
 export const MC_Z88_INTRAM = "intRAM";
+export const MC_Z88_SLOT0 = "slot0";
 export const MC_Z88_SLOT1 = "slot1";
 export const MC_Z88_SLOT2 = "slot2";
 export const MC_Z88_SLOT3 = "slot3";

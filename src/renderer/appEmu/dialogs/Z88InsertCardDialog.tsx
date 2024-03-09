@@ -18,7 +18,8 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import classnames from "@renderer/utils/classnames";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { MC_Z88_INTROM } from "@common/machines/constants";
+import { MC_Z88_INTROM, MC_Z88_SLOT0 } from "@common/machines/constants";
+import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
@@ -30,12 +31,13 @@ type Props = {
 export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const { store, messenger } = useRendererContext();
   const { machineService } = useAppServices();
+  const machine = machineService.getMachineController().machine as IZ88Machine;
   const [cardType, setCardType] = useState<CardTypeData>();
   const [file, setFile] = useState<string>();
   const [acceptedSizes, setAcceptedSizes] = useState<number[]>([]);
   const [rom0Changed, setRom0Changed] = useState(false);
 
-  const romFile = machineService.getMachineController()?.machine?.config?.[MC_Z88_INTROM];
+  const romFile = machine?.config?.[MC_Z88_INTROM];
 
   // --- Get the allowed card sizes (Slot 0 allows only a subset)
   let allowedCardTypes = cardTypes.filter(ct => ct.allowInSlot0 || slot > 0);
@@ -76,29 +78,41 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
       title={`${slot ? "Insert" : "Replace"} Z88 Card - Slot ${slot}`}
       width={438}
       translateY={0}
+      primaryEnabled={!!cardType && (!!slot || !!file)}
       onPrimaryClicked={async () => {
+        const controller = machineService.getMachineController();
+        const slotState: CardSlotState = {
+          cardType: cardType?.value,
+          size: cardType?.size,
+          file
+        };
         if (slot) {
           // --- Slot 1-3: Update the slot configuration state
-          const slotState: CardSlotState = {
-            cardType: cardType?.value,
-            size: cardType?.size,
-            file
-          };
           if (cardType.getFile && !file) {
             slotState.pristine = true;
           }
-          applyCardStateChange(
+          await applyCardStateChange(
             store,
-            machineService.getMachineController(),
+            controller,
             `slot${slot}` as any,
             slotState
           );
         } else {
           // --- Slot 0: update the Internal ROM configuration, require a restart
+          const emulatorState = store.getState().emulatorState;
+          const machineConfig = emulatorState.config ?? {};
+          const newConfig = { ...machineConfig, [MC_Z88_SLOT0]: slotState };
+          console.log(newConfig);
+          const machineId = emulatorState?.machineId;
+          const modelId = emulatorState?.modelId;
+
+          // --- Change the configuration
+          await machineService.setMachineType(machineId, modelId, newConfig);
         }
         return false;
       }}
       onClose={() => {
+        machine.signalFlapClosed();
         onClose();
       }}
     >
@@ -111,6 +125,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
             width={406}
             onSelectionChanged={async option => {
               const cardType = cardTypes.find(ct => ct.value === option);
+              setRom0Changed(true);
               setCardType(cardType);
               if (cardType) {
                 setAcceptedSizes(cardType.fallback?.map(f => f.size) || []);
@@ -132,12 +147,14 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
             </div>
             <div
               className={classnames(styles.filename, {
-                [styles.fileSelected]: !!file
+                [styles.fileSelected]: !!file,
+                [styles.warning]: !file && !slot
               })}
               onClick={selectCardFile}
             >
               {file && file.startsWith("/") ? file.substring(1) : file}
-              {!file && "(Use pristine card)"}
+              {!file && !!slot && "Use pristine card (or click to select a file)"}
+              {!file && !slot && "You must select a card file - click here"}
             </div>
             {file && (
               <IconButton
