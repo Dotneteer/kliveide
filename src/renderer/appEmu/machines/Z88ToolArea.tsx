@@ -75,33 +75,35 @@ export const cardTypes: CardTypeData[] = [
     label: "RAM*32K",
     size: 32,
     getFile: false,
-    allowInSlot0: true
+    allowInSlot0: false
   },
   {
     value: CardIds.RAM128,
     label: "RAM*128K",
     size: 128,
     getFile: false,
-    allowInSlot0: true
+    allowInSlot0: false
   },
   {
     value: CardIds.RAM256,
     label: "RAM*256K",
     size: 256,
     getFile: false,
-    allowInSlot0: true
+    allowInSlot0: false
   },
   {
     value: CardIds.RAM512,
     label: "RAM*512K",
     size: 512,
-    getFile: false
+    getFile: false,
+    allowInSlot0: false
   },
   {
     value: CardIds.RAM1024,
     label: "RAM*1M",
     size: 1024,
-    getFile: false
+    getFile: false,
+    allowInSlot0: false
   },
   {
     value: CardIds.EPROMUV32,
@@ -180,8 +182,8 @@ export const Z88ToolArea = () => {
   };
 
   const ramSizeMask = config?.[MC_Z88_INTRAM];
-  console.log("RAM size mask: ", ramSizeMask);
-  const ramSize = ramSizeMask === 0x01 ? "32K" : ramSizeMask === 0x07 ? "128K" : "512K";
+  const ramSize =
+    ramSizeMask === 0x01 ? "32K" : ramSizeMask === 0x07 ? "128K" : "512K";
   const slot1 = slotDetails(config?.[MC_Z88_SLOT1] as CardSlotState);
   const slot2 = slotDetails(config?.[MC_Z88_SLOT2] as CardSlotState);
   const slot3 = slotDetails(config?.[MC_Z88_SLOT3] as CardSlotState);
@@ -192,7 +194,7 @@ export const Z88ToolArea = () => {
         ramSize={ramSize}
         romSize='512K'
         romType='AMD Flash 29F040B'
-        isPristine={true}
+        isPristine={false}
       />
       <SlotDisplay
         slot={1}
@@ -303,27 +305,19 @@ const Slot0Display = ({
         {isPristine && <Icon iconName='@asterisk' width={12} height={12} />}
         <div
           className={styles.button}
-          onMouseDown={e => {
-            if (e.button === 0) {
-              store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
-            } else {
-              store.dispatch(displayDialogAction(Z88_REMOVE_CARD_DIALOG, 0));
-            }
+          onClick={() => {
+            store.dispatch(displayDialogAction(Z88_EXPORT_CARD_DIALOG, 0));
           }}
         >
           <Icon iconName='@export' width={14} height={14} />
         </div>
         <div
           className={styles.button}
-          onMouseDown={e => {
-            if (e.button === 0) {
-              store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
-            } else {
-              store.dispatch(displayDialogAction(Z88_REMOVE_CARD_DIALOG, 0));
-            }
+          onClick={e => {
+            store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
           }}
         >
-          <Icon iconName='@eject' width={14} height={14} />
+          <Icon iconName='@replace' width={14} height={14} />
         </div>
       </div>
     </div>
@@ -363,11 +357,12 @@ export async function applyCardStateChange (
   );
 
   const machine = controller.machine as IZ88Machine;
-  machine.dynamicConfig = cardState;
+  machine.dynamicConfig = { ...machineConfig, [slot]: cardState };
   if (controller.state === MachineControllerState.Running) {
     machine.signalFlapOpened();
     await delay(1000);
     await machine.configure();
+    await delay(1000);
     machine.signalFlapClosed();
   }
 }

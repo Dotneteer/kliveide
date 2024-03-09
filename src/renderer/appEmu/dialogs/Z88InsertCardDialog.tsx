@@ -18,6 +18,7 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import classnames from "@renderer/utils/classnames";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { MC_Z88_INTROM } from "@common/machines/constants";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
@@ -32,15 +33,26 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const [cardType, setCardType] = useState<CardTypeData>();
   const [file, setFile] = useState<string>();
   const [acceptedSizes, setAcceptedSizes] = useState<number[]>([]);
+  const [rom0Changed, setRom0Changed] = useState(false);
 
+  const romFile = machineService.getMachineController()?.machine?.config?.[MC_Z88_INTROM];
+
+  // --- Get the allowed card sizes (Slot 0 allows only a subset)
   let allowedCardTypes = cardTypes.filter(ct => ct.allowInSlot0 || slot > 0);
   const cardOptions = allowedCardTypes.map(ct => ({
     value: ct.value,
     label: ct.label.replace("*", " ")
   }));
 
+  // --- Select the card file from a file dialog
   const selectCardFile = async () => {
-    const cardFileInfo = await getCardFile(messenger, acceptedSizes);
+    const slot0AcceptedSizes = acceptedSizes.filter(s =>
+      [32, 128, 512].includes(s)
+    );
+    const cardFileInfo = await getCardFile(
+      messenger,
+      slot ? acceptedSizes : slot0AcceptedSizes
+    );
     if (!cardFileInfo) {
       setFile(undefined);
       return;
@@ -61,24 +73,29 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   return (
     <Modal
       isOpen={true}
-      title={`Insert Z88 Card into Slot ${slot}`}
+      title={`${slot ? "Insert" : "Replace"} Z88 Card - Slot ${slot}`}
       width={438}
       translateY={0}
       onPrimaryClicked={async () => {
-        const slotState: CardSlotState = {
-          cardType: cardType?.value,
-          size: cardType?.size,
-          file
-        };
-        if (cardType.getFile && !file) {
-          slotState.pristine = true;
+        if (slot) {
+          // --- Slot 1-3: Update the slot configuration state
+          const slotState: CardSlotState = {
+            cardType: cardType?.value,
+            size: cardType?.size,
+            file
+          };
+          if (cardType.getFile && !file) {
+            slotState.pristine = true;
+          }
+          applyCardStateChange(
+            store,
+            machineService.getMachineController(),
+            `slot${slot}` as any,
+            slotState
+          );
+        } else {
+          // --- Slot 0: update the Internal ROM configuration, require a restart
         }
-        applyCardStateChange(
-          store,
-          machineService.getMachineController(),
-          `slot${slot}` as any,
-          slotState
-        );
         return false;
       }}
       onClose={() => {

@@ -30,6 +30,7 @@ import { CARD_SIZE_EMPTY, createZ88MemoryCard } from "./memory/CardType";
 import { SlotState } from "@renderer/appEmu/dialogs/Z88CardsDialog";
 import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./memory/Z88IntelFlashMemoryCard";
+import { CardSlotState } from "@renderer/appEmu/machines/Z88ToolArea";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -198,8 +199,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     handleSlot(3, config?.[MC_Z88_SLOT3]);
 
     // --- Handle the specified slot
-    async function handleSlot (slotId: number, slot: SlotState): Promise<void> {
-      if (!slot || !slot.size || slot.size === CARD_SIZE_EMPTY) {
+    async function handleSlot (slotId: number, slot: CardSlotState): Promise<void> {
+      if (!slot || slot.cardType === "-" || slot.size === undefined) {
         // --- No slot info
         machine.memory.removeCard(slotId);
         return;
@@ -207,7 +208,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
       // --- There is a card in the slot
       let contents: Uint8Array | undefined;
-      let type = slot.content;
+      let type = slot.cardType;
       const card = createZ88MemoryCard(machine, slot.size, type);
       if (slot.file) {
         contents = await machine.loadRomFromFile(slot.file);
