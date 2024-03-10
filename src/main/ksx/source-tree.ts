@@ -68,7 +68,8 @@ export type Statement =
   | ThrowStatement
   | TryStatement
   | SwitchStatement
-  | FunctionDeclaration;
+  | FunctionDeclaration
+  | ImportDeclaration
 
 export type LoopStatement = WhileStatement | DoWhileStatement;
 
@@ -248,6 +249,12 @@ export interface FunctionDeclaration extends StatementBase {
   body: Statement[];
   isExported?: boolean;
   closureContext?: BlockScope[];
+}
+
+export interface ImportDeclaration extends StatementBase {
+  type: "ImportDeclaration";
+  imports: Record<string, string>;
+  moduleFile: string;
 }
 
 // =====================================================================================================================

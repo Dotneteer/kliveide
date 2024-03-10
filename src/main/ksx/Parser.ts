@@ -49,7 +49,8 @@ import {
   TryStatement,
   UnaryExpression,
   VarDeclaration,
-  WhileStatement
+  WhileStatement,
+  ImportDeclaration
 } from "./source-tree";
 import { InputStream } from "./InputStream";
 import { tokenTraits } from "./TokenTrait";
@@ -201,6 +202,8 @@ export class Parser {
         return this.parseFunctionDeclaration();
       case TokenType.Export:
         return this.parseExport();
+      case TokenType.Import:
+        return this.parseImport();  
       default:
         return this.isExpressionStart(startToken)
           ? this.parseExpressionStatement(allowSequence)
@@ -1195,6 +1198,84 @@ export class Parser {
     }
     this.reportError("W019", nextToken);
     return null;
+  }
+
+  /**
+   * Parse an import declaration
+   * 
+   * importDeclaration
+   *   : "import" "{" importItem ("," importItem)* [ "," ] "}" from module
+   *   ;
+   * 
+   * importItem
+   *   : identifier [ "as" identifier ]
+   *   ;
+   */
+  private parseImport(): ImportDeclaration | null {
+    // TODO: Implement import parsing
+    const startToken = this._lexer.get();
+    this.expectToken(TokenType.LBrace, "W012");
+    const imports: Record<string, string> = {};
+    let nextToken = this._lexer.peek();
+    while (nextToken.type !== TokenType.RBrace) {
+      if (nextToken.type !== TokenType.Identifier) {
+        this.reportError("W003", nextToken);
+        return null;
+      }
+      const id = nextToken.text;
+      this._lexer.get();
+      nextToken = this._lexer.peek();
+      if (nextToken.type === TokenType.As) {
+        this._lexer.get();
+        nextToken = this._lexer.peek();
+        if (nextToken.type !== TokenType.Identifier) {
+          this.reportError("W003", nextToken);
+          return null;
+        }
+        if (imports[nextToken.text]) {
+          this.reportError("W022", nextToken, nextToken.text);
+          return null;
+        }
+        imports[nextToken.text] = id;
+        this._lexer.get();
+      } else {
+        if (imports[id]) {
+          this.reportError("W022", nextToken, id);
+          return null;
+        }
+        imports[id] = id;
+      }
+      nextToken = this._lexer.peek();
+      if (nextToken.type === TokenType.Comma) {
+        this._lexer.get();
+        nextToken = this._lexer.peek();
+      }
+    }
+
+    // --- Skip the closing brace
+    this._lexer.get();
+
+    // --- Check for "from"
+    this.expectToken(TokenType.From, "W020");
+
+    // --- Get the module name
+    const moduleToken = this._lexer.peek();
+    if (moduleToken.type !== TokenType.StringLiteral) {
+      this.reportError("W021", moduleToken);
+      return null;
+    }
+    this._lexer.get();
+    const literal = this.parseStringLiteral(moduleToken);
+
+    // --- Done.
+    return this.createStatementNode<ImportDeclaration>(
+      "ImportDeclaration",
+      {
+        imports,
+        moduleFile: literal.value
+      },
+      startToken
+    );
   }
 
   // ==========================================================================
