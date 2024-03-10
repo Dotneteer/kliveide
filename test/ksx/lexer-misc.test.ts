@@ -112,7 +112,8 @@ describe("KSX Lexer - miscellaneous", () => {
     { src: "switch", exp: TokenType.Switch },
     { src: "case", exp: TokenType.Case },
     { src: "default", exp: TokenType.Default },
-    { src: "delete", exp: TokenType.Delete }
+    { src: "delete", exp: TokenType.Delete },
+    { src: "function", exp: TokenType.Function }
   ];
   miscCases.forEach(c => {
     it(`Token ${c.src} #1`, () => {

@@ -996,6 +996,7 @@ resolverHash.set("switch", TokenType.Switch);
 resolverHash.set("case", TokenType.Case);
 resolverHash.set("default", TokenType.Default);
 resolverHash.set("delete", TokenType.Delete);
+resolverHash.set("function", TokenType.Function);
 
 /**
  * Tests if a token id EOF

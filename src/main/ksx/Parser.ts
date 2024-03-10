@@ -28,6 +28,7 @@ import {
   ForStatement,
   ForVarBinding,
   FunctionInvocationExpression,
+  FunctionDeclaration,
   Identifier,
   IfStatement,
   LetStatement,
@@ -196,6 +197,8 @@ export class Parser {
         return this.parseTryStatement();
       case TokenType.Switch:
         return this.parseSwitchStatement();
+      case TokenType.Function:
+        return this.parseFunctionDeclaration();
       default:
         return this.isExpressionStart(startToken)
           ? this.parseExpressionStatement(allowSequence)
@@ -1052,6 +1055,120 @@ export class Parser {
       {
         expression,
         cases
+      },
+      startToken
+    );
+  }
+
+  /**
+   * Parses a function declaration
+   *
+   * functionDeclaration
+   *   : "function" identifier "(" [parameterList] ")" blockStatement
+   *   ;
+   */
+  private parseFunctionDeclaration (): FunctionDeclaration | null {
+    const startToken = this._lexer.get();
+
+    // --- Get the function name
+    const funcId = this._lexer.peek();
+    if (funcId.type !== TokenType.Identifier) {
+      this.reportError("W003", funcId);
+      return null;
+    }
+    this._lexer.get();
+
+    // --- Get the parameter list;
+    const nextToken = this._lexer.peek();
+    if (nextToken.type !== TokenType.LParent) {
+      this.reportError("W014", nextToken);
+      return null;
+    }
+
+    // --- Now, get the parameter list as an expression
+    const exprList = this.getExpression(true);
+
+    // --- We turn the expression into a parameter list
+    let isValid: boolean;
+    const args: Expression[] = [];
+    switch (exprList.type) {
+      case "NoArgExpression":
+        isValid = true;
+        break;
+      case "Identifier":
+        isValid = (exprList.parenthesized ?? 0) <= 1;
+        args.push(exprList);
+        break;
+      case "SequenceExpression":
+        isValid = exprList.parenthesized === 1;
+        if (isValid) {
+          for (const expr of exprList.expressions) {
+            switch (expr.type) {
+              case "Identifier":
+                isValid = !expr.parenthesized;
+                args.push(expr);
+                break;
+              case "ObjectLiteral": {
+                isValid = !expr.parenthesized;
+                if (isValid) {
+                  const des = this.convertToObjectDestructure(expr);
+                  if (des) args.push(des);
+                }
+                break;
+              }
+              case "ArrayLiteral": {
+                isValid = !expr.parenthesized;
+                if (isValid) {
+                  const des = this.convertToArrayDestructure(expr);
+                  if (des) args.push(des);
+                }
+                break;
+              }
+              default:
+                isValid = false;
+                break;
+            }
+          }
+        }
+        break;
+      case "ObjectLiteral":
+        isValid = exprList.parenthesized === 1;
+        if (isValid) {
+          const des = this.convertToObjectDestructure(exprList);
+          if (des) args.push(des);
+        }
+        break;
+      case "ArrayLiteral":
+        isValid = exprList.parenthesized === 1;
+        if (isValid) {
+          const des = this.convertToArrayDestructure(exprList);
+          if (des) args.push(des);
+        }
+        break;
+      default:
+        isValid = false;
+    }
+    if (!isValid) {
+      this.reportError("W010", startToken);
+      return null;
+    }
+
+    // --- Get the function body (statement block)
+    if (this._lexer.peek().type !== TokenType.LBrace) {
+      this.reportError("W012", this._lexer.peek());
+      return null;
+    }
+
+    const body = this.parseBlockStatement();
+    if (!body) return null;
+
+    // --- Done.
+    return this.createStatementNode<FunctionDeclaration>(
+      "FunctionDeclaration",
+      {
+        name: funcId.text,
+        args,
+        body: body.statements
       },
       startToken
     );
