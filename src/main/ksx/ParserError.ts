@@ -42,7 +42,8 @@ export type ErrorCodes =
   | "W015"
   | "W016"
   | "W017"
-  | "W018";
+  | "W018"
+  | "W019";
 
 /**
  * Represents a parser error message descriptions
@@ -70,5 +71,6 @@ export const errorMessages: ErrorText = {
   W015: "'case' or 'default' expected",
   W016: "'default' case can be used only once within a switch statement",
   W017: "Invalid sequence expression",
-  W018: "Invalid object literal"
+  W018: "Invalid object literal",
+  W019: "'function' or 'const' expected"
 };

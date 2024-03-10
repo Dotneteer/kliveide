@@ -199,6 +199,8 @@ export class Parser {
         return this.parseSwitchStatement();
       case TokenType.Function:
         return this.parseFunctionDeclaration();
+      case TokenType.Export:
+        return this.parseExport();
       default:
         return this.isExpressionStart(startToken)
           ? this.parseExpressionStatement(allowSequence)
@@ -1172,6 +1174,27 @@ export class Parser {
       },
       startToken
     );
+  }
+
+  /**
+   * Parses an export statement
+   *
+   * exportStatement
+   *   : "export" (constStatement | functionDeclaration)
+   *   ;
+   */
+  private parseExport (): ConstStatement | FunctionDeclaration | null {
+    this._lexer.get();
+    const nextToken = this._lexer.peek();
+    if (nextToken.type === TokenType.Const) {
+      const constStmt = this.parseConstStatement();
+      return constStmt === null ? null : { ...constStmt, isExported: true };
+    } else if (nextToken.type === TokenType.Function) {
+      const funcDecl = this.parseFunctionDeclaration();
+      return funcDecl === null ? null : { ...funcDecl, isExported: true };
+    }
+    this.reportError("W019", nextToken);
+    return null;
   }
 
   // ==========================================================================
