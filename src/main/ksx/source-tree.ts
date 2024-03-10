@@ -142,6 +142,7 @@ export interface LetStatement extends StatementBase {
 export interface ConstStatement extends StatementBase {
   type: "ConstStatement";
   declarations: VarDeclaration[];
+  isExported?: boolean;
 }
 
 export interface BlockStatement extends StatementBase {
@@ -245,10 +246,9 @@ export interface FunctionDeclaration extends StatementBase {
   name: string;
   args: Expression[];
   body: Statement[];
+  isExported?: boolean;
   closureContext?: BlockScope[];
 }
-
-
 
 // =====================================================================================================================
 // Expressions

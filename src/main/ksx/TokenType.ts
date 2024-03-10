@@ -107,5 +107,7 @@ export enum TokenType {
   Case,
   Default,
   Delete,
-  Function
+  Function,
+  Export,
+  Import,
 }
