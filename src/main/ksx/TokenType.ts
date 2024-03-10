@@ -106,5 +106,6 @@ export enum TokenType {
   Switch,
   Case,
   Default,
-  Delete
+  Delete,
+  Function
 }

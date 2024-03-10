@@ -67,7 +67,8 @@ export type Statement =
   | ForOfStatement
   | ThrowStatement
   | TryStatement
-  | SwitchStatement;
+  | SwitchStatement
+  | FunctionDeclaration;
 
 export type LoopStatement = WhileStatement | DoWhileStatement;
 
@@ -238,6 +239,16 @@ export interface SwitchCase extends BaseNode {
   caseExpression?: Expression;
   statements?: Statement[];
 }
+
+export interface FunctionDeclaration extends StatementBase {
+  type: "FunctionDeclaration";
+  name: string;
+  args: Expression[];
+  body: Statement[];
+  closureContext?: BlockScope[];
+}
+
+
 
 // =====================================================================================================================
 // Expressions
