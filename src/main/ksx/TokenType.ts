@@ -110,4 +110,6 @@ export enum TokenType {
   Function,
   Export,
   Import,
+  As,
+  From,
 }
