@@ -3,7 +3,6 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { Modal } from "@renderer/controls/Modal";
 import {
-  CardSlotState,
   CardTypeData,
   applyCardStateChange,
   cardTypes
@@ -20,6 +19,7 @@ import { IconButton } from "@renderer/controls/IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MC_Z88_INTROM, MC_Z88_SLOT0 } from "@common/machines/constants";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
