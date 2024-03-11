@@ -49,10 +49,10 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   // --- Select the card file from a file dialog
   const selectCardFile = async () => {
     const slot0AcceptedSizes = acceptedSizes.filter(s =>
-      [32, 128, 512].includes(s)
+      [128, 256, 512].includes(s)
     );
     const cardFileInfo = await getCardFile(
-      messenger,
+      messenger, slot,
       slot ? acceptedSizes : slot0AcceptedSizes
     );
     if (!cardFileInfo) {
@@ -179,12 +179,16 @@ type GetCardFileMessage = {
 
 async function getCardFile (
   messenger: MessengerBase,
+  slot: number,
   acceptedSizes: number[]
 ): Promise<GetCardFileMessage | undefined> {
+
+  const filterName = (slot == 0 ? "ROM files" : "EPROM files");
+  const filterExtensions = (slot == 0 ? ["bin","rom"] : ["epr"]);
   const response = await messenger.sendMessage({
     type: "MainShowOpenFileDialog",
     filters: [
-      { name: "EPROM files", extensions: ["epr"] },
+      { name: filterName, extensions: filterExtensions },
       { name: "All Files", extensions: ["*"] }
     ],
     settingsId: Z88_CARDS_FOLDER_ID
