@@ -165,7 +165,7 @@ export const machineRegistry: MachineInfo[] = [
         }
       },
       {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Italian KB Layout
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default French KB Layout
         modelId: "OZ326FR",
         displayName: "Cambridge Z88 (OZ v3.26 FR)",
         config: {
