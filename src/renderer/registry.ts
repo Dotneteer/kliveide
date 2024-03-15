@@ -65,11 +65,11 @@ import { createShrFileViewerPanel } from "./appIde/DocumentPanels/Next/ShrFileVi
 import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/Next/SlrFileViewerPanel";
 import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileViewerPanel";
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
-import { createNplFileEditorPanel } from "./appIde/DocumentPanels/Next/NplFileEditorPanel";
 import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
 import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEditorPanel/SprFileEditorPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
+import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -374,6 +374,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".ksx",
+    editor: CODE_EDITOR,
+    subType: "ksx",
+    icon: "file-code"
+  },
+  {
+    matchType: "ends",
     pattern: ".tzx",
     editor: TAP_VIEWER,
     icon: "@file-tap-tzx",
@@ -531,5 +538,6 @@ export const fileTypeRegistry: FileTypeEditor[] = [
 export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   asmKz80LanguageProvider,
   asmZxbLanguageProvider,
-  zxBasLanguageProvider
+  zxBasLanguageProvider,
+  ksxLanguageProvider
 ];
