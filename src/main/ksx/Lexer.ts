@@ -1,6 +1,7 @@
 import { InputStream } from "./InputStream";
 import { Token } from "./Token";
 import { TokenType } from "./TokenType";
+import { parseRegExpLiteral } from "@eslint-community/regexpp";
 
 /**
  * This enum indicates the current lexer phase
@@ -72,7 +73,10 @@ enum LexerPhase {
   LogicalAnd,
   BitwiseXor,
   LogicalOr,
-  NullCoalesce
+  NullCoalesce,
+
+  // --- Other
+  Regex
 }
 
 /**
@@ -161,12 +165,31 @@ export class Lexer {
   }
 
   /**
+   * Gets a RegEx from the current position
+   */
+  getRegEx (): RegExpLexerResult {
+    return this.fetchRegEx();
+  }
+
+  /**
    * Gets the remaining characters after the parsing phase
    */
   getTail (): string {
     return this._ahead.length > 0
       ? this.input.getTail(this._ahead[0].location.startPosition)
       : this.input.getTail(this._lastFetchPosition);
+  }
+
+  /**
+   * Fetches the next character from the input stream
+   */
+  private fetchNextChar (): string | null {
+    if (!this._prefetched) {
+      this._prefetchedPos = this.input.position;
+      this._prefetchedColumn = this.input.column;
+      this._prefetched = this.input.get();
+    }
+    return this._prefetched;
   }
 
   /**
@@ -196,7 +219,7 @@ export class Lexer {
     // --- Process all token characters
     while (true) {
       // --- Get the next character
-      ch = fetchNextChar();
+      ch = this.fetchNextChar();
 
       // --- In case of EOF, return the current token data
       if (ch === null) {
@@ -914,18 +937,6 @@ export class Lexer {
     }
 
     /**
-     * Fetches the next character from the input stream
-     */
-    function fetchNextChar (): string | null {
-      if (!lexer._prefetched) {
-        lexer._prefetchedPos = input.position;
-        lexer._prefetchedColumn = input.column;
-        lexer._prefetched = input.get();
-      }
-      return lexer._prefetched;
-    }
-
-    /**
      * Packs the specified type of token to send back
      */
     function makeToken (): Token {
@@ -961,6 +972,91 @@ export class Lexer {
         tokenType = suggestedType;
       }
       return makeToken();
+    }
+  }
+
+  /**
+   * Fetches the next RegEx token from the input stream
+   */
+  private fetchRegEx (): RegExpLexerResult {
+    // --- Get the tail
+    const tailPosition =
+      this._ahead.length > 0
+        ? this._ahead[0].location.startPosition
+        : this._lastFetchPosition;
+    const tail = this.input.getTail(tailPosition);
+
+    // --- Parse the tail. If no error, the entire tail is the RegExp
+    try {
+      const regexpResult = parseRegExpLiteral(tail);
+      const text = regexpResult.raw;
+
+      // --- Consume the characters parsed successfully
+      for (let i = 1; i < text.length; i++) {
+        this.fetchNextChar();
+        this._prefetched = null;
+        this._prefetchedPos = null;
+        this._prefetchedColumn = null;
+      }
+
+      this._ahead.length = 0;
+
+      // --- Return the token
+      return {
+        success: true,
+        pattern: regexpResult.pattern.raw,
+        flags: regexpResult.flags.raw,
+        length: text.length
+      };
+    } catch (parseErr) {
+      let errorIndex = parseErr.index;
+      if (parseErr.toString().includes("Invalid flag")) {
+        while (
+          errorIndex < tail.length &&
+          "dgimsuy".includes(tail[errorIndex])
+        ) {
+          errorIndex++;
+        }
+      }
+
+      // --- If there is no error, something is wrong
+      if (errorIndex === undefined) {
+        return {
+          success: false,
+          pattern: tail[0]
+        };
+      }
+
+      // --- Try to parse the tail before the error position
+      const tailBeforeError = tail.substring(0, errorIndex);
+      try {
+        const regexpResult = parseRegExpLiteral(tailBeforeError);
+        const text = regexpResult.raw;
+
+        // --- Consume the characters parsed successfully
+        for (let i = 1; i < text.length; i++) {
+          this.fetchNextChar();
+          this._prefetched = null;
+          this._prefetchedPos = null;
+          this._prefetchedColumn = null;
+        }
+
+        this._ahead.length = 0;
+
+        // --- Return the token
+        return {
+          success: true,
+          pattern: regexpResult.pattern.raw,
+          flags: regexpResult.flags.raw,
+          length: text.length
+        };
+      } catch (parseErr2) {
+        // --- This is really not a regexp
+        return {
+          success: false,
+          pattern: tailBeforeError
+        };
+      }
     }
   }
 }
@@ -1088,3 +1184,11 @@ function isRestrictedInString (ch: string): boolean {
     ch === "\u2029"
   );
 }
+
+// --- Result from RegExp lexing
+export type RegExpLexerResult = {
+  success: boolean;
+  pattern?: string;
+  flags?: string;
+  length?: number;
+};

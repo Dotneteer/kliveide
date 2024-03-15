@@ -82,6 +82,7 @@ enum StrParseState {
  * This class parses a binding expression and transforms it into an evaluable expression tree
  */
 export class Parser {
+  [x: string]: any;
   // --- Keep track of error messages
   private _parseErrors: ParserErrorMessage[] = [];
 
@@ -203,7 +204,7 @@ export class Parser {
       case TokenType.Export:
         return this.parseExport();
       case TokenType.Import:
-        return this.parseImport();  
+        return this.parseImport();
       default:
         return this.isExpressionStart(startToken)
           ? this.parseExpressionStatement(allowSequence)
@@ -1202,16 +1203,16 @@ export class Parser {
 
   /**
    * Parse an import declaration
-   * 
+   *
    * importDeclaration
    *   : "import" "{" importItem ("," importItem)* [ "," ] "}" from module
    *   ;
-   * 
+   *
    * importItem
    *   : identifier [ "as" identifier ]
    *   ;
    */
-  private parseImport(): ImportDeclaration | null {
+  private parseImport (): ImportDeclaration | null {
     // TODO: Implement import parsing
     const startToken = this._lexer.get();
     this.expectToken(TokenType.LBrace, "W012");
@@ -2252,6 +2253,9 @@ export class Parser {
 
       case TokenType.LBrace:
         return this.parseObjectLiteral();
+
+      case TokenType.Divide:
+        return this.parseRegExpLiteral();
     }
 
     return null;
@@ -2378,6 +2382,22 @@ export class Parser {
       },
       start
     );
+  }
+
+  private parseRegExpLiteral (): Literal | null {
+    const startToken = this._lexer.peek();
+    const result = this._lexer.getRegEx();
+    if (result.success) {
+      return this.createExpressionNode<Literal>(
+        "Literal",
+        {
+          value: new RegExp(result.pattern, result.flags)
+        },
+        startToken
+      );
+    }
+    this.reportError("W002", startToken, result.pattern ?? "");
+    return null;
   }
 
   /**

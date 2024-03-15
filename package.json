@@ -40,6 +40,7 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
+    "@eslint-community/regexpp": "^4.10.0",
     "@monaco-editor/react": "^4.5.1",
     "@tanstack/react-virtual": "^3.0.0-beta.32",
     "@types/lodash": "^4.14.200",

@@ -115,4 +115,5 @@ export const tokenTraits: Record<TokenType, TokenTrait> = {
   [TokenType.Import]: { keywordLike: true },
   [TokenType.As]: { keywordLike: true },
   [TokenType.From]: { keywordLike: true },
+  [TokenType.RegExp]: { expressionStart: true },
 };
