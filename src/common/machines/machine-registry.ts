@@ -117,6 +117,7 @@ export const machineRegistry: MachineInfo[] = [
     },
     models: [
       {
+        // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
         modelId: "OZ50",
         displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
         config: {
@@ -124,6 +125,7 @@ export const machineRegistry: MachineInfo[] = [
         }
       },
       {
+        // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
         modelId: "OZ47",
         displayName: "Cambridge Z88 (OZ v4.7)",
         config: {
@@ -131,10 +133,67 @@ export const machineRegistry: MachineInfo[] = [
         }
       },
       {
+        // Default ROM type for 128K image file, default 128K RAM for slot 0, default UK KB Layout
         modelId: "OZ40",
         displayName: "Cambridge Z88 (OZ v4.0 UK)",
         config: {
-          [MC_Z88_INTROM]: "z88v40"
+          [MC_Z88_INTROM]: "z88ukv40"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 128K RAM for slot 0, default Swedish/Finish KB Layout
+        modelId: "OZ40FI",
+        displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
+        config: {
+          [MC_Z88_INTROM]: "z88fiv401"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default UK KB Layout
+        modelId: "OZ30",
+        displayName: "Cambridge Z88 (OZ v3.0 UK)",
+        config: {
+          [MC_Z88_INTROM]: "z88ukv30"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Italian KB Layout
+        modelId: "OZ323IT",
+        displayName: "Cambridge Z88 (OZ v3.23 IT)",
+        config: {
+          [MC_Z88_INTROM]: "z88itv323"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Italian KB Layout
+        modelId: "OZ326FR",
+        displayName: "Cambridge Z88 (OZ v3.26 FR)",
+        config: {
+          [MC_Z88_INTROM]: "z88frv326"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Spanish KB Layout
+        modelId: "OZ319ES",
+        displayName: "Cambridge Z88 (OZ v3.19 ES)",
+        config: {
+          [MC_Z88_INTROM]: "z88esv319"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Danish KB Layout
+        modelId: "OZ321DK",
+        displayName: "Cambridge Z88 (OZ v3.21 DK)",
+        config: {
+          [MC_Z88_INTROM]: "z88dkv321"
+        }
+      },
+      {
+        // Default ROM type for 128K image file, default 32K RAM for slot 0, default German KB Layout
+        modelId: "OZ318DE",
+        displayName: "Cambridge Z88 (OZ v3.18 DE)",
+        config: {
+          [MC_Z88_INTROM]: "z88dev318"
         }
       }
     ],
