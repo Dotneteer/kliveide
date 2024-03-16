@@ -20,8 +20,7 @@ describe("KSX Parser - export statement", () => {
     expect(stmt.isExported).toEqual(true);
     expect(stmt.name).toEqual("myFunc");
     expect(stmt.args.length).toEqual(0);
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Exported const", () => {

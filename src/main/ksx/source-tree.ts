@@ -246,7 +246,7 @@ export interface FunctionDeclaration extends StatementBase {
   type: "FunctionDeclaration";
   name: string;
   args: Expression[];
-  body: Statement[];
+  statement: Statement;
   isExported?: boolean;
   closureContext?: BlockScope[];
 }

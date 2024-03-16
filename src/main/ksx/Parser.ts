@@ -1174,7 +1174,7 @@ export class Parser {
       {
         name: funcId.text,
         args,
-        body: body.statements
+        statement: body
       },
       startToken
     );

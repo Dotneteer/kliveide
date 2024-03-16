@@ -1,7 +1,15 @@
+import {
+  CancellationToken,
+  EvaluationContext,
+  ModuleResolver
+} from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
-import { visitLetConstDeclarations } from "./process-statement-async";
-import { FunctionDeclaration, Statement } from "./source-tree";
+import {
+  processStatementQueueAsync,
+  visitLetConstDeclarations
+} from "./process-statement-async";
+import { ArrowExpression, FunctionDeclaration, Statement } from "./source-tree";
 
 /**
  * Represents a parsed and resolved KSX module
@@ -9,7 +17,7 @@ import { FunctionDeclaration, Statement } from "./source-tree";
 export type KsxModule = {
   type: "KsxModule";
   name: string;
-  exports: Set<string>;
+  exports: Map<string, any>;
   importedModules: KsxModule[];
   imports: Record<string, any>;
   functions: Record<string, FunctionDeclaration>;
@@ -33,7 +41,7 @@ export function isModuleErrors (
 }
 
 /**
- *
+ * Parses a KSX module
  * @param source Source code to parse
  * @param moduleResolver A function that resolves a module path to the text of the module
  * @returns The parsed and resolved module
@@ -41,8 +49,8 @@ export function isModuleErrors (
 export async function parseKsxModule (
   moduleName: string,
   source: string,
-  moduleResolver: (moduleName: string) => Promise<string>
-): Promise<KsxModule | ModuleErrors | null> {
+  moduleResolver: ModuleResolver
+): Promise<KsxModule | ModuleErrors> {
   // --- Keep track of parsed modules to avoid circular references
   const parsedModules = new Map<string, KsxModule>();
   const moduleErrors: ModuleErrors = {};
@@ -56,7 +64,7 @@ export async function parseKsxModule (
   async function doParseModule (
     moduleName: string,
     source: string,
-    moduleResolver: (moduleName: string) => Promise<string | null>
+    moduleResolver: ModuleResolver
   ): Promise<KsxModule | null> {
     // --- Do not parse the same module twice
     if (parsedModules.has(moduleName)) {
@@ -89,21 +97,21 @@ export async function parseKsxModule (
       });
 
     // --- Step 3: collect exports
-    const exports = new Set<string>();
+    const exports = new Map<string, any>();
     statements.forEach(stmt => {
       if (stmt.type === "ConstStatement" && stmt.isExported) {
         visitLetConstDeclarations(stmt, id => {
           if (exports.has(id)) {
             errors.push(addErrorMessage("K024", stmt, id));
           } else {
-            exports.add(id);
+            exports.set(id, stmt);
           }
         });
       } else if (stmt.type === "FunctionDeclaration" && stmt.isExported) {
         if (exports.has(stmt.name)) {
           errors.push(addErrorMessage("K024", stmt, stmt.name));
         } else {
-          exports.add(stmt.name);
+          exports.set(stmt.name, stmt);
         }
       }
     });
@@ -142,7 +150,7 @@ export async function parseKsxModule (
       // --- Extract imported names
       for (const key in stmt.imports) {
         if (imported.exports.has(stmt.imports[key])) {
-          imports[key] = stmt.imports[key];
+          imports[key] = imported.exports.get(stmt.imports[key]);
         } else {
           errors.push(addErrorMessage("K026", stmt, stmt.moduleFile, key));
         }
@@ -195,5 +203,53 @@ export async function parseKsxModule (
       line: stmt.startLine,
       column: stmt.startColumn
     };
+  }
+}
+
+/**
+ * Executes a parsed module
+ * @param module Parsed module
+ * @param moduleResolver A function that resolves a module path to the text of the module
+ */
+export async function executeModule (
+  module: KsxModule,
+  evaluationContext: EvaluationContext
+): Promise<void> {
+  // --- Get the top-level BlockScope with its "vars" and "constVars" properties
+  const blockScope = evaluationContext.mainThread.blocks;
+  if (!blockScope || blockScope.length === 0) {
+    throw new Error("Top-level BlockScope not found");
+  }
+  blockScope[0].vars ??= {};
+  const topVars = blockScope[0].vars;
+  blockScope[0].constVars ??= new Set<string>();
+  const topConst = blockScope[0].constVars;
+
+  // --- Convert hoisted functions to ArrowExpressions
+  for (const functionDecl of Object.values(module.functions)) {
+    const arrowExpression = {
+      type: "ArrowExpression",
+      args: functionDecl.args,
+      statement: functionDecl.statement,
+      _ARROW_EXPR_: true
+    } as unknown as ArrowExpression;
+
+    // --- Store the compiled functions in the to-level BlockScope
+    if (topVars[functionDecl.name]) {
+      throw new Error(`Function ${functionDecl.name} already exists`);
+    }
+    topVars[functionDecl.name] = arrowExpression;
+    topConst.add(functionDecl.name);
+  }
+
+  // --- Run the module
+  await processStatementQueueAsync(module.statements, evaluationContext);
+
+  // --- Get exported values
+  for (const key of module.exports.keys()) {
+    if (!(key in topVars)) {
+      throw new Error(`Export ${key} not found`);
+    }
+    module.exports.set(key, topVars[key]);
   }
 }

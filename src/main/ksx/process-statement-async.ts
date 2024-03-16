@@ -78,7 +78,14 @@ export async function processStatementQueueAsync (
   };
 
   // --- Consume the queue
-  while (queue.length > 0) {
+  let statementCount = 0;
+  while (queue.length > 0 && !evalContext.cancellationToken?.cancelled) {
+    statementCount++;
+    if (statementCount > 1000) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      statementCount = 0;
+    }
+    
     // --- Process the first item
     const queueItem = queue.dequeue();
     thread.breakLabelValue = queue.length > 0 ? queue.peek()!.label : -1;

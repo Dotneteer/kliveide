@@ -1,6 +1,5 @@
 import "mocha";
 import { expect } from "expect";
-import assert from "assert";
 import {
   KsxModule,
   ModuleErrors,
