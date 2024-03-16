@@ -284,7 +284,7 @@ export class Parser {
           id: declStart.text
         };
       } else {
-        this.reportError("W003");
+        this.reportError("K003");
         return null;
       }
 
@@ -300,7 +300,7 @@ export class Parser {
         declarationProps.arrayDestruct ||
         declarationProps.objectDestruct
       ) {
-        this.reportError("W009", initToken);
+        this.reportError("K009", initToken);
         return null;
       }
 
@@ -361,7 +361,7 @@ export class Parser {
           id: declStart.text
         };
       } else {
-        this.reportError("W003");
+        this.reportError("K003");
         return null;
       }
 
@@ -453,7 +453,7 @@ export class Parser {
     }
 
     // --- Expect a closing right brace
-    this.expectToken(TokenType.RBrace, "W004");
+    this.expectToken(TokenType.RBrace, "K004");
     return result;
   }
 
@@ -503,13 +503,13 @@ export class Parser {
         }
         break;
       } else {
-        this.reportError("W002", nextToken);
+        this.reportError("K002", nextToken);
         return null;
       }
     } while (true);
 
     // --- Expect a closing right square
-    this.expectToken(TokenType.RSquare, "W005");
+    this.expectToken(TokenType.RSquare, "K005");
     return result;
   }
 
@@ -548,10 +548,10 @@ export class Parser {
    */
   private parseIfStatement (): IfStatement | null {
     const startToken = this._lexer.get();
-    this.expectToken(TokenType.LParent, "W014");
+    this.expectToken(TokenType.LParent, "K014");
     const condition = this.getExpression();
     if (!condition) return null;
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
     const thenBranch = this.parseStatement();
     if (!thenBranch) return null;
     let elseCanFollow = true;
@@ -589,10 +589,10 @@ export class Parser {
    */
   private parseWhileStatement (): WhileStatement | null {
     const startToken = this._lexer.get();
-    this.expectToken(TokenType.LParent, "W014");
+    this.expectToken(TokenType.LParent, "K014");
     const condition = this.getExpression();
     if (!condition) return null;
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
     const body = this.parseStatement();
     if (!body) return null;
 
@@ -621,10 +621,10 @@ export class Parser {
       this.expectToken(TokenType.Semicolon);
     }
     this.expectToken(TokenType.While);
-    this.expectToken(TokenType.LParent, "W014");
+    this.expectToken(TokenType.LParent, "K014");
     const condition = this.getExpression();
     if (!condition) return null;
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
 
     return this.createStatementNode<DoWhileStatement>(
       "DoWhileStatement",
@@ -673,7 +673,7 @@ export class Parser {
     | null {
     const startToken = this._lexer.peek();
     this._lexer.get();
-    this.expectToken(TokenType.LParent, "W014");
+    this.expectToken(TokenType.LParent, "K014");
 
     // --- Check for..in and for..of
     let nextToken = this._lexer.peek();
@@ -749,7 +749,7 @@ export class Parser {
       }
       init = letStmt;
       if (init.declarations.some(d => !d.expression)) {
-        this.reportError("W011");
+        this.reportError("K011");
         return null;
       }
       this.expectToken(TokenType.Semicolon);
@@ -788,7 +788,7 @@ export class Parser {
     }
 
     // --- Close the declaration part
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
 
     // --- Get the body
     const body = this.parseStatement();
@@ -836,7 +836,7 @@ export class Parser {
     const expression = this.getExpression(true);
 
     // --- Close the declaration part
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
 
     // --- Get the body
     const body = this.parseStatement();
@@ -922,12 +922,12 @@ export class Parser {
         this._lexer.get();
         nextToken = this._lexer.peek();
         if (nextToken.type !== TokenType.Identifier) {
-          this.reportError("W003", nextToken);
+          this.reportError("K003", nextToken);
           return null;
         }
         catchVariable = nextToken.text;
         this._lexer.get();
-        this.expectToken(TokenType.RParent, "W006");
+        this.expectToken(TokenType.RParent, "K006");
       }
 
       // --- Get catch block
@@ -942,7 +942,7 @@ export class Parser {
       this._lexer.get();
       finallyBlock = getBlock()!;
     } else {
-      this.reportError("W013", nextToken);
+      this.reportError("K013", nextToken);
       return null;
     }
 
@@ -960,7 +960,7 @@ export class Parser {
     function getBlock (): BlockStatement | null {
       const nextToken = parser._lexer.peek();
       if (nextToken.type !== TokenType.LBrace) {
-        parser.reportError("W012", nextToken);
+        parser.reportError("K012", nextToken);
         return null;
       }
       return parser.parseBlockStatement();
@@ -983,13 +983,13 @@ export class Parser {
     const startToken = this._lexer.get();
 
     // --- Parse the switch expression
-    this.expectToken(TokenType.LParent, "W014");
+    this.expectToken(TokenType.LParent, "K014");
     const expression = this.getExpression();
     if (!expression) return null;
-    this.expectToken(TokenType.RParent, "W006");
+    this.expectToken(TokenType.RParent, "K006");
 
     // --- Parse the case blocks
-    this.expectToken(TokenType.LBrace, "W012");
+    this.expectToken(TokenType.LBrace, "K012");
     const cases: SwitchCase[] = [];
     let defaultCaseFound = false;
     while (true) {
@@ -1003,7 +1003,7 @@ export class Parser {
       } else if (nextToken.type === TokenType.Default) {
         // --- Process "default"
         if (defaultCaseFound) {
-          this.reportError("W016");
+          this.reportError("K016");
           return null;
         }
         defaultCaseFound = true;
@@ -1011,12 +1011,12 @@ export class Parser {
       } else if (nextToken.type === TokenType.RBrace) {
         break;
       } else {
-        this.reportError("W015");
+        this.reportError("K015");
         return null;
       }
 
       // --- Process label statements
-      this.expectToken(TokenType.Colon, "W008");
+      this.expectToken(TokenType.Colon, "K008");
       let statements: Statement[] = [];
       let collected = false;
       while (!collected) {
@@ -1055,7 +1055,7 @@ export class Parser {
     }
 
     // --- Closing
-    this.expectToken(TokenType.RBrace, "W004");
+    this.expectToken(TokenType.RBrace, "K004");
     return this.createStatementNode<SwitchStatement>(
       "SwitchStatement",
       {
@@ -1079,7 +1079,7 @@ export class Parser {
     // --- Get the function name
     const funcId = this._lexer.peek();
     if (funcId.type !== TokenType.Identifier) {
-      this.reportError("W003", funcId);
+      this.reportError("K003", funcId);
       return null;
     }
     this._lexer.get();
@@ -1087,7 +1087,7 @@ export class Parser {
     // --- Get the parameter list;
     const nextToken = this._lexer.peek();
     if (nextToken.type !== TokenType.LParent) {
-      this.reportError("W014", nextToken);
+      this.reportError("K014", nextToken);
       return null;
     }
 
@@ -1155,13 +1155,13 @@ export class Parser {
         isValid = false;
     }
     if (!isValid) {
-      this.reportError("W010", startToken);
+      this.reportError("K010", startToken);
       return null;
     }
 
     // --- Get the function body (statement block)
     if (this._lexer.peek().type !== TokenType.LBrace) {
-      this.reportError("W012", this._lexer.peek());
+      this.reportError("K012", this._lexer.peek());
       return null;
     }
 
@@ -1197,7 +1197,7 @@ export class Parser {
       const funcDecl = this.parseFunctionDeclaration();
       return funcDecl === null ? null : { ...funcDecl, isExported: true };
     }
-    this.reportError("W019", nextToken);
+    this.reportError("K019", nextToken);
     return null;
   }
 
@@ -1215,12 +1215,12 @@ export class Parser {
   private parseImport (): ImportDeclaration | null {
     // TODO: Implement import parsing
     const startToken = this._lexer.get();
-    this.expectToken(TokenType.LBrace, "W012");
+    this.expectToken(TokenType.LBrace, "K012");
     const imports: Record<string, string> = {};
     let nextToken = this._lexer.peek();
     while (nextToken.type !== TokenType.RBrace) {
       if (nextToken.type !== TokenType.Identifier) {
-        this.reportError("W003", nextToken);
+        this.reportError("K003", nextToken);
         return null;
       }
       const id = nextToken.text;
@@ -1230,18 +1230,18 @@ export class Parser {
         this._lexer.get();
         nextToken = this._lexer.peek();
         if (nextToken.type !== TokenType.Identifier) {
-          this.reportError("W003", nextToken);
+          this.reportError("K003", nextToken);
           return null;
         }
         if (imports[nextToken.text]) {
-          this.reportError("W022", nextToken, nextToken.text);
+          this.reportError("K022", nextToken, nextToken.text);
           return null;
         }
         imports[nextToken.text] = id;
         this._lexer.get();
       } else {
         if (imports[id]) {
-          this.reportError("W022", nextToken, id);
+          this.reportError("K022", nextToken, id);
           return null;
         }
         imports[id] = id;
@@ -1257,12 +1257,12 @@ export class Parser {
     this._lexer.get();
 
     // --- Check for "from"
-    this.expectToken(TokenType.From, "W020");
+    this.expectToken(TokenType.From, "K020");
 
     // --- Get the module name
     const moduleToken = this._lexer.peek();
     if (moduleToken.type !== TokenType.StringLiteral) {
-      this.reportError("W021", moduleToken);
+      this.reportError("K021", moduleToken);
       return null;
     }
     this._lexer.get();
@@ -1489,7 +1489,7 @@ export class Parser {
         isValid = false;
     }
     if (!isValid) {
-      this.reportError("W010", start);
+      this.reportError("K010", start);
       return null;
     }
 
@@ -1525,7 +1525,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseLogicalOrExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1558,7 +1558,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseLogicalAndExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1591,7 +1591,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseBitwiseOrExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1624,7 +1624,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseBitwiseXorExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1657,7 +1657,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseBitwiseAndExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1690,7 +1690,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseEquExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1731,7 +1731,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseRelOrInExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1774,7 +1774,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseShiftExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1814,7 +1814,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseAddExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       const endToken = this._lexer.peek();
@@ -1850,7 +1850,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseMultExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1890,7 +1890,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseExponentialExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       leftExpr = this.createExpressionNode<BinaryExpression>(
@@ -1925,7 +1925,7 @@ export class Parser {
       const startToken = this._lexer.peek();
       let rightExpr = this.parseUnaryOrPrefixExpr();
       if (!rightExpr) {
-        this.reportError("W001");
+        this.reportError("K001");
         return null;
       }
       if (count === 0) {
@@ -2034,13 +2034,13 @@ export class Parser {
           if (this._lexer.peek().type !== TokenType.RParent) {
             const expr = this.parseExpr();
             if (!expr) {
-              this.reportError("W001");
+              this.reportError("K001");
               return null;
             }
             args =
               expr.type === "SequenceExpression" ? expr.expressions : [expr];
           }
-          this.expectToken(TokenType.RParent, "W006");
+          this.expectToken(TokenType.RParent, "K006");
           primary = this.createExpressionNode<FunctionInvocationExpression>(
             "FunctionInvocation",
             {
@@ -2057,7 +2057,7 @@ export class Parser {
           const member = this._lexer.get();
           const memberTrait = tokenTraits[member.type];
           if (!memberTrait.keywordLike) {
-            this.reportError("W003");
+            this.reportError("K003");
             return null;
           }
           primary = this.createExpressionNode<MemberAccessExpression>(
@@ -2077,7 +2077,7 @@ export class Parser {
           if (!memberExpr) {
             return null;
           }
-          this.expectToken(TokenType.RSquare, "W005");
+          this.expectToken(TokenType.RSquare, "K005");
           primary = this.createExpressionNode<CalculatedMemberAccessExpression>(
             "CalculatedMemberAccess",
             {
@@ -2144,7 +2144,7 @@ export class Parser {
         if (!parenthesizedExpr) {
           return null;
         }
-        this.expectToken(TokenType.RParent, "W006");
+        this.expectToken(TokenType.RParent, "K006");
         parenthesizedExpr.parenthesized ??= 0;
         parenthesizedExpr.parenthesized++;
         parenthesizedExpr.source = this.getSource(start);
@@ -2165,7 +2165,7 @@ export class Parser {
         this._lexer.get();
         const idToken = this._lexer.get();
         if (idToken.type !== TokenType.Identifier) {
-          this.reportError("W003");
+          this.reportError("K003");
           return null;
         }
         return this.createExpressionNode<Identifier>(
@@ -2318,7 +2318,7 @@ export class Parser {
           };
           this._lexer.get();
         } else {
-          this.reportError("W001");
+          this.reportError("K001");
           return null;
         }
 
@@ -2329,11 +2329,11 @@ export class Parser {
           if (nameType === "Literal") {
             const val = nameExpr.value;
             if (typeof val !== "number" && typeof val !== "string") {
-              this.expectToken(TokenType.RBrace, "W007");
+              this.expectToken(TokenType.RBrace, "K007");
               return null;
             }
           } else if (nameType !== "Identifier") {
-            this.expectToken(TokenType.RBrace, "W007");
+            this.expectToken(TokenType.RBrace, "K007");
             return null;
           }
 
@@ -2352,7 +2352,7 @@ export class Parser {
 
           // --- Move to property value
           if (!valueExpr) {
-            this.expectToken(TokenType.Colon, "W008");
+            this.expectToken(TokenType.Colon, "K008");
             valueExpr = this.getExpression(false);
             if (!valueExpr) {
               return null;
@@ -2374,7 +2374,7 @@ export class Parser {
       }
     }
 
-    this.expectToken(TokenType.RBrace, "W004");
+    this.expectToken(TokenType.RBrace, "K004");
     return this.createExpressionNode<ObjectLiteral>(
       "ObjectLiteral",
       {
@@ -2396,7 +2396,7 @@ export class Parser {
         startToken
       );
     }
-    this.reportError("W002", startToken, result.pattern ?? "");
+    this.reportError("K002", startToken, result.pattern ?? "");
     return null;
   }
 
@@ -2408,7 +2408,7 @@ export class Parser {
     if (expr) {
       return expr;
     }
-    this.reportError("W001");
+    this.reportError("K001");
     return null;
   }
 
@@ -2431,7 +2431,7 @@ export class Parser {
       // --- Skip the expected token
       return this._lexer.get();
     }
-    this.reportError(errorCode ?? "W002", next, next.text);
+    this.reportError(errorCode ?? "K002", next, next.text);
     return null;
   }
 
@@ -3018,7 +3018,7 @@ export class Parser {
         }
 
         default:
-          this.reportError("W017");
+          this.reportError("K017");
           return null;
       }
       if (arrayD) result.arrayDestruct?.push(arrayD);
@@ -3039,13 +3039,13 @@ export class Parser {
     for (const prop of objLit.props) {
       if (Array.isArray(prop)) {
       } else {
-        reportError("W018");
+        reportError("K018");
         return null;
       }
 
       const [propKey, propValue] = prop;
       if (propKey.type !== "Identifier") {
-        reportError("W018");
+        reportError("K018");
         return null;
       }
 
@@ -3107,7 +3107,7 @@ export class Parser {
           break;
         }
         default:
-          this.reportError("W018");
+          this.reportError("K018");
           return null;
       }
       if (objD) result.objectDestruct?.push(objD);

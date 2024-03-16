@@ -34,7 +34,7 @@ import {
   } from "./eval-tree-common";
   import { ensureMainThread } from "./process-statement-common";
   import { BlockScope } from "./BlockScope";
-  import { isPlainObject } from "lodash-es";
+  import { isPlainObject } from "lodash";
 import { OnStatementCompletedCallback, processDeclarationsAsync, processStatementQueueAsync } from "./process-statement-async";
 import { isBannedFunction } from "./banned-functions";
 import { getAsyncProxy } from "./async-proxy";

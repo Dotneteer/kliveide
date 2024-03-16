@@ -51,7 +51,7 @@ describe("KSX Parser - export statement", () => {
       wParser.parseStatements()!;
     } catch (err) {
       expect(wParser.errors.length).toEqual(1);
-      expect(wParser.errors[0].code).toEqual("W019");
+      expect(wParser.errors[0].code).toEqual("K019");
       return;
     }
     assert.fail("Exception expected");

@@ -19,9 +19,11 @@ import {
 import {
   ArrayDestructure,
   AssignmentExpression,
+  ConstStatement,
   EmptyStatement,
   ExpressionStatement,
   Identifier,
+  LetStatement,
   Literal,
   ObjectDestructure,
   Statement,
@@ -886,7 +888,7 @@ export async function processDeclarationsAsync (
   declarations: VarDeclaration[],
   addConst = false,
   useValue = false,
-  baseValue = undefined
+  baseValue: any = undefined
 ): Promise<void> {
   for (let i = 0; i < declarations.length; i++) {
     let value: any;
@@ -983,6 +985,77 @@ export async function processDeclarationsAsync (
           value,
           addConst
         );
+      }
+    }
+  }
+}
+
+/**
+ * Funtion to process a visited ID
+ */
+export type IdDeclarationVisitor = (id: string) => void;
+
+/**
+ * Visits all declarations in a let or const statement
+ * @param declaration Declaration to process
+ * @param visitor Function to call on each visited declaration
+ */
+export function visitLetConstDeclarations (
+  declaration: LetStatement | ConstStatement,
+  visitor: IdDeclarationVisitor
+): void {
+  for (let i = 0; i < declaration.declarations.length; i++) {
+    let value: any;
+    const decl = declaration.declarations[i];
+    visitDeclaration(decl, visitor);
+  }
+
+  function visitDeclaration (
+    varDecl: VarDeclaration,
+    visitor: IdDeclarationVisitor
+  ): void {
+    // --- Process each declaration
+    if (varDecl.id) {
+      visitor(varDecl.id);
+    } else if (varDecl.arrayDestruct) {
+      visitArrayDestruct(varDecl.arrayDestruct, visitor);
+    } else if (varDecl.objectDestruct) {
+      visitObjectDestruct(varDecl.objectDestruct, visitor);
+    } else {
+      throw new Error("Unknown declaration specifier");
+    }
+  }
+
+  // --- Visits an array destructure declaration
+  function visitArrayDestruct (
+    arrayD: ArrayDestructure[],
+    visitor: IdDeclarationVisitor
+  ): void {
+    for (let i = 0; i < arrayD.length; i++) {
+      const arrDecl = arrayD[i];
+      if (arrDecl.id) {
+        visitor(arrDecl.id);
+      } else if (arrDecl.arrayDestruct) {
+        visitArrayDestruct(arrDecl.arrayDestruct, visitor);
+      } else if (arrDecl.objectDestruct) {
+        visitObjectDestruct(arrDecl.objectDestruct, visitor);
+      }
+    }
+  }
+
+  // --- Visits an object destructure declaration
+  function visitObjectDestruct (
+    objectD: ObjectDestructure[],
+    visitor: IdDeclarationVisitor
+  ): void {
+    for (let i = 0; i < objectD.length; i++) {
+      const objDecl = objectD[i];
+      if (objDecl.arrayDestruct) {
+        visitArrayDestruct(objDecl.arrayDestruct, visitor);
+      } else if (objDecl.objectDestruct) {
+        visitObjectDestruct(objDecl.objectDestruct, visitor);
+      } else {
+        visitor(objDecl.alias ?? objDecl.id!);
       }
     }
   }

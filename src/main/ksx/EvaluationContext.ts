@@ -5,9 +5,6 @@ export type EvaluationContext = {
   // --- Container scope
   localContext?: any;
 
-  // --- Function to obtain the current working copy of the local context
-  getLocalContext?: () => any;
-
   // --- Application context scope
   appContext?: any;
 
