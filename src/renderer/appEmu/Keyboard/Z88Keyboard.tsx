@@ -7,6 +7,7 @@ import {
   Z88KeyboardLayout,
   esZ88KeyboardLayout,
   frZ88KeyboardLayout,
+  itZ88KeyboardLayout,
   deZ88KeyboardLayout,
   dkZ88KeyboardLayout,
   seZ88KeyboardLayout,
@@ -45,6 +46,9 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
       break;
     case "fr":
       l = frZ88KeyboardLayout;
+      break;
+    case "it":
+      l = itZ88KeyboardLayout;
       break;
     case "de":
       l = deZ88KeyboardLayout;

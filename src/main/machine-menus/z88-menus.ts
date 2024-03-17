@@ -19,6 +19,7 @@ const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
 const Z88_DK_KEYBOARD = "z88_dk_layout";
 const Z88_FR_KEYBOARD = "z88_fr_layout";
+const Z88_IT_KEYBOARD = "z88_it_layout";
 const Z88_ES_KEYBOARD = "z88_es_layout";
 const Z88_SE_KEYBOARD = "z88_se_layout";
 const Z88_UK_KEYBOARD = "z88_uk_layout";
@@ -31,6 +32,7 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
     { id: Z88_UK_KEYBOARD, label: "British && American", kdid: "uk" },
     { id: Z88_ES_KEYBOARD, label: "Spanish", kdid: "es" },
     { id: Z88_FR_KEYBOARD, label: "French", kdid: "fr" },
+    { id: Z88_IT_KEYBOARD, label: "Italian", kdid: "it" },
     { id: Z88_DE_KEYBOARD, label: "German", kdid: "de" },
     { id: Z88_DK_KEYBOARD, label: "Danish && Norwegian", kdid: "dk" },
     { id: Z88_SE_KEYBOARD, label: "Swedish && Finish", kdid: "se" }
