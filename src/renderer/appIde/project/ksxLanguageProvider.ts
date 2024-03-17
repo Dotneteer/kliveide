@@ -359,7 +359,19 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "comment",
         foreground: "6a9955"
-      }
+      },
+      {
+        token: "regexp.escape.control",
+        foreground: "ce9178"
+      },
+      {
+        token: "regexp.escape",
+        foreground: "d7ba7d"
+      },
+      {
+        token: "regexp",
+        foreground: "d16969"
+      },
     ],
     colors: {}
   },
@@ -384,7 +396,19 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "comment",
         foreground: "008000"
-      }
+      },
+      {
+        token: "regexp.escape.control",
+        foreground: "ee0000"
+      },
+      {
+        token: "regexp.escape",
+        foreground: "d16969"
+      },
+      {
+        token: "regexp",
+        foreground: "811f3f"
+      },
     ],
     colors: {}
   }
