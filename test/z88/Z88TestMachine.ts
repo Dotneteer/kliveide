@@ -2,11 +2,13 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { CardType } from "@emu/machines/z88/memory/CardType";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
 
 export class Z88TestMachine extends Z88Machine {
   constructor () {
     const model = machineRegistry.find(m => m.machineId === "z88").models[0];
-    super(model, {});
+    super({} as Store<AppState>, model, {});
   }
 
   private get memTestDevice (): IZ88BankedMemoryTestSupport {
