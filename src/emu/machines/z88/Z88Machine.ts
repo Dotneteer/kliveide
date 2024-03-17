@@ -210,7 +210,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       if (supported.indexOf(keyboardLayout) < 0) {
         keyboardLayout = "uk";
       }
-      this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout));
+      this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout), "emu");
 
       // --- Configure the machine (using the dynamic configuration, too)
       await this.configure();

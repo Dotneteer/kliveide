@@ -212,9 +212,6 @@ export const Z88ToolArea = () => {
   const slot1 = slotDetails(config?.[MC_Z88_SLOT1] as CardSlotState);
   const slot2 = slotDetails(config?.[MC_Z88_SLOT2] as CardSlotState);
   const slot3 = slotDetails(config?.[MC_Z88_SLOT3] as CardSlotState);
-  console.log("config", config);
-  console.log("Slot0", slot0);
-  console.log("UseDefaultRom", useDefaultRom);
   return (
     <div className={styles.machineTools}>
       <Slot0Display

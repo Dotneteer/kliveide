@@ -19,7 +19,7 @@ const messenger = isEmu ? new EmuToMainMessenger() : new IdeToMainMessenger();
 const messageSource: MessageSource = isEmu ? "emu" : "ide";
 
 // --- Create a store that forwards the actions to the main process with the messenger
-const store = createAppStore(async (action, source) => {
+const store = createAppStore(messageSource, async (action, source) => {
   if (source === messageSource) {
     // --- Forward only the messages dispatched from this renderer so that the main process
     // --- can receive them.
@@ -31,9 +31,7 @@ const store = createAppStore(async (action, source) => {
   }
 });
 
-document.title = isEmu
-  ? "Klive Retro-Computer Emulator"
-  : "Klive IDE"
+document.title = isEmu ? "Klive Retro-Computer Emulator" : "Klive IDE";
 
 // --- Render the app's UI
 ReactDOM.createRoot(document.getElementById("root")!).render(

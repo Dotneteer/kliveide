@@ -68,6 +68,6 @@ function appReducer (state: AppState, action: Action): AppState {
  * @param forwarder
  * @returns Store instance managing the application state
  */
-export default function createAppStore (forwarder?: ActionForwarder) {
-  return createStore(appReducer, initialAppState, forwarder);
+export default function createAppStore (id: string, forwarder?: ActionForwarder) {
+  return createStore(id, appReducer, initialAppState, forwarder);
 }

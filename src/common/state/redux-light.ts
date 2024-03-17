@@ -6,6 +6,11 @@ import { Action } from "./Action";
  */
 export interface Store<S = any, A extends Action = Action> {
   /**
+   * store ID
+   */
+  id: string;
+
+  /**
    * Resets the store's state to the specified one
    * @param state
    */
@@ -71,6 +76,7 @@ export type ActionForwarder<A extends Action = Action> = (
  *
  */
 export function createStore<S = any, A extends Action = Action> (
+  id: string,
   reducer: Reducer<S, A>,
   initialState: S,
   forwarder?: ActionForwarder
@@ -82,6 +88,7 @@ export function createStore<S = any, A extends Action = Action> (
   let isDispatching = false;
 
   const store: Store<S, A> = {
+    id,
     resetTo,
     dispatch: dispatch as Dispatch<A>,
     getState,
