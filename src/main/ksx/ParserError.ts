@@ -25,58 +25,66 @@ export interface ParserErrorMessage {
  * Represents a parser error codes
  */
 export type ErrorCodes =
-  | "W001"
-  | "W002"
-  | "W003"
-  | "W004"
-  | "W005"
-  | "W006"
-  | "W007"
-  | "W008"
-  | "W009"
-  | "W010"
-  | "W011"
-  | "W012"
-  | "W013"
-  | "W014"
-  | "W015"
-  | "W016"
-  | "W017"
-  | "W018"
-  | "W019"
-  | "W020"
-  | "W021"
-  | "W022";
+  | "K001"
+  | "K002"
+  | "K003"
+  | "K004"
+  | "K005"
+  | "K006"
+  | "K007"
+  | "K008"
+  | "K009"
+  | "K010"
+  | "K011"
+  | "K012"
+  | "K013"
+  | "K014"
+  | "K015"
+  | "K016"
+  | "K017"
+  | "K018"
+  | "K019"
+  | "K020"
+  | "K021"
+  | "K022"
+  | "K023"
+  | "K024"
+  | "K025"
+  | "K026"
 
 /**
  * Represents a parser error message descriptions
  */
-type ErrorText = Record<string, string>;
+type ErrorText = Record<ErrorCodes, string>;
 
 /**
  * Parser error messages
  */
 export const errorMessages: ErrorText = {
-  W001: "An expression expected",
-  W002: "Unexpected token: {0}",
-  W003: "An identifier expected",
-  W004: "'}' expected",
-  W005: "']' expected",
-  W006: "')' expected",
-  W007: "Invalid object property name type",
-  W008: "':' expected",
-  W009: "'=' expected",
-  W010: "Invalid arrow expression argument list",
-  W011: "For loop variable must be initialized",
-  W012: "'{' expected",
-  W013: "'catch' or 'finally' expected",
-  W014: "'(' or expected",
-  W015: "'case' or 'default' expected",
-  W016: "'default' case can be used only once within a switch statement",
-  W017: "Invalid sequence expression",
-  W018: "Invalid object literal",
-  W019: "'function' or 'const' expected",
-  W020: "'from' expected",
-  W021: "A string literal expected",
-  W022: "Identifier '{0}' is already imported"
+  K001: "An expression expected",
+  K002: "Unexpected token: {0}",
+  K003: "An identifier expected",
+  K004: "'}' expected",
+  K005: "']' expected",
+  K006: "')' expected",
+  K007: "Invalid object property name type",
+  K008: "':' expected",
+  K009: "'=' expected",
+  K010: "Invalid arrow expression argument list",
+  K011: "For loop variable must be initialized",
+  K012: "'{' expected",
+  K013: "'catch' or 'finally' expected",
+  K014: "'(' or expected",
+  K015: "'case' or 'default' expected",
+  K016: "'default' case can be used only once within a switch statement",
+  K017: "Invalid sequence expression",
+  K018: "Invalid object literal",
+  K019: "'function' or 'const' expected",
+  K020: "'from' expected",
+  K021: "A string literal expected",
+  K022: "Identifier '{0}' is already imported",
+  K023: "Function '{0}' is already defined in the module",
+  K024: "'{0}' is already exported from the module",
+  K025: "Cannot find module '{0}'",
+  K026: "Module '{0}' does not export '{1}'" 
 };

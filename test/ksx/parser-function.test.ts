@@ -22,8 +22,7 @@ describe("KSX Parser - function declaration", () => {
     expect(stmt.type).toEqual("FunctionDeclaration");
     expect(stmt.name).toEqual("myFunc");
     expect(stmt.args.length).toEqual(0);
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single param", () => {
@@ -42,8 +41,7 @@ describe("KSX Parser - function declaration", () => {
     expect(stmt.args.length).toEqual(1);
     expect(stmt.args[0].type).toEqual("Identifier");
     expect((stmt.args[0] as Identifier).name).toEqual("v");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("multiple params", () => {
@@ -64,8 +62,7 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[0] as Identifier).name).toEqual("v");
     expect(stmt.args[1].type).toEqual("Identifier");
     expect((stmt.args[1] as Identifier).name).toEqual("w");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single object destructure #1", () => {
@@ -86,8 +83,7 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[0] as Destructure).objectDestruct.length).toEqual(2);
     expect((stmt.args[0] as Destructure).objectDestruct[0].id).toEqual("x");
     expect((stmt.args[0] as Destructure).objectDestruct[1].id).toEqual("y");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single object destructure #2", () => {
@@ -109,8 +105,7 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[0] as Destructure).objectDestruct[0].id).toEqual("x");
     expect((stmt.args[0] as Destructure).objectDestruct[1].id).toEqual("y");
     expect((stmt.args[0] as Destructure).objectDestruct[1].alias).toEqual("q");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single object destructure #3", () => {
@@ -138,8 +133,7 @@ describe("KSX Parser - function declaration", () => {
     expect(
       (stmt.args[0] as Destructure).objectDestruct[1].objectDestruct[1].id
     ).toEqual("w");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single array destructure #1", () => {
@@ -160,8 +154,7 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[0] as Destructure).arrayDestruct.length).toEqual(2);
     expect((stmt.args[0] as Destructure).arrayDestruct[0].id).toEqual("x");
     expect((stmt.args[0] as Destructure).arrayDestruct[1].id).toEqual("y");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Single array destructure #2", () => {
@@ -185,8 +178,7 @@ describe("KSX Parser - function declaration", () => {
       undefined
     );
     expect((stmt.args[0] as Destructure).arrayDestruct[2].id).toEqual("y");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Complex destructure #1", () => {
@@ -215,8 +207,7 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[1] as Destructure).objectDestruct[0].id).toEqual("c");
     expect((stmt.args[1] as Destructure).objectDestruct[1].id).toEqual("y");
     expect((stmt.args[1] as Destructure).objectDestruct[1].alias).toEqual("d");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 
   it("Complex destructure #2", () => {
@@ -247,7 +238,6 @@ describe("KSX Parser - function declaration", () => {
     expect((stmt.args[1] as Destructure).objectDestruct[1].alias).toEqual("d");
     expect(stmt.args[2].type).toEqual("Identifier");
     expect((stmt.args[2] as Identifier).name).toEqual("e");
-    expect(stmt.body.length).toEqual(1);
-    expect(stmt.body[0].type).toEqual("ReturnStatement");
+    expect(stmt.statement.type).toEqual("BlockStatement");
   });
 });

@@ -1,5 +1,6 @@
 // All binding expression tree node types
 import { BlockScope } from "./BlockScope";
+import { KsxModule } from "./ksx-module";
 
 type Node = Statement | Expression | SwitchCase;
 
@@ -246,7 +247,7 @@ export interface FunctionDeclaration extends StatementBase {
   type: "FunctionDeclaration";
   name: string;
   args: Expression[];
-  body: Statement[];
+  statement: Statement;
   isExported?: boolean;
   closureContext?: BlockScope[];
 }
@@ -255,6 +256,7 @@ export interface ImportDeclaration extends StatementBase {
   type: "ImportDeclaration";
   imports: Record<string, string>;
   moduleFile: string;
+  module: KsxModule;
 }
 
 // =====================================================================================================================

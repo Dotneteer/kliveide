@@ -1,3 +1,5 @@
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+
 /**
  * Represents information about a custom language
  *
@@ -20,8 +22,6 @@ type CustomLanguageInfo = {
   fullLineBreakpoints?: boolean;
   compiler?: string;
 };
-
-import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 
 /**
  * Represents information about a custom language that uses the

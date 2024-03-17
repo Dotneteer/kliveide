@@ -793,7 +793,7 @@ export function setupMenu (
         { type: "separator" },
         {
           id: EXCLUDED_PROJECT_ITEMS,
-          label: "Manage Excluded Items",
+          label: "\nManage Excluded Items",
           enabled: true,
           click: () => {
             mainStore.dispatch(
@@ -1024,7 +1024,7 @@ async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
     saveAppSettings();
   } catch (err) {
     dialog.showErrorBox(
-      "Error while reading key mapping file",
+      "\nError while reading key mapping file",
       `Reading file ${filename} resulted in error: ${err.message}`
     );
   }

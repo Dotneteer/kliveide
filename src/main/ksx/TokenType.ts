@@ -112,4 +112,5 @@ export enum TokenType {
   Import,
   As,
   From,
+  RegExp
 }
