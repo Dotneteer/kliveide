@@ -40,7 +40,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const romFile = machine?.config?.[MC_Z88_INTROM];
 
   // --- Get the allowed card sizes (Slot 0 allows only a subset)
-  let allowedCardTypes = cardTypes.filter(ct => ct.allowInSlot0 || slot > 0);
+  let allowedCardTypes = cardTypes.filter(ct => (ct.allowInSlot0 || slot > 0) && !ct.noUi);
   const cardOptions = allowedCardTypes.map(ct => ({
     value: ct.value,
     label: ct.label.replace("*", " ")

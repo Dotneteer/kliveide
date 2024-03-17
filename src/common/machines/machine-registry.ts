@@ -15,12 +15,17 @@ import {
   MC_Z88_INTROM,
   CT_DISASSEMBLER,
   CT_DISASSEMBLER_VIEW,
-  MC_Z88_KEYBOARD
+  MC_Z88_KEYBOARD,
+  MC_Z88_SLOT0
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  MEDIA_TAPE
+} from "../../common/structs/project-const";
 
 /**
  * The registry of available machine types with their available models
@@ -72,7 +77,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 2,
       [MF_BANK]: 8
     },
-    mediaIds: [MEDIA_TAPE],
+    mediaIds: [MEDIA_TAPE]
   },
   {
     machineId: MI_SPECTRUM_3E,
@@ -122,7 +127,12 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ50",
         displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
         config: {
-          [MC_Z88_INTROM]: "z88v50-r1f99aaae"
+          [MC_Z88_INTROM]: "z88v50-r1f99aaae",
+          [MC_Z88_SLOT0]: {
+            size: 512,
+            cardType: "ROM",
+            file: "z88v50-r1f99aaae"
+          }
         }
       },
       {
@@ -130,7 +140,12 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ47",
         displayName: "Cambridge Z88 (OZ v4.7)",
         config: {
-          [MC_Z88_INTROM]: "z88v47"
+          [MC_Z88_INTROM]: "z88v47",
+          [MC_Z88_SLOT0]: {
+            size: 512,
+            cardType: "ROM",
+            file: "z88v47"
+          }
         }
       },
       {
@@ -138,7 +153,12 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ40",
         displayName: "Cambridge Z88 (OZ v4.0 UK)",
         config: {
-          [MC_Z88_INTROM]: "z88ukv40"
+          [MC_Z88_INTROM]: "z88ukv40",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88ukv40"
+          }
         }
       },
       {
@@ -147,7 +167,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
         config: {
           [MC_Z88_INTROM]: "z88fiv401",
-          [MC_Z88_KEYBOARD]: "se"
+          [MC_Z88_KEYBOARD]: "se",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88fiv401"
+          }
         }
       },
       {
@@ -155,7 +180,12 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ30",
         displayName: "Cambridge Z88 (OZ v3.0 UK)",
         config: {
-          [MC_Z88_INTROM]: "z88ukv30"
+          [MC_Z88_INTROM]: "z88ukv30",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88ukv30"
+          }
         }
       },
       {
@@ -164,6 +194,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v3.23 IT)",
         config: {
           [MC_Z88_INTROM]: "z88itv323",
+          [MC_Z88_KEYBOARD]: "it",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88itv323"
+          }
         }
       },
       {
@@ -172,7 +208,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v3.26 FR)",
         config: {
           [MC_Z88_INTROM]: "z88frv326",
-          [MC_Z88_KEYBOARD]: "fr"
+          [MC_Z88_KEYBOARD]: "fr",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88frv326"
+          }
         }
       },
       {
@@ -181,7 +222,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v3.19 ES)",
         config: {
           [MC_Z88_INTROM]: "z88esv319",
-          [MC_Z88_KEYBOARD]: "es"
+          [MC_Z88_KEYBOARD]: "es",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88esv319"
+          }
         }
       },
       {
@@ -190,7 +236,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v3.21 DK)",
         config: {
           [MC_Z88_INTROM]: "z88dkv321",
-          [MC_Z88_KEYBOARD]: "dk"
+          [MC_Z88_KEYBOARD]: "dk",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88dkv321"
+          }
         }
       },
       {
@@ -199,7 +250,12 @@ export const machineRegistry: MachineInfo[] = [
         displayName: "Cambridge Z88 (OZ v3.18 DE)",
         config: {
           [MC_Z88_INTROM]: "z88dev318",
-          [MC_Z88_KEYBOARD]: "de"
+          [MC_Z88_KEYBOARD]: "de",
+          [MC_Z88_SLOT0]: {
+            size: 128,
+            cardType: "ROM",
+            file: "z88dev318"
+          }
         }
       }
     ],

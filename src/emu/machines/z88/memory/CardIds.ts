@@ -1,4 +1,5 @@
 export enum CardIds {
+  ANYROM = "ROM",
   RAM32 = "RAM32",
   RAM128 = "RAM128",
   RAM256 = "RAM256",

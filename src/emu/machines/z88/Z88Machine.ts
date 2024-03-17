@@ -23,7 +23,8 @@ import {
   MC_Z88_SLOT0,
   MC_Z88_SLOT1,
   MC_Z88_SLOT2,
-  MC_Z88_SLOT3
+  MC_Z88_SLOT3,
+  MC_Z88_USE_DEFAULT_ROM
 } from "@common/machines/constants";
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
@@ -99,7 +100,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   constructor (
     private readonly store: Store<AppState>,
     model: MachineModel,
-    public readonly config: MachineConfigSet,
+    public readonly config: MachineConfigSet
   ) {
     super(config);
 
@@ -166,43 +167,56 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Sets up the machine (async)
    */
   async setup (): Promise<void> {
-    // --- Get the ROM file
-    let romContents: Uint8Array;
-    let romCard: IZ88MemoryCard | undefined;
+    try {
+      // --- Get the ROM file
+      let romContents: Uint8Array;
+      let romCard: IZ88MemoryCard | undefined;
 
-    // --- Check Slot 0 for the ROM
-    const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
-    if (slot0 && slot0.size !== undefined && slot0.cardType !== "-") {
-      // --- There is a card in slot 0
-      romCard = createZ88MemoryCard(this, slot0.size, slot0.cardType);
-      if (slot0.file) {
-        romContents = await this.loadRomFromFile(slot0.file);
-      }
-    } else {
-      console.log("No ROM in slot 0");
+      // --- Check Slot 0 for the ROM
+      const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
       const intRom = this.config?.[MC_Z88_INTROM];
-      if (intRom) {
-        romContents = await this.loadRomFromResource(intRom);
+      let useDefaultRom = false;
+      if (slot0 && slot0.size !== undefined && slot0.cardType !== "-") {
+        // --- There is a card in slot 0
+        romCard = createZ88MemoryCard(this, slot0.size, slot0.cardType);
+        if (slot0.file) {
+          try {
+            romContents = await this.loadRomFromResource(slot0.file);
+          } catch (err) {
+            romContents = await this.loadRomFromFile(slot0.file);
+          }
+        }
+        useDefaultRom = intRom === slot0.file;
       } else {
-        console.log("Use default ROM");
-        romContents = await this.loadRomFromResource(DEFAULT_ROM);
+        useDefaultRom = true;
+        if (intRom) {
+          romContents = await this.loadRomFromResource(intRom);
+        } else {
+          romContents = await this.loadRomFromResource(DEFAULT_ROM);
+        }
+
+        // --- Initialize the Z88 machine's default ROM
+        romCard = new Z88RomMemoryCard(this, romContents.length);
       }
+      this.memory.insertCard(0, romCard, romContents);
 
-      // --- Initialize the Z88 machine's default ROM
-      romCard = new Z88RomMemoryCard(this, romContents.length);
+      // -- Store the current ROM size
+      this.setMachineProperty(MC_Z88_INTROM, romContents.length);
+      this.setMachineProperty(MC_Z88_USE_DEFAULT_ROM, useDefaultRom);
+
+      // --- Set up the default keyboard layout
+      let keyboardLayout = this.config?.[MC_Z88_KEYBOARD] ?? "uk";
+      const supported = ["uk", "de", "fr", "es", "dk", "se"];
+      if (supported.indexOf(keyboardLayout) < 0) {
+        keyboardLayout = "uk";
+      }
+      this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout));
+
+      // --- Configure the machine (using the dynamic configuration, too)
+      await this.configure();
+    } catch (err) {
+      console.error("Error setting up Z88 machine: ", err);
     }
-    this.memory.insertCard(0, romCard, romContents);
-
-    // --- Set up the default keyboard layout
-    let keyboardLayout = this.config?.[MC_Z88_KEYBOARD] ?? "uk";
-    const supported = ["uk", "de", "fr", "es", "dk", "se"];
-    if (supported.indexOf(keyboardLayout) < 0) {
-      keyboardLayout = "uk";
-    }
-    this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout));
-
-    // --- Configure the machine (using the dynamic configuration, too)
-    this.configure();
   }
 
   /**

@@ -11,6 +11,7 @@ export const MC_SCREEN_FREQ = "screenFreq";
 export const MC_MEM_SIZE = "memSize";
 export const MC_SCREEN_SIZE = "screenSize";
 export const MC_Z88_INTROM = "intROM";
+export const MC_Z88_USE_DEFAULT_ROM = "useDefaultRom";
 export const MC_Z88_INTROM_SIZE = "intROMSize";
 export const MC_Z88_INTRAM = "intRAM";
 export const MC_Z88_SLOT0 = "slot0";

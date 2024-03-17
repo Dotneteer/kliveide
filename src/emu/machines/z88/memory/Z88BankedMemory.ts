@@ -186,7 +186,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     if (initialContent) {
       // --- Check for right content size
       if (initialContent.length !== memoryCard.size) {
-        throw new Error("Invalid initial content size");
+        throw new Error(`Invalid initial content size (${initialContent?.length ?? 0}/${memoryCard.size})`);
       }
 
       // --- Write the contents directly into the memory
