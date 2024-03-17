@@ -14,7 +14,8 @@ import {
   MF_PSG,
   MC_Z88_INTROM,
   CT_DISASSEMBLER,
-  CT_DISASSEMBLER_VIEW
+  CT_DISASSEMBLER_VIEW,
+  MC_Z88_KEYBOARD
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
@@ -145,7 +146,8 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ40FI",
         displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
         config: {
-          [MC_Z88_INTROM]: "z88fiv401"
+          [MC_Z88_INTROM]: "z88fiv401",
+          [MC_Z88_KEYBOARD]: "se"
         }
       },
       {
@@ -161,7 +163,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ323IT",
         displayName: "Cambridge Z88 (OZ v3.23 IT)",
         config: {
-          [MC_Z88_INTROM]: "z88itv323"
+          [MC_Z88_INTROM]: "z88itv323",
         }
       },
       {
@@ -169,7 +171,8 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ326FR",
         displayName: "Cambridge Z88 (OZ v3.26 FR)",
         config: {
-          [MC_Z88_INTROM]: "z88frv326"
+          [MC_Z88_INTROM]: "z88frv326",
+          [MC_Z88_KEYBOARD]: "fr"
         }
       },
       {
@@ -177,7 +180,8 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ319ES",
         displayName: "Cambridge Z88 (OZ v3.19 ES)",
         config: {
-          [MC_Z88_INTROM]: "z88esv319"
+          [MC_Z88_INTROM]: "z88esv319",
+          [MC_Z88_KEYBOARD]: "es"
         }
       },
       {
@@ -185,7 +189,8 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ321DK",
         displayName: "Cambridge Z88 (OZ v3.21 DK)",
         config: {
-          [MC_Z88_INTROM]: "z88dkv321"
+          [MC_Z88_INTROM]: "z88dkv321",
+          [MC_Z88_KEYBOARD]: "dk"
         }
       },
       {
@@ -193,7 +198,8 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ318DE",
         displayName: "Cambridge Z88 (OZ v3.18 DE)",
         config: {
-          [MC_Z88_INTROM]: "z88dev318"
+          [MC_Z88_INTROM]: "z88dev318",
+          [MC_Z88_KEYBOARD]: "de"
         }
       }
     ],

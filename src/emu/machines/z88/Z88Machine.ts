@@ -19,6 +19,7 @@ import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   MC_SCREEN_SIZE,
+  MC_Z88_KEYBOARD,
   MC_Z88_SLOT0,
   MC_Z88_SLOT1,
   MC_Z88_SLOT2,
@@ -27,12 +28,12 @@ import {
 import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
-import { CARD_SIZE_EMPTY, createZ88MemoryCard } from "./memory/CardType";
-import { SlotState } from "@renderer/appEmu/dialogs/Z88CardsDialog";
-import { Z88UvEpromMemoryCard } from "./memory/Z88UvEpromMemoryCard";
-import { Z88IntelFlashMemoryCard } from "./memory/Z88IntelFlashMemoryCard";
+import { createZ88MemoryCard } from "./memory/CardType";
 import { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 import { CardSlotState } from "./memory/CardSlotState";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { emuSetKeyboardLayoutAction } from "@common/state/actions";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -95,7 +96,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Initialize the machine
    */
-  constructor (model: MachineModel, public readonly config: MachineConfigSet) {
+  constructor (
+    private readonly store: Store<AppState>,
+    model: MachineModel,
+    public readonly config: MachineConfigSet,
+  ) {
     super(config);
 
     // --- config overrides model.config
@@ -167,19 +172,19 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
     // --- Check Slot 0 for the ROM
     const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
-    if (slot0 && (slot0.size !== undefined && slot0.cardType !== "-")) {
+    if (slot0 && slot0.size !== undefined && slot0.cardType !== "-") {
       // --- There is a card in slot 0
       romCard = createZ88MemoryCard(this, slot0.size, slot0.cardType);
       if (slot0.file) {
         romContents = await this.loadRomFromFile(slot0.file);
       }
     } else {
-      console.log("No ROM in slot 0")
+      console.log("No ROM in slot 0");
       const intRom = this.config?.[MC_Z88_INTROM];
       if (intRom) {
         romContents = await this.loadRomFromResource(intRom);
       } else {
-        console.log("Use default ROM")
+        console.log("Use default ROM");
         romContents = await this.loadRomFromResource(DEFAULT_ROM);
       }
 
@@ -187,6 +192,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       romCard = new Z88RomMemoryCard(this, romContents.length);
     }
     this.memory.insertCard(0, romCard, romContents);
+
+    // --- Set up the default keyboard layout
+    let keyboardLayout = this.config?.[MC_Z88_KEYBOARD] ?? "uk";
+    const supported = ["uk", "de", "fr", "es", "dk", "se"];
+    if (supported.indexOf(keyboardLayout) < 0) {
+      keyboardLayout = "uk";
+    }
+    this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout));
 
     // --- Configure the machine (using the dynamic configuration, too)
     this.configure();
