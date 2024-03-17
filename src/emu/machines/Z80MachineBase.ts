@@ -13,6 +13,8 @@ import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { MachineConfigSet } from "@common/machines/info-types";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.

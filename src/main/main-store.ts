@@ -8,7 +8,7 @@ import { ForwardActionRequest } from "../common/messaging/forwarding";
 /**
  * This instance represents the state store in the EMU renderer
  */
-export const mainStore = createAppStore(
+export const mainStore = createAppStore("main",
   async (action: Action, sourceId: MessageSource) => {
     const forwardingMessage: ForwardActionRequest = {
       type: "ForwardAction",

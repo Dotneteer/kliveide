@@ -6,7 +6,7 @@ import createAppStore from "@state/store";
 
 describe("AppState management", () => {
   it("Initial AppState after createAppStore", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     const state = store.getState();
     expect(state.emuLoaded).toBe(false);
@@ -14,7 +14,7 @@ describe("AppState management", () => {
   });
 
   it("AppFlags reducer works", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     store.dispatch(emuLoadedAction(true));
 
@@ -23,7 +23,7 @@ describe("AppState management", () => {
   });
 
   it("AppFlags reducer with subscribe works", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     let counter = 0;
     const unsubscribe = store.subscribe(() => {
@@ -38,7 +38,7 @@ describe("AppState management", () => {
   });
 
   it("EmuViewOptions reducer works", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     store.dispatch(showEmuToolbarAction(false));
 
@@ -47,7 +47,7 @@ describe("AppState management", () => {
   });
 
   it("EmuViewOptions reducer with subscribe works", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     let counter = 0;
     const unsubscribe = store.subscribe(() => {
@@ -62,7 +62,7 @@ describe("AppState management", () => {
   });
 
   it("Combined reducers works", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     store.dispatch(emuLoadedAction(true));
     store.dispatch(showEmuToolbarAction(false));
@@ -73,7 +73,7 @@ describe("AppState management", () => {
   });
 
   it("Combined reducers with subscribe work", () => {
-    const store = createAppStore();
+    const store = createAppStore("test");
 
     let counter = 0;
     const unsubscribe = store.subscribe(() => {
@@ -91,7 +91,7 @@ describe("AppState management", () => {
 
   it("Combined reducers with forwarding work", () => {
     let forwarded = 0;
-    const store = createAppStore(async (action: Action) => {
+    const store = createAppStore("test", async (action: Action) => {
       forwarded++;
     });
 

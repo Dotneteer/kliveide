@@ -6,7 +6,12 @@ import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setMachineConfigAction, setMachineTypeAction, setMediaAction, setModelTypeAction } from "@state/actions";
+import {
+  setMachineConfigAction,
+  setMachineTypeAction,
+  setMediaAction,
+  setModelTypeAction
+} from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
@@ -17,7 +22,11 @@ import {
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import {
+  MachineConfigSet,
+  MachineInfo,
+  MachineModel
+} from "@common/machines/info-types";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -42,7 +51,11 @@ class MachineService implements IMachineService {
    * @param modelId ID of the machine model
    * @param config Optional machine configuration
    */
-  async setMachineType (machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void> {
+  async setMachineType (
+    machineId: string,
+    modelId?: string,
+    config?: MachineConfigSet
+  ): Promise<void> {
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       m =>
@@ -100,7 +113,10 @@ class MachineService implements IMachineService {
     // --- Ready, sign the machine type state change
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
-    this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
+    this.store.dispatch(
+      setMachineConfigAction(config || modelInfo?.config),
+      this.messageSource
+    );
   }
 
   /**
@@ -119,7 +135,9 @@ class MachineService implements IMachineService {
     const machine = machineRegistry.find(
       m =>
         m.machineId === currentType &&
-        (!m.models || !currentModel || m.models?.find(m => m.modelId === currentModel))
+        (!m.models ||
+          !currentModel ||
+          m.models?.find(m => m.modelId === currentModel))
     );
     if (!machine) {
       return undefined;
