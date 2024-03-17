@@ -128,7 +128,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ50",
         displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
         config: {
-          [MC_Z88_INTRAM]: 512,
+          [MC_Z88_INTRAM]: 0x1f, // 512K
           [MC_Z88_INTROM]: "z88v50-r1f99aaae",
           [MC_Z88_SLOT0]: {
             size: 512,
@@ -142,11 +142,11 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ47",
         displayName: "Cambridge Z88 (OZ v4.7)",
         config: {
-          [MC_Z88_INTRAM]: 512,
+          [MC_Z88_INTRAM]: 0x1f, // 512K
           [MC_Z88_INTROM]: "z88v47",
           [MC_Z88_SLOT0]: {
             size: 512,
-            cardType: "IF28F004S5",
+            cardType: "ROM",
             file: "z88v47"
           }
         }
@@ -156,7 +156,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ40",
         displayName: "Cambridge Z88 (OZ v4.0 UK)",
         config: {
-          [MC_Z88_INTRAM]: 128,
+          [MC_Z88_INTRAM]: 0x07, // 128K
           [MC_Z88_INTROM]: "z88ukv40",
           [MC_Z88_SLOT0]: {
             size: 128,
@@ -170,7 +170,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ40FI",
         displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
         config: {
-          [MC_Z88_INTRAM]: 128,
+          [MC_Z88_INTRAM]: 0x07, // 128K
           [MC_Z88_INTROM]: "z88fiv401",
           [MC_Z88_KEYBOARD]: "se",
           [MC_Z88_SLOT0]: {
@@ -185,7 +185,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ30",
         displayName: "Cambridge Z88 (OZ v3.0 UK)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88ukv30",
           [MC_Z88_SLOT0]: {
             size: 128,
@@ -199,7 +199,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ323IT",
         displayName: "Cambridge Z88 (OZ v3.23 IT)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88itv323",
           [MC_Z88_KEYBOARD]: "it",
           [MC_Z88_SLOT0]: {
@@ -214,7 +214,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ326FR",
         displayName: "Cambridge Z88 (OZ v3.26 FR)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88frv326",
           [MC_Z88_KEYBOARD]: "fr",
           [MC_Z88_SLOT0]: {
@@ -229,7 +229,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ319ES",
         displayName: "Cambridge Z88 (OZ v3.19 ES)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88esv319",
           [MC_Z88_KEYBOARD]: "es",
           [MC_Z88_SLOT0]: {
@@ -244,7 +244,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ321DK",
         displayName: "Cambridge Z88 (OZ v3.21 DK)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88dkv321",
           [MC_Z88_KEYBOARD]: "dk",
           [MC_Z88_SLOT0]: {
@@ -259,7 +259,7 @@ export const machineRegistry: MachineInfo[] = [
         modelId: "OZ318DE",
         displayName: "Cambridge Z88 (OZ v3.18 DE)",
         config: {
-          [MC_Z88_INTRAM]: 32,
+          [MC_Z88_INTRAM]: 0x01, // 32K
           [MC_Z88_INTROM]: "z88dev318",
           [MC_Z88_KEYBOARD]: "de",
           [MC_Z88_SLOT0]: {
