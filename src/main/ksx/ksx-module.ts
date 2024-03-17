@@ -9,7 +9,12 @@ import {
   processStatementQueueAsync,
   visitLetConstDeclarations
 } from "./process-statement-async";
-import { ArrowExpression, FunctionDeclaration, Statement } from "./source-tree";
+import {
+  ArrowExpression,
+  FunctionDeclaration,
+  ImportDeclaration,
+  Statement
+} from "./source-tree";
 
 /**
  * Represents a parsed and resolved KSX module
@@ -17,11 +22,13 @@ import { ArrowExpression, FunctionDeclaration, Statement } from "./source-tree";
 export type KsxModule = {
   type: "KsxModule";
   name: string;
+  parent?: KsxModule;
   exports: Map<string, any>;
-  importedModules: KsxModule[];
   imports: Record<string, any>;
+  importedModules: KsxModule[];
   functions: Record<string, FunctionDeclaration>;
   statements: Statement[];
+  executed: boolean;
 };
 
 /**
@@ -171,11 +178,15 @@ export async function parseKsxModule (
       importedModules,
       imports,
       functions,
-      statements
+      statements,
+      executed: false
     };
 
     // --- Sign this module as parsed
     parsedModules.set(moduleName, parsedModule);
+
+    // --- All imported modules use this module as a parent
+    importedModules.forEach(m => (m.parent = parsedModule));
 
     // --- Done.
     return parsedModule;
@@ -242,8 +253,21 @@ export async function executeModule (
     topConst.add(functionDecl.name);
   }
 
+  // --- Load imported modules
+  module.statements
+    .filter(stmt => stmt.type === "ImportDeclaration")
+    .forEach((stmt: ImportDeclaration) => {
+      stmt.module = module.importedModules.find(
+        m => m.name === stmt.moduleFile
+      );
+      if (!stmt.module) {
+        throw new Error(`Imported module '${stmt.moduleFile}' not found`);
+      }
+    });
+
   // --- Run the module
   await processStatementQueueAsync(module.statements, evaluationContext);
+  module.executed = true;
 
   // --- Get exported values
   for (const key of module.exports.keys()) {

@@ -1,4 +1,4 @@
-import { EvaluationContext } from "./EvaluationContext";
+import { EvaluationContext, createEvalContext } from "./EvaluationContext";
 
 import { evalBindingAsync, executeArrowExpression } from "./eval-tree-async";
 import { LogicalThread } from "./LogicalThread";
@@ -44,6 +44,7 @@ import {
   reportEngineError,
   StatementExecutionError
 } from "./engine-errors";
+import { executeModule } from "./ksx-module";
 
 export type OnStatementCompletedCallback =
   | ((
@@ -161,6 +162,7 @@ export async function processStatementQueueAsync (
 
 /**
  * Process the specified statement asynchronously
+ * @param module Module to process
  * @param statement Statement to process
  * @param evalContext Evaluation context used for processing
  * @param thread Logical thread to use for statement processing
@@ -179,6 +181,42 @@ async function processStatementAsync (
 
   // --- Process the statement according to its type
   switch (statement.type) {
+    case "ImportDeclaration":
+      // --- Get module information
+      const thisModule = statement.module;
+      if (!thisModule) {
+        throw new Error("Missing module");
+      }
+      const parentModule = statement.module.parent;
+      if (!parentModule) {
+        throw new Error("Missing parent module");
+      } 
+
+      // --- At this point the imported module is set
+      if (!statement.module.executed) {
+        // --- Run the module, it has not been executed yet
+        const childEvalContext = createEvalContext({
+          cancellationToken: evalContext.cancellationToken,
+        });
+        await executeModule(statement.module, childEvalContext);
+      }
+
+      // --- Import the module's exported variables into the parent module
+      const topVars = evalContext.mainThread.blocks[0].vars;
+      const topConst = evalContext.mainThread.blocks[0].constVars;
+      for (const key of Object.keys(statement.imports)) {
+        if (key in topVars) {
+          throw new Error(`Import ${key} already exists`);
+        }
+        topVars[key] = statement.module.exports.get(statement.imports[key]);
+        topConst.add(key);
+      }
+      break;
+
+    case "FunctionDeclaration":
+      // --- Function declarations are already hoisted, nothing to do
+      break;
+
     case "EmptyStatement":
       // --- Nothing to do
       break;

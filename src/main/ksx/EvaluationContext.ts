@@ -69,8 +69,9 @@ export function createEvalContext (
         childThreads: [],
         blocks: [{ vars: {} }],
         loops: [],
-        breakLabelValue: -1
-      }
+        breakLabelValue: -1,
+      },
+      localContext: {},
     },
     ...parts
   };

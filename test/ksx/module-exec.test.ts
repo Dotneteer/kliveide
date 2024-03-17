@@ -6,7 +6,6 @@ import {
   isModuleErrors,
   parseKsxModule
 } from "@main/ksx/ksx-module";
-import { p } from "nextra/dist/types-c8e621b7";
 import {
   CancellationToken,
   EvaluationContext,
@@ -84,14 +83,89 @@ describe("KSX Execution - modules", () => {
     expect(exports.get("x")).toBe(100);
   });
 
+  it("Import function #1", async () => {
+    // --- Arrange
+    const source = `
+      import { square } from "math";
+      export const x = square(10);
+    `;
 
+    const modules = {
+      math: `
+        export function square(x) {
+          return x * x;
+        }
+      `
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext.mainThread.blocks[0].vars;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(100);
+    expect(exports.get("x")).toBe(100);
+  });
+
+  it("Import function #2", async () => {
+    // --- Arrange
+    const source = `
+      import { square, factor } from "math";
+      export const x = square(10) + factor;
+    `;
+
+    const modules = {
+      math: `
+        export const factor = 3;
+        export function square(x) {
+          return x * x;
+        }
+      `
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext.mainThread.blocks[0].vars;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(103);
+    expect(exports.get("x")).toBe(103);
+  });
+
+  it("Import function #3", async () => {
+    // --- Arrange
+    const source = `
+      import { square, factor as f1 } from "math";
+      export const x = square(10) + f1;
+    `;
+
+    const modules = {
+      math: `
+        export const factor = 3;
+        export function square(x) {
+          return x * x;
+        }
+      `
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext.mainThread.blocks[0].vars;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(103);
+    expect(exports.get("x")).toBe(103);
+  });
 });
 
 async function execModule (
   source: string,
   modules: Record<string, string> = {},
   cancellationToken?: CancellationToken
-): Promise<{evalContext: EvaluationContext, parsedModule: KsxModule}> {
+): Promise<{ evalContext: EvaluationContext; parsedModule: KsxModule }> {
   const parsedModule = await parseKsxModule(
     ROOT_MODULE,
     source,
@@ -103,9 +177,9 @@ async function execModule (
   }
 
   const evalContext = createEvalContext({
-    cancellationToken,
-    localContext: {},
+    cancellationToken
   });
+
   await executeModule(parsedModule, evalContext);
-  return {evalContext, parsedModule};
+  return { evalContext, parsedModule };
 }
