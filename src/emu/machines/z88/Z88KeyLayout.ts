@@ -419,6 +419,78 @@ export const dkZ88KeyboardLayout = {
   ...dkLayoutDiff
 };
 
+
+/**
+ * Defines the Italian keys that differ from the default Z88 UK layout
+ */
+const itLayoutDiff: Z88KeyboardLayout = {
+  /* 1st (top) row */
+  N2: {
+    key: "2",
+    symbol: "\u00a3" /* £ */
+  },
+  N9: {
+    key: "9",
+    symbol: "(",
+    secondSymbol: "{"
+  },
+  N0: {
+    key: "0",
+    symbol: ")",
+    secondSymbol: "}"
+  },
+  Backslash: {
+    key: "\u00f9", /* ù */
+    symbol: "|",
+    secondSymbol: "\\"
+  },
+  /* 2nd row */
+  W: {
+    key: "Z"
+  },
+  SBracketL: {
+    key: "\u00e8", /* è */
+    symbol: "\u00e9", /* é */
+    secondSymbol: "[",
+  },
+  SBracketR: {
+    key: "\u00ec", /* ì */
+    symbol: "~",
+    secondSymbol: "]",
+  },
+  /* 3rd row */
+  Semicolon: {
+    key: "M",
+  },
+  Quote: {
+    key: "\u00f2", /* ò */
+    symbol: "'",
+    secondSymbol: "@",
+  },
+  Pound: {
+    key: "\u00e0", /* à */
+    symbol: '"',
+    secondSymbol: "`"
+  },
+
+  /* 4th row */
+  Z: {
+    key: "W"
+  },
+  M: {
+    key: ";",
+    symbol: ':',
+  }
+};
+
+/**
+ * The DK+NO Z88 keyboard layout
+ */
+export const itZ88KeyboardLayout = {
+  ...defaultZ88KeyboardLayout,
+  ...itLayoutDiff
+};
+
 /**
  * Defines the Spanish (ES) keys that differ from the default layout
  */
