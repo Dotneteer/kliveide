@@ -206,7 +206,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
       // --- Set up the default keyboard layout
       let keyboardLayout = this.config?.[MC_Z88_KEYBOARD] ?? "uk";
-      const supported = ["uk", "de", "fr", "es", "dk", "se"];
+      const supported = ["uk", "de", "fr", "es", "it", "dk", "se"];
       if (supported.indexOf(keyboardLayout) < 0) {
         keyboardLayout = "uk";
       }
