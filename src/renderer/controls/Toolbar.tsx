@@ -22,6 +22,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { __DARWIN__ } from "../../electron/electron-utils";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { PANE_ID_BUILD } from "@common/integration/constants";
 
 type Props = {
   ide: boolean;
@@ -122,7 +123,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         clicked={async () => {
           if (mayInjectCode && !!startOpt.cmd) {
             storeDispatch(setRestartTarget("project"));
-            const buildPane = outputPaneService.getOutputPaneBuffer("build");
+            const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
             await ideCommandsService.executeCommand(startOpt.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
           } else {

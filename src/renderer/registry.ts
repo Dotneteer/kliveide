@@ -54,7 +54,12 @@ import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
 import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
 import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
-import { MC_DISK_SUPPORT, MF_BLINK, MF_PSG, MF_ULA } from "@common/machines/constants";
+import {
+  MC_DISK_SUPPORT,
+  MF_BLINK,
+  MF_PSG,
+  MF_ULA
+} from "@common/machines/constants";
 import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
@@ -70,10 +75,18 @@ import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEdi
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
+import {
+  PANE_ID_BUILD,
+  PANE_ID_EMU,
+  PANE_ID_SCRIPTIMG
+} from "@common/integration/constants";
+import { scriptingHistoryPanelRenderer } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
+import { scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
 const ACTIVITY_MACHINE_INFO_ID = "log-view";
+const ACTIVITY_SCRIPTING_ID = "scripting-view";
 const ACTIVITY_TEST_ID = "test-view";
 
 // --- Set up activities
@@ -92,6 +105,11 @@ export const activityRegistry: Activity[] = [
     id: ACTIVITY_MACHINE_INFO_ID,
     title: "Machine info",
     iconName: "output"
+  },
+  {
+    id: ACTIVITY_SCRIPTING_ID,
+    title: "Scripting",
+    iconName: "symbol-event"
   },
   {
     id: ACTIVITY_TEST_ID,
@@ -161,6 +179,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: necUpd765PanelRenderer,
     initialSize: 500,
     requireConfig: [MC_DISK_SUPPORT]
+  },
+  {
+    id: "scriptingHistory",
+    title: "Scripting History",
+    hostActivity: ACTIVITY_SCRIPTING_ID,
+    renderer: scriptingHistoryPanelRenderer,
+    initialSize: 500
   }
 ];
 
@@ -183,12 +208,16 @@ export const toolPanelRegistry: ToolRendererInfo[] = [
 // --- Set up output panes
 export const outputPaneRegistry: OutputPaneInfo[] = [
   {
-    id: "emu",
+    id: PANE_ID_EMU,
     displayName: "Emulator"
   },
   {
-    id: "build",
+    id: PANE_ID_BUILD,
     displayName: "Build"
+  },
+  {
+    id: PANE_ID_SCRIPTIMG,
+    displayName: "Script Output"
   }
 ];
 
@@ -244,80 +273,80 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: NEX_VIEWER,
     renderer: createNexFileViewerPanel,
     icon: "chip",
-    iconFill: "--console-ansi-bright-blue",
+    iconFill: "--console-ansi-bright-blue"
   },
   {
     id: Z80_VIEWER,
     renderer: createZ80FileViewerPanel,
     icon: "chip",
-    iconFill: "--console-ansi-bright-magenta",
+    iconFill: "--console-ansi-bright-magenta"
   },
   {
     id: SNA_VIEWER,
     renderer: createSnaFileViewerPanel,
     icon: "chip",
-    iconFill: "--console-ansi-bright-magenta",
+    iconFill: "--console-ansi-bright-magenta"
   },
   {
     id: SCR_VIEWER,
     renderer: createScrFileViewerPanel,
     icon: "vm",
-    iconFill: "--console-ansi-bright-blue",
+    iconFill: "--console-ansi-bright-blue"
   },
   {
     id: SHC_VIEWER,
     renderer: createShcFileViewerPanel,
     icon: "vm",
-    iconFill: "--console-ansi-bright-green",
+    iconFill: "--console-ansi-bright-green"
   },
   {
     id: SHR_VIEWER,
     renderer: createShrFileViewerPanel,
     icon: "vm",
-    iconFill: "--console-ansi-bright-cyan",
+    iconFill: "--console-ansi-bright-cyan"
   },
   {
     id: SLR_VIEWER,
     renderer: createSlrFileViewerPanel,
     icon: "vm",
-    iconFill: "--console-ansi-bright-red",
+    iconFill: "--console-ansi-bright-red"
   },
   {
     id: SL2_VIEWER,
     renderer: createSl2FileViewerPanel,
     icon: "vm",
-    iconFill: "--console-ansi-yellow",
+    iconFill: "--console-ansi-yellow"
   },
   {
     id: PAL_EDITOR,
     renderer: createPalFileEditorPanel,
     icon: "palette",
-    iconFill: "--console-ansi-bright-blue",
+    iconFill: "--console-ansi-bright-blue"
   },
   {
     id: NPL_EDITOR,
     renderer: createPalFileEditorPanel,
     icon: "palette",
-    iconFill: "--console-ansi-bright-magenta",
+    iconFill: "--console-ansi-bright-magenta"
   },
   {
     id: NXI_EDITOR,
     renderer: createNxiFileEditorPanel,
     icon: "layers",
-    iconFill: "--console-ansi-bright-blue",
+    iconFill: "--console-ansi-bright-blue"
   },
   {
     id: SPR_EDITOR,
     renderer: createSprFileEditorPanel,
     icon: "sprite",
-    iconFill: "--console-ansi-bright-green",
+    iconFill: "--console-ansi-bright-green"
   },
   {
     id: VID_VIEWER,
     renderer: createVidFileViewerPanel,
     icon: "video",
-    iconFill: "--console-ansi-bright-cyan",
-  },
+    iconFill: "--console-ansi-bright-cyan"
+  }
 ];
 
 // --- The registry of ile types
@@ -391,7 +420,22 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".ksx",
     editor: CODE_EDITOR,
     subType: "ksx",
-    icon: "@file-ksx"
+    icon: "@file-ksx",
+    documentTabRenderer: scriptingCommandBarRenderer,
+    contextMenuInfo: [
+      {
+        text: "Run script",
+        clicked: async () => {
+          console.log("Run this script file");
+        }
+      },
+      {
+        text: "Stop script",
+        clicked: async () => {
+          console.log("Stop this script file");
+        }
+      },
+    ]
   },
   {
     matchType: "ends",
@@ -545,7 +589,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     openPermanent: true
-  },
+  }
 ];
 
 // --- Supported custom languages

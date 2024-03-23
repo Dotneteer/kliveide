@@ -49,6 +49,7 @@ import {
   NEW_PROJECT_DIALOG
 } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
+import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -88,6 +89,7 @@ const ExplorerPanel = () => {
   // --- State and helpers for the selected node's context menu
   const [selectedContextNode, setSelectedContextNode] =
     useState<ITreeNode<ProjectNode>>(null);
+  const [contextInfo, setContextInfo] = useState<FileTypeEditor>();
   const selectedContextNodeIsFolder =
     selectedContextNode?.data?.isFolder ?? false;
   const selectedNodeIsProjectFile =
@@ -220,6 +222,24 @@ const ExplorerPanel = () => {
             }}
             disabled={!isKliveProject}
           />
+        </>
+      )}
+      {contextInfo?.contextMenuInfo && (
+        <>
+          <ContextMenuSeparator />
+          {contextInfo?.contextMenuInfo?.map((item, index) => {
+            return item.separator ? (
+              <ContextMenuSeparator />
+            ) : (
+              <ContextMenuItem
+                key={index}
+                dangerous={item.dangerous}
+                text={item.text}
+                disabled={item.disabled?.()}
+                clicked={() => item?.clicked()}
+              />
+            );
+          })}
         </>
       )}
     </ContextMenu>
@@ -405,6 +425,7 @@ const ExplorerPanel = () => {
         tabIndex={idx}
         onContextMenu={(e: MouseEvent) => {
           setSelectedContextNode(node);
+          setContextInfo(getFileTypeEntry(node?.data?.fullPath));
           contextMenuApi.show(e);
         }}
         onMouseDown={e => {

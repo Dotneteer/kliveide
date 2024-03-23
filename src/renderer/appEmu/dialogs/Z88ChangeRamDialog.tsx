@@ -8,6 +8,7 @@ import { useState } from "react";
 import { MC_Z88_INTRAM } from "@common/machines/constants";
 import { get } from "lodash";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { PANE_ID_EMU } from "@common/integration/constants";
 
 // --- These are the RAM sizes available for the Z88 Internal RAM
 const ramSizes = [
@@ -84,7 +85,7 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
         await machineService.setMachineType(machineId, modelId, newConfig);
         await messenger.sendMessage({
           type: "IdeDisplayOutput",
-          pane: "emu",
+          pane: PANE_ID_EMU,
           text: `Z88 internal RAM size changed to ${selectedSize}K`,
           color: "bright-cyan",
           writeLine: true

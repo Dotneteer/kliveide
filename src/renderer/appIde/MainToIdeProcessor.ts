@@ -16,6 +16,7 @@ import {
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
+import { PANE_ID_BUILD } from "@common/integration/constants";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -105,7 +106,7 @@ export async function processMainToIdeMessages (
     }
 
     case "IdeExecuteCommand": {
-      const pane = outputPaneService.getOutputPaneBuffer("build");
+      const pane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
       const response = await ideCommandsService.executeCommand(
         message.commandText,
         pane

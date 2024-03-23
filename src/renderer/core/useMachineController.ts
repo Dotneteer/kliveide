@@ -2,6 +2,7 @@ import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { FrameCompletedArgs, IMachineController } from "../abstractions/IMachineController";
+import { PANE_ID_EMU } from "@common/integration/constants";
 
 export const useMachineController = (
   controllerChanged?: (controller: IMachineController) => Promise<void>,
@@ -30,7 +31,7 @@ export const useMachineController = (
 
       // --- Done
       setController(newController);
-      newController.output = outputPaneService.getOutputPaneBuffer("emu");
+      newController.output = outputPaneService.getOutputPaneBuffer(PANE_ID_EMU);
     });
 
     return () => {
