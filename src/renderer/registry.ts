@@ -332,6 +332,20 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".c",
+    editor: CODE_EDITOR,
+    subType: "c",
+    icon: "@file-c"
+  },
+  {
+    matchType: "ends",
+    pattern: ".h",
+    editor: CODE_EDITOR,
+    subType: "c",
+    icon: "@file-h"
+  },
+  {
+    matchType: "ends",
     pattern: ".kz80.asm",
     editor: CODE_EDITOR,
     subType: "kz80-asm",
@@ -377,7 +391,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".ksx",
     editor: CODE_EDITOR,
     subType: "ksx",
-    icon: "file-code"
+    icon: "@file-ksx"
   },
   {
     matchType: "ends",
