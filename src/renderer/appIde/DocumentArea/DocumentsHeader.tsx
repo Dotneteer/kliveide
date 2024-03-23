@@ -18,7 +18,10 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incDocHubServiceVersionAction, incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
+import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
+import { PANE_ID_BUILD } from "@common/integration/constants";
+import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
+import { getFileTypeEntry } from "../project/project-node";
 
 /**
  * This component represents the header of a document hub
@@ -33,6 +36,7 @@ export const DocumentsHeader = () => {
   const [openDocs, setOpenDocs] = useState<ProjectDocumentState[]>(null);
   const [activeDocIndex, setActiveDocIndex] = useState<number>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
+  const [editorInfo, setEditorInfo] = useState<FileTypeEditor>();
   const [awaiting, setAwaiting] = useState(false);
   const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
   const editorVersion = useSelector(s => s.ideView?.editorVersion);
@@ -61,16 +65,8 @@ export const DocumentsHeader = () => {
         buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
       );
     }
+    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.fullPath));
   }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
-
-  // --- Update the UI when the build root changes
-  useEffect(() => {
-    if (openDocs) {
-      setSelectedIsBuildRoot(
-        buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
-      );
-    }
-  }, [openDocs, buildRoots, activeDocIndex]);
 
   // --- Make sure that the index is visible
   useEffect(() => {
@@ -230,6 +226,7 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
+        {editorInfo && editorInfo.documentTabRenderer?.()}
         {selectedIsBuildRoot && <BuildRootCommandBar />}
         <TabButtonSeparator />
         <TabButton
@@ -269,9 +266,9 @@ const BuildRootCommandBar = () => {
         title='Compile code'
         disabled={compiling}
         clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer("build");
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           await ideCommandsService.executeCommand("compile", buildPane);
-          await ideCommandsService.executeCommand("outp build");
+          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
@@ -280,9 +277,9 @@ const BuildRootCommandBar = () => {
         title={"Inject code into\nthe virtual machine"}
         disabled={compiling}
         clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer("build");
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           await ideCommandsService.executeCommand("inject", buildPane);
-          await ideCommandsService.executeCommand("outp build");
+          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
@@ -292,9 +289,9 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane = outputPaneService.getOutputPaneBuffer("build");
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           await ideCommandsService.executeCommand("run", buildPane);
-          await ideCommandsService.executeCommand("outp build");
+          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
@@ -304,9 +301,9 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane = outputPaneService.getOutputPaneBuffer("build");
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           await ideCommandsService.executeCommand("debug", buildPane);
-          await ideCommandsService.executeCommand("outp build");
+          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
     </>

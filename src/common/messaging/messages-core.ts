@@ -60,7 +60,10 @@ import {
   MainCreateDiskFileRequest,
   MainCreateDiskFileResponse,
   MainGetTemplateDirsResponse,
-  MainGetTemplateDirsRequest
+  MainGetTemplateDirsRequest,
+  MainStartScriptRequest,
+  MainStopScriptRequest,
+  MainScriptsStatusRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -222,6 +225,9 @@ export type RequestMessage =
   | MainSaveDiskChangesRequest
   | MainCreateDiskFileRequest
   | MainGetTemplateDirsRequest
+  | MainStartScriptRequest
+  | MainStopScriptRequest
+  | MainScriptsStatusRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

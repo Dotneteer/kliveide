@@ -34,6 +34,7 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { MachineInfo } from "@common/machines/info-types";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
+import { PANE_ID_EMU } from "@common/integration/constants";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -590,14 +591,14 @@ export class MachineController implements IMachineController {
     this._loggedEventNo++;
     await this.messenger.sendMessage({
       type: "IdeDisplayOutput",
-      pane: "emu",
+      pane: PANE_ID_EMU,
       text: `[${this._loggedEventNo}] `,
       color: "magenta",
       writeLine: false
     });
     await this.messenger.sendMessage({
       type: "IdeDisplayOutput",
-      pane: "emu",
+      pane: PANE_ID_EMU,
       text,
       color,
       writeLine: true

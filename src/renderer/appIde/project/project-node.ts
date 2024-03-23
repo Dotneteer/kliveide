@@ -207,6 +207,7 @@ export function compareProjectNode (a: ProjectNode, b: ProjectNode): number {
  * @param filename Filename to get the file type entry for
  */
 export function getFileTypeEntry(filename: string): FileTypeEditor | null {
+  if (!filename) return null;
   const nodeFile = getNodeFile(filename);
   for (const typeEntry of fileTypeRegistry) {
     let match = false;

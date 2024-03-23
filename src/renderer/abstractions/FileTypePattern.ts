@@ -1,3 +1,6 @@
+import { ContextMenuInfo } from "./ContextMenuIfo";
+import { PanelRenderer } from "./PanelRenderer";
+
 export type PatternMatchType = "starts" | "contains" | "ends" | "full";
 
 export type FileTypePattern = {
@@ -13,4 +16,6 @@ export type FileTypeEditor = FileTypePattern & {
   isReadOnly?: boolean;
   isBinary?: boolean;
   openPermanent?: boolean;
+  documentTabRenderer?: PanelRenderer;
+  contextMenuInfo?: ContextMenuInfo[];
 }
