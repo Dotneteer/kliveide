@@ -185,9 +185,9 @@ export const Z88Key = ({
           fill='transparent'
           cursor={cursor}
           onMouseEnter={() => setMouseOverSecondSymbol(true)}
-          onMouseLeave={() => setMouseOverSecondSymbol(true)}
-          onMouseDown={e => raiseKeyAction(e, "secondsymbol", true)}
-          onMouseUp={e => raiseKeyAction(e, "secondsymbol", false)}
+          onMouseLeave={() => setMouseOverSecondSymbol(false)}
+          onMouseDown={e => raiseKeyAction(e, "secondSymbol", true)}
+          onMouseUp={e => raiseKeyAction(e, "secondSymbol", false)}
         ></rect>
       )}
       {secondSymbol && (
@@ -200,9 +200,9 @@ export const Z88Key = ({
           stroke={secondSymbolStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverSecondSymbol(true)}
-          onMouseLeave={() => setMouseOverSecondSymbol(true)}
-          onMouseDown={e => raiseKeyAction(e, "secondsymbol", true)}
-          onMouseUp={e => raiseKeyAction(e, "secondsymbol", false)}
+          onMouseLeave={() => setMouseOverSecondSymbol(false)}
+          onMouseDown={e => raiseKeyAction(e, "secondSymbol", true)}
+          onMouseUp={e => raiseKeyAction(e, "secondSymbol", false)}
         >
           {secondSymbol}
         </text>
