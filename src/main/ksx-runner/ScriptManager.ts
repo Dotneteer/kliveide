@@ -7,6 +7,9 @@ import {
 import { setScriptsStatusAction } from "../../common/state/actions";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
+import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
+import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -19,6 +22,7 @@ class ScriptManager {
 
   constructor (
     private execScript?: (evalContext: EvaluationContext) => Promise<void>,
+    private outputFn = sendScriptOutput,
     private maxScriptHistory = MAX_SCRIPT_HISTORY
   ) {
     if (!this.execScript) {
@@ -38,6 +42,9 @@ class ScriptManager {
     );
     if (script) {
       // --- The script is already running, nothing to do
+      this.outputFn?.(`Script ${scriptFileName} is already running.`, {
+        color: "yellow"
+      });
       return -script.id;
     }
 
@@ -56,11 +63,15 @@ class ScriptManager {
     }
 
     // --- Now, start the script
+    this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({ cancellationToken });
 
     // --- Start the script but do not await it
     const execTask = this.execScript(evalContext);
+    this.outputFn?.(`Script started`, {
+      color: "green"
+    });
     const newScript: ScriptExecutionState = {
       id: this.id,
       scriptFileName,
@@ -80,10 +91,30 @@ class ScriptManager {
         await execTask;
         newScript.status = "completed";
         newScript.endTime = new Date();
+        const time =
+          newScript.endTime.getTime() - newScript.startTime.getTime();
+        this.outputFn?.(
+          `Script ${scriptFileName} with ID ${this.id} completed in ${time}ms.`,
+          {
+            color: "green"
+          }
+        );
       } catch (error) {
         newScript.status = "execError";
         newScript.error = error.message;
         newScript.endTime = new Date();
+        const time =
+          newScript.endTime.getTime() - newScript.startTime.getTime();
+        this.outputFn?.(
+          `Script ${scriptFileName} with ID ${
+            this.id
+          } failed: ${error.toString?.()} in ${time}ms. Error: ${
+            error.message
+          }`,
+          {
+            color: "brightRed"
+          }
+        );
       } finally {
         delete newScript.execTask;
 
@@ -107,32 +138,37 @@ class ScriptManager {
       const reversed = this.scripts.slice().reverse();
       script = reversed.find(s => s.scriptFileName === idOrFileName);
     }
-    if (!script) {
-      // --- The script is not running, nothing to do
-      return false;
-    }
-
-    if (script && isScriptCompleted(script.status)) {
-      // --- The script has been completed, nothing to do
-      return false;
-    }
-
-    if (!script.execTask) {
-      // --- The script is not running, nothing to do
+    if (!script || isScriptCompleted(script.status) || !script.execTask) {
+      // --- The script is not running or has been completed, nothing to do
+      this.outputFn?.(`Script ${idOrFileName} is not running.`, {
+        color: "yellow"
+      });
       return false;
     }
 
     // --- Stop the script
+    this.outputFn?.(`Stopping script ${idOrFileName}...`);
     script.evalContext?.cancellationToken?.cancel();
     try {
       await script.execTask;
       script.status = "stopped";
       script.stopTime = new Date();
+      const time = script.stopTime.getTime() - script.startTime.getTime();
+      this.outputFn?.(`Script successfully stopped after ${time}ms.`, {
+        color: "green"
+      });
       return true;
     } catch (error) {
       script.status = "execError";
       script.error = error.message;
       script.endTime = new Date();
+      const time = script.endTime.getTime() - script.startTime.getTime();
+      this.outputFn?.(
+        `Script raised an error when stopped after ${time}ms. Error: ${error.toString?.()}`,
+        {
+          color: "brightRed"
+        }
+      );
       throw error;
     } finally {
       delete script.execTask;
@@ -160,10 +196,26 @@ class ScriptManager {
       await script.execTask;
       script.status = "completed";
       script.endTime = new Date();
+      const time = script.endTime.getTime() - script.startTime.getTime();
+      this.outputFn?.(
+        `Script ${script.scriptFileName} with ID ${script.id} completed in ${time}ms.`,
+        {
+          color: "green"
+        }
+      );
     } catch (error) {
       script.status = "execError";
       script.error = error.message;
       script.endTime = new Date();
+      const time = script.endTime.getTime() - script.startTime.getTime();
+      this.outputFn?.(
+        `Script ${script.scriptFileName} with ID ${
+          script.id
+        } failed: ${error.toString?.()} in ${time}ms. Error: ${error.message}`,
+        {
+          color: "brightRed"
+        }
+      );
       throw error;
     } finally {
       delete script.execTask;
@@ -223,7 +275,27 @@ type ScriptExecutionState = ScriptRunInfo & {
 export function createScriptManager (
   execScript: (evalContext: EvaluationContext) => Promise<void>
 ): ScriptManager {
-  return new ScriptManager(execScript);
+  return new ScriptManager(execScript, async () => {});
 }
 
 export const scriptManager = new ScriptManager();
+
+/**
+ * Sends the output of a script to the IDE
+ * @param text Text to send
+ * @param options Additional options
+ */
+async function sendScriptOutput (
+  text: string,
+  options?: Record<string, any>
+): Promise<void> {
+  const message: IdeDisplayOutputRequest = {
+    type: "IdeDisplayOutput",
+    pane: PANE_ID_SCRIPTIMG,
+    text,
+    color: "cyan",
+    writeLine: true,
+    ...options
+  };
+  await sendFromMainToIde(message);
+}

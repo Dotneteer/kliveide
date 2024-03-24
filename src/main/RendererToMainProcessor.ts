@@ -59,6 +59,8 @@ import {
 import { readDiskData } from "../emu/machines/disk/disk-readers";
 import { createDiskFile } from "../common/utils/create-disk-file";
 import { scriptManager } from "./ksx-runner/ScriptManager";
+import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
+import { PANE_ID_SCRIPTIMG } from "../common/integration/constants";
 
 /**
  * Process the messages coming from the emulator to the main process
