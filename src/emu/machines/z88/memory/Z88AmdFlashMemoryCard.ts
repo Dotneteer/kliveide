@@ -1,5 +1,6 @@
 /**
  * Z88 AMD Flash Chip (generic protocol) emulation.
+ * Specific AMD chip is implemented in derived class.
  *
  * Klive implemention based on Amd Flash class in OZvm,
  * https://gitlab.com/b4works/ozvm/-/blob/master/src/com/gitlab/z88/ozvm/IntelFlashBank.ava
@@ -8,7 +9,6 @@
  * chip command mode programming, since the Z88 Flash Cards only responds to
  * those command sequences (and not the hardware pin manipulation). Erase
  * Suspend and Erase Resume commands are also not implemented.
- *
  */
 
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
@@ -24,6 +24,10 @@ class Stack<T> {
 
   pop (): T | undefined {
     return this._store.pop();
+  }
+
+  isEmpty(): boolean {
+    return this._store.length == 0;
   }
 }
 
@@ -72,7 +76,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * validated against the incoming command cycles (the processor write byte
    * cycles)
    */
-  private commandUnlockCycleStack: Stack<Number>;
+  private commandUnlockCycleStack: Stack<number>;
 
   /**
    * (Device level)
@@ -101,7 +105,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * for status using read cycles). This stack will contain read status
    * sequences for commands reporting success or failure.
    */
-  private readStatusStack: Stack<Number>;
+  private readStatusStack: Stack<number>;
 
   /**
    * (Device level)
@@ -134,10 +138,10 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * Prepare a sequence stack.
    *
    * This will be used for validating a complete 3 cycle command sequence or
-   * when an application polls for chip command status.
+   * when code polls for chip command status.
    */
-  private presetSequence (sequence: number[]): Stack<Number> {
-    var seqStk = new Stack<Number>();
+  private presetSequence (sequence: number[]): Stack<number> {
+    var seqStk = new Stack<number>();
 
     // prepare a new sequence
     for (var p: number = sequence.length - 1; p >= 0; p--) {
@@ -145,6 +149,94 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
     }
 
     return seqStk;
+  }
+
+  /**
+   * @returns from address XX00, return AMD Chip Manufacturer Code
+   */
+  private getManufacturerCode(): number {
+    return this.type >> 8;
+  }
+
+  /**
+   * @returns from address XX01, return AMD Chip Device Code
+   */
+  private getDeviceCode(): number {
+    return this.type & 0xff;
+  }
+
+  /**
+   * Blow Byte at 22bit address.
+   *
+   * Verify that the byte to be blown follows the rule that only 0 bit
+   * patterns can be programmed (converting 1 to 0 in the Flash Memory). Flash
+   * memory bit patterns can only be converted from 0 to 1 by erasing the
+   * memory...
+   *
+   * If the byte is successfully written, this method will signal success by
+   * establishing a sequence of read status data, which the outside
+   * application polls and acknowledges as successfully completed.
+   *
+   * On Byte Write failure a similar sequence of read status data will signal
+   * failure. The application must then signal back with forcing the chip back
+   * into Read Array Mode.
+   *
+   * @param address 22bit absolute address in AMD flash chip (of slot)
+   * @param b byte to be blown to AMD Flash Memory
+   */
+  private programByteAtAddress(address: number, b: number) {
+    // get the current bits from address
+    const byte0 = this.host.memory.memory[address];
+
+    if ((b & byte0) == b) {
+      // blow byte according to Flash hardware rule (memory bit pattern can be changed from 1 to 0)
+      this.host.memory.memory[address] = b;
+
+      // indicate success when application polls for read status cycles...
+      this.readStatusStack = this.presetSequence(this.readStatusCommandSuccess);
+      this.signalCommandFailure = false;
+    } else {
+      // the byte will break the rule that a 0 bit cannot be programmed
+      // to a 1, but only through a block erase.
+
+      // indicate failure when application polls for read status cycles...
+      this.readStatusStack = this.presetSequence(this.readStatusCommandFailure);
+      this.signalCommandFailure = true;
+    }
+  }
+
+  /**
+   * Erase complete AMD Flash Memory (never fails in this emulation).
+   */
+  private eraseChip() {
+    this.setPristineState();
+
+    // indicate success when application polls for read status cycles...
+    this.readStatusStack = this.presetSequence(this.readStatusCommandSuccess);
+    this.signalCommandFailure = false;
+  }
+
+  /**
+   * Erase the 64K Flash Memory Sector which the specified bank is part of
+   * (always succeeds in emulation).
+   *
+   * @param bank the (absolute) bank number (given via databus address) where the AMD Flash Card resides
+   */
+  protected eraseSector(bank: number) {
+    // most AMD Flash chips uses a 64K sector architecture, so erase
+    // the bottom bank of the current sector and the next three following 16K banks
+    const bottomBankOfSector = bank & 0x3c;  // (relative) bottom bank (of current slot)
+    // define base address of sector: bottom of slot base address + (relative slot bank number * 16K)
+    const sectorStartAddress = this.memOffset + (bottomBankOfSector * 0x4000);
+
+    // format 64K sector (with 0xff)
+    for (let i = 0; i <= 0xffff; i++) {
+      this.host.memory.directWrite(sectorStartAddress + i, 0xff);
+    }
+
+    // indicate success when application polls for read status cycles...
+    this.readStatusStack = this.presetSequence(this.readStatusCommandSuccess);
+    this.signalCommandFailure = false;
   }
 
   /**
@@ -158,7 +250,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * @param addr
    * @param b
    */
-  private processCommandCycle (addr: number, b: number) {
+  private processCommandCycle(bank: number, address: number, b: number) {
     if (this.readArrayMode == true) {
       // get into command mode...
       this.readArrayMode = false;
@@ -187,8 +279,8 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
 
     if (cmd != Number("?")) {
       // gathering the unlock cycles...
-      addr &= 0x07ff; // we're only interested in bits 0-10 in the unlock cycle address...
-      if (addr != cmdAddr || b != cmd) {
+      address &= 0x07ff; // we're only interested in bits 0-10 in the unlock cycle address...
+      if (address != cmdAddr || b != cmd) {
         // command sequence was 0xF0 (back to Read Array Mode) or an unknown command!
         // Immediately return to Read Array Mode...
         this.readArrayMode = true;
@@ -205,7 +297,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
       // programming will now begin...
       this.isCommandAccumulating = false;
       this.isCommandExecuting = true;
-      // this.programByteAtAddress(addr, b);
+      this.programByteAtAddress(address, b);
     } else {
       switch (b) {
         case 0x10:
@@ -213,7 +305,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
           this.isCommandAccumulating = false;
           this.isCommandExecuting = true;
           this.executingCommandCode = 0x10;
-          // this.eraseChip();
+          this.eraseChip();
           break;
 
         case 0x30:
@@ -221,15 +313,13 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
           this.isCommandAccumulating = false;
           this.isCommandExecuting = true;
           this.executingCommandCode = 0x30;
-          // this.eraseSector(addr);
+          this.eraseSector(bank);
           break;
 
         case 0x80: // Erase Command, part 1
           // add new sub command sequence for erase chip or sector
           // and wait for application command cycles...
-          this.commandUnlockCycleStack = this.presetSequence(
-            this.commandUnlockCycles
-          );
+          this.commandUnlockCycleStack = this.presetSequence(this.commandUnlockCycles);
           break;
 
         case 0x90:
@@ -257,6 +347,82 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
   }
 
   /**
+   * Fetch success/failure status or chip information from the executing Flash
+   * Memory command.
+   *
+   * @param bank
+   * @param address 22bit absolute address in AMD flash chip
+   * @returns command status information or device data
+   */
+  private getCommandStatus(bank: number, address: number): number {
+    if (this.isCommandAccumulating == true) {
+      // A command is being accumulated (not yet executing)
+      // a Read Cycle automatically aborts the pre Command Mode and resets to Read Array Mode
+      this.readArrayMode = true;
+      this.isCommandAccumulating = false;
+      this.isCommandExecuting = false;
+
+      return this.host.memory.memory[address];
+    } else {
+      if (this.isCommandExecuting == false) {
+        // A command finished executing and we automatically get back to Read Array Mode
+        this.readArrayMode = true;
+        this.isCommandAccumulating = false;
+
+        return this.host.memory.memory[address];
+      } else {
+        // command is executing,
+        // return status of Blow Byte, Erase Sector/Chip or
+        // Auto Select Mode (get Manufacturer & Device Code)
+
+        switch (this.executingCommandCode) {
+          case 0x10: // Chip Erase Command
+          case 0x30: // Sector Erase Command
+          case 0xA0: // Byte Program Command
+            var status: number;
+            if (this.signalCommandFailure == true) {
+              if (this.readStatusStack.isEmpty() == true) {
+                // Keep the error toggle status sequence "flowing"
+                // (the chip continues to be in command error mode)
+                // until the application issues a Read Array Mode command
+                this.readStatusStack = this.presetSequence(this.readStatusCommandFailure);
+              }
+              status = this.readStatusStack.pop(); // get error status cycle
+            } else {
+              status = this.readStatusStack.pop(); // get success status cycle
+              if (this.readStatusStack.isEmpty() == true) {
+                // When the last read status cycle has been delivered,
+                // the chip automatically returns to Read Array Mode
+                this.readArrayMode = true;
+                this.isCommandAccumulating = false;
+                this.isCommandExecuting = false;
+              }
+            }
+            return status;
+
+          case 0x90: // Autoselect Command
+            address &= 0xff;                         // only preserve lower 8 bits of address
+            switch (address) {
+              case 0:
+                return this.getManufacturerCode();   // XX00 = Manufacturer Code
+              case 1:
+                return this.getDeviceCode();         // XX01 = Device Code
+              default:
+                return 0xff;                    // XXXX = Unknown behaviour...
+            }
+
+          default: // unknown command! Back to Read Array mode...
+            this.readArrayMode = true;
+            this.isCommandAccumulating = false;
+            this.isCommandExecuting = false;
+
+            return this.host.memory.memory[address];
+        }
+      }
+    }
+  }
+
+  /**
    * Initializes the AMD Flash card with the specified size (512K or 1024K)
    * Type is defined by derived class.
    */
@@ -267,7 +433,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
     super(host, size);
 
     this.readArrayMode = true;
-    this.type = CardType.None; // base class, type is defined in specific Amd chip class
+    this.type = CardType.None; // base class, type is defined in specific AMD chip class
   }
 
   /**
@@ -295,13 +461,18 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
       return this.host.memory.memory[_22bitaddr];
     } else {
       // The chip is in Command Mode, get status of current command
-      return 0; // this.getCommandStatus(bank, _22bitaddr);
+      return this.getCommandStatus(bank, _22bitaddr);
     }
   }
 
   /**
    * "Blows" the specified byte at the given 16-bit CPU memory address using
    * AMD Flash command sequences
+   *
+   * Z80 processor write byte affects the behaviour of the AMD Flash Memory
+   * chip (activating the accumulating Command Mode). Using processor write
+   * cycle sequences the Flash Memory chip can be programmed with data and get
+   * erased again in ALL available Z88 slots.
    *
    * @param memOffset The 8K page base address of bound CPU <address> (in 4Mb range)
    * @param bank The (absolute) 16K bank, of bound CPU <address>
@@ -314,8 +485,8 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
     address: number, // the 64K logical address from Z80
     byte: number // the byte to blow to AMD Flash card
   ): void {
-    // deliver 16bit -> 22bit address of Intel Flash Card
-    // this.processCommand(bank, memOffset + (address & 0x1fff), byte);
+    // deliver 16bit -> 22bit address of AMD Flash Card
+    this.processCommandCycle(bank, memOffset + (address & 0x1fff), byte);
   }
 
   /**
@@ -326,7 +497,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
     this.memOffset = memOffset;
     this.setPristineState();
 
-    // When a card is inserted into a slot, the Flash chip
+    // When a card is inserted into a slot, the AMD Flash chip
     // is always in Ready Array Mode by default
     this.readArrayMode = true;
     this.isCommandAccumulating = false;
@@ -334,7 +505,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
   }
 
   /**
-   * Sets the AMD Flash card to it's pristine state (FFh)
+   * Set the AMD Flash card in pristine state (FFh)
    */
   public setPristineState (): void {
     for (let i = 0; i < this.size; i++) {
