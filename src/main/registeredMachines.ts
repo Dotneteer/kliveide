@@ -1,7 +1,8 @@
 import { MachineConfigSet } from "@common/machines/info-types";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
+import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
+import { PANE_ID_EMU } from "../common/integration/constants";
 
 export const registeredMachines = [
   {
@@ -69,14 +70,14 @@ export async function logEmuEvent (
   loggedEmuOutputEvents++;
   await sendFromMainToIde({
     type: "IdeDisplayOutput",
-    pane: "emu",
+    pane: PANE_ID_EMU,
     text: `[${loggedEmuOutputEvents}] `,
     color: "yellow",
     writeLine: false
   });
   await sendFromMainToIde({
     type: "IdeDisplayOutput",
-    pane: "emu",
+    pane: PANE_ID_EMU,
     text,
     color,
     writeLine: true

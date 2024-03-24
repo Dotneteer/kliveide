@@ -71,7 +71,8 @@ export interface MainGloballyExcludedProjectItemsRequest extends MessageBase {
 /**
  * The client wants to add items to the list of globally excluded project items
  */
-export interface MainAddGloballyExcludedProjectItemsRequest extends MessageBase {
+export interface MainAddGloballyExcludedProjectItemsRequest
+  extends MessageBase {
   type: "MainAddGloballyExcludedProjectItems";
   files: string[];
 }
@@ -79,7 +80,8 @@ export interface MainAddGloballyExcludedProjectItemsRequest extends MessageBase 
 /**
  * The client wants to set (override) the list of globally excluded project items
  */
-export interface MainSetGloballyExcludedProjectItemsRequest extends MessageBase {
+export interface MainSetGloballyExcludedProjectItemsRequest
+  extends MessageBase {
   type: "MainSetGloballyExcludedProjectItems";
   files: string[];
 }
@@ -261,7 +263,7 @@ export interface MainCheckZ88CardRequest extends MessageBase {
 export interface MainSaveDiskChangesRequest extends MessageBase {
   type: "MainSaveDiskChanges";
   diskIndex: number;
-  changes: SectorChanges
+  changes: SectorChanges;
 }
 
 /**
@@ -280,6 +282,29 @@ export interface MainCreateDiskFileRequest extends MessageBase {
 export interface MainGetTemplateDirsRequest extends MessageBase {
   type: "MainGetTemplateDirs";
   machineId: string;
+}
+
+/**
+ * The client wants to start a script
+ */
+export interface MainStartScriptRequest extends MessageBase {
+  type: "MainStartScript";
+  filename: string;
+}
+
+/**
+ * The client wants to start a script
+ */
+export interface MainStopScriptRequest extends MessageBase {
+  type: "MainStopScript";
+  filename: string;
+}
+
+/**
+ * The client wants to start a script
+ */
+export interface MainScriptsStatusRequest extends MessageBase {
+  type: "MainScriptsStatus";
 }
 
 /**
@@ -378,7 +403,6 @@ export interface MainGetTemplateDirsResponse extends MessageBase {
   type: "MainGetTemplateDirsResponse";
   dirs: string[];
 }
-
 
 export function textContentsResponse (contents: string): TextContentsResponse {
   return {

@@ -12,6 +12,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { PANE_ID_BUILD } from "@common/integration/constants";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -142,7 +143,7 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
         }${addClear ? " -c" : ""}${
           screenFilename ? ` -scr "${screenFilename}"` : ""
         }`;
-        const buildPane = outputPaneService.getOutputPaneBuffer("build");
+        const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
         const result = await ideCommandsService.executeCommand(
           command,
           buildPane
