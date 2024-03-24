@@ -297,14 +297,7 @@ export interface MainStartScriptRequest extends MessageBase {
  */
 export interface MainStopScriptRequest extends MessageBase {
   type: "MainStopScript";
-  filename: string;
-}
-
-/**
- * The client wants to start a script
- */
-export interface MainScriptsStatusRequest extends MessageBase {
-  type: "MainScriptsStatus";
+  idOrFilename: number | string;
 }
 
 /**
@@ -402,6 +395,14 @@ export interface MainCreateDiskFileResponse extends MessageBase {
 export interface MainGetTemplateDirsResponse extends MessageBase {
   type: "MainGetTemplateDirsResponse";
   dirs: string[];
+}
+
+/**
+ * The client wants to start a script
+ */
+export interface MainRunScriptResponse extends MessageBase {
+  type: "MainRunScriptResponse";
+  id?: number;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

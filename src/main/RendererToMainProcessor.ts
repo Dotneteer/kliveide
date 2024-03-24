@@ -7,7 +7,6 @@ import {
   defaultResponse,
   errorResponse,
   flagResponse,
-  MessageBase,
   RequestMessage,
   ResponseMessage
 } from "../common/messaging/messages-core";
@@ -59,6 +58,7 @@ import {
 } from "../common/structs/project-const";
 import { readDiskData } from "../emu/machines/disk/disk-readers";
 import { createDiskFile } from "../common/utils/create-disk-file";
+import { scriptManager } from "./ksx-runner/ScriptManager";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -379,7 +379,10 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainCheckZ88Card":
-      const cardResult = await checkZ88SlotFile(message.path, message.expectedSize);
+      const cardResult = await checkZ88SlotFile(
+        message.path,
+        message.expectedSize
+      );
       if (typeof cardResult === "string") {
         return {
           type: "MainCheckZ88CardResponse",
@@ -415,6 +418,16 @@ export async function processRendererToMainMessages (
       } catch (err) {
         return errorResponse(err.toString());
       }
+
+    case "MainStartScript":
+      const scriptId = scriptManager.runScript(message.filename);
+      return {
+        type: "MainRunScriptResponse",
+        id: scriptId
+      };
+
+    case "MainStopScript":
+      return flagResponse(await scriptManager.stopScript(message.idOrFilename));
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

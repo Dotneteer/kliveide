@@ -1,10 +1,10 @@
-import { ScriptRunInfo } from "@main/ksx-runner/ScriptManager";
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useState } from "react";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "@renderer/utils/classnames";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 const fakeHistory: ScriptRunInfo[] = [
   {

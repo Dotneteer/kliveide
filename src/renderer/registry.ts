@@ -81,7 +81,10 @@ import {
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 import { scriptingHistoryPanelRenderer } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
-import { scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
+import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
+import { isScriptCompleted } from "@common/utils/script-utils";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -422,20 +425,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     subType: "ksx",
     icon: "@file-ksx",
     documentTabRenderer: scriptingCommandBarRenderer,
-    contextMenuInfo: [
-      {
-        text: "Run script",
-        clicked: async () => {
-          console.log("Run this script file");
-        }
-      },
-      {
-        text: "Stop script",
-        clicked: async () => {
-          console.log("Stop this script file");
-        }
-      },
-    ]
+    contextMenuInfo: getScriptingContextMenuIfo
   },
   {
     matchType: "ends",

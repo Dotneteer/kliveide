@@ -9,6 +9,7 @@ import { emulatorStateReducer } from "./emulator-state-reducer";
 import { projectReducer } from "./project-reducer";
 import { compilationReducer } from "./compilation-reducer";
 import { mediaReducer } from "./media-reducer";
+import { scriptsReducer } from "./scripts-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -41,6 +42,7 @@ function appReducer (state: AppState, action: Action): AppState {
     (a, n) => (a.compilation = n)
   );
   invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
+  invokeReducer(state.scripts, scriptsReducer, (a, n) => (a.scripts = n));
   return state;
 
   /**
