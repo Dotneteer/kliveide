@@ -383,3 +383,8 @@ export const setMachineSpecificAction: ActionCreator = (value: any) => ({
 export const incExploreViewVersionAction: ActionCreator = () => ({
   type: "INC_EXPLORER_VIEW_VERSION"
 });
+
+export const setScriptsStatusAction: ActionCreator = (value: any) => ({
+  type: "SET_SCRIPTS_STATUS",
+  payload: { value }
+});

@@ -3,6 +3,7 @@ import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { PANE_ID_EMU } from "../../common/integration/constants";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 /**
  * Represents the state of the entire application
@@ -31,6 +32,7 @@ export type AppState = {
   keyMappings?: { mapping: KeyMapping; merge: boolean };
   userSettings?: Record<string, any>;
   menuVersion?: number;
+  scripts?: ScriptRunInfo[];
 };
 
 /**
@@ -188,5 +190,6 @@ export const initialAppState: AppState = {
   compilation: {
     inProgress: false,
     injectionVersion: 0
-  }
+  },
+  scripts: []
 };

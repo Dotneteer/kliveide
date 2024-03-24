@@ -7,6 +7,7 @@
   user-select: none;
   font-family: var(--monospace-font);
   font-size: 0.8em;
+  padding: 4px 0;
 
   .center {
     @include fill-parent-flex;
@@ -16,3 +17,41 @@
     color: var(--color-secondary-label);
   }
 }
+
+.itemWrapper {
+  display: flex;
+  flex-direction: row;
+  width: fit-content;
+  padding: 4px;
+
+  &.selected {
+    background-color: var(--bgcolor-explorer-focused-selected);
+  }
+
+  &:hover {
+    background-color: var(--bgcolor-disass-hover);
+  }
+}
+
+.itemText {
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
+  width: 140px;
+  color: var(--color-doc-activeText);
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: end;
+}
+
+.itemTime {
+  color: var(--console-ansi-bright-blue);
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: start;
+  width: 80px;
+}
+
+
+
