@@ -226,7 +226,7 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
-        {editorInfo && editorInfo.documentTabRenderer?.()}
+        {editorInfo && editorInfo.documentTabRenderer?.(openDocs?.[activeDocIndex]?.node?.fullPath)}
         {selectedIsBuildRoot && <BuildRootCommandBar />}
         <TabButtonSeparator />
         <TabButton
