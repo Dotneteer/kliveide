@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { mainStore } from "../../main/main-store";
 import {
   CancellationToken,
@@ -10,6 +11,7 @@ import { isScriptCompleted } from "../../common/utils/script-utils";
 import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
+import { executeModule, isModuleErrors, parseKsxModule } from "../../main/ksx/ksx-module";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -21,7 +23,10 @@ class ScriptManager {
   private id = 1;
 
   constructor (
-    private execScript?: (evalContext: EvaluationContext) => Promise<void>,
+    private execScript?: (
+      scriptFile: string,
+      evalContext: EvaluationContext
+    ) => Promise<void>,
     private outputFn = sendScriptOutput,
     private maxScriptHistory = MAX_SCRIPT_HISTORY
   ) {
@@ -68,7 +73,7 @@ class ScriptManager {
     const evalContext = createEvalContext({ cancellationToken });
 
     // --- Start the script but do not await it
-    const execTask = this.execScript(evalContext);
+    const execTask = this.execScript(scriptFileName, evalContext);
     this.outputFn?.(`Script started`, {
       color: "green"
     });
@@ -106,13 +111,9 @@ class ScriptManager {
         const time =
           newScript.endTime.getTime() - newScript.startTime.getTime();
         this.outputFn?.(
-          `Script ${scriptFileName} with ID ${
-            this.id
-          } failed: ${error.toString?.()} in ${time}ms. Error: ${
-            error.message
-          }`,
+          `Script ${scriptFileName} with ID ${this.id} failed in ${time}ms.`,
           {
-            color: "brightRed"
+            color: "red"
           }
         );
       } finally {
@@ -211,9 +212,9 @@ class ScriptManager {
       this.outputFn?.(
         `Script ${script.scriptFileName} with ID ${
           script.id
-        } failed: ${error.toString?.()} in ${time}ms. Error: ${error.message}`,
+        } failed: ${error.toString?.()} in ${time}ms.`,
         {
-          color: "brightRed"
+          color: "bright-red"
         }
       );
       throw error;
@@ -257,13 +258,32 @@ class ScriptManager {
     return reversed.find(s => s.scriptFileName === scriptFileName);
   }
 
-  private async doExecute (evalContext: EvaluationContext) {
-    for (let i = 0; i < 50; i++) {
-      if (evalContext?.cancellationToken?.cancelled) {
-        break;
-      }
-      await new Promise(resolve => setTimeout(resolve, 100));
+  private async doExecute (scriptFile: string, evalContext: EvaluationContext) {
+    let script: string;
+    try {
+      // --- Let's read the script file from the disk
+      script = fs.readFileSync(scriptFile, "utf-8");
+    } catch (error) {
+      throw new Error(`Cannot read script file: ${error.message}`);
     }
+
+    // --- Parse the script
+    const module = await parseKsxModule(scriptFile, script, async modulePath => null);
+    if (isModuleErrors(module)) {
+      // --- The script has errors, display them
+      Object.keys(module).forEach(moduleName => {
+        const errors = module[moduleName];
+        errors.forEach(error => {
+          this.outputFn?.(`${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`, {
+            color: "bright-red"
+          });
+        });
+      });
+      throw new Error("Running script failed");
+    }
+
+    // --- Execute the script
+    await executeModule(module, evalContext);
   }
 }
 
@@ -273,7 +293,10 @@ type ScriptExecutionState = ScriptRunInfo & {
 };
 
 export function createScriptManager (
-  execScript: (evalContext: EvaluationContext) => Promise<void>
+  execScript: (
+    scriptFile: string,
+    evalContext: EvaluationContext
+  ) => Promise<void>
 ): ScriptManager {
   return new ScriptManager(execScript, async () => {});
 }

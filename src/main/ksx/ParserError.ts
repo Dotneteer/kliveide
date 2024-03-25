@@ -62,7 +62,7 @@ type ErrorText = Record<ErrorCodes, string>;
  */
 export const errorMessages: ErrorText = {
   K001: "An expression expected",
-  K002: "Unexpected token: {0}",
+  K002: "Unexpected token: '{0}'",
   K003: "An identifier expected",
   K004: "'}' expected",
   K005: "']' expected",
