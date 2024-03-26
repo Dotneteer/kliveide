@@ -1,24 +1,33 @@
 import * as fs from "fs";
-import { mainStore } from "../../main/main-store";
+import { mainStore } from "../main-store";
 import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
-} from "../../main/ksx/EvaluationContext";
+} from "../ksx/EvaluationContext";
 import { setScriptsStatusAction } from "../../common/state/actions";
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import {
+  ScriptExecutionState,
+  ScriptRunInfo
+} from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
 import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
 import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
 import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
-import { executeModule, isModuleErrors, parseKsxModule } from "../../main/ksx/ksx-module";
+import {
+  executeModule,
+  isModuleErrors,
+  parseKsxModule
+} from "../ksx/ksx-module";
+import { IScriptManager } from "@abstractions/IScriptManager";
+import { createScriptConsole } from "./ScriptConsole";
 
 const MAX_SCRIPT_HISTORY = 128;
 
 /**
  * This class is responsible for managing the execution of scripts.
  */
-class ScriptManager {
+class MainScriptManager implements IScriptManager {
   private scripts: ScriptExecutionState[] = [];
   private id = 1;
 
@@ -70,7 +79,12 @@ class ScriptManager {
     // --- Now, start the script
     this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
-    const evalContext = createEvalContext({ cancellationToken });
+    const evalContext = createEvalContext({
+      cancellationToken,
+      appContext: {
+        console: createScriptConsole(mainStore)
+      }
+    });
 
     // --- Start the script but do not await it
     const execTask = this.execScript(scriptFileName, evalContext);
@@ -229,7 +243,7 @@ class ScriptManager {
   /**
    * Returns the status of all scripts.
    */
-  getScriptsStatus (): ScriptRunInfo[] {
+  private getScriptsStatus (): ScriptRunInfo[] {
     return this.scripts.slice(0).map(s => ({
       id: s.id,
       scriptFileName: s.scriptFileName,
@@ -239,23 +253,6 @@ class ScriptManager {
       endTime: s.endTime,
       stopTime: s.stopTime
     }));
-  }
-
-  /**
-   * Removes all completed scripts from the list.
-   */
-  removeCompletedScripts () {
-    this.scripts = this.scripts.filter(s => !isScriptCompleted(s.status));
-  }
-
-  /**
-   * Gets the status of a script file.
-   * @param scriptFileName The name of the script file to check.
-   * @returns The status of the script file, or undefined if the script is not found.
-   */
-  getScriptFileStatus (scriptFileName: string): ScriptRunInfo | undefined {
-    const reversed = this.scripts.slice().reverse();
-    return reversed.find(s => s.scriptFileName === scriptFileName);
   }
 
   private async doExecute (scriptFile: string, evalContext: EvaluationContext) {
@@ -268,15 +265,22 @@ class ScriptManager {
     }
 
     // --- Parse the script
-    const module = await parseKsxModule(scriptFile, script, async modulePath => null);
+    const module = await parseKsxModule(
+      scriptFile,
+      script,
+      async modulePath => null
+    );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
       Object.keys(module).forEach(moduleName => {
         const errors = module[moduleName];
         errors.forEach(error => {
-          this.outputFn?.(`${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`, {
-            color: "bright-red"
-          });
+          this.outputFn?.(
+            `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
+            {
+              color: "bright-red"
+            }
+          );
         });
       });
       throw new Error("Running script failed");
@@ -287,21 +291,16 @@ class ScriptManager {
   }
 }
 
-type ScriptExecutionState = ScriptRunInfo & {
-  evalContext?: EvaluationContext;
-  execTask?: Promise<void>;
-};
-
-export function createScriptManager (
+export function createMainScriptManager (
   execScript: (
     scriptFile: string,
     evalContext: EvaluationContext
   ) => Promise<void>
-): ScriptManager {
-  return new ScriptManager(execScript, async () => {});
+): MainScriptManager {
+  return new MainScriptManager(execScript, async () => {});
 }
 
-export const scriptManager = new ScriptManager();
+export const mainScriptManager = new MainScriptManager();
 
 /**
  * Sends the output of a script to the IDE

@@ -1,6 +1,7 @@
 import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
 import {
   IOutputBuffer,
+  OutputBufferState,
   OutputColor,
   OutputContentLine,
   OutputSpan
@@ -24,6 +25,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     public readonly bufferedLines = 1024,
     public readonly maxLineLenght = 1024
   ) {}
+
   /**
    * Clears the contents of the buffer
    */
@@ -38,6 +40,17 @@ export class OutputPaneBuffer implements IOutputBuffer {
    */
   getContents (): OutputContentLine[] {
     return this._buffer;
+  }
+
+  /**
+   * Gets the current buffer state
+   */
+  getBufferState (): OutputBufferState {
+    return {
+      currentLineIndex: this._currentLineIndex,
+      currenLineSpanCount:
+        this._buffer[this._currentLineIndex]?.spans?.length ?? 0
+    };
   }
 
   /**

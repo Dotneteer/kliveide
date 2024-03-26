@@ -40,6 +40,11 @@ export type OutputContentLine = {
   spans: OutputSpan[];
 };
 
+export type OutputBufferState = {
+  currentLineIndex: number;
+  currenLineSpanCount: number;
+}
+
 /**
  * Represents a buffer for an output pane
  */
@@ -53,6 +58,11 @@ export interface IOutputBuffer {
    * Gets the contents of the buffer
    */
   getContents(): OutputContentLine[];
+
+  /**
+   * Gets the output buffer's state
+   */
+  getBufferState(): OutputBufferState;
 
   /**
    * Sets the default color
