@@ -47,10 +47,10 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * A command sequence consists of two unlock cycles, followed by a command
    * code cycle. Each cycle consists of an address and a: sub command code:
    * first cycle is [0x555,0xAA], the second cycle is [0x2AA, 0x55] followed
-   * by the third cycle which is the command ('?') code (the actual command
+   * by the third cycle which is the command 0x3f ('?') code (the actual command
    * will then be verified against known codes).
    */
-  private readonly commandUnlockCycles: number[] = [0x555,0xaa,0x2aa,0x55,0x555,Number("?")];
+  private readonly commandUnlockCycles: number[] = [0x555,0xaa,0x2aa,0x55,0x555,0x3f];
 
   /**
    * Indicate success by DQ5 = 0 and DQ6 = 1, signaling no toggle in two
@@ -277,7 +277,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
     var cmdAddr = this.commandUnlockCycleStack.pop(); // validate cycle against this address
     var cmd = this.commandUnlockCycleStack.pop(); // validate cycle against this data
 
-    if (cmd != Number("?")) {
+    if (cmd != 0x3f) /* '?' */ {
       // gathering the unlock cycles...
       address &= 0x07ff; // we're only interested in bits 0-10 in the unlock cycle address...
       if (address != cmdAddr || b != cmd) {
@@ -332,8 +332,8 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
         case 0xa0:
           // Byte Program Command, Part 1, get address and byte to program..
           this.executingCommandCode = 0xa0;
-          this.commandUnlockCycleStack.push(Number("?")); // and the Byte Program Data
-          this.commandUnlockCycleStack.push(Number("?")); // We still need the Byte Program Address
+          this.commandUnlockCycleStack.push(0x3f); // ('?') and the Byte Program Data
+          this.commandUnlockCycleStack.push(0x3f); // ('?') We still need the Byte Program Address
           break;
 
         default:
