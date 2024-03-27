@@ -63,7 +63,7 @@ import {
   MainGetTemplateDirsRequest,
   MainStartScriptRequest,
   MainStopScriptRequest,
-  MainScriptsStatusRequest
+  MainRunScriptResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -227,7 +227,6 @@ export type RequestMessage =
   | MainGetTemplateDirsRequest
   | MainStartScriptRequest
   | MainStopScriptRequest
-  | MainScriptsStatusRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -256,6 +255,7 @@ export type ResponseMessage =
   | MainCheckZ88CardResponse
   | MainCreateDiskFileResponse
   | MainGetTemplateDirsResponse
+  | MainRunScriptResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

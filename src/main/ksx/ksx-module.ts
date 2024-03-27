@@ -1,10 +1,10 @@
 import {
-  CancellationToken,
   EvaluationContext,
   ModuleResolver
 } from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
+import { TokenType } from "./TokenType";
 import {
   processStatementQueueAsync,
   visitLetConstDeclarations
@@ -83,8 +83,25 @@ export async function parseKsxModule (
     let statements: Statement[] = [];
     try {
       statements = parser.parseStatements();
-    } catch (err) {
+    } catch (error) {
       moduleErrors[moduleName] = parser.errors;
+      return null;
+    }
+
+    // --- Check for unparsed tail
+    const lastToken = parser.current;
+    if (lastToken.type !== TokenType.Eof) {
+      moduleErrors[moduleName] ??= [];
+      moduleErrors[moduleName].push({
+        code: "K002",
+        text: errorMessages["K002"].replace(
+          /\{(\d+)\}/g,
+          (match, index) => lastToken.text
+        ),
+        position: lastToken.location.startLine,
+        line: lastToken.location.startLine,
+        column: lastToken.location.startColumn
+      });
       return null;
     }
 

@@ -7,6 +7,7 @@ import { useContext, useRef, useEffect, createContext } from "react";
 import { createInteractiveCommandsService } from "./IdeCommandService";
 import { createOutputPaneService } from "./OuputPaneService";
 import { createProjectService } from "./ProjectService";
+import { createScriptService } from "./ScriptService";
 
 // =====================================================================================================================
 /**
@@ -41,6 +42,7 @@ export function AppServicesProvider ({ children }: Props) {
     ideCommandsService,
     projectService,
     validationService: createValidationService(),
+    scriptService: createScriptService(store, messenger)
   });
 
   // --- Set the app services instance whenever the provider's value changes

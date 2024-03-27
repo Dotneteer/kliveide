@@ -91,4 +91,6 @@ export interface ActionTypes {
   SET_MEDIA: null;
 
   INC_EXPLORER_VIEW_VERSION: null;
+
+  SET_SCRIPTS_STATUS: null;
 }

@@ -58,7 +58,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const dispatch = useDispatch();
-  const { projectService, ideCommandsService } = useAppServices();
+  const appServices = useAppServices();
+  const { projectService, ideCommandsService } = appServices;
   const documentHubService = projectService.getActiveDocumentHubService();
 
   // --- The state representing the project tree
@@ -227,7 +228,7 @@ const ExplorerPanel = () => {
       {contextInfo?.contextMenuInfo && (
         <>
           <ContextMenuSeparator />
-          {contextInfo?.contextMenuInfo?.map((item, index) => {
+          {contextInfo?.contextMenuInfo?.(appServices).map((item, index) => {
             return item.separator ? (
               <ContextMenuSeparator />
             ) : (
@@ -235,8 +236,8 @@ const ExplorerPanel = () => {
                 key={index}
                 dangerous={item.dangerous}
                 text={item.text}
-                disabled={item.disabled?.()}
-                clicked={() => item?.clicked()}
+                disabled={item.disabled?.(store, selectedContextNode.data?.fullPath)}
+                clicked={() => item?.clicked(selectedContextNode?.data?.fullPath)}
               />
             );
           })}

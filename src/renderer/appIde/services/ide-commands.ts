@@ -228,11 +228,11 @@ export function toHexa2(value: number): string {
   return value.toString(16).toUpperCase().padStart(2, "0");
 }
 
-/// <summary>
-/// Converts a token to an integer value
-/// </summary>
-/// <param name="token">Token to convert</param>
-/// <returns>Integer value if conversion successful; otherwise, null</returns>
+/**
+ * Converts a token to an integer value
+ * @param token Token to convert
+ * @returns Integer value if conversion successful; otherwise, null
+ */
 export function getNumericTokenValue(token: Token): {
   value?: number;
   messages?: ValidationMessage[];

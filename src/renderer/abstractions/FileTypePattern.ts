@@ -1,3 +1,4 @@
+import { AppServices } from "./AppServices";
 import { ContextMenuInfo } from "./ContextMenuIfo";
 import { PanelRenderer } from "./PanelRenderer";
 
@@ -17,5 +18,5 @@ export type FileTypeEditor = FileTypePattern & {
   isBinary?: boolean;
   openPermanent?: boolean;
   documentTabRenderer?: PanelRenderer;
-  contextMenuInfo?: ContextMenuInfo[];
+  contextMenuInfo?: (services: AppServices) => ContextMenuInfo[];
 }
