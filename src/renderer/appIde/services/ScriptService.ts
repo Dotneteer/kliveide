@@ -56,8 +56,8 @@ class ScriptService implements IScriptService {
    * Gets the output of the specified script
    * @param scriptId Script ID
    */
-  getScriptOutput (scriptId: number): OutputContentLine[] {
-    return this._scriptOutputs.get(scriptId) ?? [];
+  getScriptOutput (scriptId: number): OutputContentLine[] | undefined {
+    return this._scriptOutputs.get(scriptId);
   }
 
   /**
@@ -82,6 +82,7 @@ class ScriptService implements IScriptService {
     if (currentLine) {
       outputs.push(currentLine);
     }
+    this._contentsChanged.fire(scriptId);
   }
 
   /**

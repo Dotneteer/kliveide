@@ -161,7 +161,7 @@ export const DocumentsHeader = () => {
   // --- Responds to the event when a document tab was double clicked. Double clicking
   // --- makes a temporary document permanent.
   const tabDoubleClicked = (d: ProjectDocumentState) => {
-    projectService.setPermanent(d.id);
+    documentHubService.setPermanent(d.id);
   };
 
   // --- Responds to the event when the close button of the tab is clicked

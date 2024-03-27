@@ -88,6 +88,7 @@ class DocumentHubService implements IDocumentHubService {
     } else {
       if (temporary) {
         // --- Check for temporary documents
+        document.isTemporary = true;
         const tempIndex = this._openDocs.findIndex(d => d.isTemporary);
         if (tempIndex >= 0) {
           // --- Change the former temp document to this one
@@ -113,6 +114,19 @@ class DocumentHubService implements IDocumentHubService {
     // --- Now, activate the newly opened document
     this.projectService.openInDocumentHub(document.id, this);
     await this.setActiveDocument(document.id);
+  }
+
+  /**
+   * Sets the specified document as permanent
+   * @param id
+   */
+  setPermanent (id: string): void {
+    const docIndex = this._openDocs.findIndex(d => d.id === id);
+    if (docIndex < 0) return;
+
+    const document = this._openDocs[docIndex];
+    document.isTemporary = false;
+    this.signHubStateChanged();
   }
 
   /**

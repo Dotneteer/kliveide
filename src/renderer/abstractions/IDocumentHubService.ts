@@ -49,6 +49,12 @@ export interface IDocumentHubService {
   ): Promise<void>;
 
   /**
+   * Sets the specified document as permanent
+   * @param id 
+   */  
+  setPermanent(id: string): void;
+
+  /**
    * Tests if the specified document is open
    * @param document
    */
