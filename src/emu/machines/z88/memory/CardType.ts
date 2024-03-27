@@ -4,6 +4,8 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";
+import { Z88AmdFlash29F040B } from "./Z88AmdFlash29F040B";
+import { Z88AmdFlash29F080B } from "./Z88AmdFlash29F080B";
 import { CardIds } from "./CardIds";
 
 export const CARD_SIZE_EMPTY = "-";
@@ -66,6 +68,12 @@ export function createZ88MemoryCard (
     case CardIds.IF28F004S5:
     case CardIds.IF28F008S5:
       card = new Z88IntelFlashMemoryCard(host, cardSize);
+      break;
+    case CardIds.AMDF29F040B:
+      card = new Z88AmdFlash29F040B(host);
+      break;
+    case CardIds.AMDF29F080B:
+      card = new Z88AmdFlash29F080B(host);
       break;
     default:
       throw new Error(`Unknown card type: ${type}`);

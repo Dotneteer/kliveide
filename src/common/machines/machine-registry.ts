@@ -132,7 +132,7 @@ export const machineRegistry: MachineInfo[] = [
           [MC_Z88_INTROM]: "z88v50-r1f99aaae",
           [MC_Z88_SLOT0]: {
             size: 512,
-            cardType: "IF28F004S5",
+            cardType: "AMDF29F040B",
             file: "z88v50-r1f99aaae"
           }
         }
@@ -146,7 +146,7 @@ export const machineRegistry: MachineInfo[] = [
           [MC_Z88_INTROM]: "z88v47",
           [MC_Z88_SLOT0]: {
             size: 512,
-            cardType: "ROM",
+            cardType: "AMDF29F040B",
             file: "z88v47"
           }
         }
