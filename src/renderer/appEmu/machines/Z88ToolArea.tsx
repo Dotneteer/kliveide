@@ -153,6 +153,14 @@ export const cardTypes: CardTypeData[] = [
     fallback: amdFlashTypeFallback
   },
   {
+    value: CardIds.AMIC29F040B,
+    label: "AMIC Flash 29F040B*512K",
+    size: 512,
+    getFile: true,
+    allowInSlot0: true,
+    fallback: amdFlashTypeFallback
+  },
+  {
     value: CardIds.AMDF29F080B,
     label: "AMD Flash 29F080B*1M",
     size: 512,
