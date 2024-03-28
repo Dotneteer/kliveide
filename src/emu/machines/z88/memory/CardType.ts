@@ -7,6 +7,7 @@ import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";
 import { Z88AmdFlash29F040B } from "./Z88AmdFlash29F040B";
 import { Z88AmdFlash29F080B } from "./Z88AmdFlash29F080B";
 import { Z88Amic29F040B } from "./Z88Amic29F040B";
+import { Z88MX29F040C } from "./Z88MX29F040C";
 import { CardIds } from "./CardIds";
 
 export const CARD_SIZE_EMPTY = "-";
@@ -76,7 +77,10 @@ export function createZ88MemoryCard (
     case CardIds.AMIC29F040B:
       card = new Z88Amic29F040B(host);
       break;
-    case CardIds.AMDF29F080B:
+    case CardIds.MACX29F040C:
+      card = new Z88MX29F040C(host);
+      break;
+      case CardIds.AMDF29F080B:
       card = new Z88AmdFlash29F080B(host);
       break;
     default:
