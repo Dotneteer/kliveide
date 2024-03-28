@@ -1,10 +1,16 @@
 import { ILiteEvent } from "@emu/utils/lite-event";
-import { OutputContentLine } from "@renderer/appIde/ToolArea/abstractions";
+import { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
 
 /**
  * This interface represents the service that can manage scripts.
  */
 export interface IScriptService {
+  /**
+   * Gets the ID of the latest script with the specified file path.
+   * @param scriptFilePath Script file path
+   */
+  getLatestScriptId(scriptFilePath: string): number;
+
   /**
    * Starts the execution of the specified script.
    * @param scriptFilePath Script file path
@@ -23,19 +29,7 @@ export interface IScriptService {
    * Gets the output of the specified script
    * @param scriptId Script ID
    */
-  getScriptOutput(scriptId: number): OutputContentLine[];
-
-  /**
-   * Add a new output line to the specified script
-   * @param scriptId Script ID
-   * @param prevLine Previous output line to override
-   * @param currentLine New output line to add
-   */
-  addOutput(
-    scriptId: number,
-    prevLine: OutputContentLine | undefined,
-    currentLine: OutputContentLine | undefined
-  ): void;
+  getScriptOutputBuffer(scriptId: number): OutputPaneBuffer | undefined;
 
   /**
    * Raised when the contents of the output buffer have changed

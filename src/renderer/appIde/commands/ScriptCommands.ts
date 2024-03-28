@@ -87,7 +87,7 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
     }
 
     // --- Get the script output
-    const output = context.service.scriptService.getScriptOutput(scriptId);
+    const output = context.service.scriptService.getScriptOutputBuffer(scriptId);
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
     const scripts = context.store.getState().scripts;
@@ -102,6 +102,7 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
         id: `ScriptOutput-${scriptId}`,
         name: `${thisScript.scriptFileName} (ID: ${scriptId}) output`,
         type: SCRIPT_OUTPUT_VIEWER,
+        contents: scriptId.toString(),
         iconName: "note",
         iconFill: "--console-ansi-bright-green"
       },

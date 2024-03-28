@@ -17,8 +17,7 @@ type Props = {
  * Represents the command bar for files that support scripting.
  */
 const ScriptingCommandBar = ({ path }: Props) => {
-  console.log("ScriptingCommandBar", path);
-  const { outputPaneService, ideCommandsService } = useAppServices();
+  const { ideCommandsService, scriptService } = useAppServices();
   const scriptsInfo = useSelector(s => s.scripts);
   const [scriptRunning, setScriptRunning] = useState(false);
 
@@ -42,6 +41,15 @@ const ScriptingCommandBar = ({ path }: Props) => {
               `outp ${PANE_ID_SCRIPTIMG}`
             );
             await ideCommandsService.executeCommand(`script-run "${path}"`);
+
+            // --- Delay 100ms to wait for the script to start
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const scriptId = scriptService.getLatestScriptId(path);
+            if (scriptId > 0) {
+              await ideCommandsService.executeCommand(
+                `script-output ${scriptId}`
+              );
+            }
           }}
         />
       )}
@@ -79,6 +87,12 @@ export function getScriptingContextMenuIfo (
       clicked: async (item: string) => {
         await ideCommandsService.executeCommand(`outp ${PANE_ID_SCRIPTIMG}`);
         await ideCommandsService.executeCommand(`script-run "${item}"`);
+        // --- Delay 100ms to wait for the script to start
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const scriptId = services.scriptService.getLatestScriptId(item);
+        if (scriptId > 0) {
+          await ideCommandsService.executeCommand(`script-output ${scriptId}`);
+        }
       }
     },
     {

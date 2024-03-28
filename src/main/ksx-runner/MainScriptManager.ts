@@ -29,7 +29,7 @@ const MAX_SCRIPT_HISTORY = 128;
  */
 class MainScriptManager implements IScriptManager {
   private scripts: ScriptExecutionState[] = [];
-  private id = 1;
+  private id = 0;
 
   constructor (
     private execScript?: (
@@ -76,13 +76,16 @@ class MainScriptManager implements IScriptManager {
       }
     }
 
+    // --- Create a new script ID
+    this.id++;
+    
     // --- Now, start the script
     this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({
       cancellationToken,
       appContext: {
-        console: createScriptConsole(mainStore)
+        Output: createScriptConsole(mainStore, this.id)
       }
     });
 
@@ -137,7 +140,7 @@ class MainScriptManager implements IScriptManager {
         mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
       }
     })();
-    return this.id++;
+    return this.id;
   }
 
   /**

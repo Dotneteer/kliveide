@@ -1,4 +1,3 @@
-import { AppServices } from "@renderer/abstractions/AppServices";
 import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
@@ -93,10 +92,7 @@ import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { FirstStartDialog } from "./dialogs/FirstStartDialog";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 import { CancelScriptCommand, DisplayScriptOutputCommand, RunScriptCommand } from "./commands/ScriptCommands";
-
-// --- Store the singleton instances we use for message processing (out of React)
-let appServicesCached: AppServices;
-let storeCached: Store<AppState>;
+import { getCachedAppServices, getCachedStore, setCachedAppServices, setCachedStore } from "./CachedServices";
 
 const IdeApp = () => {
   // --- Used services
@@ -135,8 +131,8 @@ const IdeApp = () => {
   // --- Use the current instance of the app services
   const mounted = useRef(false);
   useEffect(() => {
-    appServicesCached = appServices;
-    storeCached = store;
+    setCachedAppServices(appServices);
+    setCachedStore(store);
 
     // --- Whenever each of these props are known, we can state the UI is loaded
     if (!appServices || !store || !messenger || mounted.current) return;
@@ -244,7 +240,7 @@ export default IdeApp;
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
   // --- Do not process messages coming while app services are not cached.
-  if (!appServicesCached) {
+  if (!getCachedAppServices()) {
     ipcRenderer.send("MainToIdeResponse", {
       type: "NotReady"
     } as NotReadyResponse);
@@ -255,8 +251,8 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
   try {
     response = await processMainToIdeMessages(
       msg,
-      storeCached,
-      appServicesCached
+      getCachedStore(),
+      getCachedAppServices()
     );
   } catch (err) {
     // --- In case of errors (rejected promises), retrieve an error response

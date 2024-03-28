@@ -2,17 +2,28 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
-import { OutputContentLine } from "../ToolArea/abstractions";
 import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
+import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 
 class ScriptService implements IScriptService {
-  private _scriptOutputs = new Map<number, OutputContentLine[]>();
+  private _scriptOutputs = new Map<number, OutputPaneBuffer>();
   private _contentsChanged = new LiteEvent<number>();
 
   constructor (
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase
   ) {}
+
+  /**
+   * Gets the ID of the latest script with the specified file path.
+   * @param scriptFilePath Script file path
+   */
+  getLatestScriptId (scriptFilePath: string): number {
+    const scripts = this.store.getState().scripts.slice().reverse();
+    console.log(scripts);
+    const script = scripts.find(s => s.scriptFileName === scriptFilePath);
+    return script ? script.id : -1;
+  }
 
   /**
    * Starts the execution of the specified script.
@@ -28,6 +39,12 @@ class ScriptService implements IScriptService {
       throw new Error(response.message);
     }
     if (response.type === "MainRunScriptResponse") {
+      // --- Create a new output buffer for the script
+      if (response.id > 0) {
+        const buffer = new OutputPaneBuffer();
+        this._scriptOutputs.set(response.id, buffer);
+        console.log("Init buffer", response.id);
+      }
       return response.id;
     }
     throw new Error("Unexpected response");
@@ -56,33 +73,8 @@ class ScriptService implements IScriptService {
    * Gets the output of the specified script
    * @param scriptId Script ID
    */
-  getScriptOutput (scriptId: number): OutputContentLine[] | undefined {
+  getScriptOutputBuffer (scriptId: number): OutputPaneBuffer | undefined {
     return this._scriptOutputs.get(scriptId);
-  }
-
-  /**
-   * Add a new output line to the specified script
-   * @param scriptId Script ID
-   * @param prevLine Previous output line to override
-   * @param currentLine New output line to add
-   */
-  addOutput (
-    scriptId: number,
-    prevLine: OutputContentLine | undefined,
-    currentLine: OutputContentLine | undefined
-  ) {
-    let outputs = this._scriptOutputs.get(scriptId);
-    if (!outputs) {
-      outputs = [];
-      this._scriptOutputs.set(scriptId, outputs);
-    }
-    if (prevLine && outputs.length > 0) {
-      outputs[outputs.length - 1] = prevLine;
-    }
-    if (currentLine) {
-      outputs.push(currentLine);
-    }
-    this._contentsChanged.fire(scriptId);
   }
 
   /**

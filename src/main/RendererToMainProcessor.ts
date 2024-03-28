@@ -422,7 +422,7 @@ export async function processRendererToMainMessages (
       }
 
     case "MainStartScript":
-      const scriptId = mainScriptManager.runScript(message.filename);
+      const scriptId = await mainScriptManager.runScript(message.filename);
       return {
         type: "MainRunScriptResponse",
         id: scriptId
