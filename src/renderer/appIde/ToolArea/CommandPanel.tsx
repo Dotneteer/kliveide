@@ -64,7 +64,7 @@ const CommandPanel = () => {
           fixItemHeight={true}
           vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
-            return <OutputLine spans={contents?.[idx]?.spans} />;
+            return <OutputLine lineNo={idx + 1} spans={contents?.[idx]?.spans} />;
           }}
         />
       </div>

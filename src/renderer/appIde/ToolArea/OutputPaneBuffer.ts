@@ -158,7 +158,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     } else {
       this._currentLineIndex++;
     }
-    this._buffer[this._currentLineIndex] = { spans: [] };
+    this._buffer[this._currentLineIndex] = {spans: [] };
   }
 
   /**

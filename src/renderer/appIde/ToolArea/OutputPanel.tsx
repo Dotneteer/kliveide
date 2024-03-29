@@ -19,7 +19,7 @@ import {
 import { Dropdown } from "@controls/Dropdown";
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { VirtualizedListApi } from "@controls/VirtualizedList";
-import { IOutputBuffer, OutputContentLine } from "./abstractions";
+import { IOutputBuffer, OutputContentLine, OutputSpan } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { delay } from "@renderer/utils/timing";
@@ -74,7 +74,7 @@ const OutputPanel = () => {
           fixItemHeight={false}
           vlApiLoaded={vlApi => (api.current = vlApi)}
           itemRenderer={idx => {
-            return <OutputLine spans={contents?.[idx]?.spans} />;
+            return <OutputLine lineNo={idx + 1} spans={contents?.[idx]?.spans} />;
           }}
         />
       )}
@@ -82,7 +82,13 @@ const OutputPanel = () => {
   );
 };
 
-export const OutputLine = ({ spans }: OutputContentLine) => {
+type OutputContentLineProps = {
+  spans: OutputSpan[];
+  lineNo: number;
+  showLineNo?: boolean;
+}
+
+export const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
   const segments = (spans ?? []).map((s, idx) => {
     const style: CSSProperties = {
       fontWeight: s.isBold ? 600 : 400,

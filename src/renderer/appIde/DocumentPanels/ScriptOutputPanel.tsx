@@ -221,7 +221,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
               scrolled={scrolled}
               vlApiLoaded={api => (vlApi.current = api)}
               itemRenderer={idx => {
-                return <OutputLine spans={scriptOutput?.[idx]?.spans} />;
+                return <OutputLine lineNo={idx + 1} spans={scriptOutput?.[idx]?.spans} />;
               }}
             />
           )}
