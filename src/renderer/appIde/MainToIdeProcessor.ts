@@ -17,6 +17,8 @@ import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
+import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
+import { getCachedAppServices } from "./CachedServices";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -122,13 +124,71 @@ export async function processMainToIdeMessages (
       await saveAllBeforeQuit(store, projectService);
       break;
     }
+
+    case "IdeScriptOutput": {
+      executeScriptOutput(message);
+      break;
+    }
   }
   return defaultResponse();
 }
 
-export async function saveAllBeforeQuit(store: Store<AppState>, projectService: IProjectService) : Promise<void> {
+export async function saveAllBeforeQuit (
+  store: Store<AppState>,
+  projectService: IProjectService
+): Promise<void> {
   let wasDimmed = store.getState().dimMenu;
-  store.dispatch(dimMenuAction(true))
-  try { await projectService.performAllDelayedSavesNow(); }
-  finally { store.dispatch(dimMenuAction(wasDimmed)); }
+  store.dispatch(dimMenuAction(true));
+  try {
+    await projectService.performAllDelayedSavesNow();
+  } finally {
+    store.dispatch(dimMenuAction(wasDimmed));
+  }
+}
+
+function executeScriptOutput (message: IdeScriptOutputRequest): void {
+  const scriptService = getCachedAppServices().scriptService;
+  if (!scriptService) return;
+
+  const buffer = scriptService.getScriptOutputBuffer(message.id);
+  if (!buffer) return;
+
+  switch (message.operation) {
+    case "clear":
+      buffer.clear();
+      break;
+    case "write":
+      buffer.write(message.args[0], message.args[1], message.args[2]);
+      break;
+    case "writeLine":
+      buffer.writeLine(message.args[0], message.args[1], message.args[2]);
+      break;
+    case "resetStyle":
+      buffer.resetStyle();
+      break;
+    case "color":
+      buffer.color(message.args[0]);
+      break;
+    case "backgroundColor":
+      buffer.backgroundColor(message.args[0]);
+      break;
+    case "bold":
+      buffer.bold(message.args[0]);
+      break;
+    case "italic":
+      buffer.italic(message.args[0]);
+      break;
+    case "underline":
+      buffer.underline(message.args[0]);
+      break;
+    case "strikethru":
+      buffer.strikethru(message.args[0]);
+      break;
+    case "pushStyle":
+      buffer.pushStyle();
+      break;
+    case "popStyle":
+      buffer.popStyle();
+      break;
+  }
 }

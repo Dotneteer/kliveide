@@ -6,6 +6,15 @@ import {
   OutputSpan
 } from "./abstractions";
 
+type StyleState = {
+  color?: OutputColor;
+  bgColor?: OutputColor;
+  isBold: boolean;
+  isItalic: boolean;
+  isUnderline: boolean;
+  isStrikethru: boolean;
+};
+
 /**
  * Implements a simple buffer to write the contents of the output pane to
  */
@@ -19,11 +28,13 @@ export class OutputPaneBuffer implements IOutputBuffer {
   private _isUnderline: boolean = false;
   private _isStrikethru: boolean = false;
   private _contentsChanged = new LiteEvent<void>();
+  private _styleStack: StyleState[] = [];
 
   constructor (
-    public readonly bufferedLines = 1024,
+    public readonly bufferedLines = 10240,
     public readonly maxLineLenght = 1024
   ) {}
+
   /**
    * Clears the contents of the buffer
    */
@@ -137,7 +148,10 @@ export class OutputPaneBuffer implements IOutputBuffer {
     if (message) {
       this.write(message, data, actionable);
     } else {
+      this.pushStyle();
+      this.resetStyle();
       this.write("\xa0", data, actionable);
+      this.popStyle();
     }
     if (this._currentLineIndex >= this.bufferedLines) {
       this._buffer.shift();
@@ -164,5 +178,35 @@ export class OutputPaneBuffer implements IOutputBuffer {
       result += "\n";
     });
     return result;
+  }
+
+  /**
+   * Saves the current style state
+   */
+  pushStyle (): void {
+    this._styleStack.push({
+      color: this._color,
+      bgColor: this._bgColor,
+      isBold: this._isBold,
+      isItalic: this._isItalic,
+      isUnderline: this._isUnderline,
+      isStrikethru: this._isStrikethru
+    });
+  }
+
+  /**
+   * Restores the style state
+   */
+  popStyle (): void {
+    if (this._styleStack.length === 0) {
+      return;
+    }
+    const state = this._styleStack.pop();
+    this._color = state.color;
+    this._bgColor = state.bgColor;
+    this._isBold = state.isBold;
+    this._isItalic = state.isItalic;
+    this._isUnderline = state.isUnderline;
+    this._isStrikethru = state.isStrikethru;
   }
 }

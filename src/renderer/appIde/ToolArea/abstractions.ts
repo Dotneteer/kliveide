@@ -31,7 +31,7 @@ export type OutputSpan = {
   isStrikeThru?: boolean;
   actionable?: boolean;
   data?: unknown;
-}
+};
 
 /**
  * Represents a single line of the output pane's content
@@ -39,6 +39,23 @@ export type OutputSpan = {
 export type OutputContentLine = {
   spans: OutputSpan[];
 };
+
+/**
+ * Represents an operation that can be performed on the buffer
+  */
+export type BufferOperation =
+  | "clear"
+  | "write"
+  | "writeLine"
+  | "resetStyle"
+  | "color"
+  | "backgroundColor"
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strikethru"
+  | "pushStyle"
+  | "popStyle";
 
 /**
  * Represents a buffer for an output pane
@@ -118,6 +135,16 @@ export interface IOutputBuffer {
    * Gets the string representation of the buffer
    */
   getBufferText(): string;
+
+  /**
+   * Saves the current style to the stack
+   */
+  pushStyle(): void;
+
+  /**
+   * Restores the style from the stack
+   */
+  popStyle(): void;
 }
 
 /**

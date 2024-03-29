@@ -19,7 +19,8 @@ import {
   NXI_EDITOR,
   SPR_EDITOR,
   VID_VIEWER,
-  STATIC_MEMORY_DUMP_VIEWER
+  STATIC_MEMORY_DUMP_VIEWER,
+  SCRIPT_OUTPUT_VIEWER
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -85,6 +86,7 @@ import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appId
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { isScriptCompleted } from "@common/utils/script-utils";
+import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -349,7 +351,13 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createVidFileViewerPanel,
     icon: "video",
     iconFill: "--console-ansi-bright-cyan"
-  }
+  },
+  {
+    id: SCRIPT_OUTPUT_VIEWER,
+    renderer: createScriptOutputPanel,
+    icon: "note",
+    iconFill: "--console-ansi-bright-green"
+  },
 ];
 
 // --- The registry of ile types

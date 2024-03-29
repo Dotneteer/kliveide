@@ -1,7 +1,15 @@
+import { Store } from "../../common/state/redux-light";
+import { AppState } from "../../common/state/AppState";
 import { LogicalThread } from "./LogicalThread";
 
 // This type represents the context in which binding expressions and statements should be evaluated
 export type EvaluationContext = {
+  // --- ID of the script this evaluation context belongs to
+  scriptId?: number;
+
+  // --- Optional dispatch function to use in the evaluation context
+  store?: Store<AppState>;
+
   // --- Container scope
   localContext?: any;
 

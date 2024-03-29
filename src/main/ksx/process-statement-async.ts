@@ -86,7 +86,7 @@ export async function processStatementQueueAsync (
       await new Promise(resolve => setTimeout(resolve, 0));
       statementCount = 0;
     }
-    
+
     // --- Process the first item
     const queueItem = queue.dequeue();
     thread.breakLabelValue = queue.length > 0 ? queue.peek()!.label : -1;
@@ -115,13 +115,14 @@ export async function processStatementQueueAsync (
         };
       } else {
         if (err instanceof ThrowStatementError) {
-          reportEngineError(err);
+          reportEngineError(err, evalContext);
         } else {
           reportEngineError(
             new StatementExecutionError(
               err as any,
               queueItem!.statement?.source
             ),
+            evalContext,
             err
           );
         }
@@ -190,13 +191,13 @@ async function processStatementAsync (
       const parentModule = statement.module.parent;
       if (!parentModule) {
         throw new Error("Missing parent module");
-      } 
+      }
 
       // --- At this point the imported module is set
       if (!statement.module.executed) {
         // --- Run the module, it has not been executed yet
         const childEvalContext = createEvalContext({
-          cancellationToken: evalContext.cancellationToken,
+          cancellationToken: evalContext.cancellationToken
         });
         await executeModule(statement.module, childEvalContext);
       }

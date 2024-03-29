@@ -58,7 +58,7 @@ import {
 } from "../common/structs/project-const";
 import { readDiskData } from "../emu/machines/disk/disk-readers";
 import { createDiskFile } from "../common/utils/create-disk-file";
-import { scriptManager } from "./ksx-runner/ScriptManager";
+import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "../common/integration/constants";
 
@@ -422,14 +422,14 @@ export async function processRendererToMainMessages (
       }
 
     case "MainStartScript":
-      const scriptId = scriptManager.runScript(message.filename);
+      const scriptId = await mainScriptManager.runScript(message.filename);
       return {
         type: "MainRunScriptResponse",
         id: scriptId
       };
 
     case "MainStopScript":
-      return flagResponse(await scriptManager.stopScript(message.idOrFilename));
+      return flagResponse(await mainScriptManager.stopScript(message.idOrFilename));
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

@@ -47,6 +47,10 @@
   margin-left: 0.4em;
   margin-right: 0.4em;
   font-family: var(--main-font-family);
+
+  &.error {
+    color: var(--console-ansi-bright-red);
+  }
 }
 
 .value {

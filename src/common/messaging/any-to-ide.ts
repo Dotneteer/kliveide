@@ -1,4 +1,4 @@
-import { OutputColor } from "@appIde/ToolArea/abstractions";
+import { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
 import { MessageBase } from "./messages-core";
 
 /**
@@ -18,6 +18,14 @@ export interface IdeDisplayOutputRequest extends MessageBase {
   actionable?: boolean;
   writeLine?: boolean;
 }
+
+export interface IdeScriptOutputRequest extends MessageBase {
+  type: "IdeScriptOutput";
+  id: number;
+  operation: BufferOperation;
+  args?: any[];
+}
+
 
 export interface IdeShowMemoryRequest extends MessageBase {
   type: "IdeShowMemory";
