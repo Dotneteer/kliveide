@@ -517,4 +517,16 @@ export const iconLibrary: IconInfo[] = [
     width: 16,
     height: 16
   },
+  {
+    name: "lock",
+    path: "M13 7h-1V5a4 4 0 1 0-8 0v2H3L2 8v6l1 1h10l1-1V8l-1-1zM5 5a3 3 0 1 1 6 0v2H5V5zm8 9H3V8h10v6z",
+    width: 16,
+    height: 16
+  },
+  {
+    name: "unlock",
+    path: "M5 7V5a3 3 0 0 1 5.83-1h1.044A4.002 4.002 0 0 0 4 5v2H3L2 8v6l1 1h10l1-1V8l-1-1H5zm6 1h2v6H3V8h8z",
+    width: 16,
+    height: 16
+  },
 ];

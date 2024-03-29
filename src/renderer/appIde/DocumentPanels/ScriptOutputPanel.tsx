@@ -1,6 +1,5 @@
 import styles from "./ScriptOutputPanel.module.scss";
 import { VirtualizedListApi } from "@controls/VirtualizedList";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useRef, useState, useEffect } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
@@ -9,19 +8,35 @@ import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { OutputLine } from "../ToolArea/OutputPanel";
 import { useAppServices } from "../services/AppServicesProvider";
 import { OutputContentLine } from "../ToolArea/abstractions";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
+import { Text } from "@renderer/controls/generic/Text";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { isScriptCompleted } from "@common/utils/script-utils";
+import {
+  incToolCommandSeqNoAction,
+  setIdeStatusMessageAction
+} from "@common/state/actions";
 
 const SCROLL_DELAY = 500;
 
 type ScriptOutputPanelViewState = {
   topIndex?: number;
+  locked?: boolean;
 };
 
 const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   // --- Get the services used in this component
+  const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
-  const { scriptService } = useAppServices();
+  const { ideCommandsService, scriptService } = useAppServices();
   const scriptId = typeof contents === "string" ? parseInt(contents, 10) : -1;
   const mounted = useRef(false);
+
+  const scriptsInfo = useSelector(s => s.scripts);
+  const scriptFileName = scriptsInfo.find(
+    s => s.id === scriptId
+  )?.scriptFileName;
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -38,11 +53,18 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   const [scriptOutput, setScriptOutput] = useState<OutputContentLine[]>([]);
   const [scrollVersion, setScrollVersion] = useState(0);
   const [scriptBuffer, setScriptBuffer] = useState<OutputPaneBuffer>();
+  const [scriptRunning, setScriptRunning] = useState(false);
+  const [scrollLocked, setLocked] = useState(
+    viewState.current?.locked ?? false
+  );
+
   const lastRefreshTimestamp = useRef(0);
 
   const refreshScriptOutput = () => {
     if (!scriptBuffer) return;
     setScriptOutput(scriptBuffer.getContents().slice());
+    if (scrollLocked) return;
+
     const now = Date.now();
     if (now - lastRefreshTimestamp.current > SCROLL_DELAY) {
       lastRefreshTimestamp.current = now;
@@ -57,6 +79,15 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
       })();
     }
   };
+
+  // --- Check if script is running
+  useEffect(() => {
+    const scripts = scriptsInfo.slice().reverse();
+    const script = scripts.find(
+      s => s.id === scriptId && !isScriptCompleted(s.status)
+    );
+    setScriptRunning(!!script);
+  }, [scriptsInfo]);
 
   // --- Subscribe to script output changes
   useEffect(() => {
@@ -74,15 +105,11 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
     };
   });
 
+  // --- Initialize the script output
   useEffect(() => {
     refreshScriptOutput();
     setScrollVersion(scrollVersion + 1);
   }, [scriptBuffer]);
-
-  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
-  useInitializeAsync(async () => {
-    setScrollVersion(scrollVersion + 1);
-  });
 
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
@@ -90,6 +117,11 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
       align: "start"
     });
   }, [scrollVersion]);
+
+  // --- Save the view state whenever the lock state changes
+  useEffect(() => {
+    saveViewState();
+  }, [scrollLocked]);
 
   // --- Save the current top addresds
   const storeTopAddress = () => {
@@ -108,7 +140,8 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: ScriptOutputPanelViewState = {
-      topIndex: topIndex.current
+      topIndex: topIndex.current,
+      locked: scrollLocked
     };
     documentHubService.saveActiveDocumentState(mergedState);
   };
@@ -116,6 +149,64 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   return (
     mounted.current && (
       <div className={styles.panel}>
+        <div className={styles.header}>
+          <SmallIconButton
+            iconName='stop'
+            title='Stop this script file'
+            enable={scriptRunning}
+            clicked={async () => {
+              await ideCommandsService.executeCommand(
+                `script-cancel ${scriptId}`
+              );
+            }}
+          />
+          <SmallIconButton
+            iconName='pop-out'
+            title='Open script file'
+            clicked={async () => {
+              if (scriptFileName) {
+                documentHubService.setPermanent(document.id);
+                await ideCommandsService.executeCommand(
+                  `nav "${scriptFileName}"`
+                );
+              }
+            }}
+          />
+          <ToolbarSeparator small={true} />
+          <SmallIconButton
+            iconName='clear-all'
+            title='Clear script output'
+            clicked={() => {
+              scriptBuffer?.clear();
+            }}
+          />
+          <SmallIconButton
+            iconName='copy'
+            title='Copy to clipboard'
+            clicked={() => {
+              navigator.clipboard.writeText(scriptBuffer?.getBufferText());
+              dispatch(
+                setIdeStatusMessageAction(
+                  "Script output copied to the clipboard",
+                  true
+                )
+              );
+              dispatch(incToolCommandSeqNoAction());
+            }}
+          />
+          <SmallIconButton
+            iconName={scrollLocked ? "unlock" : "lock"}
+            title={`Turn auto scrolling ${scrollLocked ? "off" : "on"}`}
+            clicked={() => setLocked(!scrollLocked)}
+          />
+          <ToolbarSeparator small={true} />
+          <Text
+            text={`Lines: ${scriptOutput?.length} ${
+              scriptRunning ? "(Running)" : "(Completed)"
+            }`}
+          />
+        </div>
+
         <div className={styles.listWrapper}>
           {scriptOutput && scriptOutput.length > 0 && (
             <VirtualizedListView
