@@ -1,3 +1,6 @@
+import { EvaluationContext } from "./EvaluationContext";
+import { setScriptsStatusAction } from "../../common/state/actions";
+
 /**
  * The abstract base class of all UI engine errors
  */
@@ -120,6 +123,7 @@ export function resetErrors (): void {
  */
 export function reportEngineError (
   error: Error | string,
+  evalContext: EvaluationContext,
   errorToThrow?: any
 ): void {
   // --- Wrap a string into an error
@@ -161,5 +165,18 @@ export function reportEngineError (
     console.log(helperMessage, ...colors);
   }
   appErrors.push({ error, helperMessage, colors });
+
+  // --- Sign the error
+  if (evalContext.store && evalContext.scriptId) {
+    const scripts = evalContext.store.getState()?.scripts?.slice(0);
+    if (scripts) {
+      const script = scripts.find(s => s.id === evalContext.scriptId);
+      if (script) {
+        script.error = error?.toString() ?? "Unknown error";
+      }
+      evalContext.store.dispatch(setScriptsStatusAction(scripts));
+    }
+  }
+
   throw errorToThrow ?? error;
 }

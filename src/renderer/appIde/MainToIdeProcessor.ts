@@ -153,8 +153,6 @@ function executeScriptOutput (message: IdeScriptOutputRequest): void {
   const buffer = scriptService.getScriptOutputBuffer(message.id);
   if (!buffer) return;
 
-  console.log("Executing script output", message);
-
   switch (message.operation) {
     case "clear":
       buffer.clear();

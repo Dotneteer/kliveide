@@ -1,5 +1,9 @@
 import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
-import { TabButton, TabButtonSeparator } from "@renderer/controls/TabButton";
+import {
+  TabButton,
+  TabButtonSeparator,
+  TabButtonSpace
+} from "@renderer/controls/TabButton";
 import { useAppServices } from "../services/AppServicesProvider";
 import { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 import { AppState } from "@common/state/AppState";
@@ -20,6 +24,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
   const { ideCommandsService, scriptService } = useAppServices();
   const scriptsInfo = useSelector(s => s.scripts);
   const [scriptRunning, setScriptRunning] = useState(false);
+  const [scriptEverStarted, setScriptEverStarted] = useState(false);
 
   useEffect(() => {
     const scripts = scriptsInfo.slice().reverse();
@@ -27,6 +32,10 @@ const ScriptingCommandBar = ({ path }: Props) => {
       s => s.scriptFileName === path && !isScriptCompleted(s.status)
     );
     setScriptRunning(!!script);
+    const scriptId = scriptService.getLatestScriptId(path);
+    if (scriptId > 0) {
+      setScriptEverStarted(true);
+    }
   }, [scriptsInfo]);
 
   return (
@@ -41,6 +50,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
               `outp ${PANE_ID_SCRIPTIMG}`
             );
             await ideCommandsService.executeCommand(`script-run "${path}"`);
+            setScriptEverStarted(true);
 
             // --- Delay 100ms to wait for the script to start
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -65,6 +75,20 @@ const ScriptingCommandBar = ({ path }: Props) => {
           }}
         />
       )}
+      <TabButtonSpace />
+      <TabButton
+        iconName='note'
+        title='Show script output'
+        disabled={!scriptEverStarted}
+        clicked={async () => {
+          const scriptId = scriptService.getLatestScriptId(path);
+          if (scriptId > 0) {
+            await ideCommandsService.executeCommand(
+              `script-output ${scriptId}`
+            );
+          }
+        }}
+      />
     </>
   );
 };
@@ -108,6 +132,19 @@ export function getScriptingContextMenuIfo (
       clicked: async (item: string) => {
         await ideCommandsService.executeCommand(`outp ${PANE_ID_SCRIPTIMG}`);
         await ideCommandsService.executeCommand(`script-cancel "${item}"`);
+      }
+    },
+    {
+      text: "Show script output",
+      disabled: (_, item: string) => {
+        const scriptId = services.scriptService.getLatestScriptId(item);
+        return scriptId < 0;
+      },
+      clicked: async (item: string) => {
+        const scriptId = services.scriptService.getLatestScriptId(item);
+        if (scriptId > 0) {
+          await ideCommandsService.executeCommand(`script-output ${scriptId}`);
+        }
       }
     }
   ];

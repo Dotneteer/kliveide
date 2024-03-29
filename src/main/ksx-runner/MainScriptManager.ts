@@ -83,6 +83,8 @@ class MainScriptManager implements IScriptManager {
     this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({
+      scriptId: this.id,
+      store: mainStore,
       cancellationToken,
       appContext: {
         Output: createScriptConsole(mainStore, this.id)
@@ -246,7 +248,7 @@ class MainScriptManager implements IScriptManager {
   /**
    * Returns the status of all scripts.
    */
-  private getScriptsStatus (): ScriptRunInfo[] {
+  getScriptsStatus (): ScriptRunInfo[] {
     return this.scripts.slice(0).map(s => ({
       id: s.id,
       scriptFileName: s.scriptFileName,
@@ -297,7 +299,7 @@ class MainScriptManager implements IScriptManager {
 export function createMainScriptManager (
   execScript: (
     scriptFile: string,
-    evalContext: EvaluationContext
+    evalContext?: EvaluationContext
   ) => Promise<void>
 ): MainScriptManager {
   return new MainScriptManager(execScript, async () => {});

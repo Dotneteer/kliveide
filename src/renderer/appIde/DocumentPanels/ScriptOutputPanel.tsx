@@ -17,6 +17,7 @@ import {
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@common/state/actions";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 const SCROLL_DELAY = 500;
 
@@ -34,9 +35,6 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   const mounted = useRef(false);
 
   const scriptsInfo = useSelector(s => s.scripts);
-  const scriptFileName = scriptsInfo.find(
-    s => s.id === scriptId
-  )?.scriptFileName;
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -54,6 +52,8 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   const [scrollVersion, setScrollVersion] = useState(0);
   const [scriptBuffer, setScriptBuffer] = useState<OutputPaneBuffer>();
   const [scriptRunning, setScriptRunning] = useState(false);
+  const [scriptFileName, setScriptFileName] = useState<string>();
+  const [scriptError, setScriptError] = useState<string>();
   const [scrollLocked, setLocked] = useState(
     viewState.current?.locked ?? false
   );
@@ -82,11 +82,11 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
 
   // --- Check if script is running
   useEffect(() => {
-    const scripts = scriptsInfo.slice().reverse();
-    const script = scripts.find(
-      s => s.id === scriptId && !isScriptCompleted(s.status)
-    );
-    setScriptRunning(!!script);
+    const thisScript = scriptsInfo.find(s => s.id === scriptId);
+    if (!thisScript) return;
+    setScriptRunning(!isScriptCompleted(thisScript?.status));
+    setScriptFileName(thisScript?.scriptFileName);
+    setScriptError(thisScript?.error);
   }, [scriptsInfo]);
 
   // --- Subscribe to script output changes
@@ -201,8 +201,13 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           />
           <ToolbarSeparator small={true} />
           <Text
+            variant={scriptError ? "error" : undefined}
             text={`Lines: ${scriptOutput?.length} ${
-              scriptRunning ? "(Running)" : "(Completed)"
+              scriptRunning
+                ? "(Running)"
+                : scriptError
+                ? `, Error: ${scriptError}`
+                : "(Completed)"
             }`}
           />
         </div>
