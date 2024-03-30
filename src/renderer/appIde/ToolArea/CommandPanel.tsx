@@ -1,9 +1,7 @@
 import { useAppServices } from "@appIde/services/AppServicesProvider";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { VirtualizedListApi } from "../../controls/VirtualizedList";
-import { IOutputBuffer, OutputContentLine } from "./abstractions";
+import React, { useEffect, useRef, useState } from "react";
+import { IOutputBuffer } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
-import { OutputLine } from "./OutputPanel";
 import classnames from "@renderer/utils/classnames";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
@@ -11,20 +9,16 @@ import {
   setIdeStatusMessageAction
 } from "@state/actions";
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
+import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 
 const CommandPanel = () => {
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
-  const buffer = useRef<IOutputBuffer>(ideCommandsService.getBuffer());
-  const [contents, setContents] = useState<OutputContentLine[]>(
-    buffer.current.getContents()
-  );
+  const [buffer, setBuffer] = useState<IOutputBuffer>(ideCommandsService.getBuffer());
   const [executing, setExecuting] = useState(false);
   const commandSeqNo = useSelector(s => s.ideView?.toolCommandSeqNo);
 
-  const api = useRef<VirtualizedListApi>();
   const historyIndex = useRef(-1);
 
   // --- Set the focus to the input element when the commands panel is activated, or a new
@@ -33,24 +27,6 @@ const CommandPanel = () => {
     inputRef.current?.focus();
   }, [inputRef.current, commandSeqNo]);
 
-  // --- Respond to output buffer content changes
-  useEffect(() => {
-    const handleChanged = () => {
-      setContents((buffer?.current?.getContents() ?? []).slice(0));
-    };
-
-    if (buffer.current) {
-      buffer.current.contentsChanged.on(handleChanged);
-    }
-
-    return () => buffer.current?.contentsChanged?.off(handleChanged);
-  }, [buffer.current]);
-
-  // --- Automatically scroll to the end of the output buffer whenever the contents changes
-  useLayoutEffect(() => {
-    api.current?.scrollToEnd();
-  }, [contents]);
-
   return (
     <div
       className={styles.commandPanel}
@@ -58,14 +34,10 @@ const CommandPanel = () => {
       onFocus={() => inputRef?.current.focus()}
     >
       <div className={styles.outputWrapper}>
-        <VirtualizedListView
-          items={contents ?? []}
-          approxSize={20}
-          fixItemHeight={true}
-          vlApiLoaded={vlApi => (api.current = vlApi)}
-          itemRenderer={idx => {
-            return <OutputLine spans={contents?.[idx]?.spans} />;
-          }}
+      <ConsoleOutput
+          buffer={buffer}
+          scrollLocked={false}
+          showLineNo={false}
         />
       </div>
       <div className={styles.promptWrapper}>
@@ -121,15 +93,13 @@ const CommandPanel = () => {
 
   // --- Execute the specified command
   async function executeCommand (command: string): Promise<void> {
-    const output = buffer.current;
     setExecuting(true);
     dispatch(setIdeStatusMessageAction("Executing command"));
-    output.resetStyle();
-    output.writeLine(`$ ${command}`);
-    setContents(buffer.current.getContents().slice(0));
+    buffer.resetStyle();
+    buffer.writeLine(`$ ${command}`);
     const result = await ideCommandsService.executeInteractiveCommand(
       command,
-      output
+      buffer
     );
     if (result.success) {
       dispatch(setIdeStatusMessageAction("Command executed", true));

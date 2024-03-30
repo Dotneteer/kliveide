@@ -81,6 +81,7 @@ export type ThemeProperties = {
   "--console-ansi-white"?: string;
   "--console-ansi-yellow"?: string;
   "--console-default"?: string;
+  "--console-lineNo"?: string;
 
   // --- Label colors
   "--color-label"?: string;

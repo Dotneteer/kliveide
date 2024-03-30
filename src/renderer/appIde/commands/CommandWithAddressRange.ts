@@ -35,8 +35,7 @@ export abstract class CommandWithAddressRangeBase extends IdeCommandBase {
           "This command expects at least two 16-bit address arguments"
         );
       }
-    }
-    if (args.length < 2 + this.extraArgCount) {
+    } else if (args.length < 2 + this.extraArgCount) {
       return validationError(
         `This command expects two 16-bit address arguments and ${
           this.extraArgCount

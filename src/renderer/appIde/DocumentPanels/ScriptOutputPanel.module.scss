@@ -6,15 +6,8 @@
   flex-direction: column;
   user-select: none;
   font-size: 0.8em;
-}
-
-.listWrapper {
-  @include fill-parent-flex;
-  font-family: var(--monospace-font);
-  box-sizing: border-box;
-  flex-direction: column;
-  user-select: none;
-  padding: 4px;
+  padding-left: 4px;
+  padding-bottom: 4px;
 }
 
 .header {
