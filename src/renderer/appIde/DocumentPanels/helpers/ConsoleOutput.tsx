@@ -2,6 +2,7 @@ import { createSettingsReader } from "@common/utils/SettingsReader";
 import styles from "./ConsoleOutput.module.scss";
 import { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
 import {
+  IOutputBuffer,
   OutputContentLine,
   OutputSpan
 } from "@renderer/appIde/ToolArea/abstractions";
@@ -12,11 +13,11 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 const SCROLL_DELAY = 500;
 
 type Props = {
-  buffer: OutputPaneBuffer;
+  buffer: IOutputBuffer;
   scrollLocked: boolean;
-  initialTopPosition: number;
+  initialTopPosition?: number;
   showLineNo?: boolean;
-  onTopPositionChanged: (position: number) => void;
+  onTopPositionChanged?: (position: number) => void;
 };
 
 export const ConsoleOutput = ({
@@ -88,9 +89,11 @@ export const ConsoleOutput = ({
           }}
           vlApiLoaded={api => {
             vlApi.current = api;
-            vlApi.current?.scrollToOffset(initialTopPosition, {
-              align: "start"
-            });
+            if (initialTopPosition !== undefined) {
+              vlApi.current?.scrollToOffset(initialTopPosition, {
+                align: "start"
+              });
+            }
           }}
           itemRenderer={idx => {
             return (
@@ -149,8 +152,10 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
       </span>
     );
   });
-  return <div className={styles.outputLine}>
-    {showLineNo && <span className={styles.lineNo}>{lineNo}:</span>}
-    {[...segments]}
-    </div>;
+  return (
+    <div className={styles.outputLine}>
+      {showLineNo && <span className={styles.lineNo}>{lineNo}:</span>}
+      {[...segments]}
+    </div>
+  );
 };

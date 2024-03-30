@@ -1,5 +1,4 @@
 import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
-import { CommandResultData } from "../../abstractions/CommandResultData";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -19,6 +18,7 @@ import {
   reportMessagingError,
   reportUnexpectedMessageType
 } from "@renderer/reportError";
+import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 
 let disassemblyIndex = 1;
 
@@ -38,6 +38,16 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
   async validateArgs (
     context: IdeCommandContext
   ): Promise<ValidationMessage | ValidationMessage[]> {
+    const result = await super.validateArgs(context);
+    if (Array.isArray(result)) {
+      if (result.some(r => r.type === ValidationMessageType.Error)) {
+        return result;
+      }
+    } else {
+      if (result.type === ValidationMessageType.Error) {
+        return result;
+      }
+    }
     this.conciseMode = context.argTokens.some(t => t.text === "-c");
     this.useColons = context.argTokens.some(t => t.text === "-lc");
     return [];
@@ -47,8 +57,6 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     const fromH = toHexa4(this.startAddress);
     const toH = toHexa4(this.endAddress);
     const buffer = await this.getDisassembly(context);
-    const lines = buffer.getContents();
-    const bufferText = buffer.getBufferText();
     const title = `Result of running '${context.commandtext.trim()}'`;
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
@@ -58,13 +66,12 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
         name: `Disassembly ($${fromH}-$${toH})`,
         type: COMMAND_RESULT_EDITOR,
         iconName: "disassembly-icon",
-        iconFill: "--console-ansi-bright-green"
+        iconFill: "--console-ansi-bright-green",
+        contents: {
+          title,
+          buffer
+        } as any
       },
-      {
-        title,
-        lines,
-        bufferText
-      } as CommandResultData,
       false
     );
 
@@ -81,7 +88,9 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       type: "EmuGetMemory"
     });
     if (getMemoryResponse.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetMemory call failed: ${getMemoryResponse.message}`);
+      reportMessagingError(
+        `EmuGetMemory call failed: ${getMemoryResponse.message}`
+      );
     } else if (getMemoryResponse.type !== "EmuGetMemoryResponse") {
       reportUnexpectedMessageType(getMemoryResponse.type);
     } else {
