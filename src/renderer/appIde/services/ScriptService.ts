@@ -20,7 +20,6 @@ class ScriptService implements IScriptService {
    */
   getLatestScriptId (scriptFilePath: string): number {
     const scripts = this.store.getState().scripts.slice().reverse();
-    console.log(scripts);
     const script = scripts.find(s => s.scriptFileName === scriptFilePath);
     return script ? script.id : -1;
   }
@@ -43,7 +42,6 @@ class ScriptService implements IScriptService {
       if (response.id > 0) {
         const buffer = new OutputPaneBuffer();
         this._scriptOutputs.set(response.id, buffer);
-        console.log("Init buffer", response.id);
       }
       return response.id;
     }

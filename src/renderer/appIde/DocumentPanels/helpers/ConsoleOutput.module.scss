@@ -1,0 +1,22 @@
+@import "@styles/core.scss";
+
+.listWrapper {
+  @include fill-parent-flex;
+  font-family: var(--monospace-font);
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+}
+
+.outputLine {
+  overflow-x: hidden;
+  word-break: break-all;
+}
+
+.lineNo {
+  display: inline-block;
+  color: var(--console-lineNo);
+  padding-right: 12px;
+  min-width: 48px;
+  text-align: end;
+}

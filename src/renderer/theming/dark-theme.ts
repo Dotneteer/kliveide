@@ -81,6 +81,7 @@ export const darkTheme: ThemeProperties = {
   "--console-ansi-white": "#e5e5e5",
   "--console-ansi-yellow": "#e5e510",
   "--console-default": "#e5e5e5",
+  "--console-lineNo": "#808080",
 
   // --- Label colors
   "--color-label": "#f89406",
