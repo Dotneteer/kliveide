@@ -1,4 +1,3 @@
-import { AppServices } from "@renderer/abstractions/AppServices";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { BackDrop } from "@controls/BackDrop";
 import { Toolbar } from "@controls/Toolbar";
@@ -13,14 +12,11 @@ import {
   errorResponse,
   ResponseMessage
 } from "@messaging/messages-core";
-import { MessengerBase } from "@messaging/MessengerBase";
 import {
   displayDialogAction,
   emuLoadedAction,
   setAudioSampleRateAction
 } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
 import styles from "@styles/app.module.scss";
 import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
@@ -43,11 +39,14 @@ import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
 import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
 import { Z88ExportCardDialog } from "./dialogs/Z88ExportCardDialog";
 import { Z88ChangeRamDialog } from "./dialogs/Z88ChangeRamDialog";
-
-// --- Store the singleton instances we use for message processing (out of React)
-let appServicesCached: AppServices;
-let messengerCached: MessengerBase;
-let storeCached: Store<AppState>;
+import {
+  getCachedAppServices,
+  getCachedMessenger,
+  getCachedStore,
+  setCachedAppServices,
+  setCachedMessenger,
+  setCachedStore
+} from "@renderer/CachedServices";
 
 const EmuApp = () => {
   // --- Used services
@@ -68,9 +67,9 @@ const EmuApp = () => {
   // --- Use the current instance of the app services
   const mounted = useRef(false);
   useEffect(() => {
-    appServicesCached = appServices;
-    messengerCached = messenger;
-    storeCached = store;
+    setCachedAppServices(appServices);
+    setCachedMessenger(messenger);
+    setCachedStore(store);
 
     // --- Whenever each of these props are known, we can state the UI is loaded
     if (!appServices || !store || !messenger || mounted.current) return;
@@ -118,21 +117,24 @@ const EmuApp = () => {
         />
       )}
       {dialogId === Z88_REMOVE_CARD_DIALOG && (
-        <Z88RemoveCardDialog slot={dialogData}
+        <Z88RemoveCardDialog
+          slot={dialogData}
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
         />
       )}
       {dialogId === Z88_INSERT_CARD_DIALOG && (
-        <Z88InsertCardDialog slot={dialogData}
+        <Z88InsertCardDialog
+          slot={dialogData}
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
         />
       )}
       {dialogId === Z88_EXPORT_CARD_DIALOG && (
-        <Z88ExportCardDialog slot={dialogData}
+        <Z88ExportCardDialog
+          slot={dialogData}
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}
@@ -161,7 +163,7 @@ export default EmuApp;
 // --- This channel processes main requests and sends the results back
 ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
   // --- Do not process messages coming while app services are not cached.
-  if (!appServicesCached) {
+  if (!getCachedAppServices()) {
     ipcRenderer.send("MainToEmuResponse", {
       type: "NotReady"
     } as NotReadyResponse);
@@ -172,9 +174,9 @@ ipcRenderer.on("MainToEmu", async (_ev, msg: RequestMessage) => {
   try {
     response = await processMainToEmuMessages(
       msg,
-      storeCached,
-      messengerCached,
-      appServicesCached
+      getCachedStore(),
+      getCachedMessenger(),
+      getCachedAppServices()
     );
   } catch (err) {
     // --- In case of errors (rejected promises), retrieve an error response

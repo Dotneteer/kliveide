@@ -53,10 +53,10 @@ class ScriptService implements IScriptService {
       }
 
       // --- Script runs in the emulator, we need to forward the output
-      console.log("Starting emu script");
       const emuResponse = await this.messenger.sendMessage({
         type: "EmuStartScript",
         id: response.id,
+        scriptFile: scriptFilePath,
         contents: response.contents
       });
       if (emuResponse.type === "ErrorResponse") {
@@ -84,11 +84,12 @@ class ScriptService implements IScriptService {
     }
 
     // --- If the script is not found or already stopped, we're done.
-    if (!script || isScriptCompleted(script.status)) {
+    if (!script) {
       return false;
     }
 
     // --- Is it an emulator script?
+    console.log("Cancel script", script);
     if (script.runsInEmu) {
       return false;
     }

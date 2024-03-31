@@ -1,7 +1,6 @@
 import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import { sendFromMainToIde } from "@common/messaging/MainToIdeMessenger";
 import { AppState } from "@common/state/AppState";
 import { setScriptsStatusAction } from "@common/state/actions";
 import { Store } from "@common/state/redux-light";
@@ -49,9 +48,9 @@ export class EmuScriptRunner {
     // --- Check if the script is already running
     const scripts = this.store.getState().scripts;
     let script = scripts.find(s => s.id === scriptId);
-    if (script) {
+    if (!script) {
       // --- The script is already running, nothing to do
-      this.outputFn?.(`Script ${scriptFile} is already running.`, {
+      this.outputFn?.(`Script ${scriptFile} process has not been created.`, {
         color: "yellow"
       });
       return false;
@@ -65,7 +64,7 @@ export class EmuScriptRunner {
       store: this.store,
       cancellationToken,
       appContext: {
-        Output: createScriptConsole(this.store, scriptId)
+        Output: createScriptConsole(this.store, this.messenger, scriptId)
       }
     });
 
@@ -107,6 +106,7 @@ export class EmuScriptRunner {
     (async () => {
       try {
         await execTask;
+        console.log("Script executed");
         script.status = "completed";
         script.endTime = new Date();
         const time = script.endTime.getTime() - script.startTime.getTime();
@@ -142,7 +142,7 @@ export class EmuScriptRunner {
     // --- Check if the script is already running
     const scripts = this.store.getState().scripts;
     const script = scripts.find(s => s.id === scriptId);
-    if (!script || isScriptCompleted(script.status)) {
+    if (!script) {
       // --- The script is not running or has been completed, nothing to do
       this.outputFn?.(`Script ${script.scriptFileName} is not running.`, {
         color: "yellow"
@@ -197,35 +197,37 @@ export class EmuScriptRunner {
 
     // --- Stop the script
     const scriptInfo = this.runningScripts.get(id);
-    try {
-      await scriptInfo?.execTask;
-      script.status = "completed";
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script ${script.scriptFileName} with ID ${script.id} completed in ${time}ms.`,
-        {
-          color: "green"
-        }
-      );
-    } catch (error) {
-      script.status = "execError";
-      script.error = error.message;
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script ${script.scriptFileName} with ID ${
-          script.id
-        } failed: ${error.toString?.()} in ${time}ms.`,
-        {
-          color: "bright-red"
-        }
-      );
-      throw error;
-    } finally {
-      this.runningScripts.delete(id);
-      this.updateScriptsStatus(script);
-    }
+    (async () => {
+      try {
+        await scriptInfo?.execTask;
+        script.status = "completed";
+        script.endTime = new Date();
+        const time = script.endTime.getTime() - script.startTime.getTime();
+        this.outputFn?.(
+          `Script ${script.scriptFileName} with ID ${script.id} completed in ${time}ms.`,
+          {
+            color: "green"
+          }
+        );
+      } catch (error) {
+        script.status = "execError";
+        script.error = error.message;
+        script.endTime = new Date();
+        const time = script.endTime.getTime() - script.startTime.getTime();
+        this.outputFn?.(
+          `Script ${script.scriptFileName} with ID ${
+            script.id
+          } failed: ${error.toString?.()} in ${time}ms.`,
+          {
+            color: "bright-red"
+          }
+        );
+        throw error;
+      } finally {
+        this.runningScripts.delete(id);
+        this.updateScriptsStatus(script);
+      }
+    })();
   }
 
   // --- Resolves the script contents from the module's name
@@ -250,7 +252,7 @@ export class EmuScriptRunner {
     if (scriptIdx >= 0) {
       scripts[scriptIdx] = script;
     }
-    this.store.dispatch(setScriptsStatusAction(scripts));
+    this.store.dispatch(setScriptsStatusAction(scripts), "emu");
   }
 }
 
@@ -271,5 +273,5 @@ async function sendScriptOutput (
     writeLine: true,
     ...options
   };
-  await sendFromMainToIde(message);
+  await this.messenger.sendMessage(message);
 }

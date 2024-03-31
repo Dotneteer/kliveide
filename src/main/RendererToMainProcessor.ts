@@ -452,6 +452,7 @@ export async function processRendererToMainMessages (
 
     case "IdeDisplayOutput":
     case "IdeExecuteCommand":
+    case "IdeScriptOutput":
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
 

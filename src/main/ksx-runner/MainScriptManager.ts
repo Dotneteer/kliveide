@@ -13,7 +13,10 @@ import {
 } from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
 import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import {
+  getMainToIdeMessenger,
+  sendFromMainToIde
+} from "../../common/messaging/MainToIdeMessenger";
 import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
 import {
   executeModule,
@@ -96,23 +99,24 @@ class MainScriptManager implements IScriptManager {
       store: mainStore,
       cancellationToken,
       appContext: {
-        Output: createScriptConsole(mainStore, this.id)
+        Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id)
       }
     });
 
     // --- Prepare the script for execution
     const startInfo = await this.prepareScript(scriptFileName, this.id);
+    const runsInEmu = startInfo.target === "emu";
     const newScript: ScriptExecutionState = {
       id: this.id,
       scriptFileName,
       status: "pending",
       startTime: new Date(),
-      runsInEmu: false,
+      runsInEmu,
       evalContext
     };
     this.scripts.push(newScript);
 
-    if (startInfo.target === "emu") {
+    if (runsInEmu) {
       // --- The script should be executed in the emulator
       mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
       return startInfo;
@@ -126,13 +130,13 @@ class MainScriptManager implements IScriptManager {
       evalContext
     );
 
-    // --- Update the script status  
+    // --- Update the script status
     newScript.execTask = execTask;
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
     this.outputFn?.(`Script started`, {
       color: "green"
     });
-    
+
     // --- Await the script execution
     (async () => {
       try {
@@ -182,7 +186,7 @@ class MainScriptManager implements IScriptManager {
       const reversed = this.scripts.slice().reverse();
       script = reversed.find(s => s.scriptFileName === idOrFileName);
     }
-    if (!script || isScriptCompleted(script.status) || !script.execTask) {
+    if (!script || isScriptCompleted(script.status)) {
       // --- The script is not running or has been completed, nothing to do
       this.outputFn?.(`Script ${idOrFileName} is not running.`, {
         color: "yellow"

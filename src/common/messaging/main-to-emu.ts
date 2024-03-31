@@ -179,6 +179,7 @@ export interface EmuGetNecUpd765Request extends MessageBase {
 export interface EmuStartScriptRequest extends MessageBase {
   type: "EmuStartScript";
   id: number;
+  scriptFile: string;
   contents: string;
 }
 
