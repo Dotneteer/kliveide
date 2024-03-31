@@ -1,5 +1,5 @@
 import "mocha";
-import { Parser } from "@main/ksx/Parser";
+import { Parser } from "@common/ksx/Parser";
 
 describe("KSX Parser - error cases", () => {
   const issueCases = [

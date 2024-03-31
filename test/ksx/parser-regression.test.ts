@@ -1,9 +1,9 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
-import { Lexer } from "@main/ksx/Lexer";
-import { InputStream } from "@main/ksx/InputStream";
-import { TokenType } from "@main/ksx/TokenType";
+import { Parser } from "@common/ksx/Parser";
+import { Lexer } from "@common/ksx/Lexer";
+import { InputStream } from "@common/ksx/InputStream";
+import { TokenType } from "@common/ksx/TokenType";
 
 describe("KSX Parser - regression", () => {
   it("Lexer 'toString'", () => {

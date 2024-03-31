@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
-import { ConstStatement } from "@main/ksx/source-tree";
+import { Parser } from "@common/ksx/Parser";
+import { ConstStatement } from "@common/ksx/source-tree";
 
 describe("KSX Parser - RegeEx", () => {
   const regExpCases = [

@@ -10,12 +10,12 @@ import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
-} from "@main/ksx/EvaluationContext";
+} from "@common/ksx/EvaluationContext";
 import {
   executeModule,
   isModuleErrors,
   parseKsxModule
-} from "@main/ksx/ksx-module";
+} from "@common/ksx/ksx-module";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 type ScriptExecInfo = {

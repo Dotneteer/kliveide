@@ -5,7 +5,7 @@ import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
-} from "../ksx/EvaluationContext";
+} from "../../common/ksx/EvaluationContext";
 import { setScriptsStatusAction } from "../../common/state/actions";
 import {
   ScriptExecutionState,
@@ -22,7 +22,7 @@ import {
   executeModule,
   isModuleErrors,
   parseKsxModule
-} from "../ksx/ksx-module";
+} from "../../common/ksx/ksx-module";
 import { IScriptManager, ScriptStartInfo } from "@abstractions/IScriptManager";
 import { createScriptConsole } from "./ScriptConsole";
 
@@ -141,15 +141,18 @@ class MainScriptManager implements IScriptManager {
     (async () => {
       try {
         await execTask;
-        newScript.status = "completed";
-        newScript.endTime = new Date();
-        const time =
-          newScript.endTime.getTime() - newScript.startTime.getTime();
         const cancelled = evalContext.cancellationToken.cancelled;
+        newScript.status = cancelled ? "stopped" : "completed";
+        let time = 0;
+        if (cancelled) {
+          newScript.stopTime = new Date();
+          time = newScript.stopTime.getTime() - newScript.startTime.getTime();
+        } else {
+          newScript.endTime = new Date();
+          time = newScript.endTime.getTime() - newScript.startTime.getTime();
+        }
         this.outputFn?.(
-          `Script ${scriptFileName} with ID ${this.id} ${
-            cancelled ? "stopped" : "completed"
-          } in ${time}ms.`,
+          `Script ${scriptFileName} with ID ${this.id} ${newScript.status} in ${time}ms.`,
           {
             color: cancelled ? "yellow" : "green"
           }

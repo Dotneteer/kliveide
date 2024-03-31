@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
-import { BinaryExpression } from "@main/ksx/source-tree";
+import { Parser } from "@common/ksx/Parser";
+import { BinaryExpression } from "@common/ksx/source-tree";
 
 describe("KSX Parser - Binary operations", () => {
   const binaryOpCases = [

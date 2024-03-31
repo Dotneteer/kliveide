@@ -1,14 +1,14 @@
 import "mocha";
 import { expect } from "expect";
 import assert from "assert";
-import { Parser } from "@main/ksx/Parser";
+import { Parser } from "@common/ksx/Parser";
 import {
   ArrowExpression,
   BlockStatement,
   Destructure,
   FunctionInvocationExpression,
   Identifier
-} from "@main/ksx/source-tree";
+} from "@common/ksx/source-tree";
 
 describe("KSX Parser - arrow expressions", () => {
   it("No param", () => {

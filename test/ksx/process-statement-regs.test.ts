@@ -5,15 +5,15 @@ import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
-} from "@main/ksx/EvaluationContext";
+} from "@common/ksx/EvaluationContext";
 import {
   KsxModule,
   parseKsxModule,
   isModuleErrors,
   executeModule
-} from "@main/ksx/ksx-module";
-import { Expression } from "@main/ksx/source-tree";
-import { Parser } from "@main/ksx/Parser";
+} from "@common/ksx/ksx-module";
+import { Expression } from "@common/ksx/source-tree";
+import { Parser } from "@common/ksx/Parser";
 
 const ROOT_MODULE = "test";
 

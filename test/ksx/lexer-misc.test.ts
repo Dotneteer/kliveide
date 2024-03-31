@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "expect";
-import { Lexer } from "@main/ksx/Lexer";
-import { InputStream } from "@main/ksx/InputStream";
-import { TokenType } from "@main/ksx/TokenType";
+import { Lexer } from "@common/ksx/Lexer";
+import { InputStream } from "@common/ksx/InputStream";
+import { TokenType } from "@common/ksx/TokenType";
 
 describe("KSX Lexer - miscellaneous", () => {
   it("Empty", () => {

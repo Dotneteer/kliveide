@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
 import assert from "assert";
-import { EvaluationContext } from "@main/ksx/EvaluationContext";
+import { EvaluationContext } from "@common/ksx/EvaluationContext";
 import { createMainScriptManager } from "@main/ksx-runner/MainScriptManager";
 import { ScriptStartInfo } from "@abstractions/IScriptManager";
 

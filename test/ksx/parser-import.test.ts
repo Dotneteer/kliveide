@@ -1,8 +1,8 @@
 import "mocha";
 import { expect } from "expect";
 import assert from "assert";
-import { Parser } from "@main/ksx/Parser";
-import { ImportDeclaration } from "@main/ksx/source-tree";
+import { Parser } from "@common/ksx/Parser";
+import { ImportDeclaration } from "@common/ksx/source-tree";
 
 describe("KSX Parser - import statement", () => {
   it("Empty import", () => {

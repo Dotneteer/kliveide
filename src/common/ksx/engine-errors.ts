@@ -1,5 +1,5 @@
 import { EvaluationContext } from "./EvaluationContext";
-import { setScriptsStatusAction } from "../../common/state/actions";
+import { setScriptsStatusAction } from "../state/actions";
 
 /**
  * The abstract base class of all UI engine errors
