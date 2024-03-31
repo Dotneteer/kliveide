@@ -4,7 +4,7 @@ export interface IScriptManager {
    * @param scriptFileName The name of the script file to run.
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
-  runScript(scriptFileName: string): number;
+  runScript(scriptFileName: string): Promise<ScriptStartInfo>;
 
   /**
    * Stops the execution of a running script.
@@ -18,4 +18,13 @@ export interface IScriptManager {
    * @returns
    */
   completeScript(id: number): Promise<void>;
+}
+
+/**
+ * Represents the information required to start a script.
+ */
+export type ScriptStartInfo = {
+  id?: number;
+  target?: string;
+  contents?: string;
 }

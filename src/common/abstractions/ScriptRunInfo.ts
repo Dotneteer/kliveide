@@ -1,4 +1,5 @@
 import { EvaluationContext } from "../../main/ksx/EvaluationContext";
+import { ScriptStartInfo } from "./IScriptManager";
 
 export type ScriptStatus =
   | "pending"

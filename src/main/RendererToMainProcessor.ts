@@ -425,7 +425,9 @@ export async function processRendererToMainMessages (
       const scriptId = await mainScriptManager.runScript(message.filename);
       return {
         type: "MainRunScriptResponse",
-        id: scriptId
+        id: scriptId.id,
+        target: scriptId.target,
+        contents: scriptId.contents
       };
 
     case "MainStopScript":

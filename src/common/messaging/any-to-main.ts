@@ -402,7 +402,10 @@ export interface MainGetTemplateDirsResponse extends MessageBase {
  */
 export interface MainRunScriptResponse extends MessageBase {
   type: "MainRunScriptResponse";
+  target?: string;
+  contents?: string;
   id?: number;
+
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

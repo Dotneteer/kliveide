@@ -20,7 +20,7 @@ import {
   isModuleErrors,
   parseKsxModule
 } from "../ksx/ksx-module";
-import { IScriptManager } from "@abstractions/IScriptManager";
+import { IScriptManager, ScriptStartInfo } from "@abstractions/IScriptManager";
 import { createScriptConsole } from "./ScriptConsole";
 
 const MAX_SCRIPT_HISTORY = 128;
@@ -33,8 +33,13 @@ class MainScriptManager implements IScriptManager {
   private id = 0;
 
   constructor (
+    private prepareScript?: (
+      scriptFile: string,
+      scriptId: number
+    ) => Promise<ScriptStartInfo>,
     private execScript?: (
       scriptFile: string,
+      scriptContents: string,
       evalContext: EvaluationContext
     ) => Promise<void>,
     private outputFn = sendScriptOutput,
@@ -43,6 +48,9 @@ class MainScriptManager implements IScriptManager {
     if (!this.execScript) {
       this.execScript = this.doExecute;
     }
+    if (!this.prepareScript) {
+      this.prepareScript = this.doPrepare;
+    }
   }
 
   /**
@@ -50,7 +58,7 @@ class MainScriptManager implements IScriptManager {
    * @param scriptFileName The name of the script file to run.
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
-  runScript (scriptFileName: string): number {
+  async runScript (scriptFileName: string): Promise<ScriptStartInfo> {
     // --- Check if the script is already running
     const script = this.scripts.find(
       s => s.scriptFileName === scriptFileName && !isScriptCompleted(s.status)
@@ -60,7 +68,7 @@ class MainScriptManager implements IScriptManager {
       this.outputFn?.(`Script ${scriptFileName} is already running.`, {
         color: "yellow"
       });
-      return -script.id;
+      return { id: -script.id };
     }
 
     // --- Check the number of running scripts
@@ -79,7 +87,7 @@ class MainScriptManager implements IScriptManager {
 
     // --- Create a new script ID
     this.id++;
-    
+
     // --- Now, start the script
     this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
@@ -92,8 +100,20 @@ class MainScriptManager implements IScriptManager {
       }
     });
 
+    // --- Prepare the script for execution
+    const startInfo = await this.prepareScript(scriptFileName, this.id);
+    if (startInfo.target === "emu") {
+      // --- The script should be executed in the emulator
+      console.log("Emu", startInfo.contents);
+      return startInfo;
+    }
+
     // --- Start the script but do not await it
-    const execTask = this.execScript(scriptFileName, evalContext);
+    const execTask = this.execScript(
+      scriptFileName,
+      startInfo.contents,
+      evalContext
+    );
     this.outputFn?.(`Script started`, {
       color: "green"
     });
@@ -143,7 +163,7 @@ class MainScriptManager implements IScriptManager {
         mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
       }
     })();
-    return this.id;
+    return { id: this.id };
   }
 
   /**
@@ -261,7 +281,16 @@ class MainScriptManager implements IScriptManager {
     }));
   }
 
-  private async doExecute (scriptFile: string, evalContext: EvaluationContext) {
+  /**
+   * Prepares the script for execution
+   * @param scriptFile Script file to prepare
+   * @param scriptId ID of the script
+   * @returns Script execution information
+   */
+  private async doPrepare (
+    scriptFile: string,
+    scriptId: number
+  ): Promise<ScriptStartInfo> {
     let script: string;
     try {
       // --- Let's read the script file from the disk
@@ -271,10 +300,53 @@ class MainScriptManager implements IScriptManager {
     }
 
     // --- Parse the script
+    const module = await parseKsxModule(scriptFile, script, moduleName =>
+      this.resolveModule(scriptFile, moduleName)
+    );
+    if (isModuleErrors(module)) {
+      // --- The script has errors, display them
+      Object.keys(module).forEach(moduleName => {
+        const errors = module[moduleName];
+        errors.forEach(error => {
+          this.outputFn?.(
+            `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
+            {
+              color: "bright-red"
+            }
+          );
+        });
+      });
+      throw new Error("Running script failed");
+    }
+
+    // --- Check if the execution target is main
+    if (module.statements.length > 0) {
+      // --- Check the first statement
+      const firstStmt = module.statements[0];
+      if (
+        firstStmt.type === "ExpressionStatement" &&
+        firstStmt.expression.type === "Literal" &&
+        firstStmt.expression.value === "emu"
+      ) {
+        // --- Sign the script should be executed in the emulator
+        return { id: scriptId, target: "emu", contents: script };
+      }
+    }
+
+    // --- Sign the script should be executed in the main process
+    return { id: scriptId, contents: script };
+  }
+
+  private async doExecute (
+    scriptFile: string,
+    scriptContents: string,
+    evalContext: EvaluationContext
+  ): Promise<void> {
+    // --- Parse the script
     const module = await parseKsxModule(
       scriptFile,
-      script,
-      resolveModule
+      scriptContents,
+      (moduleName: string) => this.resolveModule(scriptFile, moduleName)
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
@@ -294,35 +366,42 @@ class MainScriptManager implements IScriptManager {
 
     // --- Execute the script
     await executeModule(module, evalContext);
-
-    // --- Resolves the script contents from the module's name
-    async function resolveModule (moduleName: string): Promise<string | null> {
-      const baseDir = path.dirname(scriptFile);
-      const fileExt = path.extname(moduleName);
-      if (!fileExt) {
-        moduleName += ".ksx";
-      }
-
-      // --- Load the module from the disk
-      const fullPath = path.join(baseDir, moduleName);
-      try {
-        const contents = fs.readFileSync(fullPath, "utf-8");
-        return contents;
-      } catch (error) {
-        return null;
-      }
-    }
   }
 
+  // --- Resolves the script contents from the module's name
+  private async resolveModule (
+    scriptFile: string,
+    moduleName: string
+  ): Promise<string | null> {
+    const baseDir = path.dirname(scriptFile);
+    const fileExt = path.extname(moduleName);
+    if (!fileExt) {
+      moduleName += ".ksx";
+    }
+
+    // --- Load the module from the disk
+    const fullPath = path.join(baseDir, moduleName);
+    try {
+      const contents = fs.readFileSync(fullPath, "utf-8");
+      return contents;
+    } catch (error) {
+      return null;
+    }
+  }
 }
 
 export function createMainScriptManager (
+  prepareScript: (
+    scriptFile: string,
+    scriptId: number
+  ) => Promise<ScriptStartInfo>,
   execScript: (
     scriptFile: string,
+    scriptContents: string,
     evalContext?: EvaluationContext
   ) => Promise<void>
 ): MainScriptManager {
-  return new MainScriptManager(execScript, async () => {});
+  return new MainScriptManager(prepareScript, execScript, async () => {});
 }
 
 export const mainScriptManager = new MainScriptManager();
