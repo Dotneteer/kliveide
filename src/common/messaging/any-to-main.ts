@@ -301,6 +301,15 @@ export interface MainStopScriptRequest extends MessageBase {
 }
 
 /**
+ * The client wants to resolve a module to its contents
+ */
+export interface MainResolveModuleRequest extends MessageBase {
+  type: "MainResolveModule";
+  mainFile: string;
+  moduleName: string;
+}
+
+/**
  * Response for text file read action
  */
 export interface TextContentsResponse extends MessageBase {
@@ -406,6 +415,14 @@ export interface MainRunScriptResponse extends MessageBase {
   contents?: string;
   id?: number;
 
+}
+
+/**
+ * The client wants to resolve a module to its contents
+ */
+export interface MainResolveModuleResponse extends MessageBase {
+  type: "MainResolveModuleResponse";
+  contents: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

@@ -14,6 +14,7 @@ export type ScriptRunInfo = {
   id: number;
   scriptFileName: string;
   status: ScriptStatus;
+  runsInEmu: boolean;
   error?: string;
   startTime: Date;
   endTime?: Date;

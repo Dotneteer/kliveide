@@ -102,34 +102,37 @@ class MainScriptManager implements IScriptManager {
 
     // --- Prepare the script for execution
     const startInfo = await this.prepareScript(scriptFileName, this.id);
+    const newScript: ScriptExecutionState = {
+      id: this.id,
+      scriptFileName,
+      status: "pending",
+      startTime: new Date(),
+      runsInEmu: false,
+      evalContext
+    };
+    this.scripts.push(newScript);
+
     if (startInfo.target === "emu") {
       // --- The script should be executed in the emulator
-      console.log("Emu", startInfo.contents);
+      mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
       return startInfo;
     }
 
+    // --- The script should be executed in the main process
     // --- Start the script but do not await it
     const execTask = this.execScript(
       scriptFileName,
       startInfo.contents,
       evalContext
     );
+
+    // --- Update the script status  
+    newScript.execTask = execTask;
+    mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
     this.outputFn?.(`Script started`, {
       color: "green"
     });
-    const newScript: ScriptExecutionState = {
-      id: this.id,
-      scriptFileName,
-      status: "pending",
-      startTime: new Date(),
-      evalContext,
-      execTask
-    };
-    this.scripts.push(newScript);
-
-    // --- Update the script status
-    mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-
+    
     // --- Await the script execution
     (async () => {
       try {
@@ -184,6 +187,11 @@ class MainScriptManager implements IScriptManager {
       this.outputFn?.(`Script ${idOrFileName} is not running.`, {
         color: "yellow"
       });
+      return false;
+    }
+
+    // --- Is it a main process script?
+    if (script.runsInEmu) {
       return false;
     }
 
@@ -275,6 +283,7 @@ class MainScriptManager implements IScriptManager {
       scriptFileName: s.scriptFileName,
       status: s.status,
       error: s.error,
+      runsInEmu: s.runsInEmu,
       startTime: s.startTime,
       endTime: s.endTime,
       stopTime: s.stopTime
@@ -369,7 +378,7 @@ class MainScriptManager implements IScriptManager {
   }
 
   // --- Resolves the script contents from the module's name
-  private async resolveModule (
+  async resolveModule (
     scriptFile: string,
     moduleName: string
   ): Promise<string | null> {
