@@ -3,6 +3,7 @@ import { MessageBase } from "./messages-core";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/IZ80CompilerService";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 /**
  * The client sends a text file read request
@@ -293,11 +294,19 @@ export interface MainStartScriptRequest extends MessageBase {
 }
 
 /**
- * The client wants to start a script
+ * The client wants to stop a script
  */
 export interface MainStopScriptRequest extends MessageBase {
   type: "MainStopScript";
   idOrFilename: number | string;
+}
+
+/**
+ * The client wants to stop a script
+ */
+export interface MainCloseScriptRequest extends MessageBase {
+  type: "MainCloseScript";
+  script: ScriptRunInfo;
 }
 
 /**
@@ -414,7 +423,6 @@ export interface MainRunScriptResponse extends MessageBase {
   target?: string;
   contents?: string;
   id?: number;
-
 }
 
 /**

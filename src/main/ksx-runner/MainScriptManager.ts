@@ -145,10 +145,13 @@ class MainScriptManager implements IScriptManager {
         newScript.endTime = new Date();
         const time =
           newScript.endTime.getTime() - newScript.startTime.getTime();
+        const cancelled = evalContext.cancellationToken.cancelled;
         this.outputFn?.(
-          `Script ${scriptFileName} with ID ${this.id} completed in ${time}ms.`,
+          `Script ${scriptFileName} with ID ${this.id} ${
+            cancelled ? "stopped" : "completed"
+          } in ${time}ms.`,
           {
-            color: "green"
+            color: cancelled ? "yellow" : "green"
           }
         );
       } catch (error) {
@@ -161,6 +164,12 @@ class MainScriptManager implements IScriptManager {
           `Script ${scriptFileName} with ID ${this.id} failed in ${time}ms.`,
           {
             color: "red"
+          }
+        );
+        this.outputFn?.(
+          error.toString?.() ?? "Unknown error",
+          {
+            color: "bright-red"
           }
         );
       } finally {
@@ -187,29 +196,14 @@ class MainScriptManager implements IScriptManager {
       script = reversed.find(s => s.scriptFileName === idOrFileName);
     }
     if (!script || isScriptCompleted(script.status)) {
-      // --- The script is not running or has been completed, nothing to do
-      this.outputFn?.(`Script ${idOrFileName} is not running.`, {
-        color: "yellow"
-      });
-      return false;
-    }
-
-    // --- Is it a main process script?
-    if (script.runsInEmu) {
       return false;
     }
 
     // --- Stop the script
-    this.outputFn?.(`Stopping script ${idOrFileName}...`);
+    this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     script.evalContext?.cancellationToken?.cancel();
     try {
       await script.execTask;
-      script.status = "stopped";
-      script.stopTime = new Date();
-      const time = script.stopTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(`Script successfully stopped after ${time}ms.`, {
-        color: "green"
-      });
       return true;
     } catch (error) {
       script.status = "execError";
@@ -276,6 +270,19 @@ class MainScriptManager implements IScriptManager {
       // --- Update the script status
       mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
     }
+  }
+
+  async closeScript (script: ScriptRunInfo): Promise<void> {
+    const savedScript = this.scripts.find(s => s.id === script.id);
+    if (!savedScript) return;
+
+    savedScript.status = script.status;
+    savedScript.error = script.error;
+    savedScript.endTime = script.endTime;
+    savedScript.stopTime = script.stopTime;
+
+    // --- Update the script status
+    mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
   }
 
   /**

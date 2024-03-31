@@ -106,14 +106,16 @@ export class EmuScriptRunner {
     (async () => {
       try {
         await execTask;
-        console.log("Script executed");
         script.status = "completed";
         script.endTime = new Date();
         const time = script.endTime.getTime() - script.startTime.getTime();
+        const cancelled = evalContext.cancellationToken.cancelled;
         this.outputFn?.(
-          `Script ${scriptFile} with ID ${scriptId} completed in ${time}ms.`,
+          `Script ${script.scriptFileName} with ID ${script.id} ${
+            cancelled ? "stopped" : "completed"
+          } in ${time}ms.`,
           {
-            color: "green"
+            color: cancelled ? "yellow" : "green"
           }
         );
       } catch (error) {
@@ -122,13 +124,25 @@ export class EmuScriptRunner {
         script.endTime = new Date();
         const time = script.endTime.getTime() - script.startTime.getTime();
         this.outputFn?.(
-          `Script ${scriptFile} with ID ${scriptId} failed in ${time}ms.`,
+          `Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`,
           {
             color: "red"
           }
         );
+        this.outputFn?.(error.toString?.() ?? "Unknown error", {
+          color: "bright-red"
+        });
       } finally {
         this.updateScriptsStatus(script);
+
+        // --- Notify the main script manager
+        const response = await this.messenger.sendMessage({
+          type: "MainCloseScript",
+          script
+        });
+        if (response.type === "ErrorResponse") {
+          throw new Error(response.message);
+        }
       }
     })();
     return true;
@@ -156,12 +170,6 @@ export class EmuScriptRunner {
     scriptInfo?.evalContext?.cancellationToken?.cancel();
     try {
       await scriptInfo?.execTask;
-      script.status = "stopped";
-      script.stopTime = new Date();
-      const time = script.stopTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(`Script successfully stopped after ${time}ms.`, {
-        color: "green"
-      });
       return true;
     } catch (error) {
       script.status = "execError";

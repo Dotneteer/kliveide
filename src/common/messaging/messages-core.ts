@@ -65,7 +65,8 @@ import {
   MainStopScriptRequest,
   MainRunScriptResponse,
   MainResolveModuleRequest,
-  MainResolveModuleResponse
+  MainResolveModuleResponse,
+  MainCloseScriptRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -235,6 +236,7 @@ export type RequestMessage =
   | MainStartScriptRequest
   | MainStopScriptRequest
   | MainResolveModuleRequest
+  | MainCloseScriptRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

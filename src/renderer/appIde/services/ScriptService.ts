@@ -89,9 +89,15 @@ class ScriptService implements IScriptService {
     }
 
     // --- Is it an emulator script?
-    console.log("Cancel script", script);
     if (script.runsInEmu) {
-      return false;
+      // --- Script runs in the emulator, we need to forward the output
+      const emuResponse = await this.messenger.sendMessage({
+        type: "EmuStopScript",
+        id: script.id
+      });
+      if (emuResponse.type === "ErrorResponse") {
+        throw new Error(emuResponse.message);
+      }
     }
 
     // --- Send the stop script message
