@@ -63,7 +63,10 @@ import {
   MainGetTemplateDirsRequest,
   MainStartScriptRequest,
   MainStopScriptRequest,
-  MainRunScriptResponse
+  MainRunScriptResponse,
+  MainResolveModuleRequest,
+  MainResolveModuleResponse,
+  MainCloseScriptRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -96,7 +99,9 @@ import {
   EmuSetDiskFileRequest,
   EmuGetBlinkStateRequest,
   EmuGetBlinkStateResponse,
-  EmuSetDiskWriteProtectionRequest
+  EmuSetDiskWriteProtectionRequest,
+  EmuStartScriptRequest,
+  EmuStopScriptRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -194,6 +199,8 @@ export type RequestMessage =
   | EmuScrollBreakpointsRequest
   | EmuGetNecUpd765Request
   | EmuGetBlinkStateRequest
+  | EmuStartScriptRequest
+  | EmuStopScriptRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -228,6 +235,8 @@ export type RequestMessage =
   | MainGetTemplateDirsRequest
   | MainStartScriptRequest
   | MainStopScriptRequest
+  | MainResolveModuleRequest
+  | MainCloseScriptRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -259,6 +268,7 @@ export type ResponseMessage =
   | MainCreateDiskFileResponse
   | MainGetTemplateDirsResponse
   | MainRunScriptResponse
+  | MainResolveModuleResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

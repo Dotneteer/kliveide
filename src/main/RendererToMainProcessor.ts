@@ -425,11 +425,29 @@ export async function processRendererToMainMessages (
       const scriptId = await mainScriptManager.runScript(message.filename);
       return {
         type: "MainRunScriptResponse",
-        id: scriptId
+        id: scriptId.id,
+        target: scriptId.target,
+        contents: scriptId.contents
       };
 
     case "MainStopScript":
-      return flagResponse(await mainScriptManager.stopScript(message.idOrFilename));
+      return flagResponse(
+        await mainScriptManager.stopScript(message.idOrFilename)
+      );
+
+    case "MainCloseScript":
+      await mainScriptManager.closeScript(message.script);
+      break;
+
+    case "MainResolveModule":
+      const resolvedModule = await mainScriptManager.resolveModule(
+        message.mainFile,
+        message.moduleName
+      );
+      return {
+        type: "MainResolveModuleResponse",
+        contents: resolvedModule
+      };
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)
@@ -438,6 +456,7 @@ export async function processRendererToMainMessages (
 
     case "IdeDisplayOutput":
     case "IdeExecuteCommand":
+    case "IdeScriptOutput":
       // --- A client wants to display an output message
       return await sendFromMainToIde(message);
 
@@ -459,6 +478,8 @@ export async function processRendererToMainMessages (
     case "EmuScrollBreakpoints":
     case "EmuNormalizeBreakpoints":
     case "EmuGetNecUpd765State":
+    case "EmuStartScript":
+    case "EmuStopScript":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();

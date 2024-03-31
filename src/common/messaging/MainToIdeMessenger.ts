@@ -58,6 +58,13 @@ export function registerMainToIdeMessenger (window: BrowserWindow) {
 }
 
 /**
+ * Gets the main-to-ide messenger instance
+ */
+export function getMainToIdeMessenger (): MainToIdeMessenger | undefined {
+  return mainToIdeMessenger;
+}
+
+/**
  * Sends the specified message from the Main process to Ide
  * @param message Message to send
  * @returns Response

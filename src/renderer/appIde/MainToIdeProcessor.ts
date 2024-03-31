@@ -18,7 +18,7 @@ import { dimMenuAction } from "@common/state/actions";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
-import { getCachedAppServices } from "./CachedServices";
+import { getCachedAppServices } from "../CachedServices";
 
 /**
  * Process the messages coming from the emulator to the main process

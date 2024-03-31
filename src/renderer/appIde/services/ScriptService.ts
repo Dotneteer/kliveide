@@ -4,6 +4,8 @@ import { Store } from "@common/state/redux-light";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import { isScriptCompleted } from "@common/utils/script-utils";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();
@@ -43,6 +45,23 @@ class ScriptService implements IScriptService {
         const buffer = new OutputPaneBuffer();
         this._scriptOutputs.set(response.id, buffer);
       }
+
+      // --- Check the target
+      if (response.target !== "emu") {
+        // --- Script runs in the main process, nothing to do
+        return response.id;
+      }
+
+      // --- Script runs in the emulator, we need to forward the output
+      const emuResponse = await this.messenger.sendMessage({
+        type: "EmuStartScript",
+        id: response.id,
+        scriptFile: scriptFilePath,
+        contents: response.contents
+      });
+      if (emuResponse.type === "ErrorResponse") {
+        throw new Error(emuResponse.message);
+      }
       return response.id;
     }
     throw new Error("Unexpected response");
@@ -50,13 +69,41 @@ class ScriptService implements IScriptService {
 
   /**
    * Stops the execution of the specified script.
-   * @param scriptId ID of the script to stop
+   * @param idOrFileName ID of the script to stop
    * @returns True, if the script is stopped; otherwise, false
    */
-  async cancelScript (scriptId: number | string): Promise<boolean> {
+  async cancelScript (idOrFileName: number | string): Promise<boolean> {
+    // --- Obtain the script status information
+    let script: ScriptRunInfo;
+    const scripts = this.store.getState().scripts;
+    if (typeof idOrFileName === "number") {
+      script = scripts.find(s => s.id === idOrFileName);
+    } else {
+      const reversed = scripts.slice().reverse();
+      script = reversed.find(s => s.scriptFileName === idOrFileName);
+    }
+
+    // --- If the script is not found or already stopped, we're done.
+    if (!script) {
+      return false;
+    }
+
+    // --- Is it an emulator script?
+    if (script.runsInEmu) {
+      // --- Script runs in the emulator, we need to forward the output
+      const emuResponse = await this.messenger.sendMessage({
+        type: "EmuStopScript",
+        id: script.id
+      });
+      if (emuResponse.type === "ErrorResponse") {
+        throw new Error(emuResponse.message);
+      }
+    }
+
+    // --- Send the stop script message
     const response = await this.messenger.sendMessage({
       type: "MainStopScript",
-      idOrFilename: scriptId
+      idOrFilename: script.id
     });
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);

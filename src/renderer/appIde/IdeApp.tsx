@@ -92,7 +92,7 @@ import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { FirstStartDialog } from "./dialogs/FirstStartDialog";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 import { CancelScriptCommand, DisplayScriptOutputCommand, RunScriptCommand } from "./commands/ScriptCommands";
-import { getCachedAppServices, getCachedStore, setCachedAppServices, setCachedStore } from "./CachedServices";
+import { getCachedAppServices, getCachedStore, setCachedAppServices, setCachedStore } from "../CachedServices";
 
 const IdeApp = () => {
   // --- Used services

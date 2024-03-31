@@ -40,6 +40,8 @@ import {
   MEDIA_TAPE
 } from "@common/structs/project-const";
 import { mediaStore } from "@emu/machines/media/media-info";
+import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
+import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 
 const borderColors = [
   "Black",
@@ -442,6 +444,19 @@ export async function processMainToEmuMessages (
           log: (machine as ZxSpectrumP3EMachine).floppyDevice.getLogEntries()
         };
       }
+      break;
+    }
+
+    case "EmuStartScript": {
+      const runner = getEmuScriptRunner();
+      const result = await runner.runScript(message.id, message.scriptFile, message.contents);
+      return flagResponse(result);
+    }
+
+    case "EmuStopScript": {
+      const runner = getEmuScriptRunner();
+      const result = await runner.stopScript(message.id);
+      return flagResponse(result);
     }
   }
   return defaultResponse();
@@ -573,4 +588,19 @@ export async function processMainToEmuMessages (
     const propName = message.diskIndex ? DISK_B_WP : DISK_A_WP;
     controller.machine.setMachineProperty(propName, message.protect);
   }
+}
+
+let emuScriptRunner: EmuScriptRunner | undefined;
+
+/**
+ * Get the EmuScriptRunner instance
+ */
+function getEmuScriptRunner (): EmuScriptRunner {
+  if (!emuScriptRunner) {
+    emuScriptRunner = new EmuScriptRunner(
+      getCachedStore(),
+      getCachedMessenger()
+    );
+  }
+  return emuScriptRunner;
 }

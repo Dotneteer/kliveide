@@ -3,6 +3,7 @@ import { MessageBase } from "./messages-core";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/IZ80CompilerService";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 /**
  * The client sends a text file read request
@@ -293,11 +294,28 @@ export interface MainStartScriptRequest extends MessageBase {
 }
 
 /**
- * The client wants to start a script
+ * The client wants to stop a script
  */
 export interface MainStopScriptRequest extends MessageBase {
   type: "MainStopScript";
   idOrFilename: number | string;
+}
+
+/**
+ * The client wants to stop a script
+ */
+export interface MainCloseScriptRequest extends MessageBase {
+  type: "MainCloseScript";
+  script: ScriptRunInfo;
+}
+
+/**
+ * The client wants to resolve a module to its contents
+ */
+export interface MainResolveModuleRequest extends MessageBase {
+  type: "MainResolveModule";
+  mainFile: string;
+  moduleName: string;
 }
 
 /**
@@ -402,7 +420,17 @@ export interface MainGetTemplateDirsResponse extends MessageBase {
  */
 export interface MainRunScriptResponse extends MessageBase {
   type: "MainRunScriptResponse";
+  target?: string;
+  contents?: string;
   id?: number;
+}
+
+/**
+ * The client wants to resolve a module to its contents
+ */
+export interface MainResolveModuleResponse extends MessageBase {
+  type: "MainResolveModuleResponse";
+  contents: string;
 }
 
 export function textContentsResponse (contents: string): TextContentsResponse {

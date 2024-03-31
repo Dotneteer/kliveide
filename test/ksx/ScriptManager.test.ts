@@ -3,22 +3,26 @@ import { expect } from "expect";
 import assert from "assert";
 import { EvaluationContext } from "@main/ksx/EvaluationContext";
 import { createMainScriptManager } from "@main/ksx-runner/MainScriptManager";
+import { ScriptStartInfo } from "@abstractions/IScriptManager";
 
 describe("KSX ScriptManager", () => {
   it("Run works with new file", async () => {
     // --- Arrange
-    const sm = createMainScriptManager(execScript);
+    const sm = createMainScriptManager(prepareScript, execScript);
 
     // --- Act
-    const id = sm.runScript("test1");
+    const startInfo = await sm.runScript("test1");
 
     // --- Assert
     let scripts = sm.getScriptsStatus();
+    expect(startInfo.target).toBeUndefined();
+    expect(startInfo.contents).toBeUndefined();
+    expect(startInfo.id).toBeGreaterThan(0);
     expect(scripts.length).toBe(1);
     expect(scripts[0].status).toBe("pending");
 
     // --- Cleanup
-    await sm.stopScript(id);
+    await sm.stopScript(startInfo.id);
     scripts = sm.getScriptsStatus();
     expect(scripts.length).toBe(1);
     expect(scripts[0].status).toBe("stopped");
@@ -26,12 +30,12 @@ describe("KSX ScriptManager", () => {
 
   it("Run works with multiple files", async () => {
     // --- Arrange
-    const sm = createMainScriptManager(execScript);
+    const sm = createMainScriptManager(prepareScript, execScript);
 
     // --- Act
-    const id1 = sm.runScript("test1");
-    const id2 = sm.runScript("test2");
-    const id3 = sm.runScript("test3");
+    const id1 = (await sm.runScript("test1")).id;
+    const id2 = (await sm.runScript("test2")).id;
+    const id3 = (await sm.runScript("test3")).id;
 
     // --- Assert
     let scripts = sm.getScriptsStatus();
@@ -59,8 +63,8 @@ describe("KSX ScriptManager", () => {
 
   it("Run completes with error", async () => {
     // --- Arrange
-    const sm = createMainScriptManager(execScript);
-    const id1 = sm.runScript("test1");
+    const sm = createMainScriptManager(prepareScript, execScript);
+    const id1 = (await sm.runScript("test1")).id;
 
     // --- Act
     errorScript = "Test error";
@@ -79,7 +83,20 @@ describe("KSX ScriptManager", () => {
 
 let errorScript = "";
 
-async function execScript (scriptFile: string, evalContext: EvaluationContext) {
+async function prepareScript (
+  scriptFile: string,
+  scriptId: number
+): Promise<ScriptStartInfo> {
+  return {
+    id: scriptId
+  };
+}
+
+async function execScript (
+  scriptFile: string,
+  scriptContent: string,
+  evalContext: EvaluationContext
+) {
   for (let i = 0; i < 10; i++) {
     if (evalContext?.cancellationToken?.cancelled) {
       break;

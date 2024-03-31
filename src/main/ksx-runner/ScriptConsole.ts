@@ -1,4 +1,4 @@
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 import { IdeScriptOutputRequest } from "../../common/messaging/any-to-ide";
 import { AppState } from "../../common/state/AppState";
 import { Store } from "../../common/state/redux-light";
@@ -7,6 +7,7 @@ class ScriptConsole {
   // --- The store is used to dispatch actions
   constructor (
     private readonly store: Store<AppState>,
+    private readonly messenger: MessengerBase,
     private readonly id: number
   ) {}
 
@@ -26,7 +27,6 @@ class ScriptConsole {
       } else {
         await this.writeLine();
       }
-
     }
   }
 
@@ -79,7 +79,7 @@ class ScriptConsole {
   }
 
   async clear (): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "clear"
@@ -87,7 +87,7 @@ class ScriptConsole {
   }
 
   async write (...args: any[]): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "write",
@@ -96,7 +96,7 @@ class ScriptConsole {
   }
 
   async writeLine (...args: any[]): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "writeLine",
@@ -105,7 +105,7 @@ class ScriptConsole {
   }
 
   async resetStyle (): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "resetStyle"
@@ -113,7 +113,7 @@ class ScriptConsole {
   }
 
   async color (color: string): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "color",
@@ -122,7 +122,7 @@ class ScriptConsole {
   }
 
   async backgroundColor (color: string): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "backgroundColor",
@@ -131,7 +131,7 @@ class ScriptConsole {
   }
 
   async bold (use: boolean): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "bold",
@@ -140,7 +140,7 @@ class ScriptConsole {
   }
 
   async italic (use: boolean): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "italic",
@@ -149,7 +149,7 @@ class ScriptConsole {
   }
 
   async underline (use: boolean): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "underline",
@@ -158,7 +158,7 @@ class ScriptConsole {
   }
 
   async strikethru (use: boolean): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "strikethru",
@@ -167,7 +167,7 @@ class ScriptConsole {
   }
 
   async pushStyle (): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "pushStyle"
@@ -175,18 +175,16 @@ class ScriptConsole {
   }
 
   async popStyle (): Promise<void> {
-    await sendScriptOutput({
+    await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "popStyle"
     });
   }
-}
 
-async function sendScriptOutput (
-  message: IdeScriptOutputRequest
-): Promise<void> {
-  await sendFromMainToIde(message);
+  async sendScriptOutput (message: IdeScriptOutputRequest): Promise<void> {
+    await this.messenger.sendMessage(message);
+  }
 }
 
 function outputValue (value: any): string {
@@ -225,5 +223,8 @@ function safeStringify (obj: any, indent = 2) {
   return retVal;
 }
 
-export const createScriptConsole = (store: Store<AppState>, id: number) =>
-  new ScriptConsole(store, id);
+export const createScriptConsole = (
+  store: Store<AppState>,
+  messenger: MessengerBase,
+  id: number
+) => new ScriptConsole(store, messenger, id);

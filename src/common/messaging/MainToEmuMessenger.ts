@@ -61,7 +61,7 @@ export function registerMainToEmuMessenger (window: BrowserWindow) {
  * @param message Message to send
  * @returns Response
  */
-export async function   sendFromMainToEmu<TResp extends ResponseMessage> (
+export async function sendFromMainToEmu<TResp extends ResponseMessage> (
   message: RequestMessage
 ): Promise<TResp> {
   if (mainToEmuMessenger) {

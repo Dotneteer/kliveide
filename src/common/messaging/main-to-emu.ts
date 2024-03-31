@@ -174,6 +174,24 @@ export interface EmuGetNecUpd765Request extends MessageBase {
 }
 
 /**
+ * The Ide process asks the emu to start a script
+ */
+export interface EmuStartScriptRequest extends MessageBase {
+  type: "EmuStartScript";
+  id: number;
+  scriptFile: string;
+  contents: string;
+}
+
+/**
+ * The Ide process asks the emu to start a script
+ */
+export interface EmuStopScriptRequest extends MessageBase {
+  type: "EmuStopScript";
+  id: number;
+}
+
+/**
  * The Emu process sends back CPU state information
  */
 export interface EmuGetCpuStateResponse extends MessageBase {
