@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as fs from "fs";
 import { mainStore } from "../main-store";
 import {
@@ -273,7 +274,7 @@ class MainScriptManager implements IScriptManager {
     const module = await parseKsxModule(
       scriptFile,
       script,
-      async modulePath => null
+      resolveModule
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
@@ -293,7 +294,26 @@ class MainScriptManager implements IScriptManager {
 
     // --- Execute the script
     await executeModule(module, evalContext);
+
+    // --- Resolves the script contents from the module's name
+    async function resolveModule (moduleName: string): Promise<string | null> {
+      const baseDir = path.dirname(scriptFile);
+      const fileExt = path.extname(moduleName);
+      if (!fileExt) {
+        moduleName += ".ksx";
+      }
+
+      // --- Load the module from the disk
+      const fullPath = path.join(baseDir, moduleName);
+      try {
+        const contents = fs.readFileSync(fullPath, "utf-8");
+        return contents;
+      } catch (error) {
+        return null;
+      }
+    }
   }
+
 }
 
 export function createMainScriptManager (
