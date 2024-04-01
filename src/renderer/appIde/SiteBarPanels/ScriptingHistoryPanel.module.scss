@@ -21,7 +21,9 @@
 .itemWrapper {
   display: flex;
   flex-direction: row;
-  width: fit-content;
+  flex-shrink: 0;
+  flex-grow: 1;
+  width: calc(100% - 8px);
   padding: 4px;
 
   &.selected {
@@ -38,7 +40,7 @@
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
-  width: 140px;
+  width: 240px;
   color: var(--color-doc-activeText);
   padding-left: 8px;
   padding-right: 8px;

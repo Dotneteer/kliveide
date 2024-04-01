@@ -87,7 +87,6 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
     }
 
     // --- Get the script output
-    const output = context.service.scriptService.getScriptOutputBuffer(scriptId);
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
     const scripts = context.store.getState().scripts;
@@ -97,17 +96,22 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
     }
 
     // --- Open the script output
-    await documentHubService.openDocument(
-      {
-        id: `ScriptOutput-${scriptId}`,
-        name: `${thisScript.scriptFileName} (ID: ${scriptId}) output`,
-        type: SCRIPT_OUTPUT_VIEWER,
-        contents: scriptId.toString(),
-        iconName: "note",
-        iconFill: "--console-ansi-bright-green"
-      },
-      {}
-    );
+    const docId = `ScriptOutput-${scriptId}`;
+    if (documentHubService.isOpen(docId)) {
+      documentHubService.setActiveDocument(docId);
+    } else {
+      await documentHubService.openDocument(
+        {
+          id: `ScriptOutput-${scriptId}`,
+          name: `${thisScript.scriptFileName} (ID: ${scriptId}) output`,
+          type: SCRIPT_OUTPUT_VIEWER,
+          contents: scriptId.toString(),
+          iconName: "note",
+          iconFill: "--console-ansi-bright-green"
+        },
+        {}
+      );
+    }
     return commandSuccessWith(
       `Output of script ${thisScript.scriptFileName} (ID: ${scriptId}) displayed.`
     );

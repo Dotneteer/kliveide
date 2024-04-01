@@ -249,7 +249,7 @@ const CpuPanel = () => {
           tooltip='Interrupt Mode'
         />
         <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text='SNZ' width={LAB_WIDTH-3} />
+        <Label text='SNZ' width={LAB_WIDTH - 3} />
         <Flag
           value={cpuState?.snoozed}
           width={FLAG_WIDTH}
