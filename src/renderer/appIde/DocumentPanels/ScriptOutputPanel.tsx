@@ -4,11 +4,14 @@ import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { useAppServices } from "../services/AppServicesProvider";
-import { OutputContentLine } from "../ToolArea/abstractions";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Text } from "@renderer/controls/generic/Text";
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
 import { isScriptCompleted } from "@common/utils/script-utils";
 import {
   incToolCommandSeqNoAction,
@@ -34,7 +37,9 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
 
   // --- Line number settings
   const { store } = useRendererContext();
-  const showLineNo = !!createSettingsReader(store).readBooleanSetting("scriptOutput.showLineNo");
+  const showLineNo = !!createSettingsReader(store).readBooleanSetting(
+    "scriptOutput.showLineNo"
+  );
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -48,13 +53,14 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
   // --- need to use state changes not yet committed by React.
 
   const [scriptBuffer, setScriptBuffer] = useState<OutputPaneBuffer>();
-  const [scriptOutput, setScriptOutput] = useState<OutputContentLine[]>([]);
   const [scriptRunning, setScriptRunning] = useState(false);
   const [scriptFileName, setScriptFileName] = useState<string>();
   const [scriptError, setScriptError] = useState<string>();
+  const [scriptStatus, setScriptStatus] = useState<string>();
   const [scrollLocked, setLocked] = useState(
     viewState.current?.locked ?? false
   );
+  const [version, setVersion] = useState(1);
 
   // --- Subscribe to script output changes
   useEffect(() => {
@@ -62,7 +68,6 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
     if (!buffer) return;
 
     setScriptBuffer(buffer);
-    setScriptOutput(buffer.getContents().slice());
   }, [scriptId]);
 
   // --- Check if script is running
@@ -72,6 +77,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
     setScriptRunning(!isScriptCompleted(thisScript?.status));
     setScriptFileName(thisScript?.scriptFileName);
     setScriptError(thisScript?.error);
+    setScriptStatus(thisScript?.status);
   }, [scriptsInfo]);
 
   // --- Save the view state whenever the lock state changes
@@ -87,6 +93,24 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
     };
     documentHubService.saveActiveDocumentState(mergedState);
   };
+
+  let variant = "";
+  let conclusion = "";
+  if (scriptError) {
+    variant = "error";
+    conclusion = "Error";
+  } else if (!scriptRunning) {
+    if (scriptStatus === "stopped") {
+      variant = "warning";
+      conclusion = "Stopped";
+    } else if (scriptStatus === "execError") {
+      variant = "error";
+      conclusion = "Error";
+    } else {
+      variant = "success";
+      conclusion = "Completed";
+    }
+  }
 
   return (
     <div className={styles.panel}>
@@ -142,13 +166,9 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
         />
         <ToolbarSeparator small={true} />
         <Text
-          variant={scriptError ? "error" : undefined}
-          text={`Lines: ${scriptOutput?.length} ${
-            scriptRunning
-              ? "(Running)"
-              : scriptError
-              ? `, Error: ${scriptError}`
-              : "(Completed)"
+          variant={variant}
+          text={`Lines: ${scriptBuffer?.getContents()?.length} ${
+            scriptRunning ? "(Running)" : conclusion
           }`}
         />
       </div>
@@ -161,6 +181,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           topPosition.current = position;
           saveViewState();
         }}
+        onContentsChanged={() => setVersion(version + 1)}
       />
     </div>
   );

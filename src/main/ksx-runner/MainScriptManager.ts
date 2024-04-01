@@ -12,12 +12,7 @@ import {
   ScriptRunInfo
 } from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
-import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
-import {
-  getMainToIdeMessenger,
-  sendFromMainToIde
-} from "../../common/messaging/MainToIdeMessenger";
-import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
+import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import {
   executeModule,
   isModuleErrors,
@@ -25,6 +20,10 @@ import {
 } from "../../common/ksx/ksx-module";
 import { IScriptManager, ScriptStartInfo } from "@abstractions/IScriptManager";
 import { createScriptConsole } from "./ScriptConsole";
+import {
+  concludeScript,
+  sendScriptOutput
+} from "../../common/ksx/script-runner";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -45,7 +44,11 @@ class MainScriptManager implements IScriptManager {
       scriptContents: string,
       evalContext: EvaluationContext
     ) => Promise<void>,
-    private outputFn = sendScriptOutput,
+    private outputFn: (
+      text: string,
+      options?: Record<string, any>
+    ) => Promise<void> = (text, options) =>
+      sendScriptOutput(getMainToIdeMessenger(), text, options),
     private maxScriptHistory = MAX_SCRIPT_HISTORY
   ) {
     if (!this.execScript) {
@@ -133,55 +136,18 @@ class MainScriptManager implements IScriptManager {
     // --- Update the script status
     newScript.execTask = execTask;
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-    this.outputFn?.(`Script started`, {
-      color: "green"
-    });
+    this.outputFn?.(`Script started`, { color: "green" });
 
     // --- Await the script execution
-    (async () => {
-      try {
-        await execTask;
-        const cancelled = evalContext.cancellationToken.cancelled;
-        newScript.status = cancelled ? "stopped" : "completed";
-        let time = 0;
-        if (cancelled) {
-          newScript.stopTime = new Date();
-          time = newScript.stopTime.getTime() - newScript.startTime.getTime();
-        } else {
-          newScript.endTime = new Date();
-          time = newScript.endTime.getTime() - newScript.startTime.getTime();
-        }
-        this.outputFn?.(
-          `Script ${scriptFileName} with ID ${this.id} ${newScript.status} in ${time}ms.`,
-          {
-            color: cancelled ? "yellow" : "green"
-          }
-        );
-      } catch (error) {
-        newScript.status = "execError";
-        newScript.error = error.message;
-        newScript.endTime = new Date();
-        const time =
-          newScript.endTime.getTime() - newScript.startTime.getTime();
-        this.outputFn?.(
-          `Script ${scriptFileName} with ID ${this.id} failed in ${time}ms.`,
-          {
-            color: "red"
-          }
-        );
-        this.outputFn?.(
-          error.toString?.() ?? "Unknown error",
-          {
-            color: "bright-red"
-          }
-        );
-      } finally {
-        delete newScript.execTask;
-
-        // --- Update the script status
-        mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-      }
-    })();
+    concludeScript(
+      mainStore,
+      execTask,
+      evalContext,
+      () => this.getScriptsStatus(),
+      newScript,
+      this.outputFn,
+      () => delete newScript.execTask
+    );
     return { id: this.id };
   }
 
@@ -205,27 +171,7 @@ class MainScriptManager implements IScriptManager {
     // --- Stop the script
     this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     script.evalContext?.cancellationToken?.cancel();
-    try {
-      await script.execTask;
-      return true;
-    } catch (error) {
-      script.status = "execError";
-      script.error = error.message;
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script raised an error when stopped after ${time}ms. Error: ${error.toString?.()}`,
-        {
-          color: "brightRed"
-        }
-      );
-      throw error;
-    } finally {
-      delete script.execTask;
-
-      // --- Update the script status
-      mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-    }
+    await script.execTask;
   }
 
   /**
@@ -240,39 +186,7 @@ class MainScriptManager implements IScriptManager {
       // --- The script has been completed, nothing to do
       return;
     }
-
-    // --- Stop the script
-    try {
-      await script.execTask;
-      script.status = "completed";
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script ${script.scriptFileName} with ID ${script.id} completed in ${time}ms.`,
-        {
-          color: "green"
-        }
-      );
-    } catch (error) {
-      script.status = "execError";
-      script.error = error.message;
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script ${script.scriptFileName} with ID ${
-          script.id
-        } failed: ${error.toString?.()} in ${time}ms.`,
-        {
-          color: "bright-red"
-        }
-      );
-      throw error;
-    } finally {
-      delete script.execTask;
-
-      // --- Update the script status
-      mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-    }
+    await script.execTask;
   }
 
   async closeScript (script: ScriptRunInfo): Promise<void> {
@@ -429,22 +343,22 @@ export function createMainScriptManager (
 
 export const mainScriptManager = new MainScriptManager();
 
-/**
- * Sends the output of a script to the IDE
- * @param text Text to send
- * @param options Additional options
- */
-async function sendScriptOutput (
-  text: string,
-  options?: Record<string, any>
-): Promise<void> {
-  const message: IdeDisplayOutputRequest = {
-    type: "IdeDisplayOutput",
-    pane: PANE_ID_SCRIPTIMG,
-    text,
-    color: "cyan",
-    writeLine: true,
-    ...options
-  };
-  await sendFromMainToIde(message);
-}
+// /**
+//  * Sends the output of a script to the IDE
+//  * @param text Text to send
+//  * @param options Additional options
+//  */
+// async function sendScriptOutput (
+//   text: string,
+//   options?: Record<string, any>
+// ): Promise<void> {
+//   const message: IdeDisplayOutputRequest = {
+//     type: "IdeDisplayOutput",
+//     pane: PANE_ID_SCRIPTIMG,
+//     text,
+//     color: "cyan",
+//     writeLine: true,
+//     ...options
+//   };
+//   await sendFromMainToIde(message);
+// }

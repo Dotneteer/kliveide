@@ -18,6 +18,7 @@ type Props = {
   initialTopPosition?: number;
   showLineNo?: boolean;
   onTopPositionChanged?: (position: number) => void;
+  onContentsChanged?: () => void;
 };
 
 export const ConsoleOutput = ({
@@ -25,7 +26,8 @@ export const ConsoleOutput = ({
   scrollLocked,
   initialTopPosition,
   showLineNo,
-  onTopPositionChanged
+  onTopPositionChanged,
+  onContentsChanged
 }: Props) => {
   // --- Component state
   const mounted = useRef(false);
@@ -38,6 +40,7 @@ export const ConsoleOutput = ({
   const refreshOutput = () => {
     if (!buffer) return;
     setOutput(buffer.getContents().slice());
+    onContentsChanged?.();
     if (scrollLocked) return;
 
     // --- Scroll to the end of the output
