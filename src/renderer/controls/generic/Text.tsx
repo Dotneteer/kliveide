@@ -20,6 +20,8 @@ export const Text = ({ text, width, center, tooltip, variant }: Props) => {
       ref={ref}
       className={classnames(styles.text, {
         [styles.error]: variant === "error",
+        [styles.warning]: variant === "warning",
+        [styles.success]: variant === "success",
       })}
       style={{
         width,

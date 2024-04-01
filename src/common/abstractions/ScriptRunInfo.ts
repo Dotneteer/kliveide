@@ -1,4 +1,4 @@
-import { EvaluationContext } from "../../main/ksx/EvaluationContext";
+import { EvaluationContext } from "../ksx/EvaluationContext";
 import { ScriptStartInfo } from "./IScriptManager";
 
 export type ScriptStatus =

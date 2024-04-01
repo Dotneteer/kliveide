@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
+import { Parser } from "@common/ksx/Parser";
 import {
   FunctionInvocationExpression,
   MemberAccessExpression,
@@ -8,7 +8,7 @@ import {
   PrefixOpExpression,
   SequenceExpression,
   SpreadExpression
-} from "@main/ksx/source-tree";
+} from "@common/ksx/source-tree";
 
 describe("KSX Parser - miscellaneous expressions", () => {
   const sequenceCases = [

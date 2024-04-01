@@ -27,8 +27,8 @@
   flex-grow: 0;
   flex-shrink: 0;
   width: 100%;
-  padding: 0.2em 0
-} 
+  padding: 0.2em 0;
+}
 
 .label {
   display: flex;
@@ -50,6 +50,14 @@
 
   &.error {
     color: var(--console-ansi-bright-red);
+  }
+
+  &.warning {
+    color: var(--console-ansi-yellow);
+  }
+
+  &.success {
+    color: var(--console-ansi-bright-green);
   }
 }
 
@@ -83,7 +91,7 @@
     padding: 0.2em 0;
     background-color: var(--bgcolor-expandable);
     cursor: pointer;
-  
+
     & .headingText {
       color: var(--color-secondary-label);
       padding: 0.2em 0.4em;
@@ -91,10 +99,7 @@
     }
 
     & .expandable {
-      cursor: pointer
+      cursor: pointer;
     }
-  } 
+  }
 }
-
-
-

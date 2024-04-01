@@ -1,15 +1,15 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
+import { Parser } from "@common/ksx/Parser";
 import {
   ArrayLiteral,
   Expression,
   Identifier,
   Literal,
   ObjectLiteral
-} from "@main/ksx/source-tree";
-import { tokenTraits } from "@main/ksx/TokenTrait";
-import { TokenType } from "@main/ksx/TokenType";
+} from "@common/ksx/source-tree";
+import { tokenTraits } from "@common/ksx/TokenTrait";
+import { TokenType } from "@common/ksx/TokenType";
 
 describe("KSX - Parser - literals", () => {
   const boolCases = [

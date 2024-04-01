@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "expect";
-import { InputStream } from "@main/ksx/InputStream";
+import { InputStream } from "@common/ksx/InputStream";
 
 describe("KSX - InputStream", () => {
   it("Builds from string", () => {

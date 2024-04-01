@@ -1,5 +1,5 @@
-import { Store } from "../../common/state/redux-light";
-import { AppState } from "../../common/state/AppState";
+import { Store } from "../state/redux-light";
+import { AppState } from "../state/AppState";
 import { LogicalThread } from "./LogicalThread";
 
 // This type represents the context in which binding expressions and statements should be evaluated

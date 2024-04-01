@@ -1,11 +1,11 @@
 import "mocha";
 import { expect } from "expect";
-import { Parser } from "@main/ksx/Parser";
+import { Parser } from "@common/ksx/Parser";
 import {
   Destructure,
   FunctionDeclaration,
   Identifier
-} from "@main/ksx/source-tree";
+} from "@common/ksx/source-tree";
 
 describe("KSX Parser - function declaration", () => {
   it("No param", () => {
