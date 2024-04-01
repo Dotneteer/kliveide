@@ -165,11 +165,11 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
           clicked={() => setLocked(!scrollLocked)}
         />
         <ToolbarSeparator small={true} />
+        <Text text={`Lines: ${scriptBuffer?.getContents()?.length}`} />
+        <ToolbarSeparator small={true} />
         <Text
           variant={variant}
-          text={`Lines: ${scriptBuffer?.getContents()?.length} ${
-            scriptRunning ? "(Running)" : conclusion
-          }`}
+          text={`${scriptRunning ? "(Running)" : `(${conclusion})`}`}
         />
       </div>
       <ConsoleOutput

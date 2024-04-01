@@ -1,10 +1,7 @@
-import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
-import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { setScriptsStatusAction } from "@common/state/actions";
 import { Store } from "@common/state/redux-light";
-import { isScriptCompleted } from "@common/utils/script-utils";
 import { createScriptConsole } from "@main/ksx-runner/ScriptConsole";
 import {
   CancellationToken,
@@ -16,7 +13,7 @@ import {
   isModuleErrors,
   parseKsxModule
 } from "@common/ksx/ksx-module";
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import { sendScriptOutput } from "@common/ksx/script-runner";
 
 type ScriptExecInfo = {
   evalContext: EvaluationContext;
@@ -32,7 +29,11 @@ export class EmuScriptRunner {
   constructor (
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
-    private readonly outputFn = sendScriptOutput
+    private readonly outputFn: (
+      text: string,
+      options?: Record<string, any>
+    ) => Promise<void> = (text, options) =>
+      sendScriptOutput(this.messenger, text, options)
   ) {}
 
   /**
@@ -106,14 +107,18 @@ export class EmuScriptRunner {
     (async () => {
       try {
         await execTask;
-        script.status = "completed";
-        script.endTime = new Date();
-        const time = script.endTime.getTime() - script.startTime.getTime();
         const cancelled = evalContext.cancellationToken.cancelled;
+        script.status = cancelled ? "stopped" : "completed";
+        let time = 0;
+        if (cancelled) {
+          script.stopTime = new Date();
+          time = script.stopTime.getTime() - script.startTime.getTime();
+        } else {
+          script.endTime = new Date();
+          time = script.endTime.getTime() - script.startTime.getTime();
+        }
         this.outputFn?.(
-          `Script ${script.scriptFileName} with ID ${script.id} ${
-            cancelled ? "stopped" : "completed"
-          } in ${time}ms.`,
+          `Script ${script.scriptFileName} with ID ${script.id} ${script.status} in ${time}ms.`,
           {
             color: cancelled ? "yellow" : "green"
           }
@@ -133,7 +138,12 @@ export class EmuScriptRunner {
           color: "bright-red"
         });
       } finally {
-        this.updateScriptsStatus(script);
+        const scripts = this.store.getState().scripts.slice();
+        let scriptIdx = scripts.findIndex(s => s.id === script.id);
+        if (scriptIdx >= 0) {
+          scripts[scriptIdx] = script;
+        }
+        this.store.dispatch(setScriptsStatusAction(scripts), "emu");
 
         // --- Notify the main script manager
         const response = await this.messenger.sendMessage({
@@ -168,74 +178,7 @@ export class EmuScriptRunner {
     const scriptInfo = this.runningScripts.get(scriptId);
     this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     scriptInfo?.evalContext?.cancellationToken?.cancel();
-    try {
-      await scriptInfo?.execTask;
-      return true;
-    } catch (error) {
-      script.status = "execError";
-      script.error = error.message;
-      script.endTime = new Date();
-      const time = script.endTime.getTime() - script.startTime.getTime();
-      this.outputFn?.(
-        `Script raised an error when stopped after ${time}ms. Error: ${error.toString?.()}`,
-        {
-          color: "brightRed"
-        }
-      );
-      throw error;
-    } finally {
-      this.runningScripts.delete(scriptId);
-      this.updateScriptsStatus(script);
-    }
-  }
-
-  /**
-   * Awaits for the completion of a script.
-   * @param scriptFileName The name of the script file to wait for.
-   * @returns
-   */
-  async completeScript (id: number): Promise<void> {
-    // --- Check if the script is already running
-    const scripts = this.store.getState().scripts;
-    const script = scripts.find(s => s.id === id);
-    if (script && isScriptCompleted(script.status)) {
-      // --- The script has been completed, nothing to do
-      return;
-    }
-
-    // --- Stop the script
-    const scriptInfo = this.runningScripts.get(id);
-    (async () => {
-      try {
-        await scriptInfo?.execTask;
-        script.status = "completed";
-        script.endTime = new Date();
-        const time = script.endTime.getTime() - script.startTime.getTime();
-        this.outputFn?.(
-          `Script ${script.scriptFileName} with ID ${script.id} completed in ${time}ms.`,
-          {
-            color: "green"
-          }
-        );
-      } catch (error) {
-        script.status = "execError";
-        script.error = error.message;
-        script.endTime = new Date();
-        const time = script.endTime.getTime() - script.startTime.getTime();
-        this.outputFn?.(
-          `Script ${script.scriptFileName} with ID ${
-            script.id
-          } failed: ${error.toString?.()} in ${time}ms.`,
-          {
-            color: "bright-red"
-          }
-        );
-        throw error;
-      } finally {
-        this.runningScripts.delete(id);
-        this.updateScriptsStatus(script);
-      }
-    })();
+    await scriptInfo?.execTask;
   }
 
   // --- Resolves the script contents from the module's name
@@ -253,33 +196,4 @@ export class EmuScriptRunner {
     }
     return null;
   }
-
-  private updateScriptsStatus (script: ScriptRunInfo): void {
-    const scripts = this.store.getState().scripts.slice();
-    let scriptIdx = scripts.findIndex(s => s.id === script.id);
-    if (scriptIdx >= 0) {
-      scripts[scriptIdx] = script;
-    }
-    this.store.dispatch(setScriptsStatusAction(scripts), "emu");
-  }
-}
-
-/**
- * Sends the output of a script to the IDE
- * @param text Text to send
- * @param options Additional options
- */
-async function sendScriptOutput (
-  text: string,
-  options?: Record<string, any>
-): Promise<void> {
-  const message: IdeDisplayOutputRequest = {
-    type: "IdeDisplayOutput",
-    pane: PANE_ID_SCRIPTIMG,
-    text,
-    color: "cyan",
-    writeLine: true,
-    ...options
-  };
-  await this.messenger.sendMessage(message);
 }
