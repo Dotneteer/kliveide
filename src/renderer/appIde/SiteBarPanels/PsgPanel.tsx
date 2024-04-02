@@ -3,10 +3,10 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import { EmuGetPsgStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
-import { PsgChipState } from "@emu/machines/zxSpectrum128/PsgChip";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 import styles from "./PsgPanel.module.scss";
+import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 const PsgPanel = () => {
   const { messenger } = useRendererContext();

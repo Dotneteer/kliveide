@@ -10,7 +10,7 @@
 }
 
 .header {
-  @include fix-height-panel(30px);
+  @include fix-height-panel(32px);
   flex-direction: row;
   align-items: center;
   padding-left: 4px;

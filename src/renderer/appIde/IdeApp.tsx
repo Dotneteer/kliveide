@@ -75,7 +75,11 @@ import {
   RunCodeCommand
 } from "./commands/CompilerCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
-import { SelectOutputPaneCommand } from "./commands/ToolCommands";
+import {
+  SelectOutputPaneCommand,
+  ShowDisassemblyCommand,
+  ShowMemoryCommand
+} from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
 import { IdeEventsHandler } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
@@ -91,8 +95,17 @@ import {
 import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { FirstStartDialog } from "./dialogs/FirstStartDialog";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
-import { CancelScriptCommand, DisplayScriptOutputCommand, RunScriptCommand } from "./commands/ScriptCommands";
-import { getCachedAppServices, getCachedStore, setCachedAppServices, setCachedStore } from "../CachedServices";
+import {
+  CancelScriptCommand,
+  DisplayScriptOutputCommand,
+  RunScriptCommand
+} from "./commands/ScriptCommands";
+import {
+  getCachedAppServices,
+  getCachedStore,
+  setCachedAppServices,
+  setCachedStore
+} from "../CachedServices";
 
 const IdeApp = () => {
   // --- Used services
@@ -286,6 +299,8 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new NavigateToDocumentCommand());
 
   cmdSrv.registerCommand(new SelectOutputPaneCommand());
+  cmdSrv.registerCommand(new ShowMemoryCommand());
+  cmdSrv.registerCommand(new ShowDisassemblyCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

@@ -64,7 +64,9 @@ export async function processMainToIdeMessages (
           {
             id: MEMORY_PANEL_ID,
             name: "Machine Memory",
-            type: MEMORY_EDITOR
+            type: MEMORY_EDITOR,
+            iconName: "memory-icon",
+            iconFill: "--console-ansi-bright-cyan"
           },
           undefined,
           false
@@ -77,15 +79,7 @@ export async function processMainToIdeMessages (
 
     case "IdeShowBankedMemory": {
       if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: BANKED_MEMORY_PANEL_ID,
-            name: "Machine Memory",
-            type: BANKED_MEMORY_EDITOR
-          },
-          undefined,
-          false
-        );
+        await ideCommandsService.executeCommand("show-memory");
       } else {
         await documentHubService.closeDocument(BANKED_MEMORY_PANEL_ID);
       }
@@ -94,15 +88,7 @@ export async function processMainToIdeMessages (
 
     case "IdeShowDisassembly": {
       if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: DISASSEMBLY_PANEL_ID,
-            name: "Z80 Disassembly",
-            type: DISASSEMBLY_EDITOR
-          },
-          undefined,
-          false
-        );
+        await ideCommandsService.executeCommand("show-memory");
       } else {
         await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }

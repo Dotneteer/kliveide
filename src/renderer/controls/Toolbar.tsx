@@ -123,7 +123,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         clicked={async () => {
           if (mayInjectCode && !!startOpt.cmd) {
             storeDispatch(setRestartTarget("project"));
-            const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+            const buildPane =
+              outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
             await ideCommandsService.executeCommand(startOpt.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
           } else {
@@ -383,6 +384,23 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             enable={kliveProjectLoaded}
             clicked={() => {
               dispatch(syncSourceBreakpointsAction(!syncSourceBps));
+            }}
+          />
+          <ToolbarSeparator />
+          <IconButton
+            iconName='memory-icon'
+            fill='orange'
+            title='Show Memory Panel'
+            clicked={async () => {
+              await ideCommandsService.executeCommand("show-memory");
+            }}
+          />
+          <IconButton
+            iconName='disassembly-icon'
+            fill='orange'
+            title='Show Z80 Disassembly Panel'
+            clicked={async () => {
+              await ideCommandsService.executeCommand("show-disass");
             }}
           />
         </>

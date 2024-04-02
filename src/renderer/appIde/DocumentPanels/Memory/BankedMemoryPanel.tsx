@@ -26,8 +26,9 @@ import classnames from "@renderer/utils/classnames";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useStateRefresh } from "@renderer/appIde/useStateRefresh";
-import { p } from "nextra/dist/types-c8e621b7";
+import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { LabelSeparator } from "@renderer/controls/Labels";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -84,7 +85,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
     viewState.current?.topIndex ?? 0
   );
   const [autoRefresh, setAutoRefresh] = useState(
-    viewState.current?.autoRefresh ?? false
+    viewState.current?.autoRefresh ?? true
   );
   const [viewMode, setViewMode] = useState<MemoryViewMode>(
     viewState.current?.viewMode ?? "full"
@@ -107,7 +108,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   const [bankLabel, setBankLabel] = useState(
     viewState.current?.bankLabel ?? true
   );
-  const [selectedBankLabel, setSelectedBankLabel] = useState<string>(null);
 
   // --- State of the memory view
   const refreshInProgress = useRef(false);
@@ -168,8 +168,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
       } else if (cachedRefreshState.current.viewMode === "ram") {
         partition = cachedRefreshState.current.ramBank ?? 0;
       }
-
-      console.log("partition", partition);
 
       // --- Get memory information
       const response = await messenger.sendMessage({
@@ -263,6 +261,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
 
   // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
   useInitializeAsync(async () => {
+    console.log("Initial refresh");
     await refreshMemoryView();
     setScrollVersion(scrollVersion + 1);
   });
@@ -281,7 +280,8 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          await refreshMemoryView();
+          console.log("Machine state refresh");
+          refreshMemoryView();
       }
     })();
   }, [machineState]);
@@ -294,7 +294,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   );
 
   const refreshView = () => {
-    if (autoRefresh) {
+    if (cachedRefreshState.current.autoRefresh) {
       refreshMemoryView();
     }
   };
@@ -345,10 +345,26 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div ref={headerRef} className={styles.header} tabIndex={-1}>
+        <LabeledText
+          label='Range:'
+          value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`}
+        />
+        <ToolbarSeparator small={true} />
+        <AddressInput
+          label='Go To:'
+          clearOnEnter={true}
+          onAddressSent={async address => {
+            setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
+            setScrollVersion(scrollVersion + 1);
+          }}
+        />
+        <LabelSeparator width={8} />
+        <ToolbarSeparator small={true} />
         <SmallIconButton
           iconName='refresh'
           title={"Refresh now"}
           clicked={async () => {
+            console.log("Manual refresh");
             refreshMemoryView();
             dispatch(setIdeStatusMessageAction("Memory view refreshed", true));
           }}
@@ -365,7 +381,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
             <ToolbarSeparator small={true} />
             <LabeledSwitch
               value={viewMode === "full"}
-              label='64K (0000-FFFF):'
+              label='64K View'
               title='Show the full 64K memory'
               clicked={v => {
                 setViewMode(v ? "full" : prevViewMode);
@@ -376,7 +392,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
               <>
                 <ToolbarSeparator small={true} />
                 <AddressInput
-                  label='Bank (0000-3FFF):'
+                  label='Bank:'
                   eightBit={true}
                   clearOnEnter={false}
                   initialValue={ramBank}
@@ -384,7 +400,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
                     setViewMode("ram");
                     setPrevViewMode(viewMode);
                     setRamBank(bank);
-                    setSelectedBankLabel(toHexa2(bank));
                     if (headerRef.current) headerRef.current.focus();
                     await refreshMemoryView();
                     setScrollVersion(scrollVersion + 1);
@@ -457,7 +472,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
                   showPartitions={showBanks && bankLabel}
                   partitionLabel={
                     viewMode !== "full"
-                      ? selectedBankLabel
+                      ? toHexa2(ramBank)
                       : partitionLabels.current?.[memoryItems[idx] >> 13]
                   }
                   address={memoryItems[idx]}

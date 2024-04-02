@@ -830,26 +830,8 @@ export function setupMenu (
     label: "IDE",
     submenu: [
       {
-        id: IDE_SHOW_MEMORY,
-        label: "Show Machine Memory",
-        type: "checkbox",
-        checked: volatileDocs[MEMORY_PANEL_ID],
-        click: async () => {
-          await sendFromMainToIde({
-            type: "IdeShowMemory",
-            show: !volatileDocs[MEMORY_PANEL_ID]
-          });
-          mainStore.dispatch(
-            setVolatileDocStateAction(
-              MEMORY_PANEL_ID,
-              !volatileDocs[MEMORY_PANEL_ID]
-            )
-          );
-        }
-      },
-      {
         id: IDE_SHOW_BANKED_MEMORY,
-        label: "Show Machine Memory (new)",
+        label: "Show Machine Memory",
         type: "checkbox",
         checked: volatileDocs[BANKED_MEMORY_PANEL_ID],
         click: async () => {
