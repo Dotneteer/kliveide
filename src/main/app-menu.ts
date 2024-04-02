@@ -50,6 +50,7 @@ import {
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
+  BANKED_MEMORY_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
   MEMORY_PANEL_ID
 } from "../common/state/common-ids";
@@ -106,6 +107,7 @@ const RESET_KEY_MAPPING = "reset_key_mapping";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
+const IDE_SHOW_BANKED_MEMORY = "show_banked:memory";
 const IDE_SHOW_DISASSEMBLY = "show_disassembly";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
@@ -841,6 +843,24 @@ export function setupMenu (
             setVolatileDocStateAction(
               MEMORY_PANEL_ID,
               !volatileDocs[MEMORY_PANEL_ID]
+            )
+          );
+        }
+      },
+      {
+        id: IDE_SHOW_BANKED_MEMORY,
+        label: "Show Machine Memory (new)",
+        type: "checkbox",
+        checked: volatileDocs[BANKED_MEMORY_PANEL_ID],
+        click: async () => {
+          await sendFromMainToIde({
+            type: "IdeShowBankedMemory",
+            show: !volatileDocs[BANKED_MEMORY_PANEL_ID]
+          });
+          mainStore.dispatch(
+            setVolatileDocStateAction(
+              BANKED_MEMORY_PANEL_ID,
+              !volatileDocs[BANKED_MEMORY_PANEL_ID]
             )
           );
         }

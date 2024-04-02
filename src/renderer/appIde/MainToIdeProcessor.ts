@@ -11,7 +11,9 @@ import {
   DISASSEMBLY_PANEL_ID,
   DISASSEMBLY_EDITOR,
   BASIC_PANEL_ID,
-  BASIC_EDITOR
+  BASIC_EDITOR,
+  BANKED_MEMORY_PANEL_ID,
+  BANKED_MEMORY_EDITOR
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
@@ -69,6 +71,23 @@ export async function processMainToIdeMessages (
         );
       } else {
         await documentHubService.closeDocument(MEMORY_PANEL_ID);
+      }
+      break;
+    }
+
+    case "IdeShowBankedMemory": {
+      if (message.show) {
+        await documentHubService.openDocument(
+          {
+            id: BANKED_MEMORY_PANEL_ID,
+            name: "Machine Memory",
+            type: BANKED_MEMORY_EDITOR
+          },
+          undefined,
+          false
+        );
+      } else {
+        await documentHubService.closeDocument(BANKED_MEMORY_PANEL_ID);
       }
       break;
     }

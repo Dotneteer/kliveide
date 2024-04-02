@@ -32,6 +32,11 @@ export interface IdeShowMemoryRequest extends MessageBase {
   show: boolean;
 }
 
+export interface IdeShowBankedMemoryRequest extends MessageBase {
+  type: "IdeShowBankedMemory";
+  show: boolean;
+}
+
 export interface IdeShowDisassemblyRequest extends MessageBase {
   type: "IdeShowDisassembly";
   show: boolean;

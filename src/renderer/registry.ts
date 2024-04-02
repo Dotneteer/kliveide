@@ -20,7 +20,8 @@ import {
   SPR_EDITOR,
   VID_VIEWER,
   STATIC_MEMORY_DUMP_VIEWER,
-  SCRIPT_OUTPUT_VIEWER
+  SCRIPT_OUTPUT_VIEWER,
+  BANKED_MEMORY_EDITOR
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -87,6 +88,7 @@ import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { isScriptCompleted } from "@common/utils/script-utils";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
+import { createBankedMemoryPanel } from "./appIde/DocumentPanels/Memory/BankedMemoryPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -241,6 +243,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
     id: MEMORY_EDITOR,
     renderer: createMemoryPanel,
+    icon: "memory-icon",
+    iconFill: "--console-ansi-bright-cyan"
+  },
+  {
+    id: BANKED_MEMORY_EDITOR,
+    renderer: createBankedMemoryPanel,
     icon: "memory-icon",
     iconFill: "--console-ansi-bright-cyan"
   },
