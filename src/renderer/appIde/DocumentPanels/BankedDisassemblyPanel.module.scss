@@ -27,7 +27,7 @@
   flex-grow: 0;
 }
 
-.memoryWrapper {
+.disassemblyWrapper {
   @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
@@ -36,11 +36,9 @@
 
 .item {
   display: flex;
-  flex-direction: column;
-
-  &.twoSections {
-    flex-direction: row;
-  }
+  flex-direction: row;
+  align-items: center;
+  height: 18px;
 
   &.even {
     background: var(--bgcolor-disass-even-row);
@@ -51,44 +49,7 @@
   }
 }
 
-.dumpSection {
-  display: flex;
-  flex-direction: row;
-  padding: 2px 0;
-}
-
-.value {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-value);
-  justify-content: center;
-  width: 20px;
-
-  &:hover {
-    background: #606060;
-    opacity: 0.9;
-  }
-
-  &.pointed {
-    background: var(--bgcolor-memory-pointed);
-    color: var(--color-memory-pointed);
-  }
-
-  &.pcPointed {
-    background: var(--bgcolor-memory-pc-pointed);
-    color: var(--color-memory-pointed);
-  }
-}
-
-.char {
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  color: var(--color-secondary-label);
-
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-    opacity: 0.9;
-  }
+.iconPlaceholder {
+  width: 16px;
+  height: 16px;
 }

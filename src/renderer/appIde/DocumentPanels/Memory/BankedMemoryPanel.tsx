@@ -406,6 +406,12 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
                     setPrevViewMode(viewMode);
                     setRamBank(bank);
                     if (headerRef.current) headerRef.current.focus();
+                    cachedRefreshState.current = {
+                      autoRefresh,
+                      viewMode: "ram",
+                      romPage,
+                      ramBank: bank
+                    };
                     await refreshMemoryView();
                     setScrollVersion(scrollVersion + 1);
                   }}
