@@ -28,7 +28,6 @@ export const AddressInput = ({
     if (!mounted.current) {
       mounted.current = true;
       if (inputRef.current && initialValue !== undefined) {
-        console.log("change to initial value", initialValue)
         inputRef.current.value =
           radix === 16
             ? eightBit

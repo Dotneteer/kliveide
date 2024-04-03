@@ -8,6 +8,7 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import {
+  CT_DISASSEMBLER,
   CT_DISASSEMBLER_VIEW,
   MF_BANK,
   MF_ROM
@@ -48,8 +49,6 @@ import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
-import { update } from "lodash";
-import { userAgent } from "next/server";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -147,10 +146,10 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   const [currentRomPage, setCurrentRomPage] = useState<number>(0);
   const [currentRamBank, setCurrentRamBank] = useState<number>(0);
 
-  const [segmentedDisassembly, setSegmentedDisassembly] = useState(true);
-  const [customDisassembly, setCustomDisassembly] = useState<any>();
+  const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
 
   const [pausedPc, setPausedPc] = useState(0);
+
   // --- Internal state values for disassembly
   const cachedItems = useRef<DisassemblyItem[]>([]);
   const breakpoints = useRef<BreakpointInfo[]>();
@@ -166,7 +165,6 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
 
   const injectionVersion = useSelector(s => s.compilation?.injectionVersion);
   const bpsVersion = useSelector(s => s.emulatorState?.breakpointsVersion);
-  const partitionLabels = useRef<string[]>([]);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -238,8 +236,6 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
         }
       }
 
-      console.log("partition", partition, cachedRefreshState.current.viewMode);
-
       const getMemoryResponse = await messenger.sendMessage({
         type: "EmuGetMemory",
         partition
@@ -269,7 +265,7 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
               MemorySectionType.Disassemble
             )
           );
-        } else if (segmentedDisassembly) {
+        } else if (showRamOption || showScreenOption) {
           // --- Use the memory segments according to the "ram" and "screen" flags
           memSections.push(
             new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
@@ -305,11 +301,24 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
             noLabelPrefix: false
           }
         );
+
+        // --- Set up partition offset
+        if (partition !== undefined && !autoRefresh) {
+          let page = disassRange ? parseInt(disassRange, 10) : 0;
+          if (isNaN(page)) {
+            page = 0;
+          }
+          disassembler.setAddressOffset(page * 0x4000);
+        }
+
         if (customDisassembly && typeof customDisassembly === "function") {
           const customPlugin = customDisassembly() as ICustomDisassembler;
           disassembler.setCustomDisassembler(customPlugin);
         }
-        const output = await disassembler.disassemble(0x0000, 0xffff);
+        const output = await disassembler.disassemble(
+          0x0000,
+          (viewMode === "full" || autoRefresh) ? 0xffff : 0x3fff
+        );
         const items = output.outputItems;
         cachedItems.current = items;
 
@@ -320,7 +329,7 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
         }
 
         // --- Scroll to the top when following PC
-        if (cachedRefreshState.current.autoRefresh) {
+        if (cachedRefreshState.current.autoRefresh && items && items.length > 0) {
           setTopAddress(items[0].address);
           setScrollVersion(scrollVersion + 1);
         }
@@ -346,7 +355,15 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   // --- Refresh when the follow PC option changes
   useEffect(() => {
     refreshDisassembly();
-  }, [autoRefresh] );
+  }, [
+    autoRefresh,
+    bpsVersion,
+    injectionVersion,
+    viewMode,
+    disassRange,
+    romPage,
+    ramBank
+  ]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, async () => {
@@ -355,13 +372,27 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
     }
   });
 
+  // --- Scroll to the desired position whenever the scroll index changes
+  useEffect(() => {
+    if (cachedItems.current) {
+      const idx = cachedItems.current.findIndex(
+        di => di.address >= (topAddress ?? 0)
+      );
+      if (idx >= 0) {
+        vlApi.current?.scrollToIndex(idx, {
+          align: "start"
+        });
+      }
+    }
+  }, [scrollVersion]);
+
   const OptionsBar = () => {
     return (
       <>
-        {viewMode !== "full" && (
+        {!autoRefresh && viewMode !== "full" && (
           <>
             <LabelSeparator width={8} />
-            <Label text='Range:' />
+            <Label text='Bank range:' />
             <LabelSeparator width={8} />
             <Dropdown
               placeholder='Size...'
@@ -445,21 +476,24 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
     );
   };
 
+  console.log(cachedItems.current.length);
+
   return (
     <div className={styles.panel}>
       <div ref={headerRef} className={styles.header} tabIndex={-1}>
         <LabelSeparator width={4} />
         <LabeledText
           label='Display:'
-          value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`}
+          value={`${toHexa4(firstAddr)}-${toHexa4(lastAddr)}`}
         />
         <ToolbarSeparator small={true} />
         <AddressInput
           label='Go To:'
           clearOnEnter={true}
           onAddressSent={async address => {
-            // TODO: Implement this
+            setTopAddress(address);
             setScrollVersion(scrollVersion + 1);
+            if (headerRef.current) headerRef.current.focus();
           }}
         />
         <LabelSeparator width={8} />
@@ -517,14 +551,8 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
                     setViewMode("ram");
                     setPrevViewMode(viewMode);
                     setRamBank(bank);
+                    setTopAddress(0);
                     if (headerRef.current) headerRef.current.focus();
-                    cachedRefreshState.current = {
-                      autoRefresh,
-                      viewMode: "ram",
-                      romPage,
-                      ramBank: bank
-                    };
-                    await refreshDisassembly();
                     setScrollVersion(scrollVersion + 1);
                   }}
                 />
