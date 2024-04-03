@@ -23,7 +23,7 @@ import { __DARWIN__ } from "../../electron/electron-utils";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { PANE_ID_BUILD } from "@common/integration/constants";
-import { BANKED_DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
+import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 
 type Props = {
   ide: boolean;
@@ -406,9 +406,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             iconName='disassembly-icon'
             fill='orange'
             title='Show Z80 Disassembly Panel'
-            selected={volatileDocs?.[BANKED_DISASSEMBLY_PANEL_ID]}
+            selected={volatileDocs?.[DISASSEMBLY_PANEL_ID]}
             clicked={async () => {
-              if (volatileDocs?.[BANKED_DISASSEMBLY_PANEL_ID]) {
+              if (volatileDocs?.[DISASSEMBLY_PANEL_ID]) {
                 await ideCommandsService.executeCommand("hide-disass");
               } else {
                 await ideCommandsService.executeCommand("show-disass");

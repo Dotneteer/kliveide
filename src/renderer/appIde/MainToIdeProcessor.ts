@@ -6,11 +6,10 @@ import {
 } from "@messaging/messages-core";
 import { AppState } from "@state/AppState";
 import {
-  DISASSEMBLY_PANEL_ID,
   BASIC_PANEL_ID,
   BASIC_EDITOR,
   MEMORY_PANEL_ID,
-  BANKED_DISASSEMBLY_PANEL_ID,
+  DISASSEMBLY_PANEL_ID,
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
@@ -77,7 +76,7 @@ export async function processMainToIdeMessages (
       if (message.show) {
         await ideCommandsService.executeCommand("show-disass");
       } else {
-        await documentHubService.closeDocument(BANKED_DISASSEMBLY_PANEL_ID);
+        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }
       break;
     }

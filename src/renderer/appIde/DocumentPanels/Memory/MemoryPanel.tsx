@@ -1,4 +1,4 @@
-import styles from "./BankedMemoryPanel.module.scss";
+import styles from "./MemoryPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";

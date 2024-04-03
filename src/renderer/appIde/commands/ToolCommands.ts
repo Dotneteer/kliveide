@@ -18,8 +18,8 @@ import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import {
   MEMORY_EDITOR,
   MEMORY_PANEL_ID,
-  BANKED_DISASSEMBLY_PANEL_ID,
-  BANKED_DISASSEMBLY_EDITOR
+  DISASSEMBLY_PANEL_ID,
+  DISASSEMBLY_EDITOR
 } from "@common/state/common-ids";
 
 export class SelectOutputPaneCommand extends IdeCommandBase {
@@ -121,14 +121,14 @@ export class ShowDisassemblyCommand extends CommandWithNoArgBase {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
-    if (documentHubService.isOpen(BANKED_DISASSEMBLY_PANEL_ID)) {
-      documentHubService.setActiveDocument(BANKED_DISASSEMBLY_PANEL_ID);
+    if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
+      documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
     } else {
       await documentHubService.openDocument(
         {
-          id: BANKED_DISASSEMBLY_PANEL_ID,
+          id: DISASSEMBLY_PANEL_ID,
           name: "Z80 Disassembly",
-          type: BANKED_DISASSEMBLY_EDITOR,
+          type: DISASSEMBLY_EDITOR,
           iconName: "disassembly-icon",
           iconFill: "--console-ansi-bright-cyan"
         },
@@ -136,7 +136,7 @@ export class ShowDisassemblyCommand extends CommandWithNoArgBase {
         false
       );
       context.store.dispatch(
-        setVolatileDocStateAction(BANKED_DISASSEMBLY_PANEL_ID, true),
+        setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, true),
         "ide"
       );
     }
@@ -152,9 +152,9 @@ export class HideDisassemblyCommand extends CommandWithNoArgBase {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
-    await documentHubService.closeDocument(BANKED_DISASSEMBLY_PANEL_ID);
+    await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
     context.store.dispatch(
-      setVolatileDocStateAction(BANKED_DISASSEMBLY_PANEL_ID, false),
+      setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, false),
       "ide"
     );
     return commandSuccess;
