@@ -6,12 +6,10 @@ import {
 } from "@messaging/messages-core";
 import { AppState } from "@state/AppState";
 import {
-  MEMORY_PANEL_ID,
-  MEMORY_EDITOR,
-  DISASSEMBLY_PANEL_ID,
-  DISASSEMBLY_EDITOR,
   BASIC_PANEL_ID,
-  BASIC_EDITOR
+  BASIC_EDITOR,
+  MEMORY_PANEL_ID,
+  DISASSEMBLY_PANEL_ID,
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
@@ -58,15 +56,7 @@ export async function processMainToIdeMessages (
 
     case "IdeShowMemory": {
       if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: MEMORY_PANEL_ID,
-            name: "Machine Memory",
-            type: MEMORY_EDITOR
-          },
-          undefined,
-          false
-        );
+        await ideCommandsService.executeCommand("show-memory");
       } else {
         await documentHubService.closeDocument(MEMORY_PANEL_ID);
       }
@@ -75,15 +65,16 @@ export async function processMainToIdeMessages (
 
     case "IdeShowDisassembly": {
       if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: DISASSEMBLY_PANEL_ID,
-            name: "Z80 Disassembly",
-            type: DISASSEMBLY_EDITOR
-          },
-          undefined,
-          false
-        );
+        await ideCommandsService.executeCommand("show-disass");
+      } else {
+        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
+      }
+      break;
+    }
+
+    case "IdeShowBankedDisassembly": {
+      if (message.show) {
+        await ideCommandsService.executeCommand("show-disass");
       } else {
         await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }

@@ -24,6 +24,7 @@ export class Z80Disassembler {
   private _opCode = 0;
   private _indexMode = 0;
   private _overflow = false;
+  private _addressOffset = 0;
 
   /**
    * Initializes a new instance of the disassembler
@@ -39,6 +40,14 @@ export class Z80Disassembler {
   ) {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
+  }
+
+  /**
+   * Sets the address offset for the disassembly
+   * @param addressOffset Address offset to use
+   */
+  setAddressOffset (addressOffset: number): void {
+    this._addressOffset = addressOffset;
   }
 
   /**
@@ -404,7 +413,7 @@ export class Z80Disassembler {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
       partition: this.partitionLabels?.[address >> 13] ?? undefined,
-      address,
+      address: (address + this._addressOffset) & 0xffff,
       opCodes: this._currentOpCodes,
       instruction: "nop"
     };
@@ -457,7 +466,7 @@ export class Z80Disassembler {
       case "r":
         // --- #r: relative label (8 bit offset)
         var distance = this._fetch();
-        var labelAddr = (this._opOffset + 2 + toSbyte(distance)) & 0xffff;
+        var labelAddr = (this._addressOffset + this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
         replacement = `${
           this.options?.noLabelPrefix ?? false ? "$" : "L"
@@ -557,103 +566,7 @@ export class Z80Disassembler {
 const q8Regs: string[] = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
 
 /**
- * Disassembly keywords that cannot be used as label names or other symbols
- */
-const disasmKeywords: string[] = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "H",
-  "L",
-  "F",
-  "BC",
-  "DE",
-  "HL",
-  "AF",
-  "IX",
-  "IY",
-  "SP",
-  "IR",
-  "PC",
-  "NZ",
-  "Z",
-  "NC",
-  "PO",
-  "PE",
-  "P",
-  "M",
-  "ADD",
-  "ADC",
-  "AND",
-  "BIT",
-  "CALL",
-  "CCF",
-  "CP",
-  "CPD",
-  "CPDR",
-  "CPI",
-  "CPIR",
-  "CPL",
-  "DAA",
-  "DEC",
-  "DI",
-  "DJNZ",
-  "EI",
-  "EX",
-  "EXX",
-  "LD",
-  "LDD",
-  "LDDR",
-  "LDI",
-  "LDIR",
-  "IM",
-  "IN",
-  "INC",
-  "IND",
-  "INDR",
-  "INI",
-  "INIR",
-  "JR",
-  "JP",
-  "NEG",
-  "OR",
-  "OTDR",
-  "OTIR",
-  "OUT",
-  "OUTI",
-  "OUTD",
-  "POP",
-  "PUSH",
-  "RES",
-  "RET",
-  "RETI",
-  "RETN",
-  "RL",
-  "RLA",
-  "RLCA",
-  "RLC",
-  "RLD",
-  "RR",
-  "RRA",
-  "RRC",
-  "RRCA",
-  "RRD",
-  "RST",
-  "SBC",
-  "SCF",
-  "SET",
-  "SLA",
-  "SLL",
-  "SRA",
-  "SRL",
-  "SUB",
-  "XOR"
-];
-
-/**
- * Disassembly stumps for standard instrcutions
+ * Disassembly stumps for standard instructions
  */
 const standardInstructions: string[] = [
   /* 0x00 */ "nop",

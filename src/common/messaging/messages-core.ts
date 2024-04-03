@@ -108,11 +108,12 @@ import {
   IdeShowBasicRequest,
   IdeShowDialogRequest,
   IdeShowDisassemblyRequest,
-  IdeShowMemoryRequest,
   IdeExecuteCommandRequest,
   IdeExecuteCommandResponse,
   IdeSaveAllBeforeQuitRequest,
-  IdeScriptOutputRequest
+  IdeScriptOutputRequest,
+  IdeShowMemoryRequest,
+  IdeShowBankedDisassemblyRequest
 } from "./any-to-ide";
 
 /**
@@ -240,6 +241,7 @@ export type RequestMessage =
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
+  | IdeShowBankedDisassemblyRequest
   | IdeShowBasicRequest
   | IdeShowDialogRequest
   | IdeExecuteCommandRequest

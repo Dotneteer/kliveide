@@ -9,11 +9,23 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { outputPaneRegistry } from "@renderer/registry";
-import { activateOutputPaneAction, activateToolAction } from "@state/actions";
+import {
+  activateOutputPaneAction,
+  activateToolAction,
+  setVolatileDocStateAction
+} from "@state/actions";
+import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
+import {
+  MEMORY_EDITOR,
+  MEMORY_PANEL_ID,
+  DISASSEMBLY_PANEL_ID,
+  DISASSEMBLY_EDITOR
+} from "@common/state/common-ids";
 
 export class SelectOutputPaneCommand extends IdeCommandBase {
   readonly id = "outp";
-  readonly description = "Selects the specified output panel and navigates there";
+  readonly description =
+    "Selects the specified output panel and navigates there";
   readonly usage = "outp panelId";
 
   private paneId: string | undefined;
@@ -52,3 +64,100 @@ export class SelectOutputPaneCommand extends IdeCommandBase {
     return commandSuccess;
   }
 }
+
+export class ShowMemoryCommand extends CommandWithNoArgBase {
+  readonly id = "show-memory";
+  readonly description = "Displays the machine memory panel";
+  readonly usage = "show-memory";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    if (documentHubService.isOpen(MEMORY_PANEL_ID)) {
+      documentHubService.setActiveDocument(MEMORY_PANEL_ID);
+    } else {
+      await documentHubService.openDocument(
+        {
+          id: MEMORY_PANEL_ID,
+          name: "Machine Memory",
+          type: MEMORY_EDITOR,
+          iconName: "memory-icon",
+          iconFill: "--console-ansi-bright-cyan"
+        },
+        undefined,
+        false
+      );
+      context.store.dispatch(
+        setVolatileDocStateAction(MEMORY_PANEL_ID, true),
+        "ide"
+      );
+    }
+    return commandSuccess;
+  }
+}
+
+export class HideMemoryCommand extends CommandWithNoArgBase {
+  readonly id = "hide-memory";
+  readonly description = "Hides the machine memory panel";
+  readonly usage = "hide-memory";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(MEMORY_PANEL_ID);
+    context.store.dispatch(
+      setVolatileDocStateAction(MEMORY_PANEL_ID, false),
+      "ide"
+    );
+    return commandSuccess;
+  }
+}
+
+export class ShowDisassemblyCommand extends CommandWithNoArgBase {
+  readonly id = "show-disass";
+  readonly description = "Displays the Z80 disassembly panel";
+  readonly usage = "show-disass";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
+      documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
+    } else {
+      await documentHubService.openDocument(
+        {
+          id: DISASSEMBLY_PANEL_ID,
+          name: "Z80 Disassembly",
+          type: DISASSEMBLY_EDITOR,
+          iconName: "disassembly-icon",
+          iconFill: "--console-ansi-bright-cyan"
+        },
+        undefined,
+        false
+      );
+      context.store.dispatch(
+        setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, true),
+        "ide"
+      );
+    }
+    return commandSuccess;
+  }
+}
+
+export class HideDisassemblyCommand extends CommandWithNoArgBase {
+  readonly id = "hide-disass";
+  readonly description = "Hides the Z80 disassembly panel";
+  readonly usage = "hide-disass";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
+    context.store.dispatch(
+      setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, false),
+      "ide"
+    );
+    return commandSuccess;
+  }
+}
+
