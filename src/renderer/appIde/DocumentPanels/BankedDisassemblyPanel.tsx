@@ -7,14 +7,36 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import {
+  CT_DISASSEMBLER_VIEW,
+  MF_BANK,
+  MF_ROM
+} from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { Label, LabelSeparator } from "@renderer/controls/Labels";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
+import { SmallIconButton } from "@renderer/controls/IconButton";
+import { setIdeStatusMessageAction } from "@common/state/actions";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import {
+  reportMessagingError,
+  reportUnexpectedMessageType
+} from "@renderer/reportError";
+import {
+  DisassemblyItem,
+  MemorySection,
+  MemorySectionType
+} from "../z80-disassembler/disassembly-helper";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
+import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
+import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import { LabeledGroup } from "@renderer/controls/LabeledGroup";
+import { Dropdown } from "@renderer/controls/Dropdown";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -28,6 +50,7 @@ type BankedMemoryPanelViewState = {
   bankLabel?: boolean;
   ram?: boolean;
   screen?: boolean;
+  disassRange?: string;
 };
 
 export type CachedRefreshState = {
@@ -36,6 +59,13 @@ export type CachedRefreshState = {
   romPage: number;
   ramBank: number;
 };
+
+const Bank16KOptions = [
+  { value: "0", label: "0000-3FFF" },
+  { value: "1", label: "4000-7FFF" },
+  { value: "2", label: "8000-BFFF" },
+  { value: "3", label: "C000-FFFF" }
+];
 
 const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   // --- Get the services used in this component
@@ -53,6 +83,11 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   const showBanks = ramBanks > 0;
   const allowBankInput = ramBanks > 8;
   const allowViews = showBanks || showRoms;
+  const showRamOption =
+    machineInfo.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showRamOption ?? true;
+  const showScreenOption =
+    machineInfo.toolInfo?.[CT_DISASSEMBLER_VIEW]?.showScreenOption ?? true;
+
   const headerRef = useRef<HTMLDivElement>(null);
 
   // --- Create a list of number range
@@ -67,6 +102,7 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
     ) as BankedMemoryPanelViewState) ?? {}
   );
 
+  // --- View state
   const [topAddress, setTopAddress] = useState<number>(
     viewState.current?.topAddress ?? 0
   );
@@ -85,21 +121,35 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   const [ramBank, setRamBank] = useState<number>(
     viewState.current?.ramBank ?? 0
   );
-  const [currentRomPage, setCurrentRomPage] = useState<number>(0);
-  const [currentRamBank, setCurrentRamBank] = useState<number>(0);
   const [bankLabel, setBankLabel] = useState(
     viewState.current?.bankLabel ?? true
   );
+  const [ram, setRam] = useState(viewState.current?.ram ?? true);
+  const [screen, setScreen] = useState(viewState.current?.screen ?? true);
+  const [disassRange, setDisassRange] = useState((viewState.current?.disassRange ?? 0).toString()); 
+
+  // --- ULA-related state
+  const [currentRomPage, setCurrentRomPage] = useState<number>(0);
+  const [currentRamBank, setCurrentRamBank] = useState<number>(0);
+
+  const [segmentedDisassembly, setSegmentedDisassembly] = useState(true);
+  const [customDisassembly, setCustomDisassembly] = useState<any>();
+
+  const [pausedPc, setPausedPc] = useState(0);
+  // --- Internal state values for disassembly
+  const cachedItems = useRef<DisassemblyItem[]>([]);
+  const breakpoints = useRef<BreakpointInfo[]>();
+  const vlApi = useRef<VirtualizedListApi>(null);
+
+  const isRefreshing = useRef(false);
+  const [scrollVersion, setScrollVersion] = useState(0);
+  const [viewVersion, setViewVersion] = useState(0);
 
   // --- State of the memory view
-  const refreshInProgress = useRef(false);
-  const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
-  const [memoryItems, setMemoryItems] = useState<number[]>([]);
-  const cachedItems = useRef<number[]>([]);
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const [firstAddr, setFirstAddr] = useState(0);
+  const [lastAddr, setLastAddr] = useState(0);
+
   const partitionLabels = useRef<string[]>([]);
-  const pointedRegs = useRef<Record<number, string>>({});
-  const [scrollVersion, setScrollVersion] = useState(1);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -112,15 +162,17 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
-      topAddress: topAddress,
+      topAddress,
       autoRefresh,
       viewMode,
       prevViewMode,
       romPage,
       ramBank,
-      bankLabel
+      bankLabel,
+      ram,
+      screen,
+      disassRange
     };
-    console.log("Saving view state", mergedState);
     documentHubService.saveActiveDocumentState(mergedState);
   };
 
@@ -140,7 +192,10 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
     prevViewMode,
     romPage,
     ramBank,
-    bankLabel
+    bankLabel,
+    ram,
+    screen,
+    disassRange
   ]);
 
   // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
@@ -148,19 +203,207 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
     setScrollVersion(scrollVersion + 1);
   });
 
-  // --- Scroll to the desired position whenever the scroll index changes
-  useEffect(() => {
-    if (!memoryItems.length) return;
-    vlApi.current?.scrollToIndex(Math.floor(topAddress), {
-      align: "start"
-    });
-  }, [scrollVersion]);
+  // --- Refresh the disassembly view
+  // --- This function refreshes the disassembly
+  const refreshDisassembly = async () => {
+    if (isRefreshing.current) return;
+
+    // --- Obtain the memory contents
+    isRefreshing.current = true;
+    try {
+      let partition: number | undefined;
+      if (!cachedRefreshState.current.autoRefresh) {
+        if (cachedRefreshState.current.viewMode === "rom") {
+          partition = -(cachedRefreshState.current.romPage + 1);
+        } else if (cachedRefreshState.current.viewMode === "ram") {
+          partition = cachedRefreshState.current.ramBank ?? 0;
+        }
+      }
+      const getMemoryResponse = await messenger.sendMessage({
+        type: "EmuGetMemory",
+        partition
+      });
+      if (getMemoryResponse.type === "ErrorResponse") {
+        reportMessagingError(
+          `EmuGetMemory request failed: ${getMemoryResponse.message}`
+        );
+      } else if (getMemoryResponse.type !== "EmuGetMemoryResponse") {
+        reportUnexpectedMessageType(getMemoryResponse.type);
+      } else {
+        const memory = getMemoryResponse.memory;
+        setPausedPc(getMemoryResponse.pc);
+        breakpoints.current = getMemoryResponse.memBreakpoints;
+        setCurrentRomPage(-(getMemoryResponse.selectedRom ?? 0) - 1);
+        setCurrentRamBank(getMemoryResponse.selectedBank ?? 0);
+
+        // --- Specify memory sections to disassemble
+        const memSections: MemorySection[] = [];
+
+        if (cachedRefreshState.current.autoRefresh) {
+          // --- Disassemble only one KB from the current PC value
+          memSections.push(
+            new MemorySection(
+              getMemoryResponse.pc,
+              (getMemoryResponse.pc + 1024) & 0xffff,
+              MemorySectionType.Disassemble
+            )
+          );
+        } else if (segmentedDisassembly) {
+          // --- Use the memory segments according to the "ram" and "screen" flags
+          memSections.push(
+            new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble)
+          );
+          if (ram) {
+            if (screen) {
+              memSections.push(
+                new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble)
+              );
+            } else {
+              memSections.push(
+                new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble)
+              );
+            }
+          } else if (screen) {
+            memSections.push(
+              new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble)
+            );
+          }
+        } else {
+          // --- Disassemble the whole memory
+          memSections.push(
+            new MemorySection(0x0000, 0xffff, MemorySectionType.Disassemble)
+          );
+        }
+
+        // --- Disassemble the specified memory segments
+        const disassembler = new Z80Disassembler(
+          memSections,
+          memory,
+          getMemoryResponse.partitionLabels,
+          {
+            noLabelPrefix: false
+          }
+        );
+        if (customDisassembly && typeof customDisassembly === "function") {
+          const customPlugin = customDisassembly() as ICustomDisassembler;
+          disassembler.setCustomDisassembler(customPlugin);
+        }
+        const output = await disassembler.disassemble(0x0000, 0xffff);
+        const items = output.outputItems;
+        cachedItems.current = items;
+
+        // --- Display the current address range
+        if (items.length > 0) {
+          setFirstAddr(items[0].address);
+          setLastAddr(items[items.length - 1].address);
+        }
+
+        // --- Scroll to the top when following PC
+        if (cachedRefreshState.current.autoRefresh) {
+          setTopAddress(items[0].address);
+          setScrollVersion(scrollVersion + 1);
+        }
+      }
+    } finally {
+      isRefreshing.current = false;
+      setViewVersion(viewVersion + 1);
+    }
+  };
+
+  const OptionsBar = () => {
+    return (
+      <>
+        {viewMode !== "full" && (
+          <>
+            <LabelSeparator width={8} />
+            <Label text="Range:" />
+            <LabelSeparator width={8} />
+            <Dropdown
+              placeholder='Size...'
+              options={Bank16KOptions}
+              value={disassRange}
+              width={120}
+              iconSize={18}
+              fontSize='0.8rem'
+              onSelectionChanged={async option => {
+                setDisassRange(option);
+              }}
+            />
+            <LabelSeparator width={8} />
+            <ToolbarSeparator small={true} />
+          </>
+        )}
+        {showRoms && viewMode !== "full" && (
+          <>
+            <LabeledGroup
+              label='ROM: '
+              title='Select the ROM to display'
+              values={range(0, romPages - 1)}
+              marked={currentRomPage}
+              selected={viewMode === "rom" ? romPage : -1}
+              clicked={v => {
+                setViewMode("rom");
+                setPrevViewMode(viewMode);
+                setRomPage(v);
+              }}
+            />
+            <ToolbarSeparator small={true} />
+            <LabeledGroup
+              label='RAM Bank: '
+              title='Select the RAM Bank to display'
+              values={range(0, ramBanks - 1)}
+              marked={currentRamBank}
+              selected={viewMode === "ram" ? ramBank : -1}
+              clicked={v => {
+                setViewMode("ram");
+                setPrevViewMode(viewMode), setRamBank(v);
+              }}
+            />
+          </>
+        )}
+        {showRamOption && viewMode === "full" && (
+          <>
+            <LabeledSwitch
+              value={ram}
+              label='RAM:'
+              title='Disasseble RAM?'
+              clicked={setRam}
+            />
+            <ToolbarSeparator small={true} />
+          </>
+        )}
+        {showScreenOption && viewMode === "full" && (
+          <>
+            <LabeledSwitch
+              value={screen}
+              label='Screen:'
+              title='Disassemble screen?'
+              clicked={setScreen}
+            />
+            <ToolbarSeparator small={true} />
+          </>
+        )}
+        {allowViews && (
+          <>
+            {viewMode !== "full" && showScreenOption && <ToolbarSeparator small={true} />}
+            <LabeledSwitch
+              value={bankLabel}
+              label='Bank Label:'
+              title='Display bank label information?'
+              clicked={setBankLabel}
+            />
+          </>
+        )}
+      </>
+    );
+  };
 
   return (
     <div className={styles.panel}>
       <div ref={headerRef} className={styles.header} tabIndex={-1}>
-      <LabeledText
-          label='Range:'
+        <LabelSeparator width={4} />
+        <LabeledText
+          label='Display:'
           value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`}
         />
         <ToolbarSeparator small={true} />
@@ -173,10 +416,77 @@ const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
           }}
         />
         <LabelSeparator width={8} />
+        <ToolbarSeparator small={true} />
+        <SmallIconButton
+          iconName='refresh'
+          title={"Refresh now"}
+          clicked={async () => {
+            refreshDisassembly();
+            dispatch(setIdeStatusMessageAction("Disassembly refreshed", true));
+          }}
+        />
+        <SmallIconButton
+          iconName={
+            pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"
+          }
+          title={"Go to the PC address"}
+          enable={
+            machineState === MachineControllerState.Paused ||
+            machineState === MachineControllerState.Stopped
+          }
+          clicked={() => {
+            setTopAddress(pausedPc);
+            setScrollVersion(scrollVersion + 1);
+          }}
+        />
+        <ToolbarSeparator small={true} />
+        <LabeledSwitch
+          value={autoRefresh}
+          label='Follow PC:'
+          title='Follow the changes of PC'
+          clicked={setAutoRefresh}
+        />
+        {allowViews && (
+          <>
+            <ToolbarSeparator small={true} />
+            <LabeledSwitch
+              value={viewMode === "full"}
+              label='64K View'
+              title='Show the full 64K memory'
+              clicked={v => {
+                setViewMode(v ? "full" : prevViewMode);
+                setPrevViewMode(v ? viewMode : "full");
+              }}
+            />
+            {allowBankInput && viewMode !== "full" && (
+              <>
+                <ToolbarSeparator small={true} />
+                <AddressInput
+                  label='Bank:'
+                  eightBit={true}
+                  clearOnEnter={false}
+                  initialValue={ramBank}
+                  onAddressSent={async bank => {
+                    setViewMode("ram");
+                    setPrevViewMode(viewMode);
+                    setRamBank(bank);
+                    if (headerRef.current) headerRef.current.focus();
+                    await refreshDisassembly();
+                    setScrollVersion(scrollVersion + 1);
+                  }}
+                />
+              </>
+            )}
+          </>
+        )}
       </div>
-      <div className={styles.memoryWrapper}>
-        Disassembly view
-      </div>
+      {allowViews && (
+        <div className={styles.header}>
+          <OptionsBar />
+        </div>
+      )}
+      <div className={styles.headerSeparator} />
+      <div className={styles.memoryWrapper}>Disassembly view</div>
     </div>
   );
 };

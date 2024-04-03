@@ -13,6 +13,8 @@ type Props = {
   options: OptionProps[];
   value?: string;
   width?: number;
+  iconSize?: number;
+  fontSize?: string;
   onSelectionChanged?: (
     value: string
   ) => boolean | void | Promise<boolean | void>;
@@ -23,6 +25,8 @@ export const Dropdown = ({
   options,
   value,
   width,
+  iconSize = 20,
+  fontSize,
   onSelectionChanged
 }: Props) => {
   const [showMenu, setShowMenu] = useState(false);
@@ -71,7 +75,7 @@ export const Dropdown = ({
   return (
     <div
       className={styles.dropdownContainer}
-      style={{ width }}
+      style={{ width, fontSize }}
       tabIndex={-1}
       onBlur={() => setShowMenu(false)}
     >
@@ -81,7 +85,7 @@ export const Dropdown = ({
         </div>
         <div className={styles.dropdownTools}>
           <div className={styles.dropdownTool}>
-            <Icon iconName='chevron-down' fill='--color-command-icon' />
+            <Icon iconName='chevron-down' fill='--color-command-icon' width={iconSize} height={iconSize} />
           </div>
         </div>
       </div>

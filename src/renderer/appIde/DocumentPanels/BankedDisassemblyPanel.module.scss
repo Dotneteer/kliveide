@@ -19,6 +19,14 @@
   outline: none;
 }
 
+.headerSeparator {
+  @include fix-height-panel(4px);
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
 .memoryWrapper {
   @include fill-parent-flex;
   box-sizing: border-box;

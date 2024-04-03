@@ -11,7 +11,7 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MF_BANK, MF_ROM, MF_ULA } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
@@ -62,6 +62,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   const machineId = useSelector(s => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
   const romPages = machineInfo?.features?.[MF_ROM] ?? 0;
+  const hasUla = machineInfo?.features?.[MF_ULA] ?? false;
   const showRoms = romPages > 0;
   const ramBanks = machineInfo?.features?.[MF_BANK] ?? 0;
   const showBanks = ramBanks > 0;
@@ -81,6 +82,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
     ) as BankedMemoryPanelViewState) ?? {}
   );
 
+  // --- View state variables
   const [topIndex, setTopIndex] = useState<number>(
     viewState.current?.topIndex ?? 0
   );
@@ -99,15 +101,19 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   const [ramBank, setRamBank] = useState<number>(
     viewState.current?.ramBank ?? 0
   );
+  const [bankLabel, setBankLabel] = useState(
+    viewState.current?.bankLabel ?? true
+  );
+
+  // --- ULA-related state
   const [currentRomPage, setCurrentRomPage] = useState<number>(0);
   const [currentRamBank, setCurrentRamBank] = useState<number>(0);
+
+  // --- Display options
   const [twoColumns, setTwoColumns] = useState(
     viewState.current?.twoColumns ?? true
   );
   const [charDump, setCharDump] = useState(viewState.current?.charDump ?? true);
-  const [bankLabel, setBankLabel] = useState(
-    viewState.current?.bankLabel ?? true
-  );
 
   // --- State of the memory view
   const refreshInProgress = useRef(false);
@@ -209,18 +215,20 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
         createDumpSections(memory.current.length, twoColumns);
 
         // --- Obtain ULA information
-        const ulaResponse = await messenger.sendMessage({
-          type: "EmuGetUlaState"
-        });
-        if (ulaResponse.type === "ErrorResponse") {
-          reportMessagingError(
-            `EmuGetUlaState request failed: ${ulaResponse.message}`
-          );
-        } else if (ulaResponse.type !== "EmuGetUlaStateResponse") {
-          reportUnexpectedMessageType(ulaResponse.type);
-        } else {
-          setCurrentRomPage(ulaResponse.romP);
-          setCurrentRamBank(ulaResponse.ramB);
+        if (hasUla) {
+          const ulaResponse = await messenger.sendMessage({
+            type: "EmuGetUlaState"
+          });
+          if (ulaResponse.type === "ErrorResponse") {
+            reportMessagingError(
+              `EmuGetUlaState request failed: ${ulaResponse.message}`
+            );
+          } else if (ulaResponse.type !== "EmuGetUlaStateResponse") {
+            reportUnexpectedMessageType(ulaResponse.type);
+          } else {
+            setCurrentRomPage(ulaResponse.romP);
+            setCurrentRamBank(ulaResponse.ramB);
+          }
         }
       }
     } finally {
@@ -342,8 +350,9 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div ref={headerRef} className={styles.header} tabIndex={-1}>
+        <LabelSeparator width={4} />
         <LabeledText
-          label='Range:'
+          label='Display:'
           value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`}
         />
         <ToolbarSeparator small={true} />
@@ -446,6 +455,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
           <OptionsBar />
         </div>
       )}
+      <div className={styles.headerSeparator} />
       <div className={styles.memoryWrapper}>
         <VirtualizedListView
           items={memoryItems}
@@ -497,10 +507,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   );
 };
 
-export const createMemoryPanel = ({
-  document,
-  contents
-}: DocumentProps) => (
+export const createMemoryPanel = ({ document, contents }: DocumentProps) => (
   <BankedMemoryPanel
     document={document}
     contents={contents}
