@@ -9,13 +9,17 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { outputPaneRegistry } from "@renderer/registry";
-import { activateOutputPaneAction, activateToolAction } from "@state/actions";
+import {
+  activateOutputPaneAction,
+  activateToolAction,
+  setVolatileDocStateAction
+} from "@state/actions";
 import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import {
-  BANKED_MEMORY_EDITOR,
-  BANKED_MEMORY_PANEL_ID,
-  DISASSEMBLY_EDITOR,
-  DISASSEMBLY_PANEL_ID
+  MEMORY_EDITOR,
+  MEMORY_PANEL_ID,
+  BANKED_DISASSEMBLY_PANEL_ID,
+  BANKED_DISASSEMBLY_EDITOR
 } from "@common/state/common-ids";
 
 export class SelectOutputPaneCommand extends IdeCommandBase {
@@ -69,21 +73,42 @@ export class ShowMemoryCommand extends CommandWithNoArgBase {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
-    if (documentHubService.isOpen(BANKED_MEMORY_PANEL_ID)) {
-      documentHubService.setActiveDocument(BANKED_MEMORY_PANEL_ID);
+    if (documentHubService.isOpen(MEMORY_PANEL_ID)) {
+      documentHubService.setActiveDocument(MEMORY_PANEL_ID);
     } else {
       await documentHubService.openDocument(
         {
-          id: BANKED_MEMORY_PANEL_ID,
+          id: MEMORY_PANEL_ID,
           name: "Machine Memory",
-          type: BANKED_MEMORY_EDITOR,
+          type: MEMORY_EDITOR,
           iconName: "memory-icon",
           iconFill: "--console-ansi-bright-cyan"
         },
         undefined,
         false
       );
+      context.store.dispatch(
+        setVolatileDocStateAction(MEMORY_PANEL_ID, true),
+        "ide"
+      );
     }
+    return commandSuccess;
+  }
+}
+
+export class HideMemoryCommand extends CommandWithNoArgBase {
+  readonly id = "hide-memory";
+  readonly description = "Hides the machine memory panel";
+  readonly usage = "hide-memory";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(MEMORY_PANEL_ID);
+    context.store.dispatch(
+      setVolatileDocStateAction(MEMORY_PANEL_ID, false),
+      "ide"
+    );
     return commandSuccess;
   }
 }
@@ -96,21 +121,43 @@ export class ShowDisassemblyCommand extends CommandWithNoArgBase {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService =
       context.service.projectService.getActiveDocumentHubService();
-    if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
-      documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
+    if (documentHubService.isOpen(BANKED_DISASSEMBLY_PANEL_ID)) {
+      documentHubService.setActiveDocument(BANKED_DISASSEMBLY_PANEL_ID);
     } else {
       await documentHubService.openDocument(
         {
-          id: DISASSEMBLY_PANEL_ID,
+          id: BANKED_DISASSEMBLY_PANEL_ID,
           name: "Z80 Disassembly",
-          type: DISASSEMBLY_EDITOR,
+          type: BANKED_DISASSEMBLY_EDITOR,
           iconName: "disassembly-icon",
           iconFill: "--console-ansi-bright-cyan"
         },
-      undefined,
+        undefined,
         false
+      );
+      context.store.dispatch(
+        setVolatileDocStateAction(BANKED_DISASSEMBLY_PANEL_ID, true),
+        "ide"
       );
     }
     return commandSuccess;
   }
 }
+
+export class HideDisassemblyCommand extends CommandWithNoArgBase {
+  readonly id = "hide-disass";
+  readonly description = "Hides the Z80 disassembly panel";
+  readonly usage = "hide-disass";
+
+  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService =
+      context.service.projectService.getActiveDocumentHubService();
+    await documentHubService.closeDocument(BANKED_DISASSEMBLY_PANEL_ID);
+    context.store.dispatch(
+      setVolatileDocStateAction(BANKED_DISASSEMBLY_PANEL_ID, false),
+      "ide"
+    );
+    return commandSuccess;
+  }
+}
+

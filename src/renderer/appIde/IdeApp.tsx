@@ -76,6 +76,8 @@ import {
 } from "./commands/CompilerCommand";
 import { NavigateToDocumentCommand } from "./commands/DocumentCommands";
 import {
+  HideDisassemblyCommand,
+  HideMemoryCommand,
   SelectOutputPaneCommand,
   ShowDisassemblyCommand,
   ShowMemoryCommand
@@ -300,7 +302,9 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
 
   cmdSrv.registerCommand(new SelectOutputPaneCommand());
   cmdSrv.registerCommand(new ShowMemoryCommand());
+  cmdSrv.registerCommand(new HideMemoryCommand());
   cmdSrv.registerCommand(new ShowDisassemblyCommand());
+  cmdSrv.registerCommand(new HideDisassemblyCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

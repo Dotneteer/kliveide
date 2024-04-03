@@ -23,6 +23,7 @@ import { __DARWIN__ } from "../../electron/electron-utils";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { PANE_ID_BUILD } from "@common/integration/constants";
+import { BANKED_DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 
 type Props = {
   ide: boolean;
@@ -68,6 +69,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const machineId = useSelector(s => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
   const state = useSelector(s => s.emulatorState?.machineState);
+  const volatileDocs = useSelector(s => s.ideView.volatileDocs);
   const showKeyboard = useSelector(
     s => s.emuViewOptions?.showKeyboard ?? false
   );
@@ -391,16 +393,26 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             iconName='memory-icon'
             fill='orange'
             title='Show Memory Panel'
+            selected={volatileDocs?.[MEMORY_PANEL_ID]}
             clicked={async () => {
-              await ideCommandsService.executeCommand("show-memory");
+              if (volatileDocs?.[MEMORY_PANEL_ID]) {
+                await ideCommandsService.executeCommand("hide-memory");
+              } else {
+                await ideCommandsService.executeCommand("show-memory");
+              }
             }}
           />
           <IconButton
             iconName='disassembly-icon'
             fill='orange'
             title='Show Z80 Disassembly Panel'
+            selected={volatileDocs?.[BANKED_DISASSEMBLY_PANEL_ID]}
             clicked={async () => {
-              await ideCommandsService.executeCommand("show-disass");
+              if (volatileDocs?.[BANKED_DISASSEMBLY_PANEL_ID]) {
+                await ideCommandsService.executeCommand("hide-disass");
+              } else {
+                await ideCommandsService.executeCommand("show-disass");
+              }
             }}
           />
         </>

@@ -1,9 +1,9 @@
 export const CODE_EDITOR = "CodeEditor";
 export const DISASSEMBLY_PANEL_ID = "$disassembly";
 export const DISASSEMBLY_EDITOR = "Disassembly";
-export const BANKED_MEMORY_PANEL_ID = "$bankedMemory";
+export const BANKED_DISASSEMBLY_PANEL_ID = "$bankedDisassembly";
+export const BANKED_DISASSEMBLY_EDITOR = "BankedDisassembly";
 export const MEMORY_PANEL_ID = "$memory";
-export const BANKED_MEMORY_EDITOR = "BankedMemory";
 export const MEMORY_EDITOR = "Memory";
 export const BASIC_PANEL_ID = "$basic";
 export const BASIC_EDITOR = "Basic";

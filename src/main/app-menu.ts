@@ -50,9 +50,9 @@ import {
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
-  BANKED_MEMORY_PANEL_ID,
+  MEMORY_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
-  MEMORY_PANEL_ID
+  BANKED_DISASSEMBLY_PANEL_ID,
 } from "../common/state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
@@ -107,8 +107,8 @@ const RESET_KEY_MAPPING = "reset_key_mapping";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
-const IDE_SHOW_BANKED_MEMORY = "show_banked:memory";
 const IDE_SHOW_DISASSEMBLY = "show_disassembly";
+const IDE_SHOW_BANKED_DISASSEMBLY = "show_banked_disassembly";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -830,19 +830,19 @@ export function setupMenu (
     label: "IDE",
     submenu: [
       {
-        id: IDE_SHOW_BANKED_MEMORY,
+        id: IDE_SHOW_MEMORY,
         label: "Show Machine Memory",
         type: "checkbox",
-        checked: volatileDocs[BANKED_MEMORY_PANEL_ID],
+        checked: volatileDocs[MEMORY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
-            type: "IdeShowBankedMemory",
-            show: !volatileDocs[BANKED_MEMORY_PANEL_ID]
+            type: "IdeShowMemory",
+            show: !volatileDocs[MEMORY_PANEL_ID]
           });
           mainStore.dispatch(
             setVolatileDocStateAction(
-              BANKED_MEMORY_PANEL_ID,
-              !volatileDocs[BANKED_MEMORY_PANEL_ID]
+              MEMORY_PANEL_ID,
+              !volatileDocs[MEMORY_PANEL_ID]
             )
           );
         }
@@ -861,6 +861,24 @@ export function setupMenu (
             setVolatileDocStateAction(
               DISASSEMBLY_PANEL_ID,
               !volatileDocs[DISASSEMBLY_PANEL_ID]
+            )
+          );
+        }
+      },
+      {
+        id: IDE_SHOW_BANKED_DISASSEMBLY,
+        label: "Show Z80 Disassembly (new)",
+        type: "checkbox",
+        checked: volatileDocs[BANKED_DISASSEMBLY_PANEL_ID],
+        click: async () => {
+          await sendFromMainToIde({
+            type: "IdeShowBankedDisassembly",
+            show: !volatileDocs[BANKED_DISASSEMBLY_PANEL_ID]
+          });
+          mainStore.dispatch(
+            setVolatileDocStateAction(
+              BANKED_DISASSEMBLY_PANEL_ID,
+              !volatileDocs[BANKED_DISASSEMBLY_PANEL_ID]
             )
           );
         }

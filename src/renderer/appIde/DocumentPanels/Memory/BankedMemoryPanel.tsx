@@ -140,7 +140,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
       charDump,
       bankLabel
     };
-    console.log("Saving view state", mergedState);
     documentHubService.saveActiveDocumentState(mergedState);
   };
 
@@ -261,7 +260,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
 
   // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
   useInitializeAsync(async () => {
-    console.log("Initial refresh");
     await refreshMemoryView();
     setScrollVersion(scrollVersion + 1);
   });
@@ -280,7 +278,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
-          console.log("Machine state refresh");
           refreshMemoryView();
       }
     })();
@@ -364,7 +361,6 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
           iconName='refresh'
           title={"Refresh now"}
           clicked={async () => {
-            console.log("Manual refresh");
             refreshMemoryView();
             dispatch(setIdeStatusMessageAction("Memory view refreshed", true));
           }}
@@ -445,7 +441,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
           </>
         )}
       </div>
-      {allowViews && allowBankInput && (
+      {allowViews && (
         <div className={styles.header}>
           <OptionsBar />
         </div>
@@ -501,7 +497,7 @@ const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
   );
 };
 
-export const createBankedMemoryPanel = ({
+export const createMemoryPanel = ({
   document,
   contents
 }: DocumentProps) => (

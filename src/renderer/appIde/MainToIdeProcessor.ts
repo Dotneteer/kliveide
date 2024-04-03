@@ -6,14 +6,11 @@ import {
 } from "@messaging/messages-core";
 import { AppState } from "@state/AppState";
 import {
-  MEMORY_PANEL_ID,
-  MEMORY_EDITOR,
   DISASSEMBLY_PANEL_ID,
-  DISASSEMBLY_EDITOR,
   BASIC_PANEL_ID,
   BASIC_EDITOR,
-  BANKED_MEMORY_PANEL_ID,
-  BANKED_MEMORY_EDITOR
+  MEMORY_PANEL_ID,
+  BANKED_DISASSEMBLY_PANEL_ID,
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
@@ -60,37 +57,27 @@ export async function processMainToIdeMessages (
 
     case "IdeShowMemory": {
       if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: MEMORY_PANEL_ID,
-            name: "Machine Memory",
-            type: MEMORY_EDITOR,
-            iconName: "memory-icon",
-            iconFill: "--console-ansi-bright-cyan"
-          },
-          undefined,
-          false
-        );
+        await ideCommandsService.executeCommand("show-memory");
       } else {
         await documentHubService.closeDocument(MEMORY_PANEL_ID);
       }
       break;
     }
 
-    case "IdeShowBankedMemory": {
+    case "IdeShowDisassembly": {
       if (message.show) {
-        await ideCommandsService.executeCommand("show-memory");
+        await ideCommandsService.executeCommand("show-disass");
       } else {
-        await documentHubService.closeDocument(BANKED_MEMORY_PANEL_ID);
+        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
       }
       break;
     }
 
-    case "IdeShowDisassembly": {
+    case "IdeShowBankedDisassembly": {
       if (message.show) {
-        await ideCommandsService.executeCommand("show-memory");
+        await ideCommandsService.executeCommand("show-disass");
       } else {
-        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
+        await documentHubService.closeDocument(BANKED_DISASSEMBLY_PANEL_ID);
       }
       break;
     }
