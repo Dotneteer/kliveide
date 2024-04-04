@@ -1,7 +1,4 @@
-import {
-  EvaluationContext,
-  ModuleResolver
-} from "./EvaluationContext";
+import { EvaluationContext, ModuleResolver } from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
 import { TokenType } from "./TokenType";
@@ -62,7 +59,7 @@ export async function parseKsxModule (
   const parsedModules = new Map<string, KsxModule>();
   const moduleErrors: ModuleErrors = {};
 
-  const parsedModule = await doParseModule(moduleName, source, moduleResolver);
+  const parsedModule = doParseModule(moduleName, source, moduleResolver);
   return !parsedModule || Object.keys(moduleErrors).length > 0
     ? moduleErrors
     : parsedModule;
@@ -71,8 +68,9 @@ export async function parseKsxModule (
   async function doParseModule (
     moduleName: string,
     source: string,
-    moduleResolver: ModuleResolver
-  ): Promise<KsxModule | null> {
+    moduleResolver: ModuleResolver,
+    topLevel = false
+  ): Promise<KsxModule | null | undefined> {
     // --- Do not parse the same module twice
     if (parsedModules.has(moduleName)) {
       return parsedModules.get(moduleName);
@@ -82,7 +80,7 @@ export async function parseKsxModule (
     const parser = new Parser(source);
     let statements: Statement[] = [];
     try {
-      statements = parser.parseStatements();
+      statements = parser.parseStatements()!;
     } catch (error) {
       moduleErrors[moduleName] = parser.errors;
       return null;
@@ -94,10 +92,7 @@ export async function parseKsxModule (
       moduleErrors[moduleName] ??= [];
       moduleErrors[moduleName].push({
         code: "K002",
-        text: errorMessages["K002"].replace(
-          /\{(\d+)\}/g,
-          (match, index) => lastToken.text
-        ),
+        text: errorMessages["K002"].replace(/\{(\d+)}/g, () => lastToken.text),
         position: lastToken.location.startLine,
         line: lastToken.location.startLine,
         column: lastToken.location.startColumn
@@ -139,6 +134,21 @@ export async function parseKsxModule (
         }
       }
     });
+
+    // --- Successful module parsing
+    const parsedModule: KsxModule = {
+      type: "KsxModule",
+      name: moduleName,
+      exports,
+      importedModules: [],
+      imports: [],
+      functions,
+      statements,
+      executed: false
+    };
+
+    // --- Sign this module as parsed
+    parsedModules.set(moduleName, parsedModule);
 
     // --- Step 4: Load imported modules and resolve imports
     const importedModules: KsxModule[] = [];
@@ -187,25 +197,12 @@ export async function parseKsxModule (
       return null;
     }
 
-    // --- Successful module parsing
-    const parsedModule: KsxModule = {
-      type: "KsxModule",
-      name: moduleName,
-      exports,
-      importedModules,
-      imports,
-      functions,
-      statements,
-      executed: false
-    };
-
-    // --- Sign this module as parsed
-    parsedModules.set(moduleName, parsedModule);
-
     // --- All imported modules use this module as a parent
     importedModules.forEach(m => (m.parent = parsedModule));
 
     // --- Done.
+    parsedModule.importedModules = importedModules;
+    parsedModule.imports = imports;
     return parsedModule;
   }
 
@@ -223,10 +220,7 @@ export async function parseKsxModule (
     }
     return {
       code,
-      text: errorMessages[code].replace(
-        /\{(\d+)\}/g,
-        (match, index) => args[index]
-      ),
+      text: errorMessages[code].replace(/\{(\d+)}/g, (_, index) => args[index]),
       position: stmt.startPosition,
       line: stmt.startLine,
       column: stmt.startColumn
@@ -294,5 +288,3 @@ export async function executeModule (
     module.exports.set(key, topVars[key]);
   }
 }
-
-
