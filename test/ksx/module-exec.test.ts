@@ -159,6 +159,38 @@ describe("KSX Execution - modules", () => {
     expect(moduleVars.x).toBe(103);
     expect(exports.get("x")).toBe(103);
   });
+
+  it("Import circular reference #1", async () => {
+    // --- Arrange
+    const source = `
+      import { square, factor as f1 } from "math";
+      export const x = square(10) + f1;
+    `;
+
+    const modules = {
+      math: `
+        import { other } from "helper";
+        export const factor = 3;
+        export function square(x) {
+          return x * x;
+        }
+      `,
+      helper: `
+        import { factor } from "math";
+        export const other = 4;
+      `,
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext?.mainThread?.blocks![0]?.vars!;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(103);
+    expect(exports.get("x")).toBe(103);
+  });
+
 });
 
 async function execModule (

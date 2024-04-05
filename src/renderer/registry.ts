@@ -1,6 +1,4 @@
 import {
-  DISASSEMBLY_EDITOR,
-  MEMORY_EDITOR,
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
@@ -20,7 +18,9 @@ import {
   SPR_EDITOR,
   VID_VIEWER,
   STATIC_MEMORY_DUMP_VIEWER,
-  SCRIPT_OUTPUT_VIEWER
+  SCRIPT_OUTPUT_VIEWER,
+  MEMORY_EDITOR,
+  DISASSEMBLY_EDITOR
 } from "@state/common-ids";
 import { PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -33,8 +33,6 @@ import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
-import { createDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
-import { createMemoryPanel } from "./appIde/DocumentPanels/MemoryPanel";
 import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvider";
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
@@ -83,10 +81,9 @@ import {
 } from "@common/integration/constants";
 import { scriptingHistoryPanelRenderer } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
 import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
-import { Store } from "@common/state/redux-light";
-import { AppState } from "@common/state/AppState";
-import { isScriptCompleted } from "@common/utils/script-utils";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
+import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
+import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -234,7 +231,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: DISASSEMBLY_EDITOR,
-    renderer: createDisassemblyPanel,
+    renderer: createBankedDisassemblyPanel,
     icon: "disassembly-icon",
     iconFill: "--console-ansi-bright-cyan"
   },

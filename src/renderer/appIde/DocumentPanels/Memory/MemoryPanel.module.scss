@@ -1,6 +1,6 @@
 @import "@styles/core.scss";
 
-.memoryPanel {
+.panel {
   @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
@@ -10,10 +10,19 @@
 }
 
 .header {
-  @include fix-height-panel(30px);
+  @include fix-height-panel(32px);
   flex-direction: row;
   align-items: center;
   padding-left: 4px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  outline: none;
+}
+
+.headerSeparator {
+  @include fix-height-panel(4px);
+  flex-direction: row;
+  align-items: center;
   flex-shrink: 0;
   flex-grow: 0;
 }
@@ -69,7 +78,7 @@
   &.pcPointed {
     background: var(--bgcolor-memory-pc-pointed);
     color: var(--color-memory-pointed);
-  } 
+  }
 }
 
 .char {

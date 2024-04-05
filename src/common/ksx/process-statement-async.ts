@@ -199,6 +199,7 @@ async function processStatementAsync (
         const childEvalContext = createEvalContext({
           cancellationToken: evalContext.cancellationToken
         });
+        statement.module!.executed = true; 
         await executeModule(statement.module, childEvalContext);
       }
 

@@ -10,7 +10,8 @@ import { useAppServices } from "../services/AppServicesProvider";
 
 const ScriptingHistoryPanel = () => {
   const { ideCommandsService } = useAppServices();
-  const scripts = useSelector(state => state.scripts);
+  const scriptsInState = useSelector(state => state.scripts);
+  const scripts = scriptsInState.slice().reverse();
   const [selectedScript, setSelectedScript] = useState<ScriptRunInfo>();
   const [version, setVersion] = useState(1);
   const refreshing = useRef(false);

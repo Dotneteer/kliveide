@@ -50,8 +50,8 @@ import {
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
+  MEMORY_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
-  MEMORY_PANEL_ID
 } from "../common/state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
@@ -106,7 +106,7 @@ const RESET_KEY_MAPPING = "reset_key_mapping";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
-const IDE_SHOW_DISASSEMBLY = "show_disassembly";
+const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -852,7 +852,7 @@ export function setupMenu (
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
-            type: "IdeShowDisassembly",
+            type: "IdeShowBankedDisassembly",
             show: !volatileDocs[DISASSEMBLY_PANEL_ID]
           });
           mainStore.dispatch(
