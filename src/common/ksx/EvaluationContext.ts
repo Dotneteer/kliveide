@@ -64,6 +64,11 @@ export class CancellationToken {
 export type ModuleResolver = (moduleName: string) => Promise<string | null>;
 
 /**
+ * A function that resolves a package name to the contents of the package
+ */
+export type PackageResolver = (packageName: string) => Promise<Record<string, any>>;
+
+/**
  * Creates an evaluation context with the given parts
  * @param parts Parts of the evaluation context
  * @returns New evaluation context

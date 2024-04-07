@@ -1,10 +1,10 @@
 import "mocha";
 import { expect } from "expect";
-import { createZcc } from "../../../src/script-packages/z88dk/Zcc";
+import { createZccRunner } from "../../../src/script-packages/z88dk/Zcc";
 
 describe("Zcc - Arguments", () => {
-  const validArgCases: { opts: Record<string, any>, exp: string }[] = [
-    { opts: { }, exp: "" },
+  const validArgCases: { opts: Record<string, any>; exp: string }[] = [
+    { opts: {}, exp: "" },
     { opts: { help: true }, exp: "-h" },
     { opts: { help: false }, exp: "" },
     { opts: { verbose: true }, exp: "-v" },
@@ -54,21 +54,45 @@ describe("Zcc - Arguments", () => {
     { opts: { zOrg: 1234 }, exp: "-zorg=1234" },
     { opts: { noStdLib: true }, exp: "-nostdlib" },
     { opts: { pragmaRedirect: "AAA" }, exp: "-pragma-redirect=AAA" },
-    { opts: { pragmaRedirect: ["AAA", "BBB"] }, exp: "-pragma-redirect=AAA -pragma-redirect=BBB" },
+    {
+      opts: { pragmaRedirect: ["AAA", "BBB"] },
+      exp: "-pragma-redirect=AAA -pragma-redirect=BBB"
+    },
     { opts: { pragmaDefine: "AAA" }, exp: "-pragma-define=AAA" },
-    { opts: { pragmaDefine: ["AAA", "BBB"] }, exp: "-pragma-define=AAA -pragma-define=BBB" },
+    {
+      opts: { pragmaDefine: ["AAA", "BBB"] },
+      exp: "-pragma-define=AAA -pragma-define=BBB"
+    },
     { opts: { pragmaOutput: "AAA" }, exp: "-pragma-output=AAA" },
-    { opts: { pragmaOutput: ["AAA", "BBB"] }, exp: "-pragma-output=AAA -pragma-output=BBB" },
+    {
+      opts: { pragmaOutput: ["AAA", "BBB"] },
+      exp: "-pragma-output=AAA -pragma-output=BBB"
+    },
     { opts: { pragmaExport: "AAA" }, exp: "-pragma-export=AAA" },
-    { opts: { pragmaExport: ["AAA", "BBB"] }, exp: "-pragma-export=AAA -pragma-export=BBB" },
+    {
+      opts: { pragmaExport: ["AAA", "BBB"] },
+      exp: "-pragma-export=AAA -pragma-export=BBB"
+    },
     { opts: { pragmaNeed: "AAA" }, exp: "-pragma-need=AAA" },
-    { opts: { pragmaNeed: ["AAA", "BBB"] }, exp: "-pragma-need=AAA -pragma-need=BBB" },
+    {
+      opts: { pragmaNeed: ["AAA", "BBB"] },
+      exp: "-pragma-need=AAA -pragma-need=BBB"
+    },
     { opts: { pragmaBytes: "AAA" }, exp: "-pragma-bytes=AAA" },
-    { opts: { pragmaBytes: ["AAA", "BBB"] }, exp: "-pragma-bytes=AAA -pragma-bytes=BBB" },
+    {
+      opts: { pragmaBytes: ["AAA", "BBB"] },
+      exp: "-pragma-bytes=AAA -pragma-bytes=BBB"
+    },
     { opts: { pragmaString: "AAA" }, exp: "-pragma-string=AAA" },
-    { opts: { pragmaString: ["AAA", "BBB"] }, exp: "-pragma-string=AAA -pragma-string=BBB" },
+    {
+      opts: { pragmaString: ["AAA", "BBB"] },
+      exp: "-pragma-string=AAA -pragma-string=BBB"
+    },
     { opts: { pragmaInclude: "AAA" }, exp: "-pragma-include=AAA" },
-    { opts: { pragmaInclude: ["AAA", "BBB"] }, exp: "-pragma-include=AAA -pragma-include=BBB" },
+    {
+      opts: { pragmaInclude: ["AAA", "BBB"] },
+      exp: "-pragma-include=AAA -pragma-include=BBB"
+    },
     { opts: { m4: true }, exp: "-m4" },
     { opts: { m4: false }, exp: "" },
     { opts: { preprocessOnly: true }, exp: "-E" },
@@ -100,12 +124,18 @@ describe("Zcc - Arguments", () => {
     { opts: { includeQuote: "AAA" }, exp: "-iquote=AAA" },
     { opts: { includeQuote: ["AAA", "BBB"] }, exp: "-iquote=AAA -iquote=BBB" },
     { opts: { includeSystem: "AAA" }, exp: "-isystem=AAA" },
-    { opts: { includeSystem: ["AAA", "BBB"] }, exp: "-isystem=AAA -isystem=BBB" },
+    {
+      opts: { includeSystem: ["AAA", "BBB"] },
+      exp: "-isystem=AAA -isystem=BBB"
+    },
     { opts: { compiler: "sdcc" }, exp: "-compiler=sdcc" },
     { opts: { cCodeInAsm: true }, exp: "--c-code-in-asm" },
     { opts: { cCodeInAsm: false }, exp: "" },
     { opts: { optCodeSpeed: "all" }, exp: "--opt-code-speed=all" },
-    { opts: { optCodeSpeed: ["cpu", "oth"] }, exp: "--opt-code-speed=cpu --opt-code-speed=oth" },
+    {
+      opts: { optCodeSpeed: ["cpu", "oth"] },
+      exp: "--opt-code-speed=cpu --opt-code-speed=oth"
+    },
     { opts: { debug: true }, exp: "-debug" },
     { opts: { debug: false }, exp: "" },
     { opts: { sccz80Option: "all" }, exp: "-Cc=all" },
@@ -164,13 +194,13 @@ describe("Zcc - Arguments", () => {
     { opts: { cmdTracingOff: true }, exp: "-vn" },
     { opts: { cmdTracingOff: false }, exp: "" },
     { opts: { noCleanup: true }, exp: "-no-cleanup" },
-    { opts: { noCleanup: false }, exp: "" },
+    { opts: { noCleanup: false }, exp: "" }
   ];
-  
+
   validArgCases.forEach((c, idx) =>
     it(`Zcc args #${idx + 1}`, () => {
       // --- Arrange
-      const zcc = createZcc("zx", c.opts, ["file.c"]);
+      const zcc = createZccRunner("zx", c.opts, ["file.c"]);
 
       // --- Act
       const cmdLine = zcc.composeCmdLineArgs();
@@ -180,4 +210,274 @@ describe("Zcc - Arguments", () => {
       expect(cmdLine).toEqual(`+zx ${c.exp} file.c`);
     })
   );
+
+  it("Zcc with unknown option fails #1", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { unknown: true }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const unknown = cmdLine.errors.unknown;
+      expect(unknown.length).toBe(1);
+      expect(unknown[0].includes("unknown")).toBe(true);
+    }
+  });
+
+  it("Zcc with unknown option fails #2", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { unknown1: true, other: false }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(2);
+      const unknown1 = cmdLine.errors.unknown1;
+      expect(unknown1.length).toBe(1);
+      expect(unknown1[0].includes("unknown1"));
+      const other = cmdLine.errors.other;
+      expect(other.length).toBe(1);
+      expect(other[0].includes("other"));
+    }
+  });
+
+  it("bool option fails with number", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { verbose: 123 }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const verbose = cmdLine.errors.verbose;
+      expect(verbose.length).toBe(1);
+      expect(verbose[0].includes("verbose")).toBe(true);
+      expect(verbose[0].includes("boolean")).toBe(true);
+    }
+  });
+
+  it("bool option fails with string", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { verbose: "123" }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      const verbose = cmdLine.errors.verbose;
+      expect(verbose.length).toBe(1);
+      expect(verbose[0].includes("verbose")).toBe(true);
+      expect(verbose[0].includes("boolean")).toBe(true);
+    }
+  });
+
+  it("bool option fails with array", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { verbose: [123] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const verbose = cmdLine.errors.verbose;
+      expect(verbose.length).toBe(1);
+      expect(verbose[0].includes("verbose")).toBe(true);
+      expect(verbose[0].includes("boolean")).toBe(true);
+    }
+  });
+
+  it("number option fails with bool", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { startup: true }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const startup = cmdLine.errors.startup;
+      expect(startup.length).toBe(1)
+      expect(startup[0].includes("startup"));
+      expect(startup[0].includes("number"));
+    }
+  });
+
+  it("number option fails with string", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { startup: "123" }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const startup = cmdLine.errors.startup;
+      expect(startup.length).toBe(1)
+      expect(startup[0].includes("startup"));
+      expect(startup[0].includes("number"));
+    }
+  });
+
+  it("number option fails with array", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { startup: ["123"] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const startup = cmdLine.errors.startup;
+      expect(startup.length).toBe(1)
+      expect(startup[0].includes("startup"));
+      expect(startup[0].includes("number"));
+    }
+  });
+
+  it("string option fails with boolean", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { output: false }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const output = cmdLine.errors.output;
+      expect(output.length).toBe(1)
+      expect(output[0].includes("output"));
+      expect(output[0].includes("string"));
+    }
+  });
+
+  it("string option fails with number", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { output: 123 }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const output = cmdLine.errors.output;
+      expect(output.length).toBe(1)
+      expect(output[0].includes("output"));
+      expect(output[0].includes("string"));
+    }
+  });
+
+  it("string option fails with array", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { output: [false] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const output = cmdLine.errors.output;
+      expect(output.length).toBe(1)
+      expect(output[0].includes("output"));
+      expect(output[0].includes("string"));
+    }
+  });
+
+  it("string array option fails with bool item #1", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { pragmaRedirect: [false] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const pragmaRedirect = cmdLine.errors.pragmaRedirect;
+      expect(pragmaRedirect.length).toBe(1)
+      expect(pragmaRedirect[0].includes("pragmaRedirect"));
+      expect(pragmaRedirect[0].includes("array of strings"));
+    }
+  });
+
+  it("string array option fails with bool item #2", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { pragmaRedirect: ["pragma", false] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const pragmaRedirect = cmdLine.errors.pragmaRedirect;
+      expect(pragmaRedirect.length).toBe(1)
+      expect(pragmaRedirect[0].includes("pragmaRedirect"));
+      expect(pragmaRedirect[0].includes("array of strings"));
+    }
+  });
+
+  it("string array option fails with number item #1", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { pragmaRedirect: [123] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const pragmaRedirect = cmdLine.errors.pragmaRedirect;
+      expect(pragmaRedirect.length).toBe(1)
+      expect(pragmaRedirect[0].includes("pragmaRedirect"));
+      expect(pragmaRedirect[0].includes("array of strings"));
+    }
+  });
+
+  it("string array option fails with number item #2", () => {
+    // --- Arrange
+    const zcc = createZccRunner("zx", { pragmaRedirect: ["pragma", 123] }, ["file.c"]);
+
+    // --- Act
+    const cmdLine = zcc.composeCmdLineArgs();
+
+    // --- Assert
+    expect(typeof cmdLine === "string").toBe(false);
+    if (typeof cmdLine !== "string") {
+      expect(Object.keys(cmdLine.errors).length).toBe(1);
+      const pragmaRedirect = cmdLine.errors.pragmaRedirect;
+      expect(pragmaRedirect.length).toBe(1)
+      expect(pragmaRedirect[0].includes("pragmaRedirect"));
+      expect(pragmaRedirect[0].includes("array of strings"));
+    }
+  });
 });

@@ -108,6 +108,7 @@ import {
   setCachedAppServices,
   setCachedStore
 } from "../CachedServices";
+import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
 
 const IdeApp = () => {
   // --- Used services
@@ -336,4 +337,6 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new RunScriptCommand());
   cmdSrv.registerCommand(new CancelScriptCommand());
   cmdSrv.registerCommand(new DisplayScriptOutputCommand());
+
+  cmdSrv.registerCommand(new ResetZ88DkCommand());
 }

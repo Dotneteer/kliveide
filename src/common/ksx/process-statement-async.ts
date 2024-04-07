@@ -210,7 +210,7 @@ async function processStatementAsync (
         if (key in topVars) {
           throw new Error(`Import ${key} already exists`);
         }
-        topVars[key] = statement.module.exports.get(statement.imports[key]);
+        topVars[key] = statement.module.exports[statement.imports[key]];
         topConst.add(key);
       }
       break;

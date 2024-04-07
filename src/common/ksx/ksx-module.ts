@@ -1,4 +1,4 @@
-import { EvaluationContext, ModuleResolver } from "./EvaluationContext";
+import { EvaluationContext, ModuleResolver, PackageResolver } from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
 import { TokenType } from "./TokenType";
@@ -20,7 +20,7 @@ export type KsxModule = {
   type: "KsxModule";
   name: string;
   parent?: KsxModule;
-  exports: Map<string, any>;
+  exports: Record<string, any>;
   imports: Record<string, any>;
   importedModules: KsxModule[];
   functions: Record<string, FunctionDeclaration>;
@@ -53,13 +53,14 @@ export function isModuleErrors (
 export async function parseKsxModule (
   moduleName: string,
   source: string,
-  moduleResolver: ModuleResolver
+  moduleResolver: ModuleResolver,
+  packageResolver: PackageResolver = async (packageName: string) => null
 ): Promise<KsxModule | ModuleErrors> {
   // --- Keep track of parsed modules to avoid circular references
   const parsedModules = new Map<string, KsxModule>();
   const moduleErrors: ModuleErrors = {};
 
-  const parsedModule = doParseModule(moduleName, source, moduleResolver);
+  const parsedModule = await doParseModule(moduleName, source, moduleResolver, packageResolver);
   return !parsedModule || Object.keys(moduleErrors).length > 0
     ? moduleErrors
     : parsedModule;
@@ -69,7 +70,7 @@ export async function parseKsxModule (
     moduleName: string,
     source: string,
     moduleResolver: ModuleResolver,
-    topLevel = false
+    packageResolver: PackageResolver
   ): Promise<KsxModule | null | undefined> {
     // --- Do not parse the same module twice
     if (parsedModules.has(moduleName)) {
@@ -116,21 +117,21 @@ export async function parseKsxModule (
       });
 
     // --- Step 3: collect exports
-    const exports = new Map<string, any>();
+    const exports: Record<string, any> = {};
     statements.forEach(stmt => {
       if (stmt.type === "ConstStatement" && stmt.isExported) {
         visitLetConstDeclarations(stmt, id => {
-          if (exports.has(id)) {
+          if (exports[id]) {
             errors.push(addErrorMessage("K024", stmt, id));
           } else {
-            exports.set(id, stmt);
+            exports[id] = stmt;
           }
         });
       } else if (stmt.type === "FunctionDeclaration" && stmt.isExported) {
-        if (exports.has(stmt.name)) {
+        if (exports[stmt.name]) {
           errors.push(addErrorMessage("K024", stmt, stmt.name));
         } else {
-          exports.set(stmt.name, stmt);
+          exports[stmt.name] = stmt;
         }
       }
     });
@@ -159,6 +160,32 @@ export async function parseKsxModule (
         continue;
       }
 
+      // --- Use these exports
+      let exportsToUse: Record<string, any> = {};
+
+      // // --- Find the imported package
+      // if (stmt.moduleFile.startsWith("@")) {
+      //   const packageContent = await packageResolver(stmt.moduleFile.substring(1));
+      //   if (packageContent === null) {
+      //     errors.push(addErrorMessage("K027", stmt, stmt.moduleFile));
+      //     continue;
+      //   }
+
+      //   // --- Successful import
+      //   importedModules.push(packageModule);
+
+      //   // --- Extract imported names
+      //   for (const key in stmt.imports) {
+      //     if (packageModule.exports.has(stmt.imports[key])) {
+      //       imports[key] = packageModule.exports.get(stmt.imports[key]);
+      //     } else {
+      //       errors.push(addErrorMessage("K026", stmt, stmt.moduleFile, key));
+      //     }
+      //   }
+
+      //   continue;
+      // }
+
       // --- Find the imported module
       const source = await moduleResolver(stmt.moduleFile);
       if (source === null) {
@@ -170,7 +197,8 @@ export async function parseKsxModule (
       const imported = await doParseModule(
         stmt.moduleFile,
         source,
-        moduleResolver
+        moduleResolver,
+        packageResolver
       );
 
       if (!imported) {
@@ -179,12 +207,14 @@ export async function parseKsxModule (
       }
 
       // --- Successful import
+      exportsToUse = imported.exports;
       importedModules.push(imported);
 
       // --- Extract imported names
       for (const key in stmt.imports) {
-        if (imported.exports.has(stmt.imports[key])) {
-          imports[key] = imported.exports.get(stmt.imports[key]);
+        const importedValue = exportsToUse[stmt.imports[key]];
+        if (importedValue !== undefined) {
+          imports[key] = importedValue;
         } else {
           errors.push(addErrorMessage("K026", stmt, stmt.moduleFile, key));
         }
@@ -281,10 +311,10 @@ export async function executeModule (
   module.executed = true;
 
   // --- Get exported values
-  for (const key of module.exports.keys()) {
+  for (const key in module.exports) {
     if (!(key in topVars)) {
       throw new Error(`Export ${key} not found`);
     }
-    module.exports.set(key, topVars[key]);
+    module.exports[key] = topVars[key];
   }
 }

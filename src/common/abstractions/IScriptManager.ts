@@ -18,6 +18,13 @@ export interface IScriptManager {
    * @returns
    */
   completeScript(id: number): Promise<void>;
+
+  /**
+   * Registers a package object to be used in the script execution.
+   * @param packageName Name of the package
+   * @param packageObject Package object to register
+   */
+  registerPackage(packageName: string, packageObject: any): void;
 }
 
 /**
@@ -27,4 +34,4 @@ export type ScriptStartInfo = {
   id?: number;
   target?: string;
   contents?: string;
-}
+};

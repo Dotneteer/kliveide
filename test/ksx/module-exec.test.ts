@@ -80,7 +80,7 @@ describe("KSX Execution - modules", () => {
     const moduleVars = result.evalContext.mainThread.blocks[0].vars;
     const exports = result.parsedModule.exports;
     expect(moduleVars.x).toBe(100);
-    expect(exports.get("x")).toBe(100);
+    expect(exports.x).toBe(100);
   });
 
   it("Import function #1", async () => {
@@ -105,7 +105,7 @@ describe("KSX Execution - modules", () => {
     const moduleVars = result.evalContext.mainThread.blocks[0].vars;
     const exports = result.parsedModule.exports;
     expect(moduleVars.x).toBe(100);
-    expect(exports.get("x")).toBe(100);
+    expect(exports.x).toBe(100);
   });
 
   it("Import function #2", async () => {
@@ -131,7 +131,7 @@ describe("KSX Execution - modules", () => {
     const moduleVars = result.evalContext.mainThread.blocks[0].vars;
     const exports = result.parsedModule.exports;
     expect(moduleVars.x).toBe(103);
-    expect(exports.get("x")).toBe(103);
+    expect(exports.x).toBe(103);
   });
 
   it("Import function #3", async () => {
@@ -157,7 +157,7 @@ describe("KSX Execution - modules", () => {
     const moduleVars = result.evalContext.mainThread.blocks[0].vars;
     const exports = result.parsedModule.exports;
     expect(moduleVars.x).toBe(103);
-    expect(exports.get("x")).toBe(103);
+    expect(exports.x).toBe(103);
   });
 
   it("Import circular reference #1", async () => {
@@ -188,7 +188,7 @@ describe("KSX Execution - modules", () => {
     const moduleVars = result.evalContext?.mainThread?.blocks![0]?.vars!;
     const exports = result.parsedModule.exports;
     expect(moduleVars.x).toBe(103);
-    expect(exports.get("x")).toBe(103);
+    expect(exports.x).toBe(103);
   });
 
 });

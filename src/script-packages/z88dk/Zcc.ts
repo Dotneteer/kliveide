@@ -1,4 +1,7 @@
+import { mainStore } from "../../main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
+import { createSettingsReader } from "../../common/utils/SettingsReader";
+import { Z88DK_INSTALL_FOLDER } from "../../main/z88dk-integration/z88dk-config";
 
 const ZccOptions: CmdLineOptionSet = {
   // --- General options
@@ -519,11 +522,31 @@ class ZccImplementation {
     this._files.push(file);
   }
 
+  getCommandLineString(): string {
+    const settingsReader = createSettingsReader(mainStore);
+    const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
+    if (!rootPath) {
+      throw new Error("Z88DK install folder is not set. Use the z88dk-reset command to specify it.")
+    }
+    const cmdLineArgs = this.composeCmdLineArgs();
+    if (typeof cmdLineArgs !== "string") {
+      let errList = "Argument error:\n";
+      Object.keys(cmdLineArgs.errors).forEach(key => {
+        const errors = cmdLineArgs.errors[key];
+        errors.forEach(err => {
+          errList += `err\n`;
+        })
+      });
+      throw new Error(errList);
+    }
+    return `${rootPath}/zcc ${this.composeCmdLineArgs()}`
+  }
+
   /**
    * Executes the ZCC process
    */
-  execute (): void {
-    // TODO: Implement this
+  async execute (): Promise<void> {
+    console.log(this.getCommandLineString());
   }
 
   composeCmdLineArgs (): OptionResult | string {
@@ -543,7 +566,6 @@ class ZccImplementation {
       cmdLine: "",
       errors: {}
     };
-    const optionsFound = new Set<string>();
     for (const key in this._options) {
       const opt = this._optionTemplate[key];
       if (!opt) {
@@ -571,10 +593,6 @@ class ZccImplementation {
           }
         }
       } else {
-        if (optionsFound.has(key)) {
-          error(key, `Option ${key} can be specified only once`);
-          continue;
-        }
         // --- Check the type of the option
         if (opt.type === "string" && typeof value !== "string") {
           error(key, `Option ${key} must be a string`);
@@ -614,9 +632,6 @@ class ZccImplementation {
           result.cmdLine += optStr;
         }
       }
-
-      // --- Mark the option as found
-      optionsFound.add(key);
     }
 
     // --- Done
@@ -660,7 +675,7 @@ type OptionResult = {
   errors: Record<string, string[]>;
 };
 
-export const createZcc = (
+export const createZccRunner = (
   target: string = "zx",
   options: Record<string, any> = {},
   files: string[] = []

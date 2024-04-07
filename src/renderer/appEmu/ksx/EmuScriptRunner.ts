@@ -25,6 +25,7 @@ type ScriptExecInfo = {
  */
 export class EmuScriptRunner {
   private runningScripts = new Map<number, ScriptExecInfo>();
+  private packages: Record<string, any> = {};
 
   constructor (
     private readonly store: Store<AppState>,
@@ -74,7 +75,8 @@ export class EmuScriptRunner {
     const module = await parseKsxModule(
       scriptFile,
       scriptContents,
-      moduleName => this.resolveModule(scriptFile, moduleName)
+      moduleName => this.resolveModule(scriptFile, moduleName),
+      packageName => this.packages[packageName]
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
@@ -197,3 +199,4 @@ export class EmuScriptRunner {
     return null;
   }
 }
+
