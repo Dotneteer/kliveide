@@ -1,0 +1,5 @@
+.org #8000
+  xor a
+	
+.org #C737 ; #C737 - this is what the includebin should work with, but does not
+includebin "./colin_mc.bin" ; this is 14536 in length

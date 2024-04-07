@@ -2284,10 +2284,12 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check for too long binary segment
     if (
-      this.getCurrentAssemblyAddress() + length >=
+      this.getCurrentAssemblyAddress() -
+        this._currentSegment.startAddress +
+        length >=
       this._currentSegment.maxCodeLength
     ) {
-      this.reportAssemblyError("Z0322", pragma);
+      this.reportAssemblyError("Z0323", pragma);
       return;
     }
 
@@ -2602,7 +2604,9 @@ export class Z80Assembler extends ExpressionEvaluator {
     const fileLine: IFileLine = {
       fileIndex: asmLine.fileIndex,
       line: asmLine.line - 1,
-      startColumn: (asmLine.sourceText ?? "").length - (asmLine.sourceText ?? "").trimStart().length,
+      startColumn:
+        (asmLine.sourceText ?? "").length -
+        (asmLine.sourceText ?? "").trimStart().length,
       endColumn: asmLine.endColumn
     };
     this._output.sourceMap[currentAddress] = fileLine;
@@ -6116,7 +6120,7 @@ const simpleInstructionCodes: { [key: string]: number } = {
   setae: 0xed95,
   stae: 0xed95,
   swapnib: 0xed23,
-  swap: 0xed23,
+  swap: 0xed23
 };
 
 /**
