@@ -2284,10 +2284,10 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check for too long binary segment
     if (
-      this.getCurrentAssemblyAddress() + length >=
+      this.getCurrentAssemblyAddress() - this._currentSegment.startAddress + length >=
       this._currentSegment.maxCodeLength
     ) {
-      this.reportAssemblyError("Z0322", pragma);
+      this.reportAssemblyError("Z0323", pragma);
       return;
     }
 
