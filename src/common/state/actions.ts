@@ -209,7 +209,6 @@ export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   payload: { id, value }
 });
 
-
 export const activateOutputPaneAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_OUTPUT_PANE",
   payload: { id }
@@ -243,7 +242,10 @@ export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
 
-export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
+export const displayDialogAction: ActionCreator = (
+  index?: number,
+  value?: any
+) => ({
   type: "DISPLAY_DIALOG",
   payload: { index, value }
 });
@@ -388,3 +390,13 @@ export const setScriptsStatusAction: ActionCreator = (value: any) => ({
   type: "SET_SCRIPTS_STATUS",
   payload: { value }
 });
+
+export const setProjectBuildFileAction: ActionCreator = flag => ({
+  type: "SET_PROJECT_BUILD_FILE",
+  payload: { flag }
+});
+
+export const incBuildFileVersionAction: ActionCreator = () => ({
+  type: "INC_BUILD_FILE_VERSION"
+});
+

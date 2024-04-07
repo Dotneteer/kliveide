@@ -22,7 +22,7 @@ import {
   MEMORY_EDITOR,
   DISASSEMBLY_EDITOR
 } from "@state/common-ids";
-import { PROJECT_FILE } from "@common/structs/project-const";
+import { BUILD_FILE, PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
 import { MonacoAwareCustomLanguageInfo } from "./abstractions/CustomLanguageInfo";
 import { DocumentRendererInfo } from "./abstractions/DocumentRendererInfo";
@@ -366,6 +366,14 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     subType: "json",
     isReadOnly: true,
     icon: "@file-project"
+  },
+  {
+    matchType: "full",
+    pattern: BUILD_FILE,
+    editor: CODE_EDITOR,
+    subType: "ksx",
+    icon: "combine",
+    iconFill: "--console-ansi-bright-magenta"
   },
   {
     matchType: "ends",

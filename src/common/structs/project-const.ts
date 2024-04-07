@@ -1,6 +1,7 @@
 export const KLIVE_PROJECT_ROOT = "KliveProjects";
 export const CODE_FOLDER = "code";
 export const PROJECT_FILE = "klive.project";
+export const BUILD_FILE = "build.ksx";
 export const PROJECT_MERGE_FILE = "__$klive.project";
 export const LAST_PROJECT_FOLDER = "lastProjectFolder";
 export const PROJECT_TEMPLATES = "project-templates";

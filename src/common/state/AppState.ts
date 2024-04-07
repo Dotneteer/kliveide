@@ -107,6 +107,8 @@ export type IdeProject = {
   projectFileVersion: number;
   projectViewStateVersion: number;
   excludedItems?: string[];
+  hasBuildFile?:boolean;
+  buildFileVersion: number;
 };
 
 /**
@@ -185,7 +187,8 @@ export const initialAppState: AppState = {
   media: {},
   project: {
     projectFileVersion: 1,
-    projectViewStateVersion: 1
+    projectViewStateVersion: 1,
+    buildFileVersion: 1
   },
   compilation: {
     inProgress: false,

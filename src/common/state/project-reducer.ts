@@ -22,6 +22,7 @@ export function projectReducer (
       return {
         projectFileVersion: 1,
         projectViewStateVersion: 1,
+        buildFileVersion: 1,
         folderPath: null
       };
 
@@ -70,6 +71,18 @@ export function projectReducer (
       return {
         ...state,
         excludedItems: state.excludedItems?.slice()
+      };
+
+    case "SET_PROJECT_BUILD_FILE":
+      return {
+        ...state,
+        hasBuildFile: payload.flag
+      };
+
+    case "INC_BUILD_FILE_VERSION":
+      return {
+        ...state,
+        buildFileVersion: state.buildFileVersion + 1
       };
 
     default:
