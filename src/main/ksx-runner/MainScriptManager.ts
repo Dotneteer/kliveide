@@ -24,6 +24,7 @@ import {
   concludeScript,
   sendScriptOutput
 } from "../../common/ksx/script-runner";
+import { Z88DK } from "../../script-packages/z88dk/Z88DK";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -33,6 +34,7 @@ const MAX_SCRIPT_HISTORY = 128;
 class MainScriptManager implements IScriptManager {
   private scripts: ScriptExecutionState[] = [];
   private id = 0;
+  private packages: Record<string, any> = {};
 
   constructor (
     private prepareScript?: (
@@ -57,6 +59,15 @@ class MainScriptManager implements IScriptManager {
     if (!this.prepareScript) {
       this.prepareScript = this.doPrepare;
     }
+  }
+
+  /**
+   * Registers a package object to be used in the script execution.
+   * @param packageName Name of the package
+   * @param packageObject Package object to register
+   */
+  registerPackage (packageName: string, packageObject: any): void {
+    this.packages[packageName] = packageObject;
   }
 
   /**
@@ -237,8 +248,11 @@ class MainScriptManager implements IScriptManager {
     }
 
     // --- Parse the script
-    const module = await parseKsxModule(scriptFile, script, moduleName =>
-      this.resolveModule(scriptFile, moduleName)
+    const module = await parseKsxModule(
+      scriptFile,
+      script,
+      moduleName => this.resolveModule(scriptFile, moduleName),
+      packageName => this.resolvePackage(packageName)
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
@@ -283,7 +297,8 @@ class MainScriptManager implements IScriptManager {
     const module = await parseKsxModule(
       scriptFile,
       scriptContents,
-      (moduleName: string) => this.resolveModule(scriptFile, moduleName)
+      moduleName => this.resolveModule(scriptFile, moduleName),
+      packageName => this.resolvePackage(packageName)
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
@@ -325,6 +340,11 @@ class MainScriptManager implements IScriptManager {
       return null;
     }
   }
+
+  // --- Resolves the package contents
+  async resolvePackage (packageName: string): Promise<Record<string, any>> {
+    return this.packages[packageName];
+  }
 }
 
 export function createMainScriptManager (
@@ -341,24 +361,12 @@ export function createMainScriptManager (
   return new MainScriptManager(prepareScript, execScript, async () => {});
 }
 
+/**
+ * The singleton instance of the main script manager
+ */
 export const mainScriptManager = new MainScriptManager();
 
-// /**
-//  * Sends the output of a script to the IDE
-//  * @param text Text to send
-//  * @param options Additional options
-//  */
-// async function sendScriptOutput (
-//   text: string,
-//   options?: Record<string, any>
-// ): Promise<void> {
-//   const message: IdeDisplayOutputRequest = {
-//     type: "IdeDisplayOutput",
-//     pane: PANE_ID_SCRIPTIMG,
-//     text,
-//     color: "cyan",
-//     writeLine: true,
-//     ...options
-//   };
-//   await sendFromMainToIde(message);
-// }
+// --- Register the standard packages
+mainScriptManager.registerPackage("fs", fs);
+mainScriptManager.registerPackage("path", path);
+mainScriptManager.registerPackage("Z88Dk", Z88DK);

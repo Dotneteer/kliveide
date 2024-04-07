@@ -12,6 +12,7 @@ import {
   setIdeFontSizeAction,
   setMachineSpecificAction,
   setModelTypeAction,
+  setProjectBuildFileAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
   showIdeStatusBarAction,
@@ -32,7 +33,8 @@ import {
   LAST_PROJECT_FOLDER,
   KLIVE_PROJECT_ROOT,
   MEDIA_TAPE,
-  PROJECT_MERGE_FILE
+  PROJECT_MERGE_FILE,
+  BUILD_FILE
 } from "../common/structs/project-const";
 import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
@@ -41,6 +43,7 @@ import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { getModelConfig } from "../common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
+import { processBuildFile } from "./build";
 
 type ProjectCreationResult = {
   path?: string;
@@ -156,6 +159,7 @@ export async function openFolderByPath (
   const disp = mainStore.dispatch;
   disp(closeFolderAction());
 
+  // --- Check if the folder is a Klive project
   const projectFile = path.join(projectFolder, PROJECT_FILE);
   let isValidProject = false;
   if (fs.existsSync(projectFile)) {
@@ -225,7 +229,12 @@ export async function openFolderByPath (
 
   disp(openFolderAction(projectFolder, isValidProject));
 
-  const emulatorState = mainStore.getState().emulatorState;
+  // --- Chck for a build file
+  const buildFile = path.join(projectFolder, BUILD_FILE);
+  if (fs.existsSync(buildFile)) {
+    disp(setProjectBuildFileAction(true));
+    await processBuildFile();
+  }
 
   // --- Save the folder into settings
   appSettings.folders ??= {};

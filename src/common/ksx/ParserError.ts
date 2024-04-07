@@ -51,6 +51,7 @@ export type ErrorCodes =
   | "K024"
   | "K025"
   | "K026"
+  | "K027";
 
 /**
  * Represents a parser error message descriptions
@@ -86,5 +87,6 @@ export const errorMessages: ErrorText = {
   K023: "Function '{0}' is already defined in the module",
   K024: "'{0}' is already exported from the module",
   K025: "Cannot find module '{0}'",
-  K026: "Module '{0}' does not export '{1}'" 
+  K026: "Module '{0}' does not export '{1}'",
+  K027: "Cannot find package '{0}'",
 };

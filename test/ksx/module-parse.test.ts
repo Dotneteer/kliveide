@@ -56,8 +56,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("func1")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["func1"]).toBeDefined();
   });
 
   it("Function exports #2", async () => {
@@ -74,8 +74,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("func2")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["func2"]).toBeDefined();
   });
 
   it("Function exports #3", async () => {
@@ -92,9 +92,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("func1")).toBe(true);
-    expect(result.exports.has("func2")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["func1"]).toBeDefined();
+    expect(result.exports["func2"]).toBeDefined();
   });
 
   it("Const exports, object, empty", async () => {
@@ -109,7 +109,7 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(0);
+    expect(Object.keys(result.exports).length).toBe(0);
   });
 
   it("Const exports, object, single ID", async () => {
@@ -124,8 +124,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("a")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["a"]).toBeDefined();
   });
 
   it("Const exports, object, multiple IDs #1", async () => {
@@ -140,9 +140,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, object, multiple IDs #2", async () => {
@@ -157,9 +157,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, object, single aliased ID", async () => {
@@ -174,8 +174,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("aA")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["aA"]).toBeDefined();
   });
 
   it("Const exports, object, multiple aliased IDs #1", async () => {
@@ -190,9 +190,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("aA")).toBe(true);
-    expect(result.exports.has("bB")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["aA"]).toBeDefined();
+    expect(result.exports["bB"]).toBeDefined();
   });
 
   it("Const exports, object, multiple aliased IDs #2", async () => {
@@ -207,9 +207,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("aA")).toBe(true);
-    expect(result.exports.has("bB")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["aA"]).toBeDefined();
+    expect(result.exports["bB"]).toBeDefined();
   });
 
   it("Const exports, object, single nested object #1", async () => {
@@ -224,8 +224,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, object, single nested object #2", async () => {
@@ -240,9 +240,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("b")).toBe(true);
-    expect(result.exports.has("cC")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["b"]).toBeDefined();
+    expect(result.exports["cC"]).toBeDefined();
   });
 
   it("Const exports, array, empty #1", async () => {
@@ -257,7 +257,7 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(0);
+    expect(Object.keys(result.exports).length).toBe(0);
   });
 
   it("Const exports, array, empty #2", async () => {
@@ -272,7 +272,7 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(0);
+    expect(Object.keys(result.exports).length).toBe(0);
   });
 
   it("Const exports, array, single ID", async () => {
@@ -287,8 +287,8 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(1);
-    expect(result.exports.has("a")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(1);
+    expect(result.exports["a"]).toBeDefined();
   });
 
   it("Const exports, array, multiple IDs #1", async () => {
@@ -303,9 +303,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, array, multiple IDs #2", async () => {
@@ -320,9 +320,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, array, multiple IDs #3", async () => {
@@ -337,9 +337,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
   });
 
   it("Const exports, array, single nested array #1", async () => {
@@ -354,10 +354,10 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(3);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
-    expect(result.exports.has("c")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(3);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
+    expect(result.exports["c"]).toBeDefined();
   });
 
   it("Const exports, array, single nested array #2", async () => {
@@ -372,10 +372,10 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(3);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
-    expect(result.exports.has("c")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(3);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
+    expect(result.exports["c"]).toBeDefined();
   });
 
   it("Const exports, array in object #1", async () => {
@@ -390,9 +390,9 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(2);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("c")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(2);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["c"]).toBeDefined();
   });
 
   it("Const exports, object in array #1", async () => {
@@ -407,10 +407,10 @@ describe("KSX Parser - modules", () => {
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
 
-    expect(result.exports.size).toBe(3);
-    expect(result.exports.has("a")).toBe(true);
-    expect(result.exports.has("b")).toBe(true);
-    expect(result.exports.has("c")).toBe(true);
+    expect(Object.keys(result.exports).length).toBe(3);
+    expect(result.exports["a"]).toBeDefined();
+    expect(result.exports["b"]).toBeDefined();
+    expect(result.exports["c"]).toBeDefined();
   });
 
 
@@ -493,6 +493,6 @@ async function parseModule (
   return await parseKsxModule(
     ROOT_MODULE,
     source,
-    async (moduleName: string) => modules[moduleName] ?? null
+    async (moduleName: string) => modules?.[moduleName] ?? null
   );
 }

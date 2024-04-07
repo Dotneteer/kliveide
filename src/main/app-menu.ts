@@ -51,7 +51,7 @@ import {
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
 import {
   MEMORY_PANEL_ID,
-  DISASSEMBLY_PANEL_ID,
+  DISASSEMBLY_PANEL_ID
 } from "../common/state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
@@ -59,6 +59,7 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "../common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
+import { collectedBuildTasks } from "./build";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -141,6 +142,7 @@ export function setupMenu (
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const buildRoot = appState?.project?.buildRoots?.[0];
+  const hasBuildFile = !!appState?.project?.hasBuildFile;
   const volatileDocs = appState?.ideView?.volatileDocs ?? {};
   const machineId = appState?.emulatorState?.machineId;
   const modelId = appState?.emulatorState?.modelId;
@@ -805,6 +807,28 @@ export function setupMenu (
         ...specificProjectMenus
       ]
     });
+
+    if (hasBuildFile) {
+      let buildTasks: MenuItemConstructorOptions[] = [];
+      for (const task of collectedBuildTasks) {
+        if (task.separatorBefore) {
+          buildTasks.push({ type: "separator" });
+        }
+        buildTasks.push({
+          label: task.displayName,
+          click: async () => {
+            // TODO: Implement build task execution
+          }
+        });
+      }
+
+      if (buildTasks.length > 0) {
+        template.push({
+          label: "Build",
+          submenu: buildTasks
+        });
+      }
+    }
   }
 
   // ==========================================================================
