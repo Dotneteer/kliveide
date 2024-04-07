@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.30.5
+
+### Fixes
+
+- `.includebin` pragma length issue fixed
+
 ## 0.30.4
 
 ### Fixes

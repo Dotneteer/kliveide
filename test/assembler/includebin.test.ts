@@ -76,4 +76,15 @@ describe("Assembler - .includebin", async () => {
     expect(code.length).toBe(0x2000);
     expect(code[0]).toBe(0x0d);
   });
+
+  it("Regression #1", async () => {
+    const output = await compileFileWorks("Regression1.z80asm");
+    let code = output.segments[0].emittedCode;
+    expect(code.length).toBe(0x0001);
+    expect(code[0]).toBe(0xaf);
+    code = output.segments[1].emittedCode;
+    expect(code.length).toBe(14536);
+    expect(code[0]).toBe(0x01);
+    expect(code[14535]).toBe(0xc8);
+  });
 });

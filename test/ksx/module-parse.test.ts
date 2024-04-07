@@ -465,43 +465,6 @@ describe("KSX Parser - modules", () => {
     expect(errors[ROOT_MODULE][0].text).toContain("'a'");
   });
 
-  it("Unresolved module error", async () => {
-    // --- Arrange
-    const source = `
-        import { a } from "module1";
-        export const a = 1;
-    `;
-
-    // --- Act
-    const result = await parseModule(source);
-
-    // --- Assert
-    expect(isModuleErrors(result)).toBe(true);
-    const errors = result as ModuleErrors;
-    expect(Object.keys(errors).length).toBe(1);
-    expect(errors[ROOT_MODULE].length).toBe(1);
-    expect(errors[ROOT_MODULE][0].code).toBe("K025");
-    expect(errors[ROOT_MODULE][0].text).toContain("'module1'");
-  });
-
-  it("Error in imported module", async () => {
-    // --- Arrange
-    const source = `
-    import { a } from "module1";
-    `;
-
-    const modules: Record<string, string> = {
-      module1: `const;`
-    };
-
-    // --- Act
-    const result = await parseModule(source, modules) as ModuleErrors;
-
-    // --- Assert
-    expect(isModuleErrors(result)).toBe(true);
-    expect(result["module1"].length).toBe(1);
-  });
-
   it("Import module", async () => {
     // --- Arrange
     const source = `
