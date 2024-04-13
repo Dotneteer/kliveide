@@ -155,6 +155,33 @@ describe("Assembler - pragmas", async () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
+  it("bank - existing segment #3", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .org #6400
+      nop
+      .bank 1
+      .defb 0x01, 0x02, 0x03
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(2);
+    expect(output.segments[0].startAddress).toBe(0x6400);
+    expect(output.segments[0].bank).toBeUndefined();
+    expect(output.segments[0].displacement).toBeUndefined();
+    expect(output.segments[1].startAddress).toBe(0xc000);
+    expect(output.segments[1].bank).toBe(1);
+    expect(output.segments[1].displacement).toBeUndefined();
+    expect(output.segments[1].emittedCode.length).toBe(3);
+    expect(output.segments[1].emittedCode[0]).toBe(0x01);
+    expect(output.segments[1].emittedCode[1]).toBe(0x02);
+    expect(output.segments[1].emittedCode[2]).toBe(0x03);
+  });
+
+
   it("bank - new segment #1", async () => {
     const compiler = new Z80Assembler();
     const source = `

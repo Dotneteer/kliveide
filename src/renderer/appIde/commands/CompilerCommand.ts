@@ -453,8 +453,8 @@ export class ExportCodeCommand extends IdeCommandBase {
         const endAddr = startAddr + bankSegment.emittedCode.length - 1;
 
         const codeSegment = new Uint8Array(endAddr - startAddr + 3);
-        for (let i = 0; i < segments.length; i++) {
-          codeSegment[i + 1] = bankSegment[i];
+        for (let i = 0; i < bankSegment.emittedCode.length; i++) {
+          codeSegment[i + 1] = bankSegment.emittedCode[i];
         }
 
         // --- The first byte of the code segment is 0xFF (Data block)
@@ -766,26 +766,10 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
 
       // --- Add 'LOAD "" CODE' for each block
-      if (exporter.singleBlock) {
-        codeLine.push(LOAD_TKN);
-        codeLine.push(DQUOTE);
-        codeLine.push(DQUOTE);
-        codeLine.push(CODE_TKN);
-      } else {
-        for (
-          let i = 0;
-          i < output.segments.map(s => s.bank == undefined).length;
-          i++
-        ) {
-          if (i > 0) {
-            codeLine.push(COLON);
-          }
-          codeLine.push(LOAD_TKN);
-          codeLine.push(DQUOTE);
-          codeLine.push(DQUOTE);
-          codeLine.push(CODE_TKN);
-        }
-      }
+      codeLine.push(LOAD_TKN);
+      codeLine.push(DQUOTE);
+      codeLine.push(DQUOTE);
+      codeLine.push(CODE_TKN);
 
       codeLine.push(NEW_LINE);
       lines.push(codeLine);
