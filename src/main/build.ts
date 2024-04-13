@@ -52,9 +52,10 @@ export async function processBuildFile (): Promise<void> {
       // --- This is a build task
       let displayName = key;
       let separatorBefore = false;
-      if (predefinedTasks[key]) {
-        displayName = predefinedTasks[key];
-        separatorBefore = key === "build";
+      const predefined = predefinedTasks[key];
+      if (predefined) {
+        displayName = predefined.displayName;
+        separatorBefore = predefined.separatorBefore;
       } else {
         const funcDecl = exp as FunctionDeclaration;
         if (
@@ -89,9 +90,36 @@ export async function processBuildFile (): Promise<void> {
   mainStore.dispatch(setIdeStatusMessageAction("Build file processed", true));
 }
 
-const predefinedTasks: Record<string, string> = {
-  build: "Build",
-  exportArtifacts: "Export artifacts"
+type PredefinedBuildTaskDescriptor = {
+  displayName: string;
+  separatorBefore?: boolean;
+  ideCommand: string;
+}
+
+const predefinedTasks: Record<string, PredefinedBuildTaskDescriptor> = {
+  buildCode: {
+    displayName: "Build project",
+    separatorBefore: true,
+    ideCommand: "compile"
+  },
+  injectCode: {
+    displayName: "Inject code into the machine",
+    ideCommand: "inject"
+  },
+  runCode: {
+    displayName: "Run",
+    separatorBefore: true,
+    ideCommand: "run"
+  },
+  debugCode: {
+    displayName: "Debug",
+    ideCommand: "debug"
+  },
+  exportCode: {
+    displayName: "Export artifacts",
+    separatorBefore: true,
+    ideCommand: "export"
+  }
 };
 
 type BuildTaskDescriptor = {
