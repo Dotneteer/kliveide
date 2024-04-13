@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { app } from "electron";
 import { WindowState } from "./WindowStateManager";
 import { mainStore } from "./main-store";
+import { getRecentProjects, setRecentProjects } from "./projects";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive.settings";
@@ -39,6 +40,7 @@ export type AppSettings = {
   excludedProjectItems?: string[];
   keyMappingFile?: string;
   userSettings?: Record<string, any>;
+  recentProjects?: string[];
 };
 
 let finalSaveDone = false;
@@ -78,6 +80,7 @@ export function saveAppSettings (): void {
     appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
     appSettings.media = state.media ?? {};
     appSettings.keyMappingFile = state.keyMappingFile;
+    appSettings.recentProjects = getRecentProjects();    
   }
 
   // --- Save to the settings file
@@ -95,6 +98,9 @@ export function loadAppSettings (): void {
   try {
     const contents = fs.readFileSync(getSettingsFilePath(), "utf8");
     appSettings = JSON.parse(contents) as AppSettings;
+
+    // --- Apply settings to the current main-only state
+    setRecentProjects(appSettings.recentProjects ?? []);
   } catch {
     appSettings = {};
   }

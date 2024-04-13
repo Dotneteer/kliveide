@@ -4,7 +4,7 @@
 
 ### Fixes
 
-Fix the segment loading issue in the ZX Spectrum 128 exported file loader
+- Fix the segment loading issue in the ZX Spectrum 128 exported file loader
 
 ## 0.31.0
 
