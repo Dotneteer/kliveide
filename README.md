@@ -3,32 +3,7 @@
 Quick links:
 - [What Klive IDE Is](#what-klive-ide-is)
 - [Klive Documentation](https://dotneteer.github.io/kliveide/)
-- [Release v0.30.5](https://github.com/Dotneteer/kliveide/releases/tag/v0.30.5)
-
-## Announcement
-
-**Klive IDE is about to receive a significant update affecting its functionality, stability, and internal architecture. Now, you can access the first release of this train of updates, v0.30.4.**
-
-This new version, due to the new architecture, removes annoying issues and implements long-awaited features such as exporting code, viewing the structure of tape files, and improved source code debugging.
-
-New and improved features at a glance:
-- Exporting compiled code into `.tzx` or `.tap` files
-- Viewers for `.tzx` and `.tap` files
-- New disk format (standard `.dsk`) for ZX Spectrum +3E
-- Viewer for `.dsk` files
-- Brand new Basic Listing (with ZX Spectrum font support)
-- New Memory view
-- New Disassembly view
-- Exclude files/folders from a project
-- ZX Spectrum 128 Keyboard
-- Keyboard mapping customization
-- More stable ZX Basic integration
-- New source code debugging architecture
-- New integration architecture to allow future integration with external compilers and tools
-
-> **Note**: The new release brings a new project file format. You will still be able to work with your Z80 assembly and ZX Basic source files; however, you should manually migrate your projects from the old format. I do not plan to add migration tools, but I will provide simple instructions. Sorry for that inconvenience. I plan to use my time to deliver more significant features!
-
-**After the release, I will entirely focus on the new version and plan to abandon supporting the old ones gradually.**
+- [Release v0.31.0](https://github.com/Dotneteer/kliveide/releases/tag/v0.31.0)
 
 ## How You Can Contribute
 
@@ -56,8 +31,8 @@ Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive 
 - **ZX Spectrum 128K**
 - **ZX Spectrum +2E/+3E** (*in progress*)
 - **Cambridge Z88** (*in progress*)
+- **ZX Spectrum Next** (*in progress*)
 - ZX 80/81 (*in the future*)
-- ZX Spectrum Next (*in the future*)
 
 ### Emulator Features
 

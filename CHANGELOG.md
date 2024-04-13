@@ -1,5 +1,23 @@
 # Klive IDE Changelog
 
+## 0.31.0
+
+### Features
+
+This build represents a preview of new features being built into the IDE. The release also adds new machine types:
+- ZX Spectrum 16K
+- ZX Spectrum 48K (NTSC)
+- Greatly improved (still in progress) Cambridge Z88
+
+Though the ZX Spectrum Next emulator is in a very initial state, some rudimentary tooling started regarding the ZX Spectrum Next app development:
+- `.z80` file viewer
+- `.scr` file viewer
+- `.nex` file viewer
+- `.spr` sprite editor
+- `.pal` and `.npl` palette editors
+
+This release contains numerous minor updates to improve user experience.
+
 ## 0.30.5
 
 ### Fixes
