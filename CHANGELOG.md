@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.31.1
+
+### Fixes
+
+Fix the segment loading issue in the ZX Spectrum 128 exported file loader
+
 ## 0.31.0
 
 ### Features
