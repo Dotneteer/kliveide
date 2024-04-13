@@ -227,6 +227,7 @@ export async function openFolderByPath (
     }
   }
 
+  addRecentProject(projectFolder);
   disp(openFolderAction(projectFolder, isValidProject));
 
   // --- Chck for a build file
@@ -415,4 +416,28 @@ export async function saveKliveProject (): Promise<void> {
   } catch {
     // --- Intentionally ignored
   }
+}
+
+let recentProjects: string[] = [];
+const MAX_RECENT_PROJECTS = 10;
+
+// --- Retrieve the recent projects
+export function getRecentProjects (): string[] {
+  return recentProjects;
+}
+
+// --- Set the recent projects (after loading the settings)
+export function setRecentProjects (projects: string[]): void {
+  recentProjects = projects;
+}
+
+// --- Add a recent project
+export function addRecentProject (projectFolder: string): void {
+  if (recentProjects.includes(projectFolder)) {
+    recentProjects = recentProjects.filter((p) => p !== projectFolder);
+  }
+  recentProjects.unshift(projectFolder);
+  recentProjects = recentProjects.slice(0, MAX_RECENT_PROJECTS);
+  appSettings.recentProjects = recentProjects;
+  saveAppSettings();
 }

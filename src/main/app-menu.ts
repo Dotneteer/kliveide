@@ -40,7 +40,7 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
-import { openFolder, saveKliveProject } from "./projects";
+import { addRecentProject, openFolder, saveKliveProject } from "./projects";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
@@ -66,6 +66,7 @@ export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 const SYSTEM_MENU_ID = "system_menu";
 const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
+const RECENT_PROJECTS = "recent_projects";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
@@ -182,6 +183,32 @@ export function setupMenu (
 
   // ==========================================================================
   // File menu
+  const recentProjectNames = appSettings.recentProjects ?? [];
+
+  const recentProjects: MenuItemConstructorOptions[] = recentProjectNames.map(
+    rp => {
+      return {
+        label: rp,
+        click: async () => {
+          await executeIdeCommand(ideWindow, `open "${rp}"`, undefined, true);
+        }
+      };
+    }
+  );
+
+  let recentProjectHolder: MenuItemConstructorOptions[] = [];
+
+  if (recentProjects.length > 0) {
+    recentProjectHolder.push(
+      { type: "separator" },
+      {
+        id: RECENT_PROJECTS,
+        label: "Recent Folders",
+        submenu: recentProjects
+      }
+    );
+  }
+
   template.push({
     label: "File",
     submenu: filterVisibleItems([
@@ -201,6 +228,7 @@ export function setupMenu (
           await openFolder(ideWindow);
         }
       },
+      ...recentProjectHolder,
       { type: "separator" },
       {
         id: CLOSE_FOLDER,
