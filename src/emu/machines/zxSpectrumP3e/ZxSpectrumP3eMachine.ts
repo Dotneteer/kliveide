@@ -22,7 +22,10 @@ import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128PsgDevice } from "../zxSpectrum128/ZxSpectrum128PsgDevice";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
-import { ZxSpectrumP3eFloatingBusDevice } from "./ZxSpectrumP3eFloatingBusDevice";
+import {
+  ZxSpectrumP3eFloatingBusDevice,
+  zxSpectrumP32FloatingBusPorts
+} from "./ZxSpectrumP3eFloatingBusDevice";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { PagedMemory } from "../memory/PagedMemory";
@@ -32,7 +35,6 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MachineModel } from "@common/machines/info-types";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import { setMediaAction } from "@common/state/actions";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 /**
@@ -54,11 +56,18 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   private screenStartOffset = 0;
   selectedRom = 0;
   selectedBank = 0;
+
+  // --- We need this value for the floating bus device
+  lastContendedValue = 0xff;
+  lastUlaReadValue = 0xff;
+
+  // --- Paging-related fields
   pagingEnabled = true;
   useShadowScreen = false;
   inSpecialPagingMode = false;
   specialConfigMode = 0;
   diskMotorOn = false;
+
 
   /**
    * Represents the PSG device of ZX Spectrum +3E
@@ -228,7 +237,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
     // --- Reset media
     this.setMachineProperty(MEDIA_DISK_A);
     this.setMachineProperty(MEDIA_DISK_B);
- }
+  }
 
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
@@ -243,7 +252,9 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory (offset: number): number {
-    return this.memory.memory[this.screenStartOffset + (offset & 0x3fff)];
+    const value = this.memory.memory[this.screenStartOffset + (offset & 0x3fff)];
+    this.lastUlaReadValue = value;
+    return value;
   }
 
   /**
@@ -312,7 +323,11 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @returns The byte read from the memory
    */
   doReadMemory (address: number): number {
-    return this.memory.readMemory(address);
+    const valueRead = this.memory.readMemory(address);
+    if (this.isContendedMemoryAddress(address)) {
+      this.lastContendedValue = valueRead;
+    }
+    return valueRead;
   }
 
   /**
@@ -322,6 +337,9 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    */
   doWriteMemory (address: number, value: number): void {
     this.memory.writeMemory(address, value);
+    if (this.isContendedMemoryAddress(address)) {
+      this.lastContendedValue = value;
+    }
   }
 
   /**
@@ -333,14 +351,8 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * the Z80 CPU takes 3 T-states to read or write the memory contents.
    */
   delayAddressBusAccess (address: number): void {
-    const page = address & 0xc000;
-
-    if (this.inSpecialPagingMode) {
-      if (page === 0xc000) {
-        if (this.specialConfigMode !== 1) return;
-      } else if (!this.specialConfigMode) return;
-    } else {
-      if (page !== 0x4000 && (page !== 0xc000 || this.selectedBank < 4)) return;
+    if (!this.isContendedMemoryAddress(address)) {
+      return;
     }
 
     // --- We read from contended memory
@@ -348,6 +360,23 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
     this.tactPlusN(delay);
     this.totalContentionDelaySinceStart += delay;
     this.contentionDelaySincePause += delay;
+  }
+
+  /**
+   * Test if the memory address is in contended memory
+   * @param address Memory address to test
+   * @returns True, if the memory address is in contended memory
+   */
+  isContendedMemoryAddress (address: number): boolean {
+    const page = address & 0xc000;
+    if (this.inSpecialPagingMode) {
+      if (page === 0xc000) {
+        if (this.specialConfigMode !== 1) return false;
+      } else if (!this.specialConfigMode) return false;
+    } else {
+      if (page !== 0x4000 && (page !== 0xc000 || this.selectedBank < 4)) return false;
+    }
+    return true;
   }
 
   /**
@@ -385,7 +414,9 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
       return this.hasFloppy ? this.floppyDevice.readDataRegister() : 0xff;
     }
 
-    return this.floatingBusDevice.readFloatingBus();
+    return (address in zxSpectrumP32FloatingBusPorts && this.pagingEnabled)
+      ? this.floatingBusDevice.readFloatingBus()
+      : 0xff;
   }
 
   /**
