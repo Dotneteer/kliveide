@@ -291,6 +291,8 @@ export interface MainGetTemplateDirsRequest extends MessageBase {
 export interface MainStartScriptRequest extends MessageBase {
   type: "MainStartScript";
   filename: string;
+  scriptTitle?: string;
+  scriptText?: string;
 }
 
 /**

@@ -100,6 +100,7 @@ import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
 import {
   CancelScriptCommand,
   DisplayScriptOutputCommand,
+  RunBuildScriptCommand,
   RunScriptCommand
 } from "./commands/ScriptCommands";
 import {
@@ -335,6 +336,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new CreateDiskFileCommand());
 
   cmdSrv.registerCommand(new RunScriptCommand());
+  cmdSrv.registerCommand(new RunBuildScriptCommand());
   cmdSrv.registerCommand(new CancelScriptCommand());
   cmdSrv.registerCommand(new DisplayScriptOutputCommand());
 

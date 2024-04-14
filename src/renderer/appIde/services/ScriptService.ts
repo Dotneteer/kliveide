@@ -5,7 +5,6 @@ import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { isScriptCompleted } from "@common/utils/script-utils";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();
@@ -62,6 +61,38 @@ class ScriptService implements IScriptService {
       if (emuResponse.type === "ErrorResponse") {
         throw new Error(emuResponse.message);
       }
+      return response.id;
+    }
+    throw new Error("Unexpected response");
+  }
+
+  /**
+   * Starts the execution of the script specified with the given text.
+   * @param scriptText The text of the script to run
+   * @param scriptTitle The title of the script
+   * @param filename The file name of the script
+   * @returns The script ID of the started script.
+   */
+  async runScriptText (
+    scriptText: string,
+    scriptTitle: string,
+    filename: string
+  ): Promise<number> {
+    // TODO: Implement this
+    const response = await this.messenger.sendMessage({
+      type: "MainStartScript",
+      filename,
+      scriptText,
+      scriptTitle
+    });
+    if (response.type === "ErrorResponse") {
+      throw new Error(response.message);
+    }
+    if (response.type === "MainRunScriptResponse") {
+      // --- Create a new output buffer for the script
+      const buffer = new OutputPaneBuffer();
+      this._scriptOutputs.set(response.id, buffer);
+
       return response.id;
     }
     throw new Error("Unexpected response");
