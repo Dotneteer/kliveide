@@ -39,6 +39,10 @@ class ScriptService implements IScriptService {
       throw new Error(response.message);
     }
     if (response.type === "MainRunScriptResponse") {
+      if (response.hasParseError) {
+        throw new Error("The script contains parse errors. See the Script Output pane for details.");
+      }
+
       // --- Create a new output buffer for the script
       if (response.id > 0) {
         const buffer = new OutputPaneBuffer();
@@ -92,10 +96,13 @@ class ScriptService implements IScriptService {
       throw new Error(response.message);
     }
     if (response.type === "MainRunScriptResponse") {
+      if (response.hasParseError) {
+        throw new Error("The script contains parse errors.");
+      }
+
       // --- Create a new output buffer for the script
       const buffer = new OutputPaneBuffer();
       this._scriptOutputs.set(response.id, buffer);
-
       return response.id;
     }
     throw new Error("Unexpected response");

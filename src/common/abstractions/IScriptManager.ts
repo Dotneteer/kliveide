@@ -34,4 +34,5 @@ export type ScriptStartInfo = {
   id?: number;
   target?: string;
   contents?: string;
+  hasParseError?: boolean;
 };

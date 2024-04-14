@@ -439,7 +439,8 @@ export async function processRendererToMainMessages (
         type: "MainRunScriptResponse",
         id: scriptInfo.id,
         target: scriptInfo.target,
-        contents: scriptInfo.contents
+        contents: scriptInfo.contents,
+        hasParseError: scriptInfo.hasParseError
       };
     }
 

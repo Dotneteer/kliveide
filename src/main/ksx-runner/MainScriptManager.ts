@@ -15,7 +15,6 @@ import { isScriptCompleted } from "../../common/utils/script-utils";
 import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import {
   KsxModule,
-  ModuleErrors,
   executeModule,
   isModuleErrors,
   parseKsxModule
@@ -27,8 +26,6 @@ import {
   sendScriptOutput
 } from "../../common/ksx/script-runner";
 import { Z88DK } from "../../script-packages/z88dk/Z88DK";
-import script from "next/script";
-import { f } from "nextra/dist/types-c8e621b7";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -110,6 +107,11 @@ class MainScriptManager implements IScriptManager {
 
     // --- Prepare the script for execution
     const startInfo = await this.prepareScript(scriptFileName, this.id);
+    if (startInfo.hasParseError) {
+      return startInfo;
+    }
+
+    // --- Ok, parsing successful
     const runsInEmu = startInfo.target === "emu";
     const newScript: ScriptExecutionState = {
       id: this.id,
@@ -176,7 +178,15 @@ class MainScriptManager implements IScriptManager {
     });
 
     // --- Parse the script
-    const module = await this.parseScript(scriptFile, scriptText);
+    let module: KsxModule;
+    try {
+      module = await this.parseScript(scriptFile, scriptText);
+    } catch (err) {
+      // --- The script has errors, display them
+      return { id: this.id, hasParseError: true };
+    }
+
+    // --- Parse was successful, start the script
     const newScript: ScriptExecutionState = {
       id: this.id,
       scriptFileName: scriptFile,
@@ -184,13 +194,14 @@ class MainScriptManager implements IScriptManager {
       startTime: new Date(),
       runsInEmu: false,
       evalContext,
-      specialScript: speciality
+      specialScript: speciality,
+      scriptFunction
     };
     this.scripts.push(newScript);
 
     // --- The script should be executed in the main process
     // --- Start the script but do not await it
-    const execTask = executeModule(module, evalContext);;
+    const execTask = executeModule(module, evalContext);
 
     // --- Update the script status
     newScript.execTask = execTask;
@@ -273,7 +284,9 @@ class MainScriptManager implements IScriptManager {
       runsInEmu: s.runsInEmu,
       startTime: s.startTime,
       endTime: s.endTime,
-      stopTime: s.stopTime
+      stopTime: s.stopTime,
+      specialScript: s.specialScript,
+      scriptFunction: s.scriptFunction
     }));
   }
 
@@ -296,7 +309,13 @@ class MainScriptManager implements IScriptManager {
     }
 
     // --- Parse the script
-    const module = await this.parseScript(scriptFile, script);
+    let module: KsxModule;
+    try {
+      module = await this.parseScript(scriptFile, script);
+    } catch (err) {
+      // --- The script has errors, display them
+      return { id: scriptId, hasParseError: true };
+    }
 
     // --- Check if the execution target is main
     if (module.statements.length > 0) {

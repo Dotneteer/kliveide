@@ -46,6 +46,7 @@ export function concludeScript (
         }
       );
     } catch (error) {
+      console.log("Script error", error);
       script.status = "execError";
       script.error = error.message;
       script.endTime = new Date();

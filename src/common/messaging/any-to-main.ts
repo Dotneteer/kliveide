@@ -426,6 +426,7 @@ export interface MainRunScriptResponse extends MessageBase {
   target?: string;
   contents?: string;
   id?: number;
+  hasParseError?: boolean;
 }
 
 /**

@@ -150,22 +150,16 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
 
     try {
       const id = await context.service.scriptService.runScriptText(script, this.arg, buildFileName, "build");
+      console.log("Script ID", id);
       return commandSuccessWith(
         `Script ${this.arg} (with ID ${Math.abs(id)}) ${
           id < 0 ? "is already running" : "has been started"
         }.`
       );
     } catch (err) {
+      console.log("Error", err.message);
       return commandError(err.message);
     }
-
-    return commandSuccessWith(script);
-
-    // // --- Check if the script file exists
-    // const checkResult = await checkScriptFile(this.arg, context);
-    // if (checkResult.error) {
-    //   return commandError(checkResult.error);
-    // }
   }
 }
 
