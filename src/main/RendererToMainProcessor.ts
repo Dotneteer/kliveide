@@ -428,8 +428,9 @@ export async function processRendererToMainMessages (
         // --- Script text specified, run as script text
         scriptInfo = await mainScriptManager.runScriptText(
           message.scriptText,
-          message.scriptTitle,
-          message.filename
+          message.scriptFunction,
+          message.filename,
+          message.speciality
         );
       } else {
         scriptInfo = await mainScriptManager.runScript(message.filename);

@@ -20,6 +20,7 @@ export type ScriptRunInfo = {
   endTime?: Date;
   stopTime?: Date;
   specialScript?: string;
+  scriptFunction?: string;
 };
 
 export type ScriptExecutionState = ScriptRunInfo & {

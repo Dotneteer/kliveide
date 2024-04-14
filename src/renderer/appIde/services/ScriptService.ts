@@ -69,21 +69,24 @@ class ScriptService implements IScriptService {
   /**
    * Starts the execution of the script specified with the given text.
    * @param scriptText The text of the script to run
-   * @param scriptTitle The title of the script
+   * @param scriptFunction The script function to run
    * @param filename The file name of the script
+   * @param speciality The speciality of the script
    * @returns The script ID of the started script.
    */
   async runScriptText (
     scriptText: string,
-    scriptTitle: string,
-    filename: string
+    scriptFunction: string,
+    filename: string,
+    speciality: string
   ): Promise<number> {
     // TODO: Implement this
     const response = await this.messenger.sendMessage({
       type: "MainStartScript",
       filename,
       scriptText,
-      scriptTitle
+      scriptFunction,
+      speciality
     });
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);

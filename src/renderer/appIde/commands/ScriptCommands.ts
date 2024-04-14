@@ -149,7 +149,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
     const script = `import { ${this.arg} } from "./${BUILD_FILE}";\n\n${this.arg}();`;
 
     try {
-      const id = await context.service.scriptService.runScriptText(script, "build", buildFileName);
+      const id = await context.service.scriptService.runScriptText(script, this.arg, buildFileName, "build");
       return commandSuccessWith(
         `Script ${this.arg} (with ID ${Math.abs(id)}) ${
           id < 0 ? "is already running" : "has been started"

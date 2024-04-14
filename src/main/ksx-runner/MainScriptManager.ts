@@ -155,8 +155,9 @@ class MainScriptManager implements IScriptManager {
 
   async runScriptText (
     scriptText: string,
-    scriptTitle: string,
-    scriptFile?: string
+    scriptFunction: string,
+    scriptFile: string,
+    speciality?: string
   ): Promise<ScriptStartInfo> {
     // --- Remove the oldest running script, if there are too many of them
     this.removeOldScript();
@@ -165,7 +166,7 @@ class MainScriptManager implements IScriptManager {
     this.id++;
 
     // --- Now, start the script
-    this.outputFn?.(`Starting script ${scriptTitle}...`);
+    this.outputFn?.(`Starting script ${scriptFunction}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({
       scriptId: this.id,
@@ -182,7 +183,8 @@ class MainScriptManager implements IScriptManager {
       status: "pending",
       startTime: new Date(),
       runsInEmu: false,
-      evalContext
+      evalContext,
+      specialScript: speciality
     };
     this.scripts.push(newScript);
 

@@ -21,11 +21,17 @@ export interface IScriptService {
   /**
    * Starts the execution of the script specified with the given text.
    * @param scriptText The text of the script to run
-   * @param title The title of the script
-   * @param scriptFile The file name of the script
+   * @param scriptFunction The script function to run
+   * @param filename The file name of the script
+   * @param speciality The speciality of the script
    * @returns The script ID of the started script.
    */
-  runScriptText(scriptText: string, title: string, scriptFile: string): Promise<number>;
+  runScriptText(
+    scriptText: string,
+    scriptFunction: string,
+    filename: string,
+    speciality: string
+  ): Promise<number>;
 
   /**
    * Stops the execution of the specified script.
