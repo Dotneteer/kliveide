@@ -194,7 +194,7 @@ function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<Proje
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
     buildFunctions: [],
-    nodes,
+    children: nodes,
   }
 
   function collectNodes(children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
@@ -215,6 +215,7 @@ function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<Proje
         children: nodeChildren.length > 0 ? nodeChildren : []
       })
     });
+    console.log(result);
     return result;
   }
 }

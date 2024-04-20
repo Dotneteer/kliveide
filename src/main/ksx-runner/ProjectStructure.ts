@@ -17,7 +17,7 @@ export type ProjectStructure = {
   rootPath: string;
   hasBuildFile: boolean;
   buildFunctions: string[];
-  nodes: ProjectTreeNode[];
+  children: ProjectTreeNode[];
 };
 
 export async function createProjectStructure (
