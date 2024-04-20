@@ -11,4 +11,9 @@ export type IdeCommandResult = {
    * Final message of the command to display
    */
   finalMessage?: string;
+
+  /**
+   * Command result value
+   */
+  value?: any;
 };

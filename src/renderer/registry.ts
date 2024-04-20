@@ -378,6 +378,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".c",
+    canBeBuildRoot: true,
     editor: CODE_EDITOR,
     subType: "c",
     icon: "@file-c"

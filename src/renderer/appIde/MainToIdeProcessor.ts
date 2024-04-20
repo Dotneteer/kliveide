@@ -17,6 +17,9 @@ import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
 import { getCachedAppServices } from "../CachedServices";
+import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
+import { ProjectNode } from "./project/project-node";
+import { ProjectStructure, ProjectTreeNode } from "@main/ksx-runner/ProjectStructure";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -72,15 +75,6 @@ export async function processMainToIdeMessages (
       break;
     }
 
-    case "IdeShowBankedDisassembly": {
-      if (message.show) {
-        await ideCommandsService.executeCommand("show-disass");
-      } else {
-        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
-      }
-      break;
-    }
-
     case "IdeShowBasic": {
       if (message.show) {
         await documentHubService.openDocument(
@@ -107,7 +101,8 @@ export async function processMainToIdeMessages (
       return {
         type: "IdeExecuteCommandResponse",
         success: response.success,
-        finalMessage: response.finalMessage
+        finalMessage: response.finalMessage,
+        value: response.value
       };
     }
 
@@ -119,6 +114,13 @@ export async function processMainToIdeMessages (
     case "IdeScriptOutput": {
       executeScriptOutput(message);
       break;
+    }
+
+    case "IdeGetProjectStructure": {
+      return {
+        type: "IdeGetProjectStructureResponse",
+        projectStructure: convertToProjectStructure(store, projectService.getProjectTree())
+      };
     }
   }
   return defaultResponse();
@@ -181,5 +183,39 @@ function executeScriptOutput (message: IdeScriptOutputRequest): void {
     case "popStyle":
       buffer.popStyle();
       break;
+  }
+}
+
+function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<ProjectNode>): ProjectStructure {
+  const project = store.getState().project;
+  const nodes = collectNodes(tree.rootNode.children);
+
+  return {
+    rootPath: project.folderPath,
+    hasBuildFile: !!project.hasBuildFile,
+    buildFunctions: [],
+    children: nodes,
+  }
+
+  function collectNodes(children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
+    if (!children) return [];
+
+    const result: ProjectTreeNode[] = [];
+    children.forEach(child => {
+      const nodeChildren = collectNodes(child.children);
+      result.push({
+        depth: child.depth,
+        name: child.data.name,
+        fullPath: child.data.fullPath,
+        projectPath: child.data.projectPath,
+        isFolder: child.data.isFolder,
+        isReadonly: child.data.isReadOnly,
+        isBinary: child.data.isBinary,
+        canBeBuildRoot: child.data.canBeBuildRoot,
+        children: nodeChildren.length > 0 ? nodeChildren : []
+      })
+    });
+    console.log(result);
+    return result;
   }
 }

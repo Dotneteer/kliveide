@@ -143,8 +143,8 @@ export const commandSuccess: IdeCommandResult = { success: true };
 /**
  * Represents successful command execution
  */
-export function commandSuccessWith(msg: string): IdeCommandResult {
-  return { success: true, finalMessage: msg };
+export function commandSuccessWith(msg: string, value?: any): IdeCommandResult {
+  return { success: true, finalMessage: msg, value };
 }
 
 /**

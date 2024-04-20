@@ -147,12 +147,13 @@ export function buildProjectTree (
       node.isReadOnly = fileTypeEntry.isReadOnly;
       node.isBinary = fileTypeEntry.isBinary;
       node.openPermanent = fileTypeEntry.openPermanent;
+      node.canBeBuildRoot = !!fileTypeEntry.canBeBuildRoot;
     }
 
     // --- Get the language information
     if (!node.isFolder) {
       const nodeFullPath = typeof node === "string" ? node : node.fullPath;
-      node.canBeBuildRoot = customLanguagesRegistry
+      node.canBeBuildRoot ||= customLanguagesRegistry
         .filter(reg => reg.extensions.some(ext => nodeFullPath.endsWith(ext)))
         .some(reg => reg.allowBuildRoot);
     }

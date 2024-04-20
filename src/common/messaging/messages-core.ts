@@ -66,7 +66,9 @@ import {
   MainRunScriptResponse,
   MainResolveModuleRequest,
   MainResolveModuleResponse,
-  MainCloseScriptRequest
+  MainCloseScriptRequest,
+  MainGetBuildFunctionsRequest,
+  MainGetBuildFunctionsResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -107,13 +109,14 @@ import {
   IdeDisplayOutputRequest,
   IdeShowBasicRequest,
   IdeShowDialogRequest,
-  IdeShowDisassemblyRequest,
   IdeExecuteCommandRequest,
   IdeExecuteCommandResponse,
   IdeSaveAllBeforeQuitRequest,
   IdeScriptOutputRequest,
   IdeShowMemoryRequest,
-  IdeShowBankedDisassemblyRequest
+  IdeShowDisassemblyRequest,
+  IdeGetProjectStructureRequest,
+  IdeGetProjectStructureResponse
 } from "./any-to-ide";
 
 /**
@@ -238,16 +241,16 @@ export type RequestMessage =
   | MainStopScriptRequest
   | MainResolveModuleRequest
   | MainCloseScriptRequest
+  | MainGetBuildFunctionsRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
-  | IdeShowBankedDisassemblyRequest
   | IdeShowBasicRequest
   | IdeShowDialogRequest
   | IdeExecuteCommandRequest
   | IdeSaveAllBeforeQuitRequest
-  | IdeScriptOutputRequest;
-
+  | IdeScriptOutputRequest
+  | IdeGetProjectStructureRequest;
 
 /**
  * All Response messages
@@ -271,6 +274,7 @@ export type ResponseMessage =
   | MainGetTemplateDirsResponse
   | MainRunScriptResponse
   | MainResolveModuleResponse
+  | MainGetBuildFunctionsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse
@@ -279,7 +283,8 @@ export type ResponseMessage =
   | EmuGetSysVarsResponse
   | EmuGetNecUpd765Response
   | EmuGetBlinkStateResponse
-  | IdeExecuteCommandResponse;
+  | IdeExecuteCommandResponse
+  | IdeGetProjectStructureResponse;
 
 /**
  * All messages

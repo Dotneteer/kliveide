@@ -1,9 +1,8 @@
 import { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
 import { MessageBase } from "./messages-core";
+import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
-/**
- * You can sens an output pane message with these request to the IDE
- */
+// --- Ask the IDE to display an output in the specified pane
 export interface IdeDisplayOutputRequest extends MessageBase {
   type: "IdeDisplayOutput";
   pane: string;
@@ -19,6 +18,7 @@ export interface IdeDisplayOutputRequest extends MessageBase {
   writeLine?: boolean;
 }
 
+// --- Ask the IDE to display a message in the scripts output
 export interface IdeScriptOutputRequest extends MessageBase {
   type: "IdeScriptOutput";
   id: number;
@@ -26,43 +26,57 @@ export interface IdeScriptOutputRequest extends MessageBase {
   args?: any[];
 }
 
-
+// --- Ask the IDE to open the Machine Memory display
 export interface IdeShowMemoryRequest extends MessageBase {
   type: "IdeShowMemory";
   show: boolean;
 }
 
+// --- Ask the IDE to open the Disassembly display
 export interface IdeShowDisassemblyRequest extends MessageBase {
   type: "IdeShowDisassembly";
   show: boolean;
 }
 
-export interface IdeShowBankedDisassemblyRequest extends MessageBase {
-  type: "IdeShowBankedDisassembly";
-  show: boolean;
-}
-
+// --- Ask the IDE to open the BASIC listing display
 export interface IdeShowBasicRequest extends MessageBase {
   type: "IdeShowBasic";
   show: boolean;
 }
 
+// --- Ask the IDE to show a particular dialog
 export interface IdeShowDialogRequest extends MessageBase {
   type: "IdeShowDialog";
   dialogId?: number;
 }
 
+// --- Ask the IDE to execute a command
 export interface IdeExecuteCommandRequest extends MessageBase {
   type: "IdeExecuteCommand";
   commandText: string;
 }
 
+// --- Ask the IDE to save all files before quitting
+export interface IdeSaveAllBeforeQuitRequest extends MessageBase {
+  type: "IdeSaveAllBeforeQuit";
+}
+
+// --- Ask the IDE to get the current project structure
+export interface IdeGetProjectStructureRequest extends MessageBase {
+  type: "IdeGetProjectStructure";
+}
+
+// --- Reteurns the result of the command execution
 export interface IdeExecuteCommandResponse extends MessageBase {
   type: "IdeExecuteCommandResponse";
   success: boolean;
   finalMessage?: string;
+  value?: any;
 }
 
-export interface IdeSaveAllBeforeQuitRequest extends MessageBase {
-  type: "IdeSaveAllBeforeQuit";
+// --- The response with the current project structure
+export interface IdeGetProjectStructureResponse extends MessageBase {
+  type: "IdeGetProjectStructureResponse";
+  projectStructure: ProjectStructure;
 }
+

@@ -20,7 +20,7 @@ const ScriptingHistoryPanel = () => {
     (async() => {
       if (refreshing.current) return;
       refreshing.current = true;
-      await new Promise(resolve => setTimeout(resolve, 250));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       setVersion(version + 1);
       refreshing.current = false;
     })()
@@ -43,6 +43,19 @@ const ScriptingHistoryPanel = () => {
             let color = "";
             const from = script.startTime;
             let to = new Date();
+
+            // --- Set the task icon
+            let taskIcon = script.runsInEmu ? "vm" : "tools";
+            let taskIconColor = "--color-command-icon";
+            let taskName = script.scriptFileName;
+            if (script.specialScript === "build" ) {
+              taskIcon = "combine";
+              taskIconColor = "--console-ansi-bright-cyan";
+              taskName = "build";
+              taskName = script.scriptFunction;
+            }
+
+            // --- Set the status icon
             switch (script.status) {
               case "pending":
                 icon = "play";
@@ -86,14 +99,14 @@ const ScriptingHistoryPanel = () => {
               >
                 <LabelSeparator width={4} />
                 <Icon
-                  iconName={script.runsInEmu ? "vm" : "tools"}
-                  fill='--color-command-icon'
+                  iconName={taskIcon}
+                  fill={taskIconColor}
                   width={16}
                   height={16}
                 />
                 <LabelSeparator width={4} />
                 <Icon iconName={icon} fill={color} width={16} height={16} />
-                <div className={styles.itemText}>{script.scriptFileName}</div>
+                <div className={styles.itemText}>{taskName}</div>
                 <div className={styles.itemTime}>{`${duration}ms`}</div>
               </div>
             );

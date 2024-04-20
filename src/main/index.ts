@@ -72,6 +72,7 @@ import { FIRST_STARTUP_DIALOG_EMU } from "../common/messaging/dialog-ids";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { MEDIA_TAPE } from "../common/structs/project-const";
+import { processBuildFile } from "./build";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -138,6 +139,9 @@ const preload = join(__dirname, "../preload/index.js");
 const emuDevUrl = process.env.VITE_DEV_SERVER_URL + EMU_QP;
 const ideDevUrl = process.env.VITE_DEV_SERVER_URL + IDE_QP;
 const indexHtml = join(process.env.DIST, "index.html");
+
+// --- Store the latest build menu version to detect changes
+let lastBuildMenuVersion = 0;
 
 async function createAppWindows () {
   // --- Reset renderer window flags used during re-activation
@@ -319,6 +323,12 @@ async function createAppWindows () {
           mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
         }
       }
+    }
+
+    // --- Handle build file version changes
+    if (state.project?.hasBuildFile && state.project?.buildFileVersion !== lastBuildMenuVersion) {
+      lastBuildMenuVersion = state.project?.buildFileVersion;
+      (async () => await processBuildFile())();
     }
 
     // --- Adjust menu items whenever the app state changes

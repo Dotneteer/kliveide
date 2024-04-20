@@ -60,6 +60,7 @@ import { machineRegistry } from "../common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
+import { useDebugValue } from "react";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -843,9 +844,23 @@ export function setupMenu (
           buildTasks.push({ type: "separator" });
         }
         buildTasks.push({
+          id: `BF_${task.id}`,
           label: task.displayName,
           click: async () => {
-            // TODO: Implement build task execution
+            const commandResult = await executeIdeCommand(
+              ideWindow,
+              `run-build-function ${task.id}`,
+              undefined,
+              true
+            );
+            if (commandResult.success && commandResult.value) {
+              await executeIdeCommand(
+                ideWindow,
+                `script-output ${commandResult.value}`,
+                undefined,
+                true
+              );
+            }
           }
         });
       }
@@ -904,7 +919,7 @@ export function setupMenu (
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
-            type: "IdeShowBankedDisassembly",
+            type: "IdeShowDisassembly",
             show: !volatileDocs[DISASSEMBLY_PANEL_ID]
           });
           mainStore.dispatch(
@@ -1124,7 +1139,7 @@ async function executeIdeCommand (
   commandText: string,
   title?: string,
   ignoreSuccess = false
-): Promise<void> {
+): Promise<IdeExecuteCommandResponse> {
   const response = await sendFromMainToIde<IdeExecuteCommandResponse>({
     type: "IdeExecuteCommand",
     commandText
@@ -1146,6 +1161,7 @@ async function executeIdeCommand (
       response.finalMessage ?? "Error executing command."
     );
   }
+  return response;
 }
 
 async function showMessage (

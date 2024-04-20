@@ -14,6 +14,7 @@ import {
 import { isScriptCompleted } from "../../common/utils/script-utils";
 import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import {
+  KsxModule,
   executeModule,
   isModuleErrors,
   parseKsxModule
@@ -25,6 +26,7 @@ import {
   sendScriptOutput
 } from "../../common/ksx/script-runner";
 import { Z88DK } from "../../script-packages/z88dk/Z88DK";
+import { createProjectStructure } from "./ProjectStructure";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -62,6 +64,11 @@ class MainScriptManager implements IScriptManager {
   }
 
   /**
+   * Allow using an app context in the script execution?
+   */
+  allowAppContext = true;
+
+  /**
    * Registers a package object to be used in the script execution.
    * @param packageName Name of the package
    * @param packageObject Package object to register
@@ -88,19 +95,8 @@ class MainScriptManager implements IScriptManager {
       return { id: -script.id };
     }
 
-    // --- Check the number of running scripts
-    const runningScripts = this.scripts.filter(
-      script => !isScriptCompleted(script.status)
-    );
-    if (runningScripts.length >= this.maxScriptHistory) {
-      // --- Remove the oldest completed script
-      const oldest = this.scripts.findIndex(script =>
-        isScriptCompleted(script.status)
-      );
-      if (oldest >= 0) {
-        this.scripts.splice(oldest, 1);
-      }
-    }
+    // --- Remove the oldest running script, if there are too many of them
+    this.removeOldScript();
 
     // --- Create a new script ID
     this.id++;
@@ -112,13 +108,16 @@ class MainScriptManager implements IScriptManager {
       scriptId: this.id,
       store: mainStore,
       cancellationToken,
-      appContext: {
-        Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id)
-      }
+      appContext: this.allowAppContext ? await this.prepareAppContext() : null
     });
 
     // --- Prepare the script for execution
     const startInfo = await this.prepareScript(scriptFileName, this.id);
+    if (startInfo.hasParseError) {
+      return startInfo;
+    }
+
+    // --- Ok, parsing successful
     const runsInEmu = startInfo.target === "emu";
     const newScript: ScriptExecutionState = {
       id: this.id,
@@ -143,6 +142,72 @@ class MainScriptManager implements IScriptManager {
       startInfo.contents,
       evalContext
     );
+
+    // --- Update the script status
+    newScript.execTask = execTask;
+    mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
+    this.outputFn?.(`Script started`, { color: "green" });
+
+    // --- Await the script execution
+    concludeScript(
+      mainStore,
+      execTask,
+      evalContext,
+      () => this.getScriptsStatus(),
+      newScript,
+      this.outputFn,
+      () => delete newScript.execTask
+    );
+    return { id: this.id };
+  }
+
+  async runScriptText (
+    scriptText: string,
+    scriptFunction: string,
+    scriptFile: string,
+    speciality?: string
+  ): Promise<ScriptStartInfo> {
+    // --- Remove the oldest running script, if there are too many of them
+    this.removeOldScript();
+
+    // --- Create a new script ID
+    this.id++;
+
+    // --- Now, start the script
+    this.outputFn?.(`Starting script ${scriptFunction}...`);
+    const cancellationToken = new CancellationToken();
+    const evalContext = createEvalContext({
+      scriptId: this.id,
+      store: mainStore,
+      cancellationToken,
+      appContext: await this.prepareAppContext()
+    });
+
+    // --- Parse the script
+    let module: KsxModule;
+    try {
+      module = await this.parseScript(scriptFile, scriptText);
+    } catch (err) {
+      // --- The script has errors, display them
+      return { id: this.id, hasParseError: true };
+    }
+
+    // --- Parse was successful, start the script
+    const newScript: ScriptExecutionState = {
+      id: this.id,
+      scriptFileName: scriptFile,
+      status: "pending",
+      startTime: new Date(),
+      runsInEmu: false,
+      evalContext,
+      specialScript: speciality,
+      scriptFunction
+    };
+    this.scripts.push(newScript);
+
+    // --- The script should be executed in the main process
+    // --- Start the script but do not await it
+    const execTask = executeModule(module, evalContext);
 
     // --- Update the script status
     newScript.execTask = execTask;
@@ -225,7 +290,9 @@ class MainScriptManager implements IScriptManager {
       runsInEmu: s.runsInEmu,
       startTime: s.startTime,
       endTime: s.endTime,
-      stopTime: s.stopTime
+      stopTime: s.stopTime,
+      specialScript: s.specialScript,
+      scriptFunction: s.scriptFunction
     }));
   }
 
@@ -248,26 +315,12 @@ class MainScriptManager implements IScriptManager {
     }
 
     // --- Parse the script
-    const module = await parseKsxModule(
-      scriptFile,
-      script,
-      moduleName => this.resolveModule(scriptFile, moduleName),
-      packageName => this.resolvePackage(packageName)
-    );
-    if (isModuleErrors(module)) {
+    let module: KsxModule;
+    try {
+      module = await this.parseScript(scriptFile, script);
+    } catch (err) {
       // --- The script has errors, display them
-      Object.keys(module).forEach(moduleName => {
-        const errors = module[moduleName];
-        errors.forEach(error => {
-          this.outputFn?.(
-            `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
-            {
-              color: "bright-red"
-            }
-          );
-        });
-      });
-      throw new Error("Running script failed");
+      return { id: scriptId, hasParseError: true };
     }
 
     // --- Check if the execution target is main
@@ -293,30 +346,7 @@ class MainScriptManager implements IScriptManager {
     scriptContents: string,
     evalContext: EvaluationContext
   ): Promise<void> {
-    // --- Parse the script
-    const module = await parseKsxModule(
-      scriptFile,
-      scriptContents,
-      moduleName => this.resolveModule(scriptFile, moduleName),
-      packageName => this.resolvePackage(packageName)
-    );
-    if (isModuleErrors(module)) {
-      // --- The script has errors, display them
-      Object.keys(module).forEach(moduleName => {
-        const errors = module[moduleName];
-        errors.forEach(error => {
-          this.outputFn?.(
-            `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
-            {
-              color: "bright-red"
-            }
-          );
-        });
-      });
-      throw new Error("Running script failed");
-    }
-
-    // --- Execute the script
+    const module = await this.parseScript(scriptFile, scriptContents);
     await executeModule(module, evalContext);
   }
 
@@ -345,6 +375,60 @@ class MainScriptManager implements IScriptManager {
   async resolvePackage (packageName: string): Promise<Record<string, any>> {
     return this.packages[packageName];
   }
+
+  // --- Removes the oldest completed script
+  private removeOldScript () {
+    const runningScripts = this.scripts.filter(
+      script => !isScriptCompleted(script.status)
+    );
+    if (runningScripts.length >= this.maxScriptHistory) {
+      // --- Remove the oldest completed script
+      const oldest = this.scripts.findIndex(script =>
+        isScriptCompleted(script.status)
+      );
+      if (oldest >= 0) {
+        this.scripts.splice(oldest, 1);
+      }
+    }
+  }
+
+  private async parseScript (
+    scriptFolder: string,
+    script: string
+  ): Promise<KsxModule> {
+    const module = await parseKsxModule(
+      scriptFolder,
+      script,
+      moduleName => this.resolveModule(scriptFolder, moduleName),
+      packageName => this.resolvePackage(packageName)
+    );
+    if (isModuleErrors(module)) {
+      // --- The script has errors, display them
+      Object.keys(module).forEach(moduleName => {
+        const errors = module[moduleName];
+        errors.forEach(error => {
+          this.outputFn?.(
+            `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
+            {
+              color: "bright-red"
+            }
+          );
+        });
+      });
+      throw new Error("Running script failed");
+    }
+    return module;
+  }
+
+  /**
+   * Prepares the application context for the script execution
+   */
+  private async prepareAppContext (): Promise<Record<string, any>> {
+    return {
+      Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id),
+      "#project": await createProjectStructure()
+    };
+  }
 }
 
 export function createMainScriptManager (
@@ -358,7 +442,9 @@ export function createMainScriptManager (
     evalContext?: EvaluationContext
   ) => Promise<void>
 ): MainScriptManager {
-  return new MainScriptManager(prepareScript, execScript, async () => {});
+  const scriptManager = new MainScriptManager(prepareScript, execScript, async () => {});
+  scriptManager.allowAppContext = false;
+  return scriptManager;
 }
 
 /**

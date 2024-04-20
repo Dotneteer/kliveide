@@ -17,6 +17,7 @@ export type FileTypeEditor = FileTypePattern & {
   isReadOnly?: boolean;
   isBinary?: boolean;
   openPermanent?: boolean;
+  canBeBuildRoot?: boolean;
   documentTabRenderer?: PanelRenderer;
   contextMenuInfo?: (services: AppServices) => ContextMenuInfo[];
 }

@@ -230,12 +230,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         document.contents = editor.current.getModel()?.getValue();
 
         // --- Now, save it back to the file
-        await projectService
-          .saveFileContent(document.id, document.contents)
-          .then(() => {
-            document.savedVersionCount = document.editVersionCount;
-            store.dispatch(incEditorVersionAction());
-          });
+        await projectService.saveFileContent(document.id, document.contents)
+        document.savedVersionCount = document.editVersionCount;
+        store.dispatch(incEditorVersionAction());
       },
 
       // --- Editor API specific

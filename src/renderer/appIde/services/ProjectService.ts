@@ -35,6 +35,10 @@ class ProjectService implements IProjectService {
     node: ITreeNode<ProjectNode>;
   }>();
   private _itemDeleted = new LiteEvent<ITreeNode<ProjectNode>>();
+  private _fileSaved = new LiteEvent<{
+    file: string;
+    contents: string | Uint8Array;
+  }>();
   private _fileCache = new Map<string, string | Uint8Array>();
   private _projectItemCache = new Map<string, ProjectDocumentState>();
 
@@ -93,6 +97,10 @@ class ProjectService implements IProjectService {
     this._itemDeleted.fire(node);
   }
 
+  signFileSaved (file: string, contents: string | Uint8Array): void {
+    this._fileSaved.fire({ file, contents });
+  }
+
   get itemAdded (): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemAdded;
   }
@@ -106,6 +114,13 @@ class ProjectService implements IProjectService {
 
   get itemDeleted (): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemDeleted;
+  }
+
+  get fileSaved (): ILiteEvent<{
+    file: string;
+    contents: string | Uint8Array;
+  }> {
+    return this._fileSaved;
   }
 
   getNodeForFile (file: string): ITreeNode<ProjectNode> {
@@ -340,6 +355,7 @@ class ProjectService implements IProjectService {
 
     // --- Done.
     this._fileCache.set(file, contents);
+    this.signFileSaved(file, contents);
   }
 
   performAllDelayedSavesNow (): Promise<void> {

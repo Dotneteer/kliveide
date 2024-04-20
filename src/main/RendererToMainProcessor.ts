@@ -61,6 +61,8 @@ import { createDiskFile } from "../common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "../common/integration/constants";
+import { ScriptStartInfo } from "@abstractions/IScriptManager";
+import { collectedBuildTasks } from "./build";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -421,14 +423,27 @@ export async function processRendererToMainMessages (
         return errorResponse(err.toString());
       }
 
-    case "MainStartScript":
-      const scriptId = await mainScriptManager.runScript(message.filename);
+    case "MainStartScript": {
+      let scriptInfo: ScriptStartInfo;
+      if (message.scriptText) {
+        // --- Script text specified, run as script text
+        scriptInfo = await mainScriptManager.runScriptText(
+          message.scriptText,
+          message.scriptFunction,
+          message.filename,
+          message.speciality
+        );
+      } else {
+        scriptInfo = await mainScriptManager.runScript(message.filename);
+      }
       return {
         type: "MainRunScriptResponse",
-        id: scriptId.id,
-        target: scriptId.target,
-        contents: scriptId.contents
+        id: scriptInfo.id,
+        target: scriptInfo.target,
+        contents: scriptInfo.contents,
+        hasParseError: scriptInfo.hasParseError
       };
+    }
 
     case "MainStopScript":
       return flagResponse(
@@ -447,6 +462,12 @@ export async function processRendererToMainMessages (
       return {
         type: "MainResolveModuleResponse",
         contents: resolvedModule
+      };
+
+    case "MainGetBuildFunctions":
+      return {
+        type: "MainGetBuildFunctionsResponse",
+        functions: collectedBuildTasks.map(t => t.id)
       };
 
     case "EmuMachineCommand":

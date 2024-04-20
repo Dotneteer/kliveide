@@ -6,9 +6,7 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
-/**
- * The main process signs that the emulator should change to a new emulated machine type
- */
+// --- Set the emulator's machine type to use
 export interface EmuSetMachineTypeRequest extends MessageBase {
   type: "EmuSetMachineType";
   machineId: string;
@@ -32,18 +30,14 @@ export type MachineCommand =
   | "rewind"
   | "custom";
 
-/**
- * The main process sends a machine command to the emulator
- */
+// --- Execute an emulated machine's control command
 export interface EmuMachineCommandRequest extends MessageBase {
   type: "EmuMachineCommand";
   command: MachineCommand;
   customCommand?: string;
 }
 
-/**
- * The main process sends a tape file to the emulator
- */
+// --- Set the tape file to use
 export interface EmuSetTapeFileRequest extends MessageBase {
   type: "EmuSetTapeFile";
   file: string;
@@ -52,9 +46,7 @@ export interface EmuSetTapeFileRequest extends MessageBase {
   suppressError?: boolean;
 }
 
-/**
- * The main process sends a disk file to the emulator
- */
+// --- Set the disk file to use
 export interface EmuSetDiskFileRequest extends MessageBase {
   type: "EmuSetDiskFile";
   diskIndex: number;
@@ -64,118 +56,112 @@ export interface EmuSetDiskFileRequest extends MessageBase {
   suppressError?: boolean;
 }
 
-/**
- * The main process sends a disk file to the emulator
- */
+// --- Set the disk write protection state
 export interface EmuSetDiskWriteProtectionRequest extends MessageBase {
   type: "EmuSetDiskWriteProtection";
   diskIndex: number;
   protect: boolean;
 }
 
-/**
- * The Ide process asks the emu process for CPU state information
- */
+// --- Get the current state of the CPU
 export interface EmuGetCpuStateRequest extends MessageBase {
   type: "EmuGetCpuState";
 }
 
-/**
- * The Ide process asks the emu process for ULA state information
- */
+// --- Get the current state of the ULA
 export interface EmuGetUlaStateRequest extends MessageBase {
   type: "EmuGetUlaState";
 }
 
-/**
- * The Ide process asks the emu process for ULA state information
- */
+// --- Get the current state of the PSG chip (AY-3-8912)
 export interface EmuGetPsgStateRequest extends MessageBase {
   type: "EmuGetPsgState";
 }
 
-/**
- * The Ide process asks the emu process for BLINK state information
- */
+// --- Get the current state of the BLINK chip
 export interface EmuGetBlinkStateRequest extends MessageBase {
   type: "EmuGetBlinkState";
 }
 
-
+// --- Erase all breakpoints set in the emulator
 export interface EmuEraseAllBreakpointsRequest extends MessageBase {
   type: "EmuEraseAllBreakpoints";
 }
 
+// --- Set a breakpoint in the emulator
 export interface EmuSetBreakpointRequest extends MessageBase {
   type: "EmuSetBreakpoint";
   breakpoint: BreakpointInfo;
 }
 
+// --- Remove a breakpoint from the emulator
 export interface EmuRemoveBreakpointRequest extends MessageBase {
   type: "EmuRemoveBreakpoint";
   breakpoint: BreakpointInfo;
 }
 
+// --- List all breakpoints in the emulator
 export interface EmuListBreakpointsRequest extends MessageBase {
   type: "EmuListBreakpoints";
 }
 
+// --- Enable/disable a breakpoint
 export interface EmuEnableBreakpointRequest extends MessageBase {
   type: "EmuEnableBreakpoint";
   breakpoint: BreakpointInfo;
   enable: boolean;
 }
 
+// --- Get the memory contents
 export interface EmuGetMemoryRequest extends MessageBase {
   type: "EmuGetMemory";
   partition?: number;
 }
 
+// --- Get the system variables of the emulated machine
 export interface EmuGetSysVarsRequest extends MessageBase {
   type: "EmuGetSysVars";
 }
 
-/**
- * The Ide asks Emu to inject the specified code
- */
+// --- Inject code into the emulated machine
 export interface EmuInjectCodeRequest extends MessageBase {
   type: "EmuInjectCode";
   codeToInject: CodeToInject;
 }
 
+// --- Run code in the emulated machine
 export interface EmuRunCodeRequest extends MessageBase {
   type: "EmuRunCode";
   codeToInject: CodeToInject;
   debug: boolean;
 }
 
+// --- Resolve source code breakpoints
 export interface EmuResolveBreakpointsRequest extends MessageBase {
   type: "EmuResolveBreakpoints";
   breakpoints: ResolvedBreakpoint[];
 }
 
+// --- Scroll breakpoints in the source code editor
 export interface EmuScrollBreakpointsRequest extends MessageBase {
   type: "EmuScrollBreakpoints";
   addr: BreakpointInfo;
   shift: number;
 }
 
+// --- Normalize breakpoints in the source code editor
 export interface EmuNormalizeBreakpointsRequest extends MessageBase {
   type: "EmuNormalizeBreakpoints";
   resource: string;
   lineCount: number;
 }
 
-/**
- * The Ide process asks the emu process for NEC UPD 765 state information
- */
+// --- Get the NEC UPD 765 state information
 export interface EmuGetNecUpd765Request extends MessageBase {
   type: "EmuGetNecUpd765State";
 }
 
-/**
- * The Ide process asks the emu to start a script
- */
+// --- Start a script running in the emulator process
 export interface EmuStartScriptRequest extends MessageBase {
   type: "EmuStartScript";
   id: number;
@@ -183,17 +169,13 @@ export interface EmuStartScriptRequest extends MessageBase {
   contents: string;
 }
 
-/**
- * The Ide process asks the emu to start a script
- */
+// --- Stop a script running in the emulator process
 export interface EmuStopScriptRequest extends MessageBase {
   type: "EmuStopScript";
   id: number;
 }
 
-/**
- * The Emu process sends back CPU state information
- */
+// --- The response with the CPU state information
 export interface EmuGetCpuStateResponse extends MessageBase {
   type: "EmuGetCpuStateResponse";
   af: number;
@@ -220,9 +202,7 @@ export interface EmuGetCpuStateResponse extends MessageBase {
   snoozed: boolean;
 }
 
-/**
- * The Emu process sends back CPU state information
- */
+// --- The response with the ULA state information
 export interface EmuGetUlaStateResponse extends MessageBase {
   type: "EmuGetUlaStateResponse";
   fcl: number;
@@ -241,23 +221,20 @@ export interface EmuGetUlaStateResponse extends MessageBase {
   ramB: number;
 }
 
-/**
- * The Emu process sends back CPU state information
- */
+// --- The response with the PSG chip state information
 export interface EmuGetPsgStateResponse extends MessageBase {
   type: "EmuGetPsgStateResponse";
   psgState: PsgChipState;
 }
 
-/**
- * The Emu process sends back CPU state information
- */
+// --- The response with the breakpoints set in the emulator
 export interface EmuListBreakpointsResponse extends MessageBase {
   type: "EmuListBreakpointsResponse";
   breakpoints: BreakpointInfo[];
   memorySegments?: number[][];
 }
 
+// --- The response with the memory contents
 export interface EmuGetMemoryResponse extends MessageBase {
   type: "EmuGetMemoryResponse";
   memory: Uint8Array;
@@ -282,19 +259,19 @@ export interface EmuGetMemoryResponse extends MessageBase {
   memBreakpoints: BreakpointInfo[];
 }
 
+// --- The response with the system variables of the emulated machine
 export interface EmuGetSysVarsResponse extends MessageBase {
   type: "EmuGetSysVarsResponse";
   sysVars: SysVar[];
 }
 
-/**
- * The Ide process asks the emu process for NEC UPD 765 state information
- */
+// --- The response with the NEC UPD 765 state information
 export interface EmuGetNecUpd765Response extends MessageBase {
   type: "EmuGetNecUpd765StateResponse";
   log: FloppyLogEntry[];
 }
 
+// --- The response with the BLINK chip state information
 export interface EmuGetBlinkStateResponse extends MessageBase {
   type: "EmuGetBlinkStateResponse";
   SR0: number;
@@ -324,6 +301,7 @@ export interface EmuGetBlinkStateResponse extends MessageBase {
   SCH: number;
 }
 
+// --- Helper function to create a particular machine command
 export function createMachineCommand (
   command: MachineCommand,
   customCommand?: string
