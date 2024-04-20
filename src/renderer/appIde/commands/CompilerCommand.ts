@@ -58,6 +58,7 @@ export class CompileCommand extends CommandWithNoArgBase {
   readonly description = "Compiles the current project";
   readonly usage = "compile";
   readonly aliases = ["co"];
+  readonly noInteractiveUsage = true;
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);

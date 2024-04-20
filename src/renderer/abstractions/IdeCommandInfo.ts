@@ -27,6 +27,11 @@ export type IdeCommandInfo = {
   readonly usage: string | string[];
 
   /**
+   * Indicates whether the command can be used interactively
+   */
+  readonly noInteractiveUsage?: boolean;
+
+  /**
    * Executes the command within the specified context
    */
   execute: (

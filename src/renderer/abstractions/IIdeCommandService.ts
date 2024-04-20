@@ -59,11 +59,13 @@ export interface IIdeCommandService {
    * @param command Command to execute
    * @param buffer Optional output buffer
    * @param useHistory Add the command to the history
+   * @param interactiveContex Indicates that the command is executed in interactive context
    */
   executeInteractiveCommand(
     command: string,
     buffer?: IOutputBuffer,
-    useHistory?: boolean
+    useHistory?: boolean,
+    interactiveContex?: boolean
   ): Promise<IdeCommandResult>;
 
   /**

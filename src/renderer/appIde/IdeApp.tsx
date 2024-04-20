@@ -110,6 +110,7 @@ import {
   setCachedStore
 } from "../CachedServices";
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
+import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 
 const IdeApp = () => {
   // --- Used services
@@ -319,6 +320,11 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new OpenFolderCommand());
   cmdSrv.registerCommand(new NewProjectCommand());
   cmdSrv.registerCommand(new CloseFolderCommand());
+
+  cmdSrv.registerCommand(new KliveCompileCommand());
+  cmdSrv.registerCommand(new KliveInjectCodeCommand());
+  cmdSrv.registerCommand(new KliveRunCodeCommand());
+  cmdSrv.registerCommand(new KliveDebugCodeCommand());
 
   cmdSrv.registerCommand(new CompileCommand());
   cmdSrv.registerCommand(new InjectCodeCommand());

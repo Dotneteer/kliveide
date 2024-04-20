@@ -54,6 +54,7 @@ export interface IdeShowDialogRequest extends MessageBase {
 export interface IdeExecuteCommandRequest extends MessageBase {
   type: "IdeExecuteCommand";
   commandText: string;
+  scriptId?: number;
 }
 
 // --- Ask the IDE to save all files before quitting
