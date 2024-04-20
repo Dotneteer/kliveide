@@ -5,6 +5,7 @@ import {
 } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { ipcRenderer, IpcRendererEvent } from "electron";
+
 /**
  * Implements a messenger that send messages from the Emu to the Main process
  */
@@ -44,19 +45,3 @@ export class EmuToMainMessenger extends MessengerBase {
     return "EmuToMainResponse";
   }
 }
-
-/**
- * The singleton messenger instance
- */
-//const emuToMainMessenger = new EmuToMainMessenger();
-
-// /**
-//  * Sends the specified message from the Emu process to Main
-//  * @param message Message to send
-//  * @returns Response
-//  */
-// export async function sendFromEmuToMain<TResp extends ResponseMessage> (
-//   message: RequestMessage
-// ): Promise<TResp> {
-//   return await emuToMainMessenger.sendMessage(message);
-// }

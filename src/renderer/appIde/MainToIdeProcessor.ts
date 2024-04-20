@@ -72,15 +72,6 @@ export async function processMainToIdeMessages (
       break;
     }
 
-    case "IdeShowBankedDisassembly": {
-      if (message.show) {
-        await ideCommandsService.executeCommand("show-disass");
-      } else {
-        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
-      }
-      break;
-    }
-
     case "IdeShowBasic": {
       if (message.show) {
         await documentHubService.openDocument(

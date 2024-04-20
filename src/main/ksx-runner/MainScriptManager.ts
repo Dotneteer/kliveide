@@ -102,7 +102,7 @@ class MainScriptManager implements IScriptManager {
       scriptId: this.id,
       store: mainStore,
       cancellationToken,
-      appContext: this.prepareAppContext()
+      appContext: await this.prepareAppContext()
     });
 
     // --- Prepare the script for execution
@@ -174,7 +174,7 @@ class MainScriptManager implements IScriptManager {
       scriptId: this.id,
       store: mainStore,
       cancellationToken,
-      appContext: this.prepareAppContext()
+      appContext: await this.prepareAppContext()
     });
 
     // --- Parse the script
@@ -417,7 +417,7 @@ class MainScriptManager implements IScriptManager {
   /**
    * Prepares the application context for the script execution
    */
-  private prepareAppContext (): Record<string, any> {
+  private async prepareAppContext (): Promise<Record<string, any>> {
     return {
       Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id)
     };

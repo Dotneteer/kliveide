@@ -141,6 +141,20 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
       return commandError("This project has no build file.");
     }
 
+    // --- Check if build function exists
+    const buildFunctionsResponse = await context.messenger.sendMessage({
+      type: "MainGetBuildFunctions"
+    });
+    if (buildFunctionsResponse.type === "ErrorResponse") {
+      return commandError(buildFunctionsResponse.message);
+    }
+    if (buildFunctionsResponse.type !== "MainGetBuildFunctionsResponse") {
+      return commandError("Unexpected response received.");
+    }
+    if (!buildFunctionsResponse.functions.includes(this.arg)) {
+      return commandError(`Function '${this.arg}' not found in the build file.`);
+    }
+
     // --- Get the current project's build file name
     const projectFolder = context.store.getState().project?.folderPath;
     const buildFileName = `${projectFolder}/${BUILD_FILE}`;
@@ -149,7 +163,12 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
     const script = `import { ${this.arg} } from "./${BUILD_FILE}";\n\n${this.arg}();`;
 
     try {
-      const id = await context.service.scriptService.runScriptText(script, this.arg, buildFileName, "build");
+      const id = await context.service.scriptService.runScriptText(
+        script,
+        this.arg,
+        buildFileName,
+        "build"
+      );
       return commandSuccessWith(
         `Script ${this.arg} (with ID ${Math.abs(id)}) ${
           id < 0 ? "is already running" : "has been started"

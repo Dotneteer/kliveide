@@ -8,7 +8,7 @@ import { setIdeStatusMessageAction } from "../common/state/actions";
 import { FunctionDeclaration } from "@common/ksx/source-tree";
 
 export async function processBuildFile (): Promise<void> {
-  collectedBuildTasks.length = 0;
+  const buildTasks: BuildTaskDescriptor[] = [];
 
   // --- Obtain the project folder
   const projectState = mainStore.getState().project;
@@ -78,12 +78,15 @@ export async function processBuildFile (): Promise<void> {
       }
 
       // --- Add the task to the list
-      collectedBuildTasks.push({
+      buildTasks.push({
         id: key,
         displayName,
         separatorBefore
       });
     });
+
+    // --- Update the list
+    collectedBuildTasks.splice(0, collectedBuildTasks.length, ...buildTasks);
   }
 
   // --- Done

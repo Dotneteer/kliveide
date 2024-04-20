@@ -62,6 +62,7 @@ import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "../common/integration/constants";
 import { ScriptStartInfo } from "@abstractions/IScriptManager";
+import { collectedBuildTasks } from "./build";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -461,6 +462,12 @@ export async function processRendererToMainMessages (
       return {
         type: "MainResolveModuleResponse",
         contents: resolvedModule
+      };
+
+    case "MainGetBuildFunctions":
+      return {
+        type: "MainGetBuildFunctionsResponse",
+        functions: collectedBuildTasks.map(t => t.id)
       };
 
     case "EmuMachineCommand":

@@ -66,7 +66,9 @@ import {
   MainRunScriptResponse,
   MainResolveModuleRequest,
   MainResolveModuleResponse,
-  MainCloseScriptRequest
+  MainCloseScriptRequest,
+  MainGetBuildFunctionsRequest,
+  MainGetBuildFunctionsResponse
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -107,13 +109,12 @@ import {
   IdeDisplayOutputRequest,
   IdeShowBasicRequest,
   IdeShowDialogRequest,
-  IdeShowDisassemblyRequest,
   IdeExecuteCommandRequest,
   IdeExecuteCommandResponse,
   IdeSaveAllBeforeQuitRequest,
   IdeScriptOutputRequest,
   IdeShowMemoryRequest,
-  IdeShowBankedDisassemblyRequest
+  IdeShowDisassemblyRequest
 } from "./any-to-ide";
 
 /**
@@ -238,10 +239,10 @@ export type RequestMessage =
   | MainStopScriptRequest
   | MainResolveModuleRequest
   | MainCloseScriptRequest
+  | MainGetBuildFunctionsRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
-  | IdeShowBankedDisassemblyRequest
   | IdeShowBasicRequest
   | IdeShowDialogRequest
   | IdeExecuteCommandRequest
@@ -271,6 +272,7 @@ export type ResponseMessage =
   | MainGetTemplateDirsResponse
   | MainRunScriptResponse
   | MainResolveModuleResponse
+  | MainGetBuildFunctionsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

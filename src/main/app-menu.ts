@@ -843,6 +843,7 @@ export function setupMenu (
           buildTasks.push({ type: "separator" });
         }
         buildTasks.push({
+          id: `BF_${task.id}`,
           label: task.displayName,
           click: async () => {
             // TODO: Implement build task execution
@@ -904,7 +905,7 @@ export function setupMenu (
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
           await sendFromMainToIde({
-            type: "IdeShowBankedDisassembly",
+            type: "IdeShowDisassembly",
             show: !volatileDocs[DISASSEMBLY_PANEL_ID]
           });
           mainStore.dispatch(
