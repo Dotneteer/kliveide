@@ -18,10 +18,12 @@ import {
 } from "./process-statement-common";
 import {
   ArrayDestructure,
+  ArrowExpression,
   AssignmentExpression,
   ConstStatement,
   EmptyStatement,
   ExpressionStatement,
+  FunctionDeclaration,
   Identifier,
   LetStatement,
   Literal,
@@ -45,6 +47,7 @@ import {
   StatementExecutionError
 } from "./engine-errors";
 import { executeModule } from "./ksx-module";
+import { obtainClosures } from "./eval-tree-common";
 
 export type OnStatementCompletedCallback =
   | ((
@@ -64,6 +67,10 @@ export async function processStatementQueueAsync (
     // --- Create the main thread for the queue
     thread = ensureMainThread(evalContext);
   }
+
+  // --- Hoist function declarations to the top scope
+  hoistFunctionDeclarations(thread, statements);
+
   // --- Fill the queue with items
   const queue = new StatementQueue();
   queue.push(mapStatementsToQueueItems(statements));
@@ -199,24 +206,24 @@ async function processStatementAsync (
         const childEvalContext = createEvalContext({
           cancellationToken: evalContext.cancellationToken
         });
-        statement.module!.executed = true; 
+        statement.module!.executed = true;
         await executeModule(statement.module, childEvalContext);
       }
 
       // --- Import the module's exported variables into the parent module
-      const topVars = evalContext.mainThread.blocks[0].vars;
-      const topConst = evalContext.mainThread.blocks[0].constVars;
+      const topVars = evalContext.mainThread!.blocks![0].vars!;
+      const topConst = evalContext.mainThread!.blocks![0].constVars!;
       for (const key of Object.keys(statement.imports)) {
         if (key in topVars) {
           throw new Error(`Import ${key} already exists`);
         }
-        topVars[key] = statement.module.exports[statement.imports[key]];
+        topVars[key] = statement.module!.exports[statement.imports[key]];
         topConst.add(key);
       }
       break;
 
     case "FunctionDeclaration":
-      // --- Function declarations are already hoisted, nothing to do
+      // --- Function declarations are already hoisted, collect their closure context
       break;
 
     case "EmptyStatement":
@@ -232,6 +239,9 @@ async function processStatementAsync (
       thread.blocks.push({
         vars: {}
       });
+
+      // --- Hoist function declarations to the innermost block scope
+      hoistFunctionDeclarations(thread, statement.statements);
 
       // --- Prepare an empty statement that will only remove the block scope when the entire block is processed
       const closing = {
@@ -1106,4 +1116,44 @@ export function visitLetConstDeclarations (
       }
     }
   }
+}
+
+// --- Hoist function definitions to the innermost block scope
+function hoistFunctionDeclarations (
+  thread: LogicalThread,
+  statements: Statement[]
+): void {
+  const block = innermostBlockScope(thread);
+  if (!block) {
+    throw new Error("Missing block scope");
+  }
+  statements
+    .filter(stmt => stmt.type === "FunctionDeclaration")
+    .forEach(stmt => {
+      const funcDecl = stmt as FunctionDeclaration;
+
+      // --- Turn the function into an arrow expression
+      const arrowExpression = {
+        type: "ArrowExpression",
+        args: funcDecl.args,
+        statement: funcDecl.statement,
+        closureContext: obtainClosures(thread),
+        _ARROW_EXPR_: true
+      } as unknown as ArrowExpression;
+
+      // --- Remove the functions from the closure list
+
+      // --- Check name uniqueness
+      const id = funcDecl.name;
+      if (block.vars[id]) {
+        throw new Error(
+          `Variable ${id} is already declared in the current scope.`
+        );
+      }
+
+      // --- Function is a constant
+      block.vars[id] = arrowExpression;
+      block.constVars ??= new Set<string>();
+      block.constVars.add(id);
+    });
 }

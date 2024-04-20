@@ -26,6 +26,7 @@ import {
   sendScriptOutput
 } from "../../common/ksx/script-runner";
 import { Z88DK } from "../../script-packages/z88dk/Z88DK";
+import { createProjectStructure } from "./ProjectStructure";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -61,6 +62,11 @@ class MainScriptManager implements IScriptManager {
       this.prepareScript = this.doPrepare;
     }
   }
+
+  /**
+   * Allow using an app context in the script execution?
+   */
+  allowAppContext = true;
 
   /**
    * Registers a package object to be used in the script execution.
@@ -102,7 +108,7 @@ class MainScriptManager implements IScriptManager {
       scriptId: this.id,
       store: mainStore,
       cancellationToken,
-      appContext: await this.prepareAppContext()
+      appContext: this.allowAppContext ? await this.prepareAppContext() : null
     });
 
     // --- Prepare the script for execution
@@ -419,7 +425,8 @@ class MainScriptManager implements IScriptManager {
    */
   private async prepareAppContext (): Promise<Record<string, any>> {
     return {
-      Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id)
+      Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id),
+      "#project": await createProjectStructure()
     };
   }
 }
@@ -435,7 +442,9 @@ export function createMainScriptManager (
     evalContext?: EvaluationContext
   ) => Promise<void>
 ): MainScriptManager {
-  return new MainScriptManager(prepareScript, execScript, async () => {});
+  const scriptManager = new MainScriptManager(prepareScript, execScript, async () => {});
+  scriptManager.allowAppContext = false;
+  return scriptManager;
 }
 
 /**

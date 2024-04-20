@@ -1,7 +1,9 @@
+import { BlockScope } from "./BlockScope";
 import { EvaluationContext, ModuleResolver, PackageResolver } from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
 import { TokenType } from "./TokenType";
+import { obtainClosures } from "./eval-tree-common";
 import {
   processStatementQueueAsync,
   visitLetConstDeclarations
@@ -163,29 +165,6 @@ export async function parseKsxModule (
       // --- Use these exports
       let exportsToUse: Record<string, any> = {};
 
-      // // --- Find the imported package
-      // if (stmt.moduleFile.startsWith("@")) {
-      //   const packageContent = await packageResolver(stmt.moduleFile.substring(1));
-      //   if (packageContent === null) {
-      //     errors.push(addErrorMessage("K027", stmt, stmt.moduleFile));
-      //     continue;
-      //   }
-
-      //   // --- Successful import
-      //   importedModules.push(packageModule);
-
-      //   // --- Extract imported names
-      //   for (const key in stmt.imports) {
-      //     if (packageModule.exports.has(stmt.imports[key])) {
-      //       imports[key] = packageModule.exports.get(stmt.imports[key]);
-      //     } else {
-      //       errors.push(addErrorMessage("K026", stmt, stmt.moduleFile, key));
-      //     }
-      //   }
-
-      //   continue;
-      // }
-
       // --- Find the imported module
       const source = await moduleResolver(stmt.moduleFile);
       if (source === null) {
@@ -277,23 +256,6 @@ export async function executeModule (
   blockScope[0].constVars ??= new Set<string>();
   const topConst = blockScope[0].constVars;
 
-  // --- Convert hoisted functions to ArrowExpressions
-  for (const functionDecl of Object.values(module.functions)) {
-    const arrowExpression = {
-      type: "ArrowExpression",
-      args: functionDecl.args,
-      statement: functionDecl.statement,
-      _ARROW_EXPR_: true
-    } as unknown as ArrowExpression;
-
-    // --- Store the compiled functions in the to-level BlockScope
-    if (topVars[functionDecl.name]) {
-      throw new Error(`Function ${functionDecl.name} already exists`);
-    }
-    topVars[functionDecl.name] = arrowExpression;
-    topConst.add(functionDecl.name);
-  }
-
   // --- Load imported modules
   module.statements
     .filter(stmt => stmt.type === "ImportDeclaration")
@@ -308,13 +270,18 @@ export async function executeModule (
 
   // --- Run the module
   await processStatementQueueAsync(module.statements, evaluationContext);
-  module.executed = true;
 
   // --- Get exported values
   for (const key in module.exports) {
     if (!(key in topVars)) {
       throw new Error(`Export ${key} not found`);
     }
-    module.exports[key] = topVars[key];
+    const exported = topVars[key];
+    module.exports[key] = exported;
+
+    // --- Set the closure context of exported arrow expressions
+    if (exported?.type === "ArrowExpression" && exported?._ARROW_EXPR_) {
+      exported.closureContext = obtainClosures(evaluationContext.mainThread!);
+    }
   }
 }

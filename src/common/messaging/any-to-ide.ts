@@ -1,5 +1,6 @@
 import { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
 import { MessageBase } from "./messages-core";
+import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
 // --- Ask the IDE to display an output in the specified pane
 export interface IdeDisplayOutputRequest extends MessageBase {
@@ -60,10 +61,22 @@ export interface IdeSaveAllBeforeQuitRequest extends MessageBase {
   type: "IdeSaveAllBeforeQuit";
 }
 
+// --- Ask the IDE to get the current project structure
+export interface IdeGetProjectStructureRequest extends MessageBase {
+  type: "IdeGetProjectStructure";
+}
+
 // --- Reteurns the result of the command execution
 export interface IdeExecuteCommandResponse extends MessageBase {
   type: "IdeExecuteCommandResponse";
   success: boolean;
   finalMessage?: string;
+  value?: any;
+}
+
+// --- The response with the current project structure
+export interface IdeGetProjectStructureResponse extends MessageBase {
+  type: "IdeGetProjectStructureResponse";
+  projectStructure: ProjectStructure;
 }
 

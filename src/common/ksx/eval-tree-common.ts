@@ -436,7 +436,7 @@ export function evalArrow (
   return lazyArrow;
 }
 
-function obtainClosures (thread: LogicalThread): BlockScope[] {
+export function obtainClosures (thread: LogicalThread): BlockScope[] {
   const closures = thread.blocks?.slice(0) ?? [];
   return thread.parent
     ? [...obtainClosures(thread.parent), ...closures]

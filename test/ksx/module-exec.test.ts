@@ -160,6 +160,64 @@ describe("KSX Execution - modules", () => {
     expect(exports.x).toBe(103);
   });
 
+  it("Import function #4", async () => {
+    // --- Arrange
+    const source = `
+      import { square } from "math";
+      export const x = square(10);
+    `;
+
+    const modules = {
+      math: `
+        export function square(x) {
+          return calc(x);
+        }
+
+        function calc(x) {
+          return x * x;
+        }
+      `
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext.mainThread.blocks[0].vars;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(100);
+    expect(exports.x).toBe(100);
+  });
+
+  it("Import function #5", async () => {
+    // --- Arrange
+    const source = `
+      import { square } from "math";
+      export const x = square(10);
+    `;
+
+    const modules = {
+      math: `
+        export function square(x) {
+          return calc();
+
+          function calc() {
+            return x * x;
+          }
+        }
+      `
+    };
+
+    // --- Act
+    const result = await execModule(source, modules);
+
+    // --- Assert
+    const moduleVars = result.evalContext.mainThread.blocks[0].vars;
+    const exports = result.parsedModule.exports;
+    expect(moduleVars.x).toBe(100);
+    expect(exports.x).toBe(100);
+  });
+
   it("Import circular reference #1", async () => {
     // --- Arrange
     const source = `

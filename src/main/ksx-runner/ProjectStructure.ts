@@ -1,4 +1,7 @@
-export type ProjectNode = {
+import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
+import { collectedBuildTasks } from "../../main/build";
+
+export type ProjectTreeNode = {
   depth: number;
   name: string;
   fullPath: string;
@@ -7,12 +10,29 @@ export type ProjectNode = {
   isReadonly: boolean;
   isBinary: boolean;
   canBeBuildRoot: boolean;
-  children?: ProjectNode[];
+  children?: ProjectTreeNode[];
 };
 
 export type ProjectStructure = {
   rootPath: string;
   hasBuildFile: boolean;
   buildFunctions: string[];
-  nodes: ProjectNode[];
+  nodes: ProjectTreeNode[];
+};
+
+export async function createProjectStructure (
+): Promise<ProjectStructure> {
+  const response = await sendFromMainToIde({
+    type: "IdeGetProjectStructure"
+  });
+  if (response.type === "ErrorResponse") {
+    throw new Error(response.message);
+  }
+  if (response.type !== "IdeGetProjectStructureResponse") {
+    throw new Error("Unexpected response type");
+  }
+
+  // --- Collect build functions
+  const buildFunctions = collectedBuildTasks.map(bt => bt.id);
+  return { ...response.projectStructure, buildFunctions };
 }

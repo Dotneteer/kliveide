@@ -118,7 +118,7 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
 export class RunBuildScriptCommand extends CommandWithSingleStringBase {
   readonly id = "run-build-function";
   readonly description = "Runs the specified build script function";
-  readonly usage = "run-build <function name>";
+  readonly usage = "run-build-function <function name>";
   readonly aliases = ["rbf"];
 
   protected extraArgCount = 0;
@@ -152,7 +152,9 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
       return commandError("Unexpected response received.");
     }
     if (!buildFunctionsResponse.functions.includes(this.arg)) {
-      return commandError(`Function '${this.arg}' not found in the build file.`);
+      return commandError(
+        `Function '${this.arg}' not found in the build file.`
+      );
     }
 
     // --- Get the current project's build file name
@@ -172,7 +174,8 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
       return commandSuccessWith(
         `Script ${this.arg} (with ID ${Math.abs(id)}) ${
           id < 0 ? "is already running" : "has been started"
-        }.`
+        }.`,
+        id
       );
     } catch (err) {
       return commandError(err.message);
