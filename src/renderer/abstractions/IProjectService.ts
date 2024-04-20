@@ -41,6 +41,13 @@ export type IProjectService = {
   signItemDeleted: (node: ITreeNode<ProjectNode>) => void;
 
   /**
+   * Signs that a project file has been saved
+   * @param file File name
+   * @param contents File contents
+   */
+  signFileSaved: (file: string, contents: string | Uint8Array) => void;
+
+  /**
    * Fires when a project has been open
    */
   readonly projectOpened: ILiteEvent<void>;
@@ -67,6 +74,14 @@ export type IProjectService = {
    * Fires when an item hasn been deleted from the project
    */
   readonly itemDeleted: ILiteEvent<ITreeNode<ProjectNode>>;
+
+  /**
+   * Fires when a file has been saved
+   */
+  readonly fileSaved: ILiteEvent<{
+    file: string;
+    contents: string | Uint8Array;
+  }>;
 
   /**
    * Gets the project node for the file with the specified name
