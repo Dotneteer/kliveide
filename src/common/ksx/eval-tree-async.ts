@@ -108,8 +108,6 @@ export async function executeArrowExpression (
     expr.args,
     evalContext,
     thread ?? evalContext.mainThread,
-    // TODO: Eliminate
-    undefined,
     ...args
   );
 }
@@ -596,8 +594,6 @@ async function evalFunctionInvocationAsync (
       functionObj.args,
       evalContext,
       thread,
-      // TODO: Eliminate
-      undefined,
       ...expr.arguments.map(a => ({ ...a, _EXPRESSION_: true }))
     );
     functionObj = await createArrowFunctionAsync(
@@ -611,8 +607,6 @@ async function evalFunctionInvocationAsync (
       expr.object.args.map(a => (a as Identifier).name),
       evalContext,
       thread,
-      // TODO: Eliminate
-      undefined,
       ...expr.arguments.map(a => ({ ...a, _EXPRESSION_: true }))
     );
   } else {
@@ -640,8 +634,6 @@ async function evalFunctionInvocationAsync (
               arg.args,
               evalContext,
               thread,
-              // TODO: Eliminate
-              undefined,
               ...args
             );
           };
@@ -701,8 +693,6 @@ export async function createArrowFunctionAsync (
     // --- Prepare the variables to pass
     const runTimeEvalContext = args[1] as EvaluationContext;
     const runtimeThread = args[2] as LogicalThread;
-    // TODO: Eliminate
-    const runTimeOnStatementCompleted = args[3] as OnStatementCompletedCallback;
 
     // --- Create the thread that runs the arrow function
     const workingThread: LogicalThread = {
@@ -746,7 +736,7 @@ export async function createArrowFunctionAsync (
       }
       if (decl) {
         // --- Get the actual value to work with
-        let argVal = args[i + 4];
+        let argVal = args[i + 3];
         if (argVal?._EXPRESSION_) {
           argVal = await evaluator(
             [],

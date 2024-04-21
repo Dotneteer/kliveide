@@ -269,9 +269,7 @@ export async function executeModule (
     });
 
   // --- Run the module
-  console.log("Executing module", module.name);
   await processStatementQueueAsync(module.statements, evaluationContext);
-  console.log("Module executed", module.name);
 
   // --- Get exported values
   for (const key in module.exports) {

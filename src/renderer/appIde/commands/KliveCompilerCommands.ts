@@ -89,7 +89,10 @@ import {
     readonly noInteractiveUsage = true;
   
     async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-      return await injectCode(context, "run");
+      console.log("Before injectCode");
+      const result = await injectCode(context, "run");
+      console.log("After injectCode");
+      return result;
     }
   }
   

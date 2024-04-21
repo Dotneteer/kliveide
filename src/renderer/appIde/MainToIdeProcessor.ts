@@ -104,6 +104,7 @@ export async function processMainToIdeMessages (
       const pane = message.scriptId
         ? scriptService.getScriptOutputBuffer(message.scriptId)
         : outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+      console.log("IdeExecuteCommand", message.commandText, pane);  
       const response = await ideCommandsService.executeCommand(
         message.commandText,
         pane
@@ -231,7 +232,6 @@ function convertToProjectStructure (
         children: nodeChildren.length > 0 ? nodeChildren : []
       });
     });
-    console.log(result);
     return result;
   }
 }

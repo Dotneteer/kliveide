@@ -12,6 +12,7 @@ class MainToIdeMessenger extends MessengerBase {
    */
   constructor (public readonly window: BrowserWindow) {
     super();
+    this._requestSeqNo = 1000;
     ipcMain?.on(
       this.responseChannel,
       (_ev: IpcMainEvent, response: ResponseMessage) =>
