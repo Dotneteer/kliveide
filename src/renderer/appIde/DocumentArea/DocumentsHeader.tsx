@@ -4,10 +4,7 @@ import {
   TabButtonSeparator,
   TabButtonSpace
 } from "@controls/TabButton";
-import {
-  useDispatch,
-  useSelector,
-} from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode, DocumentTab } from "./DocumentTab";
@@ -18,10 +15,14 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
+import {
+  incProjectViewStateVersionAction,
+  setRestartTarget
+} from "@common/state/actions";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
+import { delay } from "@renderer/utils/timing";
 
 /**
  * This component represents the header of a document hub
@@ -226,7 +227,10 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
-        {editorInfo && editorInfo.documentTabRenderer?.(openDocs?.[activeDocIndex]?.node?.fullPath)}
+        {editorInfo &&
+          editorInfo.documentTabRenderer?.(
+            openDocs?.[activeDocIndex]?.node?.fullPath
+          )}
         {selectedIsBuildRoot && <BuildRootCommandBar />}
         <TabButtonSeparator />
         <TabButton
@@ -266,9 +270,17 @@ const BuildRootCommandBar = () => {
         title='Compile code'
         disabled={compiling}
         clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand("compile", buildPane);
-          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
+          const buildPane =
+            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          const commandResult = await ideCommandsService.executeCommand(
+            "run-build-function buildCode",
+            buildPane
+          );
+          console.log("commandResult", commandResult);
+          await delay(100);
+          await ideCommandsService.executeCommand(
+            `script-output ${commandResult.value}`, buildPane
+          );
         }}
       />
       <TabButtonSpace />
@@ -277,8 +289,12 @@ const BuildRootCommandBar = () => {
         title={"Inject code into\nthe virtual machine"}
         disabled={compiling}
         clicked={async () => {
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand("inject", buildPane);
+          const buildPane =
+            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          await ideCommandsService.executeCommand(
+            "run-build-function injectCode",
+            buildPane
+          );
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
@@ -289,8 +305,12 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand("run", buildPane);
+          const buildPane =
+            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          await ideCommandsService.executeCommand(
+            "run-build-function runCode",
+            buildPane
+          );
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
@@ -301,8 +321,12 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand("debug", buildPane);
+          const buildPane =
+            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          await ideCommandsService.executeCommand(
+            "run-build-function debugCode",
+            buildPane
+          );
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />

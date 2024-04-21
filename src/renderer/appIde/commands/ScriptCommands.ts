@@ -164,8 +164,9 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
     // --- Create the script to run
     const script = `import { ${this.arg} } from "./${BUILD_FILE}";\n\n${this.arg}();`;
 
+    let id = 0;
     try {
-      const id = await context.service.scriptService.runScriptText(
+      id = await context.service.scriptService.runScriptText(
         script,
         this.arg,
         buildFileName,
@@ -178,7 +179,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
         id
       );
     } catch (err) {
-      return commandError(err.message);
+      return commandError(err.message, id);
     }
   }
 }

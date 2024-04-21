@@ -101,10 +101,9 @@ export async function processMainToIdeMessages (
     }
 
     case "IdeExecuteCommand": {
-      const pane = message.scriptId
+      const pane = /*message.scriptId
         ? scriptService.getScriptOutputBuffer(message.scriptId)
-        : outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-      console.log("IdeExecuteCommand", message.commandText, pane);  
+        : */outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
       const response = await ideCommandsService.executeCommand(
         message.commandText,
         pane
