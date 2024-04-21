@@ -60,8 +60,7 @@ export type OnStatementCompletedCallback =
 export async function processStatementQueueAsync (
   statements: Statement[],
   evalContext: EvaluationContext,
-  thread?: LogicalThread,
-  onStatementCompleted?: OnStatementCompletedCallback
+  thread?: LogicalThread
 ): Promise<QueueInfo> {
   if (!thread) {
     // --- Create the main thread for the queue
@@ -103,8 +102,7 @@ export async function processStatementQueueAsync (
       outcome = await processStatementAsync(
         queueItem!.statement,
         evalContext,
-        thread,
-        onStatementCompleted
+        thread
       );
     } catch (err) {
       if (thread.tryBlocks && thread.tryBlocks.length > 0) {
@@ -150,8 +148,6 @@ export async function processStatementQueueAsync (
       }
     }
 
-    await onStatementCompleted?.(evalContext, queueItem!.statement);
-
     // --- Provide diagnostics
     if (queue.length > diagInfo.maxQueueLength) {
       diagInfo.maxQueueLength = queue.length;
@@ -180,8 +176,7 @@ export async function processStatementQueueAsync (
 async function processStatementAsync (
   statement: Statement,
   evalContext: EvaluationContext,
-  thread: LogicalThread,
-  onStatementCompleted: OnStatementCompletedCallback
+  thread: LogicalThread
 ): Promise<ProcessOutcome> {
   // --- These items should be put in the statement queue after return
   let toUnshift: StatementQueueItem[] = [];
@@ -259,7 +254,6 @@ async function processStatementAsync (
         statement.expression,
         evalContext,
         thread,
-        onStatementCompleted
       );
       if (thread.blocks && thread.blocks.length !== 0) {
         thread.blocks[thread.blocks.length - 1].returnValue = statementValue;
@@ -271,7 +265,6 @@ async function processStatementAsync (
       const arrowFuncValue = await executeArrowExpression(
         statement.expression,
         evalContext,
-        onStatementCompleted,
         thread,
         ...(evalContext.eventArgs ?? [])
       );
@@ -290,7 +283,6 @@ async function processStatementAsync (
         block,
         evalContext,
         thread,
-        onStatementCompleted,
         statement.declarations
       );
       break;
@@ -306,7 +298,6 @@ async function processStatementAsync (
         block,
         evalContext,
         thread,
-        onStatementCompleted,
         statement.declarations,
         true
       );
@@ -319,7 +310,6 @@ async function processStatementAsync (
         statement.condition,
         evalContext,
         thread,
-        onStatementCompleted
       ));
       if (condition) {
         toUnshift = mapToItem(statement.thenBranch);
@@ -341,7 +331,6 @@ async function processStatementAsync (
             statement.expression,
             evalContext,
             thread,
-            onStatementCompleted
           )
         : undefined;
 
@@ -377,7 +366,6 @@ async function processStatementAsync (
         statement.condition,
         evalContext,
         thread,
-        onStatementCompleted
       ));
       if (condition) {
         toUnshift = provideLoopBody(
@@ -408,7 +396,6 @@ async function processStatementAsync (
         statement.condition,
         evalContext,
         thread,
-        onStatementCompleted
       ));
       if (condition) {
         toUnshift = provideLoopBody(
@@ -531,7 +518,6 @@ async function processStatementAsync (
             statement.condition,
             evalContext,
             thread,
-            onStatementCompleted
           ))
         ) {
           // --- Stay in the loop, inject the body, the update expression, and the loop guard
@@ -749,7 +735,6 @@ async function processStatementAsync (
           statement.expression,
           evalContext,
           thread,
-          onStatementCompleted
         )
       );
     }
@@ -941,7 +926,6 @@ export async function processDeclarationsAsync (
   block: BlockScope,
   evalContext: EvaluationContext,
   thread: LogicalThread,
-  onStatementCompleted: OnStatementCompletedCallback,
   declarations: VarDeclaration[],
   addConst = false,
   useValue = false,
@@ -957,7 +941,6 @@ export async function processDeclarationsAsync (
         decl.expression,
         evalContext,
         thread,
-        onStatementCompleted
       );
     }
     visitDeclaration(block, decl, value, addConst);

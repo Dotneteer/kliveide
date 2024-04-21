@@ -27,6 +27,7 @@ import {
 } from "../../common/ksx/script-runner";
 import { Z88DK } from "../../script-packages/z88dk/Z88DK";
 import { createProjectStructure } from "./ProjectStructure";
+import { executeIdeCommand } from "./ide-commands";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -89,7 +90,7 @@ class MainScriptManager implements IScriptManager {
     );
     if (script) {
       // --- The script is already running, nothing to do
-      this.outputFn?.(`Script ${scriptFileName} is already running.`, {
+      await this.outputFn?.(`Script ${scriptFileName} is already running.`, {
         color: "yellow"
       });
       return { id: -script.id };
@@ -102,7 +103,7 @@ class MainScriptManager implements IScriptManager {
     this.id++;
 
     // --- Now, start the script
-    this.outputFn?.(`Starting script ${scriptFileName}...`);
+    await this.outputFn?.(`Starting script ${scriptFileName}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({
       scriptId: this.id,
@@ -146,9 +147,9 @@ class MainScriptManager implements IScriptManager {
     // --- Update the script status
     newScript.execTask = execTask;
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-    this.outputFn?.(`Script started`, { color: "green" });
 
-    // --- Await the script execution
+    // --- We intentionally do not await the script execution here
+    this.outputFn?.(`Script started`, { color: "green" });
     concludeScript(
       mainStore,
       execTask,
@@ -158,6 +159,8 @@ class MainScriptManager implements IScriptManager {
       this.outputFn,
       () => delete newScript.execTask
     );
+
+    // --- Done.
     return { id: this.id };
   }
 
@@ -174,7 +177,7 @@ class MainScriptManager implements IScriptManager {
     this.id++;
 
     // --- Now, start the script
-    this.outputFn?.(`Starting script ${scriptFunction}...`);
+    await this.outputFn?.(`Starting script ${scriptFunction}...`);
     const cancellationToken = new CancellationToken();
     const evalContext = createEvalContext({
       scriptId: this.id,
@@ -212,9 +215,9 @@ class MainScriptManager implements IScriptManager {
     // --- Update the script status
     newScript.execTask = execTask;
     mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
-    this.outputFn?.(`Script started`, { color: "green" });
 
-    // --- Await the script execution
+    // --- We intentionally do not await the script execution here
+    this.outputFn?.(`Script started`, { color: "green" });
     concludeScript(
       mainStore,
       execTask,
@@ -224,6 +227,8 @@ class MainScriptManager implements IScriptManager {
       this.outputFn,
       () => delete newScript.execTask
     );
+
+    // --- Done.
     return { id: this.id };
   }
 
@@ -245,7 +250,7 @@ class MainScriptManager implements IScriptManager {
     }
 
     // --- Stop the script
-    this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
+    await this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     script.evalContext?.cancellationToken?.cancel();
     await script.execTask;
   }
@@ -406,8 +411,8 @@ class MainScriptManager implements IScriptManager {
       // --- The script has errors, display them
       Object.keys(module).forEach(moduleName => {
         const errors = module[moduleName];
-        errors.forEach(error => {
-          this.outputFn?.(
+        errors.forEach(async (error) => {
+          await this.outputFn?.(
             `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
             {
               color: "bright-red"
@@ -426,7 +431,8 @@ class MainScriptManager implements IScriptManager {
   private async prepareAppContext (): Promise<Record<string, any>> {
     return {
       Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id),
-      "#project": await createProjectStructure()
+      "#project": await createProjectStructure(),
+      "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
     };
   }
 }

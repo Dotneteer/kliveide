@@ -9,7 +9,7 @@ import {
   BASIC_PANEL_ID,
   BASIC_EDITOR,
   MEMORY_PANEL_ID,
-  DISASSEMBLY_PANEL_ID,
+  DISASSEMBLY_PANEL_ID
 } from "@state/common-ids";
 import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
@@ -19,7 +19,10 @@ import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
 import { getCachedAppServices } from "../CachedServices";
 import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
 import { ProjectNode } from "./project/project-node";
-import { ProjectStructure, ProjectTreeNode } from "@main/ksx-runner/ProjectStructure";
+import {
+  ProjectStructure,
+  ProjectTreeNode
+} from "@main/ksx-runner/ProjectStructure";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -29,7 +32,12 @@ import { ProjectStructure, ProjectTreeNode } from "@main/ksx-runner/ProjectStruc
 export async function processMainToIdeMessages (
   message: RequestMessage,
   store: Store<AppState>,
-  { outputPaneService, ideCommandsService, projectService }: AppServices
+  {
+    outputPaneService,
+    ideCommandsService,
+    projectService,
+    scriptService
+  }: AppServices
 ): Promise<ResponseMessage> {
   const documentHubService = projectService.getActiveDocumentHubService();
   switch (message.type) {
@@ -93,7 +101,9 @@ export async function processMainToIdeMessages (
     }
 
     case "IdeExecuteCommand": {
-      const pane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+      const pane = /*message.scriptId
+        ? scriptService.getScriptOutputBuffer(message.scriptId)
+        : */outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
       const response = await ideCommandsService.executeCommand(
         message.commandText,
         pane
@@ -119,7 +129,10 @@ export async function processMainToIdeMessages (
     case "IdeGetProjectStructure": {
       return {
         type: "IdeGetProjectStructureResponse",
-        projectStructure: convertToProjectStructure(store, projectService.getProjectTree())
+        projectStructure: convertToProjectStructure(
+          store,
+          projectService.getProjectTree()
+        )
       };
     }
   }
@@ -186,7 +199,10 @@ function executeScriptOutput (message: IdeScriptOutputRequest): void {
   }
 }
 
-function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<ProjectNode>): ProjectStructure {
+function convertToProjectStructure (
+  store: Store<AppState>,
+  tree: ITreeView<ProjectNode>
+): ProjectStructure {
   const project = store.getState().project;
   const nodes = collectNodes(tree.rootNode.children);
 
@@ -194,10 +210,10 @@ function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<Proje
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
     buildFunctions: [],
-    children: nodes,
-  }
+    children: nodes
+  };
 
-  function collectNodes(children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
+  function collectNodes (children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
     if (!children) return [];
 
     const result: ProjectTreeNode[] = [];
@@ -213,9 +229,8 @@ function convertToProjectStructure(store: Store<AppState>, tree: ITreeView<Proje
         isBinary: child.data.isBinary,
         canBeBuildRoot: child.data.canBeBuildRoot,
         children: nodeChildren.length > 0 ? nodeChildren : []
-      })
+      });
     });
-    console.log(result);
     return result;
   }
 }

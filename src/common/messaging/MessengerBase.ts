@@ -11,7 +11,7 @@ import { Channel, RequestMessage, ResponseMessage } from "./messages-core";
  */
 export abstract class MessengerBase {
   // Sequential number of the next request
-  private _requestSeqNo = 0;
+  protected _requestSeqNo = 1;
 
   /**
    * Stores resolvers to correlate incoming messages with outcoming ones
@@ -44,7 +44,7 @@ export abstract class MessengerBase {
     // --- Create a promise and store the resolver function with the message ID.
     const promise = new Promise<TResp>((resolve, reject) => {
       this._messageResolvers.set(
-        message.correlationId ?? 0,
+        message.correlationId,
         resolve as (
           value: ResponseMessage | PromiseLike<ResponseMessage>
         ) => void

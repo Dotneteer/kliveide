@@ -119,7 +119,7 @@ const predefinedTasks: Record<string, PredefinedBuildTaskDescriptor> = {
     ideCommand: "debug"
   },
   exportCode: {
-    displayName: "Export artifacts",
+    displayName: "Export code...",
     separatorBefore: true,
     ideCommand: "export"
   }

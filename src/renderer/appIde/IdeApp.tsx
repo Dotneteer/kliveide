@@ -12,7 +12,7 @@ import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
-  FIRST_STARTUP_DIALOG_IDE
+  FIRST_STARTUP_DIALOG_IDE,
 } from "@messaging/dialog-ids";
 import {
   RequestMessage,
@@ -110,6 +110,8 @@ import {
   setCachedStore
 } from "../CachedServices";
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
+import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
+import { DisplayDialogCommand } from "./commands/DialogCommands";
 
 const IdeApp = () => {
   // --- Used services
@@ -320,6 +322,11 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new NewProjectCommand());
   cmdSrv.registerCommand(new CloseFolderCommand());
 
+  cmdSrv.registerCommand(new KliveCompileCommand());
+  cmdSrv.registerCommand(new KliveInjectCodeCommand());
+  cmdSrv.registerCommand(new KliveRunCodeCommand());
+  cmdSrv.registerCommand(new KliveDebugCodeCommand());
+
   cmdSrv.registerCommand(new CompileCommand());
   cmdSrv.registerCommand(new InjectCodeCommand());
   cmdSrv.registerCommand(new RunCodeCommand());
@@ -341,4 +348,6 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DisplayScriptOutputCommand());
 
   cmdSrv.registerCommand(new ResetZ88DkCommand());
+
+  cmdSrv.registerCommand(new DisplayDialogCommand());
 }

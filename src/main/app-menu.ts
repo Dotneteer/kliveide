@@ -243,6 +243,21 @@ export function setupMenu (
           await saveKliveProject();
         }
       },
+      ...(!kliveProject
+        ? []
+        : ([
+            { type: "separator" },
+            {
+              id: EXCLUDED_PROJECT_ITEMS,
+              label: "\nManage Excluded Items",
+              enabled: true,
+              click: () => {
+                mainStore.dispatch(
+                  displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
+                );
+              }
+            }
+          ] as MenuItemConstructorOptions[])),
       ...(__DARWIN__
         ? []
         : ([
@@ -757,86 +772,6 @@ export function setupMenu (
   // Project Menu
 
   if (kliveProject) {
-    // --- Machine-specific view menu items
-    let specificProjectMenus: MenuItemConstructorOptions[] = [];
-    if (machineMenus && machineMenus.projectItems) {
-      specificProjectMenus = machineMenus.projectItems(
-        {
-          emuWindow,
-          ideWindow
-        },
-        currentMachine,
-        currentModel
-      );
-    }
-
-    template.push({
-      label: "Project",
-      submenu: [
-        {
-          id: COMPILE_CODE,
-          label: "Compile code",
-          enabled: !!buildRoot,
-          click: async () => {
-            await executeIdeCommand(ideWindow, "outp build", undefined, true);
-            await executeIdeCommand(ideWindow, "compile", "Compile Code");
-          }
-        },
-        {
-          id: INJECT_CODE,
-          label: "Inject code",
-          enabled: !!buildRoot && execState === MachineControllerState.Paused,
-          click: async () => {
-            await executeIdeCommand(ideWindow, "outp build", undefined, true);
-            await executeIdeCommand(ideWindow, "inject", "Inject Code", true);
-          }
-        },
-        { type: "separator" },
-        {
-          id: RUN_CODE,
-          label: "Run",
-          enabled: !!buildRoot,
-          click: async () => {
-            mainStore.dispatch(setRestartTarget("project"));
-            await executeIdeCommand(ideWindow, "outp build", undefined, true);
-            await executeIdeCommand(ideWindow, "run", "Run Code", true);
-          }
-        },
-        {
-          id: DEBUG_CODE,
-          label: "Debug",
-          enabled: !!buildRoot,
-          click: async () => {
-            mainStore.dispatch(setRestartTarget("project"));
-            await executeIdeCommand(ideWindow, "outp build", undefined, true);
-            await executeIdeCommand(ideWindow, "debug", "Debug Code", true);
-          }
-        },
-        { type: "separator" },
-        {
-          id: EXPORT_CODE,
-          label: "Export code...",
-          enabled: !!buildRoot,
-          click: () => {
-            mainStore.dispatch(displayDialogAction(EXPORT_CODE_DIALOG));
-          }
-        },
-        { type: "separator" },
-        {
-          id: EXCLUDED_PROJECT_ITEMS,
-          label: "\nManage Excluded Items",
-          enabled: true,
-          click: () => {
-            mainStore.dispatch(
-              displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
-            );
-          }
-        },
-        { type: "separator" },
-        ...specificProjectMenus
-      ]
-    });
-
     if (hasBuildFile) {
       let buildTasks: MenuItemConstructorOptions[] = [];
       for (const task of collectedBuildTasks) {
@@ -1134,7 +1069,7 @@ function visitMenu (
   }
 }
 
-async function executeIdeCommand (
+export async function executeIdeCommand (
   window: BrowserWindow,
   commandText: string,
   title?: string,

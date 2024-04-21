@@ -173,10 +173,11 @@ export function validationError(message: string): ValidationMessage {
  * Represents a command execution error
  * @param message Error message
  */
-export function commandError(message: string): IdeCommandResult {
+export function commandError(message: string, value?: any): IdeCommandResult {
   return {
     success: false,
-    finalMessage: message
+    finalMessage: message,
+    value
   };
 }
 
@@ -282,7 +283,7 @@ export function getPartitionedValue(token: Token): {
         if (segments.length === 2 && segments[0].length <= 2) {
           // --- Extract partition information
           let partition: number | undefined;
-          let partitionType = "B"
+          let partitionType = "B";
           const partStr = segments[0].toUpperCase();
           let partNoIdx = 0;
           if (partStr.startsWith("R")) {
@@ -300,7 +301,7 @@ export function getPartitionedValue(token: Token): {
           if (valueInfo.messages) break;
 
           // --- Return with the info
-          return { value: valueInfo.value, partition, partitionType}
+          return { value: valueInfo.value, partition, partitionType };
         }
         break;
     }

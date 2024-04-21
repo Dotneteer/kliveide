@@ -110,11 +110,15 @@ class IdeCommandService implements IIdeCommandService {
   /**
    * Executes the specified command line
    * @param command Command to execute
+   * @param buffer Optional output buffer
+   * @param useHistory Add the command to the history
+   * @param interactiveContex Indicates that the command is executed in interactive context
    */
   async executeInteractiveCommand (
     command: string,
     buffer?: IOutputBuffer,
-    useHistory = true
+    useHistory = true,
+    interactiveContex = true
   ): Promise<IdeCommandResult> {
     // --- Create a buffer if that does not exists
     buffer ??= new OutputPaneBuffer();
@@ -142,6 +146,18 @@ class IdeCommandService implements IIdeCommandService {
     const commandInfo = this.getCommandByIdOrAlias(tokens[0].text);
     if (!commandInfo) {
       const finalMessage = `Unknown command '${commandId}'.`;
+      buffer.color("bright-red");
+      buffer.writeLine(finalMessage);
+      buffer.resetStyle();
+      return {
+        success: false,
+        finalMessage
+      };
+    }
+
+    // --- Allow if the command can be executed interactively
+    if (!!commandInfo.noInteractiveUsage && interactiveContex) {
+      const finalMessage = `Command '${commandId}' cannot be executed interactively`;
       buffer.color("bright-red");
       buffer.writeLine(finalMessage);
       buffer.resetStyle();
@@ -193,7 +209,7 @@ class IdeCommandService implements IIdeCommandService {
     command: string,
     buffer?: IOutputBuffer
   ): Promise<IdeCommandResult> {
-    return this.executeInteractiveCommand(command, buffer, false);
+    return this.executeInteractiveCommand(command, buffer, false, false);
   }
 
   /**
@@ -303,12 +319,16 @@ class HelpCommand extends IdeCommandBase {
     selectedCommands
       .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
       .forEach(ci => {
-        out.color("bright-magenta");
+        out.color(ci.noInteractiveUsage ? "magenta" : "bright-magenta");
         out.bold(true);
         out.write(`${ci.id}`);
         out.bold(false);
         if ((ci.aliases ?? []).length > 0) {
           out.write(` (${ci.aliases.join(", ")})`);
+        }
+        if (ci.noInteractiveUsage) {
+          out.color("cyan");
+          out.write(" [non-interactive]");
         }
         context.output.color("bright-blue");
         context.output.write(`: `);
