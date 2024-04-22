@@ -23,6 +23,7 @@ import {
   ProjectStructure,
   ProjectTreeNode
 } from "@main/ksx-runner/ProjectStructure";
+import { CompositeOutputBuffer } from "./ToolArea/CompositeOutputBuffer";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -101,12 +102,16 @@ export async function processMainToIdeMessages (
     }
 
     case "IdeExecuteCommand": {
-      const pane = /*message.scriptId
-        ? scriptService.getScriptOutputBuffer(message.scriptId)
-        : */outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+      const buildOutput = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+      const scriptOutput = message.scriptId ? scriptService.getScriptOutputBuffer(message.scriptId) : undefined;
+      const buffers = [ buildOutput ];
+      if (scriptOutput) {
+        buffers.push(scriptOutput);
+      }
+      console.log("Executing command: " + message.commandText, buffers);
       const response = await ideCommandsService.executeCommand(
         message.commandText,
-        pane
+        new CompositeOutputBuffer(buffers)
       );
       return {
         type: "IdeExecuteCommandResponse",
