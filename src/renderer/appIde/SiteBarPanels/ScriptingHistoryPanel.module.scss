@@ -6,7 +6,6 @@
   flex-direction: column;
   user-select: none;
   font-family: var(--monospace-font);
-  font-size: 0.8em;
   padding: 4px 0;
 
   .center {
@@ -25,6 +24,7 @@
   flex-grow: 1;
   width: calc(100% - 8px);
   padding: 4px;
+  font-size: 0.8em;
 
   &.selected {
     background-color: var(--bgcolor-explorer-focused-selected);
@@ -55,5 +55,12 @@
   width: 80px;
 }
 
-
-
+.header {
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  align-items: center;
+  height: 24px;
+  gap: 8px;
+  padding: 0 8px;
+}

@@ -8,3 +8,7 @@ export function isScriptCompleted (status: ScriptStatus): boolean {
     status === "execError"
   );
 }
+
+export function scriptDocumentId (scriptId: number): string {
+  return `ScriptOutput-${scriptId}`;
+}

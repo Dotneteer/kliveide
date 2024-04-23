@@ -272,15 +272,11 @@ const BuildRootCommandBar = () => {
         clicked={async () => {
           const buildPane =
             outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const commandResult = await ideCommandsService.executeCommand(
+          await ideCommandsService.executeCommand(
             "run-build-function buildCode",
             buildPane
           );
-          console.log("commandResult", commandResult);
-          await delay(100);
-          await ideCommandsService.executeCommand(
-            `script-output ${commandResult.value}`, buildPane
-          );
+          await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />

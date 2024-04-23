@@ -40,7 +40,7 @@ export function concludeScript (
         time = script.endTime.getTime() - script.startTime.getTime();
       }
       outputFn?.(
-        `Script ${script.scriptFileName} with ID ${script.id} ${script.status} in ${time}ms.`,
+        `Script ${script.scriptFileName} with ID ${script.id} ${script.status} after ${time}ms.`,
         {
           color: cancelled ? "yellow" : "green"
         }

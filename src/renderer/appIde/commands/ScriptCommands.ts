@@ -5,6 +5,7 @@ import { commandError, commandSuccessWith } from "../services/ide-commands";
 import path from "path";
 import { SCRIPT_OUTPUT_VIEWER } from "@common/state/common-ids";
 import { BUILD_FILE } from "@common/structs/project-const";
+import { scriptDocumentId } from "@common/utils/script-utils";
 
 export class RunScriptCommand extends CommandWithSingleStringBase {
   readonly id = "script-run";
@@ -93,13 +94,13 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
     }
 
     // --- Open the script output
-    const docId = `ScriptOutput-${scriptId}`;
+    const docId = scriptDocumentId(scriptId);
     if (documentHubService.isOpen(docId)) {
       documentHubService.setActiveDocument(docId);
     } else {
       await documentHubService.openDocument(
         {
-          id: `ScriptOutput-${scriptId}`,
+          id: scriptDocumentId(scriptId),
           name: `${thisScript.scriptFileName} (ID: ${scriptId}) output`,
           type: SCRIPT_OUTPUT_VIEWER,
           contents: scriptId.toString(),
