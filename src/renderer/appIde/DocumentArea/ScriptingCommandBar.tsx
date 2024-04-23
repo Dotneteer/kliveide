@@ -36,7 +36,7 @@ const ScriptingCommandBar = ({ path }: Props) => {
     if (scriptId > 0) {
       setScriptEverStarted(true);
     }
-  }, [scriptsInfo]);
+  }, [scriptsInfo, path]);
 
   return (
     <>
