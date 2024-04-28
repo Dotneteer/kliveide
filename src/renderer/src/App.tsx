@@ -1,6 +1,9 @@
 import Versions from './components/Versions'
 import electronLogo from './assets/electron.svg'
 
+// --- Create the application messenger and the store according to the discriminator parameter
+const isEmu = location.search.startsWith("?emu");
+
 function App(): JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
 
@@ -13,7 +16,7 @@ function App(): JSX.Element {
         &nbsp;and <span className="ts">TypeScript</span>
       </div>
       <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
+        {isEmu ? "(EMU)" : "(IDE)"} Please try pressing <code>F12</code> to open the devTool
       </p>
       <div className="actions">
         <div className="action">
