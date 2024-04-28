@@ -19,7 +19,7 @@
     "editor.defaultFormatter": "numso.prettier-standard-vscode"
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[javascript]": {
     "editor.defaultFormatter": "numso.prettier-standard-vscode"

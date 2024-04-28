@@ -21,7 +21,7 @@
   ],
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
-  "main": "dist-electron/main/index.js",
+  "main": "./out/main/index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
@@ -31,6 +31,7 @@
     "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
     "build:linux:arm64": "npm run build && electron-builder build --linux --arm64",
+    "dev:el": "electron-vite dev",
     "doc:dev": "next",
     "doc:build": "next build",
     "doc:start": "next start",
@@ -40,6 +41,9 @@
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
+    "@electron-toolkit/eslint-config-prettier": "^2.0.0",
+    "@electron-toolkit/eslint-config-ts": "^2.0.0",
+    "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint-community/regexpp": "^4.10.0",
     "@monaco-editor/react": "^4.6.0",
     "@tanstack/react-virtual": "^3.0.0-beta.32",
@@ -51,6 +55,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",
+    "electron-vite": "^2.2.0",
     "eslint": "^8.31.0",
     "expect": "^29.3.1",
     "lodash": "^4.17.21",
@@ -66,7 +71,8 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.10",
     "vite-electron-plugin": "^0.8.3",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vitest": "^1.5.2"
   },
   "debug": {
     "env": {
@@ -74,6 +80,9 @@
     }
   },
   "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "electron-updater": "^6.1.8",
     "next": "^14.0.0",
     "nextra": "^2.13.2",
     "nextra-theme-docs": "^2.13.2"
