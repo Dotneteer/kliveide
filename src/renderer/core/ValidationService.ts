@@ -1,5 +1,5 @@
 import * as path from "path";
-import { __WIN32__, __DARWIN__ } from "../../electron/electron-utils";
+import { __WIN32__, __DARWIN__ } from "../../main/electron-utils";
 
 /**
  * This type represents UI services available from any part of the UI

@@ -10,7 +10,7 @@ import {
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { __DARWIN__ } from "../electron/electron-utils";
+import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
   showEmuStatusBarAction,
