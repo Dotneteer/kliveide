@@ -209,13 +209,18 @@ function convertToProjectStructure (
   tree: ITreeView<ProjectNode>
 ): ProjectStructure {
   const project = store.getState().project;
+  const rootFolder = project?.folderPath ?? "";
   const nodes = collectNodes(tree.rootNode.children);
+  const buildRoot = project.buildRoots
+    ? project.buildRoots.length === 1 ? `${rootFolder}/${project.buildRoots[0]}` : project.buildRoots
+    : undefined;
 
   return {
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
     buildFunctions: [],
-    children: nodes
+    children: nodes,
+    buildRoot
   };
 
   function collectNodes (children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {

@@ -539,7 +539,7 @@ class ZccImplementation {
       });
       throw new Error(errList);
     }
-    return `${rootPath}/zcc ${this.composeCmdLineArgs()}`
+    return `${rootPath}/bin/zcc ${this.composeCmdLineArgs()}`
   }
 
   /**

@@ -10,7 +10,7 @@
     "TS_NODE_PROJECT": "./test/tsconfig.json"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "numso.prettier-standard-vscode"

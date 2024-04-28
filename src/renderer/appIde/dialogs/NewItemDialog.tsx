@@ -2,7 +2,9 @@ import styles from "./NewItemDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { DialogRow } from "@renderer/controls/DialogRow";
+import { fileTypeRegistry } from "@renderer/registry";
 import { useRef, useState } from "react";
+import { getFileTypeEntry } from "../project/project-node";
 
 const VALID_FILENAME = /^[^>:"/\\|?*]+$/;
 
@@ -26,7 +28,7 @@ export const NewItemDialog = ({
   const subject = isFolder ? "folder" : "file";
 
   const validate = (fn: string) =>
-    !itemNames.some(item => fn === item) && VALID_FILENAME.test(fn);
+    !itemNames.some(item => fn === item) && VALID_FILENAME.test(fn) && !!getFileTypeEntry(fn);
   const isValid = validate(newItem);
 
   return (
