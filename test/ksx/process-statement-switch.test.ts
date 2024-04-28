@@ -1,17 +1,10 @@
-import "mocha";
-import { expect } from "expect";
-import assert from "assert";
+import { describe, it, expect, assert } from "vitest";
 import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
 } from "@common/ksx/EvaluationContext";
-import {
-  KsxModule,
-  parseKsxModule,
-  isModuleErrors,
-  executeModule
-} from "@common/ksx/ksx-module";
+import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
 
 const ROOT_MODULE = "test";
 
@@ -676,7 +669,7 @@ describe("KSX Execution - switch", () => {
   });
 });
 
-async function execModule (
+async function execModule(
   source: string,
   localContext: Record<string, any> = {},
   cancellationToken?: CancellationToken

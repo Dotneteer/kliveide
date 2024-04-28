@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import {
   FunctionInvocationExpression,
@@ -27,7 +26,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: 'a, 12.3, "Hello"', len: 3, idx: 1, exp: "Literal" },
     { src: 'a, 12.3, "Hello"', len: 3, idx: 2, exp: "Literal" }
   ];
-  sequenceCases.forEach(c => {
+  sequenceCases.forEach((c) => {
     it(`Sequence expression: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -59,7 +58,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
       exp: "CalculatedMemberAccess"
     }
   ];
-  invocationCases.forEach(c => {
+  invocationCases.forEach((c) => {
     it(`FunctionInvocation: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -93,7 +92,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: "(a.b)()", exp: "MemberAccess" },
     { src: "(a[b])()", exp: "CalculatedMemberAccess" }
   ];
-  objectCases.forEach(c => {
+  objectCases.forEach((c) => {
     it(`FunctionInvocation object: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -122,7 +121,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: "(a.b).b", exp: "MemberAccess" },
     { src: "(a[b]).b", exp: "CalculatedMemberAccess" }
   ];
-  memberAccessCases.forEach(c => {
+  memberAccessCases.forEach((c) => {
     it(`MemberAccess: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -145,7 +144,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: "...[1, 2, 3]", exp: "ArrayLiteral" },
     { src: "...apple", exp: "Identifier" }
   ];
-  spreadCases.forEach(c => {
+  spreadCases.forEach((c) => {
     it(`Spread: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -169,7 +168,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: "--i", op: "--", exp: "Identifier" },
     { src: "--j[2]", op: "--", exp: "CalculatedMemberAccess" }
   ];
-  prefixCases.forEach(c => {
+  prefixCases.forEach((c) => {
     it(`Prefix: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -194,7 +193,7 @@ describe("KSX Parser - miscellaneous expressions", () => {
     { src: "i--", op: "--", exp: "Identifier" },
     { src: "j[2]--", op: "--", exp: "CalculatedMemberAccess" }
   ];
-  postfixCases.forEach(c => {
+  postfixCases.forEach((c) => {
     it(`Postfix: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);

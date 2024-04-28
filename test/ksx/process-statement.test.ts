@@ -1,17 +1,10 @@
-import "mocha";
-import { expect } from "expect";
-import assert from "assert";
+import { describe, it, expect, assert } from "vitest";
 import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
 } from "@common/ksx/EvaluationContext";
-import {
-  KsxModule,
-  parseKsxModule,
-  isModuleErrors,
-  executeModule
-} from "@common/ksx/ksx-module";
+import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
 
 const ROOT_MODULE = "test";
 
@@ -190,8 +183,7 @@ describe("KSX Execution - statements", () => {
 
   it("Block statement #4", async () => {
     // --- Arrange
-    const source =
-      "{ let y = 3; { let z = 2 ; { let z = 3; x = 3 * y + z; } } }";
+    const source = "{ let y = 3; { let z = 2 ; { let z = 3; x = 3 * y + z; } } }";
     const localContext = { x: 0 };
 
     // --- Act
@@ -323,8 +315,7 @@ describe("KSX Execution - statements", () => {
 
   it("while statement #4", async () => {
     // --- Arrange
-    const source =
-      "let x = 0; while (x < 18) {let y = 0; while (y < 3) {x += y; y++;} }";
+    const source = "let x = 0; while (x < 18) {let y = 0; while (y < 3) {x += y; y++;} }";
     const localContext = {};
 
     // --- Act
@@ -366,8 +357,7 @@ describe("KSX Execution - statements", () => {
 
   it("while with continue #1", async () => {
     // --- Arrange
-    const source =
-      "let y = 0; let x = 0; while (x < 6) {x++; if (x == 3) continue; y += x; }";
+    const source = "let y = 0; let x = 0; while (x < 6) {x++; if (x == 3) continue; y += x; }";
     const localContext = {};
 
     // --- Act
@@ -435,8 +425,7 @@ describe("KSX Execution - statements", () => {
 
   it("do-while statement #5", async () => {
     // --- Arrange
-    const source =
-      "let x = 0; do {let y = 0; while (y < 3) {x += y; y++;} } while (x < 18)";
+    const source = "let x = 0; do {let y = 0; while (y < 3) {x += y; y++;} } while (x < 18)";
     const localContext = {};
 
     // --- Act
@@ -464,8 +453,7 @@ describe("KSX Execution - statements", () => {
 
   it("do-while with continue #1", async () => {
     // --- Arrange
-    const source =
-      "let y = 0; let x = 0; do {x++; if (x == 3) continue; y += x; } while (x < 6)";
+    const source = "let y = 0; let x = 0; do {x++; if (x == 3) continue; y += x; } while (x < 6)";
     const localContext = {};
 
     // --- Act
@@ -521,8 +509,7 @@ describe("KSX Execution - statements", () => {
 
   it("for-loop #4", async () => {
     // --- Arrange
-    const source =
-      "let y = 0; for (let i = 0, j = 0; i < 4; i++, j+=2) {y += i + j}";
+    const source = "let y = 0; for (let i = 0, j = 0; i < 4; i++, j+=2) {y += i + j}";
     const localContext = {};
 
     // --- Act
@@ -550,8 +537,7 @@ describe("KSX Execution - statements", () => {
 
   it("for-loop with continue", async () => {
     // --- Arrange
-    const source =
-      "let y = 0; for (let i = 0; i < 10; i++) {if (i % 3 === 0) continue; y += i; }";
+    const source = "let y = 0; for (let i = 0; i < 10; i++) {if (i % 3 === 0) continue; y += i; }";
     const localContext = {};
 
     // --- Act
@@ -696,8 +682,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'none' var binding - null", async () => {
     // --- Arrange
-    const source =
-      "let y; let res =''; for (y in obj) res += obj[y]; return res";
+    const source = "let y; let res =''; for (y in obj) res += obj[y]; return res";
     const localContext = { obj: null as any };
 
     // --- Act
@@ -711,8 +696,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'none' var binding - undefined", async () => {
     // --- Arrange
-    const source =
-      "let y; let res =''; for (y in obj) res += obj[y]; return res";
+    const source = "let y; let res =''; for (y in obj) res += obj[y]; return res";
     const localContext = { obj: null as any };
 
     // --- Act
@@ -726,8 +710,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'none' var binding", async () => {
     // --- Arrange
-    const source =
-      "let y; let res =''; for (y in obj) res += obj[y]; return res";
+    const source = "let y; let res =''; for (y in obj) res += obj[y]; return res";
     const localContext = {
       obj: { one: "1", two: 2, three: 3 }
     };
@@ -903,8 +886,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'const' var binding - null", async () => {
     // --- Arrange
-    const source =
-      "let res =''; for (const y in obj) res += obj[y]; return res";
+    const source = "let res =''; for (const y in obj) res += obj[y]; return res";
     const localContext = {
       obj: null as any
     };
@@ -920,8 +902,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'const' var binding - undefined", async () => {
     // --- Arrange
-    const source =
-      "let res =''; for (const y in obj) res += obj[y]; return res";
+    const source = "let res =''; for (const y in obj) res += obj[y]; return res";
     const localContext = {
       obj: null as any
     };
@@ -937,8 +918,7 @@ describe("KSX Execution - statements", () => {
 
   it("for..in loop with 'const' var binding", async () => {
     // --- Arrange
-    const source =
-      "let res =''; for (const y in obj) res += obj[y]; return res";
+    const source = "let res =''; for (const y in obj) res += obj[y]; return res";
     const localContext = {
       obj: { one: "1", two: 2, three: 3 }
     };
@@ -1281,7 +1261,7 @@ describe("KSX Execution - statements", () => {
   });
 });
 
-async function execModule (
+async function execModule(
   source: string,
   localContext: Record<string, any> = {},
   cancellationToken?: CancellationToken

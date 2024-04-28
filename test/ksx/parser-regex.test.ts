@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { ConstStatement } from "@common/ksx/source-tree";
 
@@ -70,7 +69,7 @@ describe("KSX Parser - RegeEx", () => {
     /[:digit:]/u, // Match a character with a specific Unicode property value using POSIX syntax
     /[^:digit:]/u // Match a character without a specific Unicode property value using POSIX syntax
   ];
-  regExpCases.forEach(regExp => {
+  regExpCases.forEach((regExp) => {
     it(`RegExp: ${regExp}`, () => {
       const parser = new Parser(regExp.toString());
       const result = parser.parseExpr();
@@ -87,9 +86,7 @@ describe("KSX Parser - RegeEx", () => {
       expect(result.length).toBe(1);
       const stmt = result[0] as ConstStatement;
       expect(stmt.declarations[0].expression.type).toBe("Literal");
-      expect(stmt.declarations[0].expression.value instanceof RegExp).toBe(
-        true
-      );
+      expect(stmt.declarations[0].expression.value instanceof RegExp).toBe(true);
       expect(stmt.declarations[0].expression.value).toStrictEqual(regExp);
     });
 

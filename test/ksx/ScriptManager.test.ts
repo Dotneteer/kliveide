@@ -1,6 +1,4 @@
-import "mocha";
-import { expect } from "expect";
-import assert from "assert";
+import { describe, it, expect, assert } from "vitest";
 import { EvaluationContext } from "@common/ksx/EvaluationContext";
 import { createMainScriptManager } from "@main/ksx-runner/MainScriptManager";
 import { ScriptStartInfo } from "@abstractions/IScriptManager";
@@ -83,16 +81,13 @@ describe("KSX ScriptManager", () => {
 
 let errorScript = "";
 
-async function prepareScript (
-  scriptFile: string,
-  scriptId: number
-): Promise<ScriptStartInfo> {
+async function prepareScript(scriptFile: string, scriptId: number): Promise<ScriptStartInfo> {
   return {
     id: scriptId
   };
 }
 
-async function execScript (
+async function execScript(
   scriptFile: string,
   scriptContent: string,
   evalContext: EvaluationContext
@@ -104,6 +99,6 @@ async function execScript (
     if (errorScript) {
       throw new Error(errorScript);
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }

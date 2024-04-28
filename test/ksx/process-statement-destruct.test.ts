@@ -1,16 +1,10 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
 } from "@common/ksx/EvaluationContext";
-import {
-  KsxModule,
-  parseKsxModule,
-  isModuleErrors,
-  executeModule
-} from "@common/ksx/ksx-module";
+import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
 
 const ROOT_MODULE = "test";
 
@@ -67,8 +61,7 @@ describe("KSX Execution - destructure", () => {
 
   it("let array destructure #4", async () => {
     // --- Arrange
-    const source =
-      "let [a, , [, b, c]] = [3, -11, [-1, 6, 8]]; x = a; y = b; z = c;";
+    const source = "let [a, , [, b, c]] = [3, -11, [-1, 6, 8]]; x = a; y = b; z = c;";
     const localContext = {
       x: 0,
       y: 0,
@@ -120,8 +113,7 @@ describe("KSX Execution - destructure", () => {
 
   it("let object destructure #3", async () => {
     // --- Arrange
-    const source =
-      "let {a, qqq: {b, c}} = {a: 3, qqq: {b: 6, c: 8}}; x = a; y = b; z = c";
+    const source = "let {a, qqq: {b, c}} = {a: 3, qqq: {b: 6, c: 8}}; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -139,8 +131,7 @@ describe("KSX Execution - destructure", () => {
 
   it("let object and array destructure #1", async () => {
     // --- Arrange
-    const source =
-      "let {a, qqq: [b, c]} = {a: 3, qqq: [6, 8] }; x = a; y = b; z = c";
+    const source = "let {a, qqq: [b, c]} = {a: 3, qqq: [6, 8] }; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -158,8 +149,7 @@ describe("KSX Execution - destructure", () => {
 
   it("let object and array destructure #2", async () => {
     // --- Arrange
-    const source =
-      "let {a, qqq: [b,,c]} = {a: 3, qqq: [6, -1, 8] }; x = a; y = b; z = c";
+    const source = "let {a, qqq: [b,,c]} = {a: 3, qqq: [6, -1, 8] }; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -195,8 +185,7 @@ describe("KSX Execution - destructure", () => {
 
   it("let object and array destructure #4", async () => {
     // --- Arrange
-    const source =
-      "let [a, , {b, c}] = [3, -1, {b: 6, c: 8}]; x = a; y = b; z = c";
+    const source = "let [a, , {b, c}] = [3, -1, {b: 6, c: 8}]; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -266,8 +255,7 @@ describe("KSX Execution - destructure", () => {
 
   it("const array destructure #4", async () => {
     // --- Arrange
-    const source =
-      "const [a, , [, b, c]] = [3, -11, [-1, 6, 8]]; x = a; y = b; z = c;";
+    const source = "const [a, , [, b, c]] = [3, -11, [-1, 6, 8]]; x = a; y = b; z = c;";
     const localContext = {
       x: 0,
       y: 0,
@@ -319,8 +307,7 @@ describe("KSX Execution - destructure", () => {
 
   it("const object destructure #3", async () => {
     // --- Arrange
-    const source =
-      "const {a, qqq: {b, c}} = {a: 3, qqq: {b: 6, c: 8}}; x = a; y = b; z = c";
+    const source = "const {a, qqq: {b, c}} = {a: 3, qqq: {b: 6, c: 8}}; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -338,8 +325,7 @@ describe("KSX Execution - destructure", () => {
 
   it("const object and array destructure #1", async () => {
     // --- Arrange
-    const source =
-      "const {a, qqq: [b, c]} = {a: 3, qqq: [6, 8] }; x = a; y = b; z = c";
+    const source = "const {a, qqq: [b, c]} = {a: 3, qqq: [6, 8] }; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -357,8 +343,7 @@ describe("KSX Execution - destructure", () => {
 
   it("const object and array destructure #2", async () => {
     // --- Arrange
-    const source =
-      "const {a, qqq: [b,,c]} = {a: 3, qqq: [6, -1, 8] }; x = a; y = b; z = c";
+    const source = "const {a, qqq: [b,,c]} = {a: 3, qqq: [6, -1, 8] }; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -394,8 +379,7 @@ describe("KSX Execution - destructure", () => {
 
   it("const object and array destructure #4", async () => {
     // --- Arrange
-    const source =
-      "const [a, , {b, c}] = [3, -1, {b: 6, c: 8}]; x = a; y = b; z = c";
+    const source = "const [a, , {b, c}] = [3, -1, {b: 6, c: 8}]; x = a; y = b; z = c";
     const localContext = {
       x: 0,
       y: 0,
@@ -481,8 +465,7 @@ describe("KSX Execution - destructure", () => {
 
   it("arrow destructure #5", async () => {
     // --- Arrange
-    const source =
-      "const fn = ([a, [b, c]]) => { x = a; y = b; z = c }; fn([3, [6, 8]])";
+    const source = "const fn = ([a, [b, c]]) => { x = a; y = b; z = c }; fn([3, [6, 8]])";
     const localContext = {
       x: 0,
       y: 0,
@@ -500,8 +483,7 @@ describe("KSX Execution - destructure", () => {
 
   it("arrow destructure #6", async () => {
     // --- Arrange
-    const source =
-      "const fn = ({a, b}) => { x = a; y = b}; fn({a: 3, b: 6, v: 8})";
+    const source = "const fn = ({a, b}) => { x = a; y = b}; fn({a: 3, b: 6, v: 8})";
     const localContext = {
       x: 0,
       y: 0,
@@ -535,8 +517,7 @@ describe("KSX Execution - destructure", () => {
 
   it("arrow destructure #8", async () => {
     // --- Arrange
-    const source =
-      "const fn = ({a, q:b}) => { x = a; y = b}; fn({a: 3, q: 6, v: 8})";
+    const source = "const fn = ({a, q:b}) => { x = a; y = b}; fn({a: 3, q: 6, v: 8})";
     const localContext = {
       x: 0,
       y: 0,
@@ -572,8 +553,7 @@ describe("KSX Execution - destructure", () => {
 
   it("arrow destructure #10", async () => {
     // --- Arrange
-    const source =
-      "const fn = ({a, q:[b, c]}) => { x = a; y = b; z = c}; fn({a: 3, q: [6, 8]})";
+    const source = "const fn = ({a, q:[b, c]}) => { x = a; y = b; z = c}; fn({a: 3, q: [6, 8]})";
     const localContext = {
       x: 0,
       y: 0,
@@ -610,8 +590,7 @@ describe("KSX Execution - destructure", () => {
 
   it("arrow destructure #12", async () => {
     // --- Arrange
-    const source =
-      "const fn = ([a, {b, c}]) => { x = a; y = b; z = c}; fn([3, {b: 6, c: 8}])";
+    const source = "const fn = ([a, {b, c}]) => { x = a; y = b; z = c}; fn([3, {b: 6, c: 8}])";
     const localContext = {
       x: 0,
       y: 0,
@@ -628,7 +607,7 @@ describe("KSX Execution - destructure", () => {
   });
 });
 
-async function execModule (
+async function execModule(
   source: string,
   localContext: Record<string, any> = {},
   cancellationToken?: CancellationToken

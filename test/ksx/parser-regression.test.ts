@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { Lexer } from "@common/ksx/Lexer";
 import { InputStream } from "@common/ksx/InputStream";

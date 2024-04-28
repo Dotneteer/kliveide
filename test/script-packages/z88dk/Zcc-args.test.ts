@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { createZccRunner } from "../../../src/script-packages/z88dk/Zcc";
 
 describe("Zcc - Arguments", () => {
