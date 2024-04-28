@@ -1,4 +1,4 @@
-import * as path from "path";
+import path from "path";
 
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -153,7 +153,6 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
         const filteredPaths: string[] = [];
         for (let p of this.paths) {
           if (!p || p.length <= 0) continue;
-          p = path.normalize(p);
           if (!context.service.validationService.isValidPath(p)) {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;
@@ -193,7 +192,6 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
         const root = proj.folderPath;
         for (let p of this.paths) {
           if (!p || p.length <= 0) continue;
-          p = path.normalize(p);
           if (!context.service.validationService.isValidPath(p)) {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;

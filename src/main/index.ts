@@ -21,7 +21,7 @@ import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
 import fs from "fs";
 import { release } from "os";
 import { join } from "path";
-import { is } from '@electron-toolkit/utils'
+import { is } from "@electron-toolkit/utils";
 
 import {
   defaultResponse,
@@ -55,10 +55,7 @@ import {
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
-import {
-  registerMainToIdeMessenger,
-  sendFromMainToIde
-} from "@messaging/MainToIdeMessenger";
+import { registerMainToIdeMessenger, sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
 import { MEDIA_TAPE } from "@common/structs/project-const";
@@ -110,10 +107,8 @@ mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 // --- Get seeting used
 const settingsReader = createSettingsReader(mainStore);
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
-const displayIdeDevTools =
-  !!settingsReader.readSetting("devTools.ide") && allowDevTools;
-const displayEmuDevTools =
-  !!settingsReader.readSetting("devTools.emu") && allowDevTools;
+const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
+const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
@@ -140,27 +135,24 @@ const preload = join(__dirname, "../preload/index.js");
 // --- Store the latest build menu version to detect changes
 let lastBuildMenuVersion = 0;
 
-async function createAppWindows () {
+async function createAppWindows() {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
   allowCloseIde = false;
   ideSaved = false;
 
   // --- Create state manager for the EMU window
-  const emuWindowStateManager = createWindowStateManager(
-    appSettings?.windowStates?.emuWindow,
-    {
-      defaultWidth: 720,
-      defaultHeight: 540,
-      maximize: true,
-      fullScreen: true,
-      stateSaver: state => {
-        appSettings.windowStates ??= {};
-        appSettings.windowStates.emuWindow = state;
-        saveAppSettings();
-      }
+  const emuWindowStateManager = createWindowStateManager(appSettings?.windowStates?.emuWindow, {
+    defaultWidth: 720,
+    defaultHeight: 540,
+    maximize: true,
+    fullScreen: true,
+    stateSaver: (state) => {
+      appSettings.windowStates ??= {};
+      appSettings.windowStates.emuWindow = state;
+      saveAppSettings();
     }
-  );
+  });
 
   // --- Create the EMU window
   emuWindow = new BrowserWindow({
@@ -180,33 +172,28 @@ async function createAppWindows () {
     }
   });
   if (displayEmuDevTools) {
-    emuWindow.webContents.toggleDevTools();
+    emuWindow.webContents.openDevTools();
   }
 
   emuWindowStateManager.manage(emuWindow);
 
   // --- Create state manager for the EMU window
-  const ideWindowStateManager = createWindowStateManager(
-    appSettings?.windowStates?.ideWindow,
-    {
-      defaultWidth: 640,
-      defaultHeight: 480,
-      maximize: false,
-      fullScreen: false,
-      stateSaver: state => {
-        appSettings.windowStates ??= {};
-        appSettings.windowStates.ideWindow = state;
-        appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
-        saveAppSettings();
-      }
+  const ideWindowStateManager = createWindowStateManager(appSettings?.windowStates?.ideWindow, {
+    defaultWidth: 640,
+    defaultHeight: 480,
+    maximize: false,
+    fullScreen: false,
+    stateSaver: (state) => {
+      appSettings.windowStates ??= {};
+      appSettings.windowStates.ideWindow = state;
+      appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
+      saveAppSettings();
     }
-  );
+  });
 
   // --- Create the IDE window
-  const showIde =
-    ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
-  const maximizeIde =
-    showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
+  const showIde = ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
+  const maximizeIde = showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
     icon: join(process.env.PUBLIC, "images/klive-logo.png"),
@@ -222,8 +209,7 @@ async function createAppWindows () {
       contextIsolation: false,
       webSecurity: false
     },
-    show:
-      ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
+    show: ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
   });
   if (displayIdeDevTools && !!appSettings.windowStates?.showIdeOnStartup) {
     ideWindow.webContents.toggleDevTools();
@@ -255,44 +241,23 @@ async function createAppWindows () {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
-      mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
       await setMachineType(
         appSettings.machineId ?? "sp48",
         appSettings.modelId,
         appSettings.config
       );
-      mainStore.dispatch(
-        setMachineSpecificAction(appSettings.machineSpecific ?? {})
-      );
-      mainStore.dispatch(
-        setClockMultiplierAction(appSettings.clockMultiplier ?? 1)
-      );
+      mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
+      mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
-      mainStore.dispatch(
-        emuSetKeyboardLayoutAction(appSettings.keyboardLayout)
-      );
-      mainStore.dispatch(
-        showEmuToolbarAction(appSettings.showEmuToolbar ?? true)
-      );
-      mainStore.dispatch(
-        showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true)
-      );
-      mainStore.dispatch(
-        showIdeToolbarAction(appSettings.showIdeToolbar ?? true)
-      );
-      mainStore.dispatch(
-        showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true)
-      );
-      mainStore.dispatch(
-        primaryBarOnRightAction(appSettings.primaryBarRight ?? false)
-      );
-      mainStore.dispatch(
-        toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false)
-      );
-      mainStore.dispatch(
-        maximizeToolsAction(appSettings.maximizeTools ?? false)
-      );
+      mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
+      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
+      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
+      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
+      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
+      mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
+      mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
+      mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       if (appSettings.media[MEDIA_TAPE]) {
         setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
@@ -301,21 +266,16 @@ async function createAppWindows () {
       // --- Set key mappings
       if (appSettings.keyMappingFile) {
         try {
-          const mappingSource = fs.readFileSync(
-            appSettings.keyMappingFile,
-            "utf8"
-          );
+          const mappingSource = fs.readFileSync(appSettings.keyMappingFile, "utf8");
           const mappings = parseKeyMappings(mappingSource);
-          mainStore.dispatch(
-            setKeyMappingsAction(appSettings.keyMappingFile, mappings)
-          );
+          mainStore.dispatch(setKeyMappingsAction(appSettings.keyMappingFile, mappings));
         } catch (err) {
           // --- Intentionally ignored
         }
       }
 
       if (!appSettings.startScreenDisplayed) {
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 400));
         if (!appSettings.startScreenDisplayed) {
           mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
         }
@@ -343,9 +303,8 @@ async function createAppWindows () {
   const devUrl = process.env["ELECTRON_RENDERER_URL"];
   const prodUrl = join(__dirname, "../renderer/index.html");
   if (is.dev && devUrl) {
-    console.log(devUrl);
     emuWindow.loadURL(devUrl + EMU_QP + devAppPath);
-    emuWindow.loadURL(devUrl + IDE_QP + devAppPath);
+    ideWindow.loadURL(devUrl + IDE_QP + devAppPath);
   } else {
     emuWindow.loadFile(prodUrl, {
       search: EMU_QP + prodAppPath
@@ -361,14 +320,9 @@ async function createAppWindows () {
 
   // --- Test actively push message to the Electron-Renderer
   ideWindow.webContents.on("did-finish-load", () => {
-    ideWindow?.webContents.send(
-      "main-process-message",
-      new Date().toLocaleString()
-    );
+    ideWindow?.webContents.send("main-process-message", new Date().toLocaleString());
     if (appSettings.windowStates?.ideZoomFactor != undefined) {
-      ideWindow.webContents.setZoomFactor(
-        appSettings.windowStates?.ideZoomFactor ?? 1.0
-      );
+      ideWindow.webContents.setZoomFactor(appSettings.windowStates?.ideZoomFactor ?? 1.0);
     }
   });
 
@@ -389,11 +343,11 @@ async function createAppWindows () {
   });
 
   // --- Do not close the IDE (unless exiting the app), only hide it
-  ideWindow.on("close", async e => {
+  ideWindow.on("close", async (e) => {
+    ideWindow.close();
     if (ideWindow?.webContents) {
       appSettings.windowStates ??= {};
-      appSettings.windowStates.ideZoomFactor =
-        ideWindow.webContents.getZoomFactor();
+      appSettings.windowStates.ideZoomFactor = ideWindow.webContents.getZoomFactor();
     }
     if (allowCloseIde) {
       // --- The emu allows closing the IDE
@@ -423,15 +377,10 @@ async function createAppWindows () {
 
   // --- Test actively push message to the Electron-Renderer
   emuWindow.webContents.on("did-finish-load", () => {
-    emuWindow?.webContents.send(
-      "main-process-message",
-      new Date().toLocaleString()
-    );
+    emuWindow?.webContents.send("main-process-message", new Date().toLocaleString());
     // --- Set emu zoom factor
     if (appSettings.windowStates?.emuZoomFactor != undefined) {
-      emuWindow.webContents.setZoomFactor(
-        appSettings.windowStates?.emuZoomFactor ?? 1.0
-      );
+      emuWindow.webContents.setZoomFactor(appSettings.windowStates?.emuZoomFactor ?? 1.0);
     }
   });
 
@@ -452,11 +401,10 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", async _e => {
+  emuWindow.on("close", async (_e) => {
     if (emuWindow?.webContents) {
       appSettings.windowStates ??= {};
-      appSettings.windowStates.emuZoomFactor =
-        emuWindow.webContents.getZoomFactor();
+      appSettings.windowStates.emuZoomFactor = emuWindow.webContents.getZoomFactor();
     }
     saveAppSettings();
     // if (!ideSaved) {
@@ -470,8 +418,8 @@ async function createAppWindows () {
     //   ideWindow?.close();
     //   emuWindow.close();
     // } else {
-      // --- The IDE is saved, so the app can be closed.
-      app.quit();
+    // --- The IDE is saved, so the app can be closed.
+    app.quit();
     // }
   });
 }
@@ -482,7 +430,7 @@ app.whenReady().then(() => {
 });
 
 // --- When the user is about to quit the app, allow closing the IDE window
-app.on("before-quit", _e => {
+app.on("before-quit", (_e) => {
   ideWindowStateSaved = true;
   saveAppSettings();
 });
@@ -557,15 +505,13 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
 });
 
 // --- Process an action forward message coming from any of the renderers
-async function forwardActions (
-  message: RequestMessage
-): Promise<ResponseMessage | null> {
+async function forwardActions(message: RequestMessage): Promise<ResponseMessage | null> {
   if (message.type !== "ForwardAction") return null;
   mainStore.dispatch(message.action, message.sourceId);
   return defaultResponse();
 }
 
-async function saveOnClose () {
+async function saveOnClose() {
   await sendFromMainToIde({ type: "IdeSaveAllBeforeQuit" });
   ideSaved = true;
 }
