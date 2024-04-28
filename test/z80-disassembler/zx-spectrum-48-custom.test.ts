@@ -1,9 +1,8 @@
+import { describe, it } from "vitest";
 import { ZxSpectrum48CustomDisassembler } from "@appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z80Tester } from "./z80-tester";
 
 describe("Disassembler - ZX Spectrum-specific", function () {
-  this.timeout(10000);
-
   it("RST $08 work as expected", async () => {
     // --- Act
     await Z80Tester.TestCustom(

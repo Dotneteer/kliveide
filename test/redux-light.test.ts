@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Action } from "@state/Action";
 import { emuLoadedAction, showEmuToolbarAction } from "@state/actions";
 import createAppStore from "@state/store";

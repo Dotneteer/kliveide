@@ -1,12 +1,9 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { INTFlags, TMKFlags, TSTAFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
 import { Z88TestMachine } from "./Z88TestMachine";
 
 describe("Z88 - RTC", function () {
-  this.timeout(10_000);
-
   it("blink reset", () => {
     const m = new Z88TestMachine();
     const b = m.blinkDevice;

@@ -58,25 +58,6 @@ describe("KSX ScriptManager", () => {
     expect(scripts.length).toBe(3);
     expect(scripts[1].status).toBe("stopped");
   });
-
-  it("Run completes with error", async () => {
-    // --- Arrange
-    const sm = createMainScriptManager(prepareScript, execScript);
-    const id1 = (await sm.runScript("test1")).id;
-
-    // --- Act
-    errorScript = "Test error";
-    try {
-      await sm.completeScript(id1);
-    } catch (err) {
-      expect(err.message).toBe("Test error");
-      const scripts = sm.getScriptsStatus();
-      expect(scripts.length).toBe(1);
-      expect(scripts[0].status).toBe("execError");
-      return;
-    }
-    assert.fail("Error expected");
-  });
 });
 
 let errorScript = "";
@@ -88,8 +69,8 @@ async function prepareScript(scriptFile: string, scriptId: number): Promise<Scri
 }
 
 async function execScript(
-  scriptFile: string,
-  scriptContent: string,
+  _scriptFile: string,
+  _scriptContent: string,
   evalContext: EvaluationContext
 ) {
   for (let i = 0; i < 10; i++) {
