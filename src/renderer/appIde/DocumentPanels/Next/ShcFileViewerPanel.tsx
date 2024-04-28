@@ -2,7 +2,7 @@ import styles from "./ShcFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
-const ShcFileViewerPanel = ({ document, contents }: DocumentProps) => {
+const ShcFileViewerPanel = ({}: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>

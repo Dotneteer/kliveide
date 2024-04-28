@@ -310,7 +310,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     blocksToSave.push(...codeBlocks);
-    return await saveDataBlocks(blocksToSave);
+    return await saveDataBlocks();
 
     // --- Reads tape data from the specified contents
     function readTapeData (contents: Uint8Array): TapeDataBlock[] | null {
@@ -950,7 +950,6 @@ export class ExportCodeCommand extends IdeCommandBase {
 
     // --- Save the collected data blocks
     async function saveDataBlocks (
-      blocks: Uint8Array[]
     ): Promise<IdeCommandResult> {
       const writer = new BinaryWriter();
       try {

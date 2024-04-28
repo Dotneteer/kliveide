@@ -1,5 +1,5 @@
 import styles from "./LabeledFlag.module.scss";
-import { Flag, Label, Value } from "./Labels";
+import { Flag, Label } from "./Labels";
 
 const LAB_WIDTH = 48;
 const FLAG_WIDTH = 16;

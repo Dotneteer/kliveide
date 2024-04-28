@@ -279,7 +279,7 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
               value={slotState.content}
               width={180}
               onSelectionChanged={async option => {
-                if (option === slotState.content) return;
+                if (option === slotState.content) return false;
                 const card = cardTypeOptions.find(ct => ct.value === option);
                 let filename: string | undefined;
                 if (card?.hasContent) {
@@ -298,6 +298,8 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
                 // --- Now, validate the slot again
                 setSlotState(newSlotState);
                 changed?.(newSlotState);
+
+                return false;
               }}
             />
           </>
@@ -324,8 +326,10 @@ async function getCardFile (
     reportMessagingError(
       `MainShowOpenFolderDialog call failed: ${response.message}`
     );
+    return null;
   } else if (response.type !== "MainShowOpenFileDialogResponse") {
     reportUnexpectedMessageType(response.type);
+    return null;
   } else {
     // --- Check the selected file
     const expectedSize = cardSizeOptions.find(
@@ -353,10 +357,11 @@ async function getCardFile (
           messageType: "error",
           message: checkResponse.message
         });
-        return;
+        return null;
       }
       return response.file;
     }
+    return null;
   }
 }
 

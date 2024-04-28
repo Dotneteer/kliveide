@@ -51,7 +51,7 @@ export type CachedRefreshState = {
   ramBank: number;
 };
 
-const BankedMemoryPanel = ({ document, contents }: DocumentProps) => {
+const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();

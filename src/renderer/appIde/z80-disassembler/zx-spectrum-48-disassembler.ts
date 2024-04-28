@@ -36,7 +36,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * The disassembler starts disassembling a memory section
    * @param section
    */
-  startSectionDisassembly (section: MemorySection): void {
+  startSectionDisassembly (_section: MemorySection): void {
     // --- No ZX Spectrum 48 specific code to disassemle
     this._inRst08Mode = false;
     this._inRst28Mode = false;

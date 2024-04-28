@@ -150,19 +150,19 @@ class ProjectService implements IProjectService {
     }
 
     addr = addr.trim();
-    if (!addr.startsWith("[")) return;
+    if (!addr.startsWith("[")) return null;
 
     const parts = addr.split(":");
-    if (parts.length < 2) return;
+    if (parts.length < 2) return null;
 
     let resource = "";
     let line = 0;
 
     const last = parts[parts.length - 1];
-    if (!/^\d+$/.test(last)) return;
+    if (!/^\d+$/.test(last)) return null;
     line = parseInt(last, 10);
 
-    if (!parts[parts.length - 2].endsWith("]")) return;
+    if (!parts[parts.length - 2].endsWith("]")) return null;
     resource = parts.slice(0, -1).join(":").slice(1, -1);
     // --- File name must be in the project
     const node = this.getNodeForFile(resource);

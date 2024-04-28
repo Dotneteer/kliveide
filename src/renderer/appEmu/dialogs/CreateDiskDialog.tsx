@@ -5,10 +5,7 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { useEffect, useRef, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
@@ -45,15 +42,15 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
 
   return (
     <Modal
-      title='Create a new disk file'
+      title="Create a new disk file"
       isOpen={true}
       fullScreen={false}
       width={500}
-      onApiLoaded={api => (modalApi.current = api)}
-      primaryLabel='Create'
+      onApiLoaded={(api) => (modalApi.current = api)}
+      primaryLabel="Create"
       primaryEnabled={true}
-      initialFocus='none'
-      onPrimaryClicked={async result => {
+      initialFocus="none"
+      onPrimaryClicked={async (result) => {
         const name = result ? result[0] : filename;
         const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
@@ -64,9 +61,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           diskType
         });
         if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `MainCreateDiskFile call failed: ${response.message}`
-          );
+          reportMessagingError(`MainCreateDiskFile call failed: ${response.message}`);
         } else if (response.type !== "MainCreateDiskFileResponse") {
           reportUnexpectedMessageType(response.type);
         } else {
@@ -79,52 +74,47 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
               message: response.errorMessage
             });
             if (dlgResponse.type === "ErrorResponse") {
-              reportMessagingError(
-                `MainDisplayMessaBox call failed: ${dlgResponse.message}`
-              );
+              reportMessagingError(`MainDisplayMessaBox call failed: ${dlgResponse.message}`);
             }
 
             // --- Keep the dialog open
             return true;
           }
-
-          // --- Close the dialog
-          return false;
         }
+        // --- Close the dialog
+        return false;
       }}
       onClose={() => {
         onClose();
       }}
     >
-      <DialogRow rows={true} label='Disk type'>
+      <DialogRow rows={true} label="Disk type">
         <div className={styles.dropdownWrapper}>
           <Dropdown
-            placeholder='Select...'
+            placeholder="Select..."
             options={diskTypesIds}
             value={"ss"}
             width={240}
-            onSelectionChanged={option => {
+            onSelectionChanged={(option) => {
               setDiskType(option);
             }}
           />
         </div>
       </DialogRow>
-      <DialogRow label='Disk file folder:'>
+      <DialogRow label="Disk file folder:">
         <TextInput
           value={diskFileFolder}
           isValid={folderIsValid}
           focusOnInit={true}
-          buttonIcon='folder'
-          buttonTitle='Select the root project folder'
+          buttonIcon="folder"
+          buttonTitle="Select the root project folder"
           buttonClicked={async () => {
             const response = await messenger.sendMessage({
               type: "MainShowOpenFolderDialog",
               settingsId: NEW_DISK_FOLDER_ID
             });
             if (response.type === "ErrorResponse") {
-              reportMessagingError(
-                `MainShowOpenFolderDialog call failed: ${response.message}`
-              );
+              reportMessagingError(`MainShowOpenFolderDialog call failed: ${response.message}`);
             } else if (response.type !== "MainShowOpenFolderDialogResponse") {
               reportUnexpectedMessageType(response.type);
             } else {
@@ -133,19 +123,20 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
               }
               return response.folder;
             }
+            return null;
           }}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setDiskFileFolder(val);
             return false;
           }}
         />
       </DialogRow>
-      <DialogRow label='Project name:'>
+      <DialogRow label="Project name:">
         <TextInput
           value={filename}
           isValid={fileIsValid}
           focusOnInit={true}
-          keyPressed={e => {
+          keyPressed={(e) => {
             if (e.code === "Enter") {
               if (folderIsValid && fileIsValid) {
                 e.preventDefault();
@@ -154,7 +145,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
               }
             }
           }}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setFilename(val);
             return false;
           }}

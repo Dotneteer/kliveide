@@ -36,7 +36,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
     keystatus.current.isPressed(code, secondary);
 
   useEffect(() => {
-    if (mounted.current) return;
+    if (mounted.current) return null;
     mounted.current = true;
     apiLoaded?.(api);
 

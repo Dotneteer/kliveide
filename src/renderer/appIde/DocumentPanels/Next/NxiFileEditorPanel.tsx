@@ -2,7 +2,7 @@ import styles from "./NxiFileEditorPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
-const NxiFileEditorPanel = ({ document, contents }: DocumentProps) => {
+const NxiFileEditorPanel = ({}: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>

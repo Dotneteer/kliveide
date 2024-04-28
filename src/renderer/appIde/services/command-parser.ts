@@ -707,7 +707,6 @@ export class CommandTokenStream {
      * Fetches the next character from the input stream
      */
     function fetchNextChar (): string | null {
-      let ch: string;
       if (!lexer._prefetched) {
         lexer._prefetchedPos = input.position;
         lexer._prefetchedColumn = input.column;
@@ -809,21 +808,6 @@ function isEof (t: Token): boolean {
  */
 function isWs (t: Token): boolean {
   return t.type <= TokenType.Ws;
-}
-
-// ----------------------------------------------------------------------------
-// Character classification
-
-/**
- * Tests if a character is a letter
- * @param ch Character to test
- */
-function isLetterOrDigit (ch: string): boolean {
-  return (
-    (ch >= "A" && ch <= "Z") ||
-    (ch >= "a" && ch <= "z") ||
-    (ch >= "0" && ch <= "9")
-  );
 }
 
 /**

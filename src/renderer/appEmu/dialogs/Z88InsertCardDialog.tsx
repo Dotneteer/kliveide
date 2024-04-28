@@ -17,7 +17,7 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import classnames from "@renderer/utils/classnames";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { MC_Z88_INTROM, MC_Z88_SLOT0 } from "@common/machines/constants";
+import { MC_Z88_SLOT0 } from "@common/machines/constants";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 
@@ -35,9 +35,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const [cardType, setCardType] = useState<CardTypeData>();
   const [file, setFile] = useState<string>();
   const [acceptedSizes, setAcceptedSizes] = useState<number[]>([]);
-  const [rom0Changed, setRom0Changed] = useState(false);
-
-  const romFile = machine?.config?.[MC_Z88_INTROM];
+  const [_rom0Changed, setRom0Changed] = useState(false);
 
   // --- Get the allowed card sizes (Slot 0 allows only a subset)
   let allowedCardTypes = cardTypes.filter(ct => (ct.allowInSlot0 || slot > 0) && !ct.noUi);
@@ -197,11 +195,13 @@ async function getCardFile (
     reportMessagingError(
       `MainShowOpenFolderDialog call failed: ${response.message}`
     );
+    return null;
   } else if (response.type !== "MainShowOpenFileDialogResponse") {
     reportUnexpectedMessageType(response.type);
+    return null;
   } else {
     // --- No card is selected
-    if (!response.file) return;
+    if (!response.file) return null;
 
     // --- Check the selected file
     const checkResponse = await messenger.sendMessage({
@@ -212,8 +212,10 @@ async function getCardFile (
       reportMessagingError(
         `MainShowOpenFolderDialog call failed: ${checkResponse.message}`
       );
+      return null;
     } else if (checkResponse.type !== "MainCheckZ88CardResponse") {
       reportUnexpectedMessageType(checkResponse.type);
+      return null;
     } else {
       // --- Result of test
       if (checkResponse.content) {
@@ -229,7 +231,7 @@ async function getCardFile (
               fileSize / 1024
             )} KBytes), which is not allowed in this slot.`
           });
-          return;
+          return null;
         }
         return { filename: response.file, contents: checkResponse.content };
       } else if (checkResponse.message) {
@@ -239,7 +241,7 @@ async function getCardFile (
           messageType: "error",
           message: checkResponse.message
         });
-        return;
+        return null;
       }
       return { filename: response.file, contents: checkResponse.content };
     }

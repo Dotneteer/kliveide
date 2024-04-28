@@ -12,7 +12,6 @@ import { createPortal } from "react-dom";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.scss";
-import { s } from "nextra/dist/types-c8e621b7";
 
 export interface ModalApi {
   enablePrimaryButton: (flag: boolean) => void;

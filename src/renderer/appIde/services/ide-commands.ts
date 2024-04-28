@@ -248,6 +248,7 @@ export function getNumericTokenValue(token: Token): {
       case TokenType.HexadecimalLiteral:
         return { value: parseInt(plainText.substring(1), 16) };
     }
+    return null;
   } catch {
     return {
       messages: [

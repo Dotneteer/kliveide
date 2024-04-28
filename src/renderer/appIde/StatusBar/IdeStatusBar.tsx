@@ -135,4 +135,3 @@ type SectionProps = {
 };
 
 const LabelSeparator = () => <div className={styles.labelSeparator} />;
-const SectionSeparator = () => <div className={styles.sectionSeparator} />;

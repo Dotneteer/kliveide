@@ -1,6 +1,5 @@
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import React, { useEffect, useRef, useState } from "react";
-import { IOutputBuffer } from "./abstractions";
 import styles from "./CommandPanel.module.scss";
 import classnames from "@renderer/utils/classnames";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
@@ -15,7 +14,7 @@ const CommandPanel = () => {
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
-  const [buffer, setBuffer] = useState<IOutputBuffer>(ideCommandsService.getBuffer());
+  const buffer = ideCommandsService.getBuffer();
   const [executing, setExecuting] = useState(false);
   const commandSeqNo = useSelector(s => s.ideView?.toolCommandSeqNo);
 

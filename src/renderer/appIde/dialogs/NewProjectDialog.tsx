@@ -33,7 +33,7 @@ type Props = {
   ) => Promise<void>;
 };
 
-export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
+export const NewProjectDialog = ({ onClose }: Props) => {
   const { messenger } = useRendererContext();
   const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
@@ -114,8 +114,10 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
           reportMessagingError(
             `MainCreateKliveProject call failed: ${response.message}`
           );
+          return null;
         } else if (response.type !== "MainCreateKliveProjectResponse") {
           reportUnexpectedMessageType(response.type);
+          return null;
         } else {
           if (response.errorMessage) {
             // --- Display the error
@@ -199,8 +201,10 @@ export const NewProjectDialog = ({ onClose, onCreate }: Props) => {
               reportMessagingError(
                 `MainShowOpenFolderDialog call failed: ${response.message}`
               );
+              return null;
             } else if (response.type !== "MainShowOpenFolderDialogResponse") {
               reportUnexpectedMessageType(response.type);
+              return null;
             } else {
               if (response.folder) {
                 setProjectFolder(response.folder);

@@ -24,8 +24,10 @@ export class FileProvider implements IFileProvider {
     });
     if (response.type === "ErrorResponse") {
       reportMessagingError(`MainReadTextFile call failed: ${response.message}`);
+      return null;
     } else if (response.type !== "TextContents") {
       reportUnexpectedMessageType(response.type);
+      return null;
     } else {
       return response.contents;
     }
@@ -43,8 +45,10 @@ export class FileProvider implements IFileProvider {
     });
     if (response.type === "ErrorResponse") {
       reportMessagingError(`MainBinaryTextFile call failed: ${response.message}`);
+      return null;
     } else if (response.type !== "BinaryContents") {
       reportUnexpectedMessageType(response.type);
+      return null;
     } else {
       return response.contents;
     }
@@ -52,24 +56,24 @@ export class FileProvider implements IFileProvider {
 
   /**
    * Writes a text file to the specified path
-   * @param path Absolute path, or one relative to the user's home folder
-   * @param contents File contents to write
-   * @param encoding Text encoding ("utf8", by default)
+   * @param _path Absolute path, or one relative to the user's home folder
+   * @param _contents File contents to write
+   * @param _encoding Text encoding ("utf8", by default)
    */
   writeTextFile (
-    path: string,
-    contents: string,
-    encoding?: string
+    _path: string,
+    _contents: string,
+    _encoding?: string
   ): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
   /**
    * Writes a binary file to the specified path
-   * @param path Absolute path, or one relative to the user's home folder
-   * @param contents File contents to write
+   * @param _path Absolute path, or one relative to the user's home folder
+   * @param _contents File contents to write
    */
-  writeBinaryFile (path: string, contents: Uint8Array): Promise<void> {
+  writeBinaryFile (_path: string, _contents: Uint8Array): Promise<void> {
     throw new Error("Method not implemented.");
   }
 }

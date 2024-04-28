@@ -490,7 +490,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param e
    */
   function handleEditorMouseLeave (
-    e: monacoEditor.editor.IEditorMouseEvent
+    _e: monacoEditor.editor.IEditorMouseEvent
   ): void {
     editor.current.deltaDecorations(oldHoverDecorations.current, []);
   }

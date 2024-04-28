@@ -2,7 +2,7 @@ import styles from "./SlrFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
-const SlrFileViewerPanel = ({ document, contents }: DocumentProps) => {
+const SlrFileViewerPanel = ({}: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>

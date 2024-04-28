@@ -11,7 +11,6 @@ import {
 } from "../services/ide-commands";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { TokenType } from "../services/command-parser";
-import { filter } from "lodash";
 
 export class SettingCommand extends IdeCommandBase {
   readonly id = "set";

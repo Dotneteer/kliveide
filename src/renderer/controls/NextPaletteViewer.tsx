@@ -12,7 +12,6 @@ import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
 import { KeyHandler } from "./generic/KeyHandler";
 import classnames from "@renderer/utils/classnames";
-import { s } from "nextra/dist/types-c8e621b7";
 
 type Props = {
   palette: number[];

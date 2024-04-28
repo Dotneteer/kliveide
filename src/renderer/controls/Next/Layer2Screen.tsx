@@ -1,9 +1,8 @@
 import styles from "./Layer2Screen.module.scss";
-import { useEffect, useRef } from "react";
 import { SmallIconButton } from "../IconButton";
 import { openStaticMemoryDump } from "@renderer/appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { HeaderRow, Row } from "../generic/Row";
+import { HeaderRow } from "../generic/Row";
 import { ScreenCanvas } from "./ScreenCanvas";
 
 type Props = {
@@ -13,34 +12,25 @@ type Props = {
   zoomFactor?: number;
 };
 
-export const Layer2Screen = ({
-  documentSource,
-  data,
-  palette,
-  zoomFactor = 2
-}: Props) => {
+export const Layer2Screen = ({ documentSource, data, palette, zoomFactor = 2 }: Props) => {
   const { projectService } = useAppServices();
-  
+
   // --- Create the Layer2 screen from the data provided
-  const createPixelData = (
-    data: Uint8Array,
-    palette: number[],
-    target: Uint32Array
-  ) => {
+  const createPixelData = (data: Uint8Array, palette: number[], target: Uint32Array) => {
     let j = 0;
     const endIndex = 256 * 192;
     for (let i = 0; i < endIndex; i++) {
       target[j++] = palette[data[i] & 0xff];
     }
-  }
+  };
 
   return (
     <div className={styles.panel}>
       <HeaderRow>
         <SmallIconButton
-          iconName='pop-out'
+          iconName="pop-out"
           fill="--color-value"
-          title='Display loading screen data dump'
+          title="Display loading screen data dump"
           clicked={async () => {
             if (!documentSource) return;
             await openStaticMemoryDump(

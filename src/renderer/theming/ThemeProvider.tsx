@@ -22,9 +22,6 @@ const availableThemes: Record<string, ThemeInfo> = {
   }
 };
 
-// --- The default theme
-const DEFAULT_THEME = "dark";
-
 // =====================================================================================================================
 /**
  * This object provides the React context of the theming, which we pass the root component, and thus all
@@ -60,7 +57,7 @@ type Props = {
  * @param defaultTone The default theming tone
  * @constructor
  */
-function ThemeProvider ({ children, themeId = DEFAULT_THEME }: Props) {
+function ThemeProvider ({ children }: Props) {
   const [root, setRoot] = useState(
     () => document.getElementById("root") || document.body
   );

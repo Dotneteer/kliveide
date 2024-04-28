@@ -33,7 +33,6 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { Z88CardsState } from "../dialogs/Z88CardsDialog";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 import { CardIds } from "@emu/machines/z88/memory/CardIds";
-import { CardType } from "@emu/machines/z88/memory/CardType";
 
 const epromTypeFallback = [
   { size: 32, type: CardIds.EPROMUV32 },
@@ -344,7 +343,7 @@ const Slot0Display = ({
         </div>
         <div
           className={styles.button}
-          onClick={e => {
+          onClick={() => {
             store.dispatch(displayDialogAction(Z88_INSERT_CARD_DIALOG, 0));
           }}
         >

@@ -22,7 +22,6 @@ import {
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
-import { delay } from "@renderer/utils/timing";
 
 /**
  * This component represents the header of a document hub

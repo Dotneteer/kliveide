@@ -6,7 +6,6 @@ import { Modal } from "@renderer/controls/Modal";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { MC_Z88_INTRAM } from "@common/machines/constants";
-import { get } from "lodash";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
@@ -73,7 +72,7 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
         const config = emulatorState?.config ?? {};
         if (config[MC_Z88_INTRAM] === newRamSize) {
           // --- No change, nothing to do
-          return;
+          return null;
         }
 
         // --- Get the new machine configuration

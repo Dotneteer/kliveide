@@ -209,7 +209,6 @@ export function compareProjectNode (a: ProjectNode, b: ProjectNode): number {
  */
 export function getFileTypeEntry(filename: string): FileTypeEditor | null {
   if (!filename) return null;
-  const nodeFile = getNodeFile(filename);
   for (const typeEntry of fileTypeRegistry) {
     let match = false;
     switch (typeEntry.matchType) {

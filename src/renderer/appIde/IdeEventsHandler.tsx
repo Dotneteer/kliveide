@@ -4,7 +4,6 @@ import {
   useSelector
 } from "@renderer/core/RendererProvider";
 import { useEffect, useRef } from "react";
-import { getBreakpoints } from "./utils/breakpoint-utils";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import {
   reportMessagingError,
@@ -89,7 +88,6 @@ export const IdeEventsHandler = () => {
     }
 
     // --- Get the available breakpoints
-    const bps = await getBreakpoints(messenger);
     const cpuResponse = await messenger.sendMessage({
       type: "EmuGetCpuState"
     });

@@ -3,7 +3,6 @@ import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
 import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
 import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import { PagedMemory } from "@emu/machines/memory/PagedMemory";
 import { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
 
 /**

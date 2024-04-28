@@ -9,7 +9,9 @@
     "src/common/**/*", 
     "src/renderer/main.tsx", 
     "src/renderer/App.tsx",
-    "src/emu/**/*"],
+    "src/emu/**/*",
+    "src/lib/**/*"
+  ],
   "compilerOptions": {
     "composite": true,
     "strictNullChecks": false,
