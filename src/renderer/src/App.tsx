@@ -3,6 +3,7 @@ import electronLogo from './assets/electron.svg'
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search.startsWith("?emu");
+const hasIpc = window.electron.ipcRenderer;
 
 function App(): JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
@@ -16,7 +17,7 @@ function App(): JSX.Element {
         &nbsp;and <span className="ts">TypeScript</span>
       </div>
       <p className="tip">
-        {isEmu ? "(EMU)" : "(IDE)"} Please try pressing <code>F12</code> to open the devTool
+        {isEmu ? "(EMU)" : "(IDE)"} {hasIpc ? "[IPC]" : "[NoIPC]"}Please try pressing <code>F12</code> to open the devTool
       </p>
       <div className="actions">
         <div className="action">
