@@ -14,8 +14,8 @@ export function projectReducer (
     case "OPEN_FOLDER":
       return {
         ...state,
-        folderPath: payload.file,
-        isKliveProject: payload.flag
+        folderPath: payload?.file,
+        isKliveProject: payload?.flag
       };
 
     case "CLOSE_FOLDER":
@@ -29,7 +29,7 @@ export function projectReducer (
     case "SET_BUILD_ROOT":
       return {
         ...state,
-        buildRoots: payload.flag ? payload.files : []
+        buildRoots: payload?.flag ? payload.files : []
       };
 
     case "INC_PROJECT_FILE_VERSION":
@@ -45,23 +45,23 @@ export function projectReducer (
       };
 
     case "ADD_EXCLUDED_PROJECT_ITEMS": {
-      const excludedItems = payload.files.map(p => {
+      const excludedItems = payload?.files?.map(p => {
         p = p.trim();
-        if (path.isAbsolute(p)) p = path.relative(state.folderPath, p);
+        if (path.isAbsolute(p)) p = path.relative(state.folderPath!, p);
         return p.replace(path.sep, "/");
       });
       return {
         ...state,
         excludedItems: (
-          state.excludedItems?.concat(excludedItems) ?? excludedItems
-        ).filter((v, i, a) => a.indexOf(v) === i)
+          state.excludedItems?.concat(excludedItems!) ?? excludedItems
+        )!.filter((v, i, a) => a.indexOf(v) === i)
       };
     }
 
     case "SET_EXCLUDED_PROJECT_ITEMS":
       return {
         ...state,
-        excludedItems: payload.files
+        excludedItems: payload?.files
       };
 
     case "REFRESH_EXCLUDED_PROJECT_ITEMS":
@@ -76,7 +76,7 @@ export function projectReducer (
     case "SET_PROJECT_BUILD_FILE":
       return {
         ...state,
-        hasBuildFile: payload.flag
+        hasBuildFile: payload?.flag
       };
 
     case "INC_BUILD_FILE_VERSION":

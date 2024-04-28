@@ -32,17 +32,17 @@ export function appStateFlagsReducer (
       return { ...state, theme: payload?.id };
 
     case "EMU_FOCUSED":
-      return { ...state, emuFocused: payload.flag };
+      return { ...state, emuFocused: payload?.flag };
 
     case "IDE_FOCUSED":
-      return { ...state, ideFocused: payload.flag };
+      return { ...state, ideFocused: payload?.flag };
 
     case "DIM_MENU":
-      return { ...state, dimMenu: payload.flag };
+      return { ...state, dimMenu: payload?.flag };
 
     case "APPLY_PROJECT_SETTING": {
       let newSetting = { ...state?.projectSettings };
-      if (payload.id) {
+      if (payload?.id) {
         if (payload.value === undefined) {
           _.unset(newSetting, payload.id);
         } else {
@@ -54,7 +54,7 @@ export function appStateFlagsReducer (
 
     case "APPLY_USER_SETTING": {
       let newSetting = { ...state?.userSettings };
-      if (payload.id) {
+      if (payload?.id) {
         if (payload.value === undefined) {
           _.unset(newSetting, payload.id);
         } else {
@@ -65,10 +65,10 @@ export function appStateFlagsReducer (
     }
 
     case "SAVE_USER_SETTINGS":
-      return { ...state, userSettings: payload.value };
+      return { ...state, userSettings: payload?.value };
 
     case "SAVE_PROJECT_SETTINGS":
-      return { ...state, projectSettings: payload.value };
+      return { ...state, projectSettings: payload?.value };
 
     case "START_SCREEN_DISPLAYED":
       return { ...state, startScreenDisplayed: true };
@@ -76,8 +76,8 @@ export function appStateFlagsReducer (
     case "SET_KEY_MAPPINGS":
       return {
         ...state,
-        keyMappingFile: payload.file,
-        keyMappings: payload.value
+        keyMappingFile: payload?.file,
+        keyMappings: payload?.value
       };
 
     case "INC_MENU_VERSION":

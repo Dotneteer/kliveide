@@ -40,7 +40,7 @@ export async function refreshSourceCodeBreakpoints (
   store: Store<AppState>,
   messenger: MessengerBase
 ): Promise<void> {
-  const compilation = store.getState().compilation;
+  const compilation = store.getState().compilation!;
   const resolvedBp: ResolvedBreakpoint[] = [];
   if (
     compilation.result &&
@@ -56,7 +56,7 @@ export async function refreshSourceCodeBreakpoints (
     for (const bp of bps) {
       if (!bp.resource) continue;
       const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
-        fi.filename.endsWith(bp.resource)
+        fi.filename.endsWith(bp.resource!)
       );
       if (fileIndex >= 0) {
         const lineInfo = compilation.result.listFileItems.find(
@@ -65,7 +65,7 @@ export async function refreshSourceCodeBreakpoints (
         if (lineInfo) {
           resolvedBp.push({
             resource: bp.resource,
-            line: bp.line,
+            line: bp.line!,
             address: lineInfo.address
           });
         }

@@ -1,6 +1,5 @@
-import { dialog } from "electron";
 import { Action } from "./Action";
-import { IdeView } from "./AppState";
+import { IdeView, SideBarPanelState } from "./AppState";
 
 /**
  * This reducer is used to manage the IDE view properties
@@ -21,10 +20,10 @@ export function ideViewReducer (
         ...state,
         sideBarPanels: {
           ...state.sideBarPanels,
-          [payload.id]: {
-            ...state.sideBarPanels[payload.id],
-            expanded: payload.flag
-          }
+          [payload!.id!]: {
+            ...state.sideBarPanels![payload!.id!],
+            expanded: payload?.flag
+          } as SideBarPanelState
         }
       };
 
@@ -33,7 +32,7 @@ export function ideViewReducer (
         ...state,
         sideBarPanels: {
           ...state.sideBarPanels,
-          ...payload.panelsState
+          ...payload?.panelsState
         }
       };
 
@@ -42,30 +41,30 @@ export function ideViewReducer (
         ...state,
         sideBarPanels: {
           ...state.sideBarPanels,
-          [payload.id]: {
-            ...state.sideBarPanels[payload.id],
-            size: payload.size
-          },
-          [payload.nextId]: {
-            ...state.sideBarPanels[payload.nextId],
-            size: payload.nextSize
-          }
+          [payload!.id!]: {
+            ...state.sideBarPanels![payload!.id!],
+            size: payload?.size
+          } as SideBarPanelState,
+          [payload!.nextId!]: {
+            ...state.sideBarPanels![payload!.nextId!],
+            size: payload?.nextSize
+          } as SideBarPanelState
         }
       };
 
     case "SET_TOOLS":
       return {
         ...state,
-        tools: payload.tools
+        tools: payload?.tools
       };
 
     case "CHANGE_TOOL_STATE": {
-      const changedTools = state.tools.splice(0) ?? [];
+      const changedTools = state?.tools?.splice(0) ?? [];
       const existingToolIndex = changedTools.findIndex(
-        t => t.id === payload.tool.id
+        t => t.id === payload?.tool?.id
       );
       if (existingToolIndex >= 0) {
-        changedTools[existingToolIndex] = payload.tool;
+        changedTools[existingToolIndex] = payload!.tool!;
         return {
           ...state,
           tools: changedTools
@@ -75,12 +74,12 @@ export function ideViewReducer (
     }
 
     case "CHANGE_TOOL_VISIBILITY": {
-      const changedTools = state.tools.splice(0) ?? [];
+      const changedTools = state?.tools?.splice(0) ?? [];
       const existingToolIndex = changedTools.findIndex(
-        t => t.id === payload.id
+        t => t.id === payload?.id
       );
       if (existingToolIndex >= 0) {
-        changedTools[existingToolIndex].visible = payload.flag;
+        changedTools[existingToolIndex].visible = payload?.flag;
         return {
           ...state,
           tools: changedTools
@@ -92,20 +91,20 @@ export function ideViewReducer (
     case "ACTIVATE_TOOL":
       return {
         ...state,
-        activeTool: payload.id
+        activeTool: payload?.id
       };
 
     case "ACTIVATE_OUTPUT_PANE":
       return {
         ...state,
-        activeOutputPane: payload.id
+        activeOutputPane: payload?.id
       };
 
     case "SET_IDE_STATUS_MESSAGE":
       return {
         ...state,
-        statusMessage: payload.text,
-        statusSuccess: payload.flag
+        statusMessage: payload?.text,
+        statusSuccess: payload?.flag
       };
 
     case "INC_TOOL_CMD_SEQ":
@@ -117,19 +116,19 @@ export function ideViewReducer (
     case "DISPLAY_DIALOG":
       return {
         ...state,
-        dialogToDisplay: payload.index,
-        dialogData: payload.value
+        dialogToDisplay: payload?.index,
+        dialogData: payload?.value
       };
 
     case "SET_RESTART_TARGET":
       return {
         ...state,
-        restartTarget: payload.id
+        restartTarget: payload?.id
       };
 
     case "INC_DOC_HUB_SERVICE_VERSION": {
       const versions = { ...state.documentHubState };
-      versions[payload.index] = (versions[payload.index] ?? 0) + 1;
+      versions[payload!.index!] = (versions[payload!.index!] ?? 0) + 1;
 
       return {
         ...state,
@@ -142,8 +141,8 @@ export function ideViewReducer (
         ...state,
         volatileDocs: {
           ...state.volatileDocs,
-          [payload.id]: payload.flag
-        }
+          [payload!.id!]: payload!.flag
+        } as any
       };
     }
 

@@ -41,7 +41,7 @@ async function asyncFilter (arr: any[], predicate: (...args: any[]) => boolean) 
 }
 
 // The async implementation of Array.prototype.forEach
-async function asyncForEach (arr: any[], predicate: (...args: any[]) => void) {
+async function asyncForEach (arr: any[], predicate: (...args: any[]) => Promise<void>) {
   for (let i = 0; i < arr.length; i++) {
     await predicate(arr[i], i, arr);
   }
@@ -52,7 +52,7 @@ async function asyncMap (
   arr: any[],
   predicate: (...args: any[]) => Promise<any[]>
 ) {
-  const result = [];
+  const result: any[] = [];
   for (let i = 0; i < arr.length; i++) {
     result.push(await predicate(arr[i], i, arr));
   }

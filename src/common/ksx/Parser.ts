@@ -1092,7 +1092,7 @@ export class Parser {
     }
 
     // --- Now, get the parameter list as an expression
-    const exprList = this.getExpression(true);
+    const exprList = this.getExpression(true)!;
 
     // --- We turn the expression into a parameter list
     let isValid: boolean;
@@ -2391,7 +2391,7 @@ export class Parser {
       return this.createExpressionNode<Literal>(
         "Literal",
         {
-          value: new RegExp(result.pattern, result.flags)
+          value: new RegExp(result.pattern!, result.flags)
         },
         startToken
       );
@@ -2477,7 +2477,7 @@ export class Parser {
     let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
     if (options) {
       options.forEach(
-        (o, idx) =>
+        (_, idx) =>
           (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
       );
     }

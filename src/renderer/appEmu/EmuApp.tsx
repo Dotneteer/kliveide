@@ -18,7 +18,6 @@ import {
   setAudioSampleRateAction
 } from "@state/actions";
 import styles from "@styles/app.module.scss";
-import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
@@ -47,6 +46,8 @@ import {
   setCachedMessenger,
   setCachedStore
 } from "@renderer/CachedServices";
+
+const ipcRenderer = window.electron.ipcRenderer;
 
 const EmuApp = () => {
   // --- Used services

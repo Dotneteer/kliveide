@@ -1,10 +1,10 @@
 import { Action } from "./Action";
-import { CompilationState, IdeProject } from "./AppState";
+import { CompilationState } from "./AppState";
 
 /**
  * This reducer is used to manage the IDE view properties
  */
-export function compilationReducer (
+export function compilationReducer(
   state: CompilationState,
   { type, payload }: Action
 ): CompilationState {
@@ -28,8 +28,8 @@ export function compilationReducer (
       return {
         ...state,
         inProgress: false,
-        result: payload.compileResult,
-        failed: payload.failed
+        result: payload?.compileResult,
+        failed: payload?.failed
       };
 
     case "INC_INJECTION_VERSION":

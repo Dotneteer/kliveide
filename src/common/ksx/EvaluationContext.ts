@@ -66,7 +66,7 @@ export type ModuleResolver = (moduleName: string) => Promise<string | null>;
 /**
  * A function that resolves a package name to the contents of the package
  */
-export type PackageResolver = (packageName: string) => Promise<Record<string, any>>;
+export type PackageResolver = (packageName: string) => Promise<Record<string, any> | null>;
 
 /**
  * Creates an evaluation context with the given parts

@@ -101,7 +101,7 @@ export type FloppyDiskState = {
 };
 
 export type IdeProject = {
-  folderPath?: string;
+  folderPath?: string | null;
   isKliveProject?: boolean;
   buildRoots?: string[];
   projectFileVersion: number;

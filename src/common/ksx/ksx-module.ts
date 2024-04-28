@@ -1,4 +1,3 @@
-import { BlockScope } from "./BlockScope";
 import { EvaluationContext, ModuleResolver, PackageResolver } from "./EvaluationContext";
 import { Parser } from "./Parser";
 import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
@@ -9,7 +8,6 @@ import {
   visitLetConstDeclarations
 } from "./process-statement-async";
 import {
-  ArrowExpression,
   FunctionDeclaration,
   ImportDeclaration,
   Statement
@@ -56,7 +54,7 @@ export async function parseKsxModule (
   moduleName: string,
   source: string,
   moduleResolver: ModuleResolver,
-  packageResolver: PackageResolver = async (packageName: string) => null
+  packageResolver: PackageResolver = async () => null
 ): Promise<KsxModule | ModuleErrors> {
   // --- Keep track of parsed modules to avoid circular references
   const parsedModules = new Map<string, KsxModule>();
@@ -223,7 +221,7 @@ export async function parseKsxModule (
     let errorText = errorMessages[code];
     if (args) {
       args.forEach(
-        (o, idx) =>
+        (_, idx) =>
           (errorText = errorText.replaceAll(`{${idx}}`, args[idx].toString()))
       );
     }
@@ -247,24 +245,24 @@ export async function executeModule (
   evaluationContext: EvaluationContext
 ): Promise<void> {
   // --- Get the top-level BlockScope with its "vars" and "constVars" properties
-  const blockScope = evaluationContext.mainThread.blocks;
+  const blockScope = evaluationContext.mainThread!.blocks;
   if (!blockScope || blockScope.length === 0) {
     throw new Error("Top-level BlockScope not found");
   }
   blockScope[0].vars ??= {};
   const topVars = blockScope[0].vars;
   blockScope[0].constVars ??= new Set<string>();
-  const topConst = blockScope[0].constVars;
 
   // --- Load imported modules
   module.statements
     .filter(stmt => stmt.type === "ImportDeclaration")
-    .forEach((stmt: ImportDeclaration) => {
-      stmt.module = module.importedModules.find(
-        m => m.name === stmt.moduleFile
-      );
-      if (!stmt.module) {
-        throw new Error(`Imported module '${stmt.moduleFile}' not found`);
+    .forEach((stmt: Statement) => {
+      const importStmt = stmt as ImportDeclaration;
+      importStmt.module = module.importedModules.find(
+        m => m.name === importStmt.moduleFile
+      )!;
+      if (!importStmt.module) {
+        throw new Error(`Imported module '${importStmt.moduleFile}' not found`);
       }
     });
 

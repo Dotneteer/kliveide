@@ -95,9 +95,6 @@ export class Lexer {
   // --- Prefetched character column (from the next token)
   private _prefetchedColumn: number | null = null;
 
-  // --- The last end-of-line comment
-  private _lastComment: string | null = null;
-
   // --- input position at the beginning of last fetch
   private _lastFetchPosition = 0;
 
@@ -128,9 +125,6 @@ export class Lexer {
     // --- Prefetch missing tokens
     while (this._ahead.length <= n) {
       const token = this.fetch();
-      if (token.type === TokenType.EolComment) {
-        this._lastComment = token.text;
-      }
       if (isEof(token)) {
         return token;
       }
@@ -155,9 +149,6 @@ export class Lexer {
     }
     while (true) {
       const token = this.fetch();
-      if (token.type === TokenType.EolComment) {
-        this._lastComment = token.text;
-      }
       if (isEof(token) || ws || (!ws && !isWs(token))) {
         return token;
       }
@@ -205,7 +196,7 @@ export class Lexer {
     this._lastFetchPosition = this.input.position;
 
     // --- State variables
-    let stringState = null;
+    let stringState: string | null = null;
     let text = "";
     let tokenType = TokenType.Eof;
     let lastEndPos = input.position;
@@ -1008,7 +999,7 @@ export class Lexer {
         flags: regexpResult.flags.raw,
         length: text.length
       };
-    } catch (parseErr) {
+    } catch (parseErr: any) {
       let errorIndex = parseErr.index;
       if (parseErr.toString().includes("Invalid flag")) {
         while (

@@ -10,13 +10,11 @@ class MainToIdeMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
-  constructor (public readonly window: BrowserWindow) {
+  constructor(public readonly window: BrowserWindow) {
     super();
     this._requestSeqNo = 1000;
-    ipcMain?.on(
-      this.responseChannel,
-      (_ev: IpcMainEvent, response: ResponseMessage) =>
-        this.processResponse(response)
+    ipcMain?.on(this.responseChannel, (_ev: IpcMainEvent, response: ResponseMessage) =>
+      this.processResponse(response)
     );
   }
 
@@ -24,7 +22,7 @@ class MainToIdeMessenger extends MessengerBase {
    * Sends out the message
    * @param message Message to send
    */
-  protected send (message: RequestMessage): void {
+  protected send(message: RequestMessage): void {
     if (this.window?.isDestroyed() === false) {
       this.window.webContents.send(this.requestChannel, message);
     }
@@ -33,14 +31,14 @@ class MainToIdeMessenger extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  get requestChannel (): Channel {
+  get requestChannel(): Channel {
     return "MainToIde";
   }
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel (): Channel {
+  get responseChannel(): Channel {
     return "MainToIdeResponse";
   }
 }
@@ -54,14 +52,14 @@ let mainToIdeMessenger: MainToIdeMessenger | undefined;
  * Registers the messenger to be used with the main process.
  * @param window The browser window to use as the message target
  */
-export function registerMainToIdeMessenger (window: BrowserWindow) {
+export function registerMainToIdeMessenger(window: BrowserWindow) {
   mainToIdeMessenger = new MainToIdeMessenger(window);
 }
 
 /**
  * Gets the main-to-ide messenger instance
  */
-export function getMainToIdeMessenger (): MainToIdeMessenger | undefined {
+export function getMainToIdeMessenger(): MainToIdeMessenger | undefined {
   return mainToIdeMessenger;
 }
 
@@ -70,10 +68,8 @@ export function getMainToIdeMessenger (): MainToIdeMessenger | undefined {
  * @param message Message to send
  * @returns Response
  */
-export async function sendFromMainToIde<TResp extends ResponseMessage> (
+export function sendFromMainToIde<TResp extends ResponseMessage>(
   message: RequestMessage
-): Promise<TResp> {
-  if (mainToIdeMessenger) {
-    return await mainToIdeMessenger.sendMessage(message);
-  }
+): Promise<TResp> | null {
+  return mainToIdeMessenger ? mainToIdeMessenger.sendMessage(message) : null;
 }

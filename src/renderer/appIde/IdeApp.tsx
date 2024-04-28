@@ -28,10 +28,7 @@ import {
   activateToolAction,
   displayDialogAction
 } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
 import styles from "@styles/app.module.scss";
-import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
@@ -112,6 +109,8 @@ import {
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
 import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
+
+const ipcRenderer = window.electron.ipcRenderer;
 
 const IdeApp = () => {
   // --- Used services
