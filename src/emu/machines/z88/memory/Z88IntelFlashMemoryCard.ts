@@ -6,7 +6,6 @@
  */
 
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 import { CardType } from "@emu/machines/z88/memory/CardType";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 

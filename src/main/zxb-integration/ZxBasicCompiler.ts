@@ -110,7 +110,6 @@ export class ZxBasicCompiler extends CompilerBase {
       const machineCode = new Uint8Array(fs.readFileSync(outFilename));
 
       // --- Extract the labels
-      const labelList = fs.readFileSync(labelFilename, "utf8");
       const segment: BinarySegment = {
         emittedCode: Array.from(machineCode),
         startAddress: typeof org === "number" ? org & 0xffff : 0x8000

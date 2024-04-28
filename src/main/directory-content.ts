@@ -68,8 +68,8 @@ export async function getDirectoryContent (
           );
         }
       }
-      return entry;
     }
+    return entry;
   }
 }
 

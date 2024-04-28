@@ -1,5 +1,3 @@
-import { KeyCodeSet } from "./IGenericKeyboardDevice";
-
 export type CodeInjectionFlow = CodeInjectionStep[];
 
 export type CodeInjectionStep =

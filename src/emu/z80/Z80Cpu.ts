@@ -1,4 +1,3 @@
-import { writeMessage } from "@renderer/appIde/services/ide-commands";
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
 import { IZ80Cpu } from "../abstractions/IZ80Cpu";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
@@ -1355,51 +1354,51 @@ export class Z80Cpu implements IZ80Cpu {
 
   /**
    * Read the byte at the specified memory address.
-   * @param address 16-bit memory address
+   * @param _address 16-bit memory address
    * @return The byte read from the memory
    * Note: the default implementation always returns 0xff
    */
-  doReadMemory (address: number): number {
+  doReadMemory (_address: number): number {
     return 0xff;
   }
 
   /**
    * This function implements the memory read delay of the CPU.
-   * @param address Memory address to read
+   * @param _address Memory address to read
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryRead (address: number): void {
+  delayMemoryRead (_address: number): void {
     this.tactPlus3();
   }
 
   /**
    * Write the given byte to the specified memory address.
-   * @param address 16-bit memory address
-   * @param value Byte to write into the memory
+   * @param _address 16-bit memory address
+   * @param _value Byte to write into the memory
    * Note: the default implementation does not write the memory
    */
-  doWriteMemory (address: number, value: number): void {
+  doWriteMemory (_address: number, _value: number): void {
     // --- Override this method in derived classes
   }
 
   /**
    * This function implements the memory write delay of the CPU.
-   * @param address Memory address to write
+   * @param _address Memory address to write
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryWrite (address: number): void {
+  delayMemoryWrite (_address: number): void {
     this.tactPlus3();
   }
 
   /**
    * This function handles address-based memory read contention.
-   * @param address Address to use for contention delay calculation
+   * @param _address Address to use for contention delay calculation
    */
-  delayAddressBusAccess (address: number): void {
+  delayAddressBusAccess (_address: number): void {
     // --- Override this method in derived classes
   }
 
@@ -1436,45 +1435,45 @@ export class Z80Cpu implements IZ80Cpu {
 
   /**
    * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
-   * @param address 16-bit port address to read
+   * @param _address 16-bit port address to read
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (address: number): number {
+  doReadPort (_address: number): number {
     // --- Override this method in derived classes
     return 0xff;
   }
 
   /**
    * This function implements the I/O port read delay of the CPU.
-   * @param address 16-bit port address
+   * @param _address 16-bit port address
    * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortRead (address: number): void {
+  delayPortRead (_address: number): void {
     this.tactPlus4();
   }
 
   /**
    * This function writes a byte (8-bit) to the 16-bit I/O port address provided in the first argument.
-   * @param address 16-bit port address to write
-   * @param value The value to write to the specified port
+   * @param _address 16-bit port address to write
+   * @param _value The value to write to the specified port
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (address: number, value: number): void {
+  doWritePort (_address: number, _value: number): void {
     // --- Override this method in derived classes
   }
 
   /**
    * This function implements the I/O port write delay of the CPU.
-   * @param address 16-bit port address
+   * @param _address 16-bit port address
    * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortWrite (address: number): void {
+  delayPortWrite (_address: number): void {
     this.tactPlus4();
   }
 
@@ -3012,7 +3011,7 @@ function sbyte (dist: number): number {
 export type Z80Operation = (cpu: Z80Cpu) => void;
 
 // 0x00: NOP
-function nop (cpu: Z80Cpu) {}
+function nop (_cpu: Z80Cpu) {}
 
 // 0x01: LD BC,nn
 function ldBcNN (cpu: Z80Cpu) {

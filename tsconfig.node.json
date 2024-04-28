@@ -10,6 +10,7 @@
   "compilerOptions": {
     "composite": true,
     "strictNullChecks": false,
+    "strict":false,
     "types": ["electron-vite/node"],
     "paths": {
       "@abstractions/*": ["./src/common/abstractions/*"],

@@ -1,11 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
+import fs from "fs";
+import path from "path";
 
-import {
-  ErrorCodes,
-  errorMessages,
-  ParserErrorMessage
-} from "./assembler-errors";
+import { ErrorCodes, errorMessages, ParserErrorMessage } from "./assembler-errors";
 import { InputStream } from "./input-stream";
 import { Token, TokenStream } from "./token-stream";
 
@@ -69,7 +65,6 @@ import {
   PartialZ80AssemblyLine,
   PopInstruction,
   Pragma,
-  ProcStatement,
   PushInstruction,
   RepeatStatement,
   ResInstruction,
@@ -120,17 +115,8 @@ import {
   SymbolValueMap
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
-import {
-  AssemblySymbolInfo,
-  ISymbolScope,
-  SymbolInfoMap,
-  SymbolScope
-} from "./assembly-symbols";
-import {
-  ExpressionEvaluator,
-  ExpressionValue,
-  setRandomSeed
-} from "./expressions";
+import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
+import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
 import { FixupEntry } from "./fixups";
 import {
   ExpressionValueType,
@@ -229,16 +215,9 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile (
-    filename: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
+  async compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
     const sourceText = readTextFile(filename);
-    return await this.doCompile(
-      new SourceFileItem(filename),
-      sourceText,
-      options
-    );
+    return await this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
 
   /**
@@ -248,38 +227,31 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compile (
-    sourceText: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
-    return await this.doCompile(
-      new SourceFileItem(NO_FILE_ITEM),
-      sourceText,
-      options
-    );
+  async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+    return await this.doCompile(new SourceFileItem(NO_FILE_ITEM), sourceText, options);
   }
 
   /**
    * Sets the trace handler function
    * @param handler Trace handler function
    */
-  setTraceHandler (handler: (message: string) => void): void {
+  setTraceHandler(handler: (message: string) => void): void {
     this._traceHandler = handler;
   }
 
   /**
    * Allows events to be processed from the JavaScript message queue
    */
-  private async allowEvents (): Promise<void> {
+  private async allowEvents(): Promise<void> {
     if (this._batchCounter++ % ASSEMBLY_BATCH_SIZE === 0) {
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     }
   }
 
   /**
    * Tests if the current compilation mode is case sensitive.
    */
-  private get isCaseSensitive (): boolean {
+  private get isCaseSensitive(): boolean {
     return !!this._options?.useCaseSensitiveSymbols;
   }
 
@@ -290,7 +262,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  private async doCompile (
+  private async doCompile(
     sourceItem: SourceFileItem,
     sourceText: string,
     options?: AssemblerOptions
@@ -322,8 +294,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.preprocessedLines = parseResult.parsedLines;
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
-      emitSuccess =
-        (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
+      emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
     }
     if (!emitSuccess) {
       // --- If failed, clear output segments
@@ -345,7 +316,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns An object with `success` property to indicate compilation success, and
    * a `parsedLines` property with all lines parsed.
    */
-  private async executeParse (
+  private async executeParse(
     fileIndex: number,
     sourceItem: SourceFileItem,
     sourceText: string
@@ -391,10 +362,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
           case "IncludeDirective": {
             // --- Parse the included file
-            const includedLines = await this.applyIncludeDirective(
-              typedLine,
-              sourceItem
-            );
+            const includedLines = await this.applyIncludeDirective(typedLine, sourceItem);
             if (includedLines.success && includedLines.parsedLines) {
               // --- Add the parse result of the include file to the result
               parsedLines.push(...includedLines.parsedLines);
@@ -403,8 +371,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           }
 
           case "DefineDirective":
-            this.conditionSymbols[typedLine.identifier.name] =
-              new ExpressionValue(true);
+            this.conditionSymbols[typedLine.identifier.name] = new ExpressionValue(true);
             break;
 
           case "UndefDirective":
@@ -416,13 +383,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             break;
 
           default: {
-            if (
-              !this.applyScopedDirective(
-                line as unknown as Directive,
-                ifdefStack,
-                processOps
-              )
-            ) {
+            if (!this.applyScopedDirective(line as unknown as Directive, ifdefStack, processOps)) {
               line.fileIndex = fileIndex;
               line.sourceText = sourceText.substr(
                 line.startPosition,
@@ -434,11 +395,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           }
         }
       } else {
-        this.applyScopedDirective(
-          line as unknown as Directive,
-          ifdefStack,
-          processOps
-        );
+        this.applyScopedDirective(line as unknown as Directive, ifdefStack, processOps);
       }
       currentLineIndex++;
     }
@@ -460,7 +417,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param lines Source code lines
    * @returns True, if there were no errors during code emission.
    */
-  private async emitCode (lines: Z80AssemblyLine[]): Promise<boolean> {
+  private async emitCode(lines: Z80AssemblyLine[]): Promise<boolean> {
     if (!lines) {
       return false;
     }
@@ -515,7 +472,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Fixes the unresolved symbols after code emission
    */
-  private async fixupUnresolvedSymbols (): Promise<boolean> {
+  private async fixupUnresolvedSymbols(): Promise<boolean> {
     for (const scope of this._currentModule.localScopes) {
       if (scope.fixups.length === 0) {
         continue;
@@ -531,7 +488,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Compares binaries at the end of comilation
    */
-  private compareBinaries (): boolean {
+  private compareBinaries(): boolean {
     for (const binInfo of this.compareBins) {
       const pragma = binInfo.comparePragma;
 
@@ -578,9 +535,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- Read the binary file
       const currentSourceFile =
-        this._output.sourceFileList[
-          (pragma as unknown as Z80AssemblyLine).fileIndex
-        ];
+        this._output.sourceFileList[(pragma as unknown as Z80AssemblyLine).fileIndex];
       const dirname = path.dirname(currentSourceFile.filename) ?? "";
       const filename = path.join(dirname, fileNameValue.asString());
 
@@ -611,12 +566,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Everything is ok, do the comparison
       var segment = binInfo.segment;
       if (!segment) {
-        this.reportAssemblyError(
-          "Z0330",
-          pragma,
-          null,
-          "No output segment to compare."
-        );
+        this.reportAssemblyError("Z0330", pragma, null, "No output segment to compare.");
         continue;
       }
 
@@ -655,11 +605,8 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Tests if the compilation point is in the global scope
    */
-  get isInGlobalScope (): boolean {
-    return (
-      this._currentModule.localScopes.filter(s => !s.isTemporaryScope)
-        .length === 0
-    );
+  get isInGlobalScope(): boolean {
+    return this._currentModule.localScopes.filter((s) => !s.isTemporaryScope).length === 0;
   }
 
   // ==========================================================================
@@ -670,12 +617,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param includeDir
    * @param sourceItem
    */
-  async applyIncludeDirective (
+  async applyIncludeDirective(
     includeDir: IncludeDirective,
     sourceItem: SourceFileItem
   ): Promise<{ success: boolean; parsedLines?: Z80AssemblyLine[] }> {
-    const parsedLines: Z80AssemblyLine[] = [];
-
     // --- Check the #include directive
     let filename = includeDir.filename.trim();
 
@@ -713,22 +658,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     try {
       sourceText = readTextFile(filename);
     } catch (err) {
-      this.reportAssemblyError(
-        "Z0204",
-        includeDir,
-        null,
-        filename,
-        err.toString()
-      );
+      this.reportAssemblyError("Z0204", includeDir, null, filename, err.toString());
       return { success: false };
     }
 
     // --- Parse the file
-    return await this.executeParse(
-      this._output.sourceFileList.length - 1,
-      childItem,
-      sourceText
-    );
+    return await this.executeParse(this._output.sourceFileList.length - 1, childItem, sourceText);
   }
 
   /**
@@ -738,7 +673,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param processOps Object with the "process operation" flag
    * @returns True, if the directive has been processed successfully
    */
-  applyScopedDirective (
+  applyScopedDirective(
     directive: Directive,
     ifdefStack: (boolean | null)[],
     processOps: ProcessOps
@@ -753,21 +688,14 @@ export class Z80Assembler extends ExpressionEvaluator {
           if (directive.type === "IfDirective") {
             const value = this.evaluateExprImmediate(directive.condition);
             processOps.ops = value.isValid && value.value !== 0;
-          } else if (
-            directive.type === "IfModDirective" ||
-            directive.type === "IfNModDirective"
-          ) {
-            if (
-              VALID_MODELS.indexOf(directive.identifier.name.toUpperCase()) < 0
-            ) {
+          } else if (directive.type === "IfModDirective" || directive.type === "IfNModDirective") {
+            if (VALID_MODELS.indexOf(directive.identifier.name.toUpperCase()) < 0) {
               this.reportAssemblyError("Z0206", directive);
               processOps.ops = false;
             } else {
-              const refModel =
-                this._output.modelType ?? this._options.currentModel;
+              const refModel = this._output.modelType ?? this._options.currentModel;
               const modelName = SpectrumModelType[refModel].toUpperCase();
-              const contains =
-                modelName === directive.identifier.name.toUpperCase();
+              const contains = modelName === directive.identifier.name.toUpperCase();
               const negate = directive.type === "IfNModDirective";
               processOps.ops = (contains && !negate) || (!contains && negate);
             }
@@ -801,8 +729,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.reportAssemblyError("Z0208", directive);
         } else {
           ifdefStack.pop();
-          processOps.ops =
-            ifdefStack.length === 0 || ifdefStack[ifdefStack.length - 1];
+          processOps.ops = ifdefStack.length === 0 || ifdefStack[ifdefStack.length - 1];
         }
         break;
 
@@ -819,7 +746,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Process the specified .model pragma
    * @param pragma Pragma to process
    */
-  processModelPragma (pragma: ModelPragma): void {
+  processModelPragma(pragma: ModelPragma): void {
     if (this._output.modelType) {
       this.reportAssemblyError("Z0302", pragma);
       return;
@@ -852,7 +779,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Gets the source line the evaluation context is bound to
    */
-  getSourceLine (): Z80AssemblyLine {
+  getSourceLine(): Z80AssemblyLine {
     return this._currentSourceLine;
   }
 
@@ -860,20 +787,18 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  setSourceLine (sourceLine: Z80AssemblyLine): void {
+  setSourceLine(sourceLine: Z80AssemblyLine): void {
     this._currentSourceLine = sourceLine;
   }
 
   /**
    * Gets the current assembly address
    */
-  getCurrentAddress (): number {
+  getCurrentAddress(): number {
     this.ensureCodeSegment();
     const curSegment = this._currentSegment;
     return (
-      (curSegment.startAddress +
-        (curSegment?.displacement ?? 0) +
-        curSegment.emittedCode.length) &
+      (curSegment.startAddress + (curSegment?.displacement ?? 0) + curSegment.emittedCode.length) &
       0xffff
     );
   }
@@ -883,7 +808,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param symbol Symbol name
    * @param startFromGlobal Should resolution start from global scope?
    */
-  getSymbolValue (symbol: string, startFromGlobal?: boolean): IValueInfo | null {
+  getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null {
     let resolved: IValueInfo;
     if (startFromGlobal) {
       // --- Most be a compound symbol
@@ -902,7 +827,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Gets the current loop counter value
    */
-  getLoopCounterValue (): ExpressionValue {
+  getLoopCounterValue(): ExpressionValue {
     if (this.isInGlobalScope) {
       this.reportAssemblyError("Z0705", this._currentSourceLine);
       return ExpressionValue.Error;
@@ -921,7 +846,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param opLine Assembly line that contains the expression
    * @param expr Expression to evaluate
    */
-  evaluateExpr (expr: Expression): IExpressionValue {
+  evaluateExpr(expr: Expression): IExpressionValue {
     if (!this.readyToEvaluate(expr)) {
       return ExpressionValue.NonEvaluated;
     }
@@ -932,7 +857,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Immediately evaluates the specified expression
    * @param expr Expression to evaluate
    */
-  evaluateExprImmediate (expr: Expression): IExpressionValue {
+  evaluateExprImmediate(expr: Expression): IExpressionValue {
     return this.doEvalExpression(this, expr);
   }
 
@@ -942,14 +867,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  readyToEvaluate (expr: Expression): boolean {
+  readyToEvaluate(expr: Expression): boolean {
     switch (expr.type) {
       case "UnaryExpression":
         return this.readyToEvaluate(expr.operand);
       case "BinaryExpression":
-        return (
-          this.readyToEvaluate(expr.left) && this.readyToEvaluate(expr.right)
-        );
+        return this.readyToEvaluate(expr.left) && this.readyToEvaluate(expr.right);
       case "ConditionalExpression":
         return (
           this.readyToEvaluate(expr.condition) &&
@@ -957,14 +880,11 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.readyToEvaluate(expr.alternate)
         );
       case "FunctionInvocation":
-        return expr.args.every(arg => this.readyToEvaluate(arg));
+        return expr.args.every((arg) => this.readyToEvaluate(arg));
       case "Identifier":
         return this.getSymbolValue(expr.name) !== null;
       case "Symbol":
-        return (
-          this.getSymbolValue(expr.identifier.name, expr.startsFromGlobal) !==
-          null
-        );
+        return this.getSymbolValue(expr.identifier.name, expr.startsFromGlobal) !== null;
       case "MacroParameter":
         return this.getSymbolValue(expr.identifier.name) !== null;
     }
@@ -976,18 +896,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param code Error code
    * @param node Error position
    */
-  reportEvaluationError (
+  reportEvaluationError(
     context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
   ): void {
-    this.reportAssemblyError(
-      code,
-      context.getSourceLine(),
-      node,
-      ...parameters
-    );
+    this.reportAssemblyError(code, context.getSourceLine(), node, ...parameters);
   }
 
   // ==========================================================================
@@ -998,10 +913,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param defaultAddress Default start address of the segment
    * @param maxLength Maximum segment length
    */
-  private ensureCodeSegment (
-    defaultAddress?: number,
-    maxLength: number = 0xffff
-  ): void {
+  private ensureCodeSegment(defaultAddress?: number, maxLength: number = 0xffff): void {
     if (this._currentSegment) {
       return;
     }
@@ -1020,7 +932,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Creates a label at the current point
    * @param asmLine Assembly line with a lable
    */
-  private async createCurrentPointLabel (asmLine: LabelOnlyLine): Promise<void> {
+  private async createCurrentPointLabel(asmLine: LabelOnlyLine): Promise<void> {
     await this.addSymbol(
       asmLine.label.name,
       asmLine as unknown as Z80AssemblyLine,
@@ -1036,7 +948,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param currentLineIndex The index of the line to emit
    * @param fromMacroEmit Is this method called during macro emit?
    */
-  private async emitSingleLine (
+  private async emitSingleLine(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     asmLine: Z80AssemblyLine,
@@ -1056,10 +968,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     };
 
     // --- No parse-time issue, process the line
-    if (
-      asmLine.type === "LabelOnlyLine" ||
-      asmLine.type === "CommentOnlyLine"
-    ) {
+    if (asmLine.type === "LabelOnlyLine" || asmLine.type === "CommentOnlyLine") {
       // --- This is a line with a label or comment only
       if (!asmLine.label) {
         return;
@@ -1105,15 +1014,10 @@ export class Z80Assembler extends ExpressionEvaluator {
           !(
             isLabelSetter(asmLine) ||
             this._isInStructCloning ||
-            (isFieldAssignment &&
-              isByteEmittingPragma(asmLine) &&
-              this._currentStructInvocation)
+            (isFieldAssignment && isByteEmittingPragma(asmLine) && this._currentStructInvocation)
           )
         ) {
-          if (
-            !currentLabel.startsWith("`") &&
-            this._currentModule.localScopes.length > 0
-          ) {
+          if (!currentLabel.startsWith("`") && this._currentModule.localScopes.length > 0) {
             // --- Check if temporary scope should be fixed and disposed
             await this.fixupTemporaryScope();
           }
@@ -1149,8 +1053,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- Handle field assignment statement
       if (isFieldAssignment) {
-        asmLine = (asmLine as unknown as FieldAssignment)
-          .assignment as unknown as Z80AssemblyLine;
+        asmLine = (asmLine as unknown as FieldAssignment).assignment as unknown as Z80AssemblyLine;
       }
       if (this._currentStructInvocation) {
         // --- We are in a .struct invocation...
@@ -1182,8 +1085,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         } else {
           if (currentLabel) {
             // --- If there's a label, that should be a field
-            const fieldDefinition =
-              this._currentStructInvocation.getField(currentLabel);
+            const fieldDefinition = this._currentStructInvocation.getField(currentLabel);
             if (!fieldDefinition) {
               this.reportAssemblyError(
                 "Z0802",
@@ -1212,8 +1114,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (asmLine.type.endsWith("Pragma")) {
         // --- Process a pragma
         this.ensureCodeSegment();
-        this._currentSegment.currentInstructionOffset =
-          this._currentSegment.emittedCode.length;
+        this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         await this.applyPragma(asmLine as Pragma, currentLabel);
         //emitListItem();
       } else if (asmLine.type.endsWith("Statement")) {
@@ -1232,15 +1133,11 @@ export class Z80Assembler extends ExpressionEvaluator {
       } else {
         // --- Process operations
         const addr = this.getCurrentAddress();
-        this._currentSegment.currentInstructionOffset =
-          this._currentSegment.emittedCode.length;
+        this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         this.emitAssemblyOperationCode(asmLine);
 
         // --- Generate source map information
-        if (
-          asmLine.type !== "LabelOnlyLine" &&
-          asmLine.type !== "CommentOnlyLine"
-        ) {
+        if (asmLine.type !== "LabelOnlyLine" && asmLine.type !== "CommentOnlyLine") {
           this._output.sourceMap[addr] = {
             fileIndex: asmLine.fileIndex,
             line: asmLine.line,
@@ -1249,8 +1146,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           };
           this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, addr);
           this._currentListFileItem.codeLength =
-            this._currentSegment.emittedCode.length -
-            this._currentListFileItem.codeStartIndex;
+            this._currentSegment.emittedCode.length - this._currentListFileItem.codeStartIndex;
           this._output.listFileItems.push(assembler._currentListFileItem);
         }
       }
@@ -1260,7 +1156,7 @@ export class Z80Assembler extends ExpressionEvaluator {
      * Tests if the specified line is a label-setter
      * @param asmLine Line to test
      */
-    function isLabelSetter (asmLine: Z80AssemblyLine): boolean {
+    function isLabelSetter(asmLine: Z80AssemblyLine): boolean {
       switch (asmLine.type) {
         case "EquPragma":
         case "OrgPragma":
@@ -1280,7 +1176,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param line Source code line
    * @param value Symbol value
    */
-  private async addSymbol (
+  private async addSymbol(
     symbol: string,
     line: Z80AssemblyLine,
     value: IExpressionValue
@@ -1294,10 +1190,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     if (symbol.startsWith(".")) {
       symbol = symbol.substring(1);
-      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(
-        symbol,
-        value
-      );
+      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(symbol, value);
       return;
     }
 
@@ -1332,8 +1225,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       let scope = localScopes[localScopes.length - 1];
       if (scope.isTemporaryScope) {
         const tmpScope = localScopes.pop();
-        scope =
-          localScopes.length > 0 ? localScopes[localScopes.length - 1] : null;
+        scope = localScopes.length > 0 ? localScopes[localScopes.length - 1] : null;
         localScopes.push(tmpScope);
       }
 
@@ -1357,7 +1249,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     /**
      * Gets the current symbol map that can be used for symbol resolution
      */
-    function getSymbols (): SymbolInfoMap {
+    function getSymbols(): SymbolInfoMap {
       return assembler._currentModule.localScopes.length === 0
         ? assembler._currentModule.symbols
         : assembler.getTopLocalScope().symbols;
@@ -1368,7 +1260,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Check if the specified symbol exists
    * @param symbol Symbol to check
    */
-  private symbolExists (symbol: string): boolean {
+  private symbolExists(symbol: string): boolean {
     if (!this.isCaseSensitive) {
       symbol = symbol.toLowerCase();
     }
@@ -1385,7 +1277,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Checks if the variable with the specified name exists
    * @param name Variable name
    */
-  private variableExists (name: string): boolean {
+  private variableExists(name: string): boolean {
     // --- Search for the variable from inside out
     for (const scope of this._currentModule.localScopes) {
       const symbolInfo = scope.getSymbol(name);
@@ -1404,7 +1296,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param name Variable name
    * @param value Variable value
    */
-  private setVariable (name: string, value: IExpressionValue): void {
+  private setVariable(name: string, value: IExpressionValue): void {
     // --- Search for the variable from inside out
     for (const scope of this._currentModule.localScopes) {
       const symbolInfo = scope.getSymbol(name);
@@ -1423,16 +1315,14 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- The variable does not exist, create it in the current scope
     const scope =
-      this._currentModule.localScopes.length > 0
-        ? this.getTopLocalScope()
-        : this._currentModule;
+      this._currentModule.localScopes.length > 0 ? this.getTopLocalScope() : this._currentModule;
     scope.addSymbol(name, AssemblySymbolInfo.createVar(name, value));
   }
 
   /**
    * Gets the top local scope
    */
-  private getTopLocalScope (): SymbolScope {
+  private getTopLocalScope(): SymbolScope {
     const localScopes = this._currentModule.localScopes;
     return localScopes[localScopes.length - 1];
   }
@@ -1440,7 +1330,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Gets the current assembly address
    */
-  private getCurrentAssemblyAddress (): number {
+  private getCurrentAssemblyAddress(): number {
     this.ensureCodeSegment();
     return (
       (this._currentSegment.startAddress +
@@ -1458,10 +1348,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragmaLine Assembly line with a pragma
    * @param label Pragma label
    */
-  private async applyPragma (
-    pragmaLine: Pragma,
-    label: string | null
-  ): Promise<void> {
+  private async applyPragma(pragmaLine: Pragma, label: string | null): Promise<void> {
     switch (pragmaLine.type) {
       case "OrgPragma":
         await this.processOrgPragma(pragmaLine, label);
@@ -1583,7 +1470,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Emits a new byte for a structure
    * @param data
    */
-  private emitStructByte (data: number): void {
+  private emitStructByte(data: number): void {
     this._currentStructBytes.set(this._currentStructOffset++, data & 0xff);
   }
 
@@ -1592,10 +1479,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  async processOrgPragma (
-    pragma: OrgPragma,
-    label: string | null
-  ): Promise<void> {
+  async processOrgPragma(pragma: OrgPragma, label: string | null): Promise<void> {
     const value = this.evaluateExprImmediate(pragma.address);
     if (!value.isValid) {
       return;
@@ -1627,7 +1511,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  processBankPragma (pragma: BankPragma, label: string | null): void {
+  processBankPragma(pragma: BankPragma, label: string | null): void {
     if (label) {
       // --- No label is allowed
       this.reportAssemblyError("Z0305", pragma);
@@ -1668,16 +1552,13 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     this.ensureCodeSegment((0xc000 + offset) & 0xffff);
-    if (
-      this._currentSegment.currentOffset !== 0 ||
-      this._currentSegment.bank !== undefined
-    ) {
+    if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
       // --- There is already code emitted for the current segment,
       // --- thus create a new segment
       this._currentSegment = new BinarySegment();
       this._output.segments.push(this._currentSegment);
     }
-    if (this._output.segments.some(s => s.bank === value.value)) {
+    if (this._output.segments.some((s) => s.bank === value.value)) {
       // --- A bank can be used only once
       this.reportAssemblyError("Z0309", pragma, null, value.value);
       return;
@@ -1692,17 +1573,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .xorg pragma
    * @param pragma Pragma to process
    */
-  processXorgPragma (pragma: XorgPragma): void {
+  processXorgPragma(pragma: XorgPragma): void {
     const value = this.evaluateExprImmediate(pragma.address);
     if (!value.isValid) {
       return;
     }
 
     this.ensureCodeSegment();
-    if (
-      this._currentSegment.currentOffset &&
-      this._currentSegment.xorgValue !== undefined
-    ) {
+    if (this._currentSegment.currentOffset && this._currentSegment.xorgValue !== undefined) {
       this.reportAssemblyError("Z0314", pragma);
     } else {
       this._currentSegment.xorgValue = value.value;
@@ -1713,20 +1591,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .ent pragma
    * @param pragma Pragma to process
    */
-  processEntPragma (pragma: EntPragma): void {
-    if (
-      !this.isInGlobalScope &&
-      this.shouldReportErrorInCurrentScope("Z0310")
-    ) {
+  processEntPragma(pragma: EntPragma): void {
+    if (!this.isInGlobalScope && this.shouldReportErrorInCurrentScope("Z0310")) {
       this.reportAssemblyError("Z0310", pragma, null, ".ent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
-      this.recordFixup(
-        pragma as unknown as Z80AssemblyLine,
-        FixupType.Ent,
-        pragma.address
-      );
+      this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Ent, pragma.address);
       return;
     }
     this._output.entryAddress = value.value;
@@ -1736,20 +1607,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .xent pragma
    * @param pragma Pragma to process
    */
-  processXentPragma (pragma: XentPragma): void {
-    if (
-      !this.isInGlobalScope &&
-      this.shouldReportErrorInCurrentScope("Z0310")
-    ) {
+  processXentPragma(pragma: XentPragma): void {
+    if (!this.isInGlobalScope && this.shouldReportErrorInCurrentScope("Z0310")) {
       this.reportAssemblyError("Z0310", pragma, null, ".xent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
-      this.recordFixup(
-        pragma as unknown as Z80AssemblyLine,
-        FixupType.Xent,
-        pragma.address
-      );
+      this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Xent, pragma.address);
       return;
     }
     this._output.exportEntryAddress = value.value;
@@ -1759,7 +1623,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .disp pragma
    * @param pragma Pragma to process
    */
-  processDispPragma (pragma: DispPragma): void {
+  processDispPragma(pragma: DispPragma): void {
     const value = this.evaluateExprImmediate(pragma.offset);
     if (!value.isValid) {
       return;
@@ -1767,8 +1631,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.ensureCodeSegment();
     const curSegment = this._currentSegment;
     curSegment.displacement = value.value;
-    curSegment.dispPragmaOffset =
-      (curSegment.startAddress + curSegment.currentOffset) & 0xffff;
+    curSegment.dispPragmaOffset = (curSegment.startAddress + curSegment.currentOffset) & 0xffff;
   }
 
   /**
@@ -1776,10 +1639,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  private async processEquPragma (
-    pragma: EquPragma,
-    label: string | null
-  ): Promise<void> {
+  private async processEquPragma(pragma: EquPragma, label: string | null): Promise<void> {
     if (!label) {
       this.reportAssemblyError("Z0304", pragma);
       return;
@@ -1807,10 +1667,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  async processVarPragma (
-    pragma: VarPragma,
-    label: string | null
-  ): Promise<void> {
+  async processVarPragma(pragma: VarPragma, label: string | null): Promise<void> {
     if (!label) {
       this.reportAssemblyError("Z0311", pragma);
       return;
@@ -1834,7 +1691,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .skip pragma
    * @param pragma Pragma to process
    */
-  processSkipPragma (pragma: SkipPragma): void {
+  processSkipPragma(pragma: SkipPragma): void {
     const skipAddr = this.evaluateExprImmediate(pragma.skip);
     if (!skipAddr.isValid) {
       return;
@@ -1842,13 +1699,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     let currentAddr = this.getCurrentAssemblyAddress();
     if (skipAddr.value < currentAddr) {
-      this.reportAssemblyError(
-        "Z0313",
-        pragma,
-        null,
-        skipAddr.value,
-        currentAddr
-      );
+      this.reportAssemblyError("Z0313", pragma, null, skipAddr.value, currentAddr);
       return;
     }
     var fillByte = 0xff;
@@ -1871,10 +1722,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefBPragma (
-    pragma: DefBPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefBPragma(pragma: DefBPragma, emitAction?: (b: number) => void): void {
     const assembler = this;
     for (const expr of pragma.values) {
       const value = this.evaluateExpr(expr);
@@ -1891,17 +1739,13 @@ export class Z80Assembler extends ExpressionEvaluator {
           emit(value.value & 0xff);
         }
       } else if (value.isNonEvaluated) {
-        this.recordFixup(
-          pragma as unknown as Z80AssemblyLine,
-          FixupType.Bit8,
-          expr
-        );
+        this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Bit8, expr);
         emit(0x00);
       }
     }
 
     // --- Emits a byte
-    function emit (value: number): void {
+    function emit(value: number): void {
       if (emitAction) {
         const emitter = emitAction.bind(assembler);
         emitter(value);
@@ -1916,10 +1760,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefWPragma (
-    pragma: DefWPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefWPragma(pragma: DefWPragma, emitAction?: (b: number) => void): void {
     const assembler = this;
     for (const expr of pragma.values) {
       var value = this.evaluateExpr(expr);
@@ -1936,17 +1777,13 @@ export class Z80Assembler extends ExpressionEvaluator {
           emit(value.value & 0xffff);
         }
       } else if (value.isNonEvaluated) {
-        this.recordFixup(
-          pragma as unknown as Z80AssemblyLine,
-          FixupType.Bit16,
-          expr
-        );
+        this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Bit16, expr);
         emit(0x0000);
       }
     }
 
     // --- Emits a byte
-    function emit (value: number): void {
+    function emit(value: number): void {
       if (emitAction) {
         const emitter = emitAction.bind(assembler);
         emitter(value & 0xff);
@@ -1962,7 +1799,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefMNCPragma (
+  processDefMNCPragma(
     pragma: DefMPragma | DefNPragma | DefCPragma,
     emitAction?: (b: number) => void
   ): void {
@@ -1970,9 +1807,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (message.isValid && message.type !== ExpressionValueType.String) {
       if (this._options.flexibleDefPragmas) {
         // --- In flexible mode, the argument expression can be numeric...
-        var value =
-          (message.asByte() | (pragma.type === "DefCPragma" ? 0x80 : 0x00)) &
-          0xff;
+        var value = (message.asByte() | (pragma.type === "DefCPragma" ? 0x80 : 0x00)) & 0xff;
         if (emitAction) {
           emitAction(value);
           if (pragma.type === "DefNPragma") {
@@ -2003,10 +1838,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefHPragma (
-    pragma: DefHPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefHPragma(pragma: DefHPragma, emitAction?: (b: number) => void): void {
     const assembler = this;
     const byteVector = this.evaluateExprImmediate(pragma.value);
     if (byteVector.isValid && byteVector.type !== ExpressionValueType.String) {
@@ -2032,7 +1864,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Emits a byte
-    function emit (value: number): void {
+    function emit(value: number): void {
       if (emitAction) {
         const emitter = emitAction.bind(assembler);
         emitter(value);
@@ -2047,10 +1879,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefSPragma (
-    pragma: DefSPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefSPragma(pragma: DefSPragma, emitAction?: (b: number) => void): void {
     const count = this.evaluateExprImmediate(pragma.count);
     let fillValue = 0x00;
     if (pragma.fill) {
@@ -2072,10 +1901,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processFillbPragma (
-    pragma: FillbPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processFillbPragma(pragma: FillbPragma, emitAction?: (b: number) => void): void {
     const count = this.evaluateExprImmediate(pragma.count);
     let fillValue = 0x00;
     fillValue = this.evaluateExprImmediate(pragma.fill).asByte();
@@ -2095,10 +1921,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processFillwPragma (
-    pragma: FillwPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processFillwPragma(pragma: FillwPragma, emitAction?: (b: number) => void): void {
     const count = this.evaluateExprImmediate(pragma.count);
     let fillValue = 0x00;
     fillValue = this.evaluateExprImmediate(pragma.fill).asWord();
@@ -2118,7 +1941,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .align pragma
    * @param pragma Pragma to process
    */
-  processAlignPragma (pragma: AlignPragma): void {
+  processAlignPragma(pragma: AlignPragma): void {
     let alignment = 0x0100;
     if (pragma.alignExpr) {
       const alignValue = this.evaluateExprImmediate(pragma.alignExpr);
@@ -2143,7 +1966,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .trace pragma
    * @param pragma Pragma to process
    */
-  processTracePragma (pragma: TracePragma): void {
+  processTracePragma(pragma: TracePragma): void {
     let message = "";
     for (const expr of pragma.values) {
       const exprValue = this.evaluateExprImmediate(expr);
@@ -2190,7 +2013,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .rndseed pragma
    * @param pragma Pragma to process
    */
-  processRndSeedPragma (pragma: RndSeedPragma): void {
+  processRndSeedPragma(pragma: RndSeedPragma): void {
     if (pragma.seedExpr) {
       const seedValue = this.evaluateExprImmediate(pragma.seedExpr);
       setRandomSeed(seedValue.value);
@@ -2203,7 +2026,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .error pragma
    * @param pragma Pragma to process
    */
-  processErrorPragma (pragma: ErrorPragma): void {
+  processErrorPragma(pragma: ErrorPragma): void {
     const errorValue = this.evaluateExprImmediate(pragma.message);
     this.reportAssemblyError("Z2000", pragma, null, errorValue.asString());
   }
@@ -2212,7 +2035,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .includebin pragma
    * @param pragma Pragma to process
    */
-  processIncBinPragma (pragma: IncBinPragma): void {
+  processIncBinPragma(pragma: IncBinPragma): void {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
@@ -2252,9 +2075,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Read the binary file
     const currentSourceFile =
-      this._output.sourceFileList[
-        (pragma as unknown as Z80AssemblyLine).fileIndex
-      ];
+      this._output.sourceFileList[(pragma as unknown as Z80AssemblyLine).fileIndex];
     const dirname = path.dirname(currentSourceFile.filename) ?? "";
     const filename = path.join(dirname, fileNameValue.asString());
 
@@ -2284,9 +2105,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check for too long binary segment
     if (
-      this.getCurrentAssemblyAddress() -
-        this._currentSegment.startAddress +
-        length >=
+      this.getCurrentAssemblyAddress() - this._currentSegment.startAddress + length >=
       this._currentSegment.maxCodeLength
     ) {
       this.reportAssemblyError("Z0323", pragma);
@@ -2303,7 +2122,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .comparebin pragma
    * @param pragma Pragma to process
    */
-  processCompareBinPragma (pragma: CompareBinPragma): void {
+  processCompareBinPragma(pragma: CompareBinPragma): void {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
@@ -2313,11 +2132,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Store pragma information
     this.compareBins.push(
-      new BinaryComparisonInfo(
-        pragma,
-        this._currentSegment,
-        this._currentSegment.currentOffset
-      )
+      new BinaryComparisonInfo(pragma, this._currentSegment, this._currentSegment.currentOffset)
     );
   }
 
@@ -2325,7 +2140,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes the .injectopt pragma
    * @param pragma Pragma to process
    */
-  processInjectOptPragma (pragma: InjectOptPragma): void {
+  processInjectOptPragma(pragma: InjectOptPragma): void {
     for (const id of pragma.identifiers) {
       this._output.injectOptions[id.name.toLowerCase()] = true;
     }
@@ -2336,10 +2151,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefGPragma (
-    pragma: DefGPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefGPragma(pragma: DefGPragma, emitAction?: (b: number) => void): void {
     this.emitDefgBytes(
       pragma as unknown as Z80AssemblyLine,
       pragma.pattern.trim(),
@@ -2353,22 +2165,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefGXPragma (
-    pragma: DefGxPragma,
-    emitAction?: (b: number) => void
-  ): void {
+  processDefGXPragma(pragma: DefGxPragma, emitAction?: (b: number) => void): void {
     const value = this.evaluateExprImmediate(pragma.pattern);
     if (value.type !== ExpressionValueType.String) {
       this.reportAssemblyError("Z0324", pragma);
       return;
     }
     var pattern = value.asString().trim();
-    this.emitDefgBytes(
-      pragma as unknown as Z80AssemblyLine,
-      pattern,
-      true,
-      emitAction
-    );
+    this.emitDefgBytes(pragma as unknown as Z80AssemblyLine, pattern, true, emitAction);
   }
 
   /**
@@ -2378,7 +2182,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param allowAlign Signs if alignment indicators are allowed or not
    * @param emitAction Action to emit a code byte
    */
-  emitDefgBytes (
+  emitDefgBytes(
     line: Z80AssemblyLine,
     pattern: string,
     allowAlign: boolean = true,
@@ -2454,20 +2258,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param macroOrStructStmt A macro or struct invocation statement
    * @param allLines All parsed lines
    */
-  private async processMacroOrStructInvocation (
+  private async processMacroOrStructInvocation(
     macroOrStructStmt: MacroOrStructInvocation,
     allLines: Z80AssemblyLine[]
   ): Promise<void> {
-    const structDef = this._currentModule.getStruct(
-      macroOrStructStmt.identifier.name
-    );
+    const structDef = this._currentModule.getStruct(macroOrStructStmt.identifier.name);
     if (structDef) {
       // --- We have found a structure definition
-      await this.processStructInvocation(
-        macroOrStructStmt,
-        structDef,
-        allLines
-      );
+      await this.processStructInvocation(macroOrStructStmt, structDef, allLines);
       return;
     }
 
@@ -2596,17 +2394,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Create source info for the macro invocation
     const currentAddress = this.getCurrentAssemblyAddress();
     const asmLine = macroOrStructStmt as unknown as Z80AssemblyLine;
-    this._output.addToAddressMap(
-      asmLine.fileIndex,
-      asmLine.line,
-      currentAddress
-    );
+    this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, currentAddress);
     const fileLine: IFileLine = {
       fileIndex: asmLine.fileIndex,
       line: asmLine.line - 1,
       startColumn:
-        (asmLine.sourceText ?? "").length -
-        (asmLine.sourceText ?? "").trimStart().length,
+        (asmLine.sourceText ?? "").length - (asmLine.sourceText ?? "").trimStart().length,
       endColumn: asmLine.endColumn
     };
     this._output.sourceMap[currentAddress] = fileLine;
@@ -2659,7 +2452,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         let errorPrefix = "";
         if (this._macroInvocations.length > 0) {
           const lines = this._macroInvocations
-            .map(mi => (mi as unknown as Z80AssemblyLine).line)
+            .map((mi) => (mi as unknown as Z80AssemblyLine).line)
             .join(" -> ");
           errorPrefix = `(from macro invocation through line ${lines}) `;
         }
@@ -2701,13 +2494,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     lineIndex.index = 0;
     while (lineIndex.index < visitedLines.length) {
       var macroLine = visitedLines[lineIndex.index];
-      await this.emitSingleLine(
-        allLines,
-        visitedLines,
-        macroLine,
-        lineIndex,
-        true
-      );
+      await this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
 
       // --- Next line
       lineIndex.index++;
@@ -2747,7 +2534,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     /**
      * Restores the original depth of the macro stack
      */
-    function restoreMacroStack () {
+    function restoreMacroStack() {
       assembler._macroInvocations.length = macroStackDepth;
     }
   }
@@ -2758,18 +2545,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param structDef Structure definition
    * @param allLines All parsed lines
    */
-  private async processStructInvocation (
+  private async processStructInvocation(
     structStmt: MacroOrStructInvocation,
     structDef: IStructDefinition,
     allLines: Z80AssemblyLine[]
   ): Promise<void> {
     if (structStmt.operands.length > 0) {
-      this.reportAssemblyError(
-        "Z0809",
-        structStmt,
-        null,
-        structStmt.identifier.name
-      );
+      this.reportAssemblyError("Z0809", structStmt, null, structStmt.identifier.name);
     }
 
     this.ensureCodeSegment();
@@ -2806,7 +2588,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param label Label to process
    * @param currentLineIndex Current line index
    */
-  private async processStatement (
+  private async processStatement(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     stmt: Statement,
@@ -2818,108 +2600,49 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.collectMacroDefinition(stmt, label, allLines, currentLineIndex);
         break;
       case "MacroEndStatement":
-        this.reportAssemblyError(
-          "Z0704",
-          stmt,
-          null,
-          ".endm/.mend",
-          ".if/.ifused/.ifnused"
-        );
+        this.reportAssemblyError("Z0704", stmt, null, ".endm/.mend", ".if/.ifused/.ifnused");
         break;
       case "LoopStatement":
-        await this.processLoopStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "LoopEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endl/.lend", ".loop");
         break;
       case "WhileStatement":
-        await this.processWhileStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processWhileStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "WhileEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endw/.wend", ".while");
         break;
       case "RepeatStatement":
-        await this.processRepeatStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processRepeatStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "UntilStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
-        await this.processProcStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processProcStatement(allLines, scopeLines, currentLineIndex);
         break;
       case "ProcEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endp/.pend", ".proc");
         break;
       case "IfStatement":
-        await this.processIfStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfUsedStatement":
-        await this.processIfStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfNUsedStatement":
-        await this.processIfStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ElseStatement":
-        this.reportAssemblyError(
-          "Z0704",
-          stmt,
-          null,
-          ".else",
-          ".if/.ifused/.ifnused"
-        );
+        this.reportAssemblyError("Z0704", stmt, null, ".else", ".if/.ifused/.ifnused");
         break;
       case "ElseIfStatement":
-        this.reportAssemblyError(
-          "Z0704",
-          stmt,
-          null,
-          ".elseif",
-          ".if/.ifused/.ifnused"
-        );
+        this.reportAssemblyError("Z0704", stmt, null, ".elseif", ".if/.ifused/.ifnused");
         break;
       case "EndIfStatement":
-        this.reportAssemblyError(
-          "Z0704",
-          stmt,
-          null,
-          ".endif",
-          ".if/.ifused/.ifnused"
-        );
+        this.reportAssemblyError("Z0704", stmt, null, ".endif", ".if/.ifused/.ifnused");
         break;
       case "BreakStatement":
         this.processBreakStatement(stmt);
@@ -2928,22 +2651,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processContinueStatement(stmt);
         break;
       case "ModuleStatement":
-        await this.processModuleStatement(
-          stmt,
-          label,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processModuleStatement(stmt, label, allLines, scopeLines, currentLineIndex);
         break;
       case "ModuleEndStatement":
-        this.reportAssemblyError(
-          "Z0704",
-          stmt,
-          null,
-          ".endmodule/.moduleend",
-          ".module"
-        );
+        this.reportAssemblyError("Z0704", stmt, null, ".endmodule/.moduleend", ".module");
         break;
       case "StructStatement":
         this.collectStructDefinition(stmt, label, allLines, currentLineIndex);
@@ -2955,12 +2666,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z0704", stmt, null, ".next", ".for");
         break;
       case "ForStatement":
-        await this.processForStatement(
-          stmt,
-          allLines,
-          scopeLines,
-          currentLineIndex
-        );
+        await this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
     }
   }
@@ -2972,7 +2678,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param allLines All parsed lines
    * @param currentLineIndex Current line index
    */
-  private collectMacroDefinition (
+  private collectMacroDefinition(
     macro: MacroStatement,
     label: string,
     allLines: Z80AssemblyLine[],
@@ -3009,11 +2715,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Search for the end of the macro
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "MacroStatement",
-      allLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("MacroStatement", allLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -3046,23 +2748,16 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (macroLine.macroParams) {
         for (const param of macroLine.macroParams) {
           const findParam = macro.parameters.find(
-            p =>
+            (p) =>
               (isCaseSensitive ? p.name : p.name.toLowerCase()) ===
-              (isCaseSensitive
-                ? param.identifier.name
-                : param.identifier.name.toLowerCase())
+              (isCaseSensitive ? param.identifier.name : param.identifier.name.toLowerCase())
           );
           if (findParam) {
             continue;
           }
 
           errorFound = true;
-          this.reportAssemblyError(
-            "Z1006",
-            macroLine,
-            null,
-            param.identifier.name
-          );
+          this.reportAssemblyError("Z1006", macroLine, null, param.identifier.name);
         }
       }
     }
@@ -3080,7 +2775,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param allLines All parsed lines
    * @param currentLineIndex Current line index
    */
-  private collectStructDefinition (
+  private collectStructDefinition(
     structStmt: StructStatement,
     label: string,
     allLines: Z80AssemblyLine[],
@@ -3107,11 +2802,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Search for the end of the structure
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "StructStatement",
-      allLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("StructStatement", allLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -3204,7 +2895,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
 
       // --- We use this fuction to emit a byte
-      function emitAction (_data: number): void {
+      function emitAction(_data: number): void {
         // ReSharper disable once AccessToModifiedClosure
         structOffset++;
       }
@@ -3233,7 +2924,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processWhileStatement (
+  private async processWhileStatement(
     whileStmt: WhileStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
@@ -3241,11 +2932,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "WhileStatement",
-      scopeLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("WhileStatement", scopeLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -3318,10 +3005,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentModule.localScopes.pop();
 
       // --- Check for the maximum number of error
-      if (
-        this._output.errorCount - errorsBefore >=
-        this._options.maxLoopErrorsToReport
-      ) {
+      if (this._output.errorCount - errorsBefore >= this._options.maxLoopErrorsToReport) {
         this.reportAssemblyError("Z0703", whileStmt);
         break;
       }
@@ -3350,7 +3034,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processLoopStatement (
+  private async processLoopStatement(
     loop: LoopStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
@@ -3358,11 +3042,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "LoopStatement",
-      scopeLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("LoopStatement", scopeLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -3436,10 +3116,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentModule.localScopes.pop();
 
       // --- Check for the maximum number of error
-      if (
-        this._output.errorCount - errorsBefore >=
-        this._options.maxLoopErrorsToReport
-      ) {
+      if (this._output.errorCount - errorsBefore >= this._options.maxLoopErrorsToReport) {
         this.reportAssemblyError("Z0703", loop);
         break;
       }
@@ -3461,7 +3138,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processRepeatStatement (
+  private async processRepeatStatement(
     repeatStmt: RepeatStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
@@ -3531,10 +3208,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       await this.fixupSymbols(iterationScope, false);
 
       // --- Check for the maximum number of error
-      if (
-        this._output.errorCount - errorsBefore >=
-        this._options.maxLoopErrorsToReport
-      ) {
+      if (this._output.errorCount - errorsBefore >= this._options.maxLoopErrorsToReport) {
         this.reportAssemblyError("Z0703", repeatStmt);
         break;
       }
@@ -3577,7 +3251,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processForStatement (
+  private async processForStatement(
     forStmt: ForStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
@@ -3585,11 +3259,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "ForStatement",
-      scopeLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("ForStatement", scopeLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -3645,16 +3315,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     const errorsBefore = this._output.errorCount;
 
     // --- Init the FOR variable
-    loopScope.addSymbol(
-      forVariable,
-      AssemblySymbolInfo.createVar(forVariable, fromValue)
-    );
+    loopScope.addSymbol(forVariable, AssemblySymbolInfo.createVar(forVariable, fromValue));
 
     const isIntLoop =
       (fromValue.type === ExpressionValueType.Bool ||
         fromValue.type === ExpressionValueType.Integer) &&
-      (toValue.type === ExpressionValueType.Bool ||
-        toValue.type === ExpressionValueType.Integer) &&
+      (toValue.type === ExpressionValueType.Bool || toValue.type === ExpressionValueType.Integer) &&
       (stepValue.type === ExpressionValueType.Bool ||
         stepValue.type === ExpressionValueType.Integer);
 
@@ -3735,10 +3401,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentModule.localScopes.pop();
 
       // --- Check for the maximum number of error
-      if (
-        this._output.errorCount - errorsBefore >=
-        this._options.maxLoopErrorsToReport
-      ) {
+      if (this._output.errorCount - errorsBefore >= this._options.maxLoopErrorsToReport) {
         this.reportAssemblyError("Z0703", forStmt);
         break;
       }
@@ -3751,14 +3414,10 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Increment cycle variable
       if (isIntLoop) {
         loopIntValue += incIntValue;
-        loopScope.getSymbol(forVariable).value = new ExpressionValue(
-          loopIntValue
-        );
+        loopScope.getSymbol(forVariable).value = new ExpressionValue(loopIntValue);
       } else {
         loopRealValue += incRealValue;
-        loopScope.getSymbol(forVariable).value = new ExpressionValue(
-          loopRealValue
-        );
+        loopScope.getSymbol(forVariable).value = new ExpressionValue(loopRealValue);
       }
     }
 
@@ -3770,7 +3429,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a BREAK statement
    * @param breakStmt Break statement
    */
-  private processBreakStatement (breakStmt: BreakStatement): void {
+  private processBreakStatement(breakStmt: BreakStatement): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
       this.reportAssemblyError("Z0707", breakStmt);
       return;
@@ -3782,7 +3441,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a CONTINUE statement
    * @param continueStmt Break statement
    */
-  private processContinueStatement (continueStmt: ContinueStatement): void {
+  private processContinueStatement(continueStmt: ContinueStatement): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
       this.reportAssemblyError("Z0708", continueStmt);
       return;
@@ -3797,14 +3456,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processIfStatement (
+  private async processIfStatement(
     ifStmt: IfLikeStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Map the sections of IF
-    const ifDef = this.getIfSections(ifStmt, scopeLines, currentLineIndex);
+    const ifDef = this.getIfSections(scopeLines, currentLineIndex);
     if (!ifDef.definition) {
       return;
     }
@@ -3828,11 +3487,7 @@ export class Z80Assembler extends ExpressionEvaluator {
               idSymbol.identifier.name,
               idSymbol.startsFromGlobal
             );
-            var isUsed =
-              (valueInfo &&
-                valueInfo.usageInfo &&
-                valueInfo.usageInfo.isUsed) ||
-              false;
+            var isUsed = (valueInfo && valueInfo.usageInfo && valueInfo.usageInfo.isUsed) || false;
             conditionValue = new ExpressionValue(
               ifStmt.type === "IfUsedStatement" ? isUsed : !isUsed
             );
@@ -3895,8 +3550,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param lines Parsed assembly lines
    * @param currentLineIndex Index of the IF defintion line
    */
-  private getIfSections (
-    ifStmt: IfLikeStatement,
+  private getIfSections(
     lines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
   ): {
@@ -3926,16 +3580,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         endLabel = curLine.label ? curLine.label.name : endLabel;
         if (elseDetected) {
           // --- Store the ELSE section
-          ifDef.elseSection = new IfSection(
-            null,
-            sectionStart,
-            currentLineIndex.index
-          );
+          ifDef.elseSection = new IfSection(null, sectionStart, currentLineIndex.index);
         } else {
           // --- Store the IF/ELIF section
-          ifDef.ifSections.push(
-            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
-          );
+          ifDef.ifSections.push(new IfSection(sectionStmt, sectionStart, currentLineIndex.index));
         }
 
         // --- Calculate the entire IF section and return with it
@@ -3943,9 +3591,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           firstLine,
           lastLine: currentLineIndex.index
         };
-        return errorDetected
-          ? { definition: null }
-          : { definition: ifDef, label: endLabel };
+        return errorDetected ? { definition: null } : { definition: ifDef, label: endLabel };
       }
 
       // --- Check for ELIF section
@@ -3959,9 +3605,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.reportAssemblyError("Z0709", sectionStmt, null, ".elif");
         } else {
           // --- Store the previous section
-          ifDef.ifSections.push(
-            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
-          );
+          ifDef.ifSections.push(new IfSection(sectionStmt, sectionStart, currentLineIndex.index));
           sectionStmt = curLine;
           sectionStart = currentLineIndex.index;
         }
@@ -3978,9 +3622,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.reportAssemblyError("Z0709", sectionStmt, null, ".else");
         } else {
           // --- Store the previous section
-          ifDef.ifSections.push(
-            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
-          );
+          ifDef.ifSections.push(new IfSection(sectionStmt, sectionStart, currentLineIndex.index));
           sectionStart = currentLineIndex.index;
         }
         elseDetected = true;
@@ -3996,30 +3638,16 @@ export class Z80Assembler extends ExpressionEvaluator {
         endLabel = null;
         if (curLine.isBlock) {
           // --- Search for the end of an embedded block statement
-          const searchResult = this.searchForEndStatement(
-            curLine.type,
-            lines,
-            currentLineIndex
-          );
+          const searchResult = this.searchForEndStatement(curLine.type, lines, currentLineIndex);
           if (!searchResult.found) {
-            this.reportAssemblyError(
-              "Z0701",
-              lines[firstLine],
-              null,
-              ".if/.ifused/.ifnused"
-            );
+            this.reportAssemblyError("Z0701", lines[firstLine], null, ".if/.ifused/.ifnused");
             return { definition: null };
           }
         }
       }
       currentLineIndex.index++;
     }
-    this.reportAssemblyError(
-      "Z0701",
-      lines[firstLine],
-      null,
-      ".if/.ifused/.ifnused"
-    );
+    this.reportAssemblyError("Z0701", lines[firstLine], null, ".if/.ifused/.ifnused");
     return { definition: null };
   }
 
@@ -4030,19 +3658,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processProcStatement (
-    proc: ProcStatement,
+  private async processProcStatement(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the proc
     const firstLine = currentLineIndex.index;
-    const searchResult = this.searchForEndStatement(
-      "ProcStatement",
-      scopeLines,
-      currentLineIndex
-    );
+    const searchResult = this.searchForEndStatement("ProcStatement", scopeLines, currentLineIndex);
     if (!searchResult.found) {
       return;
     }
@@ -4100,7 +3723,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private async processModuleStatement (
+  private async processModuleStatement(
     moduleStmt: ModuleStatement,
     label: string,
     allLines: Z80AssemblyLine[],
@@ -4122,9 +3745,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const lastLine = currentLineIndex.index;
 
     // --- Process label
-    const moduleName = moduleStmt.identifier
-      ? moduleStmt.identifier.name
-      : label;
+    const moduleName = moduleStmt.identifier ? moduleStmt.identifier.name : label;
     if (!moduleName) {
       this.reportAssemblyError("Z0901", moduleStmt);
       return;
@@ -4139,10 +3760,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Create a new nested module
-    const newModule = new AssemblyModule(
-      this._currentModule,
-      this.isCaseSensitive
-    );
+    const newModule = new AssemblyModule(this._currentModule, this.isCaseSensitive);
     this._currentModule.addNestedModule(moduleName, newModule);
     this._currentModule = newModule;
 
@@ -4194,7 +3812,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param endType Type of end statement
    * @param currentLineIndex
    */
-  private searchForEndStatement (
+  private searchForEndStatement(
     searchType: Statement["type"],
     lines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
@@ -4227,10 +3845,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         };
       }
 
-      if (
-        curLine.type === "CommentOnlyLine" ||
-        curLine.type === "LabelOnlyLine"
-      ) {
+      if (curLine.type === "CommentOnlyLine" || curLine.type === "LabelOnlyLine") {
         // --- Record the last hanging label
         endLabel = curLine.label ? curLine.label.name : null;
       } else {
@@ -4257,7 +3872,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Gets information about the end of a statement
    * @param stmtType Statement to check
    */
-  private getEndStatementInfo (
+  private getEndStatementInfo(
     stmtType: Statement["type"]
   ): { type: Statement["type"]; displayName: string } | null {
     let type: Statement["type"] | undefined;
@@ -4322,11 +3937,9 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Emits code for the specified operation
    * @param opLine Operation to emit the code for
    */
-  private emitAssemblyOperationCode (opLine: Z80AssemblyLine): void {
+  private emitAssemblyOperationCode(opLine: Z80AssemblyLine): void {
     if (opLine.type === "SimpleZ80Instruction") {
-      const mnemonic = (
-        opLine as unknown as SimpleZ80Instruction
-      ).mnemonic.toLowerCase();
+      const mnemonic = (opLine as unknown as SimpleZ80Instruction).mnemonic.toLowerCase();
 
       // --- Get the op codes for the instruction
       if (
@@ -4432,7 +4045,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a MUL instruction
    * @param op Instruction
    */
-  private processNextRegInst (op: NextRegInstruction): void {
+  private processNextRegInst(op: NextRegInstruction): void {
     if (this.invalidNextInst(op)) {
       return;
     }
@@ -4444,10 +4057,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this.emitOpCode(0xed91);
       this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
       this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-    } else if (
-      op.operand2.operandType === OperandType.Reg8 &&
-      op.operand2.register === "a"
-    ) {
+    } else if (op.operand2.operandType === OperandType.Reg8 && op.operand2.register === "a") {
       this.emitOpCode(0xed92);
       this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
     } else {
@@ -4459,7 +4069,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a PUSH or POP operation
    * @param op Instruction
    */
-  private processStackInst (op: PushInstruction | PopInstruction): void {
+  private processStackInst(op: PushInstruction | PopInstruction): void {
     switch (op.operand.operandType) {
       case OperandType.Expression:
         // --- PUSH NNNN operation
@@ -4492,7 +4102,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a CALL operation
    * @param op Instruction
    */
-  private processCallInst (op: CallInstruction): void {
+  private processCallInst(op: CallInstruction): void {
     if (!op.operand2) {
       if (op.operand1.operandType !== OperandType.Expression) {
         this.reportAssemblyError("Z0604", op);
@@ -4505,10 +4115,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     let condition: string;
     if (op.operand1.operandType === OperandType.Condition) {
       condition = op.operand1.register;
-    } else if (
-      op.operand1.operandType === OperandType.Reg8 &&
-      op.operand1.register === "c"
-    ) {
+    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
       condition = "c";
     } else {
       this.reportAssemblyError("Z0604", op);
@@ -4527,7 +4134,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a JP operation
    * @param op Instruction
    */
-  private processJpInst (op: JpInstruction): void {
+  private processJpInst(op: JpInstruction): void {
     if (!op.operand2) {
       switch (op.operand1.operandType) {
         case OperandType.CPort:
@@ -4570,10 +4177,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     let condition: string;
     if (op.operand1.operandType === OperandType.Condition) {
       condition = op.operand1.register;
-    } else if (
-      op.operand1.operandType === OperandType.Reg8 &&
-      op.operand1.register === "c"
-    ) {
+    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
       condition = "c";
     } else {
       this.reportAssemblyError("Z0604", op);
@@ -4592,7 +4196,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a JR operation
    * @param op Instruction
    */
-  private processJrInst (op: JrInstruction): void {
+  private processJrInst(op: JrInstruction): void {
     if (!op.operand2) {
       if (op.operand1.operandType !== OperandType.Expression) {
         this.reportAssemblyError("Z0604", op);
@@ -4604,10 +4208,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     let condition: string;
     if (op.operand1.operandType === OperandType.Condition) {
       condition = op.operand1.register;
-    } else if (
-      op.operand1.operandType === OperandType.Reg8 &&
-      op.operand1.register === "c"
-    ) {
+    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
       condition = "c";
     } else {
       this.reportAssemblyError("Z0604", op);
@@ -4629,15 +4230,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a RET operation
    * @param op Instruction
    */
-  private processRetInst (op: RetInstruction): void {
+  private processRetInst(op: RetInstruction): void {
     let condition: string;
     if (op.condition) {
       if (op.condition.operandType === OperandType.Condition) {
         condition = op.condition.register;
-      } else if (
-        op.condition.operandType === OperandType.Reg8 &&
-        op.condition.register === "c"
-      ) {
+      } else if (op.condition.operandType === OperandType.Reg8 && op.condition.register === "c") {
         condition = "c";
       } else {
         this.reportAssemblyError("Z0604", op);
@@ -4654,7 +4252,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an RST operation
    * @param op Instruction
    */
-  private processRstInst (op: RstInstruction): void {
+  private processRstInst(op: RstInstruction): void {
     if (op.target.operandType !== OperandType.Expression) {
       this.reportAssemblyError("Z0604", op);
       return;
@@ -4671,7 +4269,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an IM operation
    * @param op Instruction
    */
-  private processImInst (op: ImInstruction): void {
+  private processImInst(op: ImInstruction): void {
     if (op.mode.operandType !== OperandType.Expression) {
       this.reportAssemblyError("Z0604", op);
       return;
@@ -4688,7 +4286,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an EX operation
    * @param op Instruction
    */
-  private processExInst (op: ExInstruction): void {
+  private processExInst(op: ExInstruction): void {
     switch (op.operand1.operandType) {
       case OperandType.Reg16Spec:
         if (op.operand1.register === "af") {
@@ -4726,7 +4324,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an IN operation
    * @param op Instruction
    */
-  private processInInst (op: InInstruction): void {
+  private processInInst(op: InInstruction): void {
     switch (op.operand1.operandType) {
       case OperandType.CPort:
         if (op.operand2) {
@@ -4762,7 +4360,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an OUT operation
    * @param op Instruction
    */
-  private processOutInst (op: OutInstruction): void {
+  private processOutInst(op: OutInstruction): void {
     switch (op.operand1.operandType) {
       case OperandType.MemIndirect:
         if (!op.operand2) {
@@ -4801,7 +4399,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    * @param opByte Operation base value
    */
-  private processBitInst (
+  private processBitInst(
     op: BitInstruction | ResInstruction | SetInstruction,
     opByte: number
   ): void {
@@ -4857,7 +4455,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an RLC/RRC/RL/RR/SLA/SRA/SLL/SRL operation
    * @param op Instruction
    */
-  private processShiftRotateInst (op: ShiftRotateInstruction): void {
+  private processShiftRotateInst(op: ShiftRotateInstruction): void {
     let opCode = 8 * shiftOpOrder[op.type];
     let error = false;
     switch (op.operand1.operandType) {
@@ -4910,12 +4508,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an INC/DEC operation
    * @param op Instruction
    */
-  private processIncDecInst (op: IncInstruction | DecInstruction): void {
+  private processIncDecInst(op: IncInstruction | DecInstruction): void {
     switch (op.operand.operandType) {
       case OperandType.Reg8:
         this.emitOpCode(
-          (op.type === "IncInstruction" ? 0x04 : 0x05) +
-            8 * reg8Order[op.operand.register]
+          (op.type === "IncInstruction" ? 0x04 : 0x05) + 8 * reg8Order[op.operand.register]
         );
         return;
       case OperandType.Reg8Idx:
@@ -4948,9 +4545,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a ADD/ADC/SBC operation
    * @param op Instruction
    */
-  private processAlu1Inst (
-    op: AddInstruction | AdcInstruction | SbcInstruction
-  ): void {
+  private processAlu1Inst(op: AddInstruction | AdcInstruction | SbcInstruction): void {
     if (!op.operand2) {
       op.operand2 = op.operand1;
       op.operand1 = {
@@ -4968,9 +4563,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         }
         switch (op.operand2.operandType) {
           case OperandType.Reg8:
-            this.emitOpCode(
-              0x80 + aluIdx * 8 + reg8Order[op.operand2.register]
-            );
+            this.emitOpCode(0x80 + aluIdx * 8 + reg8Order[op.operand2.register]);
             return;
           case OperandType.RegIndirect:
             if (op.operand2.register !== "hl") {
@@ -4980,9 +4573,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             return;
           case OperandType.Reg8Idx:
             this.emitByte(op.operand2.register.indexOf("x") >= 0 ? 0xdd : 0xfd);
-            this.emitByte(
-              aluIdx * 8 + (op.operand2.register.endsWith("h") ? 0x84 : 0x85)
-            );
+            this.emitByte(aluIdx * 8 + (op.operand2.register.endsWith("h") ? 0x84 : 0x85));
             return;
           case OperandType.IndexedIndirect:
             this.emitIndexedOperation(
@@ -5076,13 +4667,8 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a SUB/AND/XOR/OR/CP operation
    * @param op Instruction
    */
-  private processAlu2Inst (
-    op:
-      | SubInstruction
-      | AndInstruction
-      | XorInstruction
-      | OrInstruction
-      | CpInstruction
+  private processAlu2Inst(
+    op: SubInstruction | AndInstruction | XorInstruction | OrInstruction | CpInstruction
   ): void {
     let operand = op.operand1;
     let opType = op.operand1.operandType;
@@ -5119,11 +4705,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.emitNumericExpr(op, operand.expr, FixupType.Bit8);
         return;
       case OperandType.IndexedIndirect:
-        this.emitIndexedOperation(
-          op as unknown as Z80AssemblyLine,
-          operand,
-          0x86 + aluIdx * 8
-        );
+        this.emitIndexedOperation(op as unknown as Z80AssemblyLine, operand, 0x86 + aluIdx * 8);
         return;
     }
     this.reportAssemblyError("Z0604", op);
@@ -5133,7 +4715,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes an LD operation
    * @param op Instruction
    */
-  private processLdInst (op: LdInstruction): void {
+  private processLdInst(op: LdInstruction): void {
     let issueWithOp1 = true;
     switch (op.operand1.operandType) {
       case OperandType.Reg8: {
@@ -5233,8 +4815,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
             case OperandType.Expression:
               this.emitOpCode(
-                (destReg.indexOf("x") >= 0 ? 0xdd26 : 0xfd26) +
-                  (destReg.endsWith("h") ? 0 : 8)
+                (destReg.indexOf("x") >= 0 ? 0xdd26 : 0xfd26) + (destReg.endsWith("h") ? 0 : 8)
               );
               this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
               return;
@@ -5381,11 +4962,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             );
             return;
           case OperandType.Expression:
-            this.emitIndexedOperation(
-              op as unknown as Z80AssemblyLine,
-              op.operand1,
-              0x36
-            );
+            this.emitIndexedOperation(op as unknown as Z80AssemblyLine, op.operand1, 0x36);
             this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
             return;
         }
@@ -5403,7 +4980,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Processes a TEST operation
    * @param op Instruction
    */
-  private processTestInst (op: TestInstruction): void {
+  private processTestInst(op: TestInstruction): void {
     if (this.invalidNextInst(op)) {
       return;
     }
@@ -5416,7 +4993,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * can be used only with the ZX Spectrum Next
    * @param op Instruction to test
    */
-  private invalidNextInst (op: Instruction): boolean {
+  private invalidNextInst(op: Instruction): boolean {
     if (this._output.modelType !== SpectrumModelType.Next) {
       this.reportAssemblyError("Z0414", op);
       return true;
@@ -5431,11 +5008,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param expr Expression to evaluate
    * @param type Expression/Fixup type
    */
-  private emitNumericExpr (
-    instr: Instruction,
-    expr: Expression,
-    type: FixupType
-  ): void {
+  private emitNumericExpr(instr: Instruction, expr: Expression, type: FixupType): void {
     const opLine = instr as unknown as Z80AssemblyLine;
     let value = this.evaluateExpr(expr);
     if (value.type === ExpressionValueType.Error) {
@@ -5466,11 +5039,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param target Target expression
    * @param opCode Operation code
    */
-  private emitJumpRelativeOp (
-    instr: Instruction,
-    target: Operand,
-    opCode: number
-  ) {
+  private emitJumpRelativeOp(instr: Instruction, target: Operand, opCode: number) {
     const opLine = instr as unknown as Z80AssemblyLine;
     if (target.operandType !== OperandType.Expression) {
       this.reportAssemblyError("Z0604", opLine);
@@ -5499,11 +5068,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param expr Displacement expression
    * @param opCode Operation code
    */
-  private emitIndexedOperation (
-    opLine: Z80AssemblyLine,
-    operand: Operand,
-    opCode: number
-  ): void {
+  private emitIndexedOperation(opLine: Z80AssemblyLine, operand: Operand, opCode: number): void {
     const idxByte = operand.register === "ix" ? 0xdd : 0xfd;
     let dispValue = 0x00;
     let evaluated = true;
@@ -5534,7 +5099,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param expr Displacement expression
    * @param opCode Operation code
    */
-  private emitIndexedBitOperation (
+  private emitIndexedBitOperation(
     opLine: Z80AssemblyLine,
     register: string,
     sign: string,
@@ -5568,7 +5133,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Emits a new byte to the current code segment
    * @param data Data byte to emit
    */
-  private emitByte (data: number): void {
+  private emitByte(data: number): void {
     this.ensureCodeSegment();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
@@ -5580,7 +5145,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Emits a new word to the current code segment
    * @param data Data byte to emit
    */
-  private emitWord (data: number): void {
+  private emitWord(data: number): void {
     this.emitByte(data & 0xff);
     this.emitByte((data >> 8) & 0xff);
   }
@@ -5589,7 +5154,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Emits a byte (high 8-bit value is zero)or a word
    * @param data byte or word data
    */
-  private emitOpCode (data: number): void {
+  private emitOpCode(data: number): void {
     const high = (data >> 8) & 0xff;
     if (high) {
       this.emitByte(high);
@@ -5603,7 +5168,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param nullTerminator Null terminator flag
    * @param emitAction Action to emit a code byte
    */
-  private emitString (
+  private emitString(
     message: IExpressionValue,
     bit7Terminator: boolean,
     nullTerminator: boolean,
@@ -5616,15 +5181,14 @@ export class Z80Assembler extends ExpressionEvaluator {
         emit(bytes.charCodeAt(i));
       }
     }
-    var lastByte =
-      bytes.charCodeAt(bytes.length - 1) | (bit7Terminator ? 0x80 : 0x00);
+    var lastByte = bytes.charCodeAt(bytes.length - 1) | (bit7Terminator ? 0x80 : 0x00);
     emit(lastByte);
     if (nullTerminator) {
       emit(0x00);
     }
 
     // --- Emits a byte
-    function emit (value: number) {
+    function emit(value: number) {
       if (emitAction) {
         const emitter = emitAction.bind(assembler);
         emitter(value);
@@ -5646,7 +5210,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param structBytes Optional structure bytes
    * @param offset Fixup offset, if not the current position
    */
-  private recordFixup (
+  private recordFixup(
     opLine: Z80AssemblyLine,
     type: FixupType,
     expr: Expression,
@@ -5699,7 +5263,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param numericOnly Signs if only numeric expressions are expected
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
-  private evaluateFixupExpression (
+  private evaluateFixupExpression(
     fixup: FixupEntry,
     numericOnly: boolean,
     signNotEvaluable: boolean
@@ -5735,31 +5299,19 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param symbols Symbols in the scope
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
-  private async fixupSymbols (
-    scope: ISymbolScope,
-    signNotEvaluable: boolean
-  ): Promise<boolean> {
+  private async fixupSymbols(scope: ISymbolScope, signNotEvaluable: boolean): Promise<boolean> {
     await this.allowEvents();
 
     // --- #1: fix the .equ values
     let success = true;
-    for (const equ of scope.fixups.filter(
-      f => f.type === FixupType.Equ && !f.resolved
-    )) {
-      const evalResult = this.evaluateFixupExpression(
-        equ,
-        false,
-        signNotEvaluable
-      );
+    for (const equ of scope.fixups.filter((f) => f.type === FixupType.Equ && !f.resolved)) {
+      const evalResult = this.evaluateFixupExpression(equ, false, signNotEvaluable);
       if (evalResult.success) {
         const symbolInfo = scope.getSymbol(equ.label);
         if (symbolInfo) {
           symbolInfo.value = evalResult.value;
         } else {
-          scope.addSymbol(
-            equ.label,
-            AssemblySymbolInfo.createLabel(equ.label, evalResult.value)
-          );
+          scope.addSymbol(equ.label, AssemblySymbolInfo.createLabel(equ.label, evalResult.value));
         }
       } else {
         success = false;
@@ -5768,7 +5320,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- #2: fix Bit8, Bit16, Jr, Ent, Xent
     for (const fixup of scope.fixups.filter(
-      f =>
+      (f) =>
         !f.resolved &&
         (f.type === FixupType.Bit8 ||
           f.type === FixupType.Bit16 ||
@@ -5776,11 +5328,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           f.type === FixupType.Ent ||
           f.type === FixupType.Xent)
     )) {
-      const evalResult = this.evaluateFixupExpression(
-        fixup,
-        true,
-        signNotEvaluable
-      );
+      const evalResult = this.evaluateFixupExpression(fixup, true, signNotEvaluable);
 
       if (evalResult.success) {
         const segment = this._output.segments[fixup.segmentIndex];
@@ -5827,9 +5375,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- #3: fix Struct
-    for (const fixup of scope.fixups.filter(
-      f => !f.resolved && f.type === FixupType.Struct
-    )) {
+    for (const fixup of scope.fixups.filter((f) => !f.resolved && f.type === FixupType.Struct)) {
       const segment = this._output.segments[fixup.segmentIndex];
       const emittedCode = segment.emittedCode;
 
@@ -5843,15 +5389,9 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- #4: fix FieldBit8, and FieldBit16
     for (const fixup of scope.fixups.filter(
-      f =>
-        !f.resolved &&
-        (f.type === FixupType.FieldBit8 || f.type === FixupType.FieldBit16)
+      (f) => !f.resolved && (f.type === FixupType.FieldBit8 || f.type === FixupType.FieldBit16)
     )) {
-      const evalResult = this.evaluateFixupExpression(
-        fixup,
-        true,
-        signNotEvaluable
-      );
+      const evalResult = this.evaluateFixupExpression(fixup, true, signNotEvaluable);
       if (evalResult.success) {
         var segment = this._output.segments[fixup.segmentIndex];
         var emittedCode = segment.emittedCode;
@@ -5876,7 +5416,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Checks if there's a temporary scope, and dispoese it after a fixup.
    */
-  private async fixupTemporaryScope (): Promise<void> {
+  private async fixupTemporaryScope(): Promise<void> {
     if (this._currentModule.localScopes.length === 0) {
       return;
     }
@@ -5895,10 +5435,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * the error occurred
    * @param error The error raised by the parser
    */
-  private reportParserError (
-    sourceItem: SourceFileItem,
-    error: ParserErrorMessage
-  ): void {
+  private reportParserError(sourceItem: SourceFileItem, error: ParserErrorMessage): void {
     const errorInfo = new AssemblerErrorInfo(
       error.code,
       sourceItem.filename.replace(/\\/g, "/"),
@@ -5916,7 +5453,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Reports macro invocation errors
    */
-  private reportMacroInvocationErrors (): void {
+  private reportMacroInvocationErrors(): void {
     // --- Report macro invocation errors
     for (let i = this._macroInvocations.length - 1; i >= 0; i--) {
       const errorLine = this._macroInvocations[i] as unknown as Z80AssemblyLine;
@@ -5941,7 +5478,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param sourceLine Assembly line of the error
    * @param parameters Optional parameters to report
    */
-  private reportAssemblyError (
+  private reportAssemblyError(
     code: ErrorCodes,
     sourceLine: PartialZ80AssemblyLine,
     nodePosition?: NodePosition | null,
@@ -5964,18 +5501,13 @@ export class Z80Assembler extends ExpressionEvaluator {
     let errorText: string = errorMessages[code] ?? "Unkonwn error";
     if (parameters) {
       parameters.forEach(
-        (o, idx) =>
-          (errorText = replace(
-            errorText,
-            `{${idx}}`,
-            parameters[idx].toString()
-          ))
+        (_, idx) => (errorText = replace(errorText, `{${idx}}`, parameters[idx].toString()))
       );
     }
 
     if (this._macroInvocations.length > 0) {
       const lines = this._macroInvocations
-        .map(mi => (mi as unknown as Z80AssemblyLine).line)
+        .map((mi) => (mi as unknown as Z80AssemblyLine).line)
         .join(", ");
       errorText = `(from macro invocation through ${lines})` + errorText;
     }
@@ -5993,11 +5525,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     this._output.errors.push(errorInfo);
     this.reportScopeError(code);
 
-    function replace (
-      input: string,
-      placeholder: string,
-      replacement: string
-    ): string {
+    function replace(input: string, placeholder: string, replacement: string): string {
       do {
         input = input.replace(placeholder, replacement);
       } while (input.includes(placeholder));
@@ -6009,14 +5537,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Administer the error in the local scope
    * @param errorCode
    */
-  private reportScopeError (errorCode: ErrorCodes): void {
+  private reportScopeError(errorCode: ErrorCodes): void {
     if (this._output.localScopes.length === 0) {
       // --- No local scopes, no administration
       return;
     }
 
-    let localScope =
-      this._output.localScopes[this._output.localScopes.length - 1];
+    let localScope = this._output.localScopes[this._output.localScopes.length - 1];
     if (localScope.ownerScope) {
       localScope = localScope.ownerScope;
     }
@@ -6028,7 +5555,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param code Checks if the specified error should be reported
    * in the local scope
    */
-  private shouldReportErrorInCurrentScope (code: ErrorCodes): boolean {
+  private shouldReportErrorInCurrentScope(code: ErrorCodes): boolean {
     if (this.isInGlobalScope) {
       return true;
     }
@@ -6040,7 +5567,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   }
 }
 
-function toPosition (token: Token): NodePosition {
+function toPosition(token: Token): NodePosition {
   return {
     line: token.location.line,
     startPosition: token.location.startPos,
@@ -6286,7 +5813,7 @@ const reg16Order: { [key: string]: number } = {
  * Is the line a byte-emitting pragma?
  * @param asmLine Assembly line to test
  */
-function isByteEmittingPragma (asmLine: Z80AssemblyLine): boolean {
+function isByteEmittingPragma(asmLine: Z80AssemblyLine): boolean {
   switch (asmLine.type) {
     case "DefBPragma":
     case "DefWPragma":

@@ -25,8 +25,6 @@ const ATTR_CUR = 0x38;
  * This class implements the Cambridge Z88 screen device.
  */
 export class Z88ScreenDevice implements IZ88ScreenDevice {
-  private _defaultSCW = 0;
-  private _defaultSCH = 0;
   private _ctrlCharsPerRow = 0;
   private _textFlashCount = 0;
   private _textFlashPhase = false;

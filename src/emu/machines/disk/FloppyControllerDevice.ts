@@ -2128,10 +2128,6 @@ export const SR3_RD = 0x20;
 // --- This bit is used to indicate the status of the write protected signal from the FDD.
 export const SR3_WP = 0x40;
 
-// --- Percentage of motor speed increment in a single complete frame
-const MOTOR_SPEED_INCREMENT = 2;
-const MOTOR_SPEED_DECREMENT = 2;
-
 // --- Maximum log entries preserved
 const MAX_LOG_ENTRIES = 10240;
 

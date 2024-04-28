@@ -25,7 +25,6 @@ import {
   concludeScript,
   sendScriptOutput
 } from "../../common/ksx/script-runner";
-import { Z88DK } from "../../script-packages/z88dk/Z88DK";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 
@@ -253,6 +252,7 @@ class MainScriptManager implements IScriptManager {
     await this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     script.evalContext?.cancellationToken?.cancel();
     await script.execTask;
+    return true;
   }
 
   /**
@@ -430,7 +430,7 @@ class MainScriptManager implements IScriptManager {
    */
   private async prepareAppContext (): Promise<Record<string, any>> {
     return {
-      Output: createScriptConsole(mainStore, getMainToIdeMessenger(), this.id),
+      Output: createScriptConsole(getMainToIdeMessenger(), this.id),
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
     };
@@ -461,4 +461,3 @@ export const mainScriptManager = new MainScriptManager();
 // --- Register the standard packages
 mainScriptManager.registerPackage("fs", fs);
 mainScriptManager.registerPackage("path", path);
-mainScriptManager.registerPackage("Z88Dk", Z88DK);

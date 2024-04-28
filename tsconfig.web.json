@@ -12,6 +12,8 @@
     "src/emu/**/*"],
   "compilerOptions": {
     "composite": true,
+    "strictNullChecks": false,
+    "strict":false,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {

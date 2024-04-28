@@ -28,10 +28,10 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
 
   /**
    * Sets a TBBlue register value
-   * @param address Register address
-   * @param value Register value;
+   * @param _address Register address
+   * @param _value Register value;
    */
-  tbblueOut (address: number, value: number): void {
+  tbblueOut (_address: number, _value: number): void {
     // --- Override this method in derived classes
     this.tactPlusN(6);
   }

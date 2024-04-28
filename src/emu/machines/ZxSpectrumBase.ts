@@ -537,10 +537,10 @@ export abstract class ZxSpectrumBase
 
   /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
-   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (clockMultiplierChanged: boolean): void {
+  onInitNewFrame (_clockMultiplierChanged: boolean): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 

@@ -66,7 +66,7 @@ export class EmuScriptRunner {
       store: this.store,
       cancellationToken,
       appContext: {
-        Output: createScriptConsole(this.store, this.messenger, scriptId)
+        Output: createScriptConsole(this.messenger, scriptId)
       }
     });
 
@@ -181,6 +181,7 @@ export class EmuScriptRunner {
     this.outputFn?.(`Stopping script ${script.scriptFileName}...`);
     scriptInfo?.evalContext?.cancellationToken?.cancel();
     await scriptInfo?.execTask;
+    return true;
   }
 
   // --- Resolves the script contents from the module's name

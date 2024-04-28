@@ -452,7 +452,7 @@ async function createAppWindows () {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", async e => {
+  emuWindow.on("close", async _e => {
     if (emuWindow?.webContents) {
       appSettings.windowStates ??= {};
       appSettings.windowStates.emuZoomFactor =
@@ -482,7 +482,7 @@ app.whenReady().then(() => {
 });
 
 // --- When the user is about to quit the app, allow closing the IDE window
-app.on("before-quit", e => {
+app.on("before-quit", _e => {
   ideWindowStateSaved = true;
   saveAppSettings();
 });

@@ -1,12 +1,9 @@
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { IdeScriptOutputRequest } from "../../common/messaging/any-to-ide";
-import { AppState } from "../../common/state/AppState";
-import { Store } from "../../common/state/redux-light";
 
 class ScriptConsole {
   // --- The store is used to dispatch actions
   constructor (
-    private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
     private readonly id: number
   ) {}
@@ -211,7 +208,7 @@ function safeStringify (obj: any, indent = 2) {
   let refIndex = 1;
   const retVal = JSON.stringify(
     obj,
-    (key, value) =>
+    (_, value) =>
       typeof value === "object" && value !== null && value !== undefined
         ? cache.has(value)
           ? `$ref-${cache.get(value)}`
@@ -224,7 +221,6 @@ function safeStringify (obj: any, indent = 2) {
 }
 
 export const createScriptConsole = (
-  store: Store<AppState>,
   messenger: MessengerBase,
   id: number
-) => new ScriptConsole(store, messenger, id);
+) => new ScriptConsole(messenger, id);
