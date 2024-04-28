@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - ld operations", async () => {

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { AssignmentExpression, BinaryExpression } from "@common/ksx/source-tree";
 

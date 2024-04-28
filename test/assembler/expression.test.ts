@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it} from "vitest";
 import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
 import { ExpressionValue } from "@main/z80-compiler/expressions";
 import { expressionFails, testExpression } from "./test-helpers";

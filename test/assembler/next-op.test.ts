@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - NEXT operations", async () => {
@@ -60,10 +60,7 @@ describe("Assembler - NEXT operations", async () => {
   });
 });
 
-async function testNextCodeEmit (
-  op: string,
-  ...expected: number[]
-): Promise<void> {
+async function testNextCodeEmit(op: string, ...expected: number[]): Promise<void> {
   await testCodeEmit(
     `
       .model next

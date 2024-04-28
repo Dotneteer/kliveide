@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import assert from "assert";
 import { Parser } from "@common/ksx/Parser";
 import {
@@ -75,7 +74,7 @@ describe("KSX Parser - arrow expressions", () => {
     "(!a) => 2*v",
     "((a)) => 2*v"
   ];
-  invalidLeftCases.forEach(c => {
+  invalidLeftCases.forEach((c) => {
     it(`Invalid param: '${c}' `, () => {
       // --- Arrange
       const wParser = new Parser(c);
@@ -272,12 +271,8 @@ describe("KSX Parser - arrow expressions", () => {
     expect(expr.type).toEqual("ArrowExpression");
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(1);
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual(
-      "x"
-    );
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].id).toEqual(
-      "y"
-    );
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual("x");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].id).toEqual("y");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);
   });
@@ -296,15 +291,9 @@ describe("KSX Parser - arrow expressions", () => {
     expect(expr.type).toEqual("ArrowExpression");
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(1);
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual(
-      "x"
-    );
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].id).toEqual(
-      "y"
-    );
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].alias).toEqual(
-      "q"
-    );
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual("x");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].id).toEqual("y");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].alias).toEqual("q");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);
   });
@@ -323,15 +312,9 @@ describe("KSX Parser - arrow expressions", () => {
     expect(expr.type).toEqual("ArrowExpression");
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(1);
-    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual(
-      "x"
-    );
-    expect(
-      (arrowExpr.args[0] as Destructure).objectDestruct[1].objectDestruct[0].id
-    ).toEqual("v");
-    expect(
-      (arrowExpr.args[0] as Destructure).objectDestruct[1].objectDestruct[1].id
-    ).toEqual("w");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[0].id).toEqual("x");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].objectDestruct[0].id).toEqual("v");
+    expect((arrowExpr.args[0] as Destructure).objectDestruct[1].objectDestruct[1].id).toEqual("w");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);
   });
@@ -371,9 +354,7 @@ describe("KSX Parser - arrow expressions", () => {
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(1);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[0].id).toEqual("x");
-    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(
-      undefined
-    );
+    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(undefined);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[2].id).toEqual("y");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);
@@ -394,19 +375,11 @@ describe("KSX Parser - arrow expressions", () => {
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(2);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[0].id).toEqual("a");
-    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(
-      undefined
-    );
+    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(undefined);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[2].id).toEqual("b");
-    expect((arrowExpr.args[1] as Destructure).objectDestruct[0].id).toEqual(
-      "c"
-    );
-    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].id).toEqual(
-      "y"
-    );
-    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].alias).toEqual(
-      "d"
-    );
+    expect((arrowExpr.args[1] as Destructure).objectDestruct[0].id).toEqual("c");
+    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].id).toEqual("y");
+    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].alias).toEqual("d");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);
   });
@@ -426,16 +399,10 @@ describe("KSX Parser - arrow expressions", () => {
     const arrowExpr = expr as ArrowExpression;
     expect(arrowExpr.args.length).toEqual(3);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[0].id).toEqual("a");
-    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(
-      undefined
-    );
+    expect((arrowExpr.args[0] as Destructure).arrayDestruct[1].id).toEqual(undefined);
     expect((arrowExpr.args[0] as Destructure).arrayDestruct[2].id).toEqual("b");
-    expect((arrowExpr.args[1] as Destructure).objectDestruct[0].id).toEqual(
-      "c"
-    );
-    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].id).toEqual(
-      "y"
-    );
+    expect((arrowExpr.args[1] as Destructure).objectDestruct[0].id).toEqual("c");
+    expect((arrowExpr.args[1] as Destructure).objectDestruct[1].id).toEqual("y");
     expect((arrowExpr.args[2] as Identifier).name).toEqual("e");
     expect(arrowExpr.statement.type).toEqual("ExpressionStatement");
     expect(arrowExpr.source).toEqual(source);

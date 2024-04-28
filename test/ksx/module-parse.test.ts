@@ -1,11 +1,5 @@
-import "mocha";
-import { expect } from "expect";
-import {
-  KsxModule,
-  ModuleErrors,
-  isModuleErrors,
-  parseKsxModule
-} from "@common/ksx/ksx-module";
+import { describe, it, expect } from "vitest";
+import { KsxModule, ModuleErrors, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 
 const ROOT_MODULE = "test";
 
@@ -413,7 +407,6 @@ describe("KSX Parser - modules", () => {
     expect(result.exports["c"]).toBeDefined();
   });
 
-
   it("Parsing error", async () => {
     // --- Arrange
     const source = `const;`;
@@ -476,20 +469,17 @@ describe("KSX Parser - modules", () => {
     };
 
     // --- Act
-    const result = await parseModule(source, modules) as KsxModule;
+    const result = (await parseModule(source, modules)) as KsxModule;
 
     // --- Assert
     expect(!isModuleErrors(result)).toBe(true);
     expect(result.name).toBe(ROOT_MODULE);
     expect(result.importedModules.length).toBe(1);
-    expect(result.importedModules.some(mod => mod.name === "module1")).toBe(true);
+    expect(result.importedModules.some((mod) => mod.name === "module1")).toBe(true);
   });
 });
 
-async function parseModule (
-  source: string,
-  modules: Record<string, string> = {}
-) {
+async function parseModule(source: string, modules: Record<string, string> = {}) {
   return await parseKsxModule(
     ROOT_MODULE,
     source,

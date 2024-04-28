@@ -1,25 +1,26 @@
+import { describe, it } from "vitest";
 import { TokenType } from "@appIde/services/command-parser";
 import { testToken } from "./token-stream-helper";
 
 describe("Command parser - tokens", () => {
   it("String literal #1", () => {
     const literals = [
-      '',
-      'a',
-      'abcd',
-      '\\b',
-      '\\f',
-      '\\n',
-      '\\r',
-      '\\t',
-      '\\v',
-      '\\0',
-      '\\\'',
+      "",
+      "a",
+      "abcd",
+      "\\b",
+      "\\f",
+      "\\n",
+      "\\r",
+      "\\t",
+      "\\v",
+      "\\0",
+      "\\'",
       '\\"',
-      '\\\\',
-      '\\x01',
-      '\\xa1',
-      '\\xBC',
+      "\\\\",
+      "\\x01",
+      "\\xa1",
+      "\\xBC"
     ];
 
     for (const l of literals) {

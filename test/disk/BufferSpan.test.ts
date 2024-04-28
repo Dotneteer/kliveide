@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { BufferSpan } from "@emu/machines/disk/BufferSpan";
 
 describe("BufferSpan", () => {

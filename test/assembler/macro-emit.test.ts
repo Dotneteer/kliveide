@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - macro emit", async () => {
@@ -1272,7 +1272,7 @@ describe("Assembler - macro emit", async () => {
     { expr: "2", expected: 0x0c },
     { expr: "123", expected: 0x14 }
   ];
-  trueConditions.forEach(tc => {
+  trueConditions.forEach((tc) => {
     it(`macro if true conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1299,7 +1299,7 @@ describe("Assembler - macro emit", async () => {
     { expr: "2", expected: 0x05 },
     { expr: "123", expected: 0x06 }
   ];
-  equConditions.forEach(tc => {
+  equConditions.forEach((tc) => {
     it(`macro if equ conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1321,7 +1321,7 @@ describe("Assembler - macro emit", async () => {
     });
   });
 
-  equConditions.forEach(tc => {
+  equConditions.forEach((tc) => {
     it(`macro if var conditions: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1350,7 +1350,7 @@ describe("Assembler - macro emit", async () => {
     { expr: "2", expected: 0x0c },
     { expr: "123", expected: 0x14 }
   ];
-  labelConditions.forEach(tc => {
+  labelConditions.forEach((tc) => {
     it(`macro if branch: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1379,7 +1379,7 @@ describe("Assembler - macro emit", async () => {
     });
   });
 
-  labelConditions.forEach(tc => {
+  labelConditions.forEach((tc) => {
     it(`macro if branch with hanging labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1412,7 +1412,7 @@ describe("Assembler - macro emit", async () => {
     });
   });
 
-  labelConditions.forEach(tc => {
+  labelConditions.forEach((tc) => {
     it(`macro if branch with middle labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1441,7 +1441,7 @@ describe("Assembler - macro emit", async () => {
     });
   });
 
-  labelConditions.forEach(tc => {
+  labelConditions.forEach((tc) => {
     it(`macro if branch with end labels: ${tc.expr}`, async () => {
       const source = `
       Simple: .macro()
@@ -1518,7 +1518,7 @@ describe("Assembler - macro emit", async () => {
     { row: 123, col: 1, expected: 0x0a },
     { row: 123, col: 123, expected: 0x0b }
   ];
-  nestedConditions.forEach(tc => {
+  nestedConditions.forEach((tc) => {
     it(`macro nested if branches: ${tc.row}/${tc.col}`, async () => {
       const source = `
       Simple: .macro()

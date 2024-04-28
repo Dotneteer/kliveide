@@ -1,10 +1,6 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
-import {
-  codeRaisesErrorWithOptions,
-  testCodeEmit,
-  testCodeEmitWithOptions
-} from "./test-helpers";
+import { codeRaisesErrorWithOptions, testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
 
 describe("Assembler - labels", async () => {
   it("hanging label", async () => {

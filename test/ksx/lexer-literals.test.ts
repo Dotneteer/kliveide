@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { TokenType } from "@common/ksx/TokenType";
 import { Lexer } from "@common/ksx/Lexer";
 import { InputStream } from "@common/ksx/InputStream";
@@ -76,7 +75,7 @@ describe("KSX Lexer - literal", () => {
     { src: "true", exp: TokenType.True },
     { src: "false", exp: TokenType.False }
   ];
-  literalCases.forEach(c => {
+  literalCases.forEach((c) => {
     it(`Token ${c.src} #1`, () => {
       const source = c.src;
       const wLexer = new Lexer(new InputStream(source));
@@ -198,7 +197,7 @@ describe("KSX Lexer - literal", () => {
     '"\u2028"',
     '"\u2029"'
   ];
-  errorCases.forEach(c => {
+  errorCases.forEach((c) => {
     it(`Token error ${c} #1`, () => {
       const wLexer = new Lexer(new InputStream(c));
 

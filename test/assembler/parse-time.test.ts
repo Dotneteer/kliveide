@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 
 describe("Assembler - parse-time function emit", async () => {

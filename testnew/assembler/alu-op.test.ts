@@ -1,4 +1,4 @@
-import { describe, it} from "vitest";
+import { describe, it } from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - alu operations", async () => {

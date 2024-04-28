@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
 import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
 import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
@@ -10,7 +9,7 @@ describe("Assembler - literals", async () => {
     { source: "12345", value: 12345 },
     { source: "99999", value: 34463 }
   ];
-  decimalLiterals.forEach(lit => {
+  decimalLiterals.forEach((lit) => {
     it(`Decimal literal ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
@@ -26,7 +25,7 @@ describe("Assembler - literals", async () => {
     { source: "0F78Ah", value: 0xf78a },
     { source: "78AFh", value: 0x78af }
   ];
-  hexadecimalLiterals.forEach(lit => {
+  hexadecimalLiterals.forEach((lit) => {
     it(`Hexadecimal literal ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
@@ -40,7 +39,7 @@ describe("Assembler - literals", async () => {
     { source: "%1010_1010", value: 0xaa },
     { source: "%101_010_100_101_0101", value: 0xaa55 }
   ];
-  binaryLiterals.forEach(lit => {
+  binaryLiterals.forEach((lit) => {
     it(`Binary literal ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
@@ -52,7 +51,7 @@ describe("Assembler - literals", async () => {
     { source: "77777q", value: 32767 },
     { source: "111111Q", value: 37449 }
   ];
-  octalLiterals.forEach(lit => {
+  octalLiterals.forEach((lit) => {
     it(`Octal literal ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
@@ -70,14 +69,14 @@ describe("Assembler - literals", async () => {
     { source: "3e-8", value: 0 },
     { source: "3e-188888", value: 0 }
   ];
-  realLiterals.forEach(lit => {
+  realLiterals.forEach((lit) => {
     it(`Real literal ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
   });
 });
 
-async function testExpression (
+async function testExpression(
   source: string,
   value: number | boolean | string | null,
   symbols?: SymbolValueMap

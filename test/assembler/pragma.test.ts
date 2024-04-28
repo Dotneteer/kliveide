@@ -1,11 +1,5 @@
-import "mocha";
-import { expect } from "expect";
-
-import {
-  testCodeEmit,
-  codeRaisesError,
-  testFlexibleCodeEmit
-} from "./test-helpers";
+import { describe, it, expect } from "vitest";
+import { testCodeEmit, codeRaisesError, testFlexibleCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
 
 describe("Assembler - pragmas", async () => {
@@ -73,9 +67,7 @@ describe("Assembler - pragmas", async () => {
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
-    expect(
-      output.getSymbol("__LABEL__.ZXBASIC_USER_DATA_LEN").value.value
-    ).toBe(200);
+    expect(output.getSymbol("__LABEL__.ZXBASIC_USER_DATA_LEN").value.value).toBe(200);
   });
 
   it("equ - fails with duplicated labed", async () => {
@@ -180,7 +172,6 @@ describe("Assembler - pragmas", async () => {
     expect(output.segments[1].emittedCode[1]).toBe(0x02);
     expect(output.segments[1].emittedCode[2]).toBe(0x03);
   });
-
 
   it("bank - new segment #1", async () => {
     const compiler = new Z80Assembler();
@@ -951,7 +942,7 @@ describe("Assembler - pragmas", async () => {
   });
 
   const varPragmas = [".var", "=", ":="];
-  varPragmas.forEach(varPragma => {
+  varPragmas.forEach((varPragma) => {
     it(`var - initial definition (${varPragma})`, async () => {
       const compiler = new Z80Assembler();
       const source = `
@@ -1070,17 +1061,7 @@ describe("Assembler - pragmas", async () => {
 
   it("defw - immediate evaluation", async () => {
     const source = `.defw #A001, #2345, #AE12, 122`;
-    await await testCodeEmit(
-      source,
-      0x01,
-      0xa0,
-      0x45,
-      0x23,
-      0x12,
-      0xae,
-      122,
-      0
-    );
+    await await testCodeEmit(source, 0x01, 0xa0, 0x45, 0x23, 0x12, 0xae, 122, 0);
   });
 
   it("defw - fails with string", async () => {
@@ -1133,17 +1114,7 @@ describe("Assembler - pragmas", async () => {
 
   it("defn - immediate evaluation", async () => {
     const source = `.defn "\\x12\\i\\Iabc\\P"`;
-    await await testCodeEmit(
-      source,
-      0x12,
-      0x10,
-      0x14,
-      0x61,
-      0x62,
-      0x63,
-      0x60,
-      0x00
-    );
+    await await testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60, 0x00);
   });
 
   it("defn - fails with non-string", async () => {
@@ -1370,7 +1341,7 @@ describe("Assembler - pragmas", async () => {
     { source: ".tracehex #1000*#1000", expected: "01000000" },
     { source: '.tracehex "Hello"', expected: "48656c6c6f" }
   ];
-  traceCases.forEach(tc => {
+  traceCases.forEach((tc) => {
     it(`trace: ${tc.source}`, async () => {
       const compiler = new Z80Assembler();
       let messageReceived = "";
@@ -1392,7 +1363,7 @@ describe("Assembler - pragmas", async () => {
     { source: ".error 123", expected: "ERROR: 123" },
     { source: ".error 123.5+1", expected: "ERROR: 124.5" }
   ];
-  errorCases.forEach(ec => {
+  errorCases.forEach((ec) => {
     it(`error: ${ec.source}`, async () => {
       const compiler = new Z80Assembler();
       const output = await compiler.compile(ec.source);
@@ -1439,7 +1410,7 @@ describe("Assembler - pragmas", async () => {
       expected: [0x0f, 0x3c]
     }
   ];
-  dgCases.forEach(dgc =>
+  dgCases.forEach((dgc) =>
     it(`.defg: ${dgc.source}`, async () => {
       await await testCodeEmit(dgc.source, ...dgc.expected);
     })
@@ -1470,7 +1441,7 @@ describe("Assembler - pragmas", async () => {
     { source: '.dgx ">....O OOO..OOO"', expected: [0x01, 0xe7] },
     { source: '.dgx ">....OO OO..OOOO"', expected: [0x03, 0xcf] }
   ];
-  dgxCases.forEach(dgxc =>
+  dgxCases.forEach((dgxc) =>
     it(`.defg: ${dgxc.source}`, async () => {
       await await testCodeEmit(dgxc.source, ...dgxc.expected);
     })

@@ -1,6 +1,4 @@
-import "mocha";
-import { expect } from "expect";
-
+import { describe, it, expect } from "vitest";
 import {
   codeRaisesError,
   codeRaisesErrorWithOptions,
@@ -185,7 +183,7 @@ describe("Assembler - struct definition", () => {
     '.defgx "....OOOO"',
     '.defg "....OOOO"'
   ];
-  validCases.forEach(vc => {
+  validCases.forEach((vc) => {
     it(`struct: ${vc}`, async () => {
       const compiler = new Z80Assembler();
       const source = `

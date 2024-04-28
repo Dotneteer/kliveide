@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 
 describe("Assembler - simple instructions", () => {
@@ -39,7 +39,7 @@ describe("Assembler - simple instructions", () => {
     { source: "indr", emit: 0xedba },
     { source: "otdr", emit: 0xedbb }
   ];
-  instructions.forEach(inst => {
+  instructions.forEach((inst) => {
     it(inst.source, async () => {
       const high = inst.emit >> 8;
       const low = inst.emit & 0xff;
@@ -69,7 +69,7 @@ describe("Assembler - simple instructions", () => {
     { source: "setae", emit: 0xed95 },
     { source: "stae", emit: 0xed95 }
   ];
-  nextInstructions.forEach(inst => {
+  nextInstructions.forEach((inst) => {
     it(inst.source, async () => {
       const high = inst.emit >> 8;
       const low = inst.emit & 0xff;

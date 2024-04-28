@@ -36,6 +36,7 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "dev:el": "electron-vite dev",
     "build:el": "npm run typecheck && electron-vite build",
+    "test": "vitest run",
     "doc:dev": "next",
     "doc:build": "next build",
     "doc:start": "next start",
@@ -76,6 +77,7 @@
     "vite": "^5.2.10",
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron-renderer": "^0.14.5",
+    "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^1.5.2"
   },
   "debug": {

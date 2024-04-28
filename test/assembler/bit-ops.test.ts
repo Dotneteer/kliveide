@@ -1,9 +1,7 @@
-import "mocha";
+import { describe, it} from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - bit operations", function () {
-  this.timeout(20_000);
-
   it("bit", async () => {
     await testCodeEmit("bit 0,b", 0xcb, 0x40);
     await testCodeEmit("bit 0,c", 0xcb, 0x41);

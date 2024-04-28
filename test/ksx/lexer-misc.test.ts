@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Lexer } from "@common/ksx/Lexer";
 import { InputStream } from "@common/ksx/InputStream";
 import { TokenType } from "@common/ksx/TokenType";
@@ -117,9 +116,9 @@ describe("KSX Lexer - miscellaneous", () => {
     { src: "export", exp: TokenType.Export },
     { src: "import", exp: TokenType.Import },
     { src: "as", exp: TokenType.As },
-    { src: "from", exp: TokenType.From },
+    { src: "from", exp: TokenType.From }
   ];
-  miscCases.forEach(c => {
+  miscCases.forEach((c) => {
     it(`Token ${c.src} #1`, () => {
       const source = c.src;
       const wLexer = new Lexer(new InputStream(source));

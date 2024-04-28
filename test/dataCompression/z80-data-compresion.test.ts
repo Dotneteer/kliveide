@@ -1,8 +1,5 @@
-import "mocha";
-import * as fs from "fs";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
 
 describe(".z80 file data compression", () => {
   it("Data compression without end marker #1", () => {

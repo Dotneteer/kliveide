@@ -1,11 +1,5 @@
-import "mocha";
-import { expect } from "expect";
-import {
-  KsxModule,
-  executeModule,
-  isModuleErrors,
-  parseKsxModule
-} from "@common/ksx/ksx-module";
+import { describe, it, expect } from "vitest";
+import { KsxModule, executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 import {
   CancellationToken,
   EvaluationContext,
@@ -33,7 +27,7 @@ describe("KSX Execution - modules", () => {
     // --- Act
     const cancellationToken = new CancellationToken();
     const moduleTask = execModule(source, {}, cancellationToken);
-    const cancelPromise = new Promise(resolve =>
+    const cancelPromise = new Promise((resolve) =>
       setTimeout(() => {
         cancellationToken.cancel();
         resolve(true);
@@ -236,7 +230,7 @@ describe("KSX Execution - modules", () => {
       helper: `
         import { factor } from "math";
         export const other = 4;
-      `,
+      `
     };
 
     // --- Act
@@ -248,10 +242,9 @@ describe("KSX Execution - modules", () => {
     expect(moduleVars.x).toBe(103);
     expect(exports.x).toBe(103);
   });
-
 });
 
-async function execModule (
+async function execModule(
   source: string,
   modules: Record<string, string> = {},
   cancellationToken?: CancellationToken
