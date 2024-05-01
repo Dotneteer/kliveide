@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 import { FSWatcher } from "original-fs";
 import { mainStore } from "./main-store";
 import { AppState } from "../common/state/AppState";

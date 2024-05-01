@@ -1,5 +1,3 @@
-import * as path from "path";
-
 import styles from "./ExplorerPanel.module.scss";
 import {
   useDispatch,
@@ -193,7 +191,7 @@ const ExplorerPanel = () => {
         }
         clicked={async () => {
           await ideCommandsService.executeCommand(
-            `p:x "${selectedContextNode.data.fullPath}"`
+            `p:x "${selectedContextNode.data.projectPath}"`
           );
         }}
       />
@@ -253,10 +251,7 @@ const ExplorerPanel = () => {
       oldPath={selectedContextNode?.data?.name}
       onRename={async (newName: string) => {
         // --- Start renaming the item
-        const newFullName = path.join(
-          getNodeDir(selectedContextNode.data.fullPath),
-          newName
-        );
+        const newFullName = `${getNodeDir(selectedContextNode.data.fullPath)}/${newName}`;
         await projectService.performAllDelayedSavesNow();
         const response = await messenger.sendMessage({
           type: "MainRenameFileEntry",

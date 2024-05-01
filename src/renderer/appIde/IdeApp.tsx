@@ -109,6 +109,7 @@ import {
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
 import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
+import { setIsWindows } from "@renderer/os-utils";
 
 const ipcRenderer = window.electron.ipcRenderer;
 
@@ -181,6 +182,9 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
+
+    // --- Set the OS flag
+    setIsWindows(!!store.getState()?.isWindows)
   }, [appServices, store, messenger]);
 
   useEffect(() => {

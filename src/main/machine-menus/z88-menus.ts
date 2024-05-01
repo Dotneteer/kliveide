@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 import { MachineMenuRenderer } from "../../common/machines/info-types";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";

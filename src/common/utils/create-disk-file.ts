@@ -1,7 +1,7 @@
 import { resolveHomeFilePath } from "../../main/projects";
 import { BinaryWriter } from "./BinaryWriter";
-import * as fs from "fs";
-import * as path from "path";
+import fs from "fs";
+import path from "path";
 
 const CPC_HEAD = "MV - CPCEMU Disk-File\r\nDisk-Info\r\n";
 const CPC_EXT_HEAD = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";

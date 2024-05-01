@@ -1,5 +1,5 @@
-import * as path from "path";
-import * as fs from "fs";
+import path from "path";
+import fs from "fs";
 import { mainStore } from "./main-store";
 import { BUILD_FILE } from "../common/structs/project-const";
 import { isModuleErrors, parseKsxModule } from "../common/ksx/ksx-module";

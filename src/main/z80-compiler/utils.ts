@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 
 /**
  * Converts a ZX Spectrum string to intrinsic string

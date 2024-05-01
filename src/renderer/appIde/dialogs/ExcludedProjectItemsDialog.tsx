@@ -1,5 +1,3 @@
-import * as path from "path";
-
 import styles from "./ExcludedProjectItemsDialog.module.scss";
 import { Modal } from "@controls/Modal";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +15,7 @@ import {
   excludedItemsFromGlobalSettingsAsync,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
+import { getNodeFile } from "../project/project-node";
 
 type Props = {
   onClose: () => void;
@@ -33,7 +32,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
 
   const project = store.getState().project;
   const [excludedItems, setExcludedItems] = useState(excludedItemsFromProject(project));
-  const projectName = useSelector(s => path.basename(s.project?.folderPath ?? "Unnamed"));
+  const projectName = useSelector(s => getNodeFile(s.project?.folderPath ?? "Unnamed"));
 
   const disp = useDispatch();
 

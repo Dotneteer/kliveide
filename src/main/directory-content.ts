@@ -1,5 +1,5 @@
-import * as path from "path";
-import * as fs from "fs";
+import path from "path";
+import fs from "fs";
 
 import { app } from "electron";
 import { ProjectNodeWithChildren } from "../renderer/appIde/project/project-node";
@@ -8,7 +8,6 @@ import {
 } from "./projects";
 import {
   appSettings,
-  saveAppSettings
 } from "./settings";
 import { pathStartsWith } from "../common/utils/path-utils";
 
@@ -44,7 +43,7 @@ export async function getDirectoryContent (
     const entry: ProjectNodeWithChildren = {
       isFolder: false,
       name,
-      fullPath: entryPath,
+      fullPath: entryPath.replace(/\\/g, "/"),
       projectPath: projectRelative,
       children: []
     };
@@ -80,12 +79,10 @@ export async function getDirectoryContent (
  */
 export async function getProjectDirectoryContentFilter(
 ): Promise<DirectoryContentFilter> {
-  const projPromise = getKliveProjectStructure();
   if (!appSettings.excludedProjectItems) {
     appSettings.excludedProjectItems = [ ".git" ];
-    saveAppSettings();
   }
-  const proj = await projPromise;
+  const proj = await getKliveProjectStructure();
   const ignored = appSettings.excludedProjectItems
     .concat(proj.ide.excludedProjectItems)
     .filter((value, index, array) => array.indexOf(value) === index)

@@ -46,6 +46,7 @@ import {
   setCachedMessenger,
   setCachedStore
 } from "@renderer/CachedServices";
+import { setIsWindows } from "@renderer/os-utils";
 
 const ipcRenderer = window.electron.ipcRenderer;
 
@@ -92,6 +93,9 @@ const EmuApp = () => {
       // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
       ctx?.close().catch(console.error);
     }
+
+    // --- Set OS information
+    setIsWindows(!!store.getState()?.isWindows)
   }, [appServices, store, messenger]);
 
   return (

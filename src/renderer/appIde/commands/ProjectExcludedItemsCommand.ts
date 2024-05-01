@@ -1,5 +1,3 @@
-import path from "path";
-
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import {
@@ -24,37 +22,29 @@ import {
 } from "@common/state/actions";
 import { saveProject } from "../utils/save-project";
 import { pathStartsWith } from "@common/utils/path-utils";
+import { getIsWindows } from "@renderer/os-utils";
 
 export class ProjectListExcludedItemsCommand extends IdeCommandBase {
   readonly id = "project:excluded-items";
-  readonly description =
-    "Lists the paths of items currently excluded from the project.";
+  readonly description = "Lists the paths of items currently excluded from the project.";
   readonly usage = "project:excluded-items [--global]";
-  readonly aliases = [
-    "project:list-excluded",
-    "proj:excluded-items",
-    "proj:list-excluded",
-    "p:lx"
-  ];
+  readonly aliases = ["project:list-excluded", "proj:excluded-items", "proj:list-excluded", "p:lx"];
 
   globalMode = false;
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length > 1) {
       return validationError("This command expects one argument at most.");
     }
-    this.globalMode =
-      args.length === 1 && context.argTokens.some(t => t.text === "--global");
+    this.globalMode = args.length === 1 && context.argTokens.some((t) => t.text === "--global");
     if (args.length === 1 && !this.globalMode) {
       return validationError(`Unexpected arguments! Usage: ${this.usage}`);
     }
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     let result: Promise<ExcludedItemInfo[]>;
     if (this.globalMode) {
       result = excludedItemsFromGlobalSettingsAsync(context.messenger);
@@ -71,7 +61,7 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase {
       writeInfoMessage(context.output, "There are no excluded items.");
     } else {
       writeInfoMessage(context.output, "Excluded items:");
-      items.forEach(t =>
+      items.forEach((t) =>
         writeInfoMessage(context.output, `${t.missing ? "? " : "  "}${t.value}`)
       );
     }
@@ -83,26 +73,19 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
   readonly id = "project:exclude-item";
   readonly description = "Exclude/restore an item to project or globally.";
   readonly usage = "project:exclude-item [--global] [-d] <item-path>...";
-  readonly aliases = [
-    "project:exclude",
-    "proj:exclude-item",
-    "proj:exclude",
-    "p:x"
-  ];
+  readonly aliases = ["project:exclude", "proj:exclude-item", "proj:exclude", "p:x"];
 
   globalMode: boolean;
   deleteMode: boolean;
   paths: string[];
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     this.globalMode = false;
     this.deleteMode = false;
     this.paths = [];
   }
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length <= 0) {
       return validationError("This command expects at least one argument.");
@@ -125,22 +108,22 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     let needSaveProject = false;
     if (this.globalMode) {
       // System-wide operation
       if (this.deleteMode) {
         // Remove some entries from system-wide exclusion list
         if (this.paths.length > 0) {
-          const excludedItemsPromise = excludedItemsFromGlobalSettingsAsync(
-            context.messenger
-          ).then(items => items.map(t => t.id));
-          this.paths = this.paths.map(t => t.replace(path.sep, "/"));
+          const excludedItemsPromise = excludedItemsFromGlobalSettingsAsync(context.messenger).then(
+            (items) => items.map((t) => t.id)
+          );
+          this.paths = this.paths.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
           await context.messenger.sendMessage({
             type: "MainSetGloballyExcludedProjectItems",
-            files: (
-              await excludedItemsPromise
-            )?.filter(p => !this.paths.some(t => t.localeCompare(p) === 0))
+            files: (await excludedItemsPromise)?.filter(
+              (p) => !this.paths.some((t) => t.localeCompare(p) === 0)
+            )
           });
         } else {
           await context.messenger.sendMessage({
@@ -174,13 +157,13 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
         return commandError("Please, open the project first!");
       }
 
-      const disp = a => context.store.dispatch(a, context.messageSource);
+      const disp = (a: any) => context.store.dispatch(a, context.messageSource);
       if (this.deleteMode) {
         // Remove some entries from project-specific exclusion list
         if (this.paths.length > 0) {
-          this.paths = this.paths.map(t => t.replace(path.sep, "/"));
+          this.paths = this.paths.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
           const filteredPaths = proj.excludedItems?.filter(
-            p => !this.paths.some(t => t.localeCompare(p) === 0)
+            (p) => !this.paths.some((t) => t.localeCompare(p) === 0)
           );
           disp(setExcludedProjectItemsAction(filteredPaths));
         } else {
@@ -189,21 +172,12 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       } else {
         // Add new entries to project-specific exclusion list
         const filteredPaths: string[] = [];
-        const root = proj.folderPath;
         for (let p of this.paths) {
           if (!p || p.length <= 0) continue;
           if (!context.service.validationService.isValidPath(p)) {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;
           }
-          if (path.isAbsolute(p) && !pathStartsWith(p, root)) {
-            writeInfoMessage(
-              context.output,
-              `${p} is not within the project file tree.`
-            );
-            continue;
-          }
-
           filteredPaths.push(p);
         }
         beforeExcluded(context, filteredPaths);
@@ -213,40 +187,45 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
     }
 
     writeSuccessMessage(context.output, "Done.");
-
     if (needSaveProject) await saveProject(context.messenger);
 
     return commandSuccess;
   }
 }
 
-function beforeExcluded (context: IdeCommandContext, items: string[]): boolean {
+function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
   let result = false;
 
   const state = context.store.getState();
   const proj = state.project;
   if (proj?.isKliveProject === true) {
     const root = proj.folderPath;
-    items = items.map(t => (path.isAbsolute(t) ? t : path.join(root, t)));
+    items = items.map((t) => (isAbsolutePath(t) ? t : `${root}/${t})`));
 
     const buildRoots = proj.buildRoots?.filter(
-      b => !items.some(t => pathStartsWith(path.join(root, b), t))
+      (b) => !items.some((t) => pathStartsWith(`${root}/${b})`, t))
     );
     if (buildRoots && buildRoots.length < proj.buildRoots.length) {
-      context.store.dispatch(
-        setBuildRootAction(buildRoots, true),
-        context.messageSource
-      );
+      context.store.dispatch(setBuildRootAction(buildRoots, true), context.messageSource);
       result = true;
     }
   }
 
-  const documentHubService =
-    context.service.projectService.getActiveDocumentHubService();
+  const documentHubService = context.service.projectService.getActiveDocumentHubService();
   documentHubService
     .getOpenDocuments()
-    ?.filter(doc => items.some(t => pathStartsWith(doc.id, t)))
-    .forEach(doc => documentHubService.closeDocument(doc.id));
+    ?.filter((doc) => items.some((t) => pathStartsWith(doc.id, t)))
+    .forEach((doc) => documentHubService.closeDocument(doc.id));
 
   return result;
+}
+
+function isAbsolutePath(path: string): boolean {
+  if (getIsWindows()) {
+    // In Windows, an absolute path starts with a drive letter followed by ':' or a server share ('\\')
+    return /^[a-zA-Z]:/.test(path) || path.startsWith("\\\\");
+  } else {
+    // In POSIX (Linux/Mac), an absolute path starts with '/'
+    return path.startsWith("/");
+  }
 }

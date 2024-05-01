@@ -1,4 +1,4 @@
-import * as path from "path";
+import path from "path";
 import { exec } from "child_process";
 import { IKliveCompiler, KliveCompilerOutput } from "./compiler-registry";
 import { AssemblerErrorInfo } from "@abstractions/IZ80CompilerService";

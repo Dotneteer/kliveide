@@ -1,5 +1,3 @@
-import * as path from "path";
-
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@renderer/core/tree-node";
 import { customLanguagesRegistry, fileTypeRegistry } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
@@ -87,9 +85,10 @@ export type ProjectNodeWithChildren = ProjectNode & {
  * @param node Project node
  * @returns Extension part of the project node
  */
-export function getNodeDir (node: ProjectNode | string): string {
+export function getNodeDir(node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
-  return fullPath ? path.dirname(fullPath) : "";
+  const segments = fullPath.split("/").slice(0, -1);
+  return fullPath ? segments.join("/") : "";
 }
 
 /**
@@ -97,9 +96,10 @@ export function getNodeDir (node: ProjectNode | string): string {
  * @param node Project node
  * @returns Filename + extension part of the project node
  */
-export function getNodeFile (node: ProjectNode | string): string {
+export function getNodeFile(node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
-  return fullPath ? path.basename(fullPath) : "";
+  const segments = fullPath.split("/").slice(0, -1);
+  return fullPath && segments.length > 0 ? segments[segments.length - 1] : "";
 }
 
 /**
@@ -107,7 +107,7 @@ export function getNodeFile (node: ProjectNode | string): string {
  * @param node Project node
  * @returns Extension part of the project node
  */
-export function getNodeName (node: ProjectNode | string): string {
+export function getNodeName(node: ProjectNode | string): string {
   const filename = getNodeFile(node);
   if (!filename) {
     return "";
@@ -121,7 +121,7 @@ export function getNodeName (node: ProjectNode | string): string {
  * @param node Project node
  * @returns Extension part of the project node
  */
-export function getNodeExtension (node: ProjectNode | string): string {
+export function getNodeExtension(node: ProjectNode | string): string {
   const filename = getNodeFile(node);
   if (!filename) {
     return "";
@@ -130,13 +130,13 @@ export function getNodeExtension (node: ProjectNode | string): string {
   return fileParts.length > 0 ? "." + fileParts.slice(1).join(".") : "";
 }
 
-export function buildProjectTree (
+export function buildProjectTree(
   root: ProjectNodeWithChildren,
   expandedList?: string[]
 ): ITreeView<ProjectNode> {
   return new TreeView<ProjectNode>(toTreeNode(root), false);
 
-  function toTreeNode (node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
+  function toTreeNode(node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
     // --- Get the file type information
     const fileTypeEntry = getFileTypeEntry(node.name);
     if (fileTypeEntry) {
@@ -154,8 +154,8 @@ export function buildProjectTree (
     if (!node.isFolder) {
       const nodeFullPath = typeof node === "string" ? node : node.fullPath;
       node.canBeBuildRoot ||= customLanguagesRegistry
-        .filter(reg => reg.extensions.some(ext => nodeFullPath.endsWith(ext)))
-        .some(reg => reg.allowBuildRoot);
+        .filter((reg) => reg.extensions.some((ext) => nodeFullPath.endsWith(ext)))
+        .some((reg) => reg.allowBuildRoot);
     }
 
     // --- Recursively process child nodes
@@ -174,13 +174,13 @@ export function buildProjectTree (
 
     // --- Add child nodes alphabetically
     childNodes = childNodes.sort((a, b) => compareProjectNode(a.data, b.data));
-    childNodes.forEach(cn => {
+    childNodes.forEach((cn) => {
       if (!cn.isHidden) ++visibleChildrenCount;
       rootNode.appendChild(cn);
     });
 
     // --- Handle visibility
-    let isVisible = !node.isFolder && fileTypeEntry || node.isFolder;
+    let isVisible = (!node.isFolder && fileTypeEntry) || node.isFolder;
     rootNode.isHidden = !isVisible;
 
     // --- Handle expanded state
@@ -197,7 +197,7 @@ export function buildProjectTree (
  * @param b Second node
  * @returns Comparison result
  */
-export function compareProjectNode (a: ProjectNode, b: ProjectNode): number {
+export function compareProjectNode(a: ProjectNode, b: ProjectNode): number {
   const compType = a.isFolder ? (b.isFolder ? 0 : -1) : b.isFolder ? 1 : 0;
   if (compType) return compType;
   return a.name < b.name ? -1 : a.name > b.name ? 0 : 1;
