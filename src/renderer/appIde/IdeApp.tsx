@@ -127,6 +127,7 @@ const IdeApp = () => {
   // --- Visual state
   const appPath = decodeURI(location.search.split("=")?.[1]);
   const dimmed = useSelector(s => s.dimMenu ?? false);
+  const isWindows = useSelector(s => s.isWindows ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
   const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
@@ -182,9 +183,6 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
-
-    // --- Set the OS flag
-    setIsWindows(!!store.getState()?.isWindows)
   }, [appServices, store, messenger]);
 
   useEffect(() => {
@@ -192,6 +190,10 @@ const IdeApp = () => {
       initializeMonaco(appPath);
     }
   }, [appPath]);
+
+  useEffect(() => {
+    setIsWindows(isWindows);
+  }, [isWindows]);
 
   return (
     <div id='appMain' className={styles.app}>

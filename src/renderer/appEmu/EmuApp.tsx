@@ -63,6 +63,7 @@ const EmuApp = () => {
     s => s.project?.isKliveProject ?? false
   );
   const dimmed = useSelector(s => s.dimMenu ?? false);
+  const isWindows = useSelector(s => s.isWindows ?? false);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
   const dialogData = useSelector(s => s.ideView?.dialogData);
 
@@ -94,9 +95,12 @@ const EmuApp = () => {
       ctx?.close().catch(console.error);
     }
 
-    // --- Set OS information
-    setIsWindows(!!store.getState()?.isWindows)
   }, [appServices, store, messenger]);
+
+  useEffect(() => {
+    setIsWindows(isWindows);
+  }, [isWindows]);
+
 
   return (
     <div id='appMain' className={styles.app}>

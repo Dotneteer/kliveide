@@ -25,11 +25,13 @@ import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
   incBreakpointsVersionAction,
-  incEditorVersionAction
+  incEditorVersionAction,
+  isWindowsAction
 } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
+import { getIsWindows } from "@renderer/os-utils";
 
 let monacoInitialized = false;
 
@@ -405,8 +407,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         isDebuggableCompilerOutput(compilationResult)
       ) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
+        const sep = getIsWindows() ? "\\" : "/";
         const fileIndex = compilationResult.sourceFileList.findIndex(fi =>
-          fi.filename.endsWith(getResourceName())
+          fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
         );
         if (fileIndex >= 0) {
           // --- We have address information for this source code file
@@ -574,10 +577,11 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
 
     // --- Does this file contains the default breakpoint?
+    const sep = getIsWindows() ? "\\" : "/";
     const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
-      fi.filename.endsWith(getResourceName())
+      fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
     );
-    if (fileIndex >= 0) {
+if (fileIndex >= 0) {
       // --- We have address information for this source code file
       const lineInfo = compilation.result.listFileItems.find(
         li => li.fileIndex === fileIndex && li.address === pc
