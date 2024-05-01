@@ -1,6 +1,4 @@
-import "mocha";
-import { expect } from "expect";
-
+import { describe, it, expect } from "vitest";
 import { compileFileFails, compileFileWorks } from "./test-helpers";
 
 describe("Assembler - .includebin", async () => {
@@ -30,18 +28,14 @@ describe("Assembler - .includebin", async () => {
   });
 
   it("works with zero offset and length", async () => {
-    const output = await compileFileWorks(
-      "IncludeBinWithZeroOffsetAndLength.z80asm"
-    );
+    const output = await compileFileWorks("IncludeBinWithZeroOffsetAndLength.z80asm");
     const code = output.segments[0].emittedCode;
     expect(code.length).toBe(0x1800);
     expect(code[0]).toBe(0xf3);
   });
 
   it("works with non-zero offset and length", async () => {
-    const output = await compileFileWorks(
-      "IncludeBinWithNonZeroOffsetAndLength.z80asm"
-    );
+    const output = await compileFileWorks("IncludeBinWithNonZeroOffsetAndLength.z80asm");
     const code = output.segments[0].emittedCode;
     expect(code.length).toBe(0x1800);
     expect(code[0]).toBe(0x6d);

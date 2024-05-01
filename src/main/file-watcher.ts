@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 import { FSWatcher } from "original-fs";
 import { mainStore } from "./main-store";
 import { AppState } from "../common/state/AppState";
@@ -21,7 +21,7 @@ class FileChangeWatcher {
     this._watcher = fs.watch(folder, {
       recursive: true,
       persistent: true
-    }, (event, filename) => {
+    }, (event) => {
       if (event === "rename") {
         this.store.dispatch(incExploreViewVersionAction(), "main");
       }

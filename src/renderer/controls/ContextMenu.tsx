@@ -1,5 +1,5 @@
 import classnames from "@renderer/utils/classnames";
-import { MouseEvent, ReactNode, useRef, useState } from "react";
+import { MouseEvent, ReactNode, useState } from "react";
 import { usePopper } from "react-popper";
 import { ClickAwayListener } from "./ClickAwayListener";
 import localStyles from "./ContextMenu.module.scss";

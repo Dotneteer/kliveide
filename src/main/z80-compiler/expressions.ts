@@ -1344,8 +1344,8 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       [ExpressionValueType.Real]
     )
   ],
-  pi: [new FunctionEvaluator(args => new ExpressionValue(Math.PI), [])],
-  nat: [new FunctionEvaluator(args => new ExpressionValue(Math.E), [])],
+  pi: [new FunctionEvaluator(() => new ExpressionValue(Math.PI), [])],
+  nat: [new FunctionEvaluator(() => new ExpressionValue(Math.E), [])],
   low: [
     new FunctionEvaluator(
       args => new ExpressionValue(args[0].asLong() & 0xff),
@@ -1366,7 +1366,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   rnd: [
     new FunctionEvaluator(
-      args => new ExpressionValue(randomGenerator.integer(0, 65536)),
+      () => new ExpressionValue(randomGenerator.integer(0, 65536)),
       []
     ),
     new FunctionEvaluator(
@@ -1939,4 +1939,5 @@ export function evalMacroTimeFunctionInvocationValue (
     null,
     `Cannot evaluate ${funcExpr.functionName}(${funcExpr.operand.register})`
   );
+  return null;
 }

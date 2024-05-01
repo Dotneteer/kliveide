@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { UnaryExpression } from "@common/ksx/source-tree";
 
@@ -68,7 +67,7 @@ describe("KSX - Parser - unary expressions", () => {
     { src: "typeof a[b]", op: "typeof", exp: "CalculatedMemberAccess" },
     { src: "delete a[b]", op: "delete", exp: "CalculatedMemberAccess" }
   ];
-  unaryCases.forEach(c => {
+  unaryCases.forEach((c) => {
     it(`Unary: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);

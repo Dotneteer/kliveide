@@ -1,14 +1,9 @@
-import * as fs from "fs";
-import { BrowserWindow, dialog } from "electron";
+import fs from "fs";
 import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 import { MachineMenuRenderer } from "../../common/machines/info-types";
 import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import {
-  emuSetKeyboardLayoutAction,
-  incMenuVersionAction,
-  setMachineSpecificAction
-} from "../../common/state/actions";
+import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "../../common/state/actions";
 import { mainStore } from "../../main/main-store";
 import { saveKliveProject } from "../../main/projects";
 import { getModelConfig } from "../../common/machines/machine-registry";
@@ -43,7 +38,7 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
       id: Z88_KEYBOARDS,
       label: "Keyboard layout",
       type: "submenu",
-      submenu: layouts.map(layout => ({
+      submenu: layouts.map((layout) => ({
         id: layout.id,
         label: layout.label,
         type: "radio",
@@ -75,7 +70,7 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
       id: "z88_lcd",
       label: "LCD resolution",
       type: "submenu",
-      submenu: lcds.map(lcd => ({
+      submenu: lcds.map((lcd) => ({
         id: lcd.id,
         label: lcd.label,
         type: "radio",
@@ -92,7 +87,7 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
   ];
 
   // --- Sets the LCD dimentsions
-  function setLcd (lcdId?: string): void {
+  function setLcd(lcdId?: string): void {
     const emulatorState = mainStore.getState()?.emulatorState;
     const machineId = emulatorState?.machineId;
     const modelId = emulatorState?.modelId;
@@ -152,7 +147,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
  * @param filename File to check
  * @returns File contents or error message
  */
-export async function checkZ88SlotFile (
+export async function checkZ88SlotFile(
   filename: string,
   expectedSize?: number
 ): Promise<string | Uint8Array> {
@@ -174,152 +169,4 @@ export async function checkZ88SlotFile (
       "to read the files contents and the file is a valid ROM file."
     );
   }
-}
-
-// --- The current ROM file (null, if default is used)
-let usedRomFile: string | null = null;
-
-// --- The list of recently used ROMs
-let recentRoms: string[] = [];
-
-// --- The size of the most recent ROM
-let recentRomSize: number;
-
-// ---Indicates that a recent ROM is selected. If false, we use the default ROM
-let recentRomSelected = false;
-
-/**
- * Selects one of the recent ROM items
- * @param idx Selected ROM index
- */
-async function selectRecentRomItem (
-  window: BrowserWindow,
-  idx: number
-): Promise<void> {
-  if (idx < 0 || idx >= recentRoms.length) {
-    return;
-  }
-
-  await selectRomFileToUse(window, recentRoms[idx]);
-}
-
-/**
- * Select the ROM file to use with Z88
- */
-async function selectRomFileToUse (
-  window: BrowserWindow,
-  filename?: string
-): Promise<void> {
-  if (!filename) {
-    filename = await selectRomFileFromDialog(window);
-    if (!filename) {
-      return;
-    }
-  }
-
-  const contents = await checkCz88Rom(filename);
-  if (typeof contents === "string") {
-    await dialog.showMessageBox(window, {
-      title: "ROM error",
-      message: contents,
-      type: "error"
-    });
-    return;
-  }
-
-  // --- Use the selected contents
-  const recentFileIdx = recentRoms.indexOf(filename);
-  if (recentFileIdx >= 0) {
-    recentRoms.splice(recentFileIdx, 1);
-  }
-  usedRomFile = filename;
-  recentRoms.unshift(filename);
-  recentRoms.splice(4);
-  recentRomSize = contents.length;
-
-  // --- Now set the ROM name and refresh the menu
-  recentRomSelected = true;
-  saveRecentRomInfo();
-  mainStore.dispatch(incMenuVersionAction());
-}
-
-/**
- * Select a ROM file to use with Z88
- */
-async function selectRomFileFromDialog (
-  window: BrowserWindow
-): Promise<string | null> {
-  const result = await dialog.showOpenDialog(window, {
-    title: "Open ROM file",
-    filters: [
-      { name: "ROM files", extensions: ["rom"] },
-      { name: "BIN files", extensions: ["bin"] },
-      { name: "All Files", extensions: ["*"] }
-    ]
-  });
-  return result ? result.filePaths[0] : null;
-}
-
-/**
- * Checks if the specified file is a valid Z88 ROM
- * @param filename ROM file name
- * @returns The contents, if the ROM is valid; otherwise, the error message
- */
-async function checkCz88Rom (filename: string): Promise<string | Uint8Array> {
-  try {
-    const contents = Uint8Array.from(fs.readFileSync(filename));
-
-    // --- Check contents length
-    if (
-      contents.length !== 0x8_0000 &&
-      contents.length !== 0x4_0000 &&
-      contents.length !== 0x2_0000
-    ) {
-      return `Invalid ROM file length: ${contents.length}. The ROM file length can be 128K, 256K, or 512K.`;
-    }
-
-    // --- Check watermark
-    if (!isOZRom(contents)) {
-      return "The file does not contain the OZ ROM watermark.";
-    }
-
-    // --- Done: valid ROM
-    return contents;
-  } catch (err) {
-    console.log(err);
-    // --- This error is intentionally ignored
-    return (
-      `Error processing ROM file ${filename}. ` +
-      "Please check if you have the appropriate access rights " +
-      "to read the files contents and the file is a valid ROM file."
-    );
-  }
-}
-
-/**
- * Check if specified slot contains an OZ Operating system
- * @param contents Binary contents
- * @returns true if Application Card is available in slot; otherwise false
- */
-function isOZRom (contents: Uint8Array): boolean {
-  const topBankOffset = (contents.length & 0xe_c000) - 0x4000;
-  return (
-    contents[topBankOffset + 0x3ffb] === 0x81 &&
-    contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
-    contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
-  );
-}
-
-/**
- * Saves the recent ROM information to the store
- */
-function saveRecentRomInfo (): void {
-  const machineSpecific = {
-    ...(mainStore.getState()?.emulatorState?.machineSpecific ?? {}),
-    recentRoms,
-    recentRomSelected,
-    usedRomFile,
-    recentRomSize
-  };
-  mainStore.dispatch(setMachineSpecificAction(machineSpecific));
 }

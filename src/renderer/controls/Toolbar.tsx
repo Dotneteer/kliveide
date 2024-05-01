@@ -19,7 +19,6 @@ import { reportMessagingError } from "@renderer/reportError";
 import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { __DARWIN__ } from "../../electron/electron-utils";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { PANE_ID_BUILD } from "@common/integration/constants";

@@ -454,7 +454,7 @@ type LineProps = {
 let runningIndex = 0;
 
 export const BasicLineDisplay = ({ spans, showSpectrumFont }: LineProps) => {
-  const segments = (spans ?? []).map((s, idx) => {
+  const segments = (spans ?? []).map((s) => {
     const inkColor = s.inverse ? s.paper : s.ink;
     const ink =
       inkColor !== undefined

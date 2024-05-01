@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 
 describe("Assembler - macro-time functions", async () => {
@@ -12,7 +12,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "a", expected: 0x7f },
     { expr: "bc", expected: 0x00 }
   ];
-  reg8Cases.forEach(tc => {
+  reg8Cases.forEach((tc) => {
     it(`reg8/reg8: ${tc.expr}`, async () => {
       const source = `
         MyMacro:
@@ -34,7 +34,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "r", expected: 0x5f },
     { expr: "bc", expected: 0x00 }
   ];
-  reg8SpecCases.forEach(tc => {
+  reg8SpecCases.forEach((tc) => {
     it(`reg8/reg8spec: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -51,7 +51,7 @@ describe("Assembler - macro-time functions", async () => {
     });
   });
 
-  reg8SpecCases.forEach(tc => {
+  reg8SpecCases.forEach((tc) => {
     it(`reg8spec: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -79,7 +79,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "iyl", expected: 0xfd7d },
     { expr: "bc", expected: 0x0000 }
   ];
-  reg8IdxCases.forEach(tc => {
+  reg8IdxCases.forEach((tc) => {
     it(`reg8/reg8Idx: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -96,7 +96,7 @@ describe("Assembler - macro-time functions", async () => {
     });
   });
 
-  reg8IdxCases.forEach(tc => {
+  reg8IdxCases.forEach((tc) => {
     it(`reg8Idx: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -120,7 +120,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "sp", expected: 0x31 },
     { expr: "a", expected: 0x00 }
   ];
-  reg16Cases.forEach(tc => {
+  reg16Cases.forEach((tc) => {
     it(`reg16/reg16: ${tc.expr}`, async () => {
       const source = `
         MyMacro:
@@ -142,7 +142,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "iy", expected: 0xfd21 },
     { expr: "a", expected: 0x0000 }
   ];
-  reg16IdxCases.forEach(tc => {
+  reg16IdxCases.forEach((tc) => {
     it(`reg16/reg16Idx: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -155,13 +155,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(
-        source,
-        tc.expected >> 8,
-        tc.expected & 0xff,
-        0x34,
-        0x12
-      );
+      await testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff, 0x34, 0x12);
     });
   });
 
@@ -171,7 +165,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "(hl)", expected: 0x77 },
     { expr: "ix", expected: 0x00 }
   ];
-  regIndirectCases.forEach(tc => {
+  regIndirectCases.forEach((tc) => {
     it(`regIndirect: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -193,7 +187,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "c", expected: 0x00 },
     { expr: "ix", expected: 0x00 }
   ];
-  cportCases.forEach(tc => {
+  cportCases.forEach((tc) => {
     it(`regIndirect: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -219,7 +213,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "(iy-2)", expected: 0xfd77, dist: 0xfe },
     { expr: "a", expected: 0x0000, dist: 0x00 }
   ];
-  indexedAddrCases.forEach(tc => {
+  indexedAddrCases.forEach((tc) => {
     it(`indexedAddr: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -247,7 +241,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "m", expected: 0xfa },
     { expr: "ix", expected: 0x00 }
   ];
-  conditionCases.forEach(tc => {
+  conditionCases.forEach((tc) => {
     it(`condition: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -270,7 +264,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "#10", expected: 0x10 },
     { expr: "ix", expected: 0x00 }
   ];
-  exprCases.forEach(tc => {
+  exprCases.forEach((tc) => {
     it(`expression: ${tc.expr}`, async () => {
       const source = `
       MyMacro:
@@ -303,7 +297,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregl", arg: "l", expected: 0x7d },
     { expr: "isregl", arg: "sp", expected: 0x00 }
   ];
-  singleReg8Cases.forEach(rc => {
+  singleReg8Cases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:
@@ -326,7 +320,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregr", arg: "r", expected: 0x5f },
     { expr: "isregr", arg: "sp", expected: 0x00 }
   ];
-  singleReg8SpecCases.forEach(rc => {
+  singleReg8SpecCases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:
@@ -353,7 +347,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregsp", arg: "sp", expected: 0x33 },
     { expr: "isregsp", arg: "a", expected: 0x00 }
   ];
-  singleReg16Cases.forEach(rc => {
+  singleReg16Cases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:
@@ -384,7 +378,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregyl", arg: "iyl", expected: 0xfd2c },
     { expr: "isregyl", arg: "a", expected: 0x0000 }
   ];
-  singleReg8IdxCases.forEach(rc => {
+  singleReg8IdxCases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:
@@ -407,7 +401,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregiy", arg: "iy", expected: 0xfd23 },
     { expr: "isregiy", arg: "a", expected: 0x0000 }
   ];
-  singleReg16IdxCases.forEach(rc => {
+  singleReg16IdxCases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:
@@ -427,7 +421,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregaf", arg: "af", expected: 0xf5 },
     { expr: "isregaf", arg: "a", expected: 0x00 }
   ];
-  singleRegAfCases.forEach(rc => {
+  singleRegAfCases.forEach((rc) => {
     it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
       const source = `
       MyMacro:

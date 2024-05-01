@@ -11,7 +11,7 @@ export class DelayedJobs {
   }
 
   public instantlyRunAllOf(kind?: number, tag?: string): Promise<any> {
-    const promises = [];
+    const promises: any[] = [];
     const jobs = this.queryJobsOf(kind, tag);
     for (const job of jobs) {
       clearTimeout(job.timeoutId);

@@ -1,5 +1,4 @@
-import "mocha";
-
+import { describe, it } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 
 describe("Assembler - struct invocation", () => {
@@ -28,7 +27,7 @@ describe("Assembler - struct invocation", () => {
     '.defgx "....OOOO"',
     '.defg "....OOOO"'
   ];
-  validCases.forEach(vc => {
+  validCases.forEach((vc) => {
     it(`no invocation, no bytes ${vc}`, async () => {
       await testCodeEmit(`
         MyStruct .struct

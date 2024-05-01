@@ -36,7 +36,6 @@ import { ensureMainThread } from "./process-statement-common";
 import { BlockScope } from "./BlockScope";
 import { isPlainObject } from "lodash";
 import {
-  OnStatementCompletedCallback,
   processDeclarationsAsync,
   processStatementQueueAsync
 } from "./process-statement-async";
@@ -546,7 +545,7 @@ async function evalPreOrPostAsync (
       thread,
     );
     thisStack.pop();
-    return evalPreOrPostCore(operand, thisStack, expr, evalContext, thread);
+    return evalPreOrPostCore(operand, thisStack, expr, thread);
   });
 }
 

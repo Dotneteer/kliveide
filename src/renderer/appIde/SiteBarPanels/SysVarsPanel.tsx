@@ -1,15 +1,5 @@
-import {
-  Flag,
-  FlagRow,
-  Label,
-  LabelSeparator,
-  Secondary,
-  Value
-} from "@controls/Labels";
-import {
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
@@ -17,10 +7,7 @@ import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVar, SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory } from "@controls/Tooltip";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
@@ -35,7 +22,7 @@ type SysVarData = {
 const SysVarsPanel = () => {
   const { messenger } = useRendererContext();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
-  const machineState = useSelector(s => s.emulatorState?.machineState);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
@@ -44,9 +31,7 @@ const SysVarsPanel = () => {
       type: "EmuGetSysVars"
     });
     if (sysVarsResponse.type === "ErrorResponse") {
-      reportMessagingError(
-        `EmuGetSysVars call failed: ${sysVarsResponse.message}`
-      );
+      reportMessagingError(`EmuGetSysVars call failed: ${sysVarsResponse.message}`);
     } else if (sysVarsResponse.type !== "EmuGetSysVarsResponse") {
       reportUnexpectedMessageType(sysVarsResponse.type);
     } else {
@@ -54,14 +39,12 @@ const SysVarsPanel = () => {
         type: "EmuGetMemory"
       });
       if (memResponse.type === "ErrorResponse") {
-        reportMessagingError(
-          `EmuGetMemoty call failed: ${memResponse.message}`
-        );
+        reportMessagingError(`EmuGetMemoty call failed: ${memResponse.message}`);
       } else if (memResponse.type !== "EmuGetMemoryResponse") {
         reportUnexpectedMessageType(memResponse.type);
       } else {
         const memory = memResponse.memory;
-        const vars = sysVarsResponse.sysVars.map(sv => {
+        const vars = sysVarsResponse.sysVars.map((sv) => {
           const addr = sv.address;
           let value: number;
           let valueList: Uint8Array;
@@ -108,19 +91,16 @@ const SysVarsPanel = () => {
 
   return (
     <div className={styles.sysVarsPanel}>
-      {sysVars.length === 0 && (
-        <div className={styles.center}>No system variables available</div>
-      )}
+      {sysVars.length === 0 && <div className={styles.center}>No system variables available</div>}
       {sysVars.length > 0 && (
         <VirtualizedListView
           items={sysVars}
           approxSize={20}
           fixItemHeight={true}
-          itemRenderer={idx => {
+          itemRenderer={(idx) => {
             const item = sysVars[idx];
             const sysVar = item.sysVar;
             const value = item.value;
-            const valueList = item.valueList;
             const length = item.length;
             const type = sysVar.type;
             const tooltip = `${sysVar.name}: $${toHexa4(sysVar.address)} (${
@@ -145,14 +125,9 @@ const SysVarsPanel = () => {
                       <Secondary text={`(${value})`} />
                     </>
                   )}
-                  {type === SysVarType.Array && (
-                    <FullDumpSection sysVarData={item} />
-                  )}
+                  {type === SysVarType.Array && <FullDumpSection sysVarData={item} />}
                   {type === SysVarType.Flags && (
-                    <FlagRow
-                      value={value}
-                      flagDescriptions={sysVar.flagDecriptions}
-                    />
+                    <FlagRow value={value} flagDescriptions={sysVar.flagDecriptions} />
                   )}
                 </div>
               </div>
@@ -184,11 +159,7 @@ type DumpProps = {
 
 const DumpSection = ({ sysVarData, index }: DumpProps) => {
   const byteItems: JSX.Element[] = [];
-  for (
-    let i = index;
-    i < index + 8 && i < (sysVarData.valueList?.length ?? 0);
-    i++
-  ) {
+  for (let i = index; i < index + 8 && i < (sysVarData.valueList?.length ?? 0); i++) {
     const byteValue = (
       <ByteValue
         key={i}
@@ -220,7 +191,7 @@ const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={8}
           offsetY={32}
           showDelay={100}

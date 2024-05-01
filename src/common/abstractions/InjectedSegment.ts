@@ -10,12 +10,12 @@ export class InjectedSegment {
   /**
    * Start offset used for banks
    */
-  bankOffset: number;
+  bankOffset = 0;
 
   /**
    * Start address of the compiled block
    */
-  startAddress: number;
+  startAddress = 0;
 
   /**
    * Emitted Z80 binary code

@@ -1,6 +1,5 @@
-import "mocha";
-import * as path from "path";
-import { expect } from "expect";
+import path from "path";
+import { expect } from "vitest";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
 import { ErrorCodes } from "@main/z80-compiler/assembler-errors";
 import {

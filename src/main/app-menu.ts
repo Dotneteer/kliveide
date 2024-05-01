@@ -7,10 +7,10 @@ import {
   MenuItemConstructorOptions,
   shell
 } from "electron";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
-import { __DARWIN__ } from "../electron/electron-utils";
+import fs from "fs";
+import path from "path";
+import os from "os";
+import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
   showEmuStatusBarAction,
@@ -40,19 +40,15 @@ import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
 import { createMachineCommand } from "../common/messaging/main-to-emu";
 import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
-import { addRecentProject, openFolder, saveKliveProject } from "./projects";
+import { openFolder, saveKliveProject } from "./projects";
 import {
-  EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
 } from "../common/messaging/dialog-ids";
 import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
-import {
-  MEMORY_PANEL_ID,
-  DISASSEMBLY_PANEL_ID
-} from "../common/state/common-ids";
+import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "../common/state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { createSettingsReader } from "../common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
@@ -60,7 +56,6 @@ import { machineRegistry } from "../common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
-import { useDebugValue } from "react";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -84,11 +79,6 @@ const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
-const COMPILE_CODE = "compile_code";
-const INJECT_CODE = "inject_code";
-const RUN_CODE = "run_code";
-const DEBUG_CODE = "debug_code";
-const EXPORT_CODE = "export_code";
 const EXCLUDED_PROJECT_ITEMS = "manage_excluded_items";
 
 const SHOW_IDE_WINDOW = "show_ide_window";
@@ -122,10 +112,7 @@ const KEY_MAPPING_FOLDER = "keyMappingFolder";
 /**
  * Creates and sets the main menu of the app
  */
-export function setupMenu (
-  emuWindow: BrowserWindow,
-  ideWindow: BrowserWindow
-): void {
+export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): void {
   // --- We'll put the entire menu here
   const template: (MenuItemConstructorOptions | MenuItem)[] = [];
 
@@ -143,13 +130,12 @@ export function setupMenu (
   const machineRestartable = machineRuns || machinePaused;
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
-  const buildRoot = appState?.project?.buildRoots?.[0];
   const hasBuildFile = !!appState?.project?.hasBuildFile;
   const volatileDocs = appState?.ideView?.volatileDocs ?? {};
   const machineId = appState?.emulatorState?.machineId;
   const modelId = appState?.emulatorState?.modelId;
-  const currentMachine = machineRegistry.find(m => m.machineId === machineId);
-  const currentModel = currentMachine?.models?.find(m => m.modelId === modelId);
+  const currentMachine = machineRegistry.find((m) => m.machineId === machineId);
+  const currentModel = currentMachine?.models?.find((m) => m.modelId === modelId);
   const machineMenus = machineMenuRegistry[machineId];
   const ideFocus = appState?.ideFocused;
 
@@ -186,16 +172,14 @@ export function setupMenu (
   // File menu
   const recentProjectNames = appSettings.recentProjects ?? [];
 
-  const recentProjects: MenuItemConstructorOptions[] = recentProjectNames.map(
-    rp => {
-      return {
-        label: rp,
-        click: async () => {
-          await executeIdeCommand(ideWindow, `open "${rp}"`, undefined, true);
-        }
-      };
-    }
-  );
+  const recentProjects: MenuItemConstructorOptions[] = recentProjectNames.map((rp) => {
+    return {
+      label: rp,
+      click: async () => {
+        await executeIdeCommand(ideWindow, `open "${rp}"`, undefined, true);
+      }
+    };
+  });
 
   let recentProjectHolder: MenuItemConstructorOptions[] = [];
 
@@ -252,18 +236,13 @@ export function setupMenu (
               label: "\nManage Excluded Items",
               enabled: true,
               click: () => {
-                mainStore.dispatch(
-                  displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG)
-                );
+                mainStore.dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
               }
             }
           ] as MenuItemConstructorOptions[])),
       ...(__DARWIN__
         ? []
-        : ([
-            { type: "separator" },
-            { role: "quit" }
-          ] as MenuItemConstructorOptions[]))
+        : ([{ type: "separator" }, { role: "quit" }] as MenuItemConstructorOptions[]))
     ])
   });
 
@@ -290,14 +269,14 @@ export function setupMenu (
   // View menu
 
   // --- Use the menu to put together tool-related menus
-  const toolMenus: MenuItemConstructorOptions[] = tools.map(t => {
+  const toolMenus: MenuItemConstructorOptions[] = tools.map((t) => {
     return {
       id: `${TOOL_PREFIX}${t.id}`,
       label: `Show ${t.name} Panel`,
       type: "checkbox",
       checked: t.visible,
       visible: ideTraits.isFocused,
-      click: mi => {
+      click: (mi) => {
         const panelId = mi.id.substring(TOOL_PREFIX.length);
         mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked));
       }
@@ -328,20 +307,18 @@ export function setupMenu (
       value: 24
     }
   ];
-  const editorFontMenu: MenuItemConstructorOptions[] = editorFontOptions.map(
-    (f, idx) => {
-      return {
-        id: `${EDITOR_FONT_SIZE}_${idx}`,
-        label: f.label,
-        type: "checkbox",
-        checked: appState.ideViewOptions?.editorFontSize === f.value,
-        click: async () => {
-          mainStore.dispatch(setIdeFontSizeAction(f.value));
-          await saveKliveProject();
-        }
-      };
-    }
-  );
+  const editorFontMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
+    return {
+      id: `${EDITOR_FONT_SIZE}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: appState.ideViewOptions?.editorFontSize === f.value,
+      click: async () => {
+        mainStore.dispatch(setIdeFontSizeAction(f.value));
+        await saveKliveProject();
+      }
+    };
+  });
 
   // --- Machine-specific view menu items
   let specificViewMenus: MenuItemConstructorOptions[] = [];
@@ -393,7 +370,7 @@ export function setupMenu (
         type: "checkbox",
         visible: emuTraits.isFocused,
         checked: appState.emuViewOptions.showToolbar,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showEmuToolbarAction(mi.checked));
           await saveKliveProject();
         }
@@ -404,7 +381,7 @@ export function setupMenu (
         type: "checkbox",
         visible: ideTraits.isFocused,
         checked: appState.ideViewOptions.showToolbar,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showIdeToolbarAction(mi.checked));
           await saveKliveProject();
         }
@@ -415,7 +392,7 @@ export function setupMenu (
         type: "checkbox",
         visible: emuTraits.isFocused,
         checked: appState.emuViewOptions.showStatusBar,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showEmuStatusBarAction(mi.checked));
           await saveKliveProject();
         }
@@ -426,7 +403,7 @@ export function setupMenu (
         type: "checkbox",
         visible: ideTraits.isFocused,
         checked: appState.ideViewOptions.showStatusBar,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showIdeStatusBarAction(mi.checked));
           await saveKliveProject();
         }
@@ -437,7 +414,7 @@ export function setupMenu (
         type: "checkbox",
         visible: emuTraits.isFocused,
         checked: appState.emuViewOptions.showKeyboard,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showKeyboardAction(mi.checked));
           await saveKliveProject();
         }
@@ -452,7 +429,7 @@ export function setupMenu (
         type: "checkbox",
         checked: appState.ideViewOptions.showSidebar,
         visible: ideTraits.isFocused,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(showSideBarAction(mi.checked));
           await saveKliveProject();
         }
@@ -463,7 +440,7 @@ export function setupMenu (
         type: "checkbox",
         checked: appState.ideViewOptions.primaryBarOnRight,
         visible: ideTraits.isFocused,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(primaryBarOnRightAction(mi.checked));
           await saveKliveProject();
         }
@@ -474,7 +451,7 @@ export function setupMenu (
         type: "checkbox",
         checked: appState.ideViewOptions.showToolPanels,
         visible: ideTraits.isFocused,
-        click: async mi => {
+        click: async (mi) => {
           const checked = mi.checked;
           mainStore.dispatch(showToolPanelsAction(checked));
           if (checked) {
@@ -489,7 +466,7 @@ export function setupMenu (
         type: "checkbox",
         checked: appState.ideViewOptions.toolPanelsOnTop,
         visible: ideTraits.isFocused,
-        click: async mi => {
+        click: async (mi) => {
           mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
           await saveKliveProject();
         }
@@ -500,7 +477,7 @@ export function setupMenu (
         type: "checkbox",
         checked: appState.ideViewOptions.maximizeTools,
         visible: ideTraits.isFocused,
-        click: async mi => {
+        click: async (mi) => {
           const checked = mi.checked;
           if (checked) {
             mainStore.dispatch(showToolPanelsAction(true));
@@ -557,21 +534,19 @@ export function setupMenu (
 
   // --- Prepare the clock multiplier submenu
   const multiplierValues = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
-  const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map(
-    v => {
-      return {
-        id: `${CLOCK_MULT}_${v}`,
-        label: v === 1 ? "Normal" : `${v}x`,
-        type: "checkbox",
-        checked: appState.emulatorState?.clockMultiplier === v,
-        click: async () => {
-          mainStore.dispatch(setClockMultiplierAction(v));
-          await logEmuEvent(`Clock multiplier set to ${v}`);
-          await saveKliveProject();
-        }
-      };
-    }
-  );
+  const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map((v) => {
+    return {
+      id: `${CLOCK_MULT}_${v}`,
+      label: v === 1 ? "Normal" : `${v}x`,
+      type: "checkbox",
+      checked: appState.emulatorState?.clockMultiplier === v,
+      click: async () => {
+        mainStore.dispatch(setClockMultiplierAction(v));
+        await logEmuEvent(`Clock multiplier set to ${v}`);
+        await saveKliveProject();
+      }
+    };
+  });
 
   // --- Prepare the sound level submenus
   const soundLevelValues = [
@@ -581,25 +556,23 @@ export function setupMenu (
     { value: 0.8, label: "High" },
     { value: 1.0, label: "Highest" }
   ];
-  const soundLeveMenu: MenuItemConstructorOptions[] = soundLevelValues.map(
-    v => {
-      return {
-        id: `${SOUND_LEVEL}_${v.value}`,
-        label: v.label,
-        type: "checkbox",
-        checked: appState.emulatorState?.soundLevel === v.value,
-        click: async () => {
-          mainStore.dispatch(setSoundLevelAction(v.value));
-          await logEmuEvent(`Sound level set to ${v.label} (${v.value})`);
-          await saveKliveProject();
-        }
-      };
-    }
-  );
+  const soundLeveMenu: MenuItemConstructorOptions[] = soundLevelValues.map((v) => {
+    return {
+      id: `${SOUND_LEVEL}_${v.value}`,
+      label: v.label,
+      type: "checkbox",
+      checked: appState.emulatorState?.soundLevel === v.value,
+      click: async () => {
+        mainStore.dispatch(setSoundLevelAction(v.value));
+        await logEmuEvent(`Sound level set to ${v.label} (${v.value})`);
+        await saveKliveProject();
+      }
+    };
+  });
 
   // --- Machine types submenu (use the registered machines)
   const machineTypesMenu: MenuItemConstructorOptions[] = [];
-  machineRegistry.forEach(mt => {
+  machineRegistry.forEach((mt) => {
     if (!mt.models) {
       machineTypesMenu.push({
         id: `machine_${mt.machineId}`,
@@ -612,7 +585,7 @@ export function setupMenu (
         }
       });
     } else {
-      mt.models.forEach(m => {
+      mt.models.forEach((m) => {
         machineTypesMenu.push({
           id: `machine_${mt.machineId}_${m.modelId}`,
           label: m.displayName,
@@ -840,10 +813,7 @@ export function setupMenu (
             show: !volatileDocs[MEMORY_PANEL_ID]
           });
           mainStore.dispatch(
-            setVolatileDocStateAction(
-              MEMORY_PANEL_ID,
-              !volatileDocs[MEMORY_PANEL_ID]
-            )
+            setVolatileDocStateAction(MEMORY_PANEL_ID, !volatileDocs[MEMORY_PANEL_ID])
           );
         }
       },
@@ -858,10 +828,7 @@ export function setupMenu (
             show: !volatileDocs[DISASSEMBLY_PANEL_ID]
           });
           mainStore.dispatch(
-            setVolatileDocStateAction(
-              DISASSEMBLY_PANEL_ID,
-              !volatileDocs[DISASSEMBLY_PANEL_ID]
-            )
+            setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, !volatileDocs[DISASSEMBLY_PANEL_ID])
           );
         }
       },
@@ -885,9 +852,7 @@ export function setupMenu (
     );
   }
 
-  const helpLinks: MenuItemConstructorOptions[] = (
-    machineMenus?.helpLinks ?? []
-  ).map(hl => {
+  const helpLinks: MenuItemConstructorOptions[] = (machineMenus?.helpLinks ?? []).map((hl) => {
     if (hl.label) {
       return {
         label: hl.label,
@@ -906,17 +871,14 @@ export function setupMenu (
         id: HELP_ABOUT,
         label: "About",
         click: async () => {
-          const result = await dialog.showMessageBox(
-            ideFocus ? ideWindow : emuWindow,
-            {
-              message: "About Klive IDE",
-              detail:
-                `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
-                `Electron version: ${process.versions.electron}\n` +
-                `OS version: ${os.version()}`,
-              buttons: ["Close", "Visit website"]
-            }
-          );
+          const result = await dialog.showMessageBox(ideFocus ? ideWindow : emuWindow, {
+            message: "About Klive IDE",
+            detail:
+              `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
+              `Electron version: ${process.versions.electron}\n` +
+              `OS version: ${os.version()}`,
+            buttons: ["Close", "Visit website"]
+          });
           if (result.response) {
             shell.openExternal(KLIVE_GITHUB_PAGES);
           }
@@ -952,7 +914,7 @@ export function setupMenu (
   }
 
   // Preserve the submenus as a dedicated array.
-  const submenus = template.map(i => i.submenu);
+  const submenus = template.map((i) => i.submenu);
 
   // --- Set the menu
   if (__DARWIN__) {
@@ -972,7 +934,7 @@ export function setupMenu (
     }
   }
 
-  function ensureIdeWindow () {
+  function ensureIdeWindow() {
     ideWindow.show();
     if (appSettings?.windowStates?.ideWindow?.isMaximized) {
       ideWindow.maximize();
@@ -982,7 +944,7 @@ export function setupMenu (
     saveAppSettings();
   }
 
-  function templateTransform (wnd: BrowserWindow) {
+  function templateTransform(wnd: BrowserWindow) {
     return wnd.isFocused()
       ? (
           i: { submenu: Electron.MenuItemConstructorOptions[] | Electron.Menu },
@@ -997,7 +959,7 @@ export function setupMenu (
  * @param browserWindow Host browser window
  * @returns The key mappings file is set in the app state
  */
-async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
+async function setKeyMappingFile(browserWindow: BrowserWindow): Promise<void> {
   const lastFile = appSettings.keyMappingFile;
   const defaultPath =
     appSettings?.folders?.[KEY_MAPPING_FOLDER] ||
@@ -1033,10 +995,10 @@ async function setKeyMappingFile (browserWindow: BrowserWindow): Promise<void> {
 }
 
 // --- Disable all menu items (except the system menu)
-function disableAllMenuItems (
+function disableAllMenuItems(
   items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[]
 ): void {
-  visitMenu(items, item => {
+  visitMenu(items, (item) => {
     if (item.id === SYSTEM_MENU_ID) return false;
     item.enabled = false;
     return true;
@@ -1044,24 +1006,20 @@ function disableAllMenuItems (
 }
 
 // --- Visitor for each menu item in the current application menu
-function visitMenu (
+function visitMenu(
   items: (Electron.MenuItemConstructorOptions | Electron.MenuItem)[],
-  visitor: (
-    item: Electron.MenuItemConstructorOptions | Electron.MenuItem
-  ) => boolean
+  visitor: (item: Electron.MenuItemConstructorOptions | Electron.MenuItem) => boolean
 ): void {
-  items.forEach(i => visitMenuItem(i));
+  items.forEach((i) => visitMenuItem(i));
 
-  function visitMenuItem (
-    item: Electron.MenuItemConstructorOptions | Electron.MenuItem
-  ): boolean {
+  function visitMenuItem(item: Electron.MenuItemConstructorOptions | Electron.MenuItem): boolean {
     const visitResult = visitor(item);
     if (visitResult) {
       if (item.submenu) {
         if (Array.isArray(item.submenu)) {
-          item.submenu.forEach(i => visitMenuItem(i));
+          item.submenu.forEach((i) => visitMenuItem(i));
         } else {
-          item.submenu.items.forEach(i => visitMenuItem(i));
+          item.submenu.items.forEach((i) => visitMenuItem(i));
         }
       }
     }
@@ -1069,7 +1027,7 @@ function visitMenu (
   }
 }
 
-export async function executeIdeCommand (
+export async function executeIdeCommand(
   window: BrowserWindow,
   commandText: string,
   title?: string,
@@ -1089,17 +1047,12 @@ export async function executeIdeCommand (
       );
     }
   } else {
-    await showMessage(
-      window,
-      "error",
-      title,
-      response.finalMessage ?? "Error executing command."
-    );
+    await showMessage(window, "error", title, response.finalMessage ?? "Error executing command.");
   }
   return response;
 }
 
-async function showMessage (
+async function showMessage(
   window: BrowserWindow,
   type: string,
   title: string,
@@ -1117,8 +1070,6 @@ async function showMessage (
   }
 }
 
-function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem> (
-  items: T[]
-): T[] {
-  return items.filter(i => i.visible !== false);
+function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem>(items: T[]): T[] {
+  return items.filter((i) => i.visible !== false);
 }

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { RunMode, Z80TestMachine } from "./test-z80";
 
 describe("Z80 standard ops 60-6f", () => {

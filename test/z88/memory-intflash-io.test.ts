@@ -1,10 +1,8 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88TestMachine } from "./Z88TestMachine";
 import { CardType } from "@emu/machines/z88/memory/CardType";
 import { Z88IntelFlashMemoryCard } from "@emu/machines/z88/memory/Z88IntelFlashMemoryCard";
-import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 
 const addrSR3: number[] = [
   // logical addresses for SR3 (16K range)

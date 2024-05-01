@@ -8,7 +8,7 @@
     // filter falsy (null, undefined, "", false) values
     const args = input.filter(Boolean);
     let i = 0,
-      tmp,
+      tmp: string | number | object,
       x = "",
       str = "";
     while (i < args.length) {

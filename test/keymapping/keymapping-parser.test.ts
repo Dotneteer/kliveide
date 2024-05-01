@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { parseKeyMappings } from "@main/key-mappings/keymapping-parser";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 

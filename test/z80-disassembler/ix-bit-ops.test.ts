@@ -1,8 +1,7 @@
+import { describe, it } from "vitest";
 import { Z80Tester } from "./z80-tester";
 
 describe("Disassembler - IX bit instructions", function () {
-  this.timeout(10000);
-
   it("Bit instructions 0x00-0x0F work as expected", async () => {
     // --- Act
     await Z80Tester.Test("rlc (ix+$3D),b", 0xdd, 0xcb, 0x3d, 0x00);

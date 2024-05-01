@@ -1,12 +1,9 @@
-import * as path from "path";
-
 import styles from "./ExcludedProjectItemsDialog.module.scss";
 import { Modal } from "@controls/Modal";
 import { useEffect, useRef, useState } from "react";
 import classnames from "@renderer/utils/classnames";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { Label } from "@renderer/controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory } from "@renderer/controls/Tooltip";
@@ -17,6 +14,7 @@ import {
   excludedItemsFromGlobalSettingsAsync,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
+import { getNodeFile } from "../project/project-node";
 
 type Props = {
   onClose: () => void;
@@ -33,7 +31,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
 
   const project = store.getState().project;
   const [excludedItems, setExcludedItems] = useState(excludedItemsFromProject(project));
-  const projectName = useSelector(s => path.basename(s.project?.folderPath ?? "Unnamed"));
+  const projectName = useSelector(s => getNodeFile(s.project?.folderPath ?? "Unnamed"));
 
   const disp = useDispatch();
 
@@ -106,7 +104,6 @@ const ExcludedItem = ({itemInfo, onRemove = undefined}: ItemProps) => {
       })}
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}>
-        { itemInfo.missing && <Label text="?" width={12} /> }
         <div className={styles.listItemTitle}>
           <span
             ref={ref}

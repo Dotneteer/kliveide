@@ -12,7 +12,7 @@ type EmuToolInfo = {
 export const machineEmuToolRegistry: EmuToolInfo[] = [
   {
     machineId: MI_Z88,
-    toolFactory: (machine: IZ80Machine) => {
+    toolFactory: (_machine: IZ80Machine) => {
       return <Z88ToolArea />;
     }
   }

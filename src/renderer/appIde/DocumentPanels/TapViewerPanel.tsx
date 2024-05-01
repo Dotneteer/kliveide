@@ -134,7 +134,7 @@ type TzxSectionProps = {
   index: number;
 };
 
-const TzxSection = ({ block, index }: TzxSectionProps) => {
+const TzxSection = ({ block }: TzxSectionProps) => {
   let section: ReactNode;
   switch (block.blockId) {
     case 0x10:
@@ -245,7 +245,7 @@ type TzxNotImplementedBlockProps = {
   block: TzxBlockBase;
 };
 
-const TzxNotImplementedBlockUi = ({ block }: TzxNotImplementedBlockProps) => {
+const TzxNotImplementedBlockUi = ({}: TzxNotImplementedBlockProps) => {
   return (
     <div className={styles.dataSection}>
       <div className={styles.blockHeader}>

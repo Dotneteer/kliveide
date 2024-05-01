@@ -1237,7 +1237,7 @@ export class Z80AsmParser {
           break;
         default:
           this.reportError("Z0109");
-          return;
+          return null;
       }
       this.tokens.get();
       this.expectToken(TokenType.RPar, "Z0005");
@@ -1281,7 +1281,7 @@ export class Z80AsmParser {
           break;
         default:
           this.reportError("Z0109");
-          return;
+          return null;
       }
       this.tokens.get();
       this.expectToken(TokenType.RPar, "Z0005");
@@ -2276,7 +2276,7 @@ export class Z80AsmParser {
       const reg16Traits = getTokenTraits(reg16.type);
       if (!reg16Traits.reg16) {
         this.reportError("Z0106");
-        return;
+        return null;
       }
       this.tokens.get();
       this.expectToken(TokenType.RPar, "Z0005");
@@ -2300,6 +2300,7 @@ export class Z80AsmParser {
       }
     }
     this.reportError("Z0112");
+    return null;
   }
 
   /**
@@ -2690,7 +2691,7 @@ export class Z80AsmParser {
     let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
     if (options) {
       options.forEach(
-        (o, idx) =>
+        (_, idx) =>
           (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
       );
     }
@@ -2835,7 +2836,7 @@ export class Z80AsmParser {
       }
     } else if (needsOne) {
       this.reportError("Z0107");
-      return;
+      return null;
     }
     return expressions;
   }

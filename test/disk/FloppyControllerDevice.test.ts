@@ -1,7 +1,6 @@
-import "mocha";
-import * as path from "path";
-import * as fs from "fs";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
+import path from "path";
+import fs from "fs";
 import { TestUpd765Machine } from "./TestUpd765Machine";
 import { IFloppyControllerDeviceTest } from "@emu/machines/disk/IFloppyContorllerDeviceTest";
 import {
@@ -1696,7 +1695,7 @@ describe("FloppyControllerDevice", () => {
   });
 });
 
-export function readTestFile (filename: string): Uint8Array {
+export function readTestFile(filename: string): Uint8Array {
   const fullname = path.join(__dirname, "../testfiles", filename);
   return fs.readFileSync(fullname);
 }

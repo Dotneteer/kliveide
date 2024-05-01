@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 
 describe("KSX Parser - error cases", () => {
@@ -50,7 +50,7 @@ describe("KSX Parser - error cases", () => {
     { src: "{ abc", issue: "K008" },
     { src: "{ abc 123", issue: "K008" }
   ];
-  issueCases.forEach(c => {
+  issueCases.forEach((c) => {
     it(`Issue: ${c.src}/${c.issue}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -74,4 +74,3 @@ describe("KSX Parser - error cases", () => {
     });
   });
 });
-

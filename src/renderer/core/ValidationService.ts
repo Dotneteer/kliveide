@@ -1,5 +1,4 @@
-import * as path from "path";
-import { __WIN32__, __DARWIN__ } from "../../electron/electron-utils";
+import { getIsWindows } from "@renderer/os-utils";
 
 /**
  * This type represents UI services available from any part of the UI
@@ -16,11 +15,11 @@ class ValidationService implements IValidationService {
   private _maxSegmentLength: number;
   private _separator: RegExp | string;
 
-  constructor () {
+  constructor() {
     this._maxSegmentLength = 255;
-    this._separator = path.sep;
+    this._separator = getIsWindows() ? "\\" : "/";
 
-    if (__DARWIN__) {
+    if (!getIsWindows()) {
       // HFS+ allows any Unicode characters but some limitations are
       // imposed by OS itself (e.g.: colon is a paths separator).
       // Leading dot is unwanted as there's no strong reason to create hidden
@@ -32,59 +31,54 @@ class ValidationService implements IValidationService {
 
       return;
     }
-    if (__WIN32__) {
-      // https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths
-      this._fileNameRegExp = /^[^\\/:*?\"<>|]{1,255}$/;
-      this._pathRegExp = /^(?:[A-Za-z]\:)?[^:*?\"<>|\r\n\t\v]+$/;
-      this._reservedFsNames = [
-        "com1",
-        "com2",
-        "com3",
-        "com4",
-        "com5",
-        "com6",
-        "com7",
-        "com8",
-        "com9",
-        "lpt1",
-        "lpt2",
-        "lpt3",
-        "lpt4",
-        "lpt5",
-        "lpt6",
-        "lpt7",
-        "lpt8",
-        "lpt9",
-        "con",
-        "nul",
-        "prn"
-      ].map(s => new RegExp(`^${s}\$`, "i"));
-      this._separator = /[\\/]/;
-      return;
-    }
-
-    // TODO: Linux?
+    // https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths
+    this._fileNameRegExp = /^[^\\/:*?\"<>|]{1,255}$/;
+    this._pathRegExp = /^(?:[A-Za-z]\:)?[^:*?\"<>|\r\n\t\v]+$/;
+    this._reservedFsNames = [
+      "com1",
+      "com2",
+      "com3",
+      "com4",
+      "com5",
+      "com6",
+      "com7",
+      "com8",
+      "com9",
+      "lpt1",
+      "lpt2",
+      "lpt3",
+      "lpt4",
+      "lpt5",
+      "lpt6",
+      "lpt7",
+      "lpt8",
+      "lpt9",
+      "con",
+      "nul",
+      "prn"
+    ].map((s) => new RegExp(`^${s}\$`, "i"));
+    this._separator = /[\\/]/;
+    return;
   }
 
-  isValidFilename (value: string, allowEmpty = false): boolean {
+  isValidFilename(value: string, allowEmpty = false): boolean {
     value = value.trim();
     if (!value) return allowEmpty;
     return (
       (this._fileNameRegExp?.test(value) ?? true) &&
-      !this._reservedFsNames?.some(r => r.test(value))
+      !this._reservedFsNames?.some((r) => r.test(value))
     );
   }
 
-  isValidPath (value: string, allowEmpty = true): boolean {
+  isValidPath(value: string, allowEmpty = true): boolean {
     value = value.trim();
     if (!value) return allowEmpty;
     if (this._pathRegExp?.test(value)) {
       const segments = value.split(this._separator);
-      console.log(this._separator, segments);
       return (
-        !segments.some(s => s.length > this._maxSegmentLength) &&
+        !segments.some((s) => s.length > this._maxSegmentLength) &&
         (!this._reservedFsNames ||
-          !segments.some(s => this._reservedFsNames?.some(r => r.test(s))))
+          !segments.some((s) => this._reservedFsNames?.some((r) => r.test(s))))
       );
     }
     return !this._pathRegExp;

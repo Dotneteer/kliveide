@@ -1,5 +1,4 @@
-import "mocha";
-
+import { describe, it} from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - .break", async () => {

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { DiskCrc } from "@emu/machines/disk/DiskCrc";
 
 describe("DiskCrc", () => {
@@ -45,5 +44,4 @@ describe("DiskCrc", () => {
     expect(crc.high).toEqual(0xc4);
     expect(crc.low).toEqual(0x0b);
   });
-
 });

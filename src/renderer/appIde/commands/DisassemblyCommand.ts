@@ -91,8 +91,10 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
       reportMessagingError(
         `EmuGetMemory call failed: ${getMemoryResponse.message}`
       );
+      return null;
     } else if (getMemoryResponse.type !== "EmuGetMemoryResponse") {
       reportUnexpectedMessageType(getMemoryResponse.type);
+      return null;
     } else {
       const memory = getMemoryResponse.memory;
       const partitions = getMemoryResponse.partitionLabels;

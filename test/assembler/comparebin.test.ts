@@ -1,5 +1,4 @@
-import "mocha";
-
+import { describe, it} from "vitest";
 import { compileFileFails, compileFileWorks } from "./test-helpers";
 
 describe("Assembler - .comparebin", () => {

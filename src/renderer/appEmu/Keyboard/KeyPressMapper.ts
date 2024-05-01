@@ -1,5 +1,3 @@
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-
 /**
  * Stores and manages tracking keypresses
  */

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import assert from "assert";
 import { Parser } from "@common/ksx/Parser";
 import {
@@ -669,9 +668,7 @@ describe("KSX Parser - statements", () => {
 
   it("Try statement - with catch and finally", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "try { let x = 1; } catch { return; } finally { break; }"
-    );
+    const wParser = new Parser("try { let x = 1; } catch { return; } finally { break; }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -688,9 +685,7 @@ describe("KSX Parser - statements", () => {
 
   it("Try statement - with catch, catch variable, and finally", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "try { let x = 1; } catch (err) { return; } finally { break; }"
-    );
+    const wParser = new Parser("try { let x = 1; } catch (err) { return; } finally { break; }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1098,9 +1093,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..in loop - no var binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (myVar in collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (myVar in collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1117,9 +1110,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..in loop - 'let' binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (let myVar in collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (let myVar in collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1136,9 +1127,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..in loop - 'const' binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (const myVar in collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (const myVar in collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1206,9 +1195,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..of loop - no var binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (myVar of collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (myVar of collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1225,9 +1212,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..of loop - 'let' binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (let myVar of collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (let myVar of collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;
@@ -1244,9 +1229,7 @@ describe("KSX Parser - statements", () => {
 
   it("for..of loop - 'const' binding, body", () => {
     // --- Arrange
-    const wParser = new Parser(
-      "for (const myVar of collection) { console.log(myVar); }"
-    );
+    const wParser = new Parser("for (const myVar of collection) { console.log(myVar); }");
 
     // --- Act
     const stmts = wParser.parseStatements()!;

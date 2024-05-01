@@ -18,7 +18,7 @@ export const useMachineController = (
 
   // --- Manage controller setup
   useEffect(() => {
-    if (mounted.current) return;
+    if (mounted.current) return null;
 
     mounted.current = true;
     const unsubscribe = machineService.newMachineTypeInitialized(() => {

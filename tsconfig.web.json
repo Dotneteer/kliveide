@@ -1,0 +1,35 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/main/**/*",
+    "src/renderer/env.d.ts",
+    "src/renderer/**/*",
+    "src/renderer**/*.tsx",
+    "src/preload/*.d.ts",
+    "src/common/**/*", 
+    "src/renderer/main.tsx", 
+    "src/renderer/App.tsx",
+    "src/emu/**/*",
+    "src/lib/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "strictNullChecks": false,
+    "strict":false,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@abstractions/*": ["./src/common/abstractions/*"],
+      "@common/*": ["./src/common/*"],
+      "@styles/*": ["./src/renderer/assets/styles/*"],
+      "@messaging/*": ["./src/common/messaging/*"],
+      "@state/*": ["./src/common/state/*"],
+      "@utils/*": ["./src/common/utils/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@appIde/*": ["./src/renderer/appIde/*"],
+      "@main/*": ["./src/main/*"],
+      "@controls/*": ["./src/renderer/controls/*"],
+		}
+  }
+}

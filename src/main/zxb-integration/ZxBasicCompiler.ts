@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import {
   AssemblerErrorInfo,
   BinarySegment,
@@ -7,7 +9,6 @@ import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
 import { InjectableOutput, KliveCompilerOutput } from "../compiler-integration/compiler-registry";
 import { mainStore } from "../main-store";
-import * as fs from "fs";
 import {
   ZXBC_DEBUG_ARRAY,
   ZXBC_DEBUG_MEMORY,
@@ -24,7 +25,6 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import * as path from "path";
 import {app} from "electron";
 
 /**
@@ -110,7 +110,6 @@ export class ZxBasicCompiler extends CompilerBase {
       const machineCode = new Uint8Array(fs.readFileSync(outFilename));
 
       // --- Extract the labels
-      const labelList = fs.readFileSync(labelFilename, "utf8");
       const segment: BinarySegment = {
         emittedCode: Array.from(machineCode),
         startAddress: typeof org === "number" ? org & 0xffff : 0x8000

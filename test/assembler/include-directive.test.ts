@@ -1,12 +1,6 @@
-import "mocha";
-import { expect } from "expect";
-import * as path from "path";
-
-import {
-  compileFileFails,
-  compileFileWorks,
-  testCodeFileEmit
-} from "./test-helpers";
+import { describe, it, expect } from "vitest";
+import path from "path";
+import { compileFileFails, compileFileWorks, testCodeFileEmit } from "./test-helpers";
 
 describe("Assembler - include directive", () => {
   it("no include works", async () => {
@@ -23,9 +17,7 @@ describe("Assembler - include directive", () => {
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("SingleInclude.z80asm");
     expect(output.sourceItem.includes.length).toBe(1);
-    expect(path.basename(output.sourceItem.includes[0].filename)).toBe(
-      "inc1.z80asm"
-    );
+    expect(path.basename(output.sourceItem.includes[0].filename)).toBe("inc1.z80asm");
   });
 
   it("multiple include works", async () => {
@@ -34,12 +26,8 @@ describe("Assembler - include directive", () => {
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("MultipleInclude.z80asm");
     expect(output.sourceItem.includes.length).toBe(2);
-    expect(path.basename(output.sourceItem.includes[0].filename)).toBe(
-      "inc1.z80asm"
-    );
-    expect(path.basename(output.sourceItem.includes[1].filename)).toBe(
-      "inc2.z80asm"
-    );
+    expect(path.basename(output.sourceItem.includes[0].filename)).toBe("inc1.z80asm");
+    expect(path.basename(output.sourceItem.includes[1].filename)).toBe("inc2.z80asm");
   });
 
   it("fails with repetition", async () => {
@@ -56,16 +44,12 @@ describe("Assembler - include directive", () => {
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("NestedInclude.z80asm");
     expect(output.sourceItem.includes.length).toBe(2);
-    expect(path.basename(output.sourceItem.includes[0].filename)).toBe(
-      "incA.z80asm"
-    );
+    expect(path.basename(output.sourceItem.includes[0].filename)).toBe("incA.z80asm");
     const itemA = output.sourceItem.includes[0];
     expect(itemA.includes.length).toBe(2);
     expect(path.basename(itemA.includes[0].filename)).toBe("inc1.z80asm");
     expect(path.basename(itemA.includes[1].filename)).toBe("inc2.z80asm");
-    expect(path.basename(output.sourceItem.includes[1].filename)).toBe(
-      "incB.z80asm"
-    );
+    expect(path.basename(output.sourceItem.includes[1].filename)).toBe("incB.z80asm");
     const itemB = output.sourceItem.includes[1];
     expect(path.basename(itemB.includes[0].filename)).toBe("inc1.z80asm");
     expect(path.basename(itemB.includes[1].filename)).toBe("inc2.z80asm");

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import {
   ArrayLiteral,
@@ -16,7 +15,7 @@ describe("KSX - Parser - literals", () => {
     { src: "true", exp: true },
     { src: "false", exp: false }
   ];
-  boolCases.forEach(c => {
+  boolCases.forEach((c) => {
     it(`Boolean literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -46,7 +45,7 @@ describe("KSX - Parser - literals", () => {
       exp: BigInt("0xffffffffffffffff")
     }
   ];
-  binaryCases.forEach(c => {
+  binaryCases.forEach((c) => {
     it(`Binary literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -81,7 +80,7 @@ describe("KSX - Parser - literals", () => {
     { src: "123_456_678_912_345", exp: 123456678912345 },
     { src: "999999_123_456_678_912_345", exp: BigInt("999999123456678912345") }
   ];
-  decimalCases.forEach(c => {
+  decimalCases.forEach((c) => {
     it(`Decimal literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -111,7 +110,7 @@ describe("KSX - Parser - literals", () => {
       exp: BigInt("0xffffffffffffffff")
     }
   ];
-  hexadecimalCases.forEach(c => {
+  hexadecimalCases.forEach((c) => {
     it(`Binary literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -172,7 +171,7 @@ describe("KSX - Parser - literals", () => {
 
     { src: "Infinity", exp: Infinity }
   ];
-  realCases.forEach(c => {
+  realCases.forEach((c) => {
     it(`Real literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -261,7 +260,7 @@ describe("KSX - Parser - literals", () => {
     { src: '"Hello\\xa4"', exp: "Hello\u00a4" },
     { src: '"Hello❤️"', exp: "Hello❤️" }
   ];
-  stringCases.forEach(c => {
+  stringCases.forEach((c) => {
     it(`String literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -288,7 +287,7 @@ describe("KSX - Parser - literals", () => {
     { src: "[[b], a+b]", len: 2, idx: 0, exp: "ArrayLiteral" },
     { src: "[[b], a+b]", len: 2, idx: 1, exp: "BinaryExpression" }
   ];
-  arrayCases.forEach(c => {
+  arrayCases.forEach((c) => {
     it(`Array literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -365,7 +364,7 @@ describe("KSX - Parser - literals", () => {
       val: "ArrayLiteral"
     }
   ];
-  objectCases.forEach(c => {
+  objectCases.forEach((c) => {
     it(`Object literal: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -381,13 +380,9 @@ describe("KSX - Parser - literals", () => {
       expect(array.props.length).toEqual(c.len);
       if (c.len > 0) {
         // eslint-disable-next-line jest/no-conditional-expect
-        expect(
-          (array.props[c.idx] as [Expression, Expression])[0].type
-        ).toEqual(c.name);
+        expect((array.props[c.idx] as [Expression, Expression])[0].type).toEqual(c.name);
         // eslint-disable-next-line jest/no-conditional-expect
-        expect(
-          (array.props[c.idx] as [Expression, Expression])[1].type
-        ).toEqual(c.val);
+        expect((array.props[c.idx] as [Expression, Expression])[1].type).toEqual(c.val);
       }
       expect(array.source).toEqual(c.src);
     });
@@ -395,12 +390,12 @@ describe("KSX - Parser - literals", () => {
 
   const allKeywords = Object.keys(tokenTraits)
     .filter(
-      k =>
+      (k) =>
         tokenTraits[k as unknown as TokenType].keywordLike &&
         !tokenTraits[k as unknown as TokenType].expressionStart
     )
-    .map(tt => TokenType[tt as unknown as TokenType]);
-  allKeywords.forEach(kw => {
+    .map((tt) => TokenType[tt as unknown as TokenType]);
+  allKeywords.forEach((kw) => {
     it(`Object literal with '${kw}'`, () => {
       // --- Arrange
       const wParser = new Parser(`{ ${kw}: 123 }`);
@@ -414,16 +409,10 @@ describe("KSX - Parser - literals", () => {
       expect(expr.type).toEqual("ObjectLiteral");
       const array = expr as ObjectLiteral;
       expect(array.props.length).toEqual(1);
-      expect((array.props[0] as [Expression, Expression])[0].type).toEqual(
-        "Identifier"
-      );
-      const prop = (
-        array.props[0] as [Expression, Expression]
-      )[0] as Identifier;
+      expect((array.props[0] as [Expression, Expression])[0].type).toEqual("Identifier");
+      const prop = (array.props[0] as [Expression, Expression])[0] as Identifier;
       expect(prop.name).toEqual(kw);
-      expect((array.props[0] as [Expression, Expression])[1].value).toEqual(
-        123
-      );
+      expect((array.props[0] as [Expression, Expression])[1].value).toEqual(123);
     });
   });
 });

@@ -1045,7 +1045,6 @@ export function visitLetConstDeclarations (
   visitor: IdDeclarationVisitor
 ): void {
   for (let i = 0; i < declaration.declarations.length; i++) {
-    let value: any;
     const decl = declaration.declarations[i];
     visitDeclaration(decl, visitor);
   }

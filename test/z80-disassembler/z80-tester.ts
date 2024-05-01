@@ -1,4 +1,4 @@
-import { expect } from "expect";
+import { expect } from "vitest";
 import { ICustomDisassembler } from "@appIde/z80-disassembler/custom-disassembly";
 import {
   intToX2,

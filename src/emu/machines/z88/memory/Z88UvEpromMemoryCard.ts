@@ -34,11 +34,11 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
    * Reads the byte at the specified memory address
    *
    * @param memOffset The 8K page base address of bound CPU <address> (in 4Mb range)
-   * @param bank The (absolute) 16K bank, of bound CPU <address>
+   * @param _bank The (absolute) 16K bank, of bound CPU <address>
    * @param address 16-bit (64K) CPU logical address
    * @returns The read byte
    */
-  readMemory (memOffset: number, bank: number, address: number): number {
+  readMemory (memOffset: number, _bank: number, address: number): number {
     // Read behaviour of an UV Eprom is just like ROM or RAM...
     return this.host.memory.memory[memOffset + (address & 0x1fff)];
   }

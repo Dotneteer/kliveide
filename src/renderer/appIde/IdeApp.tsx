@@ -28,10 +28,7 @@ import {
   activateToolAction,
   displayDialogAction
 } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
 import styles from "@styles/app.module.scss";
-import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
@@ -112,6 +109,9 @@ import {
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
 import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
+import { setIsWindows } from "@renderer/os-utils";
+
+const ipcRenderer = window.electron.ipcRenderer;
 
 const IdeApp = () => {
   // --- Used services
@@ -127,6 +127,7 @@ const IdeApp = () => {
   // --- Visual state
   const appPath = decodeURI(location.search.split("=")?.[1]);
   const dimmed = useSelector(s => s.dimMenu ?? false);
+  const isWindows = useSelector(s => s.isWindows ?? false);
   const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
   const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
@@ -189,6 +190,10 @@ const IdeApp = () => {
       initializeMonaco(appPath);
     }
   }, [appPath]);
+
+  useEffect(() => {
+    setIsWindows(isWindows);
+  }, [isWindows]);
 
   return (
     <div id='appMain' className={styles.app}>

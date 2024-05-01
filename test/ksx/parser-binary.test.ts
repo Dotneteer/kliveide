@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { BinaryExpression } from "@common/ksx/source-tree";
 
@@ -28,7 +27,7 @@ describe("KSX Parser - Binary operations", () => {
     { src: "a && b", op: "&&" },
     { src: "a in b", op: "in" }
   ];
-  binaryOpCases.forEach(c => {
+  binaryOpCases.forEach((c) => {
     it(`Binary (operator): ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -59,7 +58,7 @@ describe("KSX Parser - Binary operations", () => {
     { src: "a(b,c)+b", op: "+", exp: "FunctionInvocation" },
     { src: "(123, 1+c)+b", op: "+", exp: "SequenceExpression" }
   ];
-  binaryLeftOperandCases.forEach(c => {
+  binaryLeftOperandCases.forEach((c) => {
     it(`Binary (left operand): ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -92,7 +91,7 @@ describe("KSX Parser - Binary operations", () => {
     { src: "b+a(b,c)", op: "+", exp: "FunctionInvocation" },
     { src: "b+(123, 1+c)", op: "+", exp: "SequenceExpression" }
   ];
-  binaryRightOperandCases.forEach(c => {
+  binaryRightOperandCases.forEach((c) => {
     it(`Binary (left operand): ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);

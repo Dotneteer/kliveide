@@ -13,8 +13,6 @@ import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { MachineConfigSet } from "@common/machines/info-types";
-import { Store } from "@common/state/redux-light";
-import { AppState } from "@common/state/AppState";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -368,17 +366,17 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   /**
    * Gets the partition in which the specified address is paged in
-   * @param address Address to get the partition for
+   * @param _address Address to get the partition for
    */
-  getPartition (address: number): number | undefined {
+  getPartition (_address: number): number | undefined {
     return undefined;
   }
 
   /**
    * Executes the specified custom command
-   * @param command Command to execute
+   * @param _command Command to execute
    */
-  async executeCustomCommand (command: string): Promise<void> {
+  async executeCustomCommand (_command: string): Promise<void> {
     // --- Override in derived classes
   }
 
@@ -670,10 +668,10 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
   /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
-   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  protected onInitNewFrame (clockMultiplierChanged: boolean): void {
+  protected onInitNewFrame (_clockMultiplierChanged: boolean): void {
     // --- Override this method in derived classes.
   }
 

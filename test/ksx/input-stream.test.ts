@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { InputStream } from "@common/ksx/InputStream";
 
 describe("KSX - InputStream", () => {

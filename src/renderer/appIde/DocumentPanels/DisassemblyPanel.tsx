@@ -79,7 +79,7 @@ const Bank16KOptions = [
   { value: "3", label: "C000-FFFF" }
 ];
 
-const BankedDisassemblyPanel = ({ document, contents }: DocumentProps) => {
+const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();

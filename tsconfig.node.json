@@ -1,12 +1,18 @@
 {
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": [
+    "electron.vite.config.*", 
+    "src/main/**/*", 
+    "src/preload/**/*",
+    "src/common/**/*",
+    "testnew/**/*",
+
+  ],
   "compilerOptions": {
     "composite": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react-jsx",
+    "strictNullChecks": false,
+    "strict":false,
+    "types": ["electron-vite/node"],
     "paths": {
       "@abstractions/*": ["./src/common/abstractions/*"],
       "@common/*": ["./src/common/*"],
@@ -19,12 +25,6 @@
       "@appIde/*": ["./src/renderer/appIde/*"],
       "@main/*": ["./src/main/*"],
       "@controls/*": ["./src/renderer/controls/*"],
-		},
-  },
-  "include": [
-    "package.json", 
-    "src/electron", 
-    "src/**/*",
-    "src/common/**/*"
-  ]
+		}
+  }
 }

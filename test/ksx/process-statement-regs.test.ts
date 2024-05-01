@@ -1,17 +1,10 @@
-import "mocha";
-import { expect } from "expect";
-import assert from "assert";
+import { describe, it, expect, assert } from "vitest";
 import {
   CancellationToken,
   EvaluationContext,
   createEvalContext
 } from "@common/ksx/EvaluationContext";
-import {
-  KsxModule,
-  parseKsxModule,
-  isModuleErrors,
-  executeModule
-} from "@common/ksx/ksx-module";
+import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
 import { Expression } from "@common/ksx/source-tree";
 import { Parser } from "@common/ksx/Parser";
 
@@ -70,8 +63,7 @@ describe("KSX Execution - regression", () => {
 
   it("mapped arrow regression #1", async () => {
     // --- Arrange
-    const source =
-      "const mapped = [1,2,3].map(id => {return {id: id} }); console.log(mapped)";
+    const source = "const mapped = [1,2,3].map(id => {return {id: id} }); console.log(mapped)";
     const localContext = {};
 
     // --- Act
@@ -336,7 +328,7 @@ describe("KSX Execution - regression", () => {
   });
 });
 
-async function execModule (
+async function execModule(
   source: string,
   localContext: Record<string, any> = {},
   cancellationToken?: CancellationToken
@@ -360,7 +352,7 @@ async function execModule (
   return { evalContext, parsedModule };
 }
 
-async function execModuleWithContext (
+async function execModuleWithContext(
   source: string,
   evalContext: EvaluationContext
 ): Promise<{ evalContext: EvaluationContext; parsedModule: KsxModule }> {
@@ -378,7 +370,7 @@ async function execModuleWithContext (
   return { evalContext, parsedModule };
 }
 
-export function parseExpression (source: string): Expression {
+export function parseExpression(source: string): Expression {
   const wParser = new Parser(source);
   const tree = wParser.parseExpr();
   if (tree === null) {

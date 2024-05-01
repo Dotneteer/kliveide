@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
 import { Z88TestMachine } from "./Z88TestMachine";

@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Parser } from "@common/ksx/Parser";
 import { Identifier } from "@common/ksx/source-tree";
 
@@ -38,7 +37,7 @@ describe("KSX Parser - primary expressions", () => {
     { src: "_alma$123", exp: "_alma$123" }
   ];
 
-  identifierCases.forEach(c => {
+  identifierCases.forEach((c) => {
     it(`Identifier: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);
@@ -67,7 +66,7 @@ describe("KSX Parser - primary expressions", () => {
     { src: "(a.b)", exp: "MemberAccess" },
     { src: "(a[b])", exp: "CalculatedMemberAccess" }
   ];
-  parenthesizedCases.forEach(c => {
+  parenthesizedCases.forEach((c) => {
     it(`Parenthesized expression: ${c.src}`, () => {
       // --- Arrange
       const wParser = new Parser(c.src);

@@ -12,7 +12,7 @@ export function mediaReducer (
     case "SET_MEDIA":
       return {
         ...state,
-        [payload.id]: payload.value
+        [payload!.id!]: payload!.value
       };
     default:
       return state;

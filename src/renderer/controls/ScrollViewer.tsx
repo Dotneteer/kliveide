@@ -216,7 +216,6 @@ export const ScrollViewer = ({
   // --- Move the verical thumb
   const vMove = (e: MouseEvent | React.MouseEvent) => {
     const delta = e.clientY - vGrip.current;
-    const el = ref.current;
     const newScrollPos =
       ((((vGripThumb.current + delta) * getScrollHeight()) /
         (vHeight.current + scrollBarWidth)) *
@@ -227,7 +226,6 @@ export const ScrollViewer = ({
 
   // --- Position verticvally when clicked the scrollbar
   const vPositionTo = (e: React.MouseEvent) => {
-    const el = ref.current;
     const newScrollPos =
       ((((e.clientY - vTop.current - vThumbHeight.current / 2) *
         getScrollHeight()) /
@@ -257,7 +255,6 @@ export const ScrollViewer = ({
   // --- Move the horizontal thumb
   const hMove = (e: MouseEvent | React.MouseEvent) => {
     const delta = e.clientX - hGrip.current;
-    const el = ref.current;
     const newScrollPos =
       ((((hGripThumb.current + delta) * getScrollWidth()) /
         (hWidth.current + scrollBarWidth)) *
@@ -268,7 +265,6 @@ export const ScrollViewer = ({
 
   // --- Position verticvally when clicked the scrollbar
   const hPositionTo = (e: React.MouseEvent) => {
-    const el = ref.current;
     const newScrollPos =
       ((((e.clientX - hLeft.current - hThumbWidth.current / 2) *
         getScrollWidth()) /

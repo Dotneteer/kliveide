@@ -1,8 +1,7 @@
+import { describe, it } from "vitest";
 import { Z80Tester } from "./z80-tester";
 
 describe("Disassembler - extended instructions", function () {
-  this.timeout(10000);
-
   it("Next extended instructions work as expected", async () => {
     // --- Act
     await Z80Tester.TestExt("swapnib", 0xed, 0x23);

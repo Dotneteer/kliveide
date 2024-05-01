@@ -1,7 +1,28 @@
-function domReady (
-  condition: DocumentReadyState[] = ["complete", "interactive"]
-) {
-  return new Promise(resolve => {
+import { contextBridge } from "electron";
+import { electronAPI } from "@electron-toolkit/preload";
+
+// --- Custom APIs for renderer
+const api = {};
+
+// --- Use `contextBridge` APIs to expose Electron APIs to renderer only if context isolation
+// --- is enabled, otherwise just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld("electron", electronAPI);
+    contextBridge.exposeInMainWorld("api", api);
+  } catch (error) {
+    console.error(error);
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI;
+  // @ts-ignore (define in dts)
+  window.api = api;
+}
+
+// --- When the DOM is ready, remove the loading animation
+function domReady(condition: DocumentReadyState[] = ["complete", "interactive"]) {
+  return new Promise((resolve) => {
     if (condition.includes(document.readyState)) {
       resolve(true);
     } else {
@@ -14,26 +35,25 @@ function domReady (
   });
 }
 
+// --- Safe DOM manipulation
 const safeDOM = {
-  append (parent: HTMLElement, child: HTMLElement) {
-    if (!Array.from(parent.children).find(e => e === child)) {
-      return parent.appendChild(child);
-    }
+  append(parent: HTMLElement, child: HTMLElement) {
+    return !Array.from(parent.children).find((e) => e === child) ? parent.appendChild(child) : null;
   },
-  remove (parent: HTMLElement, child: HTMLElement) {
-    if (Array.from(parent.children).find(e => e === child)) {
-      return parent.removeChild(child);
-    }
+  remove(parent: HTMLElement, child: HTMLElement) {
+    return Array.from(parent.children).find((e) => e === child) ? parent.removeChild(child) : null;
   }
 };
 
 /**
+ * Loading animation
+ * 
  * https://tobiasahlin.com/spinkit
  * https://connoratherton.com/loaders
  * https://projects.lukehaas.me/css-loaders
  * https://matejkustec.github.io/SpinThatShit
  */
-function useLoading () {
+function useLoading() {
   const className = `loaders-css__square-spin`;
   const styleContent = `
 @keyframes square-spin {
@@ -71,24 +91,24 @@ function useLoading () {
   oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
 
   return {
-    appendLoading () {
+    appendLoading() {
       safeDOM.append(document.head, oStyle);
       safeDOM.append(document.body, oDiv);
     },
-    removeLoading () {
+    removeLoading() {
       safeDOM.remove(document.head, oStyle);
       safeDOM.remove(document.body, oDiv);
     }
   };
 }
 
-// ----------------------------------------------------------------------
-
+// --- Apply the loading animation
 const { appendLoading, removeLoading } = useLoading();
 domReady().then(appendLoading);
 
-window.onmessage = ev => {
+window.onmessage = (ev: { data: { payload: string } }) => {
   ev.data.payload === "removeLoading" && removeLoading();
 };
 
-setTimeout(removeLoading, 4999);
+// --- Remove the loading animation after 2 seconds
+setTimeout(removeLoading, 1999);

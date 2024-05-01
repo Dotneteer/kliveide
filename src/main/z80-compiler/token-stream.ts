@@ -971,7 +971,6 @@ export class TokenStream {
      * Fetches the next character from the input stream
      */
     function fetchNextChar (): string | null {
-      let ch: string;
       if (!lexer._prefetched) {
         lexer._prefetchedPos = input.position;
         lexer._prefetchedColumn = input.column;
@@ -1501,14 +1500,6 @@ function isWs (t: Token): boolean {
  * Tests if a character is a letter
  * @param ch Character to test
  */
-function isLetter (ch: string): boolean {
-  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z");
-}
-
-/**
- * Tests if a character is a letter
- * @param ch Character to test
- */
 function isLetterOrDigit (ch: string): boolean {
   return (
     (ch >= "A" && ch <= "Z") ||
@@ -1523,14 +1514,6 @@ function isLetterOrDigit (ch: string): boolean {
  */
 function isBinaryDigit (ch: string): boolean {
   return ch === "0" || ch === "1" || ch === "_";
-}
-
-/**
- * Tests if a character is an octal digit
- * @param ch Character to test
- */
-function isOctalDigit (ch: string): boolean {
-  return ch >= "0" && ch <= "7";
 }
 
 /**
@@ -1631,18 +1614,6 @@ function isRestrictedInString (ch: string): boolean {
     ch === "\u0085" ||
     ch === "\u2028" ||
     ch === "\u2029"
-  );
-}
-
-// --- Tests for a breaking char
-function isLiteralBreakingChar (ch: string): boolean {
-  return (
-    !isHexadecimalDigit(ch) &&
-    !isHexaSuffix(ch) &&
-    !isOctalSuffix(ch) &&
-    ch !== "." //&&
-    //ch !== "+" &&
-    //ch !== "-"
   );
 }
 

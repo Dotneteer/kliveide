@@ -2,10 +2,10 @@ import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { CommandWithSingleStringBase } from "./CommandWithSimpleStringBase";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import { commandError, commandSuccessWith } from "../services/ide-commands";
-import path from "path";
 import { SCRIPT_OUTPUT_VIEWER } from "@common/state/common-ids";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { scriptDocumentId } from "@common/utils/script-utils";
+import { isAbsolutePath } from "../project/project-node";
 
 export class RunScriptCommand extends CommandWithSingleStringBase {
   readonly id = "script-run";
@@ -195,9 +195,9 @@ async function checkScriptFile (
   }
 
   // --- Check if the script file exists
-  const filePath = path.isAbsolute(filename)
+  const filePath = isAbsolutePath(filename)
     ? filename
-    : path.join(projectFolder, filename);
+    : `${projectFolder}/${filename}`
   const response = await context.messenger.sendMessage({
     type: "MainReadTextFile",
     path: filePath,

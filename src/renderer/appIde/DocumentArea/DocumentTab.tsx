@@ -1,6 +1,6 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
-import { MouseEvent, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { TooltipFactory } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";

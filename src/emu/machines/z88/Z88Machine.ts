@@ -18,7 +18,6 @@ import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
 import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
-  MC_SCREEN_SIZE,
   MC_Z88_KEYBOARD,
   MC_Z88_SLOT0,
   MC_Z88_SLOT1,
@@ -122,28 +121,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.keyboardDevice = new Z88KeyboardDevice(this);
     this.screenDevice = new Z88ScreenDevice(this);
     this.beeperDevice = new Z88BeeperDevice(this);
-
-    // --- Set up the screen size
-    let scw = 0xff;
-    let sch = 8;
-    switch (this.config?.[MC_SCREEN_SIZE]) {
-      case "640x320":
-        scw = 0xff;
-        sch = 40;
-        break;
-      case "640x480":
-        scw = 0xff;
-        sch = 60;
-        break;
-      case "800x320":
-        scw = 100;
-        sch = 40;
-        break;
-      case "800x480":
-        scw = 100;
-        sch = 60;
-        break;
-    }
 
     // --- Now, reset the machine
     this.reset();
@@ -637,29 +614,29 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
 
   /**
    * Gets the main execution point information of the machine
-   * @param model Machine model to use for code execution
+   * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+  getCodeInjectionFlow (_model: string): CodeInjectionFlow {
     // TODO: Implement this
     return [];
   }
 
   /**
    * Injects the specified code into the ZX Spectrum machine
-   * @param codeToInject Code to inject into the machine
+   * @param _codeToInject Code to inject into the machine
    * @returns The start address of the injected code
    */
-  injectCodeToRun (codeToInject: CodeToInject): number {
+  injectCodeToRun (_codeToInject: CodeToInject): number {
     // TODO: Implement this
     return 0;
   }
 
   /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
-   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (clockMultiplierChanged: boolean): void {
+  onInitNewFrame (_clockMultiplierChanged: boolean): void {
     // --- 5ms frame completed, update the real time clock
     const blink = this.blinkDevice;
     blink.incrementRtc();

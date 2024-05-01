@@ -1,4 +1,3 @@
-import * as path from "path";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -21,7 +20,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
   private lineNo?: number;
   private columnNo?: number;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     this.lineNo = this.columnNo = undefined;
   }
 
@@ -30,9 +29,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
    * @param _args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length < 1 || args.length > 3) {
       return validationError("This command expects 1 to 3 arguments");
@@ -55,7 +52,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check if a project node exists
     const projState = context.store.getState()?.project;
     if (!projState?.folderPath) {
@@ -63,9 +60,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     }
 
     // --- Get the project node
-    const projNode = context.service.projectService.getNodeForFile(
-      path.normalize(this.filename)
-    );
+    const projNode = context.service.projectService.getNodeForFile(this.filename);
     if (!projNode) {
       return commandError(`File '${this.filename}' not found in the project.`);
     }
@@ -98,7 +93,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
           }
         }
       }
-      
+
       // TODO: ?
       //context.store.dispatch(incDocumentActivationVersionAction());
     }

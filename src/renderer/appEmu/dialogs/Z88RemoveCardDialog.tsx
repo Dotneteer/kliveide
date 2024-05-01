@@ -1,10 +1,11 @@
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Modal } from "@renderer/controls/Modal";
-import { CardSlotState, applyCardStateChange } from "../machines/Z88ToolArea";
+import { applyCardStateChange } from "../machines/Z88ToolArea";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { MC_Z88_SLOT0 } from "@common/machines/constants";
+import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 
 type Props = {
   slot: number;

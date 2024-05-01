@@ -179,6 +179,7 @@ class DocumentHubService implements IDocumentHubService {
       }
       return projectDoc;
     }
+    return null;
   }
 
   /**

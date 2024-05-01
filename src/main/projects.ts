@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import {
   closeFolderAction,
   dimMenuAction,
@@ -11,7 +13,6 @@ import {
   setExcludedProjectItemsAction,
   setIdeFontSizeAction,
   setMachineSpecificAction,
-  setModelTypeAction,
   setProjectBuildFileAction,
   showEmuStatusBarAction,
   showEmuToolbarAction,
@@ -23,8 +24,6 @@ import {
   toolPanelsOnTopAction
 } from "../common/state/actions";
 import { app, BrowserWindow, dialog } from "electron";
-import * as fs from "fs";
-import * as path from "path";
 import { mainStore } from "./main-store";
 import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
 import {

@@ -10,7 +10,7 @@ export function scriptsReducer (
 ): ScriptRunInfo[] {
   switch (type) {
     case "SET_SCRIPTS_STATUS":
-      return (payload.value as ScriptRunInfo[]).slice();
+      return (payload?.value as ScriptRunInfo[]).slice();
     default:
       return state;
   }

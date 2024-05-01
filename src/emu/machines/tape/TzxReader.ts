@@ -31,7 +31,6 @@ import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
 import { TzxStopTheTape48Block } from "./TzxStopTheTape48Block";
 import { TzxTextDescriptionBlock } from "./TzxTextDescriptionBlock";
 import { TzxTurboSpeedBlock } from "./TzxTurboSpeedBlock";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 // --- Represents the available TZX data block types
 const dataBlockTypes = new Map<number, () => TzxBlockBase>([

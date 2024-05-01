@@ -18,7 +18,6 @@ import {
   setAudioSampleRateAction
 } from "@state/actions";
 import styles from "@styles/app.module.scss";
-import { ipcRenderer } from "electron";
 import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
@@ -47,6 +46,9 @@ import {
   setCachedMessenger,
   setCachedStore
 } from "@renderer/CachedServices";
+import { setIsWindows } from "@renderer/os-utils";
+
+const ipcRenderer = window.electron.ipcRenderer;
 
 const EmuApp = () => {
   // --- Used services
@@ -61,6 +63,7 @@ const EmuApp = () => {
     s => s.project?.isKliveProject ?? false
   );
   const dimmed = useSelector(s => s.dimMenu ?? false);
+  const isWindows = useSelector(s => s.isWindows ?? false);
   const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
   const dialogData = useSelector(s => s.ideView?.dialogData);
 
@@ -91,7 +94,13 @@ const EmuApp = () => {
       // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
       ctx?.close().catch(console.error);
     }
+
   }, [appServices, store, messenger]);
+
+  useEffect(() => {
+    setIsWindows(isWindows);
+  }, [isWindows]);
+
 
   return (
     <div id='appMain' className={styles.app}>

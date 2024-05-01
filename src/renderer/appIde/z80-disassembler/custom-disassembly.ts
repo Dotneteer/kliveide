@@ -1,4 +1,3 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { DisassemblyItem, FetchResult, MemorySection } from "./disassembly-helper";
 
 /**

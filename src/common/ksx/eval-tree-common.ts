@@ -110,7 +110,6 @@ export function evalIdentifier (
   evalContext: EvaluationContext,
   thread: LogicalThread
 ): any {
-  let report = false;
   const valueScope = getIdentifierScope(expr, evalContext, thread).scope;
   let valueIndex: string | number = expr.name;
   let idObj: any;
@@ -391,7 +390,6 @@ export function evalPreOrPostCore (
   operand: Expression,
   thisStack: any[],
   expr: PrefixOpExpression | PostfixOpExpression,
-  evalContext: EvaluationContext,
   thread: LogicalThread
 ): any {
   thisStack.pop();

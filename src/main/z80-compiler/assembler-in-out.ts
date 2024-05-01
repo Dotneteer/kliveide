@@ -1,4 +1,4 @@
-import * as path from "path";
+import path from "path";
 
 import { SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { ErrorCodes } from "./assembler-errors";

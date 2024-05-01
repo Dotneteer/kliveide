@@ -23,8 +23,6 @@ import { Row } from "@renderer/controls/generic/Row";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
 import { memo, useEffect, useRef, useState } from "react";
-import { set } from "lodash";
-import { actionAsyncStorage } from "next/dist/client/components/action-async-storage.external";
 
 const defaultPalette: number[] = [];
 for (let i = 0; i < 256; i++) {

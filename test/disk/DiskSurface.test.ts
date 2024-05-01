@@ -1,7 +1,6 @@
-import "mocha";
-import * as path from "path";
-import * as fs from "fs";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
+import path from "path";
+import fs from "fs";
 import { createDiskSurface } from "@emu/machines/disk/DiskSurface";
 import { DiskCrc } from "@emu/machines/disk/DiskCrc";
 import { readDiskData } from "@emu/machines/disk/disk-readers";

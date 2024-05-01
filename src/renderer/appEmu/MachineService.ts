@@ -6,12 +6,7 @@ import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import {
-  setMachineConfigAction,
-  setMachineTypeAction,
-  setMediaAction,
-  setModelTypeAction
-} from "@state/actions";
+import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store, Unsubscribe } from "@state/redux-light";
 import {
@@ -22,11 +17,7 @@ import {
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
-import {
-  MachineConfigSet,
-  MachineInfo,
-  MachineModel
-} from "@common/machines/info-types";
+import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
@@ -39,7 +30,7 @@ class MachineService implements IMachineService {
    * Initializes the machine service to use the specified store
    * @param store Store to use for managing the state
    */
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
     private readonly messageSource: MessageSource
@@ -51,25 +42,23 @@ class MachineService implements IMachineService {
    * @param modelId ID of the machine model
    * @param config Optional machine configuration
    */
-  async setMachineType (
+  async setMachineType(
     machineId: string,
     modelId?: string,
     config?: MachineConfigSet
   ): Promise<void> {
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
-      m =>
+      (m) =>
         m.machineId === machineId &&
-        (!modelId || !m.models || m.models.find(m => m.modelId === modelId))
+        (!modelId || !m.models || m.models.find((m) => m.modelId === modelId))
     );
     if (!machineInfo) {
-      throw new Error(
-        `Cannot find machine type '${machineId}' in the registry.`
-      );
+      throw new Error(`Cannot find machine type '${machineId}' in the registry.`);
     }
 
     // --- Get the model instance
-    const modelInfo = machineInfo.models?.find(m => m.modelId === modelId);
+    const modelInfo = machineInfo.models?.find((m) => m.modelId === modelId);
 
     // --- Ok, dismount the old machine type
     let oldBps: BreakpointInfo[] | undefined;
@@ -86,15 +75,9 @@ class MachineService implements IMachineService {
     }
 
     // --- Initialize the new machine
-    const rendererInfo = machineRendererRegistry.find(
-      r => r.machineId === machineId
-    );
+    const rendererInfo = machineRendererRegistry.find((r) => r.machineId === machineId);
     const machine = rendererInfo.factory(this.store, modelInfo, config);
-    this._controller = new MachineController(
-      this.store,
-      this.messenger,
-      machine
-    );
+    this._controller = new MachineController(this.store, this.messenger, machine);
 
     // --- Restore the breakpoints from the old machine
     this._controller.debugSupport = new DebugSupport(this.store, oldBps);
@@ -113,43 +96,38 @@ class MachineService implements IMachineService {
     // --- Ready, sign the machine type state change
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
-    this.store.dispatch(
-      setMachineConfigAction(config || modelInfo?.config),
-      this.messageSource
-    );
+    this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
   }
 
   /**
    * Gets the current machine type
    */
-  getMachineType (): string | undefined {
+  getMachineType(): string | undefined {
     return this.store.getState()?.emulatorState?.machineId;
   }
 
   /**
    * Gets descriptive information about the current machine
    */
-  getMachineInfo (): { machine: MachineInfo; model: MachineModel } | undefined {
+  getMachineInfo(): { machine: MachineInfo; model: MachineModel } | undefined {
     const currentType = this.store.getState()?.emulatorState?.machineId;
     const currentModel = this.store.getState()?.emulatorState?.modelId;
     const machine = machineRegistry.find(
-      m =>
+      (m) =>
         m.machineId === currentType &&
-        (!m.models ||
-          !currentModel ||
-          m.models?.find(m => m.modelId === currentModel))
+        (!m.models || !currentModel || m.models?.find((m) => m.modelId === currentModel))
     );
     if (!machine) {
       return undefined;
     }
-    const model = machine.models?.find(m => m.modelId === currentModel);
+    const model = machine.models?.find((m) => m.modelId === currentModel);
     return { machine, model };
   }
 
   /**
    * Gets the current machine controller instance
    */
-  getMachineController (): MachineController | undefined {
+  getMachineController(): MachineController | undefined {
     return this._controller;
   }
 
@@ -158,7 +136,7 @@ class MachineService implements IMachineService {
    * @param handler Function handling machine type change
    * @returns An unsubscribe function
    */
-  oldMachineTypeDisposing (handler: MachineTypeEventHandler): Unsubscribe {
+  oldMachineTypeDisposing(handler: MachineTypeEventHandler): Unsubscribe {
     this._oldDisposing.on(handler);
     return () => this._oldDisposing.off(handler);
   }
@@ -168,7 +146,7 @@ class MachineService implements IMachineService {
    * @param handler Function handling machine type change
    * @returns An unsubscribe function
    */
-  oldMachineTypeDisposed (handler: MachineTypeEventHandler): Unsubscribe {
+  oldMachineTypeDisposed(handler: MachineTypeEventHandler): Unsubscribe {
     this._oldDisposed.on(handler);
     return () => this._oldDisposed.off(handler);
   }
@@ -178,9 +156,7 @@ class MachineService implements IMachineService {
    * @param handler Function handling machine type change
    * @returns An unsubscribe function
    */
-  newMachineTypeInitializing (
-    handler: MachineInstanceEventHandler
-  ): Unsubscribe {
+  newMachineTypeInitializing(handler: MachineInstanceEventHandler): Unsubscribe {
     this._newInitializing.on(handler);
     return () => this._newInitializing.off(handler);
   }
@@ -190,7 +166,7 @@ class MachineService implements IMachineService {
    * @param handler Function handling machine type change
    * @returns An unsubscribe function
    */
-  newMachineTypeInitialized (handler: MachineInstanceEventHandler): Unsubscribe {
+  newMachineTypeInitialized(handler: MachineInstanceEventHandler): Unsubscribe {
     this._newInitialized.on(handler);
     return () => this._newInitialized.off(handler);
   }
@@ -202,7 +178,7 @@ class MachineService implements IMachineService {
  * @param messenger Messenger instance
  * @returns Machine service instance
  */
-export function createMachineService (
+export function createMachineService(
   store: Store<AppState>,
   messenger: MessengerBase,
   messageSource: MessageSource

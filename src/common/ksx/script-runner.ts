@@ -29,7 +29,7 @@ export function concludeScript (
   (async () => {
     try {
       await execTask;
-      const cancelled = evalContext.cancellationToken.cancelled;
+      const cancelled = evalContext.cancellationToken!.cancelled;
       script.status = cancelled ? "stopped" : "completed";
       let time = 0;
       if (cancelled) {
@@ -45,7 +45,7 @@ export function concludeScript (
           color: cancelled ? "yellow" : "green"
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.log("Script error", error);
       script.status = "execError";
       script.error = error.message;

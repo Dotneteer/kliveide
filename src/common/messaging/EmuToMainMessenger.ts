@@ -4,7 +4,8 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { ipcRenderer, IpcRendererEvent } from "electron";
+
+const ipcRenderer = window.electron.ipcRenderer;
 
 /**
  * Implements a messenger that send messages from the Emu to the Main process
@@ -17,7 +18,7 @@ export class EmuToMainMessenger extends MessengerBase {
     super();
     ipcRenderer?.on(
       this.responseChannel,
-      (_ev: IpcRendererEvent, response: ResponseMessage) =>
+      (_ev: any, response: ResponseMessage) =>
         this.processResponse(response)
     );
   }

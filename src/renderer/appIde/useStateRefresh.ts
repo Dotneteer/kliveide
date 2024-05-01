@@ -18,7 +18,7 @@ export function useStateRefresh (
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) return;
+    if (initialized.current) return null;
     initialized.current = true;
     handler(machineState);
 

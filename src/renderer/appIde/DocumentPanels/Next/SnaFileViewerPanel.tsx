@@ -2,7 +2,7 @@ import styles from "./SnaFileViewerPanel.module.scss";
 import { Label } from "@renderer/controls/Labels";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
-const SnaFileViewerPanel = ({ document, contents }: DocumentProps) => {
+const SnaFileViewerPanel = ({}: DocumentProps) => {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>

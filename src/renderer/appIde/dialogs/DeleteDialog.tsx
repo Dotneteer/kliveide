@@ -23,7 +23,7 @@ export const DeleteDialog = ({ isFolder, entry, onClose, onDelete }: Props) => {
       primaryLabel='Delete'
       primaryDanger={true}
       initialFocus='cancel'
-      onPrimaryClicked={async result => {
+      onPrimaryClicked={async () => {
         await onDelete?.();
         return false;
       }}

@@ -139,8 +139,11 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
       this.address = value;
       this.partition = partitionType === "R" ? -(partition + 1) : partition;
       if (partition !== undefined) {
-        const roms = context.machineInfo.roms ?? 0;
-        const banks = context.machineInfo.banks ?? 0;
+        // --- TODO: Fix this!
+        // const roms = context.machineInfo.roms ?? 0;
+        // const banks = context.machineInfo.banks ?? 0;
+        const roms = 0;
+        const banks = 0;
         if (
           (roms === 0 && this.partition < 0) ||
           (banks === 0 && this.partition >= 0)

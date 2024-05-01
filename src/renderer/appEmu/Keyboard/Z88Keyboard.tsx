@@ -75,7 +75,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
 
   // --- Mount the kayboard API
   useEffect(() => {
-    if (mounted.current) return;
+    if (mounted.current) return null;
     mounted.current = true;
     apiLoaded?.(api);
 

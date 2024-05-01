@@ -6,6 +6,6 @@ import { TzxBlockBase } from "./TzxBlockBase";
  * This class represents a TZX data block with empty body
  */
 export abstract class TzxBodylessBlockBase extends TzxBlockBase {
-  readFrom (reader: BinaryReader): void {}
-  writeTo (writer: BinaryWriter): void {}
+  readFrom (_: BinaryReader): void {}
+  writeTo (_: BinaryWriter): void {}
 }

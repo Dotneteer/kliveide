@@ -42,11 +42,11 @@ export abstract class MessengerBase {
     }
 
     // --- Create a promise and store the resolver function with the message ID.
-    const promise = new Promise<TResp>((resolve, reject) => {
+    const promise = new Promise<TResp>((resolve) => {
       this._messageResolvers.set(
-        message.correlationId,
+        message.correlationId!,
         resolve as (
-          value: ResponseMessage | PromiseLike<ResponseMessage>
+          value?: ResponseMessage | PromiseLike<ResponseMessage>
         ) => void
       );
     });
@@ -64,13 +64,13 @@ export abstract class MessengerBase {
    */
   protected processResponse (response: ResponseMessage): void {
     // --- Find the resolver according to the correlation ID.
-    const resolver = this._messageResolvers.get(response.correlationId);
+    const resolver = this._messageResolvers.get(response.correlationId!);
     if (resolver) {
       // --- Sign the response arrived
       resolver(response);
 
       // --- Remove the resolver
-      this._messageResolvers.delete(response.correlationId);
+      this._messageResolvers.delete(response.correlationId!);
     }
   }
 

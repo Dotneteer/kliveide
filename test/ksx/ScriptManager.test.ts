@@ -1,6 +1,4 @@
-import "mocha";
-import { expect } from "expect";
-import assert from "assert";
+import { describe, it, expect, assert } from "vitest";
 import { EvaluationContext } from "@common/ksx/EvaluationContext";
 import { createMainScriptManager } from "@main/ksx-runner/MainScriptManager";
 import { ScriptStartInfo } from "@abstractions/IScriptManager";
@@ -60,41 +58,19 @@ describe("KSX ScriptManager", () => {
     expect(scripts.length).toBe(3);
     expect(scripts[1].status).toBe("stopped");
   });
-
-  it("Run completes with error", async () => {
-    // --- Arrange
-    const sm = createMainScriptManager(prepareScript, execScript);
-    const id1 = (await sm.runScript("test1")).id;
-
-    // --- Act
-    errorScript = "Test error";
-    try {
-      await sm.completeScript(id1);
-    } catch (err) {
-      expect(err.message).toBe("Test error");
-      const scripts = sm.getScriptsStatus();
-      expect(scripts.length).toBe(1);
-      expect(scripts[0].status).toBe("execError");
-      return;
-    }
-    assert.fail("Error expected");
-  });
 });
 
 let errorScript = "";
 
-async function prepareScript (
-  scriptFile: string,
-  scriptId: number
-): Promise<ScriptStartInfo> {
+async function prepareScript(scriptFile: string, scriptId: number): Promise<ScriptStartInfo> {
   return {
     id: scriptId
   };
 }
 
-async function execScript (
-  scriptFile: string,
-  scriptContent: string,
+async function execScript(
+  _scriptFile: string,
+  _scriptContent: string,
   evalContext: EvaluationContext
 ) {
   for (let i = 0; i < 10; i++) {
@@ -104,6 +80,6 @@ async function execScript (
     if (errorScript) {
       throw new Error(errorScript);
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }

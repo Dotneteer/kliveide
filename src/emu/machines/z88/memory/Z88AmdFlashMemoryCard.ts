@@ -354,7 +354,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * @param address 22bit absolute address in AMD flash chip
    * @returns command status information or device data
    */
-  private getCommandStatus(bank: number, address: number): number {
+  private getCommandStatus(_: number, address: number): number {
     if (this.isCommandAccumulating == true) {
       // A command is being accumulated (not yet executing)
       // a Read Cycle automatically aborts the pre Command Mode and resets to Read Array Mode

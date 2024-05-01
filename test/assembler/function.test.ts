@@ -1,4 +1,4 @@
-import "mocha";
+import { describe, it } from "vitest";
 import { expressionFails, testExpression } from "./test-helpers";
 
 describe("Assembler - functions", async () => {
@@ -350,7 +350,7 @@ describe("Assembler - functions", async () => {
     { source: "attraddr(130, 25)", value: 0x5a03 },
     { source: "attraddr(191, 255)", value: 0x5aff }
   ];
-  functionSamples.forEach(lit => {
+  functionSamples.forEach((lit) => {
     it(`Invoke: ${lit.source}`, async () => {
       await testExpression(lit.source, lit.value);
     });
@@ -441,7 +441,7 @@ describe("Assembler - functions", async () => {
     { source: "attraddr(0, -1)" },
     { source: "attraddr(0, 256)" }
   ];
-  functionFailSamples.forEach(lit => {
+  functionFailSamples.forEach((lit) => {
     it(`Invoke fails: ${lit.source}`, async () => {
       await expressionFails(lit.source);
     });

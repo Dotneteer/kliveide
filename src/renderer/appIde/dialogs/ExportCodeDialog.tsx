@@ -76,7 +76,7 @@ type Props = {
   onExport: () => Promise<void>;
 };
 
-export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
+export const ExportCodeDialog = ({ onClose }: Props) => {
   const { messenger } = useRendererContext();
   const { outputPaneService, ideCommandsService, validationService } =
     useAppServices();
@@ -204,8 +204,10 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
               reportMessagingError(
                 `MainShowOpenFolderDialog call failed: ${response.message}`
               );
+              return null;
             } else if (response.type !== "MainShowOpenFolderDialogResponse") {
               reportUnexpectedMessageType(response.type);
+              return null;
             } else {
               if (response.folder) {
                 setExportFolder(response.folder);
@@ -271,8 +273,10 @@ export const ExportCodeDialog = ({ onClose, onExport }: Props) => {
               reportMessagingError(
                 `MainShowOpenFolderDialog call failed: ${response.message}`
               );
+              return null;
             } else if (response.type !== "MainShowOpenFileDialogResponse") {
               reportUnexpectedMessageType(response.type);
+              return null;
             } else {
               if (response.file) {
                 setScreenFilename(response.file);

@@ -1,11 +1,5 @@
-import "mocha";
-import { expect } from "expect";
-
-import {
-  codeRaisesError,
-  testCodeEmit,
-  testCodeEmitWithOptions
-} from "./test-helpers";
+import { describe, it, expect } from "vitest";
+import { codeRaisesError, testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
 import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
 
@@ -101,7 +95,7 @@ describe("Assembler - macro parameter emit", async () => {
     { expr: "l", expected: 0x7d },
     { expr: "a", expected: 0x7f }
   ];
-  reg8Cases.forEach(tc => {
+  reg8Cases.forEach((tc) => {
     it(`wotks with reg8: ${tc.expr}`, async () => {
       const source = `
       MyMacro: .macro(MyArg)

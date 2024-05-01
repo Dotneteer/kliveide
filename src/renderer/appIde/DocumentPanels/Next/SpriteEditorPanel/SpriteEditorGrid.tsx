@@ -74,7 +74,7 @@ export const SpriteEditorGrid = ({
   const _endMove = () => endMove();
 
   // --- Start the drawing operation with the tool set
-  const handleMouseDown = (row: number, col: number, button: number) => {
+  const handleMouseDown = (_row: number, _col: number, button: number) => {
     // --- Save the current sprite map
     savedSpriteMap.current = activeSpriteMap.current.slice(0);
     origSpriteMap.current = activeSpriteMap.current.slice(0);
@@ -122,7 +122,7 @@ export const SpriteEditorGrid = ({
   };
 
   // --- Sign the start of operation
-  const startMove = (e: React.MouseEvent) => {
+  const startMove = () => {
     // --- Capture mouse move via window events
     window.addEventListener("mouseup", _endMove);
     window.addEventListener("mousemove", _move);
@@ -674,7 +674,7 @@ export const SpriteEditorGrid = ({
                 }}
                 onMouseDown={e => {
                   if (tool === "pointer") return;
-                  startMove(e);
+                  startMove();
                   startMousePos.current = {
                     row: thisRow,
                     col: thisCol,
@@ -689,7 +689,7 @@ export const SpriteEditorGrid = ({
                   }
                   onPositionChange?.(thisRow, thisCol);
                 }}
-                onMouseUp={e => {
+                onMouseUp={() => {
                   endMove(thisRow, thisCol);
                 }}
                 key={i}

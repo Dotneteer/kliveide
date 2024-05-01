@@ -1,6 +1,4 @@
-import "mocha";
-import { expect } from "expect";
-
+import { describe, it, expect } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
 import { ExpressionValueType } from "@abstractions/IZ80CompilerService";
@@ -200,13 +198,9 @@ describe("Assembler - fixups", async () => {
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
     expect(output.getSymbol("Symbol1").value.asString()).toBe("helloyou");
-    expect(output.getSymbol("Symbol1").value.type).toBe(
-      ExpressionValueType.String
-    );
+    expect(output.getSymbol("Symbol1").value.type).toBe(ExpressionValueType.String);
     expect(output.getSymbol("Symbol2").value.asString()).toBe("hello");
-    expect(output.getSymbol("Symbol2").value.type).toBe(
-      ExpressionValueType.String
-    );
+    expect(output.getSymbol("Symbol2").value.type).toBe(ExpressionValueType.String);
   });
 
   it("equ: Bit16 string", async () => {
@@ -235,13 +229,9 @@ describe("Assembler - fixups", async () => {
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0603").toBe(true);
     expect(output.getSymbol("Symbol1").value.asString()).toBe("helloyou");
-    expect(output.getSymbol("Symbol1").value.type).toBe(
-      ExpressionValueType.String
-    );
+    expect(output.getSymbol("Symbol1").value.type).toBe(ExpressionValueType.String);
     expect(output.getSymbol("Symbol2").value.asString()).toBe("you");
-    expect(output.getSymbol("Symbol2").value.type).toBe(
-      ExpressionValueType.String
-    );
+    expect(output.getSymbol("Symbol2").value.type).toBe(ExpressionValueType.String);
   });
 
   it("val: fixup lifetime discrepancy #1", async () => {
@@ -257,7 +247,14 @@ describe("Assembler - fixups", async () => {
         fixupVar:
         nop
       `,
-      0x21, 0x07, 0x80, 0x21, 0x08, 0x80, 0x00);
+      0x21,
+      0x07,
+      0x80,
+      0x21,
+      0x08,
+      0x80,
+      0x00
+    );
   });
 
   it("val: fixup lifetime discrepancy #2", async () => {
@@ -282,6 +279,13 @@ describe("Assembler - fixups", async () => {
         fixupVar:
           nop
       `,
-      0x21, 0x08, 0x80, 0x21, 0x0a, 0x80, 0x00);
+      0x21,
+      0x08,
+      0x80,
+      0x21,
+      0x0a,
+      0x80,
+      0x00
+    );
   });
 });

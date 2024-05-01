@@ -1,5 +1,5 @@
-import * as path from "path";
-import * as fs from "fs";
+import path from "path";
+import fs from "fs";
 import _ from "lodash";
 
 import { app, BrowserWindow, dialog, shell } from "electron";
@@ -59,8 +59,6 @@ import {
 import { readDiskData } from "../emu/machines/disk/disk-readers";
 import { createDiskFile } from "../common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
-import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
-import { PANE_ID_SCRIPTIMG } from "../common/integration/constants";
 import { ScriptStartInfo } from "@abstractions/IScriptManager";
 import { collectedBuildTasks } from "./build";
 
@@ -523,7 +521,7 @@ async function displayOpenFolderDialog (
     defaultPath,
     properties: ["openDirectory"]
   });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return null;
 
   // --- Read the file
   const selectedFolder = dialogResult.filePaths[0];
@@ -557,7 +555,7 @@ async function displayOpenFileDialog (
     properties: ["openFile"],
     filters
   });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return null;
 
   // --- Read the file
   const selectedFile = dialogResult.filePaths[0];

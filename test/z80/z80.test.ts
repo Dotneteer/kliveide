@@ -1,5 +1,4 @@
-import "mocha";
-import { expect } from "expect";
+import { describe, it, expect } from "vitest";
 import { Z80Cpu } from "@emu/z80/Z80Cpu";
 
 describe("Z80 register assignment", () => {

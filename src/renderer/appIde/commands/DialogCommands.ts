@@ -6,7 +6,6 @@ import {
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
-  writeSuccessMessage,
   commandSuccess,
   commandError
 } from "../services/ide-commands";

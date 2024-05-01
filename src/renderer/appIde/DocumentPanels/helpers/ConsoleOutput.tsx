@@ -1,6 +1,4 @@
-import { createSettingsReader } from "@common/utils/SettingsReader";
 import styles from "./ConsoleOutput.module.scss";
-import { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
 import {
   IOutputBuffer,
   OutputContentLine,
