@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import classnames from "@renderer/utils/classnames";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { Label } from "@renderer/controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory } from "@renderer/controls/Tooltip";
@@ -105,7 +104,6 @@ const ExcludedItem = ({itemInfo, onRemove = undefined}: ItemProps) => {
       })}
       onMouseEnter={() => setMouseOver(true)}
       onMouseLeave={() => setMouseOver(false)}>
-        { itemInfo.missing && <Label text="?" width={12} /> }
         <div className={styles.listItemTitle}>
           <span
             ref={ref}

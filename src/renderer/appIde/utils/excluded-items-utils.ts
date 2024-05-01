@@ -1,5 +1,3 @@
-import fs from "fs";
-
 import { ResponseMessage } from "@common/messaging/messages-core";
 import { IdeProject } from "@common/state/AppState";
 import { MessengerBase } from "@common/messaging/MessengerBase";
@@ -8,7 +6,6 @@ import { getIsWindows } from "@renderer/os-utils";
 export type ExcludedItemInfo = {
   id: string;
   value: string;
-  missing?: boolean;
 };
 
 export async function excludedItemsFromGlobalSettingsAsync(
@@ -33,15 +30,12 @@ export function excludedItemsFromGlobalSettings(response: ResponseMessage): Excl
 
 export function excludedItemsFromProject(project?: IdeProject): ExcludedItemInfo[] {
   if (project?.isKliveProject !== true) return [];
-
-  const root = project.folderPath;
   return postprocessResult(
     project.excludedItems?.map((id) => {
       const value = cvtPath(id);
       return {
         id,
         value,
-        missing: !fs.existsSync(`${root}/${value}`)
       };
     }) ?? []
   );

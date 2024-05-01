@@ -1,5 +1,3 @@
-//import path from "path";
-
 import { getIsWindows } from "@renderer/os-utils";
 import { Action } from "./Action";
 import { IdeProject } from "./AppState";

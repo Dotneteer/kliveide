@@ -23,6 +23,7 @@ import {
 import { saveProject } from "../utils/save-project";
 import { pathStartsWith } from "@common/utils/path-utils";
 import { getIsWindows } from "@renderer/os-utils";
+import { isAbsolutePath } from "../project/project-node";
 
 export class ProjectListExcludedItemsCommand extends IdeCommandBase {
   readonly id = "project:excluded-items";
@@ -62,7 +63,7 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase {
     } else {
       writeInfoMessage(context.output, "Excluded items:");
       items.forEach((t) =>
-        writeInfoMessage(context.output, `${t.missing ? "? " : "  "}${t.value}`)
+        writeInfoMessage(context.output, `"  "}${t.value}`)
       );
     }
     return commandSuccess;
@@ -218,14 +219,4 @@ function beforeExcluded(context: IdeCommandContext, items: string[]): boolean {
     .forEach((doc) => documentHubService.closeDocument(doc.id));
 
   return result;
-}
-
-function isAbsolutePath(path: string): boolean {
-  if (getIsWindows()) {
-    // In Windows, an absolute path starts with a drive letter followed by ':' or a server share ('\\')
-    return /^[a-zA-Z]:/.test(path) || path.startsWith("\\\\");
-  } else {
-    // In POSIX (Linux/Mac), an absolute path starts with '/'
-    return path.startsWith("/");
-  }
 }

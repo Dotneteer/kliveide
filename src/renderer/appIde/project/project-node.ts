@@ -1,6 +1,7 @@
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@renderer/core/tree-node";
 import { customLanguagesRegistry, fileTypeRegistry } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
+import { getIsWindows } from "@renderer/os-utils";
 
 /**
  * This interface represents a project node for transferring data
@@ -228,4 +229,14 @@ export function getFileTypeEntry(filename: string): FileTypeEditor | null {
     if (match) return typeEntry;
   }
   return null;
+}
+
+export function isAbsolutePath(path: string): boolean {
+  if (getIsWindows()) {
+    // In Windows, an absolute path starts with a drive letter followed by ':' or a server share ('\\')
+    return /^[a-zA-Z]:/.test(path) || path.startsWith("\\\\");
+  } else {
+    // In POSIX (Linux/Mac), an absolute path starts with '/'
+    return path.startsWith("/");
+  }
 }
