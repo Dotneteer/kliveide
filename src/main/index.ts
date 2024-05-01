@@ -344,7 +344,6 @@ async function createAppWindows() {
 
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async (e) => {
-    ideWindow.close();
     if (ideWindow?.webContents) {
       appSettings.windowStates ??= {};
       appSettings.windowStates.ideZoomFactor = ideWindow.webContents.getZoomFactor();
@@ -401,26 +400,26 @@ async function createAppWindows() {
   });
 
   // --- Close the emu window with the IDE window
-  emuWindow.on("close", async (_e) => {
+  emuWindow.on("close", async (e) => {
     if (emuWindow?.webContents) {
       appSettings.windowStates ??= {};
       appSettings.windowStates.emuZoomFactor = emuWindow.webContents.getZoomFactor();
     }
     saveAppSettings();
-    // if (!ideSaved) {
-    //   // --- Do not allow the emu close while IDE is not saved
-    //   e.preventDefault();
-    //   // --- Start saving the IDE and return back from event. The IDE will be still alive
-    //   await saveOnClose();
+    if (!ideSaved) {
+      // --- Do not allow the emu close while IDE is not saved
+      e.preventDefault();
+      // --- Start saving the IDE and return back from event. The IDE will be still alive
+      await saveOnClose();
 
-    //   // --- Close both renderer windows (unless already disposed)
-    //   allowCloseIde = true;
-    //   ideWindow?.close();
-    //   emuWindow.close();
-    // } else {
-    // --- The IDE is saved, so the app can be closed.
-    app.quit();
-    // }
+      // --- Close both renderer windows (unless already disposed)
+      allowCloseIde = true;
+      ideWindow?.close();
+      emuWindow.close();
+    } else {
+      // --- The IDE is saved, so the app can be closed.
+      app.quit();
+    }
   });
 }
 
