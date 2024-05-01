@@ -1,4 +1,50 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.web.json"
+    }
+  ],
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "paths": {
+      "@abstractions/*": ["./src/common/abstractions/*"],
+      "@common/*": ["./src/common/*"],
+      "@styles/*": ["./src/renderer/assets/styles/*"],
+      "@messaging/*": ["./src/common/messaging/*"],
+      "@state/*": ["./src/common/state/*"],
+      "@utils/*": ["./src/common/utils/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@appIde/*": ["./src/renderer/appIde/*"],
+      "@main/*": ["./src/main/*"],
+      "@controls/*": ["./src/renderer/controls/*"],
+		}
+  },
+  "include": [
+    "next-env.d.ts",
+    "pages/**/*.ts",
+    "pages/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
