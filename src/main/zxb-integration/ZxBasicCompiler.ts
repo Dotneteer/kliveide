@@ -1,13 +1,11 @@
-import path from "path";
 import fs from "fs";
-import {
-  AssemblerErrorInfo,
-  BinarySegment,
-  SpectrumModelType
-} from "../../common/abstractions/IZ80CompilerService";
+import { BinarySegment, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
-import { CompilerBase } from "../compiler-integration/CompilerBase";
-import { InjectableOutput, KliveCompilerOutput } from "../compiler-integration/compiler-registry";
+import {
+  IKliveCompiler,
+  InjectableOutput,
+  KliveCompilerOutput
+} from "../compiler-integration/compiler-registry";
 import { mainStore } from "../main-store";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -25,12 +23,12 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import {app} from "electron";
+import { CliCommandRunner, ErrorFilterDescriptor } from "@main/cli-integration/CliCommandRunner";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
  */
-export class ZxBasicCompiler extends CompilerBase {
+export class ZxBasicCompiler implements IKliveCompiler {
   /**
    * The unique ID of the compiler
    */
@@ -53,56 +51,29 @@ export class ZxBasicCompiler extends CompilerBase {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile (
-    filename: string,
-  ): Promise<KliveCompilerOutput> {
+  async compileFile(filename: string): Promise<KliveCompilerOutput> {
     const settingsReader = createSettingsReader(mainStore);
     try {
       // --- Obtain configuration info for ZXBC
-      const execPath = settingsReader
-        .readSetting(ZXBC_EXECUTABLE_PATH)
-        ?.toString();
+      const execPath = settingsReader.readSetting(ZXBC_EXECUTABLE_PATH)?.toString();
       if (!execPath || execPath.trim() === "") {
-        throw new Error(
-          "ZXBC executable path is not set, cannot start the compiler."
-        );
+        throw new Error("ZXBC executable path is not set, cannot start the compiler.");
       }
       const pythonPath = settingsReader.readSetting(ZXBC_PYTHON_PATH)?.toString();
 
       // --- Create the command line arguments
       const outFilename = `${filename}.bin`;
       const labelFilename = `${filename}.lab`;
-      const cmdLine = await createZxbCommandLineArgs(
-        filename,
-        outFilename,
-        labelFilename,
-        null
-      );
-      const traceOutput = [`Executing ${cmdLine}`];
 
-      // --- Run the compiler
-      const compileOut = await this.executeCommandLine(execPath, cmdLine, pythonPath);
-      fs.writeFileSync(path.join(app.getPath("home"), "klive-compile.log"), JSON.stringify(compileOut, null, 2));
-      if (compileOut) {
-        if (typeof compileOut === "string") {
-          return {
-            traceOutput,
-            failed: compileOut
-          };
-        }
+      const args = await createCommandLineArgs(filename, outFilename, labelFilename);
+      const runner = new CliCommandRunner();
+      runner.setErrorFilter(this.getErrorFilterDescription());
+      const result = await runner.execute(execPath, args, {
+        env: pythonPath ? { ...process.env, PATH: pythonPath } : { ...process.env }
+      });
 
-        const errors = compileOut.filter(
-          i => typeof i !== "string"
-        ) as AssemblerErrorInfo[];
-        if (errors?.length > 0) {
-          return {
-            traceOutput,
-            errors,
-            debugMessages: compileOut.filter(
-              i => typeof i === "string"
-            ) as string[]
-          };
-        }
+      if (result.failed || result.errors?.length > 0) {
+        return result;
       }
 
       // --- Extract the output
@@ -125,7 +96,7 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Done.
       return {
-        traceOutput,
+        traceOutput: result.traceOutput,
         errors: [],
         injectOptions: { subroutine: true },
         segments: [segment],
@@ -142,102 +113,68 @@ export class ZxBasicCompiler extends CompilerBase {
      * @param labelFile Lable file to generate
      * @param rawArgs Raw arguments from the code
      */
-    async function createZxbCommandLineArgs (
+    async function createCommandLineArgs(
       inputFile: string,
       outputFile: string,
-      labelFile: string,
-      rawArgs: string | null
-    ): Promise<string> {
+      labelFile: string
+    ): Promise<string[]> {
       const settingsReader = createSettingsReader(mainStore);
-      const argRoot = `${inputFile} --output ${outputFile} --mmap ${labelFile} `;
-      let additional = rawArgs ? rawArgs.trim() : "";
-      if (!additional) {
-        const arrayBaseOne = !!settingsReader.readSetting(
-          ZXBC_ONE_AS_ARRAY_BASE_INDEX
-        );
-        additional = arrayBaseOne ? "--array-base=1 " : "";
-        const optimize = settingsReader.readSetting(
-          ZXBC_OPTIMIZATION_LEVEL
-        ) as number;
-        additional += `--optimize ${optimize ?? 2} `;
-        const orgValue = settingsReader.readSetting(
-          ZXBC_MACHINE_CODE_ORIGIN
-        ) as number;
-        additional += `--org ${orgValue ?? 0x8000} `;
-        const heapSize = settingsReader.readSetting(ZXBC_HEAP_SIZE) as number;
-        additional += `--heap-size ${heapSize ?? 4096} `;
-        const sinclair = settingsReader.readSetting(ZXBC_SINCLAIR) as boolean;
-        additional += sinclair ? "--sinclair " : "";
-        const stringBaseOne = !!settingsReader.readSetting(
-          ZXBC_ONE_AS_STRING_BASE_INDEX
-        );
-        additional += stringBaseOne ? "--string-base=1 " : "";
-        const debugMemory = !!settingsReader.readSetting(ZXBC_DEBUG_MEMORY);
-        additional += debugMemory ? "--debug-memory " : "";
-        const debugArray = !!settingsReader.readSetting(ZXBC_DEBUG_ARRAY);
-        additional += debugArray ? "--debug-array " : "";
-        const strictBool = !!settingsReader.readSetting(ZXBC_STRICT_BOOL);
-        additional += strictBool ? "--strict-bool " : "";
-        const strictMode = !!settingsReader.readSetting(ZXBC_STRICT_MODE);
-        additional += strictMode ? "--strict " : "";
-        const enableBreak = !!settingsReader.readSetting(ZXBC_ENABLE_BREAK);
-        additional += enableBreak ? "--enable-break " : "";
-        const explicit = !!settingsReader.readSetting(ZXBC_EXPLICIT_VARIABLES);
-        additional += explicit ? "--explicit " : "";
+      const args: string[] = [inputFile, "--output", outputFile, "--mmap", labelFile];
+      const arrayBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_ARRAY_BASE_INDEX);
+      if (arrayBaseOne) {
+        args.push("--array-base=1");
       }
-      return (argRoot + additional).trim();
+      const optimize = settingsReader.readSetting(ZXBC_OPTIMIZATION_LEVEL) as number;
+      args.push("--optimize", `${optimize ?? 2}`);
+      const orgValue = settingsReader.readSetting(ZXBC_MACHINE_CODE_ORIGIN) as number;
+      args.push("--org", `${orgValue ?? 0x8000}`);
+      const heapSize = settingsReader.readSetting(ZXBC_HEAP_SIZE) as number;
+      args.push("--heap-size", `${heapSize ?? 4096}`);
+      const sinclair = settingsReader.readSetting(ZXBC_SINCLAIR) as boolean;
+      if (sinclair) {
+        args.push("--sinclair");
+      }
+      const stringBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_STRING_BASE_INDEX);
+      if (stringBaseOne) {
+        args.push("--string-base=1");
+      }
+      const debugMemory = !!settingsReader.readSetting(ZXBC_DEBUG_MEMORY);
+      if (debugMemory) {
+        args.push("--debug-memory");
+      }
+      const debugArray = !!settingsReader.readSetting(ZXBC_DEBUG_ARRAY);
+      if (debugArray) {
+        args.push("--debug-array");
+      }
+      const strictBool = !!settingsReader.readSetting(ZXBC_STRICT_BOOL);
+      if (strictBool) {
+        args.push("--strict-bool");
+      }
+      const strictMode = !!settingsReader.readSetting(ZXBC_STRICT_MODE);
+      if (strictMode) {
+        args.push("--strict");
+      }
+      const enableBreak = !!settingsReader.readSetting(ZXBC_ENABLE_BREAK);
+      if (enableBreak) {
+        args.push("--enable-break");
+      }
+      const explicit = !!settingsReader.readSetting(ZXBC_EXPLICIT_VARIABLES);
+      if (explicit) {
+        args.push("--explicit");
+      }
+      return args;
     }
   }
 
   /**
-   * Processes a compiler error and turns it into an assembly error information
-   * or plain string
-   * @param data Message data to process
+   * Gets the error filter description
    */
-  processErrorMessage (data: string): string | AssemblerErrorInfo {
-    // --- Split segments and search for "error" or "warning"
-    const segments = data.split(":").map(s => s.trim());
-    let isWarning = false;
-    let keywordIdx = segments.indexOf("error");
-    if (keywordIdx < 0) {
-      keywordIdx = segments.indexOf("warning");
-      isWarning = keywordIdx >= 0;
-    }
-
-    // --- Ok, we found an error or a warning.
-    // --- Try to parse the rest of the message
-    if (keywordIdx < 2 || keywordIdx >= segments.length - 1) {
-      return data;
-    }
-
-    // --- Extract other parts
-    const line = parseInt(segments[keywordIdx - 1]);
-    if (isNaN(line)) {
-      return data;
-    }
-    const fileName = segments.slice(0, keywordIdx - 1).join(":");
-    let message = segments
-      .slice(keywordIdx + 1)
-      .join(":")
-      .trim();
-    const bracketPos = message.indexOf("]");
-    let errorCode = "ERR";
-    if (bracketPos >= 0) {
-      errorCode = message.slice(1, bracketPos);
-      message = message.slice(bracketPos + 1).trim();
-    }
-
-    // --- Done.
+  getErrorFilterDescription(): ErrorFilterDescriptor {
     return {
-      fileName,
-      line,
-      message,
-      startColumn: 0,
-      endColumn: 0,
-      startPosition: 0,
-      endPosition: 0,
-      errorCode,
-      isWarning
+      regex: /^(.*):(\d+): error: (.*)$/,
+      filenameFilterIndex: 1,
+      lineFilterIndex: 2,
+      messageFilterIndex: 3
     };
   }
 }

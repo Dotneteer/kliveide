@@ -89,9 +89,7 @@ import {
     readonly noInteractiveUsage = true;
   
     async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-      console.log("Before injectCode");
       const result = await injectCode(context, "run");
-      console.log("After injectCode");
       return result;
     }
   }
@@ -1071,7 +1069,7 @@ import {
     }
   
     // --- Collect errors
-    const errorCount = result?.errors.filter(m => !m.isWarning).length ?? 0;
+    const errorCount = result?.errors?.filter(m => !m.isWarning).length ?? 0;
   
     if (response.failed) {
       if (!result || errorCount === 0) {
@@ -1092,7 +1090,7 @@ import {
         out.color("bright-cyan");
         ideCmd.writeNavigationAction(
           context,
-          err.fileName,
+          err.filename,
           err.line,
           err.startColumn
         );
