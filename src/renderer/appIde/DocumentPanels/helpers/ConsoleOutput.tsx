@@ -1,3 +1,4 @@
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import styles from "./ConsoleOutput.module.scss";
 import {
   IOutputBuffer,
@@ -7,6 +8,7 @@ import {
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { CSSProperties, useEffect, useRef, useState } from "react";
+import { ConsoleAction } from "@common/utils/output-utils";
 
 const SCROLL_DELAY = 500;
 
@@ -118,6 +120,7 @@ type OutputContentLineProps = {
 };
 
 const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
+  const { ideCommandsService } = useAppServices(); 
   const segments = (spans ?? []).map((s, idx) => {
     const style: CSSProperties = {
       fontWeight: s.isBold ? 600 : 400,
@@ -141,9 +144,19 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
       <span
         key={idx}
         style={style}
-        onClick={() => {
+        onClick={async () => {
           if (s.actionable) {
-            if (typeof s.data === "function") {
+            // --- Execute the command
+            if ((s.data as ConsoleAction)?.type === "@navigate") {
+              console.log("Navigate to");
+              const payload = (s.data as ConsoleAction).payload;
+              if (!payload) return;
+              await ideCommandsService.executeCommand(
+                `nav "${payload.file}" ${payload.line != undefined ? payload.line : ""} ${
+                  payload.column != undefined ? (payload.column + 1).toString() : ""
+                }`
+              );
+            } else if (typeof s.data === "function") {
               s.data();
             }
           }

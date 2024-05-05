@@ -87,18 +87,4 @@ export interface IIdeCommandService {
     messages: ValidationMessage[],
     context: IdeCommandContext
   ): void;
-
-  /**
-   * Displays a navigation action to the specified project file
-   * @param context Context to display the messages in
-   * @param file Filename
-   * @param line Optional line number
-   * @param column Optional column number
-   */
-  writeNavigationAction(
-    context: IdeCommandContext,
-    file: string,
-    line?: number,
-    column?: number
-  ): void;
 }

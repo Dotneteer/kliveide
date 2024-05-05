@@ -27,7 +27,9 @@ import {
 } from "../../common/ksx/script-runner";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
-import { Z88DK } from "../../script-packages/z88dk/Z88DK";
+import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -430,13 +432,24 @@ class MainScriptManager implements IScriptManager {
    * Prepares the application context for the script execution
    */
   private async prepareAppContext (): Promise<Record<string, any>> {
+    const callContext: ScriptCallContext = {
+      state: mainStore.getState(),
+      messenger: getMainToIdeMessenger(),
+      output: createScriptConsole(getMainToIdeMessenger(), this.id),
+    }
     return {
-      Output: createScriptConsole(getMainToIdeMessenger(), this.id),
+      Output: callContext.output,
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
-      Z88dk: Z88DK
+      Z88dk: createZ88dk(callContext)
     };
   }
+}
+
+export type ScriptCallContext = {
+  state: AppState;
+  messenger: ReturnType<typeof getMainToIdeMessenger>;
+  output: ReturnType<typeof createScriptConsole>;
 }
 
 export function createMainScriptManager (

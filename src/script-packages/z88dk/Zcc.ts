@@ -484,6 +484,7 @@ function cloneZccOptions(): CmdLineOptionSet {
  * ZCC wrapper to invoke the ZCC process
  */
 class ZccImplementation {
+  readonly _cwd: string;
   readonly _target: string;
   readonly _optionTemplate = cloneZccOptions();
   readonly _options: Record<string, any> = {};
@@ -498,11 +499,13 @@ class ZccImplementation {
 
   /**
    * Creates a new ZCC instance
+   * @param cwd Current working directory
    * @param target Target CPU
    * @param options Compiler options
    * @param files Files to compile
    */
-  constructor(target: string = "zx", options: Record<string, any> = {}, files: string[] = []) {
+  constructor(cwd: string, target: string = "zx", options: Record<string, any> = {}, files: string[] = []) {
+    this._cwd = cwd;
     this._target = target;
     this._options = options;
     this._files = files;
@@ -545,7 +548,7 @@ class ZccImplementation {
     const runner = new CliCommandRunner()
     console.log(command);
     const result = await runner.execute(command, cmdLineArgs.args, {
-      cwd: process.cwd()
+      cwd: this._cwd
     });
     return result;
   }
@@ -671,7 +674,8 @@ type OptionResult = {
 };
 
 export const createZccRunner = (
+  cwd: string,
   target: string = "zx",
   options: Record<string, any> = {},
   files: string[] = []
-) => new ZccImplementation(target, options, files);
+) => new ZccImplementation(cwd, target, options, files);

@@ -213,6 +213,7 @@ function convertToProjectStructure (
   return {
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
+    buildRoot: project.buildRoots.length > 0 ? project.buildRoots[0] : undefined,
     buildFunctions: [],
     children: nodes
   };

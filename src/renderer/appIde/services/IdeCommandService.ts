@@ -26,7 +26,7 @@ class IdeCommandService implements IIdeCommandService {
   /**
    * Initializes the interactive command registry
    */
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
     private readonly messageSource: MessageSource
@@ -39,21 +39,21 @@ class IdeCommandService implements IIdeCommandService {
    * Gets the command with the specified index from the command history
    * @param index Command index
    */
-  getCommandFromHistory (index: number): string {
+  getCommandFromHistory(index: number): string {
     return this._history[index];
   }
 
   /**
    * Gets the length of the command history
    */
-  getCommandHistoryLength (): number {
+  getCommandHistoryLength(): number {
     return this._history?.length ?? 0;
   }
 
   /**
    * Clears the command history
    */
-  clearHistory (): void {
+  clearHistory(): void {
     this._history.length = 0;
   }
 
@@ -61,7 +61,7 @@ class IdeCommandService implements IIdeCommandService {
    * Sets the app services instance
    * @param appServices AppServices instance to use with commands
    */
-  setAppServices (appServices: AppServices): void {
+  setAppServices(appServices: AppServices): void {
     this._appServices = appServices;
   }
 
@@ -69,11 +69,9 @@ class IdeCommandService implements IIdeCommandService {
    * Registers a command
    * @param command Command to register
    */
-  registerCommand (command: IdeCommandInfo): void {
+  registerCommand(command: IdeCommandInfo): void {
     if (this.getCommandInfo(command.id)) {
-      throw new Error(
-        `Command with ID ${command.id} has already been registered.`
-      );
+      throw new Error(`Command with ID ${command.id} has already been registered.`);
     }
     this._commands.push(command);
   }
@@ -81,7 +79,7 @@ class IdeCommandService implements IIdeCommandService {
   /**
    * Retrieves all registered commands
    */
-  getRegisteredCommands (): IdeCommandInfo[] {
+  getRegisteredCommands(): IdeCommandInfo[] {
     return this._commands.slice(0);
   }
 
@@ -90,8 +88,8 @@ class IdeCommandService implements IIdeCommandService {
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo (id: string): IdeCommandInfo | undefined {
-    return this._commands.find(c => c.id === id);
+  getCommandInfo(id: string): IdeCommandInfo | undefined {
+    return this._commands.find((c) => c.id === id);
   }
 
   /**
@@ -99,11 +97,9 @@ class IdeCommandService implements IIdeCommandService {
    * @param idOrAlias
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandByIdOrAlias (idOrAlias: string): IdeCommandInfo | undefined {
+  getCommandByIdOrAlias(idOrAlias: string): IdeCommandInfo | undefined {
     return this._commands.find(
-      c =>
-        c.id === idOrAlias ||
-        (c.aliases && c.aliases.some(a => a === idOrAlias))
+      (c) => c.id === idOrAlias || (c.aliases && c.aliases.some((a) => a === idOrAlias))
     );
   }
 
@@ -114,7 +110,7 @@ class IdeCommandService implements IIdeCommandService {
    * @param useHistory Add the command to the history
    * @param interactiveContex Indicates that the command is executed in interactive context
    */
-  async executeInteractiveCommand (
+  async executeInteractiveCommand(
     command: string,
     buffer?: IOutputBuffer,
     useHistory = true,
@@ -169,7 +165,7 @@ class IdeCommandService implements IIdeCommandService {
 
     // --- Execute the registered command
     const machineId = this.store.getState().emulatorState?.machineId;
-    const machineInfo = machineRegistry.find(m => m.machineId === machineId);
+    const machineInfo = machineRegistry.find((m) => m.machineId === machineId);
     const context: IdeCommandContext = {
       commandtext: command,
       machineInfo,
@@ -189,9 +185,7 @@ class IdeCommandService implements IIdeCommandService {
       }
     } else {
       buffer.color("bright-red");
-      const lines = (
-        commandResult.finalMessage ?? "Command execution failed."
-      ).split("\n");
+      const lines = (commandResult.finalMessage ?? "Command execution failed.").split("\n");
       for (const line of lines) {
         buffer.writeLine(line);
       }
@@ -205,10 +199,7 @@ class IdeCommandService implements IIdeCommandService {
    * @param command Command to execute
    * @param buffer Optional output buffer
    */
-  executeCommand (
-    command: string,
-    buffer?: IOutputBuffer
-  ): Promise<IdeCommandResult> {
+  executeCommand(command: string, buffer?: IOutputBuffer): Promise<IdeCommandResult> {
     return this.executeInteractiveCommand(command, buffer, false, false);
   }
 
@@ -217,17 +208,14 @@ class IdeCommandService implements IIdeCommandService {
    * @param messages Trace messages to display
    * @param context Context to display the messages in
    */
-  displayTraceMessages (
-    messages: ValidationMessage[],
-    context: IdeCommandContext
-  ): void {
+  displayTraceMessages(messages: ValidationMessage[], context: IdeCommandContext): void {
     for (var trace of messages) {
       context.output.color(
         trace.type === ValidationMessageType.Error
           ? "bright-red"
           : trace.type === ValidationMessageType.Warning
-          ? "yellow"
-          : "bright-blue"
+            ? "yellow"
+            : "bright-blue"
       );
       context.output.writeLine(trace.message);
     }
@@ -236,34 +224,8 @@ class IdeCommandService implements IIdeCommandService {
   /**
    * Gets the output buffer of the interactive commands
    */
-  getBuffer (): IOutputBuffer {
+  getBuffer(): IOutputBuffer {
     return this._buffer;
-  }
-
-  /**
-   * Displays a navigation action to the specified project file
-   * @param context Context to display the messages in
-   * @param file Filename
-   * @param line Optional line number
-   * @param column Optional column number
-   */
-  writeNavigationAction (
-    context: IdeCommandContext,
-    file: string,
-    line?: number,
-    column?: number
-  ): void {
-    context.output.write(
-      `${file}${line != undefined ? ` (${line}:${column + 1})` : ""}`,
-      async () => {
-        await this.executeCommand(
-          `nav "${file}" ${line != undefined ? line : ""} ${
-            column != undefined ? (column + 1).toString() : ""
-          }`
-        );
-      },
-      true
-    );
   }
 }
 
@@ -280,9 +242,7 @@ class HelpCommand extends IdeCommandBase {
    * @param args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     // --- Check argument number
     const args = context.argTokens;
     if (args.length > 1) {
@@ -298,18 +258,16 @@ class HelpCommand extends IdeCommandBase {
   /**
    * Executes the command within the specified context
    */
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     let count = 0;
     const cmdSrv = context.service.ideCommandsService;
     const selectedCommands: IdeCommandInfo[] = this._arg
       ? cmdSrv
           .getRegisteredCommands()
           .filter(
-            cmd =>
+            (cmd) =>
               cmd.id.toLowerCase().includes(this._arg.toLowerCase()) ||
-              cmd.aliases.some(a =>
-                a.toLowerCase().includes(this._arg.toLowerCase())
-              )
+              cmd.aliases.some((a) => a.toLowerCase().includes(this._arg.toLowerCase()))
           )
       : cmdSrv.getRegisteredCommands();
     const out = context.output;
@@ -318,7 +276,7 @@ class HelpCommand extends IdeCommandBase {
     out.writeLine();
     selectedCommands
       .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
-      .forEach(ci => {
+      .forEach((ci) => {
         out.color(ci.noInteractiveUsage ? "magenta" : "bright-magenta");
         out.bold(true);
         out.write(`${ci.id}`);
@@ -350,7 +308,7 @@ class ExitCommand extends IdeCommandBase {
   readonly description = "Exits Klvie IDE.";
   readonly usage = "exit";
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     context.messenger.postMessage({ type: "MainExitApp" });
     return { success: true, finalMessage: "Farewell!" };
   }
@@ -361,7 +319,7 @@ class ExitCommand extends IdeCommandBase {
  * @param dispatch Dispatch function to use
  * @returns Interactive commands service instance
  */
-export function createInteractiveCommandsService (
+export function createInteractiveCommandsService(
   store: Store<AppState>,
   messenger: MessengerBase,
   messageSource: MessageSource

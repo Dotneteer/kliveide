@@ -3,21 +3,19 @@ import { IdeScriptOutputRequest } from "../../common/messaging/any-to-ide";
 
 class ScriptConsole {
   // --- The store is used to dispatch actions
-  constructor (
+  constructor(
     private readonly messenger: MessengerBase,
     private readonly id: number
   ) {}
 
-  async assert (...args: any[]): Promise<void> {
+  async assert(...args: any[]): Promise<void> {
     if (args.length === 0 || typeof args[0] !== "function") return;
     const result = await args[0]();
     if (!result) {
       this.pushStyle();
       this.resetStyle();
       this.color("red");
-      await this.write(
-        args.length === 1 ? "Assertion failed" : args[1].toString()
-      );
+      await this.write(args.length === 1 ? "Assertion failed" : args[1].toString());
       this.popStyle();
       if (args.length > 2) {
         //await this.log("", ...args.slice(2));
@@ -27,9 +25,9 @@ class ScriptConsole {
     }
   }
 
-  async log (...args: any[]): Promise<void> {
+  async log(...args: any[]): Promise<void> {
     let first = true;
-    args.forEach(arg => {
+    args.forEach((arg) => {
       if (!first) {
         this.write(" ");
       }
@@ -39,7 +37,7 @@ class ScriptConsole {
     this.writeLine();
   }
 
-  async error (...args: any[]): Promise<void> {
+  async error(...args: any[]): Promise<void> {
     this.pushStyle();
     this.resetStyle();
     this.color("red");
@@ -48,7 +46,7 @@ class ScriptConsole {
     this.popStyle();
   }
 
-  async warn (...args: any[]): Promise<void> {
+  async warn(...args: any[]): Promise<void> {
     this.pushStyle();
     this.resetStyle();
     this.color("yellow");
@@ -57,7 +55,7 @@ class ScriptConsole {
     this.popStyle();
   }
 
-  async info (...args: any[]): Promise<void> {
+  async info(...args: any[]): Promise<void> {
     this.pushStyle();
     this.resetStyle();
     this.color("cyan");
@@ -66,7 +64,7 @@ class ScriptConsole {
     this.popStyle();
   }
 
-  async success (...args: any[]): Promise<void> {
+  async success(...args: any[]): Promise<void> {
     this.pushStyle();
     this.resetStyle();
     this.color("green");
@@ -75,7 +73,7 @@ class ScriptConsole {
     this.popStyle();
   }
 
-  async clear (): Promise<void> {
+  async clear(): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -83,25 +81,25 @@ class ScriptConsole {
     });
   }
 
-  async write (...args: any[]): Promise<void> {
+  async write(...args: any[]): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "write",
-      args: args?.map(outputValue) ?? []
+      args: args ?? []
     });
   }
 
-  async writeLine (...args: any[]): Promise<void> {
+  async writeLine(...args: any[]): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
       operation: "writeLine",
-      args: args?.map(outputValue) ?? []
+      args: args ?? []
     });
   }
 
-  async resetStyle (): Promise<void> {
+  async resetStyle(): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -109,7 +107,7 @@ class ScriptConsole {
     });
   }
 
-  async color (color: string): Promise<void> {
+  async color(color: string): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -118,7 +116,7 @@ class ScriptConsole {
     });
   }
 
-  async backgroundColor (color: string): Promise<void> {
+  async backgroundColor(color: string): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -127,7 +125,7 @@ class ScriptConsole {
     });
   }
 
-  async bold (use: boolean): Promise<void> {
+  async bold(use: boolean): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -136,7 +134,7 @@ class ScriptConsole {
     });
   }
 
-  async italic (use: boolean): Promise<void> {
+  async italic(use: boolean): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -145,7 +143,7 @@ class ScriptConsole {
     });
   }
 
-  async underline (use: boolean): Promise<void> {
+  async underline(use: boolean): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -154,7 +152,7 @@ class ScriptConsole {
     });
   }
 
-  async strikethru (use: boolean): Promise<void> {
+  async strikethru(use: boolean): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -163,7 +161,7 @@ class ScriptConsole {
     });
   }
 
-  async pushStyle (): Promise<void> {
+  async pushStyle(): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -171,7 +169,7 @@ class ScriptConsole {
     });
   }
 
-  async popStyle (): Promise<void> {
+  async popStyle(): Promise<void> {
     await this.sendScriptOutput({
       type: "IdeScriptOutput",
       id: this.id,
@@ -179,48 +177,10 @@ class ScriptConsole {
     });
   }
 
-  async sendScriptOutput (message: IdeScriptOutputRequest): Promise<void> {
+  async sendScriptOutput(message: IdeScriptOutputRequest): Promise<void> {
     await this.messenger.sendMessage(message);
   }
 }
 
-function outputValue (value: any): string {
-  switch (typeof value) {
-    case "string":
-      return value;
-    case "number":
-    case "boolean":
-      return value.toString();
-    case "undefined":
-      return "undefined";
-    case "object":
-      if (value === null) {
-        return "null";
-      }
-      return safeStringify(value);
-    default:
-      return value.toString();
-  }
-}
-
-function safeStringify (obj: any, indent = 2) {
-  let cache = new Map<any, number>();
-  let refIndex = 1;
-  const retVal = JSON.stringify(
-    obj,
-    (_, value) =>
-      typeof value === "object" && value !== null && value !== undefined
-        ? cache.has(value)
-          ? `$ref-${cache.get(value)}`
-          : (cache.set(value, refIndex++), value)
-        : value,
-    indent
-  );
-  cache = null;
-  return retVal;
-}
-
-export const createScriptConsole = (
-  messenger: MessengerBase,
-  id: number
-) => new ScriptConsole(messenger, id);
+export const createScriptConsole = (messenger: MessengerBase, id: number) =>
+  new ScriptConsole(messenger, id);
