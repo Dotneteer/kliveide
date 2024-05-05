@@ -27,6 +27,7 @@ import {
 } from "../../common/ksx/script-runner";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
+import { Z88DK } from "../../script-packages/z88dk/Z88DK";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -433,6 +434,7 @@ class MainScriptManager implements IScriptManager {
       Output: createScriptConsole(getMainToIdeMessenger(), this.id),
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
+      Z88dk: Z88DK
     };
   }
 }

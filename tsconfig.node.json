@@ -5,7 +5,7 @@
     "src/main/**/*", 
     "src/preload/**/*",
     "src/common/**/*",
-    "testnew/**/*",
+    "src/script-packages/**/*",
 
   ],
   "compilerOptions": {

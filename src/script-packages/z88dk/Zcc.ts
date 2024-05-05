@@ -2,6 +2,8 @@ import { mainStore } from "../../main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { Z88DK_INSTALL_FOLDER } from "../../main/z88dk-integration/z88dk-config";
+import { CliCommandRunner } from '../../main/cli-integration/CliCommandRunner';
+import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
 
 const ZccOptions: CmdLineOptionSet = {
   // --- General options
@@ -44,8 +46,7 @@ const ZccOptions: CmdLineOptionSet = {
     type: "boolean"
   },
   mz80_strict: {
-    description:
-      "Generate output for the Zilog Z80 CPU with documented Z80 instruction set",
+    description: "Generate output for the Zilog Z80 CPU with documented Z80 instruction set",
     type: "boolean"
   },
   mz80n: {
@@ -186,8 +187,7 @@ const ZccOptions: CmdLineOptionSet = {
   },
   printMacroDefs: {
     optionName: "dD",
-    description:
-      "Print macro definitions in -E mode in addition to normal output",
+    description: "Print macro definitions in -E mode in addition to normal output",
     type: "boolean"
   },
   compileOnly: {
@@ -212,8 +212,7 @@ const ZccOptions: CmdLineOptionSet = {
   },
   createApp: {
     optionName: "create-app",
-    description:
-      "Run appmake on the resulting binary to create emulator usable file",
+    description: "Run appmake on the resulting binary to create emulator usable file",
     type: "boolean"
   },
 
@@ -438,8 +437,7 @@ const ZccOptions: CmdLineOptionSet = {
   // --- Misc options
   globalDefC: {
     optionName: "g",
-    description:
-      "Generate a global defc file of the final executable (-g -gp -gpf:filename)",
+    description: "Generate a global defc file of the final executable (-g -gp -gpf:filename)",
     type: "string"
   },
   alias: {
@@ -474,7 +472,7 @@ const ZccOptions: CmdLineOptionSet = {
   }
 };
 
-function cloneZccOptions (): CmdLineOptionSet {
+function cloneZccOptions(): CmdLineOptionSet {
   const result: CmdLineOptionSet = {};
   for (const key in ZccOptions) {
     result[key] = { ...ZccOptions[key] };
@@ -494,7 +492,7 @@ class ZccImplementation {
   /**
    * Prefix used with options
    */
-  get optionPrefix (): string {
+  get optionPrefix(): string {
     return "-";
   }
 
@@ -504,11 +502,7 @@ class ZccImplementation {
    * @param options Compiler options
    * @param files Files to compile
    */
-  constructor (
-    target: string = "zx",
-    options: Record<string, any> = {},
-    files: string[] = []
-  ) {
+  constructor(target: string = "zx", options: Record<string, any> = {}, files: string[] = []) {
     this._target = target;
     this._options = options;
     this._files = files;
@@ -518,52 +512,64 @@ class ZccImplementation {
    * Adds a file to the compilation list
    * @param file File to add to the compilation list
    */
-  addFile (file: string): void {
+  addFile(file: string): void {
     this._files.push(file);
-  }
-
-  getCommandLineString(): string {
-    const settingsReader = createSettingsReader(mainStore);
-    const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
-    if (!rootPath) {
-      throw new Error("Z88DK install folder is not set. Use the z88dk-reset command to specify it.")
-    }
-    const cmdLineArgs = this.composeCmdLineArgs();
-    if (typeof cmdLineArgs !== "string") {
-      let errList = "Argument error:\n";
-      Object.keys(cmdLineArgs.errors).forEach(key => {
-        const errors = cmdLineArgs.errors[key];
-        errors.forEach(err => {
-          errList += `err\n`;
-        })
-      });
-      throw new Error(errList);
-    }
-    return `${rootPath}/zcc ${this.composeCmdLineArgs()}`
   }
 
   /**
    * Executes the ZCC process
    */
-  async execute (): Promise<void> {
-    console.log(this.getCommandLineString());
+  async execute(): Promise<SimpleAssemblerOutput | null> {
+    const settingsReader = createSettingsReader(mainStore);
+    const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
+    console.log(rootPath);
+    if (!rootPath) {
+      throw new Error(
+        "Z88DK install folder is not set. Use the z88dk-reset command to specify it."
+      );
+    }
+    const command = `${rootPath}/bin/zcc`;
+    const cmdLineArgs = this.composeCmdLineArgs();
+    if (cmdLineArgs.errors && Object.keys(cmdLineArgs.errors).length > 0) {
+      let errList = "Argument error:\n";
+      Object.keys(cmdLineArgs.errors).forEach((key) => {
+        const errors = cmdLineArgs.errors[key];
+        errors.forEach((err) => {
+          errList += `${err}\n`;
+        });
+      });
+      throw new Error(errList);
+    }
+
+    // --- Execute the command
+    const runner = new CliCommandRunner()
+    console.log(command);
+    const result = await runner.execute(command, cmdLineArgs.args, {
+      cwd: process.cwd()
+    });
+    return result;
   }
 
-  composeCmdLineArgs (): OptionResult | string {
+  composeCmdLineArgs(): OptionResult {
     const optionValues = this.composeOptionValues();
     if (optionValues.errors && Object.keys(optionValues.errors).length > 0) {
       return optionValues;
     }
-    return `+${this._target} ${optionValues.cmdLine} ${this._files.join(" ")}`;
+    optionValues.args.unshift(`+${this._target}`);
+    if (this._files?.length) {
+      this._files.forEach((file) => optionValues.args.push(file));
+    }
+    return optionValues;
   }
 
   /**
    * Composes the option values
    * @returns Result of option composition
    */
-  composeOptionValues (): OptionResult {
+  composeOptionValues(): OptionResult {
     const result: OptionResult = {
-      cmdLine: "",
+      command: "",
+      args: [],
       errors: {}
     };
     for (const key in this._options) {
@@ -617,19 +623,13 @@ class ZccImplementation {
         for (const item of value) {
           const optStr = this.renderCmdOption(key, item, opt);
           if (optStr) {
-            if (result.cmdLine) {
-              result.cmdLine += " ";
-            }
-            result.cmdLine += optStr;
+            result.args.push(optStr);
           }
         }
       } else {
         const optStr = this.renderCmdOption(key, value, opt);
         if (optStr) {
-          if (result.cmdLine) {
-            result.cmdLine += " ";
-          }
-          result.cmdLine += optStr;
+          result.args.push(optStr);
         }
       }
     }
@@ -638,7 +638,7 @@ class ZccImplementation {
     return result;
 
     // --- Report an option error
-    function error (key: string, message: string): void {
+    function error(key: string, message: string): void {
       const existing = result.errors[key];
       if (existing) {
         existing.push(message);
@@ -649,20 +649,14 @@ class ZccImplementation {
   }
 
   // --- Renders a single option
-  renderCmdOption (
-    key: string,
-    value: any,
-    optionDesc: CmdLineOptionDescriptor
-  ): string {
+  renderCmdOption(key: string, value: any, optionDesc: CmdLineOptionDescriptor): string {
     // --- Render the option
     const optionName = `${this.optionPrefix}${optionDesc.optionName || key}`;
     switch (optionDesc.type) {
       case "boolean":
         return value ? optionName : "";
       case "string":
-        return value
-          ? `${optionName}=${/\s/.test(value) ? `"${value}"` : value}`
-          : "";
+        return value ? `${optionName}=${/\s/.test(value) ? `"${value}"` : value}` : "";
       case "number":
         return `${optionName}=${value}`;
     }
@@ -671,7 +665,8 @@ class ZccImplementation {
 
 // --- The result of option composition
 type OptionResult = {
-  cmdLine: string;
+  command: string;
+  args: string[];
   errors: Record<string, string[]>;
 };
 
