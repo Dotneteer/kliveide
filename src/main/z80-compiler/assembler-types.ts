@@ -274,7 +274,7 @@ export type SourceMap = Record<number, IFileLine>;
  */
 export interface IAssemblerErrorInfo {
   readonly errorCode: ErrorCodes;
-  readonly fileName: string;
+  readonly filename: string;
   readonly line: number;
   readonly startPosition: number;
   readonly endPosition: number | null;

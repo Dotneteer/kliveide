@@ -203,7 +203,7 @@ export class BinarySegment implements IBinarySegment {
 export class AssemblerErrorInfo implements IAssemblerErrorInfo {
   constructor (
     public readonly errorCode: ErrorCodes,
-    public readonly fileName: string,
+    public readonly filename: string,
     public readonly line: number,
     public readonly startPosition: number,
     public readonly endPosition: number | null,

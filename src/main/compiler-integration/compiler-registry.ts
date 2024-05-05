@@ -69,14 +69,6 @@ export interface IKliveCompiler {
 }
 
 /**
- * Tests if the specified data is AssemblerErrorInfo
- * @param data Data to test
- */
-export function isAssemblerError (data: any): data is AssemblerErrorInfo {
-  return !!data.errorCode && !!data.fileName;
-}
-
-/**
  * Type guard that checks if the specified output can be used for code injection
  * @param output
  * @returns

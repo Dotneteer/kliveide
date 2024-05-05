@@ -1,12 +1,11 @@
 import fs from "fs";
-import {
-  AssemblerErrorInfo,
-  BinarySegment,
-  SpectrumModelType
-} from "../../common/abstractions/IZ80CompilerService";
+import { BinarySegment, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
-import { CompilerBase } from "../compiler-integration/CompilerBase";
-import { InjectableOutput, KliveCompilerOutput } from "../compiler-integration/compiler-registry";
+import {
+  IKliveCompiler,
+  InjectableOutput,
+  KliveCompilerOutput
+} from "../compiler-integration/compiler-registry";
 import { mainStore } from "../main-store";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -29,7 +28,7 @@ import { CliCommandRunner, ErrorFilterDescriptor } from "@main/cli-integration/C
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
  */
-export class ZxBasicCompiler extends CompilerBase {
+export class ZxBasicCompiler implements IKliveCompiler {
   /**
    * The unique ID of the compiler
    */
@@ -167,64 +166,15 @@ export class ZxBasicCompiler extends CompilerBase {
     }
   }
 
+  /**
+   * Gets the error filter description
+   */
   getErrorFilterDescription(): ErrorFilterDescriptor {
     return {
       regex: /^(.*):(\d+): error: (.*)$/,
       filenameFilterIndex: 1,
       lineFilterIndex: 2,
       messageFilterIndex: 3
-    };
-  }
-
-  /**
-   * Processes a compiler error and turns it into an assembly error information
-   * or plain string
-   * @param data Message data to process
-   */
-  processErrorMessage(data: string): string | AssemblerErrorInfo {
-    // --- Split segments and search for "error" or "warning"
-    const segments = data.split(":").map((s) => s.trim());
-    let isWarning = false;
-    let keywordIdx = segments.indexOf("error");
-    if (keywordIdx < 0) {
-      keywordIdx = segments.indexOf("warning");
-      isWarning = keywordIdx >= 0;
-    }
-
-    // --- Ok, we found an error or a warning.
-    // --- Try to parse the rest of the message
-    if (keywordIdx < 2 || keywordIdx >= segments.length - 1) {
-      return data;
-    }
-
-    // --- Extract other parts
-    const line = parseInt(segments[keywordIdx - 1]);
-    if (isNaN(line)) {
-      return data;
-    }
-    const fileName = segments.slice(0, keywordIdx - 1).join(":");
-    let message = segments
-      .slice(keywordIdx + 1)
-      .join(":")
-      .trim();
-    const bracketPos = message.indexOf("]");
-    let errorCode = "ERR";
-    if (bracketPos >= 0) {
-      errorCode = message.slice(1, bracketPos);
-      message = message.slice(bracketPos + 1).trim();
-    }
-
-    // --- Done.
-    return {
-      filename: fileName,
-      line,
-      message,
-      startColumn: 0,
-      endColumn: 0,
-      startPosition: 0,
-      endPosition: 0,
-      errorCode,
-      isWarning
     };
   }
 }

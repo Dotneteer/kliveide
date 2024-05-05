@@ -79,6 +79,10 @@ export class CliCommandRunner {
               failed: error.message
             };
       }
+      return {
+        traceOutput: [`Executing ${command}`],
+        failed: error.tosString()
+      };
     }
   }
 
@@ -95,10 +99,9 @@ export class CliCommandRunner {
     }
 
     const match = errorString.match(filter.regex);
-    console.log("Filtering", errorString, match);
     return match
       ? {
-          errorCode: filter.codeFilterIndex ? match[filter.codeFilterIndex] : "",
+          errorCode: filter.codeFilterIndex ? match[filter.codeFilterIndex] : "Error",
           filename: filter.filenameFilterIndex ? match[filter.filenameFilterIndex] : "",
           line: parseInt(filter.lineFilterIndex ? match[filter.lineFilterIndex] : "0"),
           startPosition: 0,
