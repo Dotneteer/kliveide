@@ -108,7 +108,6 @@ export async function processMainToIdeMessages (
       if (scriptOutput) {
         buffers.push(scriptOutput);
       }
-      console.log("Executing command: " + message.commandText, buffers);
       const response = await ideCommandsService.executeCommand(
         message.commandText,
         new CompositeOutputBuffer(buffers)

@@ -1086,7 +1086,7 @@ async function compileCode (
       out.color("bright-cyan");
       ideCmd.writeNavigationAction(
         context,
-        err.fileName,
+        err.filename,
         err.line,
         err.startColumn
       );

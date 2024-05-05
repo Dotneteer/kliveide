@@ -1,4 +1,3 @@
-import path from "path";
 import fs from "fs";
 import {
   AssemblerErrorInfo,
@@ -25,9 +24,7 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import { app } from "electron";
-import { CliCommandRunner } from "@main/cli-integration/CliCommandRunner";
-import { ExecaReturnValue } from "execa";
+import { CliCommandRunner, ErrorFilterDescriptor } from "@main/cli-integration/CliCommandRunner";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
@@ -71,49 +68,13 @@ export class ZxBasicCompiler extends CompilerBase {
 
       const args = await createCommandLineArgs(filename, outFilename, labelFilename);
       const runner = new CliCommandRunner();
-      console.log("before execute");
-      let result: ExecaReturnValue<string>;
-      try {
-        result = await runner.execute(execPath, args, {
-          env: pythonPath ? { ...process.env, PATH: pythonPath } : { ...process.env }
-        });
-        console.log("after execute");
-      } catch (error: any) {
-        if ("exitCode" in error) result = error as ExecaReturnValue<string>;
-      }
-      console.log(result);
+      runner.setErrorFilter(this.getErrorFilterDescription());
+      const result = await runner.execute(execPath, args, {
+        env: pythonPath ? { ...process.env, PATH: pythonPath } : { ...process.env }
+      });
 
-      if (result.failed || result.exitCode !== 0 || result.stderr) {
-        const lines = result.stderr.split("\n");
-        const messages = lines.map((l) => parseErrorMessage(l)).filter((m) => m !== null);
-        console.log(JSON.stringify(messages, null, 2));
-      }
-
-      const cmdLine = await createZxbCommandLineArgs(filename, outFilename, labelFilename, null);
-      const traceOutput = [`Executing ${cmdLine}`];
-
-      // --- Run the compiler
-      const compileOut = await this.executeCommandLine(execPath, cmdLine, pythonPath);
-      fs.writeFileSync(
-        path.join(app.getPath("home"), "klive-compile.log"),
-        JSON.stringify(compileOut, null, 2)
-      );
-      if (compileOut) {
-        if (typeof compileOut === "string") {
-          return {
-            traceOutput,
-            failed: compileOut
-          };
-        }
-
-        const errors = compileOut.filter((i) => typeof i !== "string") as AssemblerErrorInfo[];
-        if (errors?.length > 0) {
-          return {
-            traceOutput,
-            errors,
-            debugMessages: compileOut.filter((i) => typeof i === "string") as string[]
-          };
-        }
+      if (result.failed || result.errors?.length > 0) {
+        return result;
       }
 
       // --- Extract the output
@@ -136,7 +97,7 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Done.
       return {
-        traceOutput,
+        traceOutput: result.traceOutput,
         errors: [],
         injectOptions: { subroutine: true },
         segments: [segment],
@@ -144,51 +105,6 @@ export class ZxBasicCompiler extends CompilerBase {
       } as InjectableOutput;
     } catch (err) {
       throw err;
-    }
-
-    /**
-     * Generates the command-line arguments to run ZXBC.EXE
-     * @param inputFile Source file to compile
-     * @param outputFile Output file to generate
-     * @param labelFile Lable file to generate
-     * @param rawArgs Raw arguments from the code
-     */
-    async function createZxbCommandLineArgs(
-      inputFile: string,
-      outputFile: string,
-      labelFile: string,
-      rawArgs: string | null
-    ): Promise<string> {
-      const settingsReader = createSettingsReader(mainStore);
-      const argRoot = `${inputFile} --output ${outputFile} --mmap ${labelFile} `;
-      let additional = rawArgs ? rawArgs.trim() : "";
-      if (!additional) {
-        const arrayBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_ARRAY_BASE_INDEX);
-        additional = arrayBaseOne ? "--array-base=1 " : "";
-        const optimize = settingsReader.readSetting(ZXBC_OPTIMIZATION_LEVEL) as number;
-        additional += `--optimize ${optimize ?? 2} `;
-        const orgValue = settingsReader.readSetting(ZXBC_MACHINE_CODE_ORIGIN) as number;
-        additional += `--org ${orgValue ?? 0x8000} `;
-        const heapSize = settingsReader.readSetting(ZXBC_HEAP_SIZE) as number;
-        additional += `--heap-size ${heapSize ?? 4096} `;
-        const sinclair = settingsReader.readSetting(ZXBC_SINCLAIR) as boolean;
-        additional += sinclair ? "--sinclair " : "";
-        const stringBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_STRING_BASE_INDEX);
-        additional += stringBaseOne ? "--string-base=1 " : "";
-        const debugMemory = !!settingsReader.readSetting(ZXBC_DEBUG_MEMORY);
-        additional += debugMemory ? "--debug-memory " : "";
-        const debugArray = !!settingsReader.readSetting(ZXBC_DEBUG_ARRAY);
-        additional += debugArray ? "--debug-array " : "";
-        const strictBool = !!settingsReader.readSetting(ZXBC_STRICT_BOOL);
-        additional += strictBool ? "--strict-bool " : "";
-        const strictMode = !!settingsReader.readSetting(ZXBC_STRICT_MODE);
-        additional += strictMode ? "--strict " : "";
-        const enableBreak = !!settingsReader.readSetting(ZXBC_ENABLE_BREAK);
-        additional += enableBreak ? "--enable-break " : "";
-        const explicit = !!settingsReader.readSetting(ZXBC_EXPLICIT_VARIABLES);
-        additional += explicit ? "--explicit " : "";
-      }
-      return (argRoot + additional).trim();
     }
 
     /**
@@ -251,6 +167,15 @@ export class ZxBasicCompiler extends CompilerBase {
     }
   }
 
+  getErrorFilterDescription(): ErrorFilterDescriptor {
+    return {
+      regex: /^(.*):(\d+): error: (.*)$/,
+      filenameFilterIndex: 1,
+      lineFilterIndex: 2,
+      messageFilterIndex: 3
+    };
+  }
+
   /**
    * Processes a compiler error and turns it into an assembly error information
    * or plain string
@@ -291,7 +216,7 @@ export class ZxBasicCompiler extends CompilerBase {
 
     // --- Done.
     return {
-      fileName,
+      filename: fileName,
       line,
       message,
       startColumn: 0,
@@ -302,19 +227,4 @@ export class ZxBasicCompiler extends CompilerBase {
       isWarning
     };
   }
-}
-
-function parseErrorMessage(
-  errorString: string
-): { filename: string; lineNumber: number; errorMessage: string } | null {
-  const regex = /^(.*):(\d+): error: (.*)$/;
-  const match = errorString.match(regex);
-  if (match) {
-    return {
-      filename: match[1],
-      lineNumber: parseInt(match[2]),
-      errorMessage: match[3]
-    };
-  }
-  return null;
 }

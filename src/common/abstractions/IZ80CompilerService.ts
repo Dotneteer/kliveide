@@ -403,7 +403,7 @@ export interface AssemblerErrorInfo {
   /**
    * File in which the error is found
    */
-  readonly fileName: string;
+  readonly filename: string;
 
   /**
    * Error line number
