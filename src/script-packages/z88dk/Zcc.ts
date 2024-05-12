@@ -2,7 +2,10 @@ import { mainStore } from "../../main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { Z88DK_INSTALL_FOLDER } from "../../main/z88dk-integration/z88dk-config";
-import { CliCommandRunner } from '../../main/cli-integration/CliCommandRunner';
+import {
+  CliCommandRunner,
+  ErrorFilterDescriptor
+} from "../../main/cli-integration/CliCommandRunner";
 import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
 
 const ZccOptions: CmdLineOptionSet = {
@@ -484,11 +487,12 @@ function cloneZccOptions(): CmdLineOptionSet {
  * ZCC wrapper to invoke the ZCC process
  */
 class ZccImplementation {
-  readonly _cwd: string;
-  readonly _target: string;
-  readonly _optionTemplate = cloneZccOptions();
-  readonly _options: Record<string, any> = {};
-  readonly _files: string[] = [];
+  private readonly _cwd: string;
+  private readonly _target: string;
+  private readonly _optionTemplate = cloneZccOptions();
+  private _options: Record<string, any> = {};
+  private readonly _files: string[] = [];
+  private readonly _overwriteOptions: boolean;
 
   /**
    * Prefix used with options
@@ -503,12 +507,20 @@ class ZccImplementation {
    * @param target Target CPU
    * @param options Compiler options
    * @param files Files to compile
+   * @param overwriteOptions Should the options overwrite the default ones?
    */
-  constructor(cwd: string, target: string = "zx", options: Record<string, any> = {}, files: string[] = []) {
+  constructor(
+    cwd: string,
+    target: string = "zx",
+    options: Record<string, any> = {},
+    files: string[] = [],
+    overwriteOptions = false
+  ) {
     this._cwd = cwd;
     this._target = target;
     this._options = options;
     this._files = files;
+    this._overwriteOptions = overwriteOptions;
   }
 
   /**
@@ -525,13 +537,23 @@ class ZccImplementation {
   async execute(): Promise<SimpleAssemblerOutput | null> {
     const settingsReader = createSettingsReader(mainStore);
     const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
-    console.log(rootPath);
     if (!rootPath) {
       throw new Error(
         "Z88DK install folder is not set. Use the z88dk-reset command to specify it."
       );
     }
     const command = `${rootPath}/bin/zcc`;
+
+    // --- Prepare default options
+    if (!this._overwriteOptions) {
+      this._options = {
+        ...this._options,
+        includePath: `${rootPath}/include`,
+        cmdTracingOff: true,
+        output: "output.bin", 
+      };
+    }
+
     const cmdLineArgs = this.composeCmdLineArgs();
     if (cmdLineArgs.errors && Object.keys(cmdLineArgs.errors).length > 0) {
       let errList = "Argument error:\n";
@@ -545,8 +567,8 @@ class ZccImplementation {
     }
 
     // --- Execute the command
-    const runner = new CliCommandRunner()
-    console.log(command);
+    const runner = new CliCommandRunner();
+    runner.setErrorFilter(this.getErrorFilterDescription());
     const result = await runner.execute(command, cmdLineArgs.args, {
       cwd: this._cwd
     });
@@ -664,6 +686,21 @@ class ZccImplementation {
         return `${optionName}=${value}`;
     }
   }
+
+  /**
+   * Gets the error filter description
+   */
+  getErrorFilterDescription(): ErrorFilterDescriptor {
+    return {
+      regex: /^(.*?)(::.*?)*:(\d+):(\d+): (warning|error): (.*)$/,
+      hasLineInfo: (match: RegExpMatchArray) => match?.[2] === undefined,
+      filenameFilterIndex: 1,
+      lineFilterIndex: 3,
+      columnFilterIndex: 4,
+      messageFilterIndex: 6,
+      warningFilterIndex: 5
+    };
+  }
 }
 
 // --- The result of option composition
@@ -677,5 +714,6 @@ export const createZccRunner = (
   cwd: string,
   target: string = "zx",
   options: Record<string, any> = {},
-  files: string[] = []
-) => new ZccImplementation(cwd, target, options, files);
+  files: string[] = [],
+  overwriteOptions = false
+) => new ZccImplementation(cwd, target, options, files, overwriteOptions);

@@ -34,7 +34,13 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
     const traceOutput = result?.traceOutput;
     if (traceOutput?.length > 0) {
       out.resetStyle();
-      traceOutput.forEach((msg) => out.writeLine(msg));
+      traceOutput.forEach((msg) => {
+        const lines = msg.split("\n");
+        lines.forEach((line) => {
+          out.writeLine(line);
+          console.log(line);
+        });
+      });
     }
 
     // --- Collect errors
@@ -45,7 +51,11 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
         // --- Some unexpected error with the compilation
         out.color("bright-red");
         out.bold(true);
-        out.writeLine(result.failed);
+        const lines = result.failed.split("\n");
+        lines.forEach((line) => {
+          out.writeLine(line);
+          console.log(line);
+        });
         out.resetStyle();
         return result;
       }
@@ -64,14 +74,25 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
         const file = err.filename;
         const line = err.line;
         const column = err.startColumn;
-        out.write(
-          `${file}${line != undefined ? ` (${line}:${column + 1})` : ""}`,
-          {
-            type: "@navigate",
-            payload: { file, line, column }
-          },
-          true
-        );
+        if (line !== undefined && line >= 0) {
+          out.write(
+            `${file}${line != undefined ? ` (${line}:${column + 1})` : ""}`,
+            {
+              type: "@navigate",
+              payload: { file, line, column }
+            },
+            true
+          );
+        } else {
+          out.write(
+            file,
+            {
+              type: "@navigate",
+              payload: { file }
+            },
+            true
+          );
+        }
         out.writeLine();
         out.resetStyle();
       }
