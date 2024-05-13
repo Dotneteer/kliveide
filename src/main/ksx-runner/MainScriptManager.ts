@@ -7,10 +7,7 @@ import {
   createEvalContext
 } from "../../common/ksx/EvaluationContext";
 import { setScriptsStatusAction } from "../../common/state/actions";
-import {
-  ScriptExecutionState,
-  ScriptRunInfo
-} from "@abstractions/ScriptRunInfo";
+import { ScriptExecutionState, ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
 import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
 import {
@@ -21,10 +18,7 @@ import {
 } from "../../common/ksx/ksx-module";
 import { IScriptManager, ScriptStartInfo } from "@abstractions/IScriptManager";
 import { createScriptConsole } from "./ScriptConsole";
-import {
-  concludeScript,
-  sendScriptOutput
-} from "../../common/ksx/script-runner";
+import { concludeScript, sendScriptOutput } from "../../common/ksx/script-runner";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
@@ -42,21 +36,17 @@ class MainScriptManager implements IScriptManager {
   private id = 0;
   private packages: Record<string, any> = {};
 
-  constructor (
-    private prepareScript?: (
-      scriptFile: string,
-      scriptId: number
-    ) => Promise<ScriptStartInfo>,
+  constructor(
+    private prepareScript?: (scriptFile: string, scriptId: number) => Promise<ScriptStartInfo>,
     private execScript?: (
       scriptFile: string,
       scriptContents: string,
       evalContext: EvaluationContext
     ) => Promise<void>,
-    private outputFn: (
-      text: string,
-      options?: Record<string, any>
-    ) => Promise<void> = (text, options) =>
-      sendScriptOutput(getMainToIdeMessenger(), text, options),
+    private outputFn: (text: string, options?: Record<string, any>) => Promise<void> = (
+      text,
+      options
+    ) => sendScriptOutput(getMainToIdeMessenger(), text, options),
     private maxScriptHistory = MAX_SCRIPT_HISTORY
   ) {
     if (!this.execScript) {
@@ -77,7 +67,7 @@ class MainScriptManager implements IScriptManager {
    * @param packageName Name of the package
    * @param packageObject Package object to register
    */
-  registerPackage (packageName: string, packageObject: any): void {
+  registerPackage(packageName: string, packageObject: any): void {
     this.packages[packageName] = packageObject;
   }
 
@@ -86,10 +76,10 @@ class MainScriptManager implements IScriptManager {
    * @param scriptFileName The name of the script file to run.
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
-  async runScript (scriptFileName: string): Promise<ScriptStartInfo> {
+  async runScript(scriptFileName: string): Promise<ScriptStartInfo> {
     // --- Check if the script is already running
     const script = this.scripts.find(
-      s => s.scriptFileName === scriptFileName && !isScriptCompleted(s.status)
+      (s) => s.scriptFileName === scriptFileName && !isScriptCompleted(s.status)
     );
     if (script) {
       // --- The script is already running, nothing to do
@@ -141,11 +131,7 @@ class MainScriptManager implements IScriptManager {
 
     // --- The script should be executed in the main process
     // --- Start the script but do not await it
-    const execTask = this.execScript(
-      scriptFileName,
-      startInfo.contents,
-      evalContext
-    );
+    const execTask = this.execScript(scriptFileName, startInfo.contents, evalContext);
 
     // --- Update the script status
     newScript.execTask = execTask;
@@ -167,7 +153,7 @@ class MainScriptManager implements IScriptManager {
     return { id: this.id };
   }
 
-  async runScriptText (
+  async runScriptText(
     scriptText: string,
     scriptFunction: string,
     scriptFile: string,
@@ -239,14 +225,14 @@ class MainScriptManager implements IScriptManager {
    * Stops the execution of a running script.
    * @param scriptFileName The name of the script file to stop.
    */
-  async stopScript (idOrFileName: number | string): Promise<boolean> {
+  async stopScript(idOrFileName: number | string): Promise<boolean> {
     // --- Check if the script is already running
     let script: ScriptExecutionState;
     if (typeof idOrFileName === "number") {
-      script = this.scripts.find(s => s.id === idOrFileName);
+      script = this.scripts.find((s) => s.id === idOrFileName);
     } else {
       const reversed = this.scripts.slice().reverse();
-      script = reversed.find(s => s.scriptFileName === idOrFileName);
+      script = reversed.find((s) => s.scriptFileName === idOrFileName);
     }
     if (!script || isScriptCompleted(script.status)) {
       return false;
@@ -264,9 +250,9 @@ class MainScriptManager implements IScriptManager {
    * @param scriptFileName The name of the script file to wait for.
    * @returns
    */
-  async completeScript (id: number): Promise<void> {
+  async completeScript(id: number): Promise<void> {
     // --- Check if the script is already running
-    const script = this.scripts.find(s => s.id === id);
+    const script = this.scripts.find((s) => s.id === id);
     if (script && isScriptCompleted(script.status)) {
       // --- The script has been completed, nothing to do
       return;
@@ -274,8 +260,8 @@ class MainScriptManager implements IScriptManager {
     await script.execTask;
   }
 
-  async closeScript (script: ScriptRunInfo): Promise<void> {
-    const savedScript = this.scripts.find(s => s.id === script.id);
+  async closeScript(script: ScriptRunInfo): Promise<void> {
+    const savedScript = this.scripts.find((s) => s.id === script.id);
     if (!savedScript) return;
 
     savedScript.status = script.status;
@@ -290,8 +276,8 @@ class MainScriptManager implements IScriptManager {
   /**
    * Returns the status of all scripts.
    */
-  getScriptsStatus (): ScriptRunInfo[] {
-    return this.scripts.slice(0).map(s => ({
+  getScriptsStatus(): ScriptRunInfo[] {
+    return this.scripts.slice(0).map((s) => ({
       id: s.id,
       scriptFileName: s.scriptFileName,
       status: s.status,
@@ -311,10 +297,7 @@ class MainScriptManager implements IScriptManager {
    * @param scriptId ID of the script
    * @returns Script execution information
    */
-  private async doPrepare (
-    scriptFile: string,
-    scriptId: number
-  ): Promise<ScriptStartInfo> {
+  private async doPrepare(scriptFile: string, scriptId: number): Promise<ScriptStartInfo> {
     let script: string;
     try {
       // --- Let's read the script file from the disk
@@ -350,7 +333,7 @@ class MainScriptManager implements IScriptManager {
     return { id: scriptId, contents: script };
   }
 
-  private async doExecute (
+  private async doExecute(
     scriptFile: string,
     scriptContents: string,
     evalContext: EvaluationContext
@@ -360,10 +343,7 @@ class MainScriptManager implements IScriptManager {
   }
 
   // --- Resolves the script contents from the module's name
-  async resolveModule (
-    scriptFile: string,
-    moduleName: string
-  ): Promise<string | null> {
+  async resolveModule(scriptFile: string, moduleName: string): Promise<string | null> {
     const baseDir = path.dirname(scriptFile);
     const fileExt = path.extname(moduleName);
     if (!fileExt) {
@@ -381,39 +361,32 @@ class MainScriptManager implements IScriptManager {
   }
 
   // --- Resolves the package contents
-  async resolvePackage (packageName: string): Promise<Record<string, any>> {
+  async resolvePackage(packageName: string): Promise<Record<string, any>> {
     return this.packages[packageName];
   }
 
   // --- Removes the oldest completed script
-  private removeOldScript () {
-    const runningScripts = this.scripts.filter(
-      script => !isScriptCompleted(script.status)
-    );
+  private removeOldScript() {
+    const runningScripts = this.scripts.filter((script) => !isScriptCompleted(script.status));
     if (runningScripts.length >= this.maxScriptHistory) {
       // --- Remove the oldest completed script
-      const oldest = this.scripts.findIndex(script =>
-        isScriptCompleted(script.status)
-      );
+      const oldest = this.scripts.findIndex((script) => isScriptCompleted(script.status));
       if (oldest >= 0) {
         this.scripts.splice(oldest, 1);
       }
     }
   }
 
-  private async parseScript (
-    scriptFolder: string,
-    script: string
-  ): Promise<KsxModule> {
+  private async parseScript(scriptFolder: string, script: string): Promise<KsxModule> {
     const module = await parseKsxModule(
       scriptFolder,
       script,
-      moduleName => this.resolveModule(scriptFolder, moduleName),
-      packageName => this.resolvePackage(packageName)
+      (moduleName) => this.resolveModule(scriptFolder, moduleName),
+      (packageName) => this.resolvePackage(packageName)
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
-      Object.keys(module).forEach(moduleName => {
+      Object.keys(module).forEach((moduleName) => {
         const errors = module[moduleName];
         errors.forEach(async (error) => {
           await this.outputFn?.(
@@ -432,13 +405,16 @@ class MainScriptManager implements IScriptManager {
   /**
    * Prepares the application context for the script execution
    */
-  private async prepareAppContext (): Promise<Record<string, any>> {
+  private async prepareAppContext(): Promise<Record<string, any>> {
     const callContext: ScriptCallContext = {
-      state: mainStore.getState(),
+      get state() {
+        return mainStore.getState();
+      },
       messenger: getMainToIdeMessenger(),
-      output: createScriptConsole(getMainToIdeMessenger(), this.id),
-    }
+      output: createScriptConsole(getMainToIdeMessenger(), this.id)
+    };
     return {
+      delay: (ms: number) => new Promise((res) => setTimeout(res, ms)),
       Output: callContext.output,
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
@@ -448,17 +424,14 @@ class MainScriptManager implements IScriptManager {
   }
 }
 
-export type ScriptCallContext = {
-  state: AppState;
+export interface ScriptCallContext {
+  readonly state: AppState;
   messenger: ReturnType<typeof getMainToIdeMessenger>;
   output: ReturnType<typeof createScriptConsole>;
 }
 
-export function createMainScriptManager (
-  prepareScript: (
-    scriptFile: string,
-    scriptId: number
-  ) => Promise<ScriptStartInfo>,
+export function createMainScriptManager(
+  prepareScript: (scriptFile: string, scriptId: number) => Promise<ScriptStartInfo>,
   execScript: (
     scriptFile: string,
     scriptContents: string,
