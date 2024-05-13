@@ -1,3 +1,4 @@
+import fs from "fs";
 import { mainStore } from "../../main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
@@ -7,6 +8,8 @@ import {
   ErrorFilterDescriptor
 } from "../../main/cli-integration/CliCommandRunner";
 import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
+
+const ZCC_OUTPUT_FILE = "_output.bin";
 
 const ZccOptions: CmdLineOptionSet = {
   // --- General options
@@ -534,7 +537,7 @@ class ZccImplementation {
   /**
    * Executes the ZCC process
    */
-  async execute(): Promise<SimpleAssemblerOutput | null> {
+  async execute(): Promise<CompilerResult | null> {
     const settingsReader = createSettingsReader(mainStore);
     const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
     if (!rootPath) {
@@ -550,7 +553,7 @@ class ZccImplementation {
         ...this._options,
         includePath: `${rootPath}/include`,
         cmdTracingOff: true,
-        output: "output.bin", 
+        output: ZCC_OUTPUT_FILE, 
       };
     }
 
@@ -566,12 +569,24 @@ class ZccImplementation {
       throw new Error(errList);
     }
 
+    // --- Remove previous output file
+    const outFile = `${this._cwd}/${ZCC_OUTPUT_FILE}`;
+    if (fs.existsSync(outFile)) {
+      fs.unlinkSync(outFile);
+    }
+
     // --- Execute the command
     const runner = new CliCommandRunner();
     runner.setErrorFilter(this.getErrorFilterDescription());
     const result = await runner.execute(command, cmdLineArgs.args, {
       cwd: this._cwd
     });
+    result.outFile = outFile;
+    try {
+      result.contents = fs.readFileSync(outFile);
+    } catch (err) {
+      // --- Intentionally ignore this error
+    }
     return result;
   }
 
@@ -709,6 +724,18 @@ type OptionResult = {
   args: string[];
   errors: Record<string, string[]>;
 };
+
+export type CompilerResult =  SimpleAssemblerOutput & {
+  outFile?: string;
+  contents?: Uint8Array;
+  errorCount?: number;
+}
+
+export type CompilerFunction = (
+  filename: string,
+  options?: Record<string, any>,
+  target?: string
+) => Promise<CompilerResult | null>;
 
 export const createZccRunner = (
   cwd: string,

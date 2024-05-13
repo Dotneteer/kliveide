@@ -1,6 +1,6 @@
 import { AssemblerErrorInfo } from "@abstractions/IZ80CompilerService";
-import { SimpleAssemblerOutput } from "@main/compiler-integration/compiler-registry";
 import { ExecaSyncError, execa } from "execa";
+import { CompilerResult } from "src/script-packages/z88dk/Zcc";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.
@@ -50,7 +50,7 @@ export class CliCommandRunner {
     command: string,
     args: string[],
     options?: RunnerOptions
-  ): Promise<SimpleAssemblerOutput | null> {
+  ): Promise<CompilerResult | null> {
     try {
       const result = await execa(command, args, options);
       return {

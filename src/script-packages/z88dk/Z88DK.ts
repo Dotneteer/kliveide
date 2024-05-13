@@ -1,20 +1,13 @@
 import { ScriptCallContext } from "@main/ksx-runner/MainScriptManager";
-import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
-import { createZccRunner } from "./Zcc";
-
-type CompilerFunction = (
-  filename: string,
-  options?: Record<string, any>,
-  target?: string
-) => Promise<SimpleAssemblerOutput | null>;
+import { CompilerFunction, createZccRunner } from "./Zcc";
 
 function createCompiler(context: ScriptCallContext): CompilerFunction {
   return async (filename, options, target) => {
     // --- Display compilation message
     const out = context.output;
-    out.color("bright-blue");
-    out.write("Start compiling ");
-    out.write(
+    await out.color("bright-blue");
+    await out.write("Start compiling ");
+    await out.write(
       filename,
       {
         type: "@navigate",
@@ -22,8 +15,8 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
       },
       true
     );
-    out.writeLine();
-    out.resetStyle();
+    await out.writeLine();
+    await out.resetStyle();
 
     // --- Do the compilation
     const runner = createZccRunner(context.state.project?.folderPath, target, options, [filename]);
@@ -33,49 +26,45 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
     // --- Display optional trace output
     const traceOutput = result?.traceOutput;
     if (traceOutput?.length > 0) {
-      out.resetStyle();
-      traceOutput.forEach((msg) => {
-        const lines = msg.split("\n");
-        lines.forEach((line) => {
-          out.writeLine(line);
-          console.log(line);
-        });
-      });
+      await out.resetStyle();
+      for (let i = 0; i < traceOutput.length; i++) {
+        const lines = traceOutput[i].split("\n");
+        for (let j = 0; j < lines.length - 1; j++) {
+          await out.writeLine(lines[j]);
+        }
+      }
     }
 
     // --- Collect errors
-    const errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
+    result.errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
 
     if (result.failed) {
-      if (!result || errorCount === 0) {
-        // --- Some unexpected error with the compilation
-        out.color("bright-red");
-        out.bold(true);
-        const lines = result.failed.split("\n");
-        lines.forEach((line) => {
-          out.writeLine(line);
-          console.log(line);
-        });
-        out.resetStyle();
-        return result;
+      // --- Some unexpected error with the compilation
+      await out.color("bright-red");
+      await out.bold(true);
+      const lines = result.failed.split("\n");
+      for (let i = 0; i < lines.length - 1; i++) {
+        out.writeLine(lines[i]);
       }
+      out.resetStyle();
+      return result;
     }
 
     // --- Display the errors
     if ((result.errors?.length ?? 0) > 0) {
       for (let i = 0; i < result.errors.length; i++) {
         const err = result.errors[i];
-        out.color(err.isWarning ? "yellow" : "bright-red");
-        out.bold(true);
-        out.write(`${err.errorCode}: ${err.message}`);
-        out.write(" - ");
-        out.bold(false);
-        out.color("bright-cyan");
+        await out.color(err.isWarning ? "yellow" : "bright-red");
+        await out.bold(true);
+        await out.write(`${err.errorCode}: ${err.message}`);
+        await out.write(" - ");
+        await out.bold(false);
+        await out.color("bright-cyan");
         const file = err.filename;
         const line = err.line;
         const column = err.startColumn;
         if (line !== undefined && line >= 0) {
-          out.write(
+          await out.write(
             `${file}${line != undefined ? ` (${line}:${column + 1})` : ""}`,
             {
               type: "@navigate",
@@ -84,7 +73,7 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
             true
           );
         } else {
-          out.write(
+          await out.write(
             file,
             {
               type: "@navigate",
@@ -93,20 +82,21 @@ function createCompiler(context: ScriptCallContext): CompilerFunction {
             true
           );
         }
-        out.writeLine();
-        out.resetStyle();
+        await out.writeLine();
+        await out.resetStyle();
       }
     }
 
+    // --- Done
     return result;
   };
 }
 
 export function createZ88dk(context: ScriptCallContext) {
   return {
-    compile: (filename: string, options: Record<string, any>, target: string) => {
+    compile: async (filename: string, options: Record<string, any>, target: string) => {
       const compiler = createCompiler(context);
-      compiler(filename, options, target);
+      return await compiler(filename, options, target);
     }
   };
 }

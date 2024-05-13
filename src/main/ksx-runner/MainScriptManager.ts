@@ -30,6 +30,7 @@ import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
+import { createEmulatorApi } from "./emulator";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -441,6 +442,7 @@ class MainScriptManager implements IScriptManager {
       Output: callContext.output,
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
+      "#emu": createEmulatorApi(callContext),
       Z88dk: createZ88dk(callContext)
     };
   }
