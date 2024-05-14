@@ -23,8 +23,8 @@ import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
 import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
 import { createEmulatorApi } from "./emulator";
+import { createNotifications } from "./notifications";
 
 const MAX_SCRIPT_HISTORY = 128;
 
@@ -274,6 +274,14 @@ class MainScriptManager implements IScriptManager {
   }
 
   /**
+   * Remove the completed scripts from the list.
+   */
+  removeCompletedScripts(): void {
+    this.scripts = this.scripts.filter((s) => !isScriptCompleted(s.status));
+    mainStore.dispatch(setScriptsStatusAction(this.getScriptsStatus()));
+  }
+
+  /**
    * Returns the status of all scripts.
    */
   getScriptsStatus(): ScriptRunInfo[] {
@@ -407,6 +415,7 @@ class MainScriptManager implements IScriptManager {
    */
   private async prepareAppContext(): Promise<Record<string, any>> {
     const callContext: ScriptCallContext = {
+      dispatch: mainStore.dispatch,
       get state() {
         return mainStore.getState();
       },
@@ -416,6 +425,7 @@ class MainScriptManager implements IScriptManager {
     return {
       delay: (ms: number) => new Promise((res) => setTimeout(res, ms)),
       Output: callContext.output,
+      "#notifications": createNotifications(callContext),
       "#project": await createProjectStructure(),
       "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
       "#emu": createEmulatorApi(callContext),
@@ -425,6 +435,7 @@ class MainScriptManager implements IScriptManager {
 }
 
 export interface ScriptCallContext {
+  dispatch: typeof mainStore.dispatch;
   readonly state: AppState;
   messenger: ReturnType<typeof getMainToIdeMessenger>;
   output: ReturnType<typeof createScriptConsole>;

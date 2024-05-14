@@ -20,6 +20,11 @@ export interface IScriptManager {
   completeScript(id: number): Promise<void>;
 
   /**
+   * Remove the completed scripts from the list.
+   */
+  removeCompletedScripts(): void;
+
+  /**
    * Registers a package object to be used in the script execution.
    * @param packageName Name of the package
    * @param packageObject Package object to register

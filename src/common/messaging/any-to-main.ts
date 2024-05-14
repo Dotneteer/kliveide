@@ -244,6 +244,12 @@ export interface MainCloseScriptRequest extends MessageBase {
   script: ScriptRunInfo;
 }
 
+// --- Resmove the scripts that have completed
+export interface MainRemoveCompletedScriptsRequest extends MessageBase {
+  type: "MainRemoveCompletedScripts";
+}
+
+
 // --- Resolve a module to its contents
 export interface MainResolveModuleRequest extends MessageBase {
   type: "MainResolveModule";

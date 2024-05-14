@@ -20,12 +20,17 @@
 .label {
   font-size: 0.8em;
   color: var(--color-statusbar-label);
-  padding: 0 2px;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .isMonospace {
   font-family: monospace;
   font-size: 1em;
+}
+
+.isError {
+  background-color: var(--bgcolor-errorLabel);
 }
 
 .labelSeparator {

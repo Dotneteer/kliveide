@@ -199,7 +199,7 @@ describe("Zcc - Arguments", () => {
   validArgCases.forEach((c, idx) =>
     it(`Zcc args #${idx + 1}`, () => {
       // --- Arrange
-      const zcc = createZccRunner("zx", c.opts, ["file.c"]);
+      const zcc = createZccRunner("", "zx", c.opts, ["file.c"]);
 
       // --- Act
       const options = zcc.composeCmdLineArgs();
@@ -224,7 +224,7 @@ describe("Zcc - Arguments", () => {
 
   it("Zcc with unknown option fails #1", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { unknown: true }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { unknown: true }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -238,7 +238,7 @@ describe("Zcc - Arguments", () => {
 
   it("Zcc with unknown option fails #2", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { unknown1: true, other: false }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { unknown1: true, other: false }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -255,7 +255,7 @@ describe("Zcc - Arguments", () => {
 
   it("bool option fails with number", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { verbose: 123 }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { verbose: 123 }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -270,7 +270,7 @@ describe("Zcc - Arguments", () => {
 
   it("bool option fails with string", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { verbose: "123" }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { verbose: "123" }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -284,7 +284,7 @@ describe("Zcc - Arguments", () => {
 
   it("bool option fails with array", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { verbose: [123] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { verbose: [123] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -299,7 +299,7 @@ describe("Zcc - Arguments", () => {
 
   it("number option fails with bool", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { startup: true }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { startup: true }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -314,7 +314,7 @@ describe("Zcc - Arguments", () => {
 
   it("number option fails with string", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { startup: "123" }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { startup: "123" }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -329,7 +329,7 @@ describe("Zcc - Arguments", () => {
 
   it("number option fails with array", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { startup: ["123"] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { startup: ["123"] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -344,7 +344,7 @@ describe("Zcc - Arguments", () => {
 
   it("string option fails with boolean", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { output: false }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { output: false }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -359,7 +359,7 @@ describe("Zcc - Arguments", () => {
 
   it("string option fails with number", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { output: 123 }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { output: 123 }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -374,7 +374,7 @@ describe("Zcc - Arguments", () => {
 
   it("string option fails with array", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { output: [false] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { output: [false] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -389,7 +389,7 @@ describe("Zcc - Arguments", () => {
 
   it("string array option fails with bool item #1", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { pragmaRedirect: [false] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { pragmaRedirect: [false] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -404,7 +404,7 @@ describe("Zcc - Arguments", () => {
 
   it("string array option fails with bool item #2", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { pragmaRedirect: ["pragma", false] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { pragmaRedirect: ["pragma", false] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -419,7 +419,7 @@ describe("Zcc - Arguments", () => {
 
   it("string array option fails with number item #1", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { pragmaRedirect: [123] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { pragmaRedirect: [123] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();
@@ -434,7 +434,7 @@ describe("Zcc - Arguments", () => {
 
   it("string array option fails with number item #2", () => {
     // --- Arrange
-    const zcc = createZccRunner("zx", { pragmaRedirect: ["pragma", 123] }, ["file.c"]);
+    const zcc = createZccRunner("", "zx", { pragmaRedirect: ["pragma", 123] }, ["file.c"]);
 
     // --- Act
     const cmdLine = zcc.composeCmdLineArgs();

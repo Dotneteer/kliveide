@@ -1,9 +1,5 @@
 import { ScrollViewer, ScrollViewerApi } from "@controls/ScrollViewer";
-import {
-  TabButton,
-  TabButtonSeparator,
-  TabButtonSpace
-} from "@controls/TabButton";
+import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -15,10 +11,7 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import {
-  incProjectViewStateVersionAction,
-  setRestartTarget
-} from "@common/state/actions";
+import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
@@ -32,14 +25,14 @@ export const DocumentsHeader = () => {
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
   const handlersInitialized = useRef(false);
-  const projectVersion = useSelector(s => s.project?.projectFileVersion);
+  const projectVersion = useSelector((s) => s.project?.projectFileVersion);
   const [openDocs, setOpenDocs] = useState<ProjectDocumentState[]>(null);
   const [activeDocIndex, setActiveDocIndex] = useState<number>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
   const [editorInfo, setEditorInfo] = useState<FileTypeEditor>();
   const [awaiting, setAwaiting] = useState(false);
-  const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
-  const editorVersion = useSelector(s => s.ideView?.editorVersion);
+  const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
+  const editorVersion = useSelector((s) => s.ideView?.editorVersion);
   const [dirtyStates, setDirtyStates] = useState<boolean[]>();
 
   const svApi = useRef<ScrollViewerApi>();
@@ -53,19 +46,15 @@ export const DocumentsHeader = () => {
   }, [hubVersion]);
 
   useEffect(() => {
-    setDirtyStates(
-      openDocs?.map(d => d.editVersionCount !== d.savedVersionCount)
-    );
+    setDirtyStates(openDocs?.map((d) => d.editVersionCount !== d.savedVersionCount));
   }, [editorVersion]);
 
   // --- Update the UI when the build root changes
   useEffect(() => {
     if (openDocs) {
-      setSelectedIsBuildRoot(
-        buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0
-      );
+      setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
     }
-    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.fullPath));
+    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name));
   }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
 
   // --- Make sure that the index is visible
@@ -129,9 +118,7 @@ export const DocumentsHeader = () => {
       svApi.current.scrollToHorizontal(tabLeftPos);
     } else if (tabRightPos > scrollPos + parent.offsetWidth) {
       // --- Right tab edge is hidden, scroll to the left to display the tab
-      svApi.current.scrollToHorizontal(
-        tabLeftPos - parent.offsetWidth + tabDim.offsetWidth
-      );
+      svApi.current.scrollToHorizontal(tabLeftPos - parent.offsetWidth + tabDim.offsetWidth);
     }
   };
 
@@ -153,9 +140,7 @@ export const DocumentsHeader = () => {
     if (!activeDocId || id === activeDocId) return;
 
     setAwaiting(true);
-    await documentHubService
-      .setActiveDocument(id)
-      .finally(setAwaiting.bind(false));
+    await documentHubService.setActiveDocument(id).finally(setAwaiting.bind(false));
   };
 
   // --- Responds to the event when a document tab was double clicked. Double clicking
@@ -166,7 +151,7 @@ export const DocumentsHeader = () => {
 
   // --- Responds to the event when the close button of the tab is clicked
   const tabCloseClicked = (mode: CloseMode, id: string) => {
-    async function onTabCloseAsync () {
+    async function onTabCloseAsync() {
       switch (mode) {
         case CloseMode.All:
           await documentHubService.closeAllDocuments();
@@ -190,13 +175,13 @@ export const DocumentsHeader = () => {
         allowHorizontal={true}
         allowVertical={false}
         scrollBarWidth={4}
-        apiLoaded={api => (svApi.current = api)}
+        apiLoaded={(api) => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>
           {(openDocs ?? []).map((d, idx) => {
             // --- Take care of unique names
             const docName = openDocs.find(
-              doc => doc.name === d.name && doc.id !== d.id && doc.path
+              (doc) => doc.name === d.name && doc.id !== d.id && doc.path
             )
               ? d.path
               : d.name;
@@ -213,12 +198,10 @@ export const DocumentsHeader = () => {
                 tabsCount={tabsCount}
                 iconName={d.iconName}
                 iconFill={d.iconFill}
-                tabDisplayed={el => tabDisplayed(idx, el)}
+                tabDisplayed={(el) => tabDisplayed(idx, el)}
                 tabClicked={() => tabClicked(d.id)}
                 tabDoubleClicked={() => tabDoubleClicked(d)}
-                tabCloseClicked={(mode: CloseMode) =>
-                  tabCloseClicked(mode, d.id)
-                }
+                tabCloseClicked={(mode: CloseMode) => tabCloseClicked(mode, d.id)}
               />
             );
           })}
@@ -226,31 +209,35 @@ export const DocumentsHeader = () => {
         <div className={styles.closingTab} />
       </ScrollViewer>
       <div className={styles.commandBar}>
-        {editorInfo &&
-          editorInfo.documentTabRenderer?.(
-            openDocs?.[activeDocIndex]?.node?.fullPath
-          )}
+        {editorInfo && editorInfo.documentTabRenderer?.(openDocs?.[activeDocIndex]?.node?.fullPath)}
         {selectedIsBuildRoot && <BuildRootCommandBar />}
         <TabButtonSeparator />
         <TabButton
-          iconName='arrow-small-left'
+          iconName="arrow-small-left"
           title={"Move the active\ntab to left"}
           disabled={activeDocIndex === 0}
           useSpace={true}
           clicked={() => documentHubService.moveActiveToLeft()}
         />
         <TabButton
-          iconName='arrow-small-right'
+          iconName="arrow-small-right"
           title={"Move the active\ntab to right"}
           disabled={activeDocIndex === (openDocs?.length ?? 0) - 1}
           useSpace={true}
           clicked={() => documentHubService.moveActiveToRight()}
         />
         <TabButton
-          iconName='close'
+          iconName="close"
           useSpace={true}
           clicked={async () => await documentHubService.closeAllDocuments()}
         />
+        <TabButtonSeparator />
+        <TabButton
+          iconName="close"
+          useSpace={true}
+          clicked={async () => await documentHubService.closeAllDocuments()}
+        />
+
       </div>
     </div>
   ) : null;
@@ -259,70 +246,82 @@ export const DocumentsHeader = () => {
 // --- Encapsulates the command bar to use with the build root document
 const BuildRootCommandBar = () => {
   const { outputPaneService, ideCommandsService } = useAppServices();
-  const compiling = useSelector(s => s.compilation?.inProgress ?? false);
   const storeDispatch = useDispatch();
+  const compiling = useSelector((s) => s.compilation?.inProgress ?? false);
+  const [startedHere, setStartedHere] = useState(false);
+  const [scriptId, setScriptId] = useState<number>();
+
+  useEffect(() => {
+    if (startedHere && !compiling) {
+      setStartedHere(false);
+    }
+  }, [compiling]);
   return (
     <>
       <TabButtonSeparator />
       <TabButton
-        iconName='combine'
-        title='Compile code'
+        iconName="combine"
+        title="Compile code"
         disabled={compiling}
         clicked={async () => {
-          const buildPane =
-            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand(
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          const result = await ideCommandsService.executeCommand(
             "run-build-function buildCode",
             buildPane
           );
+          setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
       <TabButton
-        iconName='inject'
+        iconName="inject"
         title={"Inject code into\nthe virtual machine"}
         disabled={compiling}
         clicked={async () => {
-          const buildPane =
-            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand(
-            "run-build-function injectCode",
-            buildPane
-          );
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          const result = await ideCommandsService.executeCommand("run-build-function injectCode", buildPane);
+          setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
       <TabButton
-        iconName='play'
+        iconName="play"
         title={"Inject code and start\nthe virtual machine"}
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane =
-            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand(
-            "run-build-function runCode",
-            buildPane
-          );
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          const result = await ideCommandsService.executeCommand("run-build-function runCode", buildPane);
+          setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
       />
       <TabButtonSpace />
       <TabButton
-        iconName='debug'
+        iconName="debug"
         title={"Inject code and start\ndebugging"}
         disabled={compiling}
         clicked={async () => {
           storeDispatch(setRestartTarget("project"));
-          const buildPane =
-            outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          await ideCommandsService.executeCommand(
-            "run-build-function debugCode",
-            buildPane
-          );
+          const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+          const result = await ideCommandsService.executeCommand("run-build-function debugCode", buildPane);
+          setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
+        }}
+      />
+      <TabButtonSeparator />
+      <TabButton
+        iconName="pop-out"
+        title={"Show script output"}
+        disabled={compiling || !scriptId}
+        clicked={async () => {
+          if (scriptId > 0) {
+            await ideCommandsService.executeCommand(
+              `script-output ${scriptId}`
+            );
+          }
         }}
       />
     </>

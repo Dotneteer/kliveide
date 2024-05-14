@@ -8,17 +8,17 @@ import styles from "./IdeStatusBar.module.scss";
 
 type IdeStatusBarProps = {
   show: boolean;
-}
+};
 
-
-export const IdeStatusBar = ({show}: IdeStatusBarProps) => {
-  const execState = useSelector(s => s.emulatorState?.machineState);
-  const statusMessage = useSelector(s => s.ideView?.statusMessage);
-  const statusSuccess = useSelector(s => s.ideView?.statusSuccess);
-  const isKliveProject = useSelector(s => s.project?.isKliveProject);
-  const compilation = useSelector(s => s.compilation);
+export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
+  const execState = useSelector((s) => s.emulatorState?.machineState);
+  const statusMessage = useSelector((s) => s.ideView?.statusMessage);
+  const statusSuccess = useSelector((s) => s.ideView?.statusSuccess);
+  const isKliveProject = useSelector((s) => s.project?.isKliveProject);
+  const compilation = useSelector((s) => s.compilation);
   const [machineState, setMachineState] = useState("");
   const [compileStatus, setCompileStatus] = useState("");
+  const [compileSuccess, setCompileSuccess] = useState(true);
 
   // --- Reflect machine execution state changes
   useEffect(() => {
@@ -46,6 +46,7 @@ export const IdeStatusBar = ({show}: IdeStatusBarProps) => {
 
   useEffect(() => {
     let compilationLabel = "";
+    let success = true;
     if (compilation.inProgress) {
       compilationLabel = "Compilation in progress...";
     } else {
@@ -54,35 +55,37 @@ export const IdeStatusBar = ({show}: IdeStatusBarProps) => {
       } else {
         if (compilation.failed || compilation.result?.errors?.length > 0) {
           compilationLabel = "Compilation failed";
+          success = false;
         } else {
           compilationLabel = "Compilation successful";
         }
       }
     }
     setCompileStatus(compilationLabel);
+    setCompileSuccess(success);
   }, [compilation]);
 
   if (!show) return null;
-  
+
   return (
     <div className={styles.ideStatusBar}>
       <div className={styles.sectionWrapper}>
         <Section>
-          <Icon
-            iconName='vm-running'
-            width={16}
-            height={16}
-            fill='--color-statusbar-icon'
-          />
+          <Icon iconName="vm-running" width={16} height={16} fill="--color-statusbar-icon" />
           <LabelSeparator />
           <Label text={machineState} />
         </Section>
         {isKliveProject && (
           <Section>
             <LabelSeparator />
-            <Icon iconName='combine' width={16} height={16} />
+            <Icon
+              iconName="combine"
+              width={16}
+              height={16}
+              fill="--color-statusbar-icon"
+            />
             <LabelSeparator />
-            <Label text={compileStatus} />
+            <Label text={compileStatus} isError={!compileSuccess} />
           </Section>
         )}
         {statusMessage && (
@@ -92,12 +95,12 @@ export const IdeStatusBar = ({show}: IdeStatusBarProps) => {
                 statusSuccess === undefined
                   ? "circle-outline"
                   : statusSuccess
-                  ? "check"
-                  : "circle-filled"
+                    ? "check"
+                    : "circle-filled"
               }
               width={16}
               height={16}
-              fill='--color-statusbar-icon'
+              fill="--color-statusbar-icon"
             />
             <LabelSeparator />
             <Label text={statusMessage} />
@@ -116,13 +119,15 @@ const Section = ({ children }: SectionProps) => {
 type LabelProps = {
   text: string;
   isMonospace?: boolean;
+  isError?: boolean;
 };
 
-const Label = ({ text, isMonospace }: LabelProps) => {
+const Label = ({ text, isMonospace, isError }: LabelProps) => {
   return (
     <span
       className={classnames(styles.label, {
-        [styles.isMonospace]: isMonospace
+        [styles.isMonospace]: isMonospace,
+        [styles.isError]: isError
       })}
     >
       {text}

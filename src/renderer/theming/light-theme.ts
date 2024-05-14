@@ -117,6 +117,7 @@ export const lightTheme: ThemeProperties = {
 
   // --- Statusbar
   "--bgcolor-statusbar": "#61a4d0",
+  "--bgcolor-errorLabel": "orange",
   "--color-statusbar-label": "#000000",
   "--color-statusbar-icon": "#000000",
 

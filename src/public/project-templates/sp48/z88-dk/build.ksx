@@ -1,5 +1,8 @@
 export function buildCode() {
-  return Z88dk.compile(#project.buildRoot);
+  #notifications.startCompilation();
+  const result = Z88dk.compile(#project.buildRoot);
+  #notifications.completeCompilation(result);
+  return result;
 }
 
 export function injectCode() {
