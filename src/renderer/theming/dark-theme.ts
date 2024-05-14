@@ -119,6 +119,7 @@ export const darkTheme: ThemeProperties = {
 
   // --- Statusbar
   "--bgcolor-statusbar": "#007acc",
+  "--bgcolor-errorLabel": "orangered",
   "--color-statusbar-label": "#ffffff",
   "--color-statusbar-icon": "#ffffff",
 

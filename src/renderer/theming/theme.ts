@@ -120,6 +120,7 @@ export type ThemeProperties = {
   // --- Statusbar
   "--bgcolor-statusbar"?: string;
   "--color-statusbar-label"?: string;
+  "--bgcolor-errorLabel"?: string;
   "--color-statusbar-icon"?: string;
 
   // --- Sitebar

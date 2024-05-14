@@ -452,6 +452,10 @@ export async function processRendererToMainMessages (
       await mainScriptManager.closeScript(message.script);
       break;
 
+    case "MainRemoveCompletedScripts":
+      mainScriptManager.removeCompletedScripts();
+      break;  
+
     case "MainResolveModule":
       const resolvedModule = await mainScriptManager.resolveModule(
         message.mainFile,

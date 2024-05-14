@@ -1,13 +1,7 @@
-import {
-  MainCompileResponse,
-  MainSaveFileResponse
-} from "@messaging/any-to-main";
+import { MainCompileResponse, MainSaveFileResponse } from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import {
-  getFileTypeEntry,
-  getNodeName as getNodeFileName
-} from "../project/project-node";
+import { getFileTypeEntry, getNodeName as getNodeFileName } from "../project/project-node";
 import {
   IdeCommandBase,
   commandError,
@@ -48,6 +42,7 @@ import {
   startCompileAction
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
+import { outputNavigateAction } from "@common/utils/output-utils";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -60,7 +55,7 @@ export class CompileCommand extends CommandWithNoArgBase {
   readonly aliases = ["co"];
   readonly noInteractiveUsage = true;
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
     return compileResult.message
       ? commandError(compileResult.message)
@@ -74,31 +69,29 @@ export class InjectCodeCommand extends CommandWithNoArgBase {
   readonly usage = "inject";
   readonly aliases = ["inj"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "inject");
   }
 }
 
 export class RunCodeCommand extends CommandWithNoArgBase {
   readonly id = "run";
-  readonly description =
-    "Runs the current project's code in the virtual machine";
+  readonly description = "Runs the current project's code in the virtual machine";
   readonly usage = "run";
   readonly aliases = ["r"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "run");
   }
 }
 
 export class DebugCodeCommand extends CommandWithNoArgBase {
   readonly id = "debug";
-  readonly description =
-    "Runs the current project's code in the virtual machine with debugging";
+  readonly description = "Runs the current project's code in the virtual machine with debugging";
   readonly usage = "debug";
   readonly aliases = ["rd"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "debug");
   }
 }
@@ -120,7 +113,7 @@ export class ExportCodeCommand extends IdeCommandBase {
   private address?: number;
   private screenFile?: string;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     this.format = "tzx";
     this.autoStart = false;
     this.pause = false;
@@ -135,9 +128,7 @@ export class ExportCodeCommand extends IdeCommandBase {
    * @param _args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length < 1) {
       return validationError("This command expects at least 2 arguments");
@@ -161,14 +152,8 @@ export class ExportCodeCommand extends IdeCommandBase {
             return validationError("Missing value for '-f'");
           }
           this.format = args[argPos].text;
-          if (
-            this.format !== "tzx" &&
-            this.format !== "tap" &&
-            this.format !== "hex"
-          ) {
-            return validationError(
-              "Format should be one 'tzx', 'tap', or 'hex'"
-            );
+          if (this.format !== "tzx" && this.format !== "tap" && this.format !== "hex") {
+            return validationError("Format should be one 'tzx', 'tap', or 'hex'");
           }
           break;
         case "-p":
@@ -223,7 +208,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Compile before export
     const { message, result } = await compileCode(context);
     const errorNo = result?.errors?.length ?? 0;
@@ -240,9 +225,7 @@ export class ExportCodeCommand extends IdeCommandBase {
           message
         });
         if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `MainDisplayMessageBox call failed: ${response.message}`
-          );
+          reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
         }
         return commandError(message);
       }
@@ -255,7 +238,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     return this.exportCompiledCode(context, result);
   }
 
-  async exportCompiledCode (
+  async exportCompiledCode(
     context: IdeCommandContext,
     output: KliveCompilerOutput
   ): Promise<IdeCommandResult> {
@@ -274,9 +257,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       )) as Uint8Array;
       context.service.projectService.forgetFile(this.screenFile);
       if (!isScreenFile(scrContent)) {
-        return commandError(
-          `File '${this.screenFile}' is not a valid screen file`
-        );
+        return commandError(`File '${this.screenFile}' is not a valid screen file`);
       }
     }
 
@@ -313,7 +294,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     return await saveDataBlocks();
 
     // --- Reads tape data from the specified contents
-    function readTapeData (contents: Uint8Array): TapeDataBlock[] | null {
+    function readTapeData(contents: Uint8Array): TapeDataBlock[] | null {
       let dataBlocks: TapeDataBlock[] = [];
       try {
         const reader = new BinaryReader(contents);
@@ -330,9 +311,7 @@ export class ExportCodeCommand extends IdeCommandBase {
             dataBlocks = tapReader.dataBlocks;
           }
         } else {
-          dataBlocks = tzxReader.dataBlocks
-            .map(b => b.getDataBlock())
-            .filter(b => b);
+          dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
         }
         return dataBlocks;
       } catch {
@@ -340,7 +319,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
     }
 
-    function isScreenFile (contents: Uint8Array): boolean {
+    function isScreenFile(contents: Uint8Array): boolean {
       // --- Try to read a .TZX file
       const dataBlocks = readTapeData(contents);
       if (!dataBlocks) {
@@ -368,34 +347,27 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Create tap blocks
-    function createTapeBlocks (output: InjectableOutput): Uint8Array[] {
+    function createTapeBlocks(output: InjectableOutput): Uint8Array[] {
       var result: Uint8Array[] = [];
-      if (
-        output.segments
-          .map(s => s.emittedCode.length)
-          .reduce((a, b) => a + b, 0) === 0
-      ) {
+      if (output.segments.map((s) => s.emittedCode.length).reduce((a, b) => a + b, 0) === 0) {
         // --- No code to return
         return null;
       }
 
       if (exporter.singleBlock) {
         // --- Merge all blocks together
-        const startAddr = Math.min(...output.segments.map(s => s.startAddress));
+        const startAddr = Math.min(...output.segments.map((s) => s.startAddress));
         const endAddr = Math.max(
           ...output.segments
-            .filter(s => s.bank == undefined)
-            .map(s => s.startAddress + s.emittedCode.length - 1)
+            .filter((s) => s.bank == undefined)
+            .map((s) => s.startAddress + s.emittedCode.length - 1)
         );
 
         // --- Normal code segments
         const mergedSegment = new Uint8Array(endAddr - startAddr + 3);
-        for (const segment of output.segments.filter(
-          s => s.bank == undefined
-        )) {
+        for (const segment of output.segments.filter((s) => s.bank == undefined)) {
           for (let i = 0; i < segment.emittedCode.length; i++) {
-            mergedSegment[segment.startAddress - startAddr + 1 + i] =
-              segment.emittedCode[i];
+            mergedSegment[segment.startAddress - startAddr + 1 + i] = segment.emittedCode[i];
           }
         }
 
@@ -418,7 +390,7 @@ export class ExportCodeCommand extends IdeCommandBase {
         let segmentIdx = 0;
 
         // --- Normal code segments
-        for (const segment of output.segments.filter(s => s.bank == null)) {
+        for (const segment of output.segments.filter((s) => s.bank == null)) {
           segmentIdx++;
           const startAddr = segment.startAddress;
           const endAddr = segment.startAddress + segment.emittedCode.length - 1;
@@ -447,7 +419,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
 
       // --- Create blocks for the banks
-      const segments = output.segments.filter(s => s.bank != null);
+      const segments = output.segments.filter((s) => s.bank != null);
       segments.sort((a, b) => a.bank - b.bank);
       for (const bankSegment of segments) {
         const startAddr = (0xc000 + bankSegment.bankOffset) & 0xffff;
@@ -480,7 +452,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Sets the checksum byte for a tape block
-    function setTapeCheckSum (bytes: Uint8Array): void {
+    function setTapeCheckSum(bytes: Uint8Array): void {
       let chk = 0x00;
       for (let i = 0; i < bytes.length - 1; i++) {
         chk ^= bytes[i];
@@ -490,7 +462,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Saves an Intel HEX file
-    async function saveIntelHexFile (
+    async function saveIntelHexFile(
       context: IdeCommandContext,
       filename: string,
       output: KliveCompilerOutput
@@ -526,22 +498,15 @@ export class ExportCodeCommand extends IdeCommandBase {
           return commandError(response.message);
         }
         return commandSuccessWith(
-          `Code successfully exported to '${
-            (response as MainSaveFileResponse).path
-          }'`
+          `Code successfully exported to '${(response as MainSaveFileResponse).path}'`
         );
       }
       return commandError("Filename not specified");
 
       // --- Write out a single data record
-      function writeDataRecord (
-        segment: BinarySegment,
-        offset: number,
-        bytesCount: number
-      ): void {
+      function writeDataRecord(segment: BinarySegment, offset: number, bytesCount: number): void {
         if (bytesCount === 0) return;
-        var addr =
-          ((segment.xorgValue ?? segment.startAddress) + offset) & 0xffff;
+        var addr = ((segment.xorgValue ?? segment.startAddress) + offset) & 0xffff;
         hexOut += `:${toHexa2(bytesCount)}${toHexa4(addr)}00`; // --- Data record header
         let checksum = bytesCount + (addr >> 8) + (addr & 0xff);
         for (var i = offset; i < offset + bytesCount; i++) {
@@ -555,14 +520,12 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Creates blocks with autostart functionality
-    function createAutoStartBlock (output: CompilerOutput): Uint8Array[] {
+    function createAutoStartBlock(output: CompilerOutput): Uint8Array[] {
       const clearAddr = exporter.applyClear
-        ? Math.min(
-            ...(output as InjectableOutput).segments.map(s => s.startAddress)
-          )
+        ? Math.min(...(output as InjectableOutput).segments.map((s) => s.startAddress))
         : null;
       return output.modelType == SpectrumModelType.Spectrum48 ||
-        output.segments.filter(s => s.bank != undefined).length === 0
+        output.segments.filter((s) => s.bank != undefined).length === 0
         ? // --- No banks to emit, use the ZX Spectrum 48 auto-loader format
           createSpectrum48StartBlock(output, clearAddr)
         : // --- There are banks to emit, use the ZX Spectrum 128 auto-loader format
@@ -570,10 +533,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Auto start block for ZX Spectrum 48
-    function createSpectrum48StartBlock (
-      output: CompilerOutput,
-      clearAddr?: number
-    ): Uint8Array[] {
+    function createSpectrum48StartBlock(output: CompilerOutput, clearAddr?: number): Uint8Array[] {
       const result: Uint8Array[] = [];
 
       // --- Step #1: Create the code line for auto start
@@ -682,10 +642,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Auto start block for ZX Spectrum 48
-    function createSpectrum128StartBlock (
-      output: CompilerOutput,
-      clearAddr?: number
-    ): Uint8Array[] {
+    function createSpectrum128StartBlock(output: CompilerOutput, clearAddr?: number): Uint8Array[] {
       const result: Uint8Array[] = [];
 
       // --- We keep the code lines here
@@ -856,17 +813,15 @@ export class ExportCodeCommand extends IdeCommandBase {
       writeDataStatement(
         codeLine,
         [
-          243, 58, 92, 91, 230, 248, 71, 58, 56, 92, 176, 50, 92, 91, 1, 253,
-          127, 237, 121, 251, 201
+          243, 58, 92, 91, 230, 248, 71, 58, 56, 92, 176, 50, 92, 91, 1, 253, 127, 237, 121, 251,
+          201
         ]
       );
       lines.push(codeLine);
 
       // --- Add data lines with used banks and terminating 8
       codeLine = [];
-      const banks = output.segments
-        .filter(s => s.bank != null)
-        .map(s => s.bank);
+      const banks = output.segments.filter((s) => s.bank != null).map((s) => s.bank);
       banks.sort((a, b) => a - b);
       banks.push(8);
       writeDataStatement(codeLine, banks);
@@ -890,7 +845,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       return result;
     }
 
-    function writeNumber (codeArray: number[], num: number) {
+    function writeNumber(codeArray: number[], num: number) {
       // --- Number in string form
       for (const ch of num.toString()) codeArray.push(ch.charCodeAt(0));
       codeArray.push(NUMB_SIGN);
@@ -902,11 +857,11 @@ export class ExportCodeCommand extends IdeCommandBase {
       codeArray.push(0x00);
     }
 
-    function writeString (codeArray: number[], str: string) {
+    function writeString(codeArray: number[], str: string) {
       for (const ch of str) codeArray.push(ch.charCodeAt(0));
     }
 
-    function writeDataStatement (codeLine: number[], data: number[]) {
+    function writeDataStatement(codeLine: number[], data: number[]) {
       codeLine.push(DATA_TKN);
       let comma = false;
       for (const item of data) {
@@ -919,9 +874,8 @@ export class ExportCodeCommand extends IdeCommandBase {
       codeLine.push(NEW_LINE);
     }
 
-    function createDataBlockForCodeLines (lines: number[][]): Uint8Array {
-      const length =
-        lines.map(cl => cl.length + 4).reduce((a, b) => a + b, 0) + 2;
+    function createDataBlockForCodeLines(lines: number[][]): Uint8Array {
+      const length = lines.map((cl) => cl.length + 4).reduce((a, b) => a + b, 0) + 2;
       const dataBlock: Uint8Array = new Uint8Array(length);
       dataBlock[0] = 0xff;
       let index = 1;
@@ -949,8 +903,7 @@ export class ExportCodeCommand extends IdeCommandBase {
     }
 
     // --- Save the collected data blocks
-    async function saveDataBlocks (
-    ): Promise<IdeCommandResult> {
+    async function saveDataBlocks(): Promise<IdeCommandResult> {
       const writer = new BinaryWriter();
       try {
         // --- Save data blocks
@@ -982,9 +935,7 @@ export class ExportCodeCommand extends IdeCommandBase {
             return commandError(response.message);
           }
           return commandSuccessWith(
-            `Code successfully exported to '${
-              (response as MainSaveFileResponse).path
-            }'`
+            `Code successfully exported to '${(response as MainSaveFileResponse).path}'`
           );
         }
 
@@ -997,7 +948,7 @@ export class ExportCodeCommand extends IdeCommandBase {
 }
 
 // --- Gets the model code according to machine type
-function modelTypeToMachineType (model: SpectrumModelType): string | null {
+function modelTypeToMachineType(model: SpectrumModelType): string | null {
   switch (model) {
     case SpectrumModelType.Spectrum48:
       return "sp48";
@@ -1013,12 +964,11 @@ function modelTypeToMachineType (model: SpectrumModelType): string | null {
 }
 
 // --- Compile the current project's code
-async function compileCode (
+async function compileCode(
   context: IdeCommandContext
 ): Promise<{ result?: KliveCompilerOutput; message?: string }> {
   // --- Shortcuts
   const out = context.output;
-  const ideCmd = context.service.ideCommandsService;
 
   // --- Check if we have a build root to compile
   const state = context.store.getState();
@@ -1035,7 +985,7 @@ async function compileCode (
   // --- Compile the build root
   out.color("bright-blue");
   out.write("Start compiling ");
-  ideCmd.writeNavigationAction(context, buildRoot);
+  outputNavigateAction(context.output, buildRoot);
   out.writeLine();
   out.resetStyle();
 
@@ -1061,11 +1011,11 @@ async function compileCode (
   const traceOutput = result?.traceOutput;
   if (traceOutput?.length > 0) {
     out.resetStyle();
-    traceOutput.forEach(msg => out.writeLine(msg));
+    traceOutput.forEach((msg) => out.writeLine(msg));
   }
 
   // --- Collect errors
-  const errorCount = result?.errors.filter(m => !m.isWarning).length ?? 0;
+  const errorCount = result?.errors.filter((m) => !m.isWarning).length ?? 0;
 
   if (response.failed) {
     if (!result || errorCount === 0) {
@@ -1084,12 +1034,7 @@ async function compileCode (
       out.write(" - ");
       out.bold(false);
       out.color("bright-cyan");
-      ideCmd.writeNavigationAction(
-        context,
-        err.filename,
-        err.line,
-        err.startColumn
-      );
+      outputNavigateAction(context.output, err.filename, err.line, err.startColumn);
       out.writeLine();
       out.resetStyle();
     }
@@ -1099,14 +1044,12 @@ async function compileCode (
   return errorCount > 0
     ? {
         result,
-        message: `Compilation failed with ${errorCount} error${
-          errorCount > 1 ? "s" : ""
-        }.`
+        message: `Compilation failed with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
       }
     : { result };
 }
 
-async function injectCode (
+async function injectCode(
   context: IdeCommandContext,
   operationType: CodeInjectionType
 ): Promise<IdeCommandResult> {
@@ -1125,9 +1068,7 @@ async function injectCode (
         message: returnMessage
       });
       if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `MainDisplayMessageBox call failed: ${response.message}`
-        );
+        reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
       }
       return commandError(returnMessage);
     }
@@ -1138,7 +1079,7 @@ async function injectCode (
   }
 
   let sumCodeLength = 0;
-  result.segments.forEach(s => (sumCodeLength += s.emittedCode.length));
+  result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
     const response = await context.messenger.sendMessage({
       type: "MainDisplayMessageBox",
@@ -1149,29 +1090,21 @@ async function injectCode (
         "so there is no code to inject into the virtual machine."
     });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(
-        `MainDisplayMessageBox call failed: ${response.message}`
-      );
+      reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
     }
     return commandSuccessWith("Code length is 0, no code injected");
   }
 
   if (operationType === "inject") {
-    if (
-      context.store.getState().emulatorState?.machineState !==
-      MachineControllerState.Paused
-    ) {
+    if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
       const response = await context.messenger.sendMessage({
         type: "MainDisplayMessageBox",
         messageType: "warning",
         title: "Injecting code",
-        message:
-          "To inject the code into the virtual machine, please put it in paused state."
+        message: "To inject the code into the virtual machine, please put it in paused state."
       });
       if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `MainDisplayMessageBox call failed: ${response.message}`
-        );
+        reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
       }
       return commandError("Machine must be in paused state.");
     }
@@ -1182,7 +1115,7 @@ async function injectCode (
     model: modelTypeToMachineType(result.modelType),
     entryAddress: result.entryAddress,
     subroutine: result.injectOptions["subroutine"],
-    segments: result.segments.map(s => ({
+    segments: result.segments.map((s) => ({
       startAddress: s.startAddress,
       bank: s.bank,
       bankOffset: s.bankOffset ?? 0,
@@ -1218,9 +1151,7 @@ async function injectCode (
         message: returnMessage
       });
       if (dlgResponse.type === "ErrorResponse") {
-        reportMessagingError(
-          `MainDisplayMessageBox call failed: ${dlgResponse.message}`
-        );
+        reportMessagingError(`MainDisplayMessageBox call failed: ${dlgResponse.message}`);
       }
       break;
 

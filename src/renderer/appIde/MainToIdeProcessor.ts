@@ -168,10 +168,10 @@ function executeScriptOutput (message: IdeScriptOutputRequest): void {
       buffer.clear();
       break;
     case "write":
-      buffer.write(message.args[0], message.args[1], message.args[2]);
+      buffer.write(message.args[0]?.toString(), message.args[1], message.args[2]);
       break;
     case "writeLine":
-      buffer.writeLine(message.args[0], message.args[1], message.args[2]);
+      buffer.writeLine(message.args[0]?.toString(), message.args[1], message.args[2]);
       break;
     case "resetStyle":
       buffer.resetStyle();
@@ -213,6 +213,7 @@ function convertToProjectStructure (
   return {
     rootPath: project.folderPath,
     hasBuildFile: !!project.hasBuildFile,
+    buildRoot: project.buildRoots.length > 0 ? project.buildRoots[0] : undefined,
     buildFunctions: [],
     children: nodes
   };

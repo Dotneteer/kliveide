@@ -5,20 +5,16 @@ import { LabelSeparator } from "@renderer/controls/Labels";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "@renderer/utils/classnames";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";
-import {
-  isScriptCompleted,
-  scriptDocumentId
-} from "@common/utils/script-utils";
-import { setScriptsStatusAction } from "@common/state/actions";
+import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
 import { Text } from "@renderer/controls/generic/Text";
 
 const ScriptingHistoryPanel = () => {
-  const dispatch = useDispatch();
   const { ideCommandsService, projectService } = useAppServices();
-  const scriptsInState = useSelector(state => state.scripts);
+  const { messenger } = useRendererContext();
+  const scriptsInState = useSelector((state) => state.scripts);
   const [scripts, setScripts] = useState<ScriptRunInfo[]>([]);
   const [selectedScript, setSelectedScript] = useState<ScriptRunInfo>();
   const [version, setVersion] = useState(1);
@@ -29,9 +25,7 @@ const ScriptingHistoryPanel = () => {
     setScripts(
       scriptsInState
         .filter(
-          script =>
-            (script.specialScript !== "build" && !showBuildScripts) ||
-            showBuildScripts
+          (script) => (script.specialScript !== "build" && !showBuildScripts) || showBuildScripts
         )
         .reverse()
     );
@@ -42,7 +36,7 @@ const ScriptingHistoryPanel = () => {
     (async () => {
       if (refreshing.current) return;
       refreshing.current = true;
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
       setVersion(version + 1);
       refreshing.current = false;
     })();
@@ -54,24 +48,19 @@ const ScriptingHistoryPanel = () => {
         <div className={styles.panel}>
           <div className={styles.header}>
             <TabButton
-              iconName='clear-all'
-              title='Clear completed scripts'
-              clicked={() => {
-                const removed = scripts.filter(scr =>
-                  isScriptCompleted(scr.status)
-                );
-                const cleared = scripts.filter(
-                  scr => !isScriptCompleted(scr.status)
-                );
-                dispatch(setScriptsStatusAction(cleared));
+              iconName="clear-all"
+              title="Clear completed scripts"
+              clicked={async () => {
+                const removed = scripts.filter((scr) => isScriptCompleted(scr.status));
                 const hub = projectService.getActiveDocumentHubService();
-                removed.forEach(async scr => {
+                removed.forEach(async (scr) => {
                   await hub.closeDocument(scriptDocumentId(scr.id));
                 });
+                await messenger.sendMessage({ type: "MainRemoveCompletedScripts"});
               }}
             />
             <TabButton
-              iconName='combine'
+              iconName="combine"
               title={`${showBuildScripts ? "Hide" : "Show"} build scripts`}
               fill={showBuildScripts ? "--color-button-focused" : undefined}
               clicked={() => {
@@ -85,7 +74,7 @@ const ScriptingHistoryPanel = () => {
               items={scripts}
               approxSize={24}
               fixItemHeight={true}
-              itemRenderer={idx => {
+              itemRenderer={(idx) => {
                 const script = scripts[idx];
                 console;
                 let icon = "";
@@ -141,18 +130,11 @@ const ScriptingHistoryPanel = () => {
                     })}
                     onClick={async () => {
                       setSelectedScript(script);
-                      await ideCommandsService.executeCommand(
-                        `script-output ${script.id}`
-                      );
+                      await ideCommandsService.executeCommand(`script-output ${script.id}`);
                     }}
                   >
                     <LabelSeparator width={4} />
-                    <Icon
-                      iconName={taskIcon}
-                      fill={taskIconColor}
-                      width={16}
-                      height={16}
-                    />
+                    <Icon iconName={taskIcon} fill={taskIconColor} width={16} height={16} />
                     <LabelSeparator width={4} />
                     <Icon iconName={icon} fill={color} width={16} height={16} />
                     <div className={styles.itemText}>{taskName}</div>

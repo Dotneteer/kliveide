@@ -1,7 +1,15 @@
+import fs from "fs";
 import { mainStore } from "../../main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { Z88DK_INSTALL_FOLDER } from "../../main/z88dk-integration/z88dk-config";
+import {
+  CliCommandRunner,
+  ErrorFilterDescriptor
+} from "../../main/cli-integration/CliCommandRunner";
+import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
+
+const ZCC_OUTPUT_FILE = "_output.bin";
 
 const ZccOptions: CmdLineOptionSet = {
   // --- General options
@@ -44,8 +52,7 @@ const ZccOptions: CmdLineOptionSet = {
     type: "boolean"
   },
   mz80_strict: {
-    description:
-      "Generate output for the Zilog Z80 CPU with documented Z80 instruction set",
+    description: "Generate output for the Zilog Z80 CPU with documented Z80 instruction set",
     type: "boolean"
   },
   mz80n: {
@@ -186,8 +193,7 @@ const ZccOptions: CmdLineOptionSet = {
   },
   printMacroDefs: {
     optionName: "dD",
-    description:
-      "Print macro definitions in -E mode in addition to normal output",
+    description: "Print macro definitions in -E mode in addition to normal output",
     type: "boolean"
   },
   compileOnly: {
@@ -212,8 +218,7 @@ const ZccOptions: CmdLineOptionSet = {
   },
   createApp: {
     optionName: "create-app",
-    description:
-      "Run appmake on the resulting binary to create emulator usable file",
+    description: "Run appmake on the resulting binary to create emulator usable file",
     type: "boolean"
   },
 
@@ -438,8 +443,7 @@ const ZccOptions: CmdLineOptionSet = {
   // --- Misc options
   globalDefC: {
     optionName: "g",
-    description:
-      "Generate a global defc file of the final executable (-g -gp -gpf:filename)",
+    description: "Generate a global defc file of the final executable (-g -gp -gpf:filename)",
     type: "string"
   },
   alias: {
@@ -474,7 +478,7 @@ const ZccOptions: CmdLineOptionSet = {
   }
 };
 
-function cloneZccOptions (): CmdLineOptionSet {
+function cloneZccOptions(): CmdLineOptionSet {
   const result: CmdLineOptionSet = {};
   for (const key in ZccOptions) {
     result[key] = { ...ZccOptions[key] };
@@ -486,84 +490,126 @@ function cloneZccOptions (): CmdLineOptionSet {
  * ZCC wrapper to invoke the ZCC process
  */
 class ZccImplementation {
-  readonly _target: string;
-  readonly _optionTemplate = cloneZccOptions();
-  readonly _options: Record<string, any> = {};
-  readonly _files: string[] = [];
+  private readonly _cwd: string;
+  private readonly _target: string;
+  private readonly _optionTemplate = cloneZccOptions();
+  private _options: Record<string, any> = {};
+  private readonly _files: string[] = [];
+  private readonly _overwriteOptions: boolean;
 
   /**
    * Prefix used with options
    */
-  get optionPrefix (): string {
+  get optionPrefix(): string {
     return "-";
   }
 
   /**
    * Creates a new ZCC instance
+   * @param cwd Current working directory
    * @param target Target CPU
    * @param options Compiler options
    * @param files Files to compile
+   * @param overwriteOptions Should the options overwrite the default ones?
    */
-  constructor (
+  constructor(
+    cwd: string,
     target: string = "zx",
     options: Record<string, any> = {},
-    files: string[] = []
+    files: string[] = [],
+    overwriteOptions = false
   ) {
+    this._cwd = cwd;
     this._target = target;
     this._options = options;
     this._files = files;
+    this._overwriteOptions = overwriteOptions;
   }
 
   /**
    * Adds a file to the compilation list
    * @param file File to add to the compilation list
    */
-  addFile (file: string): void {
+  addFile(file: string): void {
     this._files.push(file);
-  }
-
-  getCommandLineString(): string {
-    const settingsReader = createSettingsReader(mainStore);
-    const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
-    if (!rootPath) {
-      throw new Error("Z88DK install folder is not set. Use the z88dk-reset command to specify it.")
-    }
-    const cmdLineArgs = this.composeCmdLineArgs();
-    if (typeof cmdLineArgs !== "string") {
-      let errList = "Argument error:\n";
-      Object.keys(cmdLineArgs.errors).forEach(key => {
-        const errors = cmdLineArgs.errors[key];
-        errors.forEach(err => {
-          errList += `err\n`;
-        })
-      });
-      throw new Error(errList);
-    }
-    return `${rootPath}/zcc ${this.composeCmdLineArgs()}`
   }
 
   /**
    * Executes the ZCC process
    */
-  async execute (): Promise<void> {
-    console.log(this.getCommandLineString());
+  async execute(): Promise<CompilerResult | null> {
+    const settingsReader = createSettingsReader(mainStore);
+    const rootPath = settingsReader.readSetting(Z88DK_INSTALL_FOLDER);
+    if (!rootPath) {
+      throw new Error(
+        "Z88DK install folder is not set. Use the z88dk-reset command to specify it."
+      );
+    }
+    const command = `${rootPath}/bin/zcc`;
+
+    // --- Prepare default options
+    if (!this._overwriteOptions) {
+      this._options = {
+        ...this._options,
+        includePath: `${rootPath}/include`,
+        cmdTracingOff: true,
+        output: ZCC_OUTPUT_FILE, 
+      };
+    }
+
+    const cmdLineArgs = this.composeCmdLineArgs();
+    if (cmdLineArgs.errors && Object.keys(cmdLineArgs.errors).length > 0) {
+      let errList = "Argument error:\n";
+      Object.keys(cmdLineArgs.errors).forEach((key) => {
+        const errors = cmdLineArgs.errors[key];
+        errors.forEach((err) => {
+          errList += `${err}\n`;
+        });
+      });
+      throw new Error(errList);
+    }
+
+    // --- Remove previous output file
+    const outFile = `${this._cwd}/${ZCC_OUTPUT_FILE}`;
+    if (fs.existsSync(outFile)) {
+      fs.unlinkSync(outFile);
+    }
+
+    // --- Execute the command
+    const runner = new CliCommandRunner();
+    runner.setErrorFilter(this.getErrorFilterDescription());
+    const result = await runner.execute(command, cmdLineArgs.args, {
+      cwd: this._cwd
+    });
+    result.outFile = outFile;
+    try {
+      result.contents = fs.readFileSync(outFile);
+    } catch (err) {
+      // --- Intentionally ignore this error
+    }
+    return result;
   }
 
-  composeCmdLineArgs (): OptionResult | string {
+  composeCmdLineArgs(): OptionResult {
     const optionValues = this.composeOptionValues();
     if (optionValues.errors && Object.keys(optionValues.errors).length > 0) {
       return optionValues;
     }
-    return `+${this._target} ${optionValues.cmdLine} ${this._files.join(" ")}`;
+    optionValues.args.unshift(`+${this._target}`);
+    if (this._files?.length) {
+      this._files.forEach((file) => optionValues.args.push(file));
+    }
+    return optionValues;
   }
 
   /**
    * Composes the option values
    * @returns Result of option composition
    */
-  composeOptionValues (): OptionResult {
+  composeOptionValues(): OptionResult {
     const result: OptionResult = {
-      cmdLine: "",
+      command: "",
+      args: [],
       errors: {}
     };
     for (const key in this._options) {
@@ -617,19 +663,13 @@ class ZccImplementation {
         for (const item of value) {
           const optStr = this.renderCmdOption(key, item, opt);
           if (optStr) {
-            if (result.cmdLine) {
-              result.cmdLine += " ";
-            }
-            result.cmdLine += optStr;
+            result.args.push(optStr);
           }
         }
       } else {
         const optStr = this.renderCmdOption(key, value, opt);
         if (optStr) {
-          if (result.cmdLine) {
-            result.cmdLine += " ";
-          }
-          result.cmdLine += optStr;
+          result.args.push(optStr);
         }
       }
     }
@@ -638,7 +678,7 @@ class ZccImplementation {
     return result;
 
     // --- Report an option error
-    function error (key: string, message: string): void {
+    function error(key: string, message: string): void {
       const existing = result.errors[key];
       if (existing) {
         existing.push(message);
@@ -649,34 +689,58 @@ class ZccImplementation {
   }
 
   // --- Renders a single option
-  renderCmdOption (
-    key: string,
-    value: any,
-    optionDesc: CmdLineOptionDescriptor
-  ): string {
+  renderCmdOption(key: string, value: any, optionDesc: CmdLineOptionDescriptor): string {
     // --- Render the option
     const optionName = `${this.optionPrefix}${optionDesc.optionName || key}`;
     switch (optionDesc.type) {
       case "boolean":
         return value ? optionName : "";
       case "string":
-        return value
-          ? `${optionName}=${/\s/.test(value) ? `"${value}"` : value}`
-          : "";
+        return value ? `${optionName}=${/\s/.test(value) ? `"${value}"` : value}` : "";
       case "number":
         return `${optionName}=${value}`;
     }
+  }
+
+  /**
+   * Gets the error filter description
+   */
+  getErrorFilterDescription(): ErrorFilterDescriptor {
+    return {
+      regex: /^(.*?)(::.*?)*:(\d+):(\d+): (warning|error): (.*)$/,
+      hasLineInfo: (match: RegExpMatchArray) => match?.[2] === undefined,
+      filenameFilterIndex: 1,
+      lineFilterIndex: 3,
+      columnFilterIndex: 4,
+      messageFilterIndex: 6,
+      warningFilterIndex: 5
+    };
   }
 }
 
 // --- The result of option composition
 type OptionResult = {
-  cmdLine: string;
+  command: string;
+  args: string[];
   errors: Record<string, string[]>;
 };
 
+export type CompilerResult =  SimpleAssemblerOutput & {
+  outFile?: string;
+  contents?: Uint8Array;
+  errorCount?: number;
+}
+
+export type CompilerFunction = (
+  filename: string,
+  options?: Record<string, any>,
+  target?: string
+) => Promise<CompilerResult | null>;
+
 export const createZccRunner = (
+  cwd: string,
   target: string = "zx",
   options: Record<string, any> = {},
-  files: string[] = []
-) => new ZccImplementation(target, options, files);
+  files: string[] = [],
+  overwriteOptions = false
+) => new ZccImplementation(cwd, target, options, files, overwriteOptions);

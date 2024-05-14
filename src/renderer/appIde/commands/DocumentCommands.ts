@@ -83,19 +83,18 @@ export class NavigateToDocumentCommand extends IdeCommandBase {
     // --- The document should be open
     const openDoc = await docService.waitOpen(projNode.data.fullPath, true);
     if (openDoc) {
+      // --- Delay 50 ms to allow the editor to be ready
+      await new Promise((resolve) => setTimeout(resolve, 50));
       // --- Navigate to the specified position (if requested)
       if (this.lineNo != undefined) {
         const api = docService.getDocumentApi(openDoc.id);
         if (api) {
           const apiEndpoint = (api as EditorApi)?.setPosition;
           if (typeof apiEndpoint === "function") {
-            apiEndpoint(this.lineNo, this.columnNo ?? 0);
+            apiEndpoint(this.lineNo, Math.max((this.columnNo ?? 0) - 1, 0));
           }
         }
       }
-
-      // TODO: ?
-      //context.store.dispatch(incDocumentActivationVersionAction());
     }
 
     // --- Done.

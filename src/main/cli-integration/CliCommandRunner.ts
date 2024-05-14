@@ -1,6 +1,6 @@
 import { AssemblerErrorInfo } from "@abstractions/IZ80CompilerService";
-import { SimpleAssemblerOutput } from "@main/compiler-integration/compiler-registry";
 import { ExecaSyncError, execa } from "execa";
+import { CompilerResult } from "src/script-packages/z88dk/Zcc";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.
@@ -50,7 +50,7 @@ export class CliCommandRunner {
     command: string,
     args: string[],
     options?: RunnerOptions
-  ): Promise<SimpleAssemblerOutput | null> {
+  ): Promise<CompilerResult | null> {
     try {
       const result = await execa(command, args, options);
       return {
@@ -99,17 +99,33 @@ export class CliCommandRunner {
     }
 
     const match = errorString.match(filter.regex);
+    const getMatch = (index: number): string =>
+      match ? (index >= 0 ? match[index] : match[match.length - index]) : "";
+
+    const hasLineNo = filter.hasLineInfo ? filter.hasLineInfo(match) : true;
+    const isWarning =
+      filter.warningFilterIndex &&
+      getMatch(filter.warningFilterIndex) === (filter.warningText ?? "warning");
+
     return match
       ? {
-          errorCode: filter.codeFilterIndex ? match[filter.codeFilterIndex] : "Error",
-          filename: filter.filenameFilterIndex ? match[filter.filenameFilterIndex] : "",
-          line: parseInt(filter.lineFilterIndex ? match[filter.lineFilterIndex] : "0"),
+          errorCode: filter.codeFilterIndex
+            ? getMatch(filter.codeFilterIndex)
+            : isWarning
+              ? "Warning"
+              : "Error",
+          filename: filter.filenameFilterIndex ? getMatch(filter.filenameFilterIndex) : "",
+          line: hasLineNo
+            ? parseInt(filter.lineFilterIndex ? getMatch(filter.lineFilterIndex) : "0")
+            : -1,
           startPosition: 0,
           endPosition: 0,
-          startColumn: parseInt(filter.columnFilterIndex ? match[filter.columnFilterIndex] : "0"),
+          startColumn: parseInt(
+            filter.columnFilterIndex ? getMatch(filter.columnFilterIndex) : "0"
+          ),
           endColumn: 0,
-          message: filter.messageFilterIndex ? match[filter.messageFilterIndex] : "",
-          isWarning: filter.warningFilterFn ? filter.warningFilterFn(errorString) : false
+          message: filter.messageFilterIndex ? getMatch(filter.messageFilterIndex) : "",
+          isWarning
         }
       : null;
   }
@@ -187,10 +203,12 @@ export type ErrorLineSplitterFn = (err: ExecaSyncError<string>) => string[];
  */
 export type ErrorFilterDescriptor = {
   regex: RegExp;
+  hasLineInfo?: (match: RegExpMatchArray) => boolean;
   codeFilterIndex?: number;
   filenameFilterIndex?: number;
   lineFilterIndex?: number;
   columnFilterIndex?: number;
   messageFilterIndex?: number;
-  warningFilterFn?: (message: string) => boolean;
+  warningFilterIndex?: number;
+  warningText?: string;
 };

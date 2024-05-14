@@ -16,6 +16,7 @@ export type ProjectTreeNode = {
 export type ProjectStructure = {
   rootPath: string;
   hasBuildFile: boolean;
+  buildRoot?: string;
   buildFunctions: string[];
   children: ProjectTreeNode[];
 };

@@ -433,6 +433,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "@file-text-txt"
   },
   {
+    matchType: "full",
+    pattern: "build.ksx",
+    editor: CODE_EDITOR,
+    subType: "ksx",
+    icon: "@file-ksx",
+  },
+  {
     matchType: "ends",
     pattern: ".ksx",
     editor: CODE_EDITOR,

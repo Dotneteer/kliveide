@@ -10,7 +10,8 @@
     "src/renderer/main.tsx", 
     "src/renderer/App.tsx",
     "src/emu/**/*",
-    "src/lib/**/*"
+    "src/lib/**/*",
+    "src/script-packages/**/*",
   ],
   "compilerOptions": {
     "composite": true,

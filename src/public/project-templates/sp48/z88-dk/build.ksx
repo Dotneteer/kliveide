@@ -1,19 +1,40 @@
 export function buildCode() {
-  // TODO: Implement build
+  #notifications.startCompilation();
+  const result = Z88dk.compile(#project.buildRoot);
+  #notifications.completeCompilation(result);
+  return result;
 }
 
 export function injectCode() {
-  // TODO: Implement inject
+  const result = buildForInject();
+  if (!result) return;
+
+  if (#emu.executionState !== 3) {
+    Output.warn("The virtual machine must be paused to inject code.");
+    return;
+  }
+
+  #emu.injectCode(result.contents);
+  Output.info("Code (" + result.contents.length + " bytes) successfully injected.")
 }
 
 export function runCode() {
-  // TODO: Implement run
-}
+  const result = buildForInject();
+  if (!result) return;
 
-export function debugCode() {
-  // TODO: Implement debug
+  #emu.runCode(result.contents);
+  Output.info("Code (" + result.contents.length + " bytes) successfully injected and started.")
 }
 
 export function exportCode() {
   // TODO: Implement export
+}
+
+function buildForInject() {
+  const result = buildCode();
+  if (result.failed || !result.contents) {
+    Output.error("No code to inject.")
+    return null;
+  }
+  return result;
 }
