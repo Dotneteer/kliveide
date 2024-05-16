@@ -23,9 +23,6 @@ import { CommonScreenDevice } from "../CommonScreenDevice";
  * The common core functionality of the ZX Spectrum Next virtual machine.
  */
 export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
-  async setup(): Promise<void> {
-    //throw new Error("Method not implemented.");
-  }
   get64KFlatMemory(): Uint8Array {
     throw new Error("Method not implemented.");
   }
@@ -65,6 +62,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // this.tapeDevice = new TapeDevice(this);
     this.reset();
     console.log("machine created");
+  }
+
+  async setup(): Promise<void> {
+    //throw new Error("Method not implemented.");
   }
 
   // --- This byte array stores the contention values associated with a particular machine frame tact.
