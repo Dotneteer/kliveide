@@ -1054,7 +1054,7 @@ export class NextRegDevice {
       ]
     });
     r({
-      id: 0x6A,
+      id: 0x6a,
       description: "LoRes Control",
       writeFn: this.writeLoResControl,
       slices: [
@@ -1076,7 +1076,7 @@ export class NextRegDevice {
       ]
     });
     r({
-      id: 0x6B,
+      id: 0x6b,
       description: "Tilemap Control",
       writeFn: this.writeTilemapControl,
       slices: [
@@ -1113,11 +1113,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "Force tilemap on top of ULA (soft reset = 0)"
-        },
+        }
       ]
     });
     r({
-      id: 0x6C,
+      id: 0x6c,
       description: "Default Tilemap Attribute",
       writeFn: this.writeDefaultTilemapAttribute,
       slices: [
@@ -1144,11 +1144,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "ULA over tilemap (soft reset = 0)"
-        },
+        }
       ]
     });
     r({
-      id: 0x6E,
+      id: 0x6e,
       description: "Tilemap Base Address",
       writeFn: this.writeTilemapBaseAddress,
       slices: [
@@ -1165,7 +1165,7 @@ export class NextRegDevice {
       ]
     });
     r({
-      id: 0x6F,
+      id: 0x6f,
       description: "Tile Definitions Base Address",
       writeFn: this.writeTileDefinitionsBaseAddress,
       slices: [
@@ -1193,7 +1193,7 @@ export class NextRegDevice {
           valueSet: {
             0b00: "256x192x8",
             0b01: "320x256x8",
-            0b10: "640x256x4",
+            0b10: "640x256x4"
           }
         },
         {
@@ -1210,19 +1210,1442 @@ export class NextRegDevice {
       slices: [
         {
           mask: 0x01,
-          description: "MSB of scroll amount",
+          description: "MSB of scroll amount"
         }
       ]
     });
     r({
-      id: 0x7F,
+      id: 0x7f,
       description: "User Register 0",
-      writeFn: this.writeUserRegister0,
+      writeFn: this.writeUserRegister0
     });
     r({
       id: 0x80,
       description: "Expansion Bus Enable",
       writeFn: this.writeExpansionBusEnable,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Enable the expansion bus"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Enable romcs rom replacement from DivMMC banks 14/15"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Disable i/o cycles & ignore iorqula"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Disable memory cycles & ignore romcs"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Enable the expansion bus"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Enable romcs rom replacement from DivMMC banks 14/15"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Disable i/o cycles & ignore iorqula"
+        },
+        {
+          mask: 0x01,
+          description: "Disable memory cycles & ignore romcs"
+        }
+      ]
+    });
+    r({
+      id: 0x81,
+      description: "Expansion Bus Control",
+      writeFn: this.writeExpansionBusControl,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "ROMCS is asserted on the expansion bus (read only)"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description:
+            "Allow peripherals to override the ULA on some even port reads (rotronics wafadrive)"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Disable expansion bus nmi debounce (opus discovery)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description:
+            "Propagate the max cpu clock at all times including when the expansion bus is off"
+        },
+        {
+          mask: 0x03,
+          description: "Max cpu speed when the expansion bus is on (currently fixed at 00 = 3.5MHz)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Enable romcs rom replacement from DivMMC banks 14/15"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Disable i/o cycles & ignore iorqula"
+        },
+        {
+          mask: 0x01,
+          description: "Disable memory cycles & ignore romcs"
+        }
+      ]
+    });
+    r({
+      id: 0x82,
+      description: "Internal Port Decoding Enables (#1)",
+      writeFn: this.writeInternalPortDecodingEnables1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0x37 kempston 2 / md2"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0x1f kempston / md1"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0x6b zxn dma"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "+3 floating bus"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x1ffd"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xdffd"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x7ffd"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xff"
+        }
+      ]
+    });
+    r({
+      id: 0x83,
+      description: "Internal Port Decoding Enables (#2)",
+      writeFn: this.writeInternalPortDecodingEnables2,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0x123b layer2"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0x57, 0x5b, 0x303b sprites"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0xe7, 0xeb spi"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0x103b, 0x113b i2c"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Multiface (two variable ports)"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xe3 DivMMC control"
+        }
+      ]
+    });
+    r({
+      id: 0x84,
+      description: "Internal Port Decoding Enables (#3)",
+      writeFn: this.writeInternalPortDecodingEnables3,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0xdf dac mono specdrum, port 0x1f kempston alias"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0xb3 dac mono gs covox"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0xfb dac mono pentagon/atm (sd mode 2 off)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Port 0x0f, 0x4f dac stereo covox"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x3f, 0x5f dac stereo profi covox"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xf1, 0xf3, 0xf9, 0xfb dac soundrive mode 2"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x0f, 0x1f, 0x4f, 0x5f dac soundrive mode 1"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xfffd, 0xbffd ay"
+        }
+      ]
+    });
+    r({
+      id: 0x85,
+      description: "Internal Port Decoding Enables (#4)",
+      writeFn: this.writeInternalPortDecodingEnables4,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Register reset mode (soft or hard reset selection)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b z80 ctc"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xeff7 Pentagon 1024 memory"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x0b Z80 DMA"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xbf3b, 0xff3b ULA+"
+        }
+      ]
+    });
+    r({
+      id: 0x86,
+      description: "Expansion Bus Decoding Enables (#1)",
+      writeFn: this.writeExpansionBusDecodingEnables1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0x37 kempston 2 / md2"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0x1f kempston / md1"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0x6b zxn dma"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "+3 floating bus"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x1ffd"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xdffd"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x7ffd"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xff"
+        }
+      ]
+    });
+    r({
+      id: 0x87,
+      description: "Expansion Bus Decoding Enables (#2)",
+      writeFn: this.writeExpansionBusDecodingEnables2,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0x123b layer2"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0x57, 0x5b, 0x303b sprites"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0xe7, 0xeb spi"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0x103b, 0x113b i2c"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Multiface (two variable ports)"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xe3 DivMMC control"
+        }
+      ]
+    });
+    r({
+      id: 0x88,
+      description: "Expansion Bus Decoding Enables (#3)",
+      writeFn: this.writeExpansionBusDecodingEnables3,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0xdf dac mono specdrum, port 0x1f kempston alias"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Port 0xb3 dac mono gs covox"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Port 0xfb dac mono pentagon/atm (sd mode 2 off)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Port 0x0f, 0x4f dac stereo covox"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x3f, 0x5f dac stereo profi covox"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xf1, 0xf3, 0xf9, 0xfb dac soundrive mode 2"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x0f, 0x1f, 0x4f, 0x5f dac soundrive mode 1"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xfffd, 0xbffd ay"
+        }
+      ]
+    });
+    r({
+      id: 0x89,
+      description: "Expansion Bus Decoding Enables (#4)",
+      writeFn: this.writeExpansionBusDecodingEnables4,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Register reset mode (soft or hard reset selection)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b z80 ctc"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xeff7 Pentagon 1024 memory"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x0b Z80 DMA"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xbf3b, 0xff3b ULA+"
+        }
+      ]
+    });
+    r({
+      id: 0x8a,
+      description: "Expansion Bus IO Propagate",
+      writeFn: this.writeExpansionBusIoPropagate,
+      slices: [
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Propagate port 0xeff7 io cycles (hard reset = 0)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Propagate port 0xff io cycles (hard reset = 0)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Propagate port 0x1ffd io cycles (hard reset = 0)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Propagate port 0xdffd io cycles (hard reset = 0)"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Propagate port 0x7ffd io cycles (hard reset = 0)"
+        },
+        {
+          mask: 0x01,
+          description: "Propagate port 0xfe io cycles (hard reset = 0)"
+        }
+      ]
+    });
+    r({
+      id: 0x8c,
+      description: "Alternate ROM",
+      writeFn: this.writeAlternateRom,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Enable alt rom"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description:
+            "Make alt rom visible only during writes, otherwise replaces rom during reads"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Lock ROM1 (48K rom)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Lock ROM0 (128K rom)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Enable alt rom"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description:
+            "Make alt rom visible only during writes, otherwise replaces rom during reads"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Lock ROM1 (48K rom)"
+        },
+        {
+          mask: 0x01,
+          description: "Lock ROM0 (128K rom)"
+        }
+      ]
+    });
+    r({
+      id: 0x8e,
+      description: "Spectrum 128K Memory Mapping",
+      writeFn: this.writeSp128MemoryMapping,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Port 0xdffd bit 0"
+        },
+        {
+          mask: 0x70,
+          shift: 4,
+          description: "Port 0x7ffd bits 2:0"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description:
+            "1 to change RAM bank, 0 = no change to mmu6 / mmu7 / RAM bank in ports 0x7ffd, 0xdffd"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0x1ffd bit 0"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x1ffd bit 2"
+        },
+        {
+          mask: 0x01,
+          description:
+            "If bit 2 = paging mode = 0 (normal) then port 0x7ffd bit 4, else port 0x1ffd bit 1"
+        }
+      ]
+    });
+    r({
+      id: 0x8f,
+      description: "Memory Mapping Mode",
+      writeFn: this.writeMemoryMappingMode,
+      slices: [
+        {
+          mask: 0x03,
+          description: "Mapping mode applied",
+          valueSet: {
+            0b00: "Standard ZX 128k +3",
+            0b01: "Reserved",
+            0b10: "Pentagon 512K",
+            0b11: "Pentagon 1024K (limited to 768K on 1MB machines)"
+          }
+        }
+      ]
+    });
+    r({
+      id: 0x90,
+      description: "PI GPIO Output Enable (#1)",
+      writeFn: this.writeGpioOutputEnable1
+    });
+    r({
+      id: 0x91,
+      description: "PI GPIO Output Enable (#2)",
+      writeFn: this.writeGpioOutputEnable2
+    });
+    r({
+      id: 0x92,
+      description: "PI GPIO Output Enable (#3)",
+      writeFn: this.writeGpioOutputEnable3
+    });
+    r({
+      id: 0x93,
+      description: "PI GPIO Output Enable (#4)",
+      writeFn: this.writeGpioOutputEnable4
+    });
+    r({
+      id: 0x98,
+      description: "PI GPIO (#1)",
+      writeFn: this.writeGpio1
+    });
+    r({
+      id: 0x99,
+      description: "PI GPIO (#2)",
+      writeFn: this.writeGpio2
+    });
+    r({
+      id: 0x9a,
+      description: "PI GPIO (#3)",
+      writeFn: this.writeGpio3
+    });
+    r({
+      id: 0x9b,
+      description: "PI GPIO (#4)",
+      writeFn: this.writeGpio4
+    });
+    r({
+      id: 0xa0,
+      description: "PI Peripheral Enable",
+      writeFn: this.writePiPeripheralEnable,
+      slices: [
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Enable UART on GPIO 14,15 (overrides gpio)* (soft reset = 0)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description:
+            "0 to connect Rx to GPIO 15, Tx to GPIO 14 (for comm with pi hats) (soft reset = 0); 1 to connect Rx to GPIO 14, Tx to GPIO 15 (for comm with pi)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Enable I2C on GPIO 2,3 (override gpio) (soft reset = 0)"
+        },
+        {
+          mask: 0x01,
+          description: "Enable SPI on GPIO 7,8,9,10,11 (overrides gpio) (soft reset = 0)"
+        }
+      ]
+    });
+    r({
+      id: 0xa2,
+      description: "PI I2S Audio Control",
+      writeFn: this.writePiI2sAudioControl,
+      slices: [
+        {
+          mask: 0xc0,
+          shift: 6,
+          description: "I2S enable (soft reset = 00)",
+          valueSet: {
+            0b00: "i2s off",
+            0b01: "i2s is mono source right",
+            0b10: "i2s is mono source left",
+            0b11: "i2s is stereo"
+          }
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description:
+            "0 PCM_DOUT to pi, PCM_DIN from pi (hats) (soft reset = 0); 1 PCM_DOUT from pi, PCM_DIN to pi (pi)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Mute left side (soft reset = 0)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Mute right side (soft reset = 0)"
+        },
+        {
+          mask: 0x01,
+          description: "Direct i2s audio to EAR on port 0xFE (soft reset = 0)"
+        }
+      ]
+    });
+    r({
+      id: 0xa3,
+      description: "PI I2S Clock Divide (Master Mode)",
+      writeFn: this.writePiI2sClockDivide
+    });
+    r({
+      id: 0xa8,
+      description: "ESP Wifi GPIO Output Enable",
+      writeFn: this.writeEspWifiGpioOutputEnable,
+      slices: [
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "GPIO2 output enable (fixed at 0, GPIO2 is read-only)"
+        },
+        {
+          mask: 0x01,
+          description: "GPIO0 output enable"
+        }
+      ]
+    });
+    r({
+      id: 0xa9,
+      description: "ESP Wifi GPIO",
+      writeFn: this.writeEspWifiGpio,
+      slices: [
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Read / Write ESP GPIO2 (soft reset = 1)"
+        },
+        {
+          mask: 0x01,
+          description: "Read / Write ESP GPIO0 (soft reset = 1)"
+        }
+      ]
+    });
+    r({
+      id: 0xb0,
+      description: "Extended Keys 0",
+      readFn: this.readExtKeys0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "; pressed"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: '" pressed'
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: ", pressed"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: ". pressed"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "UP pressed"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "DOWN pressed"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "LEFT pressed"
+        },
+        {
+          mask: 0x01,
+          description: "RIGHT pressed"
+        }
+      ]
+    });
+    r({
+      id: 0xb1,
+      description: "Extended Keys 1",
+      readFn: this.readExtKeys1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "DELETE pressed"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "EDIT pressed"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "BREAK pressed"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "INV VIDEO pressed"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "TRUE VIDEO pressed"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "GRAPH pressed"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "CAPS LOCK pressed"
+        },
+        {
+          mask: 0x01,
+          description: "EXTEND pressed"
+        }
+      ]
+    });
+    r({
+      id: 0xb2,
+      description: "Extended MD Pad Buttons",
+      readFn: this.readMdPadButtons,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Right Pad X pressed"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "Right Pad Z pressed"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "Right Pad Y pressed"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "Right Pad MODE pressed"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Left Pad X pressed"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Left Pad Y pressed"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Left Pad Z pressed"
+        },
+        {
+          mask: 0x01,
+          description: "Left Pad MODE pressed"
+        }
+      ]
+    });
+    r({
+      id: 0xb8,
+      description: "DivMMC Entry Points 0",
+      writeFn: this.writeDivMmcEntryPoints0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "enable automap on address 0x0038 (instruction fetch)"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "enable automap on address 0x0030 (instruction fetch)"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "enable automap on address 0x0028 (instruction fetch)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "enable automap on address 0x0020 (instruction fetch)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "enable automap on address 0x0018 (instruction fetch)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "enable automap on address 0x0010 (instruction fetch)"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "enable automap on address 0x0008 (instruction fetch)"
+        },
+        {
+          mask: 0x01,
+          description: "enable automap on address 0x0000 (instruction fetch)"
+        }
+      ]
+    });
+    r({
+      id: 0xb9,
+      description: "DivMMC Entry Points Valid 0",
+      writeFn: this.writeDivMmcEntryPointsValid0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "1 for always else only when rom3 is present (0x0038)"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "1 for always else only when rom3 is present (0x0030)"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "1 for always else only when rom3 is present (0x0028)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "1 for always else only when rom3 is present (0x0020)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "1 for always else only when rom3 is present (0x0018)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "1 for always else only when rom3 is present (0x0010)"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "1 for always else only when rom3 is present (0x0008)"
+        },
+        {
+          mask: 0x01,
+          description: "1 for always else only when rom3 is present (0x0000)"
+        }
+      ]
+    });
+    r({
+      id: 0xba,
+      description: "DivMMC Entry Points Timing 0",
+      writeFn: this.writeDivMmcEntryPointsTiming0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "1 for instant mapping else delayed (0x0038)"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "1 for instant mapping else delayed (0x0030)"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "1 for instant mapping else delayed (0x0028)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "1 for instant mapping else delayed (0x0020)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "1 for instant mapping else delayed (0x0018)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "1 for instant mapping else delayed (0x0010)"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "1 for instant mapping else delayed (0x0008)"
+        },
+        {
+          mask: 0x01,
+          description: "1 for instant mapping else delayed (0x0000)"
+        }
+      ]
+    });
+    r({
+      id: 0xbb,
+      description: "DivMMC Entry Points 1",
+      writeFn: this.writeDivMmcEntryPoints1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description:
+            "1 to enable automap on addresses 0x3DXX (instruction fetch, instant, ROM3) > TRDOS"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description:
+            "1 to disable automap on addresses 0x1FF8-0x1FFF (instruction fetch, delayed)"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "1 to enable automap on address 0x056A (instruction fetch, delayed, ROM3)"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "to enable automap on address 0x04D7 (instruction fetch, delayed, ROM3)"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "to enable automap on address 0x0562 (instruction fetch, delayed, ROM3)"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "1 to enable automap on address 0x04C6 (instruction fetch, delayed, ROM3)"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "1 to enable automap on address 0x0066 (instruction fetch + button, instant)"
+        },
+        {
+          mask: 0x01,
+          description: "1 to enable automap on address 0x0066 (instruction fetch + button, delayed)"
+        }
+      ]
+    });
+    r({
+      id: 0xc0,
+      description: "Interrupt Control",
+      writeFn: this.writeInterruptControl,
+      slices: [
+        {
+          mask: 0xe0,
+          shift: 5,
+          description: "Programmable portion of im2 vector"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Enable stackless nmi response"
+        },
+        {
+          mask: 0x06,
+          shift: 1,
+          description: "Current Z80 interrupt mode 0,1,2 (read only, write ignored)"
+        },
+        {
+          mask: 0x01,
+          description: "Maskable interrupt mode: pulse (0) or hw im2 mode (1)"
+        }
+      ]
+    });
+    r({
+      id: 0xc2,
+      description: "NMI Return Address LSB",
+      writeFn: this.writeNmiReturnAddressLsb
+    });
+    r({
+      id: 0xc3,
+      description: "NMI Return Address MSB",
+      writeFn: this.writeNmiReturnAddressMsb
+    });
+    r({
+      id: 0xc4,
+      description: "Interrupt Enable 0",
+      writeFn: this.writeInterruptEnable0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "Expansion bus /INT"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Line"
+        },
+        {
+          mask: 0x01,
+          description: "ULA"
+        }
+      ]
+    });
+    r({
+      id: 0xc5,
+      description: "Interrupt Enable 1",
+      writeFn: this.writeInterruptEnable1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "ctc channel 7 zc/to"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "ctc channel 6 zc/to"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "ctc channel 5 zc/to"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "ctc channel 4 zc/to"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "ctc channel 3 zc/to"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "ctc channel 2 zc/to"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "ctc channel 1 zc/to"
+        },
+        {
+          mask: 0x01,
+          description: "ctc channel 0 zc/to"
+        },
+      ]
+    });
+    r({
+      id: 0xc6,
+      description: "Interrupt Enable 2",
+      writeFn: this.writeInterruptEnable2,
+      slices: [
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "UART1 Tx empty"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "UART1 Rx near full"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "UART1 Rx available"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "UART0 Tx empty"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "UART0 Rx near full"
+        },
+        {
+          mask: 0x01,
+          description: "UART0 Rx available"
+        },
+      ]
+    });
+    r({
+      id: 0xC8,
+      description: "Interrupt Status 0",
+      writeFn: this.writeInterruptStatus0,
+      slices: [
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Line"
+        },
+        {
+          mask: 0x01,
+          description: "ULA"
+        }
+      ]
+    });
+    r({
+      id: 0xC9,
+      description: "Interrupt Status 1",
+      writeFn: this.writeInterruptStatus1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "ctc channel 7 zc/to"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "ctc channel 6 zc/to"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "ctc channel 5 zc/to"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "ctc channel 4 zc/to"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "ctc channel 3 zc/to"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "ctc channel 2 zc/to"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "ctc channel 1 zc/to"
+        },
+        {
+          mask: 0x01,
+          description: "ctc channel 0 zc/to"
+        },
+      ]
+    });
+    r({
+      id: 0xCA,
+      description: "Interrupt Status 2",
+      writeFn: this.writeInterruptStatus2,
+      slices: [
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "UART1 Tx empty"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "UART1 Rx near full"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "UART1 Rx available"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "UART0 Tx empty"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "UART0 Rx near full"
+        },
+        {
+          mask: 0x01,
+          description: "UART0 Rx available"
+        },
+      ]
+    });
+    r({
+      id: 0xCC,
+      description: "DMA Interrupt Enable 0",
+      writeFn: this.writeDmaInterruptEnable0,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "NMI"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Line"
+        },
+        {
+          mask: 0x01,
+          description: "ULA"
+        }
+      ]
+    });
+    r({
+      id: 0xCD,
+      description: "DMA Interrupt Enable 1",
+      writeFn: this.writeDmaInterruptEnable1,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "ctc channel 7 zc/to"
+        },
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "ctc channel 6 zc/to"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "ctc channel 5 zc/to"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "ctc channel 4 zc/to"
+        },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "ctc channel 3 zc/to"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "ctc channel 2 zc/to"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "ctc channel 1 zc/to"
+        },
+        {
+          mask: 0x01,
+          description: "ctc channel 0 zc/to"
+        },
+      ]
+    });
+    r({
+      id: 0xCE,
+      description: "DMA Interrupt Enable 2",
+      writeFn: this.writeDmaInterruptEnable2,
+      slices: [
+        {
+          mask: 0x40,
+          shift: 6,
+          description: "UART1 Tx empty"
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "UART1 Rx near full"
+        },
+        {
+          mask: 0x10,
+          shift: 4,
+          description: "UART1 Rx available"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "UART0 Tx empty"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "UART0 Rx near full"
+        },
+        {
+          mask: 0x01,
+          description: "UART0 Rx available"
+        },
+      ]
+    });
+    r({
+      id: 0xD8,
+      description: "I/O Traps (experimental)",
+      writeFn: this.writeIoTraps,
+      slices: [
+        {
+          mask: 0x01,
+          description: "1 to enable +3 FDC traps on ports 0x2ffd and 0x3ffd"
+        },
+      ]
+    });
+    r({
+      id: 0xD9,
+      description: "I/O Trap Write (experimental)",
+      writeFn: this.writeIoTrapWrite,
+    });
+    r({
+      id: 0xDA,
+      description: "I/O Trap Cause (experimental)",
+      writeFn: this.writeIoTrapWrite,
+    });
+    r({
+      id: 0xF0,
+      description: "XDEV CMD",
+      writeFn: this.writeXdevCmd,
+    });
+    r({
+      id: 0xF8,
+      description: "XADC REG",
+      writeFn: this.writeXadcReg,
+      slices: [
+        {
+          mask: 0x80,
+          shift: 7,
+          description: "1 to write to XADC DRP port, 0 to read from XADC DRP port"
+        },
+        {
+          mask: 0x7f,
+          description: "XADC DRP register address DADDR"
+        },
+      ]
+    });
+    r({
+      id: 0xF9,
+      description: "XADC D0",
+      writeFn: this.writeXadcD0,
+    });
+    r({
+      id: 0xF9,
+      description: "XADC D1",
+      writeFn: this.writeXadcD1,
     });
   }
 
@@ -1399,4 +2822,112 @@ export class NextRegDevice {
   private writeUserRegister0(value: number): void {}
 
   private writeExpansionBusEnable(value: number): void {}
+
+  private writeExpansionBusControl(value: number): void {}
+
+  private writeInternalPortDecodingEnables1(value: number): void {}
+
+  private writeInternalPortDecodingEnables2(value: number): void {}
+
+  private writeInternalPortDecodingEnables3(value: number): void {}
+
+  private writeInternalPortDecodingEnables4(value: number): void {}
+
+  private writeExpansionBusDecodingEnables1(value: number): void {}
+
+  private writeExpansionBusDecodingEnables2(value: number): void {}
+
+  private writeExpansionBusDecodingEnables3(value: number): void {}
+
+  private writeExpansionBusDecodingEnables4(value: number): void {}
+
+  private writeExpansionBusIoPropagate(value: number): void {}
+
+  private writeAlternateRom(value: number): void {}
+
+  private writeSp128MemoryMapping(value: number): void {}
+
+  private writeMemoryMappingMode(value: number): void {}
+
+  private writeGpioOutputEnable1(value: number): void {}
+
+  private writeGpioOutputEnable2(value: number): void {}
+
+  private writeGpioOutputEnable3(value: number): void {}
+
+  private writeGpioOutputEnable4(value: number): void {}
+
+  private writeGpio1(value: number): void {}
+
+  private writeGpio2(value: number): void {}
+
+  private writeGpio3(value: number): void {}
+
+  private writeGpio4(value: number): void {}
+
+  private writePiPeripheralEnable(value: number): void {}
+
+  private writePiI2sAudioControl(value: number): void {}
+
+  private writePiI2sClockDivide(value: number): void {}
+
+  private writeEspWifiGpioOutputEnable(value: number): void {}
+
+  private writeEspWifiGpio(value: number): void {}
+
+  private readExtKeys0(): number {
+    return 0x00;
+  }
+
+  private readExtKeys1(): number {
+    return 0x00;
+  }
+
+  private readMdPadButtons(): number {
+    return 0x00;
+  }
+
+  private writeDivMmcEntryPoints0(value: number): void {}
+
+  private writeDivMmcEntryPointsValid0(value: number): void {}
+
+  private writeDivMmcEntryPointsTiming0(value: number): void {}
+
+  private writeDivMmcEntryPoints1(value: number): void {}
+
+  private writeInterruptControl(value: number): void {}
+
+  private writeNmiReturnAddressLsb(value: number): void {}
+
+  private writeNmiReturnAddressMsb(value: number): void {}
+
+  private writeInterruptEnable0(value: number): void {}
+
+  private writeInterruptEnable1(value: number): void {}
+
+  private writeInterruptEnable2(value: number): void {}
+
+  private writeInterruptStatus0(value: number): void {}
+
+  private writeInterruptStatus1(value: number): void {}
+
+  private writeInterruptStatus2(value: number): void {}
+
+  private writeDmaInterruptEnable0(value: number): void {}
+
+  private writeDmaInterruptEnable1(value: number): void {}
+
+  private writeDmaInterruptEnable2(value: number): void {}
+
+  private writeIoTraps(value: number): void {}
+
+  private writeIoTrapWrite(value: number): void {}
+
+  private writeXdevCmd(value: number): void {}
+
+  private writeXadcReg(value: number): void {}
+
+  private writeXadcD0(value: number): void {}
+
+  private writeXadcD1(value: number): void {}
 }
