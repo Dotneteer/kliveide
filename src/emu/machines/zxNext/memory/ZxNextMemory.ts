@@ -15,10 +15,16 @@ export type MemoryPageInfo = {
 /**
  * This class implements a handler for TbBlue memory
  */
-export class TbBlueMemory {
+export class ZxNextMemory {
   pageInfo: MemoryPageInfo[];
-  maxPages: number;
+  maxPages: number; 
   memory: Uint8Array;
+
+  selectedRom = 0;
+  selectedBank = 0;
+  pagingEnabled = true;
+  useShadowScreen = false;
+  allRamMode = false;
 
   /**
    * Initializes the memory
@@ -44,7 +50,7 @@ export class TbBlueMemory {
 
     // --- Set up memory data (with no pageinfo yet)
     this.pageInfo = [];
-    this.memory = new Uint8Array(totalMemInKb * 1024);
+    this.memory = new Uint8Array(2048 * 1024);
   }
 
   /**

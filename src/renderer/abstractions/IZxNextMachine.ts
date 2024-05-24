@@ -1,3 +1,5 @@
+import { Layer2Device } from "@emu/machines/zxNext/layer2/Layer2Device";
+import { NextRegDevice } from "@emu/machines/zxNext/next-reg/NextRegDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
@@ -9,4 +11,8 @@ export interface IZxNextMachine extends IZ80Machine {
    * Gets the ROM ID to load the ROM file
    */
   get romId(): string;
+
+  nextRegDevice: NextRegDevice;
+
+  layer2Device: Layer2Device;
 }

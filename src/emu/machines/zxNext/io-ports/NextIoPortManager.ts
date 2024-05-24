@@ -83,7 +83,7 @@ export class NextIoPortManager {
   private readonly portMap: Map<number, PortDescriptor> = new Map();
 
   constructor() {
-    const r = this.registerPort;
+    const r = (val: PortDescriptor) => this.registerPort(val);
     r({
       description: "ULA",
       port: 0xfe,

@@ -18,6 +18,8 @@ import { MachineModel } from "@common/machines/info-types";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
+import { NextRegDevice } from "./next-reg/NextRegDevice";
+import { Layer2Device } from "./layer2/Layer2Device";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -40,6 +42,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   public readonly machineId = "zxnext";
 
+  nextRegDevice: NextRegDevice;
+
+  layer2Device: Layer2Device;
+
   /**
    * Initialize the machine
    */
@@ -60,8 +66,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.beeperDevice = new SpectrumBeeperDevice(this);
     // this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
     // this.tapeDevice = new TapeDevice(this);
+    this.nextRegDevice = new NextRegDevice(this);
     this.reset();
-    console.log("machine created");
+  }
+
+  reset(): void {
+    super.reset();
+    this.nextRegDevice.reset();
+    this.layer2Device.reset();
   }
 
   async setup(): Promise<void> {

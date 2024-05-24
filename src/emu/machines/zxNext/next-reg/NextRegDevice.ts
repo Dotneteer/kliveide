@@ -1,5 +1,11 @@
+import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 type NextRegreadFn = () => number;
 type NextRegWriteFn = (value: number) => void;
+
+// --- Return this value when a register is not defined
+const UNDEFINED_REG = 0xff;
 
 export type NextRegInfo = {
   id: number;
@@ -17,10 +23,23 @@ export type NextRegValueSlice = {
   view?: "flag" | "number";
 };
 
-export class NextRegDevice {
-  regs: NextRegInfo[] = [];
+export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
+  private regs: NextRegInfo[] = [];
+  private lastRegister: number = 0;
+  private regValues: number[] = [];
 
-  constructor() {
+  // --- Reg 0x07 state
+  r07_ActualCpuSpeed = 0;
+  r07_ProgrammedCpuSpeed = 0;
+
+  r44_FirstWrite = false;
+  r44_PaletteValue9Bit = 0;
+
+  /**
+   * Initialize the floating port device and assign it to its host machine.
+   * @param machine The machine hosting this device
+   */
+  constructor(public readonly machine: IZxNextMachine) {
     const r = this.registerNextReg;
     this.regs = [];
     r({
@@ -234,6 +253,7 @@ export class NextRegDevice {
     r({
       id: 0x07,
       description: "CPU speed",
+      readFn: this.readCpuSpeed,
       writeFn: this.writeCpuSpeed,
       slices: [
         {
@@ -2355,7 +2375,7 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "ctc channel 0 zc/to"
-        },
+        }
       ]
     });
     r({
@@ -2391,11 +2411,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "UART0 Rx available"
-        },
+        }
       ]
     });
     r({
-      id: 0xC8,
+      id: 0xc8,
       description: "Interrupt Status 0",
       writeFn: this.writeInterruptStatus0,
       slices: [
@@ -2411,7 +2431,7 @@ export class NextRegDevice {
       ]
     });
     r({
-      id: 0xC9,
+      id: 0xc9,
       description: "Interrupt Status 1",
       writeFn: this.writeInterruptStatus1,
       slices: [
@@ -2453,11 +2473,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "ctc channel 0 zc/to"
-        },
+        }
       ]
     });
     r({
-      id: 0xCA,
+      id: 0xca,
       description: "Interrupt Status 2",
       writeFn: this.writeInterruptStatus2,
       slices: [
@@ -2489,11 +2509,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "UART0 Rx available"
-        },
+        }
       ]
     });
     r({
-      id: 0xCC,
+      id: 0xcc,
       description: "DMA Interrupt Enable 0",
       writeFn: this.writeDmaInterruptEnable0,
       slices: [
@@ -2514,7 +2534,7 @@ export class NextRegDevice {
       ]
     });
     r({
-      id: 0xCD,
+      id: 0xcd,
       description: "DMA Interrupt Enable 1",
       writeFn: this.writeDmaInterruptEnable1,
       slices: [
@@ -2556,11 +2576,11 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "ctc channel 0 zc/to"
-        },
+        }
       ]
     });
     r({
-      id: 0xCE,
+      id: 0xce,
       description: "DMA Interrupt Enable 2",
       writeFn: this.writeDmaInterruptEnable2,
       slices: [
@@ -2592,37 +2612,37 @@ export class NextRegDevice {
         {
           mask: 0x01,
           description: "UART0 Rx available"
-        },
+        }
       ]
     });
     r({
-      id: 0xD8,
+      id: 0xd8,
       description: "I/O Traps (experimental)",
       writeFn: this.writeIoTraps,
       slices: [
         {
           mask: 0x01,
           description: "1 to enable +3 FDC traps on ports 0x2ffd and 0x3ffd"
-        },
+        }
       ]
     });
     r({
-      id: 0xD9,
+      id: 0xd9,
       description: "I/O Trap Write (experimental)",
-      writeFn: this.writeIoTrapWrite,
+      writeFn: this.writeIoTrapWrite
     });
     r({
-      id: 0xDA,
+      id: 0xda,
       description: "I/O Trap Cause (experimental)",
-      writeFn: this.writeIoTrapWrite,
+      writeFn: this.writeIoTrapWrite
     });
     r({
-      id: 0xF0,
+      id: 0xf0,
       description: "XDEV CMD",
-      writeFn: this.writeXdevCmd,
+      writeFn: this.writeXdevCmd
     });
     r({
-      id: 0xF8,
+      id: 0xf8,
       description: "XADC REG",
       writeFn: this.writeXadcReg,
       slices: [
@@ -2634,23 +2654,111 @@ export class NextRegDevice {
         {
           mask: 0x7f,
           description: "XADC DRP register address DADDR"
-        },
+        }
       ]
     });
     r({
-      id: 0xF9,
+      id: 0xf9,
       description: "XADC D0",
-      writeFn: this.writeXadcD0,
+      writeFn: this.writeXadcD0
     });
     r({
-      id: 0xF9,
+      id: 0xf9,
       description: "XADC D1",
-      writeFn: this.writeXadcD1,
+      writeFn: this.writeXadcD1
     });
   }
 
-  private registerNextReg({ id, description, writeFn }: NextRegInfo): void {
-    this.regs[id] = { id, description, writeFn };
+  /**
+   * Dispose the resources held by the device
+   */
+  dispose(): void {}
+
+  reset(): void {
+    // --- Reset all registers (soft reset)
+  }
+
+  hardReset(): void {
+    // --- Reset all registers (hard reset)
+    for (let i = 0; i < 0x100; i++) {
+      this.regs[i] = undefined;
+    }
+
+    this.directSetRegValue(0x02, 0x06); // --- Generate DivMMC interrupt & hard reset
+    this.directSetRegValue(0x03, 0x00); // --- Config mode
+    this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
+    this.directSetRegValue(0x05, 0x01); // --- Enable scan doubler to VGA
+    this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
+    this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
+    this.directSetRegValue(0x08, 0x10); // --- Peripheral settings #3: Enable internal speaker
+    this.directSetRegValue(0x09, 0x00); // --- All Peripheral settings #4 are 0
+    this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
+
+    // --- Apply soft reset
+    this.reset();
+
+    // --- Apply other hard reset settings
+    this.r44_FirstWrite = true;
+  }
+
+  /**
+   * Sets the register to use in subsequent register value writes
+   * @param reg
+   */
+  setNextRegisterIndex(reg: number): void {
+    this.lastRegister = reg & 0xff;
+  }
+
+  /**
+   * Gets the last register used
+   */
+  getNextRegisterIndex(): number {
+    return this.lastRegister;
+  }
+
+  /**
+   * Sets the value of the next register
+   * @param value
+   */
+  setNextRegisterValue(value: number): void {
+    this.regValues[this.lastRegister] = value;
+    const regInfo = this.regs[this.lastRegister];
+    regInfo?.writeFn?.(value);
+  }
+
+  /**
+   * Gets the value of the next register
+   */
+  getNextRegisterValue(): number {
+    const regInfo = this.regs[this.lastRegister];
+    if (!regInfo) {
+      return UNDEFINED_REG;
+    }
+    if (regInfo.readFn) {
+      return regInfo.readFn();
+    }
+    return this.regValues[this.lastRegister] ?? UNDEFINED_REG;
+  }
+
+  directGetRegValue(reg: number): number {
+    const regInfo = this.regs[reg];
+    if (!regInfo) {
+      return UNDEFINED_REG;
+    }
+    if (regInfo.readFn) {
+      return regInfo.readFn();
+    }
+    return this.regValues[reg] ?? UNDEFINED_REG;
+  }
+
+  directSetRegValue(reg: number, value: number): void {
+    this.regValues[reg] = value;
+    const regInfo = this.regs[reg];
+    regInfo?.writeFn?.(value);
+  }
+
+  private registerNextReg({ id, description, readFn, writeFn }: NextRegInfo): void {
+    this.regs[id] = { id, description, readFn, writeFn };
   }
 
   private writeReset(value: number): void {}
@@ -2663,7 +2771,17 @@ export class NextRegDevice {
 
   private writePeripheral2Setting(value: number): void {}
 
-  private writeCpuSpeed(value: number): void {}
+  // --- Register 0x07
+  private writeCpuSpeed(value: number): void {
+    this.r07_ProgrammedCpuSpeed = value & 0x03;
+
+    // TODO: Implement CPU speed change
+    this.r07_ActualCpuSpeed = this.r07_ProgrammedCpuSpeed;
+  }
+
+  private readCpuSpeed(): number {
+    return (this.r07_ActualCpuSpeed << 4) | this.r07_ProgrammedCpuSpeed;
+  }
 
   private writePeripheral3Setting(value: number): void {}
 
@@ -2767,7 +2885,15 @@ export class NextRegDevice {
 
   private writePaletteControl(value: number): void {}
 
-  private writePaletteValue9Bit(value: number): void {}
+  private writePaletteValue9Bit(value: number): void {
+    if (this.r44_FirstWrite) {
+      this.r44_FirstWrite = false;
+      this.r44_PaletteValue9Bit = value;
+    } else {
+      this.r44_FirstWrite = true;
+      this.r44_PaletteValue9Bit = (this.r44_PaletteValue9Bit << 1) | (value & 0x01);
+    }
+  }
 
   private writeFallbackColour(value: number): void {}
 
