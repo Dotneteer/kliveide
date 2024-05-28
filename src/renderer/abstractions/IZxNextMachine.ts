@@ -1,5 +1,10 @@
-import { Layer2Device } from "@emu/machines/zxNext/layer2/Layer2Device";
-import { NextRegDevice } from "@emu/machines/zxNext/next-reg/NextRegDevice";
+import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
+import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
+import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
+import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
+import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
+import { SpriteDevice } from "@emu/machines/zxNext/sprites/SpriteDevice";
+import { TilemapDevice } from "@emu/machines/zxNext/TilemapDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
@@ -15,4 +20,14 @@ export interface IZxNextMachine extends IZ80Machine {
   nextRegDevice: NextRegDevice;
 
   layer2Device: Layer2Device;
+
+  paletteDevice: PaletteDevice;
+
+  tilemapDevice: TilemapDevice;
+
+  spriteDevice: SpriteDevice;
+
+  dmaDevice: DmaDevice;
+
+  copperDevice: CopperDevice;
 }

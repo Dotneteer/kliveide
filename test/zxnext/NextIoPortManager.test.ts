@@ -1,4 +1,4 @@
-import { NextIoPortManager } from "@emu/machines/zxNext/IoPorts/NextIoPortManager";
+import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { describe, it, expect } from "vitest";
 
 describe("PagedMemory", () => {

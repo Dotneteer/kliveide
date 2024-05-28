@@ -2676,6 +2676,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   reset(): void {
     // --- Reset all registers (soft reset)
+    this.directSetRegValue(0x12, 0x08); // --- Layer 2 active RAM bank
+    this.directSetRegValue(0x13, 0x0b); // --- Layer 2 shadow RAM bank
+    this.directSetRegValue(0x1C, 0x00); // --- Clip window control: all clip indexes to zero
+    this.directSetRegValue(0x43, 0x00); // --- Palette control
+    this.directSetRegValue(0x70, 0x00); // --- Layer 2 Control
+
   }
 
   hardReset(): void {

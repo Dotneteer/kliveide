@@ -18,8 +18,13 @@ import { MachineModel } from "@common/machines/info-types";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
-import { NextRegDevice } from "./next-reg/NextRegDevice";
-import { Layer2Device } from "./layer2/Layer2Device";
+import { NextRegDevice } from "./NextRegDevice";
+import { Layer2Device } from "./Layer2Device";
+import { PaletteDevice } from "./PaletteDevice";
+import { TilemapDevice } from "./TilemapDevice";
+import { SpriteDevice } from "./sprites/SpriteDevice";
+import { DmaDevice } from "./DmaDevice";
+import { CopperDevice } from "./CopperDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -45,6 +50,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   nextRegDevice: NextRegDevice;
 
   layer2Device: Layer2Device;
+
+  paletteDevice: PaletteDevice;
+
+  tilemapDevice: TilemapDevice;
+
+  spriteDevice: SpriteDevice;
+
+  dmaDevice: DmaDevice;
+
+  copperDevice: CopperDevice;
 
   /**
    * Initialize the machine
