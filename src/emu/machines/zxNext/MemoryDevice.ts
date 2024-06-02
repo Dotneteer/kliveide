@@ -25,8 +25,6 @@ export type MemoryPageInfo = {
  * This class implements a handler for TbBlue memory
  */
 export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
-  private last0x1ffdValue = 0xff;
-
   pageInfo: MemoryPageInfo[];
   maxPages: number;
   memory: Uint8Array;
@@ -78,6 +76,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.memory[i] = 0x7e;
     }
 
+    // --- Init the device flags and values
     this.reset();
   }
 
@@ -87,11 +86,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.selectedBankLsb = 0;
     this.selectedBankMsb = 0;
 
-    this.pagingEnabled = false;
+    this.pagingEnabled = true;
     this.useShadowScreen = false;
     this.allRamMode = false;
     this.specialConfig = 0;
 
+    // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
     this.mmuRegs[1] = 0xff;
     this.mmuRegs[2] = 0x10;
@@ -100,10 +100,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.mmuRegs[5] = 0x05;
     this.mmuRegs[6] = 0x00;
     this.mmuRegs[7] = 0x01;
+
+    // --- Set memory pages according to the default configuration
+    this.updateMemoryConfig();
   }
 
-  hardReset(): void {
-  }
+  hardReset(): void {}
 
   dispose(): void {}
 
@@ -121,7 +123,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     offset: number,
     bank16k: number,
     bank8k: number,
-    contended: boolean,
+    contended: boolean
   ) {
     if (pageIndex < 0 || pageIndex > 7) {
       throw new Error(`Invalid page index ${pageIndex}`);
@@ -130,7 +132,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       offset,
       bank16k,
       bank8k,
-      contended,
+      contended
     };
   }
 
@@ -171,19 +173,73 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   getBankOffset(bank: number): number {
-    return bank << 13 + 0x40_0000;
+    return bank << (13 + 0x40_0000);
   }
 
   /**
    * Updates the memory configuration based on the new 0x1ffd port value
    */
   set port1ffdValue(value: number) {
-    if (value === this.last0x1ffdValue) return;
-    this.last0x1ffdValue = value;
     this.allRamMode = (value & 0x01) !== 0;
     this.specialConfig = (value >> 1) & 0x03;
-    this.selectedRomMsb = (this.specialConfig & 0x02);
+    this.selectedRomMsb = this.specialConfig & 0x02;
     this.updateMemoryConfig();
+  }
+
+  /**
+   * Updates the memory configuration based on the new 0x7ffd port value
+   */
+  set port7ffdValue(value: number) {
+    // --- Port value has changed; abort if paging is not enabled
+    if (!this.pagingEnabled) return;
+
+    // --- Update port value changes
+    this.selectedBankLsb = value & 0x07;
+    this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
+    this.selectedRomLsb = (value >> 4) & 0x01;
+    this.pagingEnabled = (value & 0x20) == 0x00;
+    this.updateMemoryConfig();
+  }
+
+  /**
+   * Updates the memory configuration based on the new 0xdffd port value
+   */
+  set portDffdValue(value: number) {
+    this.selectedBankMsb = value & 0x0f;
+    this.updateMemoryConfig();
+  }
+
+  /**
+   * Gets the value to be read from the next register 8E
+   */
+  get nextReg8EValue(): number {
+    return (
+      ((this.selectedBankMsb & 0x01) << 7) |
+      ((this.selectedBankLsb & 0x07) << 4) |
+      0x08 |
+      (this.allRamMode ? 0x04 : 0x00) |
+      (this.allRamMode ? this.specialConfig & 0x02 : this.selectedRomMsb) |
+      (this.allRamMode ? this.specialConfig & 0x01 : this.selectedRomLsb)
+    );
+  }
+
+  set nextReg8EValue(value: number) {
+    // --- Bit 3 indicates
+    if (value & 0x08) {
+      // --- Change RAM bank, MMU6, and MMU7
+      this.selectedBankMsb = (value & 0x0e) | ((value & 0x80) >> 7);
+      this.selectedBankLsb = (value >> 4) & 0x07;
+      // TODO: Set MMUs
+    }
+
+    // --- Set the AllRAM flag
+    this.allRamMode = (value & 0x04) !== 0;
+    if (this.allRamMode) {
+      this.specialConfig = value & 0x03;
+    } else {
+      this.selectedRomMsb = value & 0x02;
+      this.selectedRomLsb = value & 0x01;
+    }
   }
 
   private updateMemoryConfig(): void {

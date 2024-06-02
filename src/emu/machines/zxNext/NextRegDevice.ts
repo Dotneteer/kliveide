@@ -1761,7 +1761,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8e,
       description: "Spectrum 128K Memory Mapping",
-      writeFn: this.writeSp128MemoryMapping,
+      readFn: () => this.machine.memoryDevice.nextReg8EValue,
+      writeFn: v => this.machine.memoryDevice.nextReg8EValue = v,
       slices: [
         {
           mask: 0x80,
@@ -3043,8 +3044,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private writeExpansionBusIoPropagate(value: number): void {}
 
   private writeAlternateRom(value: number): void {}
-
-  private writeSp128MemoryMapping(value: number): void {}
 
   private writeMemoryMappingMode(value: number): void {}
 

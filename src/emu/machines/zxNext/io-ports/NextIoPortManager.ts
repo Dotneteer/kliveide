@@ -1,8 +1,6 @@
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { readFloatingBusPort, writeFloatingBusPort } from "./FloatingBusHandler";
-import { writeSpectrum128MemoryPort } from "./Spectrum128MemoryPortHandler";
 import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
-import { writeNextBankExtensionPort } from "./NextBankExtensionPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
@@ -82,7 +80,7 @@ export class NextIoPortManager {
   private readonly portMap: Map<number, PortDescriptor> = new Map();
   private readonly portCollisions: Map<number, string[]> = new Map();
 
-  constructor(private readonly machine: IZxNextMachine) {
+  constructor(machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
 
     r({
@@ -106,14 +104,18 @@ export class NextIoPortManager {
       port: 0x7ffd,
       pmask: 0b1100_0000_0000_0011,
       value: 0b0100_0000_0000_0001,
-      writerFns: writeSpectrum128MemoryPort
+      writerFns: (_, v) => {
+        machine.memoryDevice.port7ffdValue = v;
+      }
     });
     r({
       description: "Spectrum Next bank extension",
       port: 0xdffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b1101_0000_0000_0001,
-      writerFns: writeNextBankExtensionPort
+      writerFns: (_, v) => {
+        machine.memoryDevice.portDffdValue = v;
+      }
     });
     r({
       description: "ZX Spectrum +3 memory",
