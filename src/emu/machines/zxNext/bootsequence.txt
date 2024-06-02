@@ -1,0 +1,57 @@
+REG $07: $03
+  - CPU Speed: 28 MHz
+  
+
+05: 5B (0101 1011)
+  - 101: MD 1 (Joystick 1)
+  - 101: MD 1 (Joystick 2)
+  - 50 Hz mode
+  - Enable scandoublel
+
+06: AC (1010 1100)
+  - Enable F8 cpu speed hotkey and F5/F6 expansion bus hotkeys
+  - (not) Divert BEEP only to internal speaker
+  - Enable F3 50/60 Hz hotkey
+  - (not) Enable divmmc nmi by DRIVE button
+  - Enable multiface nmi by M1 button
+  - PS/2 mode (0 = keyboard primary, 1 = mouse primary; config mode only)
+  - Audio chip mode: YM
+
+07: 00 (0000 0000)
+  - CPU speed: 3.5 MHz
+
+08: DE (1101 1110)
+  - Unlock port 0x7ffd
+  - Disable ram and port contention
+  - AY stereo mode: ABC
+  - Enable internal speaker
+  - Enable 8-bit DACs (A,B,C,D)
+  - Enable port 0xff Timex video mode read
+  - Enable turbosound
+  - (not) Implement issue 2 keyboard
+
+09: 00 (0000 0000)  
+  - (not) Place AY 2 in mono mode
+  - (not) Place AY 1 in mono mode
+  - (not) Place AY 0 in mono mode
+  - (not) Sprite id lockstep
+  - N/A (Write only)
+  - (not) silence hdmi audio
+  - Scan lines off
+
+0A: 11 (0001 0001)  
+  - Multiface +3
+  - Reserved (0)
+  - Enable divmmc automap
+  - (not) Reverse left and right mouse buttons
+  - Reserved (0)
+  - Default DPI
+
+8C: 00 (0000 0000) (Alternate ROM)
+  - Disable Alternate ROM
+  - Replaces ROM during reads
+  - (not) lock ROM 1
+  - (not) lock ROM 0
+
+8E: 00
+  - Memory mapping mode standard ZX Spectrum 128/+3  

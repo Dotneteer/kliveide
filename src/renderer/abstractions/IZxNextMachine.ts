@@ -1,6 +1,8 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
+import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
+import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
 import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
 import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
 import { SpriteDevice } from "@emu/machines/zxNext/sprites/SpriteDevice";
@@ -16,6 +18,10 @@ export interface IZxNextMachine extends IZ80Machine {
    * Gets the ROM ID to load the ROM file
    */
   get romId(): string;
+
+  portManager: NextIoPortManager
+
+  memoryDevice: MemoryDevice;
 
   nextRegDevice: NextRegDevice;
 

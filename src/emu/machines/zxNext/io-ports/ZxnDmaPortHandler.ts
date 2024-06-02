@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readZxnDmaPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readZxnDmaPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeZxnDmaPort(machine: IZxNextMachine, value: number): void {
+export function writeZxnDmaPort(value: number): void {
   // TODO: Implement this
 }

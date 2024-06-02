@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readUartFramePort(machine: IZxNextMachine, ulaPort: number): number {
+export function readUartFramePort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeUartFramePort(machine: IZxNextMachine, value: number): void {
+export function writeUartFramePort(value: number): void {
   // TODO: Implement this
 }

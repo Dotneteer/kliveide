@@ -1,55 +1,53 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readMultifaceDisablePort(machine: IZxNextMachine, ulaPort: number): number {
+export function readMultifaceDisablePort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeMultifaceDisablePort(machine: IZxNextMachine, value: number): void {
+export function writeMultifaceDisablePort(value: number): void {
   // TODO: Implement this
 }
 
-export function readMultifaceEnablePort(machine: IZxNextMachine, ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
-}
-
-export function writeMultifaceEnablePort(machine: IZxNextMachine, value: number): void {
-  // TODO: Implement this
-}
-
-export function readMultiface128DisablePort(machine: IZxNextMachine, ulaPort: number): number {
+export function readMultifaceEnablePort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeMultiface128DisablePort(machine: IZxNextMachine, value: number): void {
+export function writeMultifaceEnablePort(value: number): void {
   // TODO: Implement this
 }
 
-export function readMultiface128EnablePort(machine: IZxNextMachine, ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
-}
-
-export function writeMultiface128EnablePort(machine: IZxNextMachine, value: number): void {
-  // TODO: Implement this
-}
-
-export function readMultifaceP3DisablePort(machine: IZxNextMachine, ulaPort: number): number {
+export function readMultiface128DisablePort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeMultifaceP3DisablePort(machine: IZxNextMachine, value: number): void {
+export function writeMultiface128DisablePort(value: number): void {
   // TODO: Implement this
 }
 
-export function readMultifaceP3EnablePort(machine: IZxNextMachine, ulaPort: number): number {
+export function readMultiface128EnablePort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeMultifaceP3EnablePort(machine: IZxNextMachine, value: number): void {
+export function writeMultiface128EnablePort(value: number): void {
+  // TODO: Implement this
+}
+
+export function readMultifaceP3DisablePort(ulaPort: number): number {
+  // TODO: Implement this
+  return 0xff;
+}
+
+export function writeMultifaceP3DisablePort(value: number): void {
+  // TODO: Implement this
+}
+
+export function readMultifaceP3EnablePort(ulaPort: number): number {
+  // TODO: Implement this
+  return 0xff;
+}
+
+export function writeMultifaceP3EnablePort(value: number): void {
   // TODO: Implement this
 }

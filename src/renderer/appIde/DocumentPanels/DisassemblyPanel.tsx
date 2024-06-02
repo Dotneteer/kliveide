@@ -298,7 +298,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           memory,
           getMemoryResponse.partitionLabels,
           {
-            noLabelPrefix: false
+            noLabelPrefix: false,
+            // TODO: Remove it for ZX Spectrum 48K
+            allowExtendedSet: true
           }
         );
 

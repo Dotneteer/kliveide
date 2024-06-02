@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readSpiDataPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readSpiDataPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeSpiDataPort(machine: IZxNextMachine, value: number): void {
+export function writeSpiDataPort(value: number): void {
   // TODO: Implement this
 }

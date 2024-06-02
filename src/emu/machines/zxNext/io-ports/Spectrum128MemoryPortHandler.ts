@@ -1,9 +1,3 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function writeSpectrum128MemoryPort(
-  machine: IZxNextMachine,
-  ulaPort: number,
-  value: number
-): void {
+export function writeSpectrum128MemoryPort(ulaPort: number, value: number): void {
   // TODO: Implement this
 }

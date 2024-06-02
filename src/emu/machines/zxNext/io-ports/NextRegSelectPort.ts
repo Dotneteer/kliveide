@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readNextRegSelectPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readNextRegSelectPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeNextRegSelectPort(machine: IZxNextMachine, value: number): void {
+export function writeNextRegSelectPort(value: number): void {
   // TODO: Implement this
 }

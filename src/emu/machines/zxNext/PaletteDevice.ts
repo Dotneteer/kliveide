@@ -1,6 +1,8 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
+export const TBBLUE_DEF_TRANSPARENT_COLOR = 0xe3;
+
 export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   ulaFirst: number[] = [];
   ulaSecond: number[] = [];

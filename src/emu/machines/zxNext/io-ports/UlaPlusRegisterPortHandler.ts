@@ -1,5 +1,3 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function writeUlaPlusRegisterPort(machine: IZxNextMachine, value: number): void {
+export function writeUlaPlusRegisterPort(value: number): void {
   // TODO: Implement this
 }

@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readUlaPlusDataPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readUlaPlusDataPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeUlaPlusDataPort(machine: IZxNextMachine, value: number): void {
+export function writeUlaPlusDataPort(value: number): void {
   // TODO: Implement this
 }

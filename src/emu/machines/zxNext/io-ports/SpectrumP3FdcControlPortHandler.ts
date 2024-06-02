@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readSpectrumP3FdcControlPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readSpectrumP3FdcControlPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeSpectrumP3FdcControlPort(machine: IZxNextMachine, value: number): void {
+export function writeSpectrumP3FdcControlPort(value: number): void {
   // TODO: Implement this
 }

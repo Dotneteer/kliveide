@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readI2cSdaPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readI2cSdaPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeI2cSdaPort(machine: IZxNextMachine, value: number): void {
+export function writeI2cSdaPort(value: number): void {
   // TODO: Implement this
 }

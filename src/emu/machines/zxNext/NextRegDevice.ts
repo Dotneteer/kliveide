@@ -1,5 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
 
 type NextRegreadFn = () => number;
 type NextRegWriteFn = (value: number) => void;
@@ -24,9 +25,9 @@ export type NextRegValueSlice = {
 };
 
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
-  private regs: NextRegInfo[] = [];
+  private readonly regs: NextRegInfo[] = [];
   private lastRegister: number = 0;
-  private regValues: number[] = [];
+  private readonly regValues: number[] = [];
 
   // --- Reg 0x07 state
   r07_ActualCpuSpeed = 0;
@@ -40,8 +41,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * @param machine The machine hosting this device
    */
   constructor(public readonly machine: IZxNextMachine) {
-    const r = this.registerNextReg;
+    const r = (reg: NextRegInfo) => this.registerNextReg(reg);
     this.regs = [];
+    for (let i = 0; i < 0x100; i++) {
+      this.regValues[i] = UNDEFINED_REG;
+    }
     r({
       id: 0x00,
       description: "Machine ID",
@@ -2674,34 +2678,97 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    */
   dispose(): void {}
 
-  reset(): void {
-    // --- Reset all registers (soft reset)
+  // --- Common reset operation for soft and hard reset
+  private commonReset(): void {
+    this.directSetRegValue(0x00, 0x08); // --- Machine type: Emulators
+    this.directSetRegValue(0x01, 0x32); // --- Machine core: 3.2     
+    this.directSetRegValue(0x0e, 0x00); // --- Machine core subminor: 0            
     this.directSetRegValue(0x12, 0x08); // --- Layer 2 active RAM bank
     this.directSetRegValue(0x13, 0x0b); // --- Layer 2 shadow RAM bank
-    this.directSetRegValue(0x1C, 0x00); // --- Clip window control: all clip indexes to zero
-    this.directSetRegValue(0x43, 0x00); // --- Palette control
-    this.directSetRegValue(0x70, 0x00); // --- Layer 2 Control
+    this.directSetRegValue(0x14, TBBLUE_DEF_TRANSPARENT_COLOR);
+    this.directSetRegValue(0x15, 0x00); // --- No LoRes mode;
+                                        // --- No Sprite priority
+                                        // --- Disable sprite clipping in over border mode
+                                        // --- Layer priority: SLU
+                                        // --- Disbale sprite over border
+                                        // --- Disable sprites
+    this.directSetRegValue(0x16, 0x00); // --- Layer 2 X scroll LSB = 0;
+    this.directSetRegValue(0x17, 0x00); // --- Layer 2 Y scroll = 0;
+    this.directSetRegValue(0x1c, 0x00); // --- Tilemap clip index = 0
+                                        // --- ULA/LoRes clip index = 0
+                                        // --- Sprite clip index = 0
+                                        // --- Layer 2 clip index = 0
+    this.directSetRegValue(0x1e, 0x00); // --- Active line MSB = 0
+    this.directSetRegValue(0x1f, 0x00); // --- Active line LSB = 0
+    this.directSetRegValue(0x22, 0x00); // --- ULA is not asserting an interrupt
+                                        // --- Alias of ULA interrupt bit in register 0xc4
+                                        // --- Alias of line interrupt bit in register 0xc4
+                                        // --- Line interrupt value MSB = 0
+    this.directSetRegValue(0x23, 0x00); // --- Line interrupt value LSB = 0
+    this.directSetRegValue(0x32, 0x00); // --- LoRes X Scroll = 0
+    this.directSetRegValue(0x33, 0x00); // --- LoRes Y Scroll = 0
+    this.directSetRegValue(0x42, 0x0f); // --- ULA Next Attribute byte format = 0x0f
+    this.directSetRegValue(0x43, 0x00); // --- Enable palette write auto increment
+                                        // --- Select ULA first palette
+                                        // --- First sprite palette
+                                        // --- First layer 2 palette
+                                        // --- First ULA palette
+                                        // --- Disable ULA Next mode
+    this.directSetRegValue(0x4a, 0x00); // --- Fallback color = 0x00
+    this.directSetRegValue(0x4b, TBBLUE_DEF_TRANSPARENT_COLOR);
+    this.directSetRegValue(0x4c, 0x0f); // --- Tilemap transparency index = 0x0f
+    this.directSetRegValue(0x61, 0x00); // --- Copper address LSB
+    this.directSetRegValue(0x62, 0x00); // --- Copper fully stopped
+                                        // --- Copper instruction memory address MSB = 0
+    this.directSetRegValue(0x6b, 0x00); // --- Disable tilemap
+                                        // --- 40x32 tilemap
+                                        // --- Use attribute entry in tilemap
+                                        // --- Palette select = 0
+                                        // --- Textmode select = 0
+                                        // --- 512 tile mode inactive
+                                        // --- No tilemap on top
+    this.directSetRegValue(0x70, 0x00); // --- Layer 2 resolution: 256x192x8
+                                        // --- Palette offset = 0
+  }
 
+  // --- Soft reset
+  reset(): void {
+    // --- Reset all registers (soft reset)
+    this.directSetRegValue(0x02, 0x01); // --- Sign the last reset was soft reset
+
+    // --- Copy alternate ROM bits 0:3 to bits 4:7
+    const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;
+    this.directSetRegValue(0x8c, (bit0to3 << 4) | bit0to3);
+
+    // --- Apply common reset operations
+    this.commonReset();
   }
 
   hardReset(): void {
     // --- Reset all registers (hard reset)
     for (let i = 0; i < 0x100; i++) {
-      this.regs[i] = undefined;
+      this.regValues[i] = UNDEFINED_REG;
     }
 
+    // --- We assume fast boot
+
     this.directSetRegValue(0x02, 0x06); // --- Generate DivMMC interrupt & hard reset
-    this.directSetRegValue(0x03, 0x00); // --- Config mode
+    this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
-    this.directSetRegValue(0x05, 0x01); // --- Enable scan doubler to VGA
+    this.directSetRegValue(0x05, 0x01); // --- Enable scandoubler for VGA
     this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
-    this.directSetRegValue(0x08, 0x10); // --- Peripheral settings #3: Enable internal speaker
+    this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
     this.directSetRegValue(0x09, 0x00); // --- All Peripheral settings #4 are 0
+    this.directSetRegValue(0x0a, 0x01); // --- Use Multiface +3 type (enable port 0x3f, disable port 0xbf)
+                                        // --- Disable DivMMC automap
+                                        // --- Use default mouse DPI
+    this.directSetRegValue(0x50, 0xff); // --- Map ROM into 0x0000-0x1fff
+    this.directSetRegValue(0x51, 0xff); // --- Map ROM into 0x2000-0x3fff
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
 
     // --- Apply soft reset
-    this.reset();
+    this.commonReset();
 
     // --- Apply other hard reset settings
     this.r44_FirstWrite = true;

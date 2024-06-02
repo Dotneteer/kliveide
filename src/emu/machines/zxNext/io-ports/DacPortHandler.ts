@@ -1,25 +1,23 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function writeDacAPort(machine: IZxNextMachine, value: number): void {
+export function writeDacAPort(value: number): void {
   // TODO: Implement this
 }
 
-export function writeDacBPort(machine: IZxNextMachine, value: number): void {
+export function writeDacBPort(value: number): void {
   // TODO: Implement this
 }
 
-export function writeDacAandDPort(machine: IZxNextMachine, value: number): void {
+export function writeDacAandDPort(value: number): void {
   // TODO: Implement this
 }
 
-export function writeDacBandCPort(machine: IZxNextMachine, value: number): void {
+export function writeDacBandCPort(value: number): void {
   // TODO: Implement this
 }
 
-export function writeDacCPort(machine: IZxNextMachine, value: number): void {
+export function writeDacCPort(value: number): void {
   // TODO: Implement this
 }
 
-export function writeDacDPort(machine: IZxNextMachine, value: number): void {
+export function writeDacDPort(value: number): void {
   // TODO: Implement this
 }

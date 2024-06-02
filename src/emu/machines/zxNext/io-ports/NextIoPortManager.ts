@@ -3,7 +3,6 @@ import { readFloatingBusPort, writeFloatingBusPort } from "./FloatingBusHandler"
 import { writeSpectrum128MemoryPort } from "./Spectrum128MemoryPortHandler";
 import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
 import { writeNextBankExtensionPort } from "./NextBankExtensionPortHandler";
-import { writeSpectrumP3MemoryPort } from "./SpectrumP3MemoryPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
@@ -66,463 +65,518 @@ import {
   writeSpriteSlotPort
 } from "./SpritePortHandler";
 
-type IoPortReaderFn = (machine: IZxNextMachine, port: number) => number;
-type IoPortWriterFn = (machine: IZxNextMachine, port: number, value: number) => void;
+type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
+type IoPortWriterFn = (port: number, value: number) => void | boolean;
 
 type PortDescriptor = {
   pmask: number;
   value: number;
   port?: number;
   description: string;
-  readerFn?: IoPortReaderFn;
-  writerFn?: IoPortWriterFn;
+  readerFns?: IoPortReaderFn | IoPortReaderFn[];
+  writerFns?: IoPortWriterFn | IoPortWriterFn[];
 };
 
 export class NextIoPortManager {
   private readonly ports: PortDescriptor[] = [];
   private readonly portMap: Map<number, PortDescriptor> = new Map();
+  private readonly portCollisions: Map<number, string[]> = new Map();
 
-  constructor() {
+  constructor(private readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
+
     r({
       description: "ULA",
       port: 0xfe,
       pmask: 0b0000_0000_0000_0001,
       value: 0b0000_0000_0000_0000,
-      readerFn: readUlaPort,
-      writerFn: writeUlaPort
+      readerFns: readUlaPort,
+      writerFns: writeUlaPort
     });
     r({
       description: "Timex video, floating bus",
       port: 0xff,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
-      readerFn: readFloatingBusPort,
-      writerFn: writeFloatingBusPort
+      readerFns: readFloatingBusPort,
+      writerFns: writeFloatingBusPort
     });
     r({
       description: "ZX Spectrum 128 memory",
       port: 0x7ffd,
       pmask: 0b1100_0000_0000_0011,
       value: 0b0100_0000_0000_0001,
-      writerFn: writeSpectrum128MemoryPort
+      writerFns: writeSpectrum128MemoryPort
     });
     r({
       description: "Spectrum Next bank extension",
       port: 0xdffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b1101_0000_0000_0001,
-      writerFn: writeNextBankExtensionPort
+      writerFns: writeNextBankExtensionPort
     });
     r({
       description: "ZX Spectrum +3 memory",
       port: 0x1ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0001_0000_0000_0001,
-      writerFn: writeSpectrumP3MemoryPort
+      writerFns: (_, v) => {
+        machine.memoryDevice.port1ffdValue = v;
+      }
     });
     r({
       description: "ZX Spectrum +3 FDC status",
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFn: readSpectrumP3FdcStatusPort
+      readerFns: readSpectrumP3FdcStatusPort
     });
     r({
       description: "ZX Spectrum +3 FDC control",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFn: readSpectrumP3FdcControlPort,
-      writerFn: writeSpectrumP3FdcControlPort
+      readerFns: readSpectrumP3FdcControlPort,
+      writerFns: writeSpectrumP3FdcControlPort
     });
     r({
       description: "Pentagon 1024K memory",
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFn: writePentagon1024MemoryPort
+      writerFns: writePentagon1024MemoryPort
     });
     r({
       description: "NextREG Register Select",
       port: 0x243b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0010_0100_0011_1011,
-      readerFn: readNextRegSelectPort,
-      writerFn: writeNextRegSelectPort
+      readerFns: readNextRegSelectPort,
+      writerFns: writeNextRegSelectPort
     });
     r({
       description: "NextREG Data",
       port: 0x253b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0010_0101_0011_1011,
-      readerFn: readNextRegDataPort,
-      writerFn: writeNextRegDataPort
+      readerFns: readNextRegDataPort,
+      writerFns: writeNextRegDataPort
     });
     r({
       description: "i2c SCL",
       port: 0x103b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0000_0011_1011,
-      readerFn: readI2cSclPort,
-      writerFn: writeI2cSclPort
+      readerFns: readI2cSclPort,
+      writerFns: writeI2cSclPort
     });
     r({
       description: "i2c SDA",
       port: 0x113b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0001_0011_1011,
-      readerFn: readI2cSdaPort,
-      writerFn: writeI2cSdaPort
+      readerFns: readI2cSdaPort,
+      writerFns: writeI2cSdaPort
     });
     r({
       description: "Layer 2",
       port: 0x123b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0010_0011_1011,
-      readerFn: readLayer2Port,
-      writerFn: writeLayer2Port
+      readerFns: readLayer2Port,
+      writerFns: writeLayer2Port
     });
     r({
       description: "UART Tx",
       port: 0x133b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0011_0011_1011,
-      readerFn: readUartTxPort,
-      writerFn: writeUartTxPort
+      readerFns: readUartTxPort,
+      writerFns: writeUartTxPort
     });
     r({
       description: "UART Rx",
       port: 0x143b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0100_0011_1011,
-      readerFn: readUartRxPort,
-      writerFn: writeUartRxPort
+      readerFns: readUartRxPort,
+      writerFns: writeUartRxPort
     });
     r({
       description: "UART Select",
       port: 0x153b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0101_0011_1011,
-      readerFn: readUartSelectPort,
-      writerFn: writeUartSelectPort
+      readerFns: readUartSelectPort,
+      writerFns: writeUartSelectPort
     });
     r({
       description: "UART Frame",
       port: 0x163b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0110_0011_1011,
-      readerFn: readUartFramePort,
-      writerFn: writeUartFramePort
+      readerFns: readUartFramePort,
+      writerFns: writeUartFramePort
     });
     r({
       description: "CTC 8 channels",
       port: 0x173b,
       pmask: 0b1111_1000_1111_1111,
       value: 0b0001_1000_0011_1011,
-      readerFn: readCtcPort,
-      writerFn: writeCtcPort
+      readerFns: readCtcPort,
+      writerFns: writeCtcPort
     });
     r({
       description: "ULA+ Register",
       port: 0xbf3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1011_1111_0011_1011,
-      writerFn: writeUlaPlusRegisterPort
+      writerFns: writeUlaPlusRegisterPort
     });
     r({
       description: "ULA+ Data",
       port: 0xff3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1111_1111_0011_1011,
-      readerFn: readUlaPlusDataPort,
-      writerFn: writeUlaPlusDataPort
+      readerFns: readUlaPlusDataPort,
+      writerFns: writeUlaPlusDataPort
     });
     r({
       description: "Z80Dma",
       port: 0x0b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1011,
-      readerFn: readZ80DmaPort,
-      writerFn: writeZ80DmaPort
+      readerFns: readZ80DmaPort,
+      writerFns: writeZ80DmaPort
     });
     r({
       description: "ZxnDma",
       port: 0x6b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0110_1011,
-      readerFn: readZxnDmaPort,
-      writerFn: writeZxnDmaPort
+      readerFns: readZxnDmaPort,
+      writerFns: writeZxnDmaPort
     });
     r({
       description: "AY reg",
       port: 0xfffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1100_0000_0000_0101,
-      readerFn: readAyRegPort,
-      writerFn: writeAyRegPort
+      readerFns: readAyRegPort,
+      writerFns: writeAyRegPort
     });
     r({
       description: "AY data",
       port: 0xbffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1000_0000_0000_0101,
-      readerFn: readAyDatPort,
-      writerFn: writeAyDatPort
+      readerFns: readAyDatPort,
+      writerFns: writeAyDatPort
     });
     r({
       description: "AY info",
       port: 0xbff5,
       pmask: 0b1100_0000_0000_1111,
       value: 0b1000_0000_0000_0101,
-      readerFn: readAyDatPort,
-      writerFn: writeAyDatPort
+      readerFns: readAyDatPort,
+      writerFns: writeAyDatPort
     });
     r({
       description: "DAC A",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b1000_0000_0001_1111,
-      writerFn: writeDacAPort
+      writerFns: writeDacAPort
     });
     r({
       description: "DAC A",
       port: 0xf1,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0001,
-      writerFn: writeDacAPort
+      writerFns: writeDacAPort
     });
     r({
       description: "DAC A",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      writerFn: writeDacAPort
+      writerFns: writeDacAPort
     });
     r({
       description: "DAC B",
       port: 0x0f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1111,
-      writerFn: writeDacBPort
+      writerFns: writeDacBPort
     });
     r({
       description: "DAC B",
       port: 0xf3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0011,
-      writerFn: writeDacBPort
+      writerFns: writeDacBPort
     });
     r({
       description: "DAC A,D",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      writerFn: writeDacAandDPort
+      writerFns: writeDacAandDPort
     });
     r({
       description: "DAC A,D",
       port: 0xfb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1011,
-      writerFn: writeDacAandDPort
+      writerFns: writeDacAandDPort
     });
     r({
       description: "DAC B,C",
       port: 0xb3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_0011,
-      writerFn: writeDacBandCPort
+      writerFns: writeDacBandCPort
     });
     r({
       description: "DAC C",
       port: 0x4f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0100_1111,
-      writerFn: writeDacCPort
+      writerFns: writeDacCPort
     });
     r({
       description: "DAC C",
       port: 0xf9,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1001,
-      writerFn: writeDacCPort
+      writerFns: writeDacCPort
     });
     r({
       description: "DAC D",
       port: 0x5f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1111,
-      writerFn: writeDacCPort
+      writerFns: writeDacCPort
     });
     r({
       description: "SPI CS",
       port: 0xe7,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0111,
-      writerFn: writeSpiCsPort
+      writerFns: writeSpiCsPort
     });
     r({
       description: "SPI DATA",
       port: 0xeb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_1011,
-      readerFn: readSpiDataPort,
-      writerFn: writeSpiDataPort
+      readerFns: readSpiDataPort,
+      writerFns: writeSpiDataPort
     });
     r({
       description: "divMMC Control",
       port: 0xe3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0011,
-      readerFn: readDivMmcControlPort,
-      writerFn: writeDivMmmcControlPort
+      readerFns: readDivMmcControlPort,
+      writerFns: writeDivMmmcControlPort
     });
     r({
       description: "Kempston mouse x",
       port: 0xfbdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1011_1101_1111,
-      readerFn: readKempstonMouseXPort
+      readerFns: readKempstonMouseXPort
     });
     r({
       description: "Kempston mouse y",
       port: 0xffdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1111_1101_1111,
-      readerFn: readKempstonMouseYPort
+      readerFns: readKempstonMouseYPort
     });
     r({
       description: "Kempston mouse wheel, buttons",
       port: 0xfadf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1010_1101_1111,
-      readerFn: readKempstonMouseYPort
+      readerFns: readKempstonMouseYPort
     });
     r({
       description: "Kempston joy 1",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
-      readerFn: readKempstonJoy1Port
+      readerFns: readKempstonJoy1Port
     });
     r({
       description: "Kempston joy 1 alias",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      readerFn: readKempstonJoy1AliasPort
+      readerFns: readKempstonJoy1AliasPort
     });
     r({
       description: "Kempston joy 2",
       port: 0x37,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_0111,
-      readerFn: readKempstonJoy2Port
+      readerFns: readKempstonJoy2Port
     });
     r({
       description: "Multiface 1, 128 v87.12 disable",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
-      readerFn: readMultifaceDisablePort,
-      writerFn: writeMultifaceDisablePort
+      readerFns: readMultifaceDisablePort,
+      writerFns: writeMultifaceDisablePort
     });
     r({
       description: "Multiface 1, 128 v87.12 enable",
       port: 0x9f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1001_1111,
-      readerFn: readMultifaceEnablePort,
-      writerFn: writeMultifaceEnablePort
+      readerFns: readMultifaceEnablePort,
+      writerFns: writeMultifaceEnablePort
     });
     r({
       description: "Multiface 128 v87.2 disable",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      readerFn: readMultiface128DisablePort,
-      writerFn: writeMultiface128DisablePort
+      readerFns: readMultiface128DisablePort,
+      writerFns: writeMultiface128DisablePort
     });
     r({
       description: "Multiface 128 v87.2 disable",
       port: 0xbf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      readerFn: readMultiface128EnablePort,
-      writerFn: writeMultiface128EnablePort
+      readerFns: readMultiface128EnablePort,
+      writerFns: writeMultiface128EnablePort
     });
     r({
       description: "Multiface +3 disable",
       port: 0xbf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_1111,
-      readerFn: readMultifaceP3DisablePort,
-      writerFn: writeMultifaceP3DisablePort
+      readerFns: readMultifaceP3DisablePort,
+      writerFns: writeMultifaceP3DisablePort
     });
     r({
       description: "Multiface +3 enable",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      readerFn: readMultifaceP3EnablePort,
-      writerFn: writeMultifaceP3EnablePort
+      readerFns: readMultifaceP3EnablePort,
+      writerFns: writeMultifaceP3EnablePort
     });
     r({
       description: "Sprite slot, flags",
       port: 0x303b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0011_0000_0011_1011,
-      readerFn: readSpriteSlotPort,
-      writerFn: writeSpriteSlotPort
+      readerFns: readSpriteSlotPort,
+      writerFns: writeSpriteSlotPort
     });
     r({
       description: "Sprite attributes",
       port: 0x57,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_0111,
-      readerFn: readSpriteAttributePort,
-      writerFn: writeSpriteAttributePort
+      readerFns: readSpriteAttributePort,
+      writerFns: writeSpriteAttributePort
     });
     r({
       description: "Sprite pattern",
       port: 0x5b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1011,
-      readerFn: readSpritePatternPort,
-      writerFn: writeSpritePatternPort
+      readerFns: readSpritePatternPort,
+      writerFns: writeSpritePatternPort
     });
   }
 
-  /**
-   * Gets the reader function for the specified port
-   * @param port Port number
-   * @returns Reader function, if any
-   */
-  getPortReaderFn(port: number): IoPortReaderFn | undefined {
-    return this.portMap.get(port)?.readerFn;
+  getPortHandler(port: number): PortDescriptor | undefined {
+    return this.portMap.get(port);
   }
 
-  /**
-   * Gets the writer function for the specified port
-   * @param port Port number
-   * @returns Writer function, if any
-   */
-  getPortWriterFn(port: number): IoPortWriterFn | undefined {
-    return this.portMap.get(port)?.writerFn;
+  getPortCollisions(port: number): string[] {
+    return this.portCollisions.get(port) ?? [];
+  }
+
+  readPort(port: number): number {
+    const descriptor = this.portMap.get(port);
+    if (!descriptor?.readerFns) return 0xff;
+
+    if (Array.isArray(descriptor.readerFns)) {
+      // --- Multiple reader functions
+      let lastValue = 0xff;
+      for (const readerFn of descriptor.readerFns) {
+        const value = readerFn(port);
+        if (typeof value === "number") return value;
+        lastValue = value.value ?? 0xff;
+        if (value.handled) return lastValue;
+      }
+      return lastValue;
+    }
+    // --- Single reader function
+    const value = descriptor.readerFns(port);
+    if (typeof value === "number") return value;
+    return value.value ?? 0xff;
+  }
+
+  writePort(port: number, value: number): void {
+    const descriptor = this.portMap.get(port);
+    if (!descriptor) return;
+
+    if (Array.isArray(descriptor.writerFns)) {
+      // --- Multiple writer functions
+      for (const writerFn of descriptor.writerFns) {
+        const handled = writerFn(port, value);
+        if (handled) return;
+      }
+    } else if (descriptor.writerFns) {
+      // --- Single writer function
+      descriptor.writerFns(port, value);
+    }
   }
 
   private registerPort({
     pmask: mask,
     value,
     description,
-    readerFn,
-    writerFn
+    readerFns,
+    writerFns
   }: PortDescriptor): void {
-    this.ports.push({ pmask: mask, value, description, readerFn, writerFn });
+    this.ports.push({ pmask: mask, value, description, readerFns, writerFns });
     for (let i = 0; i < 0x1_0000; i++) {
       if ((i & mask) === value) {
-        this.portMap.set(i, { pmask: mask, value, description, readerFn, writerFn });
+        let mapping = this.portMap.get(i);
+        if (mapping) {
+          mapping = { ...mapping };
+          if (mapping.readerFns) {
+            const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
+            mapping.readerFns = Array.isArray(mapping.readerFns)
+              ? [...mapping.readerFns, ...readerFnsArray]
+              : [mapping.readerFns, ...readerFnsArray];
+          } else {
+            mapping.readerFns = readerFns;
+          }
+          if (mapping.writerFns) {
+            const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
+            mapping.writerFns = Array.isArray(mapping.writerFns)
+              ? [...mapping.writerFns, ...writerFnsArray]
+              : [mapping.writerFns, ...writerFnsArray];
+          } else {
+            mapping.writerFns = writerFns;
+          }
+          this.portMap.set(i, mapping);
+          this.portCollisions.set(i, [...this.portCollisions.get(i)!, description]);
+        } else {
+          this.portMap.set(i, { pmask: mask, value, description, readerFns, writerFns });
+          this.portCollisions.set(i, [description]);
+        }
       }
     }
   }

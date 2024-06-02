@@ -5,7 +5,6 @@ import { ISpectrumKeyboardDevice } from "../zxSpectrum/ISpectrumKeyboardDevice";
 import { IScreenDevice } from "../../abstractions/IScreenDevice";
 import { ITapeDevice } from "../../abstractions/ITapeDevice";
 import { SysVar } from "@abstractions/SysVar";
-import { TapeMode } from "../../abstractions/TapeMode";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
@@ -25,6 +24,8 @@ import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./sprites/SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
+import { OFFS_NEXT_ROM, MemoryDevice } from "./MemoryDevice";
+import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -47,6 +48,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   public readonly machineId = "zxnext";
 
+  portManager: NextIoPortManager;
+
+  memoryDevice: MemoryDevice;
+
   nextRegDevice: NextRegDevice;
 
   layer2Device: Layer2Device;
@@ -60,65 +65,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   dmaDevice: DmaDevice;
 
   copperDevice: CopperDevice;
-
-  /**
-   * Initialize the machine
-   */
-  constructor(public readonly modelInfo?: MachineModel) {
-    super();
-
-    // --- Set up machine attributes
-    this.baseClockFrequency = 3_500_000;
-    this.clockMultiplier = 1;
-    this.delayedAddressBus = true;
-
-    // --- Create and initialize devices
-    this.keyboardDevice = new KeyboardDevice(this);
-    this.screenDevice = new CommonScreenDevice(
-      this,
-      CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
-    );
-    this.beeperDevice = new SpectrumBeeperDevice(this);
-    // this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
-    // this.tapeDevice = new TapeDevice(this);
-    this.nextRegDevice = new NextRegDevice(this);
-    this.reset();
-  }
-
-  reset(): void {
-    super.reset();
-    this.nextRegDevice.reset();
-    this.layer2Device.reset();
-  }
-
-  async setup(): Promise<void> {
-    //throw new Error("Method not implemented.");
-  }
-
-  // --- This byte array stores the contention values associated with a particular machine frame tact.
-  protected contentionValues: number[] = [];
-
-  // --- Last value of bit 3 on port $FE
-  private _portBit3LastValue = false;
-
-  // --- Last value of bit 4 on port $FE
-  private _portBit4LastValue = false;
-
-  // --- Tacts value when last time bit 4 of $fe changed from 0 to 1
-  private _portBit4ChangedFrom0Tacts = 0;
-
-  // --- Tacts value when last time bit 4 of $fe changed from 1 to 0
-  private _portBit4ChangedFrom1Tacts = 0;
-
-  /**
-   * Stores the key strokes to emulate
-   */
-  protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
-
-  /**
-   * Stores the last rendered machine frame tact.
-   */
-  protected lastRenderedFrameTact: number;
 
   /**
    * Represents the keyboard device of ZX Spectrum 48K
@@ -144,6 +90,84 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the tape device of ZX Spectrum 48K
    */
   tapeDevice: ITapeDevice;
+
+  /**
+   * Initialize the machine
+   */
+  constructor(public readonly modelInfo?: MachineModel) {
+    super();
+
+    // --- Set up machine attributes
+    this.baseClockFrequency = 3_500_000;
+    this.clockMultiplier = 1;
+    this.delayedAddressBus = true;
+
+    // --- Create and initialize the I/O port manager
+    this.portManager = new NextIoPortManager(this);
+
+    // --- Create and initialize the memory
+    this.memoryDevice = new MemoryDevice(this);
+
+    // --- Create and initialize devices
+    this.nextRegDevice = new NextRegDevice(this);
+    this.layer2Device = new Layer2Device(this);
+    this.paletteDevice = new PaletteDevice(this);
+    this.tilemapDevice = new TilemapDevice(this);
+    this.spriteDevice = new SpriteDevice(this);
+    this.dmaDevice = new DmaDevice(this);
+    this.copperDevice = new CopperDevice(this);
+    this.keyboardDevice = new KeyboardDevice(this);
+    this.screenDevice = new CommonScreenDevice(
+      this,
+      CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
+    );
+    this.beeperDevice = new SpectrumBeeperDevice(this);
+    this.nextRegDevice = new NextRegDevice(this);
+    this.reset();
+  }
+
+  reset(): void {
+    super.reset();
+    this.memoryDevice.reset();
+    this.nextRegDevice.reset();
+    this.layer2Device.reset();
+    this.paletteDevice.reset();
+    this.tilemapDevice.reset();
+    this.spriteDevice.reset();
+    this.dmaDevice.reset();
+    this.copperDevice.reset();
+    this.keyboardDevice.reset();
+    this.screenDevice.reset();
+    this.beeperDevice.reset();
+  }
+
+  async setup(): Promise<void> {
+    // --- Get the ZX Spectrum Next ROM file
+    const romContents = await this.loadRomFromFile("roms/enNextZx.rom");
+
+    // --- Initialize the machine's ROM
+    this.memoryDevice.upload(romContents, OFFS_NEXT_ROM);
+  }
+
+  /**
+   * Emulates turning on a machine (after it has been turned off).
+   */
+  async hardReset(): Promise<void> {
+    await super.hardReset();
+    this.reset();
+    this.memoryDevice.hardReset();
+    this.nextRegDevice.hardReset();
+  }
+
+  /**
+   * Stores the key strokes to emulate
+   */
+  protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
+  /**
+   * Stores the last rendered machine frame tact.
+   */
+  protected lastRenderedFrameTact: number;
 
   /**
    * Gets the ROM ID to load the ROM file
@@ -200,6 +224,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * Read the byte at the specified memory address.
+   * @param address 16-bit memory address
+   * @return The byte read from the memory
+   */
+  doReadMemory(address: number): number {
+    return this.memoryDevice.readMemory(address);
+  }
+
+  /**
    * This function implements the memory read delay of the CPU.
    * @param address Memory address to read
    *
@@ -212,6 +245,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.tactPlus3();
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
+  }
+
+  /**
+   * Write the given byte to the specified memory address.
+   * @param address 16-bit memory address
+   * @param value Byte to write into the memory
+   */
+  doWriteMemory(address: number, value: number): void {
+    this.memoryDevice.writeMemory(address, value);
   }
 
   /**
@@ -235,13 +277,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * the Z80 CPU takes 3 T-states to read or write the memory contents.
    */
   delayAddressBusAccess(address: number): void {
-    if ((address & 0xc000) != 0x4000) return;
-
-    // --- We read from contended memory
-    const delay = this.contentionValues[this.currentFrameTact];
-    this.tactPlusN(delay);
-    this.totalContentionDelaySinceStart += delay;
-    this.contentionDelaySincePause += delay;
+    // TODO: Implement this
   }
 
   /**
@@ -255,7 +291,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param value Contention value
    */
   setContentionValue(tact: number, value: number): void {
-    this.contentionValues[tact] = value;
+    // TODO: Implement this
   }
 
   /**
@@ -264,7 +300,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns The contention value associated with the specified tact.
    */
   getContentionValue(tact: number): number {
-    return this.contentionValues[tact];
+    // TODO: Implement this
+    return 0;
   }
 
   /**
@@ -292,130 +329,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
-   * Reads a byte from the ZX Spectrum generic input port.
-   * @param address Port address
-   * @returns Byte value read from the generic port
-   */
-  protected readPort0Xfe(address: number): number {
-    var portValue = this.keyboardDevice.getKeyLineStatus(address);
-
-    // --- Check for LOAD mode
-    if (this.tapeDevice.tapeMode === TapeMode.Load) {
-      const earBit = this.tapeDevice.getTapeEarBit();
-      this.beeperDevice.setEarBit(earBit);
-      portValue = ((portValue & 0xbf) | (earBit ? 0x40 : 0)) & 0xff;
-    } else {
-      // --- Handle analog EAR bit
-      var bit4Sensed = this._portBit4LastValue;
-      if (!bit4Sensed) {
-        // --- Changed later to 1 from 0 than to 0 from 1?
-        let chargeTime = this._portBit4ChangedFrom1Tacts - this._portBit4ChangedFrom0Tacts;
-        if (chargeTime > 0) {
-          // --- Yes, calculate charge time
-          chargeTime = chargeTime > 700 ? 2800 : 4 * chargeTime;
-
-          // --- Calculate time ellapsed since last change from 1 to 0
-          bit4Sensed = this.tacts - this._portBit4ChangedFrom1Tacts < chargeTime;
-        }
-      }
-
-      // --- Calculate bit 6 value
-      var bit6Value = this._portBit3LastValue ? 0x40 : bit4Sensed ? 0x40 : 0x00;
-
-      // --- Check for ULA 3
-      if (!bit4Sensed) {
-        bit6Value = 0x00;
-      }
-
-      // --- Merge bit 6 with port value
-      portValue = ((portValue & 0xbf) | bit6Value) & 0xff;
-    }
-    return portValue;
-  }
-
-  /**
-   * Wites the specified data byte to the ZX Spectrum generic output port.
-   * @param value Data byte to write
-   */
-  protected writePort0xFE(value: number): void {
-    // --- Extract bthe border color
-    this.screenDevice.borderColor = value & 0x07;
-
-    // --- Store the last EAR bit
-    var bit4 = value & 0x10;
-    this.beeperDevice.setEarBit(bit4 !== 0);
-
-    // --- Set the last value of bit3
-    this._portBit3LastValue = (value & 0x08) !== 0;
-
-    // --- Instruct the tape device process the MIC bit
-    this.tapeDevice.processMicBit(this._portBit3LastValue);
-
-    // --- Manage bit 4 value
-    if (this._portBit4LastValue) {
-      // --- Bit 4 was 1, is it now 0?
-      if (!bit4) {
-        this._portBit4ChangedFrom1Tacts = this.tacts;
-        this._portBit4LastValue = false;
-      }
-    } else {
-      // --- Bit 4 was 0, is it now 1?
-      if (bit4) {
-        this._portBit4ChangedFrom0Tacts = this.tacts;
-        this._portBit4LastValue = true;
-      }
-    }
-  }
-
-  /**
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
   protected delayContendedIo(address: number): void {
-    const spectrum = this;
-    var lowbit = (address & 0x0001) !== 0;
-
-    // --- Check for contended range
-    if ((address & 0xc000) === 0x4000) {
-      if (lowbit) {
-        // --- Low bit set, C:1, C:1, C:1, C:1
-        applyContentionDelay();
-        this.tactPlus1();
-        applyContentionDelay();
-        this.tactPlus1();
-        applyContentionDelay();
-        this.tactPlus1();
-        applyContentionDelay();
-        this.tactPlus1();
-      } else {
-        // --- Low bit reset, C:1, C:3
-        applyContentionDelay();
-        this.tactPlus1();
-        applyContentionDelay();
-        this.tactPlus3();
-      }
-    } else {
-      if (lowbit) {
-        // --- Low bit set, N:4
-        this.tactPlus4();
-      } else {
-        // --- Low bit reset, C:1, C:3
-        this.tactPlus1();
-        applyContentionDelay();
-        this.tactPlus3();
-      }
-    }
-
-    this.totalContentionDelaySinceStart += 4;
-    this.contentionDelaySincePause += 4;
-
-    // --- Apply I/O contention
-    function applyContentionDelay(): void {
-      const delay = spectrum.getContentionValue(spectrum.currentFrameTact);
-      spectrum.tactPlusN(delay);
-      spectrum.totalContentionDelaySinceStart += delay;
-      spectrum.contentionDelaySincePause += delay;
-    }
+    // TODO: Implement this
   }
 
   /**

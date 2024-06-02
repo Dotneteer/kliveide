@@ -1,10 +1,8 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
-export function readDivMmcControlPort(machine: IZxNextMachine, ulaPort: number): number {
+export function readDivMmcControlPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;
 }
 
-export function writeDivMmmcControlPort(machine: IZxNextMachine, value: number): void {
+export function writeDivMmmcControlPort(value: number): void {
   // TODO: Implement this
 }
