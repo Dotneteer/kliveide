@@ -1,9 +1,11 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
+import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
 import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
+import { NextScreenDevice } from "@emu/machines/zxNext/NextScreenDevice";
 import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
 import { SpriteDevice } from "@emu/machines/zxNext/sprites/SpriteDevice";
 import { TilemapDevice } from "@emu/machines/zxNext/TilemapDevice";
@@ -19,11 +21,13 @@ export interface IZxNextMachine extends IZ80Machine {
    */
   get romId(): string;
 
-  portManager: NextIoPortManager
+  portManager: NextIoPortManager;
 
   memoryDevice: MemoryDevice;
 
   nextRegDevice: NextRegDevice;
+
+  divMmcDevice: DivMmcDevice;
 
   layer2Device: Layer2Device;
 
@@ -36,4 +40,13 @@ export interface IZxNextMachine extends IZ80Machine {
   dmaDevice: DmaDevice;
 
   copperDevice: CopperDevice;
+
+  screenDevice: NextScreenDevice
+
+  /**
+   * Reads the screen memory byte
+   * @param offset Offset from the beginning of the screen memory
+   * @returns The byte at the specified screen memory location
+   */
+  readScreenMemory(offset: number): number;
 }

@@ -26,6 +26,8 @@ import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
 import { OFFS_NEXT_ROM, MemoryDevice } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
+import { DivMmcDevice } from "./DivMmcDevice";
+import { NextScreenDevice } from "./NextScreenDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -54,6 +56,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   nextRegDevice: NextRegDevice;
 
+  divMmcDevice: DivMmcDevice;
+
   layer2Device: Layer2Device;
 
   paletteDevice: PaletteDevice;
@@ -74,7 +78,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Represents the screen device of ZX Spectrum 48K
    */
-  screenDevice: IScreenDevice;
+  screenDevice: NextScreenDevice;
 
   /**
    * Represents the beeper device of ZX Spectrum 48K
@@ -110,6 +114,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize devices
     this.nextRegDevice = new NextRegDevice(this);
+    this.divMmcDevice = new DivMmcDevice(this);
     this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
@@ -117,9 +122,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new KeyboardDevice(this);
-    this.screenDevice = new CommonScreenDevice(
+    this.screenDevice = new NextScreenDevice(
       this,
-      CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
+      NextScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.nextRegDevice = new NextRegDevice(this);
@@ -130,6 +135,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     super.reset();
     this.memoryDevice.reset();
     this.nextRegDevice.reset();
+    this.divMmcDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();

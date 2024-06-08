@@ -11,7 +11,6 @@ import { readNextRegSelectPort, writeNextRegSelectPort } from "./NextRegSelectPo
 import { readNextRegDataPort, writeNextRegDataPort } from "./NextRegDataPort";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
-import { readLayer2Port, writeLayer2Port } from "./Layer2PortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
 import { readUartRxPort, writeUartRxPort } from "./UartRxPortHandler";
 import { readUartSelectPort, writeUartSelectPort } from "./UartSelectPortHandler";
@@ -32,7 +31,6 @@ import {
 } from "./DacPortHandler";
 import { writeSpiCsPort } from "./SpiCsPortHandler";
 import { readSpiDataPort, writeSpiDataPort } from "./SpiDataPortHandler";
-import { readDivMmcControlPort, writeDivMmmcControlPort } from "./DivMmmcControlPortHandler";
 import {
   readKempstonJoy1AliasPort,
   readKempstonJoy1Port,
@@ -185,8 +183,10 @@ export class NextIoPortManager {
       port: 0x123b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0010_0011_1011,
-      readerFns: readLayer2Port,
-      writerFns: writeLayer2Port
+      readerFns: () => machine.layer2Device.port123bValue,
+      writerFns: (_, v) => {
+        machine.layer2Device.port123bValue = v;
+      }
     });
     r({
       description: "UART Tx",
@@ -380,8 +380,10 @@ export class NextIoPortManager {
       port: 0xe3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0011,
-      readerFns: readDivMmcControlPort,
-      writerFns: writeDivMmmcControlPort
+      readerFns: () => machine.divMmcDevice.port0xe3Value,
+      writerFns: (_, v) => {
+        machine.divMmcDevice.port0xe3Value = v;
+      }
     });
     r({
       description: "Kempston mouse x",

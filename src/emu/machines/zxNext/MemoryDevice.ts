@@ -17,8 +17,6 @@ export type MemoryPageInfo = {
   offset: number;
   bank16k?: number;
   bank8k?: number;
-  isReadOnly?: boolean;
-  contended?: boolean;
 };
 
 /**
@@ -38,6 +36,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   useShadowScreen: boolean;
   allRamMode: boolean;
   specialConfig: number;
+
+  enableAltRom: boolean;
+  altRomVisibleOnlyForWrites: boolean;
+  lockRom1: boolean;
+  lockRom0: boolean;
+  reg8CLowNibble: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
 
@@ -118,21 +122,14 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param readerFn Optional memory reader function
    * @param writerFn Optional memory writer function (if not specified, the memory is read-only)
    */
-  setPageInfo(
-    pageIndex: number,
-    offset: number,
-    bank16k: number,
-    bank8k: number,
-    contended: boolean
-  ) {
+  setPageInfo(pageIndex: number, offset: number, bank16k: number, bank8k: number) {
     if (pageIndex < 0 || pageIndex > 7) {
       throw new Error(`Invalid page index ${pageIndex}`);
     }
     this.pageInfo[pageIndex] = {
       offset,
       bank16k,
-      bank8k,
-      contended
+      bank8k
     };
   }
 
@@ -141,10 +138,18 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param address 16-bit memory address to read
    */
   readMemory(address: number): number {
-    address &= 0xffff;
-    const pageOffset = address & 0x1fff;
-    const pageInfo = this.pageInfo[address >>> 13];
-    return this.memory[pageInfo.offset + pageOffset];
+    const layer2Device = this.machine.layer2Device;
+    const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
+
+    if (layer2Device.enableMappingForReads && address < layer2Size) {
+      // --- Read from layer2 memory
+      const offset = this.getLayer2MemoryOffset();
+      return this.memory[offset + address];
+    }
+
+    // --- Read the memory according to bank information
+    const slotInfo = this.pageInfo[address >>> 13];
+    return this.memory[slotInfo.offset + (address & 0x1fff)];
   }
 
   /**
@@ -153,12 +158,49 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param data Data to write
    */
   writeMemory(address: number, data: number): void {
-    address &= 0xffff;
-    const pageOffset = address & 0x1fff;
-    const pageInfo = this.pageInfo[address >>> 13];
-    if (!pageInfo.isReadOnly) {
-      this.memory[pageInfo.offset + pageOffset] = data;
+    const divMmcDevice = this.machine.divMmcDevice;
+    // --- Check if alternate ROM is being written
+    if (
+      address < 0x4000 &&
+      this.enableAltRom &&
+      this.altRomVisibleOnlyForWrites &&
+      divMmcDevice.conmem &&
+      !divMmcDevice.divifaceAutomaticPaging
+    ) {
+      // --- Write to the alternative ROM area
+      const romOffset = this.lockRom1
+        ? OFFS_ALT_ROM_1
+        : this.lockRom0
+          ? OFFS_ALT_ROM_0
+          : this.selectedBankLsb
+            ? OFFS_ALT_ROM_1
+            : OFFS_ALT_ROM_0;
+      this.memory[romOffset + address] = data;
     }
+
+    // --- Check Layer 2
+    const layer2Device = this.machine.layer2Device;
+    const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
+    if (
+      layer2Device.enableMappingForWrites &&
+      layer2Size === 0xc000 &&
+      !divMmcDevice.conmem &&
+      !divMmcDevice.divifaceAutomaticPaging &&
+      address < layer2Size
+    ) {
+      const offset = this.getLayer2MemoryOffset();
+      this.memory[offset + address] = data;
+      return;
+    }
+
+    // --- Check ROM is being written
+    if (address < 0x4000 && !this.allRamMode) {
+      return;
+    }
+
+    // --- Write the memory according to bank information
+    const slotInfo = this.pageInfo[address >>> 13];
+    this.memory[slotInfo.offset + (address & 0x1fff)] = data;
   }
 
   /**
@@ -210,7 +252,51 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Gets the value to be read from the next register 8E
+   * Gets the value of the specified MMU register
+   * @param index MMU register index
+   */
+  getNextRegMmuValue(index: number): number {
+    return this.mmuRegs[index & 0x07];
+  }
+
+  /**
+   * Sets the value of the specified MMU register
+   * @param index MMU register index
+   * @param value Value to set
+   */
+  setNextRegMmmuValue(index: number, value: number): void {
+    this.mmuRegs[index & 0x07] = value;
+    this.updateMemoryConfig();
+  }
+
+  /**
+   * Gets the value to be read from the Next register $8C
+   */
+  get nextReg8CValue(): number {
+    return (
+      (this.enableAltRom ? 0x80 : 0x00) |
+      (this.altRomVisibleOnlyForWrites ? 0x40 : 0x00) |
+      (this.lockRom1 ? 0x20 : 0x00) |
+      (this.lockRom0 ? 0x10 : 0x00) |
+      (this.reg8CLowNibble & 0x0f)
+    );
+  }
+
+  /**
+   * Sets the value of the Next register $8C
+   * @param value Value to set
+   */
+  set nextReg8CValue(value: number) {
+    this.enableAltRom = (value & 0x80) !== 0;
+    this.altRomVisibleOnlyForWrites = (value & 0x40) !== 0;
+    this.lockRom1 = (value & 0x20) !== 0;
+    this.lockRom0 = (value & 0x10) !== 0;
+    this.reg8CLowNibble = value & 0x0f;
+    this.updateMemoryConfig();
+  }
+
+  /**
+   * Gets the value to be read from the Next register $8E
    */
   get nextReg8EValue(): number {
     return (
@@ -223,6 +309,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     );
   }
 
+  /**
+   * Sets the value of the Next register $8E
+   */
   set nextReg8EValue(value: number) {
     // --- Bit 3 indicates
     if (value & 0x08) {
@@ -244,5 +333,25 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   private updateMemoryConfig(): void {
     // TODO: Implement memory configuration changes
+  }
+
+  /**
+   * Gets the offset of the Layer 2 memory according to the current configuration
+   */
+  private getLayer2MemoryOffset(): number {
+    const layer2Device = this.machine.layer2Device;
+    let layer2Offset = 0;
+    switch (layer2Device.bank) {
+      case 0x01:
+        layer2Offset = 0x4000;
+        break;
+      case 0x02:
+        layer2Offset = 0x8000;
+        break;
+    }
+    const ramBank = layer2Device.useShadowScreen
+      ? layer2Device.shadowRamBank
+      : layer2Device.activeRamBank;
+    return OFFS_NEXT_RAM + ramBank * 0x4000 + layer2Device.bankOffset * 0x4000 + layer2Offset;
   }
 }

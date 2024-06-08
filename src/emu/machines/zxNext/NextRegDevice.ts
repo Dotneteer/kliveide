@@ -33,6 +33,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   r07_ActualCpuSpeed = 0;
   r07_ProgrammedCpuSpeed = 0;
 
+  // --- Reg 0x09 state
+  r09_Ay2Mono = false;
+  r09_Ay1Mono = false;
+  r09_Ay0Mono = false;
+  r09_SpriteIdLockstep = false;
+  r09_ResetDivMmcMapram = false;
+  r09_SilenceHdmiAudio = false;
+  r09_ScanlineWeight = 0;
+
+  // --- Reg 0x44 state
   r44_FirstWrite = false;
   r44_PaletteValue9Bit = 0;
 
@@ -507,7 +517,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x12,
       description: "Layer 2 Active RAM bank",
-      writeFn: this.writeLayer2ActiveRamBank,
+      readFn: () => machine.layer2Device.activeRamBank,
+      writeFn: (v) => (machine.layer2Device.activeRamBank = v & 0x7f),
       slices: [
         {
           mask: 0x7f,
@@ -519,7 +530,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x13,
       description: "Layer 2 Shadow RAM bank",
-      writeFn: this.writeLayer2ShadowRamBank,
+      readFn: () => machine.layer2Device.shadowRamBank,
+      writeFn: (v) => (machine.layer2Device.shadowRamBank = v & 0x7f),
       slices: [
         {
           mask: 0x7f,
@@ -1058,7 +1070,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x69,
       description: "Display Control 1",
-      writeFn: this.writeDisplayControl1,
+      readFn: () =>
+        (machine.layer2Device.visible ? 0x80 : 0) |
+        (machine.memoryDevice.useShadowScreen ? 0x40 : 0) |
+        (machine.screenDevice.timexColorCombination << 3) |
+        machine.screenDevice.timexScreenMode,
+      writeFn: (v) => {
+        machine.layer2Device.visible = !!(v & 0x80);
+        machine.memoryDevice.useShadowScreen = !!(v & 0x40);
+        machine.screenDevice.timexColorCombination = (v & 0x38) >> 3;
+        machine.screenDevice.timexScreenMode = v & 0x07;
+      },
       slices: [
         {
           mask: 0x80,
@@ -1713,7 +1735,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8c,
       description: "Alternate ROM",
-      writeFn: this.writeAlternateRom,
+      readFn: () => this.machine.memoryDevice.nextReg8CValue,
+      writeFn: (v) => (this.machine.memoryDevice.nextReg8CValue = v),
       slices: [
         {
           mask: 0x80,
@@ -1762,7 +1785,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x8e,
       description: "Spectrum 128K Memory Mapping",
       readFn: () => this.machine.memoryDevice.nextReg8EValue,
-      writeFn: v => this.machine.memoryDevice.nextReg8EValue = v,
+      writeFn: (v) => (this.machine.memoryDevice.nextReg8EValue = v),
       slices: [
         {
           mask: 0x80,
@@ -2682,54 +2705,54 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- Common reset operation for soft and hard reset
   private commonReset(): void {
     this.directSetRegValue(0x00, 0x08); // --- Machine type: Emulators
-    this.directSetRegValue(0x01, 0x32); // --- Machine core: 3.2     
-    this.directSetRegValue(0x0e, 0x00); // --- Machine core subminor: 0            
+    this.directSetRegValue(0x01, 0x32); // --- Machine core: 3.2
+    this.directSetRegValue(0x0e, 0x00); // --- Machine core subminor: 0
     this.directSetRegValue(0x12, 0x08); // --- Layer 2 active RAM bank
     this.directSetRegValue(0x13, 0x0b); // --- Layer 2 shadow RAM bank
     this.directSetRegValue(0x14, TBBLUE_DEF_TRANSPARENT_COLOR);
     this.directSetRegValue(0x15, 0x00); // --- No LoRes mode;
-                                        // --- No Sprite priority
-                                        // --- Disable sprite clipping in over border mode
-                                        // --- Layer priority: SLU
-                                        // --- Disbale sprite over border
-                                        // --- Disable sprites
+    // --- No Sprite priority
+    // --- Disable sprite clipping in over border mode
+    // --- Layer priority: SLU
+    // --- Disbale sprite over border
+    // --- Disable sprites
     this.directSetRegValue(0x16, 0x00); // --- Layer 2 X scroll LSB = 0;
     this.directSetRegValue(0x17, 0x00); // --- Layer 2 Y scroll = 0;
     this.directSetRegValue(0x1c, 0x00); // --- Tilemap clip index = 0
-                                        // --- ULA/LoRes clip index = 0
-                                        // --- Sprite clip index = 0
-                                        // --- Layer 2 clip index = 0
+    // --- ULA/LoRes clip index = 0
+    // --- Sprite clip index = 0
+    // --- Layer 2 clip index = 0
     this.directSetRegValue(0x1e, 0x00); // --- Active line MSB = 0
     this.directSetRegValue(0x1f, 0x00); // --- Active line LSB = 0
     this.directSetRegValue(0x22, 0x00); // --- ULA is not asserting an interrupt
-                                        // --- Alias of ULA interrupt bit in register 0xc4
-                                        // --- Alias of line interrupt bit in register 0xc4
-                                        // --- Line interrupt value MSB = 0
+    // --- Alias of ULA interrupt bit in register 0xc4
+    // --- Alias of line interrupt bit in register 0xc4
+    // --- Line interrupt value MSB = 0
     this.directSetRegValue(0x23, 0x00); // --- Line interrupt value LSB = 0
     this.directSetRegValue(0x32, 0x00); // --- LoRes X Scroll = 0
     this.directSetRegValue(0x33, 0x00); // --- LoRes Y Scroll = 0
     this.directSetRegValue(0x42, 0x0f); // --- ULA Next Attribute byte format = 0x0f
     this.directSetRegValue(0x43, 0x00); // --- Enable palette write auto increment
-                                        // --- Select ULA first palette
-                                        // --- First sprite palette
-                                        // --- First layer 2 palette
-                                        // --- First ULA palette
-                                        // --- Disable ULA Next mode
+    // --- Select ULA first palette
+    // --- First sprite palette
+    // --- First layer 2 palette
+    // --- First ULA palette
+    // --- Disable ULA Next mode
     this.directSetRegValue(0x4a, 0x00); // --- Fallback color = 0x00
     this.directSetRegValue(0x4b, TBBLUE_DEF_TRANSPARENT_COLOR);
     this.directSetRegValue(0x4c, 0x0f); // --- Tilemap transparency index = 0x0f
     this.directSetRegValue(0x61, 0x00); // --- Copper address LSB
     this.directSetRegValue(0x62, 0x00); // --- Copper fully stopped
-                                        // --- Copper instruction memory address MSB = 0
+    // --- Copper instruction memory address MSB = 0
     this.directSetRegValue(0x6b, 0x00); // --- Disable tilemap
-                                        // --- 40x32 tilemap
-                                        // --- Use attribute entry in tilemap
-                                        // --- Palette select = 0
-                                        // --- Textmode select = 0
-                                        // --- 512 tile mode inactive
-                                        // --- No tilemap on top
+    // --- 40x32 tilemap
+    // --- Use attribute entry in tilemap
+    // --- Palette select = 0
+    // --- Textmode select = 0
+    // --- 512 tile mode inactive
+    // --- No tilemap on top
     this.directSetRegValue(0x70, 0x00); // --- Layer 2 resolution: 256x192x8
-                                        // --- Palette offset = 0
+    // --- Palette offset = 0
   }
 
   // --- Soft reset
@@ -2762,8 +2785,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
     this.directSetRegValue(0x09, 0x00); // --- All Peripheral settings #4 are 0
     this.directSetRegValue(0x0a, 0x01); // --- Use Multiface +3 type (enable port 0x3f, disable port 0xbf)
-                                        // --- Disable DivMMC automap
-                                        // --- Use default mouse DPI
+    // --- Disable DivMMC automap
+    // --- Use default mouse DPI
     this.directSetRegValue(0x50, 0xff); // --- Map ROM into 0x0000-0x1fff
     this.directSetRegValue(0x51, 0xff); // --- Map ROM into 0x2000-0x3fff
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
@@ -2859,7 +2882,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   private writePeripheral3Setting(value: number): void {}
 
-  private writePeripheral4Setting(value: number): void {}
+  // --- Register 0x09
+  private writePeripheral4Setting(value: number): void {
+    this.r09_Ay2Mono = (value & 0x80) !== 0;
+    this.r09_Ay1Mono = (value & 0x40) !== 0;
+    this.r09_Ay0Mono = (value & 0x20) !== 0;
+    this.r09_SpriteIdLockstep = (value & 0x10) !== 0;
+    this.r09_ResetDivMmcMapram = (value & 0x08) !== 0;
+    this.r09_SilenceHdmiAudio = (value & 0x04) !== 0;
+    this.r09_ScanlineWeight = value & 0x03;
+  }
 
   private writePeripheral5Setting(value: number): void {}
 
@@ -2868,10 +2900,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private writeCoreBoot(value: number): void {}
 
   private writeVideoTiming(value: number): void {}
-
-  private writeLayer2ActiveRamBank(value: number): void {}
-
-  private writeLayer2ShadowRamBank(value: number): void {}
 
   private writeGlobalTransparencyColour(value: number): void {}
 
@@ -3003,8 +3031,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   private writeUlaControl(value: number): void {}
 
-  private writeDisplayControl1(value: number): void {}
-
   private writeLoResControl(value: number): void {}
 
   private writeTilemapControl(value: number): void {}
@@ -3042,8 +3068,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private writeExpansionBusDecodingEnables4(value: number): void {}
 
   private writeExpansionBusIoPropagate(value: number): void {}
-
-  private writeAlternateRom(value: number): void {}
 
   private writeMemoryMappingMode(value: number): void {}
 
