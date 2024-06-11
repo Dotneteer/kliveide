@@ -265,10 +265,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param value Value to set
    */
   setNextRegMmmuValue(index: number, value: number): void {
-    console.log(`MMU[${index}]: ${toHexa2(value)}`);
     this.mmuRegs[index & 0x07] = value;
     this.updateMemoryConfig();
-    this.logStatus();
   }
 
   /**
