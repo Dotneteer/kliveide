@@ -124,4 +124,23 @@ zxvision.c:
     void set_menu_gui_zoom(void)
     
 
+Diviface references in TBBLUE (T), operaciones (O), cpu (C)
 
+- diviface_enabled (O, C)
+- diviface_disable (C)
+- diviface_paginacion_automatica_activa (T, O)
+- diviface_control_register (T, O)
+- diviface_write_control_register (O)
+- diviface_set_peek_poke_functions (C)
+- diviface_restore_peek_poke_functions (C)
+- diviface_pre_opcode_fetch (<-- Machine execution frame)
+- diviface_post_opcode_fetch (<-- Machine execution frame)
+- diviface_eprom_write_jumper (T, probably not the newest)
+- diviface_memory_pointer (T)
+- diviface_ram_memory_pointer (T, probably not the newest)
+- diviface_allow_automatic_paging (T)
+- diviface_read_control_register (O)
+- diviface_reset (C)
+- diviface_conmem_enabled (T, probably not the newest)
+- diviface_mapram_enabled (T, probably not the newest)
+- get_diviface_ram_mask (T, probably not the newest)

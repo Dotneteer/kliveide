@@ -2,7 +2,6 @@ import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
 import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
 import { ISpectrumKeyboardDevice } from "../zxSpectrum/ISpectrumKeyboardDevice";
-import { IScreenDevice } from "../../abstractions/IScreenDevice";
 import { ITapeDevice } from "../../abstractions/ITapeDevice";
 import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -16,7 +15,6 @@ import { Z80NMachineBase } from "./Z80NMachineBase";
 import { MachineModel } from "@common/machines/info-types";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
-import { CommonScreenDevice } from "../CommonScreenDevice";
 import { NextRegDevice } from "./NextRegDevice";
 import { Layer2Device } from "./Layer2Device";
 import { PaletteDevice } from "./PaletteDevice";
@@ -33,18 +31,6 @@ import { NextScreenDevice } from "./NextScreenDevice";
  * The common core functionality of the ZX Spectrum Next virtual machine.
  */
 export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
-  get64KFlatMemory(): Uint8Array {
-    throw new Error("Method not implemented.");
-  }
-  get16KPartition(index: number): Uint8Array {
-    throw new Error("Method not implemented.");
-  }
-  getCurrentPartitions(): number[] {
-    throw new Error("Method not implemented.");
-  }
-  getCurrentPartitionLabels(): string[] {
-    throw new Error("Method not implemented.");
-  }
   /**
    * The unique identifier of the machine type
    */
@@ -128,7 +114,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.nextRegDevice = new NextRegDevice(this);
-    this.reset();
+    this.hardReset();
   }
 
   reset(): void {
@@ -158,11 +144,27 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  async hardReset(): Promise<void> {
-    await super.hardReset();
+  hardReset(): void {
+    super.hardReset();
     this.reset();
     this.memoryDevice.hardReset();
     this.nextRegDevice.hardReset();
+  }
+
+  get64KFlatMemory(): Uint8Array {
+    return this.memoryDevice.get64KFlatMemory();
+  }
+
+  get16KPartition(index: number): Uint8Array {
+    return this.memoryDevice.get16KPartition(index);
+  }
+
+  getCurrentPartitions(): number[] {
+    return this.memoryDevice.getPartitions();
+  }
+
+  getCurrentPartitionLabels(): string[] {
+    return this.memoryDevice.getPartitionLabels();
   }
 
   /**
@@ -275,15 +277,37 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
-   * This method implements memory operation delays.
-   * @param address Memory address
+   * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
+   * @param address
+   * @returns Byte read from the specified port
    *
-   * Whenever the CPU accesses the 0x4000-0x7fff memory range, it contends with the ULA. We keep the contention
-   * delay values for a particular machine frame tact in _contentionValues.Independently of the memory address,
-   * the Z80 CPU takes 3 T-states to read or write the memory contents.
+   * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
+   * I/O port read operation.
    */
-  delayAddressBusAccess(address: number): void {
-    // TODO: Implement this
+  doReadPort(address: number): number {
+    return this.portManager.readPort(address);
+  }
+
+  /**
+   * This function writes a byte (8-bit) to the 16-bit I/O port address provided in the first argument.
+   * @param address Port address
+   * @param value Value to send to the port
+   *
+   * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
+   * I/O port write operation.
+   */
+  doWritePort(address: number, value: number): void {
+    this.portManager.writePort(address, value);
+  }
+
+  /**
+   * Sets a TBBlue register value
+   * @param address Register address
+   * @param value Register value;
+   */
+  tbblueOut(address: number, value: number): void {
+    this.nextRegDevice.directSetRegValue(address, value);
+    super.tbblueOut(address, value);
   }
 
   /**
@@ -522,13 +546,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   shouldRaiseInterrupt(): boolean {
     return this.currentFrameTact < 32;
-  }
-
-  /**
-   * Check for current tape mode after each executed instruction
-   */
-  afterInstructionExecuted(): void {
-    this.tapeDevice.updateTapeMode();
   }
 
   /**

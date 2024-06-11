@@ -1,6 +1,79 @@
 REG $07: $03
   - CPU Speed: 28 MHz
-  
+
+REG $30: $B0
+  - allow changes to bits 6:4
+  - ZX +2A/+2B/+3 display timing
+  - Configuration mode
+
+REG $C0: $08
+  - Enable stackless NMI
+  - Maskable interrupt mode: pulse
+
+REG $82: $FF
+  - Enable port ff
+  - Enable port 7ffd
+  - Enable port dffd
+  - Enable port 1ffd
+  - Enable +3 floating bus
+  - Enable port 6b zxn dma
+  - Enable port 1f kempston / md1
+  - Enable port 37 kempston 2 / md2
+
+REG $83: $FF
+  - Enable port e3 divmmc control
+  - Enable multiface (two variable ports)
+  - Enable port 103b,113b i2c
+  - Enable port e7,eb spi
+  - Enable port 133b,143b,153b,163b uart
+  - Enable port fadf,fbdf,ffdf mouse (also disables kempston alias on port df)
+  - Enable port 57,5b,303b sprites
+  - Enable port 123b layer2
+
+REG $84: $FF
+  - Enable port fffd,bffd ay
+  - Enable port 0f,1f,4f,5f dac soundrive mode 1
+  - Enable port f1,f3,f9,fb dac soundrive mode 2
+  - Enable port 3f,5f dac stereo profi covox
+  - Enable port 0f,4f dac stereo covox
+  - Enable port fb dac mono pentagon/atm (sd mode 2 off)
+  - Enable port b3 dac mono gs covox
+  - Enable port df dac mono specdrum, port 1f kempston alias
+
+REG $85: $FF
+  - Enable port bf3b,ff3b ula+
+  - Enable port 0b z80 dma
+  - Enable port eff7 pentagon 1024 memory
+  - Enable port 183b,193b,1a3b,1b3b,1c3b,1d3b,1e3b,1f3b z80 ctc
+  - Enable register reset mode (soft or hard reset selection)
+
+REG $80: $00
+  - Disable the expansion bus
+  - Disable romcs rom replacement from divmmc banks 14/15
+  - Enable i/o cycles & ignore iorqula
+  - Enable memory cycles & ignore romcs
+
+REG $81: $00
+  - Do not allow peripherals to override the ULA on some even port reads (rotronics wafadrive)
+  - Enable expansion bus nmi debounce (opus discovery)
+  - Do not propagate the max cpu clock at all times including when the expansion bus is off
+  - Max cpu speed when the expansion bus is on (currently fixed at 00 = 3.5MHz)
+
+REG $8A: $00
+  - Do not propagate port 0xeff7 io cycles (hard reset = 0)
+  - Do not propagate port 0xff io cycles (hard reset = 0)
+  - Do not propagate port 0x1ffd io cycles (hard reset = 0)
+  - Do not propagate port 0xdffd io cycles (hard reset = 0)
+  - Do not propagate port 0x7ffd io cycles (hard reset = 0)
+  - Do not propagate port 0xfe io cycles (hard reset = 0)
+
+REG $8F: $00
+  - Standard ZX 128k +3 memory mapping mode
+
+
+
+
+
 
 05: 5B (0101 1011)
   - 101: MD 1 (Joystick 1)

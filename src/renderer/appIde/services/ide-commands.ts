@@ -221,6 +221,14 @@ export function writeSuccessMessage(output: IOutputBuffer, text: string): void {
   writeMessage(output, text, "green");
 }
 
+export function toHexa8(value: number): string {
+  return value.toString(16).toUpperCase().padStart(8, "0");
+}
+
+export function toHexa6(value: number): string {
+  return value.toString(16).toUpperCase().padStart(6, "0");
+}
+
 export function toHexa4(value: number): string {
   return value.toString(16).toUpperCase().padStart(4, "0");
 }

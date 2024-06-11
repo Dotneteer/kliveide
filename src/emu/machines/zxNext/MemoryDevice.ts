@@ -1,5 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -44,6 +45,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   reg8CLowNibble: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
+
+  private _wasInAllRamMode = false;
 
   /**
    * Initializes the memory
@@ -98,8 +101,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
     this.mmuRegs[1] = 0xff;
-    this.mmuRegs[2] = 0x10;
-    this.mmuRegs[3] = 0x11;
+    this.mmuRegs[2] = 0x0A;
+    this.mmuRegs[3] = 0x0B;
     this.mmuRegs[4] = 0x04;
     this.mmuRegs[5] = 0x05;
     this.mmuRegs[6] = 0x00;
@@ -168,14 +171,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       !divMmcDevice.divifaceAutomaticPaging
     ) {
       // --- Write to the alternative ROM area
-      const romOffset = this.lockRom1
-        ? OFFS_ALT_ROM_1
-        : this.lockRom0
-          ? OFFS_ALT_ROM_0
-          : this.selectedBankLsb
-            ? OFFS_ALT_ROM_1
-            : OFFS_ALT_ROM_0;
-      this.memory[romOffset + address] = data;
+      this.memory[this.getAltRomOffset() + address] = data;
     }
 
     // --- Check Layer 2
@@ -200,6 +196,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Write the memory according to bank information
     const slotInfo = this.pageInfo[address >>> 13];
+    if (slotInfo.offset === OFFS_ERR_PAGE) {
+      // --- Do not write to the invalid page
+      return;
+    }
     this.memory[slotInfo.offset + (address & 0x1fff)] = data;
   }
 
@@ -265,8 +265,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param value Value to set
    */
   setNextRegMmmuValue(index: number, value: number): void {
+    console.log(`MMU[${index}]: ${toHexa2(value)}`);
     this.mmuRegs[index & 0x07] = value;
     this.updateMemoryConfig();
+    this.logStatus();
   }
 
   /**
@@ -331,8 +333,193 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
+  /**
+   * Get the 64K of addressable memory of the ZX Spectrum computer
+   * @returns Bytes of the flat memory
+   */
+  get64KFlatMemory(): Uint8Array {
+    const flat64 = new Uint8Array(0x1_0000);
+    for (let i = 0; i < 8; i++) {
+      const pageOffs = this.pageInfo[i].offset;
+      for (let j = 0; j < 0x2000; j++) {
+        flat64[i * 0x2000 + j] = this.memory[pageOffs + j];
+      }
+    }
+    return flat64;
+  }
+
+  /**
+   * Get the specified 16K partition of memory
+   * @param index Partition index
+   * @returns Bytes of the partition
+   *
+   * < 0 : ROM pages
+   * >= 0: RAM bank with the specified index
+   */
+  get16KPartition(index: number): Uint8Array {
+    const flat16 = new Uint8Array(0x1_0000);
+    const pageOffs = this.pageInfo[index * 2].offset;
+    for (let i = 0; i < 0x4000; i++) {
+      flat16[i + 0x0000] = this.memory[pageOffs + i];
+    }
+    return flat16;
+  }
+
+  /**
+   * Gets the current partition values for all 16K/8K partitions
+   */
+  getPartitions(): number[] {
+    return this.pageInfo.map((b) => b.bank16k);
+  }
+
+  /**
+   * Gets the current partition labels for all 16K/8K partitions
+   */
+  getPartitionLabels(): string[] {
+    return this.pageInfo.map((b) => {
+      if (b.bank16k === 0xff) {
+        return `ROM`;
+      }
+      return toHexa2(b.bank16k);
+    });
+  }
+
+  /**
+   * Get value directly from the physical memory
+   * @param index Absoulte memory address
+   * @returns Memory value
+   */
+  directRead(index: number): number {
+    return this.memory[index];
+  }
+
+  /**
+   * Set value directly into the physical memory
+   * @param index Absolute memory address
+   * @param value Value to set
+   */
+  directWrite(index: number, value: number): void {
+    this.memory[index] = value;
+  }
+
+  logStatus(): void {
+    for (let i = 0; i < 8; i++) {
+      const page = this.pageInfo[i];
+      console.log(
+        `Page ${i}: ${toHexa2(page.bank16k)} ${toHexa2(page.bank8k)} | ${toHexa6(page.offset)}`
+      );
+    }
+  }
+
+  /**
+   * Updates the memory configuration based on the current settings
+   */
   private updateMemoryConfig(): void {
-    // TODO: Implement memory configuration changes
+    if (this.allRamMode) {
+      // --- All RAM page setup
+      this._wasInAllRamMode = true;
+
+      switch (this.specialConfig) {
+        case 0:
+          this.setMemorySlotAndMmu(0, 0);
+          this.setMemorySlotAndMmu(1, 1);
+          this.setMemorySlotAndMmu(2, 2);
+          this.setMemorySlotAndMmu(3, 3);
+          break;
+        case 1:
+          // --- 0x01: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x6000
+          this.setMemorySlotAndMmu(0, 4);
+          this.setMemorySlotAndMmu(1, 5);
+          this.setMemorySlotAndMmu(2, 6);
+          this.setMemorySlotAndMmu(3, 7);
+          break;
+        case 2:
+          // --- 0x10: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x8000
+          this.setMemorySlotAndMmu(0, 4);
+          this.setMemorySlotAndMmu(1, 5);
+          this.setMemorySlotAndMmu(2, 6);
+          this.setMemorySlotAndMmu(3, 3);
+          break;
+        case 3:
+          // --- 0x11: 16K RAM at 0x0000, 16K RAM at 0x4000
+          this.setMemorySlotAndMmu(0, 4);
+          this.setMemorySlotAndMmu(1, 7);
+          this.setMemorySlotAndMmu(2, 6);
+          this.setMemorySlotAndMmu(3, 3);
+          break;
+      }
+    } else {
+      if (this._wasInAllRamMode) {
+        // --- Restore the original configuration
+        this.mmuRegs[0] = 0xff;
+        this.mmuRegs[1] = 0xff;
+        this.mmuRegs[2] = 0x10;
+        this.mmuRegs[3] = 0x11;
+        this.mmuRegs[4] = 0x04;
+        this.mmuRegs[5] = 0x05;
+        this.mmuRegs[6] = 0x00;
+        this.mmuRegs[7] = 0x01;
+        this._wasInAllRamMode = false;
+      }
+
+      // --- Normal mode page setup
+      const romPage = this.selectedRomMsb | this.selectedRomLsb;
+      this.setRomSlotByMmu(0, romPage * 2);
+      this.setRomSlotByMmu(1, romPage * 2 + 1);
+
+      this.setMemorySlotByMmu(2);
+      this.setMemorySlotByMmu(3);
+      this.setMemorySlotByMmu(4);
+      this.setMemorySlotByMmu(5);
+      this.setMemorySlotByMmu(6);
+      this.setMemorySlotByMmu(7);
+    }
+  }
+
+  /**
+   * Sets the specified 16K memory slot to the specified 16K bank
+   * @param slotNo
+   * @param bank16k
+   */
+  private setMemorySlotAndMmu(slotNo: number, bank16k: number): void {
+    let bank8k = bank16k * 2;
+    let offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
+    this.setPageInfo(slotNo * 2, offset, bank16k, bank8k);
+    bank8k++;
+    offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
+    this.setPageInfo(slotNo * 2 + 1, OFFS_NEXT_RAM + offset, bank16k, bank8k);
+  }
+
+  private setMemorySlotByMmu(slotNo: number): void {
+    const bank8k = this.mmuRegs[slotNo];
+    let offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
+    this.setPageInfo(slotNo, offset, bank8k << 1, bank8k);
+  }
+
+  private setRomSlotByMmu(slotNo: number, pageNo): void {
+    const bank8k = this.mmuRegs[slotNo];
+    if (bank8k !== 0xff) {
+      // --- It is not a ROM, uset the MMU reg value
+      this.setMemorySlotByMmu(slotNo);
+      return;
+    }
+
+    // --- It is a ROM, use the specified page number
+    if (this.enableAltRom && !this.altRomVisibleOnlyForWrites) {
+      this.setPageInfo(slotNo, this.getAltRomOffset(), 0xff, 0xff);
+    } else {
+      this.setPageInfo(slotNo, OFFS_NEXT_ROM + pageNo * 0x2000, 0xff, 0xff);
+    }
+  }
+
+  private getAltRomOffset(): number {
+    return this.lockRom1
+      ? OFFS_ALT_ROM_1
+      : this.lockRom0
+        ? OFFS_ALT_ROM_0
+        : this.selectedBankLsb
+          ? OFFS_ALT_ROM_1
+          : OFFS_ALT_ROM_0;
   }
 
   /**

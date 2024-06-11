@@ -7,8 +7,6 @@ import {
   writeSpectrumP3FdcControlPort
 } from "./SpectrumP3FdcControlPortHandler";
 import { writePentagon1024MemoryPort } from "./PentagonMemoryPortHandler";
-import { readNextRegSelectPort, writeNextRegSelectPort } from "./NextRegSelectPort";
-import { readNextRegDataPort, writeNextRegDataPort } from "./NextRegDataPort";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
@@ -151,16 +149,16 @@ export class NextIoPortManager {
       port: 0x243b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0010_0100_0011_1011,
-      readerFns: readNextRegSelectPort,
-      writerFns: writeNextRegSelectPort
+      readerFns: () => machine.nextRegDevice.getNextRegisterIndex(),
+      writerFns: (_, v) => machine.nextRegDevice.setNextRegisterIndex(v)
     });
     r({
       description: "NextREG Data",
       port: 0x253b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0010_0101_0011_1011,
-      readerFns: readNextRegDataPort,
-      writerFns: writeNextRegDataPort
+      readerFns: () => machine.nextRegDevice.getNextRegisterValue(),
+      writerFns: (_, v) => machine.nextRegDevice.setNextRegisterValue(v)
     });
     r({
       description: "i2c SCL",
