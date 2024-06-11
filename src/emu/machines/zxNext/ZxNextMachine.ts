@@ -1,0 +1,567 @@
+import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
+import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
+import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
+import { ISpectrumKeyboardDevice } from "../zxSpectrum/ISpectrumKeyboardDevice";
+import { ITapeDevice } from "../../abstractions/ITapeDevice";
+import { SysVar } from "@abstractions/SysVar";
+import { CodeToInject } from "@abstractions/CodeToInject";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
+import { KeyMapping } from "@renderer/abstractions/KeyMapping";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { Z80NMachineBase } from "./Z80NMachineBase";
+import { MachineModel } from "@common/machines/info-types";
+import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
+import { SpectrumBeeperDevice } from "../BeeperDevice";
+import { NextRegDevice } from "./NextRegDevice";
+import { Layer2Device } from "./Layer2Device";
+import { PaletteDevice } from "./PaletteDevice";
+import { TilemapDevice } from "./TilemapDevice";
+import { SpriteDevice } from "./sprites/SpriteDevice";
+import { DmaDevice } from "./DmaDevice";
+import { CopperDevice } from "./CopperDevice";
+import { OFFS_NEXT_ROM, MemoryDevice } from "./MemoryDevice";
+import { NextIoPortManager } from "./io-ports/NextIoPortManager";
+import { DivMmcDevice } from "./DivMmcDevice";
+import { NextScreenDevice } from "./NextScreenDevice";
+
+/**
+ * The common core functionality of the ZX Spectrum Next virtual machine.
+ */
+export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
+  /**
+   * The unique identifier of the machine type
+   */
+  public readonly machineId = "zxnext";
+
+  portManager: NextIoPortManager;
+
+  memoryDevice: MemoryDevice;
+
+  nextRegDevice: NextRegDevice;
+
+  divMmcDevice: DivMmcDevice;
+
+  layer2Device: Layer2Device;
+
+  paletteDevice: PaletteDevice;
+
+  tilemapDevice: TilemapDevice;
+
+  spriteDevice: SpriteDevice;
+
+  dmaDevice: DmaDevice;
+
+  copperDevice: CopperDevice;
+
+  /**
+   * Represents the keyboard device of ZX Spectrum 48K
+   */
+  keyboardDevice: ISpectrumKeyboardDevice;
+
+  /**
+   * Represents the screen device of ZX Spectrum 48K
+   */
+  screenDevice: NextScreenDevice;
+
+  /**
+   * Represents the beeper device of ZX Spectrum 48K
+   */
+  beeperDevice: ISpectrumBeeperDevice;
+
+  /**
+   * Represents the floating port device of ZX Spectrum 48K
+   */
+  floatingBusDevice: IFloatingBusDevice;
+
+  /**
+   * Represents the tape device of ZX Spectrum 48K
+   */
+  tapeDevice: ITapeDevice;
+
+  /**
+   * Initialize the machine
+   */
+  constructor(public readonly modelInfo?: MachineModel) {
+    super();
+
+    // --- Set up machine attributes
+    this.baseClockFrequency = 3_500_000;
+    this.clockMultiplier = 1;
+    this.delayedAddressBus = true;
+
+    // --- Create and initialize the I/O port manager
+    this.portManager = new NextIoPortManager(this);
+
+    // --- Create and initialize the memory
+    this.memoryDevice = new MemoryDevice(this);
+
+    // --- Create and initialize devices
+    this.nextRegDevice = new NextRegDevice(this);
+    this.divMmcDevice = new DivMmcDevice(this);
+    this.layer2Device = new Layer2Device(this);
+    this.paletteDevice = new PaletteDevice(this);
+    this.tilemapDevice = new TilemapDevice(this);
+    this.spriteDevice = new SpriteDevice(this);
+    this.dmaDevice = new DmaDevice(this);
+    this.copperDevice = new CopperDevice(this);
+    this.keyboardDevice = new KeyboardDevice(this);
+    this.screenDevice = new NextScreenDevice(
+      this,
+      NextScreenDevice.ZxSpectrum48PalScreenConfiguration
+    );
+    this.beeperDevice = new SpectrumBeeperDevice(this);
+    this.nextRegDevice = new NextRegDevice(this);
+    this.hardReset();
+  }
+
+  reset(): void {
+    super.reset();
+    this.memoryDevice.reset();
+    this.nextRegDevice.reset();
+    this.divMmcDevice.reset();
+    this.layer2Device.reset();
+    this.paletteDevice.reset();
+    this.tilemapDevice.reset();
+    this.spriteDevice.reset();
+    this.dmaDevice.reset();
+    this.copperDevice.reset();
+    this.keyboardDevice.reset();
+    this.screenDevice.reset();
+    this.beeperDevice.reset();
+  }
+
+  async setup(): Promise<void> {
+    // --- Get the ZX Spectrum Next ROM file
+    const romContents = await this.loadRomFromFile("roms/enNextZx.rom");
+
+    // --- Initialize the machine's ROM
+    this.memoryDevice.upload(romContents, OFFS_NEXT_ROM);
+  }
+
+  /**
+   * Emulates turning on a machine (after it has been turned off).
+   */
+  hardReset(): void {
+    super.hardReset();
+    this.reset();
+    this.memoryDevice.hardReset();
+    this.nextRegDevice.hardReset();
+  }
+
+  get64KFlatMemory(): Uint8Array {
+    return this.memoryDevice.get64KFlatMemory();
+  }
+
+  get16KPartition(index: number): Uint8Array {
+    return this.memoryDevice.get16KPartition(index);
+  }
+
+  getCurrentPartitions(): number[] {
+    return this.memoryDevice.getPartitions();
+  }
+
+  getCurrentPartitionLabels(): string[] {
+    return this.memoryDevice.getPartitionLabels();
+  }
+
+  /**
+   * Stores the key strokes to emulate
+   */
+  protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
+  /**
+   * Stores the last rendered machine frame tact.
+   */
+  protected lastRenderedFrameTact: number;
+
+  /**
+   * Gets the ROM ID to load the ROM file
+   */
+  get romId(): string {
+    return this.machineId;
+  }
+
+  /**
+   * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
+   */
+  get isSpectrum48RomSelected(): boolean {
+    return true;
+  }
+
+  /**
+   * Indicates if the machine's operating system is initialized
+   */
+  get isOsInitialized(): boolean {
+    return this.iy === 0x5c3a;
+  }
+
+  /**
+   * Reads the screen memory byte
+   * @param offset Offset from the beginning of the screen memory
+   * @returns The byte at the specified screen memory location
+   */
+  readScreenMemory(offset: number): number {
+    // TODO: Implement this
+    return 0xff;
+  }
+
+  /**
+   * Gets the audio samples rendered in the current frame
+   */
+  getAudioSamples(): number[] {
+    // TODO: Implement this
+    return [];
+  }
+
+  /**
+   * Gets the structure describing system variables
+   */
+  get sysVars(): SysVar[] {
+    // TODO: Implement this
+    return [];
+  }
+
+  /**
+   * Get the number of T-states in a display line (use -1, if this info is not available)
+   */
+  get tactsInDisplayLine(): number {
+    return this.screenDevice.screenWidth;
+  }
+
+  /**
+   * Read the byte at the specified memory address.
+   * @param address 16-bit memory address
+   * @return The byte read from the memory
+   */
+  doReadMemory(address: number): number {
+    return this.memoryDevice.readMemory(address);
+  }
+
+  /**
+   * This function implements the memory read delay of the CPU.
+   * @param address Memory address to read
+   *
+   * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
+   *  action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
+   * the CPU tacts at least with 3 T-states!
+   */
+  delayMemoryRead(address: number): void {
+    this.delayAddressBusAccess(address);
+    this.tactPlus3();
+    this.totalContentionDelaySinceStart += 3;
+    this.contentionDelaySincePause += 3;
+  }
+
+  /**
+   * Write the given byte to the specified memory address.
+   * @param address 16-bit memory address
+   * @param value Byte to write into the memory
+   */
+  doWriteMemory(address: number, value: number): void {
+    this.memoryDevice.writeMemory(address, value);
+  }
+
+  /**
+   * This function implements the memory write delay of the CPU.
+   * @param address Memory address to write
+   *
+   * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
+   * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
+   * the CPU tacts at least with 3 T-states!
+   */
+  delayMemoryWrite(address: number): void {
+    this.delayMemoryRead(address);
+  }
+
+  /**
+   * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
+   * @param address
+   * @returns Byte read from the specified port
+   *
+   * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
+   * I/O port read operation.
+   */
+  doReadPort(address: number): number {
+    return this.portManager.readPort(address);
+  }
+
+  /**
+   * This function writes a byte (8-bit) to the 16-bit I/O port address provided in the first argument.
+   * @param address Port address
+   * @param value Value to send to the port
+   *
+   * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
+   * I/O port write operation.
+   */
+  doWritePort(address: number, value: number): void {
+    this.portManager.writePort(address, value);
+  }
+
+  /**
+   * Sets a TBBlue register value
+   * @param address Register address
+   * @param value Register value;
+   */
+  tbblueOut(address: number, value: number): void {
+    this.nextRegDevice.directSetRegValue(address, value);
+    super.tbblueOut(address, value);
+  }
+
+  /**
+   * Gets the ULA issue number of the ZX Spectrum model (2 or 3)
+   */
+  ulaIssue = 3;
+
+  /**
+   * This method sets the contention value associated with the specified machine frame tact.
+   * @param tact Machine frame tact
+   * @param value Contention value
+   */
+  setContentionValue(tact: number, value: number): void {
+    // TODO: Implement this
+  }
+
+  /**
+   * This method gets the contention value for the specified machine frame tact.
+   * @param tact Machine frame tact
+   * @returns The contention value associated with the specified tact.
+   */
+  getContentionValue(tact: number): number {
+    // TODO: Implement this
+    return 0;
+  }
+
+  /**
+   * This function implements the I/O port read delay of the CPU.
+   * @param address Port address
+   *
+   * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
+   * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
+   * the CPU tacts at least with 4 T-states!
+   */
+  delayPortRead(address: number): void {
+    this.delayContendedIo(address);
+  }
+
+  /**
+   * This function implements the I/O port write delay of the CPU.
+   * @param address  Port address
+   *
+   * Normally, it is exactly 4 T-states; however, it may be higher in particular hardware. If you do not set your
+   * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
+   * the CPU tacts at least with 4 T-states!
+   */
+  delayPortWrite(address: number): void {
+    this.delayContendedIo(address);
+  }
+
+  /**
+   * Delays the I/O access according to address bus contention
+   * @param address Port address
+   */
+  protected delayContendedIo(address: number): void {
+    // TODO: Implement this
+  }
+
+  /**
+   * Width of the screen in native machine screen pixels
+   */
+  get screenWidthInPixels() {
+    return this.screenDevice.screenWidth;
+  }
+
+  /**
+   * Height of the screen in native machine screen pixels
+   */
+  get screenHeightInPixels() {
+    return this.screenDevice.screenLines;
+  }
+
+  /**
+   * Gets the buffer that stores the rendered pixels
+   * @returns
+   */
+  getPixelBuffer(): Uint32Array {
+    return this.screenDevice.getPixelBuffer();
+  }
+
+  /*
+   * Gets the offset of the pixel buffer in the memory
+   */
+  getBufferStartOffset(): number {
+    return this.screenDevice.screenWidth;
+  }
+
+  /**
+   * Gets the key code set used for the machine
+   */
+  getKeyCodeSet(): KeyCodeSet {
+    return SpectrumKeyCode;
+  }
+
+  /**
+   * Gets the default key mapping for the machine
+   */
+  getDefaultKeyMapping(): KeyMapping {
+    return spectrumKeyMappings;
+  }
+
+  /**
+   * Set the status of the specified ZX Spectrum key.
+   * @param key Key code
+   * @param isDown Indicates if the key is pressed down.
+   */
+  setKeyStatus(key: number, isDown: boolean): void {
+    this.keyboardDevice.setStatus(key, isDown);
+  }
+
+  /**
+   * Emulates queued key strokes as if those were pressed by the user
+   */
+  emulateKeystroke(): void {
+    if (this.emulatedKeyStrokes.length === 0) return;
+
+    // --- Check the next keystroke
+    const keyStroke = this.emulatedKeyStrokes[0];
+
+    // --- Time has not come
+    if (keyStroke.startTact > this.tacts) return;
+
+    if (keyStroke.endTact < this.tacts) {
+      // --- End emulation of this very keystroke
+      this.keyboardDevice.setStatus(keyStroke.primaryCode, false);
+      if (keyStroke.secondaryCode !== undefined) {
+        this.keyboardDevice.setStatus(keyStroke.secondaryCode, false);
+      }
+
+      // --- Remove the keystroke from the queue
+      this.emulatedKeyStrokes.shift();
+      return;
+    }
+
+    // --- Emulate this very keystroke, and leave it in the queue
+    this.keyboardDevice.setStatus(keyStroke.primaryCode, true);
+    if (keyStroke.secondaryCode !== undefined) {
+      this.keyboardDevice.setStatus(keyStroke.secondaryCode, true);
+    }
+  }
+
+  /**
+   * Adds an emulated keypress to the queue of the provider.
+   * @param frameOffset Number of frames to start the keypress emulation
+   * @param frames Number of frames to hold the emulation
+   * @param primary Primary key code
+   * @param secondary Optional secondary key code
+   *
+   * The keyboard provider can play back emulated key strokes
+   */
+  queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
+    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
+    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
+    this.emulatedKeyStrokes.push(keypress);
+  }
+
+  /**
+   * Gets the length of the key emulation queue
+   */
+  getKeyQueueLength(): number {
+    return this.emulatedKeyStrokes.length;
+  }
+
+  /**
+   * Gets the current cursor mode
+   */
+  getCursorMode(): number {
+    return this.doReadMemory(0x5c41);
+  }
+
+  /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+    // TODO: Implement this
+    return [];
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   * @returns The start address of the injected code
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number {
+    // --- Clear the screen unless otherwise requested
+    if (!codeToInject.options.noCls) {
+      for (let addr = 0x4000; addr < 0x5800; addr++) {
+        this.writeMemory(addr, 0);
+      }
+      for (let addr = 0x5800; addr < 0x5b00; addr++) {
+        this.writeMemory(addr, 0x38);
+      }
+    }
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // TODO: Implement this
+      } else {
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
+
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+    }
+
+    // --- Use this start point
+    return codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
+  }
+
+  /**
+   * The machine's execution loop calls this method when it is about to initialize a new frame.
+   * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * previous frame.
+   */
+  onInitNewFrame(_clockMultiplierChanged: boolean): void {
+    // --- No screen tact rendered in this frame
+    this.lastRenderedFrameTact = 0;
+
+    // --- Prepare the screen device for the new machine frame
+    this.screenDevice.onNewFrame();
+
+    // --- Prepare the beeper device for the new frame
+    this.beeperDevice.onNewFrame();
+  }
+
+  /**
+   * Tests if the machine should raise a Z80 maskable interrupt
+   * @returns True, if the INT signal should be active; otherwise, false.
+   */
+  shouldRaiseInterrupt(): boolean {
+    return this.currentFrameTact < 32;
+  }
+
+  /**
+   * Every time the CPU clock is incremented, this function is executed.
+   * @param increment The tact increment value
+   */
+  onTactIncremented(): void {
+    const machineTact = this.currentFrameTact;
+    while (this.lastRenderedFrameTact <= machineTact) {
+      this.screenDevice.renderTact(this.lastRenderedFrameTact++);
+    }
+    this.beeperDevice.setNextAudioSample();
+  }
+
+  /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency = 1;
+}

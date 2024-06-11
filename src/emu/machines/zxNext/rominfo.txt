@@ -1,0 +1,10 @@
+TBBLUE loads these roms:
+enNxtmmc.rom (8 KB)
+  F3 C3 6A 00 44 56 08 02
+enNextMf.rom (8 KB)
+  F5 3E 02 CD 69 00 F1 C9
+enNextZX.rom (64 KB)
+  F3 C3 EF 00 45 44 08 02
+48.rom
+  F3 AF 11 FF FF C3 CB 11 (0000)
+  0D CD 79 1C CD C3 1F CD (2000)

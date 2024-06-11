@@ -3,12 +3,14 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
   MI_SPECTRUM_3E,
-  MI_Z88
+  MI_Z88,
+  MI_ZXNEXT
 } from "./constants";
 import { MachineUiRendererInfo } from "./info-types";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
@@ -24,7 +26,11 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
     factory: (store, model) => new ZxSpectrumP3EMachine(store, model!)
   },
   {
+    machineId: MI_ZXNEXT,
+    factory: (_, model) => new ZxNextMachine(model)
+  },
+  {
     machineId: MI_Z88,
     factory: (store, model, config) => new Z88Machine(store, model!, config!)
-  }
+  },
 ];

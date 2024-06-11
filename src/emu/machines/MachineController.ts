@@ -1,13 +1,7 @@
-import {
-  FrameCompletedArgs,
-  IMachineController
-} from "@renderer/abstractions/IMachineController";
+import { FrameCompletedArgs, IMachineController } from "@renderer/abstractions/IMachineController";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { toHexa4 } from "@appIde/services/ide-commands";
-import {
-  IOutputBuffer,
-  OutputColor
-} from "@renderer/appIde/ToolArea/abstractions";
+import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { FrameStats } from "@renderer/abstractions/FrameStats";
@@ -21,12 +15,7 @@ import { setDebuggingAction, setMachineStateAction } from "@state/actions";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
-import {
-  DISK_A_CHANGES,
-  DISK_B_CHANGES,
-  FAST_LOAD,
-  SAVED_TO_TAPE
-} from "./machine-props";
+import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { delay } from "@renderer/utils/timing";
@@ -50,7 +39,7 @@ export class MachineController implements IMachineController {
    * Initializes the controller to manage the specified machine.
    * @param machine The machine to manage
    */
-  constructor (
+  constructor(
     public readonly store: Store<AppState>,
     public readonly messenger: MessengerBase,
     public readonly machine: IZ80Machine
@@ -68,14 +57,14 @@ export class MachineController implements IMachineController {
 
     // --- Get machine information
     this._machineInfo = machineRegistry.find(
-      m => m.machineId === machine.machineId
+      (m) => m.machineId === machine.machineId
     ) as MachineInfo;
   }
 
   /**
    * Disposes resources held by this class
    */
-  dispose (): void {
+  dispose(): void {
     this.stateChanged?.release();
     this.frameCompleted?.release();
   }
@@ -98,10 +87,10 @@ export class MachineController implements IMachineController {
   /// <summary>
   /// Get or set the current state of the machine controller.
   /// </summary>
-  get state (): MachineControllerState {
+  get state(): MachineControllerState {
     return this._machineState;
   }
-  set state (value: MachineControllerState) {
+  set state(value: MachineControllerState) {
     if (this._machineState === value) return;
 
     const oldState = this._machineState;
@@ -137,7 +126,7 @@ export class MachineController implements IMachineController {
   /**
    * Start the machine in normal mode.
    */
-  async start (): Promise<void> {
+  async start(): Promise<void> {
     await this.sendOutput("Machine started", "green");
     this.isDebugging = false;
     this.run();
@@ -146,7 +135,7 @@ export class MachineController implements IMachineController {
   /**
    * Start the machine in debug mode.
    */
-  async startDebug (): Promise<void> {
+  async startDebug(): Promise<void> {
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput("Machine started in debug mode", "green");
@@ -156,14 +145,11 @@ export class MachineController implements IMachineController {
   /**
    * Pause the running machine.
    */
-  async pause (): Promise<void> {
+  async pause(): Promise<void> {
     if (this.state !== MachineControllerState.Running) {
       throw new Error("The machine is not running");
     }
-    await this.finishExecutionLoop(
-      MachineControllerState.Pausing,
-      MachineControllerState.Paused
-    );
+    await this.finishExecutionLoop(MachineControllerState.Pausing, MachineControllerState.Paused);
     await this.sendOutput(
       `Machine paused (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
@@ -173,22 +159,17 @@ export class MachineController implements IMachineController {
   /**
    * Stop the running or paused machine.
    */
-  async stop (): Promise<void> {
+  async stop(): Promise<void> {
     // --- Stop the machine
     const beforeState = this.state;
     this.isDebugging = false;
-    await this.finishExecutionLoop(
-      MachineControllerState.Stopping,
-      MachineControllerState.Stopped
-    );
+    await this.finishExecutionLoop(MachineControllerState.Stopping, MachineControllerState.Stopped);
     if (
       beforeState !== MachineControllerState.Stopped &&
       beforeState !== MachineControllerState.None
     ) {
       await this.sendOutput(
-        `Machine stopped (PC: $${this.machine.pc
-          .toString(16)
-          .padStart(4, "0")})`,
+        `Machine stopped (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
         "red"
       );
     }
@@ -212,7 +193,7 @@ export class MachineController implements IMachineController {
   /**
    * Reset the CPU of the machine.
    */
-  async cpuReset (): Promise<void> {
+  async cpuReset(): Promise<void> {
     await this.stop();
     await this.sendOutput("CPU reset", "cyan");
     this.machine.reset();
@@ -222,7 +203,7 @@ export class MachineController implements IMachineController {
   /**
    * Stop and then start the machine again.
    */
-  async restart (): Promise<void> {
+  async restart(): Promise<void> {
     await this.stop();
     await this.sendOutput("Hard reset", "cyan");
     await this.machine.hardReset();
@@ -232,7 +213,7 @@ export class MachineController implements IMachineController {
   /**
    * Starts the machine in step-into mode.
    */
-  async stepInto (): Promise<void> {
+  async stepInto(): Promise<void> {
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
@@ -245,7 +226,7 @@ export class MachineController implements IMachineController {
   /**
    * Starts the machine in step-over mode.
    */
-  async stepOver (): Promise<void> {
+  async stepOver(): Promise<void> {
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
@@ -258,7 +239,7 @@ export class MachineController implements IMachineController {
   /**
    * Starts the machine in step-out mode.
    */
-  async stepOut (): Promise<void> {
+  async stepOut(): Promise<void> {
     this.isDebugging = true;
     this.machine?.awakeCpu();
     await this.sendOutput(
@@ -272,7 +253,7 @@ export class MachineController implements IMachineController {
    * Executes a custom command
    * @param command Custom command string
    */
-  async customCommand (command: string): Promise<void> {
+  async customCommand(command: string): Promise<void> {
     await this.machine.executeCustomCommand(command);
   }
 
@@ -281,15 +262,13 @@ export class MachineController implements IMachineController {
    * @param codeToInject Code to inject into the amchine
    * @param debug Run in debug mode?
    */
-  async runCode (codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+  async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void> {
     // --- Stop the machine
     await this.stop();
 
     // --- Execute the code injection flow
     const m = this.machine;
-    const injectionFlow = this.machine.getCodeInjectionFlow(
-      codeToInject.model ?? m.machineId
-    );
+    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId);
     await this.sendOutput("Initialize the machine", "blue");
     this.isDebugging = debug;
 
@@ -337,9 +316,7 @@ export class MachineController implements IMachineController {
             m.doWriteMemory(spValue - 2, step.returnPoint & 0xff);
             m.sp = spValue - 2;
             await this.sendOutput(
-              `Code will start as a subroutine to return to $${toHexa4(
-                step.returnPoint
-              )}`,
+              `Code will start as a subroutine to return to $${toHexa4(step.returnPoint)}`,
               "blue"
             );
           }
@@ -365,7 +342,7 @@ export class MachineController implements IMachineController {
    * Resolves the source code breakpoints used when running the machine
    * @param bps
    */
-  resolveBreakpoints (bps: ResolvedBreakpoint[]): void {
+  resolveBreakpoints(bps: ResolvedBreakpoint[]): void {
     if (!this.debugSupport) return;
     this.debugSupport.resetBreakpointResolution();
     for (const bp of bps) {
@@ -378,7 +355,7 @@ export class MachineController implements IMachineController {
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
    */
-  scrollBreakpoints (def: BreakpointInfo, shift: number): void {
+  scrollBreakpoints(def: BreakpointInfo, shift: number): void {
     if (!this.debugSupport) return;
     this.debugSupport.scrollBreakpoints(def, shift);
   }
@@ -389,7 +366,7 @@ export class MachineController implements IMachineController {
    * @param lineCount
    * @returns
    */
-  normalizeBreakpoints (resource: string, lineCount: number): void {
+  normalizeBreakpoints(resource: string, lineCount: number): void {
     if (!this.debugSupport) return;
     this.debugSupport.normalizeBreakpoints(resource, lineCount);
   }
@@ -397,12 +374,12 @@ export class MachineController implements IMachineController {
   /**
    * Run the machine loop until cancelled
    */
-  private run (
+  private async run(
     terminationMode = FrameTerminationMode.Normal,
     debugStepMode = DebugStepMode.NoDebug,
     terminationPartition?: number,
     terminationPoint?: number
-  ): void {
+  ): Promise<void> {
     switch (this.state) {
       case MachineControllerState.Running:
         throw new Error("The machine is already running");
@@ -410,10 +387,14 @@ export class MachineController implements IMachineController {
       case MachineControllerState.None:
       case MachineControllerState.Stopped:
         // --- First start (after stop), reset the machine
-        this.machine.reset();
+        if (this.machine.softResetOnFirstStart) {
+          this.machine.reset();
+        } else {
+          await this.machine.hardReset();
+        }
 
         // --- Check for supported media, attach media contents to the machine
-        this._machineInfo.mediaIds?.forEach(mediaId => {
+        this._machineInfo.mediaIds?.forEach((mediaId) => {
           const mediaInfo = mediaStore.getMedia(mediaId);
           if (mediaInfo?.mediaContents) {
             this.machine.setMachineProperty(mediaId, mediaInfo.mediaContents);
@@ -435,10 +416,7 @@ export class MachineController implements IMachineController {
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings
-    this.machine.setMachineProperty(
-      FAST_LOAD,
-      this.store.getState()?.emulatorState.fastLoad
-    );
+    this.machine.setMachineProperty(FAST_LOAD, this.store.getState()?.emulatorState.fastLoad);
 
     // --- Sign if we are in debug mode
     this.store.dispatch(setDebuggingAction(this.isDebugging), "emu");
@@ -467,25 +445,19 @@ export class MachineController implements IMachineController {
         let diskBChanges: SectorChanges;
         if (frameCompleted) {
           // --- Check for file to save
-          savedFileInfo = this.machine.getMachineProperty(
-            SAVED_TO_TAPE
-          ) as SavedFileInfo;
+          savedFileInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as SavedFileInfo;
           if (savedFileInfo) {
             this.machine.setMachineProperty(SAVED_TO_TAPE);
           }
 
           // --- Check for disk A changes
-          diskAChanges = this.machine.getMachineProperty(
-            DISK_A_CHANGES
-          ) as SectorChanges;
+          diskAChanges = this.machine.getMachineProperty(DISK_A_CHANGES) as SectorChanges;
           if (diskAChanges) {
             this.machine.setMachineProperty(DISK_A_CHANGES);
           }
 
           // --- Check for disk B changes
-          diskBChanges = this.machine.getMachineProperty(
-            DISK_B_CHANGES
-          ) as SectorChanges;
+          diskBChanges = this.machine.getMachineProperty(DISK_B_CHANGES) as SectorChanges;
           if (diskBChanges) {
             this.machine.setMachineProperty(DISK_B_CHANGES);
           }
@@ -507,16 +479,14 @@ export class MachineController implements IMachineController {
         this.frameStats.avgCpuFrameTimeInMs =
           this.frameStats.frameCount === 0
             ? this.frameStats.lastCpuFrameTimeInMs
-            : (this.frameStats.avgCpuFrameTimeInMs *
-                (this.frameStats.frameCount - 1) +
+            : (this.frameStats.avgCpuFrameTimeInMs * (this.frameStats.frameCount - 1) +
                 this.frameStats.lastCpuFrameTimeInMs) /
               this.frameStats.frameCount;
         this.frameStats.lastFrameTimeInMs = frameTime;
         this.frameStats.avgFrameTimeInMs =
           this.frameStats.frameCount == 0
             ? this.frameStats.lastFrameTimeInMs
-            : (this.frameStats.avgFrameTimeInMs *
-                (this.frameStats.frameCount - 1) +
+            : (this.frameStats.avgFrameTimeInMs * (this.frameStats.frameCount - 1) +
                 this.frameStats.lastFrameTimeInMs) /
               this.frameStats.frameCount;
 
@@ -532,9 +502,7 @@ export class MachineController implements IMachineController {
 
           if (termination === FrameTerminationMode.DebugEvent) {
             await this.sendOutput(
-              `Breakpoint reached at PC=${this.machine.pc
-                .toString(16)
-                .padStart(4, "0")}`,
+              `Breakpoint reached at PC=${this.machine.pc.toString(16).padStart(4, "0")}`,
               "cyan"
             );
           }
@@ -552,8 +520,8 @@ export class MachineController implements IMachineController {
     })();
 
     // --- Apply delay
-    function delay (milliseconds: number): Promise<void> {
-      return new Promise<void>(resolve => {
+    function delay(milliseconds: number): Promise<void> {
+      return new Promise<void>((resolve) => {
         if (milliseconds < 0) {
           milliseconds = 0;
         }
@@ -569,7 +537,7 @@ export class MachineController implements IMachineController {
    * @param beforeState Controller state before finishing the operation
    * @param afterState Controller state after finishing the operation
    */
-  private async finishExecutionLoop (
+  private async finishExecutionLoop(
     beforeState: MachineControllerState,
     afterState: MachineControllerState
   ): Promise<void> {
@@ -587,7 +555,7 @@ export class MachineController implements IMachineController {
    * @param text Text to send
    * @param color Text color to use
    */
-  async sendOutput (text: string, color: OutputColor): Promise<void> {
+  async sendOutput(text: string, color: OutputColor): Promise<void> {
     this._loggedEventNo++;
     await this.messenger.sendMessage({
       type: "IdeDisplayOutput",

@@ -25,6 +25,7 @@ type Props = {
   glyph?: number;
   xwidth?: number;
   pressed?: boolean;
+  extMode?: boolean;
   keyAction?: (e: KeyboardButtonClickArgs) => void;
 };
 
@@ -48,6 +49,7 @@ export const Sp128Key = ({
   glyph,
   xwidth,
   pressed,
+  extMode,
   keyAction
 }: Props) => {
   // --- State bindings
@@ -392,6 +394,7 @@ export const Sp128Key = ({
       secondaryButton: secondaryCode,
       keyCategory,
       button: e.button,
+      extMode,
       down
     });
   }

@@ -1,3 +1,4 @@
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { ISpectrumKeyboardDevice } from "./ISpectrumKeyboardDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 
@@ -16,7 +17,7 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZxSpectrumMachine) {}
+  constructor (public readonly machine: (IZxSpectrumMachine | IZxNextMachine)) {}
 
   /**
    * Dispose the resources held by the device

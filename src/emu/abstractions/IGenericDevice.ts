@@ -15,6 +15,12 @@ export interface IGenericDevice<TMachine extends IZ80Machine> {
    */
   reset(): void;
 
+
+  /**
+   * Optional hard reset operation
+   */
+  hardReset?: () => void;
+  
   /**
    * Dispose the resources held by the device
    */

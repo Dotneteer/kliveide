@@ -20,6 +20,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   machineId: string;
 
   /**
+   * Apply a soft reset on the first start?
+   */
+  readonly softResetOnFirstStart?: boolean;
+
+  /**
    * The machine configuration
    */
   readonly config: MachineConfigSet;

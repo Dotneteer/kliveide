@@ -1,23 +1,27 @@
 import { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { AudioDeviceBase } from "./AudioDeviceBase";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 // --- This class implements the ZX Spectrum beeper device.
-export class SpectrumBeeperDevice extends AudioDeviceBase<IZxSpectrumMachine> implements ISpectrumBeeperDevice {
+export class SpectrumBeeperDevice
+  extends AudioDeviceBase<IZxSpectrumMachine | IZxNextMachine>
+  implements ISpectrumBeeperDevice
+{
   private _earBit = false;
 
   /// <summary>
   /// Initialize the beeper device and assign it to its host machine.
   /// </summary>
   /// <param name="machine">The machine hosting this device</param>
-  constructor (public readonly machine: IZxSpectrumMachine) {
+  constructor(public readonly machine: IZxSpectrumMachine | IZxNextMachine) {
     super(machine);
   }
 
   /**
    * The current value of the EAR bit
    */
-  get earBit (): boolean {
+  get earBit(): boolean {
     return this._earBit;
   }
 
@@ -25,14 +29,14 @@ export class SpectrumBeeperDevice extends AudioDeviceBase<IZxSpectrumMachine> im
    * This method sets the EAR bit value to generate sound with the beeper.
    * @param value EAR bit value to set
    */
-  setEarBit (value: boolean): void {
+  setEarBit(value: boolean): void {
     this._earBit = value;
   }
 
   /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue (): number {
+  getCurrentSampleValue(): number {
     return this._earBit ? 1.0 : 0.0;
   }
 }

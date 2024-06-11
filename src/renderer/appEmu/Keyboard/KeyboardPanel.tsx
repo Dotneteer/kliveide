@@ -5,6 +5,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
 import { Z88Keyboard } from "./Z88Keyboard";
 import { useSelector } from "@renderer/core/RendererProvider";
+import { NextKeyboard } from "./NextKeyboard";
 
 export type KeyboardApi = {
   signKeyStatus: (code: number, down: boolean) => void;
@@ -40,9 +41,12 @@ export const KeyboardPanel = ({
         <Sp48Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
       {type === "z88" && (
-        <Z88Keyboard width={width} height={height} layout={layout}  apiLoaded={apiLoaded} />
+        <Z88Keyboard width={width} height={height} layout={layout} apiLoaded={apiLoaded} />
       )}
-      {type !== "sp48" && type !== "z88" && (
+      {type === "zxnext" && (
+        <NextKeyboard width={width} height={height} apiLoaded={apiLoaded} />
+      )}
+      {type !== "sp48" && type !== "z88" && type !== "zxnext" && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
     </div>

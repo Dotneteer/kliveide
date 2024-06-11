@@ -567,7 +567,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
-  async hardReset (): Promise<void> {
+  hardReset (): void {
     this.af = 0xffff;
     this.af_ = 0xffff;
     this.bc = 0x0000;

@@ -296,7 +296,7 @@ export interface IZ80Cpu {
   /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
-  hardReset(): Promise<void>;
+  hardReset(): void | Promise<void>;
 
   /**
    * Handles the active RESET signal of the CPU.

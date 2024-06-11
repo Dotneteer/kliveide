@@ -30,7 +30,7 @@ Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive 
 - **ZX Spectrum 48K**
 - **ZX Spectrum 128K**
 - **ZX Spectrum +2E/+3E**
-- **Cambridge Z88** (*in progress*)
+- **Cambridge Z88**
 - **ZX Spectrum Next** (*in progress*)
 - ZX 80/81 (*in the future*)
 

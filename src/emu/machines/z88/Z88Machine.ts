@@ -241,10 +241,15 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
+   * Apply a soft reset on the first start
+   */
+  readonly softResetOnFirstStart = true;
+
+  /**
    * Emulates turning on a machine (after it has been turned off).
    */
   async hardReset (): Promise<void> {
-    await super.hardReset();
+    super.hardReset();
     this.memory.reset();
     await this.setup();
     this.reset();

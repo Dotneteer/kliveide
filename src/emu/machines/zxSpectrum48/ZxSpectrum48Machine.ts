@@ -63,6 +63,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   async setup (): Promise<void> {
     // --- Get the ROM file
     const romContents = await this.loadRomFromResource(this.romId);
+    
 
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(romContents);
@@ -87,8 +88,8 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  async hardReset (): Promise<void> {
-    await super.hardReset();
+  hardReset (): void {
+    super.hardReset();
     for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
     if (this._is16KModel) {
       for (let i = 0x8000; i < this._memory.length; i++) this._memory[i] = 0xff;

@@ -30,7 +30,7 @@
       "@emu/*": ["./src/emu/*"],
       "@appIde/*": ["./src/renderer/appIde/*"],
       "@main/*": ["./src/main/*"],
-      "@controls/*": ["./src/renderer/controls/*"],
+      "@controls/*": ["./src/renderer/controls/*"]
 		}
   }
 }

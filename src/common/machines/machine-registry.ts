@@ -17,7 +17,8 @@ import {
   CT_DISASSEMBLER,
   CT_DISASSEMBLER_VIEW,
   MC_Z88_KEYBOARD,
-  MC_Z88_SLOT0
+  MC_Z88_SLOT0,
+  MI_ZXNEXT
 } from "./constants";
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
@@ -114,6 +115,15 @@ export const machineRegistry: MachineInfo[] = [
         }
       }
     ]
+  },
+  {
+    machineId: MI_ZXNEXT,
+    displayName: "ZX Spectrum Next",
+    features: {
+      [MF_TAPE_SUPPORT]: true,
+      [MF_ULA]: true
+    },
+    mediaIds: [MEDIA_TAPE],
   },
   {
     machineId: MI_Z88,
