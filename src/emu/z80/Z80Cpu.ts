@@ -50,312 +50,310 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The A register
    */
-  get a (): number {
+  get a(): number {
     return this._viewA.getUint8(0);
   }
-  set a (value: number) {
+  set a(value: number) {
     this._viewA.setUint8(0, value);
   }
 
   /**
    * The F register
    */
-  get f (): number {
+  get f(): number {
     return this._viewF.getUint8(0);
   }
-  set f (value: number) {
+  set f(value: number) {
     this._viewF.setUint8(0, value);
   }
 
   /**
    * The AF register pair
    */
-  get af (): number {
+  get af(): number {
     return this._viewAF.getUint16(0);
   }
-  set af (value: number) {
+  set af(value: number) {
     this._viewAF.setUint16(0, value);
   }
 
   /**
    * The B register
    */
-  get b (): number {
+  get b(): number {
     return this._viewB.getUint8(0);
   }
-  set b (value: number) {
+  set b(value: number) {
     this._viewB.setUint8(0, value);
   }
 
   /**
    * The C register
    */
-  get c (): number {
+  get c(): number {
     return this._viewC.getUint8(0);
   }
-  set c (value: number) {
+  set c(value: number) {
     this._viewC.setUint8(0, value);
   }
 
   /**
    * The BC register pair
    */
-  get bc (): number {
+  get bc(): number {
     return this._viewBC.getUint16(0);
   }
-  set bc (value: number) {
+  set bc(value: number) {
     this._viewBC.setUint16(0, value);
   }
 
   /**
    * The D register
    */
-  get d (): number {
+  get d(): number {
     return this._viewD.getUint8(0);
   }
-  set d (value: number) {
+  set d(value: number) {
     this._viewD.setUint8(0, value);
   }
 
   /**
    * The E register
    */
-  get e (): number {
+  get e(): number {
     return this._viewE.getUint8(0);
   }
-  set e (value: number) {
+  set e(value: number) {
     this._viewE.setUint8(0, value);
   }
 
   /**
    * The DE register pair
    */
-  get de (): number {
+  get de(): number {
     return this._viewDE.getUint16(0);
   }
-  set de (value: number) {
+  set de(value: number) {
     this._viewDE.setUint16(0, value);
   }
 
   /**
    * The H register
    */
-  get h (): number {
+  get h(): number {
     return this._viewH.getUint8(0);
   }
-  set h (value: number) {
+  set h(value: number) {
     this._viewH.setUint8(0, value);
   }
 
   /**
    * The L register
    */
-  get l (): number {
+  get l(): number {
     return this._viewL.getUint8(0);
   }
-  set l (value: number) {
+  set l(value: number) {
     this._viewL.setUint8(0, value);
   }
 
   /**
    * The HL register pair
    */
-  get hl (): number {
+  get hl(): number {
     return this._viewHL.getUint16(0);
   }
-  set hl (value: number) {
+  set hl(value: number) {
     this._viewHL.setUint16(0, value);
   }
 
   /**
    * The alternate AF' register pair
    */
-  get af_ (): number {
+  get af_(): number {
     return this._af_;
   }
-  set af_ (value: number) {
+  set af_(value: number) {
     this._af_ = value & 0xffff;
   }
 
   /**
    * The alternate BC' register pair
    */
-  get bc_ (): number {
+  get bc_(): number {
     return this._bc_;
   }
-  set bc_ (value: number) {
+  set bc_(value: number) {
     this._bc_ = value & 0xffff;
   }
 
   /**
    * The alternate DE' register pair
    */
-  get de_ (): number {
+  get de_(): number {
     return this._de_;
   }
-  set de_ (value: number) {
+  set de_(value: number) {
     this._de_ = value & 0xffff;
   }
 
   /**
    * The alternate HL' register pair
    */
-  get hl_ (): number {
+  get hl_(): number {
     return this._hl_;
   }
-  set hl_ (value: number) {
+  set hl_(value: number) {
     this._hl_ = value & 0xffff;
   }
 
   /**
    * The higher 8 bits of the IX register pair
    */
-  get xh (): number {
+  get xh(): number {
     return this._viewXH.getUint8(0);
   }
-  set xh (value: number) {
+  set xh(value: number) {
     this._viewXH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
-  get xl (): number {
+  get xl(): number {
     return this._viewXL.getUint8(0);
   }
-  set xl (value: number) {
+  set xl(value: number) {
     this._viewXL.setUint8(0, value);
   }
 
   /**
    * The IX register pair
    */
-  get ix (): number {
+  get ix(): number {
     return this._viewIX.getUint16(0);
   }
-  set ix (value: number) {
+  set ix(value: number) {
     this._viewIX.setUint16(0, value);
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
-  get yh (): number {
+  get yh(): number {
     return this._viewYH.getUint8(0);
   }
-  set yh (value: number) {
+  set yh(value: number) {
     this._viewYH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
-  get yl (): number {
+  get yl(): number {
     return this._viewYL.getUint8(0);
   }
-  set yl (value: number) {
+  set yl(value: number) {
     this._viewYL.setUint8(0, value);
   }
 
   /**
    * The IY register pair
    */
-  get iy (): number {
+  get iy(): number {
     return this._viewIY.getUint16(0);
   }
-  set iy (value: number) {
+  set iy(value: number) {
     this._viewIY.setUint16(0, value);
   }
 
   /**
    * The I (interrupt vector) register
    */
-  get i (): number {
+  get i(): number {
     return this._viewI.getUint8(0);
   }
-  set i (value: number) {
+  set i(value: number) {
     this._viewI.setUint8(0, value);
   }
 
   /**
    * The R (refresh) register
    */
-  get r (): number {
+  get r(): number {
     return this._viewR.getUint8(0);
   }
-  set r (value: number) {
+  set r(value: number) {
     this._viewR.setUint8(0, value);
   }
 
   /**
    * The IR register pair
    */
-  get ir (): number {
+  get ir(): number {
     return this._viewIR.getUint16(0);
   }
-  set ir (value: number) {
+  set ir(value: number) {
     this._viewIR.setUint16(0, value);
   }
 
   /**
    * The Program Counter register
    */
-  get pc (): number {
+  get pc(): number {
     return this._pc;
   }
-  set pc (value: number) {
+  set pc(value: number) {
     this._pc = value & 0xffff;
   }
 
   /**
    * The Stack Pointer register
    */
-  get sp (): number {
+  get sp(): number {
     return this._sp;
   }
-  set sp (value: number) {
+  set sp(value: number) {
     this._sp = value & 0xffff;
   }
 
   /**
    * The higher 8 bits of the WZ register pair
    */
-  get wh (): number {
+  get wh(): number {
     return this._viewWH.getUint8(0);
   }
-  set wh (value: number) {
+  set wh(value: number) {
     this._viewWH.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
-  get wl (): number {
+  get wl(): number {
     return this._viewWL.getUint8(0);
   }
-  set wl (value: number) {
+  set wl(value: number) {
     this._viewWL.setUint8(0, value);
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
-  get wz (): number {
+  get wz(): number {
     return this._viewWZ.getUint16(0);
   }
-  set wz (value: number) {
+  set wz(value: number) {
     this._viewWZ.setUint16(0, value);
   }
 
   /**
    * Get or set the value of the current index register
    */
-  get indexReg (): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB
-      ? this.ix
-      : this.iy;
+  get indexReg(): number {
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.ix : this.iy;
   }
-  set indexReg (value: number) {
+  set indexReg(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
       this.ix = value;
     } else {
@@ -366,12 +364,10 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Get or set the LSB value of the current index register
    */
-  get indexL (): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB
-      ? this.xl
-      : this.yl;
+  get indexL(): number {
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xl : this.yl;
   }
-  set indexL (value: number) {
+  set indexL(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
       this.xl = value;
     } else {
@@ -382,12 +378,10 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Get or set the MSB value of the current index register
    */
-  get indexH (): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB
-      ? this.xh
-      : this.yh;
+  get indexH(): number {
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xh : this.yh;
   }
-  set indexH (value: number) {
+  set indexH(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
       this.xh = value;
     } else {
@@ -398,14 +392,14 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Gets the value of the Carry flag
    */
-  get flagCValue (): number {
+  get flagCValue(): number {
     return this.f & FlagsSetMask.C;
   }
 
   /**
    * Gets the bits that represent the value of SZPV flag group
    */
-  get flagsSZPVValue (): number {
+  get flagsSZPVValue(): number {
     return this.f & FlagsSetMask.SZPV;
   }
 
@@ -489,7 +483,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Get the number of T-states in a machine frame.
    */
-  get tactsInFrame (): number {
+  get tactsInFrame(): number {
     return this._tactsInFrame;
   }
 
@@ -497,7 +491,7 @@ export class Z80Cpu implements IZ80Cpu {
    * Sets the number of tacts within a single machine frame
    * @param tacts Tacts to set
    */
-  setTactsInFrame (tacts: number): void {
+  setTactsInFrame(tacts: number): void {
     this._tactsInFrame = tacts;
     this.tactsInCurrentFrame = tacts * this.clockMultiplier;
   }
@@ -505,10 +499,10 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
-  get tactsInDisplayLine (): number {
+  get tactsInDisplayLine(): number {
     return this._tactsInDisplayLine;
   }
-  set tactsInDisplayLine (value: number) {
+  set tactsInDisplayLine(value: number) {
     this._tactsInDisplayLine = value;
   }
 
@@ -567,7 +561,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
-  hardReset (): void {
+  hardReset(): void {
     this.af = 0xffff;
     this.af_ = 0xffff;
     this.bc = 0x0000;
@@ -610,7 +604,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Handles the active RESET signal of the CPU.
    */
-  reset (): void {
+  reset(): void {
     this.af = 0xffff;
     this.af_ = 0xffff;
     this.ir = 0x0000;
@@ -647,28 +641,28 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Indicates if the CPU is currently snoozed
    */
-  isCpuSnoozed (): boolean {
+  isCpuSnoozed(): boolean {
     return this._snoozed;
   }
 
   /**
    * Awakes the CPU from the snoozed state
    */
-  awakeCpu (): void {
+  awakeCpu(): void {
     this._snoozed = false;
   }
 
   /**
    * Puts the CPU into snoozed state
    */
-  snoozeCpu (): void {
+  snoozeCpu(): void {
     this._snoozed = true;
   }
 
   /**
    * Define what to do when CPU is snoozed. You should increment the tacts emulating the snoozing.
    */
-  onSnooze (): void {
+  onSnooze(): void {
     // --- Emulate 4 NOPs
     this.tactPlusN(16);
   }
@@ -677,7 +671,7 @@ export class Z80Cpu implements IZ80Cpu {
    * Checks if the next instruction to be executed is a call instruction or not
    * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
    */
-  getCallInstructionLength (): number {
+  getCallInstructionLength(): number {
     // --- We intentionally avoid using ReadMemory() directly
     // --- So that we can prevent false memory touching.
     var opCode = this.doReadMemory(this.pc);
@@ -705,14 +699,14 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Override this method in derived classes to refine extended operations
    */
-  getExtendedOpsTable (): Z80Operation[] {
+  getExtendedOpsTable(): Z80Operation[] {
     return this.extendedOps;
   }
 
   /**
    * Call this method to execute a CPU instruction cycle.
    */
-  executeCpuCycle (): void {
+  executeCpuCycle(): void {
     // --- Modify the EI interrupt backlog value
     if (this.eiBacklog > 0) {
       this.eiBacklog--;
@@ -748,11 +742,20 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     // --- Second, let's execute the M1 machine cycle that reads the next opcode from the memory.
+    const m1Active = this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB;
+    if (m1Active) {
+      // --- During M1, DivMMC may page in/out memory banks
+      this.beforeOpcodeFetch();
+    }
     this.opCode = this.readMemory(this.pc);
+    if (m1Active) {
+      // --- During M1, DivMMC may page in/out memory banks
+      this.afterOpcodeFetch;
+    }
     this.pc++;
 
     // --- Third, let's refresh the memory by updating the value of Register R. It takes one T-state.
-    if (this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB) {
+    if (m1Active) {
       // --- Indexed bit operation consider the third byte as an address offset, so no memory refresh occurs.
       this.refreshMemory();
       this.tactPlus1();
@@ -803,10 +806,7 @@ export class Z80Cpu implements IZ80Cpu {
         } else if (this.opCode == 0xfd) {
           this.prefix = OpCodePrefix.FD;
         } else if (this.opCode == 0xcb) {
-          this.prefix =
-            this.prefix == OpCodePrefix.DD
-              ? OpCodePrefix.DDCB
-              : OpCodePrefix.FDCB;
+          this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
           this.indexedOps[this.opCode](this);
           this.prefix = OpCodePrefix.None;
@@ -828,9 +828,23 @@ export class Z80Cpu implements IZ80Cpu {
   }
 
   /**
+   * Execute this method before fetching the opcode of the next instruction
+   */
+  beforeOpcodeFetch(): void {
+    // --- Implement this method in derived classes
+  }
+
+  /**
+   * Execute this method after fetching the opcode of the next instruction
+   */
+  afterOpcodeFetch(): void {
+    // --- Implement this method in derived classes
+  }
+
+  /**
    * This method processes the active non-maskable interrupt.
    */
-  private processNmi (): void {
+  private processNmi(): void {
     // --- Acknowledge the NMI
     this.tactPlus4();
 
@@ -855,7 +869,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * This method executes an active and enabled maskable interrupt using the current Interrupt Mode.
    */
-  private processInt (): void {
+  private processInt(): void {
     // --- It takes six T-states to acknowledge the interrupt
     this.tactPlusN(6);
 
@@ -901,7 +915,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Remove the CPU from its HALTED state.
    */
-  removeFromHaltedState (): void {
+  removeFromHaltedState(): void {
     if (this.halted) {
       this.pc++;
       this.halted = false;
@@ -911,63 +925,63 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * Test the Sign flag
    */
-  isSFlagSet (): boolean {
+  isSFlagSet(): boolean {
     return (this.f & FlagsSetMask.S) !== 0;
   }
 
   /**
    * Test the Zero flag
    */
-  isZFlagSet (): boolean {
+  isZFlagSet(): boolean {
     return (this.f & FlagsSetMask.Z) !== 0;
   }
 
   /**
    * Test the R5 flag
    */
-  isR5FlagSet (): boolean {
+  isR5FlagSet(): boolean {
     return (this.f & FlagsSetMask.R5) !== 0;
   }
 
   /**
    * Test the Half Carry flag
    */
-  isHFlagSet (): boolean {
+  isHFlagSet(): boolean {
     return (this.f & FlagsSetMask.H) !== 0;
   }
 
   /**
    * Test the R3 flag
    */
-  isR3FlagSet (): boolean {
+  isR3FlagSet(): boolean {
     return (this.f & FlagsSetMask.R3) !== 0;
   }
 
   /**
    * Test the Parity/overflow flag
    */
-  isPvFlagSet (): boolean {
+  isPvFlagSet(): boolean {
     return (this.f & FlagsSetMask.PV) !== 0;
   }
 
   /**
    * Test the Subtract flag
    */
-  isNFlagSet (): boolean {
+  isNFlagSet(): boolean {
     return (this.f & FlagsSetMask.N) !== 0;
   }
 
   /**
    * Test the Carry flag
    */
-  isCFlagSet (): boolean {
+  isCFlagSet(): boolean {
     return (this.f & FlagsSetMask.C) !== 0;
   }
 
   /**
    * Push the current value of PC to the stack.
    */
-  pushPC (): void {
+  pushPC(): void {
     this.sp--;
     this.tactPlus1();
     this.writeMemory(this.sp, this.pc >>> 8);
@@ -979,7 +993,7 @@ export class Z80Cpu implements IZ80Cpu {
    * Execute a relative jump with the specified distance.
    * @param e 8-bit signed distance
    */
-  relativeJump (e: number): void {
+  relativeJump(e: number): void {
     this.tactPlus5WithAddress(this.pc);
     this.pc = this.wz = this.pc + sbyte(e);
   }
@@ -987,7 +1001,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The core of the CALL instruction
    */
-  callCore (): void {
+  callCore(): void {
     this.tactPlus1WithAddress(this.pc);
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
@@ -1000,7 +1014,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the RST instruction
    * @param addr Restart address to call
    */
-  rstCore (addr: number): void {
+  rstCore(addr: number): void {
     this.tactPlus1WithAddress(this.ir);
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
@@ -1015,12 +1029,10 @@ export class Z80Cpu implements IZ80Cpu {
    * @param regOther Other value
    * @returns Result value
    */
-  add16 (regHl: number, regOther: number): number {
+  add16(regHl: number, regOther: number): number {
     const tmpVal = regHl + regOther;
     const lookup =
-      ((regHl & 0x0800) >>> 11) |
-      ((regOther & 0x0800) >>> 10) |
-      ((tmpVal & 0x0800) >>> 9);
+      ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
     this.wz = regHl + 1;
     this.f =
       this.flagsSZPVValue |
@@ -1034,12 +1046,10 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 16-bit ADC operation.
    * @param value Value to subtract from HL
    */
-  adc16 (value: number): void {
+  adc16(value: number): void {
     const tmpVal = this.hl + value + this.flagCValue;
     const lookup =
-      ((this.hl & 0x8800) >>> 11) |
-      ((value & 0x8800) >>> 10) |
-      ((tmpVal & 0x8800) >>> 9);
+      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
     this.wz = this.hl + 1;
     this.hl = tmpVal;
     this.f =
@@ -1054,12 +1064,10 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 16-bit SBC operation.
    * @param value Value to subtract from HL
    */
-  sbc16 (value: number): void {
+  sbc16(value: number): void {
     const tmpVal = this.hl - value - this.flagCValue;
     var lookup =
-      ((this.hl & 0x8800) >>> 11) |
-      ((value & 0x8800) >>> 10) |
-      ((tmpVal & 0x8800) >>> 9);
+      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
     this.wz = this.hl + 1;
     this.hl = tmpVal;
     this.f =
@@ -1076,7 +1084,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param low LSB value to store
    * @param high MSB value to store
    */
-  store16 (low: number, high: number): void {
+  store16(low: number, high: number): void {
     let tmp = this.fetchCodeByte();
     tmp += this.fetchCodeByte() << 8;
     this.writeMemory(tmp, low);
@@ -1089,10 +1097,9 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit SUB operation
    * @param value Value to subtract from A
    */
-  sub8 (value: number): void {
+  sub8(value: number): void {
     const tmp = this.a - value;
-    const lookup =
-      ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.a = tmp;
     this.f =
       ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
@@ -1106,10 +1113,9 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit SBC operation
    * @param value Value to subtract from A
    */
-  sbc8 (value: number): void {
+  sbc8(value: number): void {
     const tmp = this.a - value - this.flagCValue;
-    const lookup =
-      ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.a = tmp;
     this.f =
       ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
@@ -1123,10 +1129,9 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit ADD operation
    * @param value Value to add to A
    */
-  add8 (value: number): void {
+  add8(value: number): void {
     const tmp = this.a + value;
-    var lookup =
-      ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.a = tmp;
     this.f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
@@ -1139,10 +1144,9 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit ADD operation
    * @param value Value to add to A
    */
-  adc8 (value: number): void {
+  adc8(value: number): void {
     const tmp = this.a + value + this.flagCValue;
-    var lookup =
-      ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.a = tmp;
     this.f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
@@ -1155,7 +1159,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit AND operation
    * @param value Value to AND with A
    */
-  and8 (value: number): void {
+  and8(value: number): void {
     this.a &= value;
     this.f = FlagsSetMask.H | sz53pvTable[this.a];
   }
@@ -1164,7 +1168,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit XOR operation
    * @param value Value to XOR with A
    */
-  xor8 (value: number): void {
+  xor8(value: number): void {
     this.a ^= value;
     this.f = sz53pvTable[this.a];
   }
@@ -1173,7 +1177,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit OR operation
    * @param value Value to OR with A
    */
-  or8 (value: number): void {
+  or8(value: number): void {
     this.a |= value;
     this.f = sz53pvTable[this.a];
   }
@@ -1182,10 +1186,9 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the 8-bit CP operation
    * @param value Value to compare with A
    */
-  cp8 (value: number): void {
+  cp8(value: number): void {
     const tmp = this.a - value;
-    const lookup =
-      ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
       (tmp != 0 ? 0 : FlagsSetMask.Z) |
@@ -1201,7 +1204,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  rlc8 (oper: number): number {
+  rlc8(oper: number): number {
     const result = ((oper << 1) | (oper >>> 7)) & 0xff;
     this.f = (result & FlagsSetMask.C) | sz53pvTable[result];
     return result;
@@ -1212,7 +1215,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  rrc8 (oper: number): number {
+  rrc8(oper: number): number {
     this.f = oper & FlagsSetMask.C;
     const result = ((oper >>> 1) | (oper << 7)) & 0xff;
     this.f |= sz53pvTable[result];
@@ -1224,7 +1227,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  rl8 (oper: number): number {
+  rl8(oper: number): number {
     const result = ((oper << 1) | this.flagCValue) & 0xff;
     this.f = (oper >>> 7) | sz53pvTable[result];
     return result;
@@ -1235,7 +1238,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  rr8 (oper: number): number {
+  rr8(oper: number): number {
     const result = ((oper >>> 1) | (this.f << 7)) & 0xff;
     this.f = (oper & FlagsSetMask.C) | sz53pvTable[result];
     return result;
@@ -1246,7 +1249,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  sla8 (oper: number): number {
+  sla8(oper: number): number {
     this.f = oper >>> 7;
     const result = (oper << 1) & 0xff;
     this.f |= sz53pvTable[result];
@@ -1258,7 +1261,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  sra8 (oper: number): number {
+  sra8(oper: number): number {
     this.f = oper & FlagsSetMask.C;
     const result = ((oper & 0x80) | (oper >> 1)) & 0xff;
     this.f |= sz53pvTable[result];
@@ -1270,7 +1273,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  sll8 (oper: number): number {
+  sll8(oper: number): number {
     this.f = oper >>> 7;
     const result = ((oper << 1) | 0x01) & 0xff;
     this.f |= sz53pvTable[result];
@@ -1282,7 +1285,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    * @returns Operation result
    */
-  srl8 (oper: number): number {
+  srl8(oper: number): number {
     this.f = oper & FlagsSetMask.C;
     const result = oper >>> 1;
     this.f |= sz53pvTable[result];
@@ -1294,7 +1297,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param bit Bit index (0-7)
    * @param oper Operand
    */
-  bit8 (bit: number, oper: number): void {
+  bit8(bit: number, oper: number): void {
     this.f = this.flagCValue | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
     const bitVal = oper & (0x01 << bit);
     if (bitVal === 0) {
@@ -1308,7 +1311,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param bit Bit index (0-7)
    * @param oper Operand
    */
-  bit8W (bit: number, oper: number): void {
+  bit8W(bit: number, oper: number): void {
     this.f = this.flagCValue | FlagsSetMask.H | (this.wh & FlagsSetMask.R3R5);
     const bitVal = oper & (0x01 << bit);
     if (bitVal === 0) {
@@ -1326,7 +1329,7 @@ export class Z80Cpu implements IZ80Cpu {
    * Seven bits of this 8-bit register are automatically incremented after each instruction fetch. The eighth bit
    * remains as programmed, resulting from an LD R, A instruction.
    */
-  refreshMemory (): void {
+  refreshMemory(): void {
     this.r = ((this.r + 1) & 0x7f) | (this.r & 0x80);
   }
 
@@ -1336,7 +1339,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @returns The byte the CPU has read from the memory
    * If the emulated hardware uses any delay when reading the memory, increment the CPU tacts accordingly.
    */
-  readMemory (address: number): number {
+  readMemory(address: number): number {
     this.delayMemoryRead(address);
     return this.doReadMemory(address);
   }
@@ -1347,7 +1350,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param data Data byte to write
    * If the emulated hardware uses any delay when writing the memory, increment the CPU tacts accordingly.
    */
-  writeMemory (address: number, data: number): void {
+  writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
     this.doWriteMemory(address, data);
   }
@@ -1358,7 +1361,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @return The byte read from the memory
    * Note: the default implementation always returns 0xff
    */
-  doReadMemory (_address: number): number {
+  doReadMemory(_address: number): number {
     return 0xff;
   }
 
@@ -1369,7 +1372,7 @@ export class Z80Cpu implements IZ80Cpu {
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryRead (_address: number): void {
+  delayMemoryRead(_address: number): void {
     this.tactPlus3();
   }
 
@@ -1379,7 +1382,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param _value Byte to write into the memory
    * Note: the default implementation does not write the memory
    */
-  doWriteMemory (_address: number, _value: number): void {
+  doWriteMemory(_address: number, _value: number): void {
     // --- Override this method in derived classes
   }
 
@@ -1390,7 +1393,7 @@ export class Z80Cpu implements IZ80Cpu {
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryWrite (_address: number): void {
+  delayMemoryWrite(_address: number): void {
     this.tactPlus3();
   }
 
@@ -1398,7 +1401,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This function handles address-based memory read contention.
    * @param _address Address to use for contention delay calculation
    */
-  delayAddressBusAccess (_address: number): void {
+  delayAddressBusAccess(_address: number): void {
     // --- Override this method in derived classes
   }
 
@@ -1406,7 +1409,7 @@ export class Z80Cpu implements IZ80Cpu {
    * Reads the code byte from the current Program Counter address and then increments the Program Counter.
    * @returns The byte read
    */
-  fetchCodeByte (): number {
+  fetchCodeByte(): number {
     this.delayMemoryRead(this.pc);
     return this.doReadMemory(this.pc++);
   }
@@ -1417,7 +1420,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @returns The byte the CPU has read from the port
    * If the emulated hardware uses any delay when reading the port, increment the CPU tacts accordingly.
    */
-  readPort (address: number): number {
+  readPort(address: number): number {
     this.delayPortRead(address);
     return this.doReadPort(address);
   }
@@ -1428,7 +1431,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param data Data byte to write
    * If the emulated hardware uses any delay when writing the port, increment the CPU tacts accordingly.
    */
-  writePort (address: number, data: number): void {
+  writePort(address: number, data: number): void {
     this.delayPortWrite(address);
     this.doWritePort(address, data);
   }
@@ -1439,7 +1442,7 @@ export class Z80Cpu implements IZ80Cpu {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (_address: number): number {
+  doReadPort(_address: number): number {
     // --- Override this method in derived classes
     return 0xff;
   }
@@ -1451,7 +1454,7 @@ export class Z80Cpu implements IZ80Cpu {
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortRead (_address: number): void {
+  delayPortRead(_address: number): void {
     this.tactPlus4();
   }
 
@@ -1462,7 +1465,7 @@ export class Z80Cpu implements IZ80Cpu {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (_address: number, _value: number): void {
+  doWritePort(_address: number, _value: number): void {
     // --- Override this method in derived classes
   }
 
@@ -1473,7 +1476,7 @@ export class Z80Cpu implements IZ80Cpu {
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortWrite (_address: number): void {
+  delayPortWrite(_address: number): void {
     this.tactPlus4();
   }
 
@@ -1482,7 +1485,7 @@ export class Z80Cpu implements IZ80Cpu {
    * With this function, you can emulate hardware activities running simultaneously with the CPU. For example,
    * rendering the screen or sound,  handling peripheral devices, and so on.
    */
-  onTactIncremented (): void {
+  onTactIncremented(): void {
     // --- Override this method in derived classes
   }
 
@@ -1498,7 +1501,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * This method increments the current CPU tacts by one.
    */
-  tactPlus1 (): void {
+  tactPlus1(): void {
     this.tactPlusN(1);
   }
 
@@ -1506,7 +1509,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by one, using memory contention with the provided address.
    * @param address
    */
-  tactPlus1WithAddress (address: number): void {
+  tactPlus1WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
     this.tactPlus1();
   }
@@ -1515,7 +1518,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by two, using memory contention with the provided address.
    * @param address
    */
-  tactPlus2WithAddress (address: number): void {
+  tactPlus2WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
     this.tactPlus1();
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
@@ -1525,14 +1528,14 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * This method increments the current CPU tacts by three.
    */
-  tactPlus3 (): void {
+  tactPlus3(): void {
     this.tactPlusN(3);
   }
 
   /**
    * This method increments the current CPU tacts by four.
    */
-  tactPlus4 (): void {
+  tactPlus4(): void {
     this.tactPlusN(4);
   }
 
@@ -1540,7 +1543,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by four, using memory contention with the provided address.
    * @param address
    */
-  tactPlus4WithAddress (address: number): void {
+  tactPlus4WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
     this.tactPlus1();
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
@@ -1555,7 +1558,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by five, using memory contention with the provided address.
    * @param address
    */
-  tactPlus5WithAddress (address: number): void {
+  tactPlus5WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
     this.tactPlus1();
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
@@ -1572,7 +1575,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by seven, using memory contention with the provided address.
    * @param address
    */
-  tactPlus7WithAddress (address: number): void {
+  tactPlus7WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
     this.tactPlus1();
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
@@ -1593,7 +1596,7 @@ export class Z80Cpu implements IZ80Cpu {
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
    */
-  tactPlusN (n: number): void {
+  tactPlusN(n: number): void {
     this.tacts += n;
     this.frameTacts += n;
     if (this.frameTacts >= this.tactsInCurrentFrame) {
@@ -2922,18 +2925,10 @@ export class Z80Cpu implements IZ80Cpu {
 // ALU helpers
 const incFlags: number[] = [];
 const decFlags: number[] = [];
-const halfCarryAddFlags: number[] = [
-  0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10
-];
-const halfCarrySubFlags: number[] = [
-  0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10
-];
-const overflowAddFlags: number[] = [
-  0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00
-];
-const overflowSubFlags: number[] = [
-  0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00
-];
+const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10];
+const halfCarrySubFlags: number[] = [0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10];
+const overflowAddFlags: number[] = [0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00];
+const overflowSubFlags: number[] = [0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00];
 
 // --- We use these tables from Z80N CPU, too
 export const parityTable: number[] = [];
@@ -2943,12 +2938,12 @@ export const sz53pvTable: number[] = [];
 /**
  * Converts an unsigned byte value to a signed byte value
  */
-function sbyte (dist: number): number {
+function sbyte(dist: number): number {
   return dist >= 128 ? dist - 256 : dist;
 }
 
 // --- Initialize ALU tables
-(function initializeAluTables () {
+(function initializeAluTables() {
   // --- Initialize increment flags
   for (var b = 0; b < 0x100; b++) {
     const oldVal = b;
@@ -3011,43 +3006,43 @@ function sbyte (dist: number): number {
 export type Z80Operation = (cpu: Z80Cpu) => void;
 
 // 0x00: NOP
-function nop (_cpu: Z80Cpu) {}
+function nop(_cpu: Z80Cpu) {}
 
 // 0x01: LD BC,nn
-function ldBcNN (cpu: Z80Cpu) {
+function ldBcNN(cpu: Z80Cpu) {
   cpu.c = cpu.fetchCodeByte();
   cpu.b = cpu.fetchCodeByte();
 }
 
 // 0x02: LD (BC),A
-function ldBciA (cpu: Z80Cpu) {
+function ldBciA(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.bc, cpu.a);
   cpu.wh = cpu.a;
 }
 
 // 0x03: INC BC
-function incBc (cpu: Z80Cpu) {
+function incBc(cpu: Z80Cpu) {
   cpu.bc++;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x04: INC B
-function incB (cpu: Z80Cpu) {
+function incB(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.b++] | cpu.flagCValue;
 }
 
 // 0x05: DEC B
-function decB (cpu: Z80Cpu) {
+function decB(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.b--] | cpu.flagCValue;
 }
 
 // 0x06: LD B,n
-function ldBN (cpu: Z80Cpu) {
+function ldBN(cpu: Z80Cpu) {
   cpu.b = cpu.fetchCodeByte();
 }
 
 // 0x07: RLCA
-function rlca (cpu: Z80Cpu) {
+function rlca(cpu: Z80Cpu) {
   let rlcaVal = cpu.a;
   rlcaVal = rlcaVal << 1;
   const cf = (rlcaVal & 0x100) !== 0 ? FlagsSetMask.C : 0;
@@ -3059,47 +3054,47 @@ function rlca (cpu: Z80Cpu) {
 }
 
 // 0x08: EX AF,AF'
-function exAf (cpu: Z80Cpu) {
+function exAf(cpu: Z80Cpu) {
   const tmp = cpu.af;
   cpu.af = cpu.af_;
   cpu.af_ = tmp;
 }
 
 // 0x09: ADD HL,BC
-function addHlBc (cpu: Z80Cpu) {
+function addHlBc(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.hl = cpu.add16(cpu.hl, cpu.bc);
 }
 
 // 0x0a: LD A,(BC)
-function ldABci (cpu: Z80Cpu) {
+function ldABci(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.a = cpu.readMemory(cpu.bc);
 }
 
 // 0x0b: DEC BC
-function decBc (cpu: Z80Cpu) {
+function decBc(cpu: Z80Cpu) {
   cpu.bc--;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x0c: INC C
-function incC (cpu: Z80Cpu) {
+function incC(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.c++] | cpu.flagCValue;
 }
 
 // 0x0d: DEC C
-function decC (cpu: Z80Cpu) {
+function decC(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.c--] | cpu.flagCValue;
 }
 
 // 0x0e: LD C,n
-function ldCN (cpu: Z80Cpu) {
+function ldCN(cpu: Z80Cpu) {
   cpu.c = cpu.fetchCodeByte();
 }
 
 // 0x0f: RRCA
-function rrca (cpu: Z80Cpu) {
+function rrca(cpu: Z80Cpu) {
   let rrcaVal = cpu.a;
   const cf = (rrcaVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
   if ((rrcaVal & 0x01) !== 0) {
@@ -3112,7 +3107,7 @@ function rrca (cpu: Z80Cpu) {
 }
 
 // 0x10: DJNZ d
-function djnz (cpu: Z80Cpu) {
+function djnz(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const e = cpu.fetchCodeByte();
   if (--cpu.b !== 0) {
@@ -3121,40 +3116,40 @@ function djnz (cpu: Z80Cpu) {
 }
 
 // 0x11: LD DE,nn
-function ldDeNN (cpu: Z80Cpu) {
+function ldDeNN(cpu: Z80Cpu) {
   cpu.e = cpu.fetchCodeByte();
   cpu.d = cpu.fetchCodeByte();
 }
 
 // 0x12: LD (BC),A
-function ldDeiA (cpu: Z80Cpu) {
+function ldDeiA(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.de, cpu.a);
   cpu.wh = cpu.a;
 }
 
 // 0x13: INC DE
-function incDe (cpu: Z80Cpu) {
+function incDe(cpu: Z80Cpu) {
   cpu.de++;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x14: INC D
-function incD (cpu: Z80Cpu) {
+function incD(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
 }
 
 // 0x15: DEC D
-function decD (cpu: Z80Cpu) {
+function decD(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.d--] | cpu.flagCValue;
 }
 
 // 0x16: LD D,n
-function ldDN (cpu: Z80Cpu) {
+function ldDN(cpu: Z80Cpu) {
   cpu.d = cpu.fetchCodeByte();
 }
 
 // 0x17: RLA
-function rla (cpu: Z80Cpu) {
+function rla(cpu: Z80Cpu) {
   let rlaVal = cpu.a;
   const newCF = (rlaVal & 0x80) !== 0 ? FlagsSetMask.C : 0;
   rlaVal = rlaVal << 1;
@@ -3166,45 +3161,45 @@ function rla (cpu: Z80Cpu) {
 }
 
 // 0x18: JR e
-function jr (cpu: Z80Cpu) {
+function jr(cpu: Z80Cpu) {
   cpu.relativeJump(cpu.fetchCodeByte());
 }
 
 // 0x19: ADD HL,DE
-function addHlDe (cpu: Z80Cpu) {
+function addHlDe(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.hl = cpu.add16(cpu.hl, cpu.de);
 }
 
 // 0x1a: LD A,(DE)
-function ldADei (cpu: Z80Cpu) {
+function ldADei(cpu: Z80Cpu) {
   cpu.wz = cpu.de + 1;
   cpu.a = cpu.readMemory(cpu.de);
 }
 
 // 0x1b: DEC DE
-function decDe (cpu: Z80Cpu) {
+function decDe(cpu: Z80Cpu) {
   cpu.de--;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x1c: INC E
-function incE (cpu: Z80Cpu) {
+function incE(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.e++] | cpu.flagCValue;
 }
 
 // 0x1d: DEC E
-function decE (cpu: Z80Cpu) {
+function decE(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.e--] | cpu.flagCValue;
 }
 
 // 0x1e: LD E,n
-function ldEN (cpu: Z80Cpu) {
+function ldEN(cpu: Z80Cpu) {
   cpu.e = cpu.fetchCodeByte();
 }
 
 // 0x1f: RRA
-function rra (cpu: Z80Cpu) {
+function rra(cpu: Z80Cpu) {
   let rraVal = cpu.a;
   const newCF = (rraVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
   rraVal = rraVal >>> 1;
@@ -3216,7 +3211,7 @@ function rra (cpu: Z80Cpu) {
 }
 
 // 0x20: JR NZ,e
-function jrnz (cpu: Z80Cpu) {
+function jrnz(cpu: Z80Cpu) {
   const e = cpu.fetchCodeByte();
   if (!cpu.isZFlagSet()) {
     cpu.relativeJump(e);
@@ -3224,39 +3219,39 @@ function jrnz (cpu: Z80Cpu) {
 }
 
 // 0x21: LD HL,nn
-function ldHlNN (cpu: Z80Cpu) {
+function ldHlNN(cpu: Z80Cpu) {
   cpu.l = cpu.fetchCodeByte();
   cpu.h = cpu.fetchCodeByte();
 }
 
 // 0x22: LD (nn),HL
-function ldNNiHl (cpu: Z80Cpu) {
+function ldNNiHl(cpu: Z80Cpu) {
   cpu.store16(cpu.l, cpu.h);
 }
 
 // 0x23: INC HL
-function incHl (cpu: Z80Cpu) {
+function incHl(cpu: Z80Cpu) {
   cpu.hl++;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x24: INC H
-function incH (cpu: Z80Cpu) {
+function incH(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.h++] | cpu.flagCValue;
 }
 
 // 0x25: DEC H
-function decH (cpu: Z80Cpu) {
+function decH(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.h--] | cpu.flagCValue;
 }
 
 // 0x26: LD H,n
-function ldHN (cpu: Z80Cpu) {
+function ldHN(cpu: Z80Cpu) {
   cpu.h = cpu.fetchCodeByte();
 }
 
 // 0x27: DAA
-function daa (cpu: Z80Cpu) {
+function daa(cpu: Z80Cpu) {
   let add = 0;
   let carry = cpu.flagCValue;
   if (cpu.isHFlagSet() || (cpu.a & 0x0f) > 9) {
@@ -3274,12 +3269,11 @@ function daa (cpu: Z80Cpu) {
     cpu.add8(add);
   }
 
-  cpu.f =
-    (cpu.f & ~(FlagsSetMask.C | FlagsSetMask.PV)) | carry | parityTable[cpu.a];
+  cpu.f = (cpu.f & ~(FlagsSetMask.C | FlagsSetMask.PV)) | carry | parityTable[cpu.a];
 }
 
 // 0x28: JR Z,e
-function jrz (cpu: Z80Cpu) {
+function jrz(cpu: Z80Cpu) {
   const e = cpu.fetchCodeByte();
   if (cpu.isZFlagSet()) {
     cpu.relativeJump(e);
@@ -3287,13 +3281,13 @@ function jrz (cpu: Z80Cpu) {
 }
 
 // 0x29: ADD HL,HL
-function addHlHl (cpu: Z80Cpu) {
+function addHlHl(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.hl = cpu.add16(cpu.hl, cpu.hl);
 }
 
 // 0x2a: LD HL,(nn)
-function ldHlNNi (cpu: Z80Cpu) {
+function ldHlNNi(cpu: Z80Cpu) {
   let adr = cpu.fetchCodeByte();
   adr += cpu.fetchCodeByte() << 8;
   cpu.wz = adr + 1;
@@ -3303,39 +3297,38 @@ function ldHlNNi (cpu: Z80Cpu) {
 }
 
 // 0x2b: DEC HL
-function decHl (cpu: Z80Cpu) {
+function decHl(cpu: Z80Cpu) {
   cpu.hl--;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x2c: INC L
-function incL (cpu: Z80Cpu) {
+function incL(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.l++] | cpu.flagCValue;
 }
 
 // 0x2d: DEC L
-function decL (cpu: Z80Cpu) {
+function decL(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.l--] | cpu.flagCValue;
 }
 
 // 0x2e: LD L,n
-function ldLN (cpu: Z80Cpu) {
+function ldLN(cpu: Z80Cpu) {
   cpu.l = cpu.fetchCodeByte();
 }
 
 // 0x2f: CPL
-function cpl (cpu: Z80Cpu) {
+function cpl(cpu: Z80Cpu) {
   cpu.a ^= 0xff;
   cpu.f =
-    (cpu.f &
-      (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
+    (cpu.f & (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
     (cpu.a & FlagsSetMask.R3R5) |
     FlagsSetMask.N |
     FlagsSetMask.H;
 }
 
 // 0x30: JR NC,e
-function jrnc (cpu: Z80Cpu) {
+function jrnc(cpu: Z80Cpu) {
   const e = cpu.fetchCodeByte();
   if (!cpu.isCFlagSet()) {
     cpu.relativeJump(e);
@@ -3343,14 +3336,14 @@ function jrnc (cpu: Z80Cpu) {
 }
 
 // 0x31: LD SP,nn
-function ldSpNN (cpu: Z80Cpu) {
+function ldSpNN(cpu: Z80Cpu) {
   const l = cpu.fetchCodeByte();
   const h = cpu.fetchCodeByte();
   cpu.sp = (h << 8) | l;
 }
 
 // 0x32: LD (nn),A
-function ldNNiA (cpu: Z80Cpu) {
+function ldNNiA(cpu: Z80Cpu) {
   const l = cpu.fetchCodeByte();
   const addr = (cpu.fetchCodeByte() << 8) | l;
   cpu.wl = addr + 1;
@@ -3359,13 +3352,13 @@ function ldNNiA (cpu: Z80Cpu) {
 }
 
 // 0x33: INC SP
-function incSp (cpu: Z80Cpu) {
+function incSp(cpu: Z80Cpu) {
   cpu.sp++;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x34: INC (HL)
-function incHli (cpu: Z80Cpu) {
+function incHli(cpu: Z80Cpu) {
   let memValue = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.f = incFlags[memValue++] | cpu.flagCValue;
@@ -3373,7 +3366,7 @@ function incHli (cpu: Z80Cpu) {
 }
 
 // 0x35: DEC (HL)
-function decHli (cpu: Z80Cpu) {
+function decHli(cpu: Z80Cpu) {
   let memValue = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.f = decFlags[memValue--] | cpu.flagCValue;
@@ -3381,18 +3374,18 @@ function decHli (cpu: Z80Cpu) {
 }
 
 // 0x36: LD (HL),n
-function ldHliN (cpu: Z80Cpu) {
+function ldHliN(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.fetchCodeByte());
 }
 
 // 0x37: SCF
-function scf (cpu: Z80Cpu) {
+function scf(cpu: Z80Cpu) {
   cpu.f = cpu.flagsSZPVValue | FlagsSetMask.C;
   cpu.f = (cpu.f & ~FlagsSetMask.R3R5) | (cpu.a & FlagsSetMask.R3R5);
 }
 
 // 0x38: JR C,e
-function jrc (cpu: Z80Cpu) {
+function jrc(cpu: Z80Cpu) {
   const e = cpu.fetchCodeByte();
   if (cpu.isCFlagSet()) {
     cpu.relativeJump(e);
@@ -3400,13 +3393,13 @@ function jrc (cpu: Z80Cpu) {
 }
 
 // 0x39: ADD HL,SP
-function addHlSp (cpu: Z80Cpu) {
+function addHlSp(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.hl = cpu.add16(cpu.hl, cpu.sp);
 }
 
 // 0x3a: LD A,(nn)
-function ldANNi (cpu: Z80Cpu) {
+function ldANNi(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   cpu.a = cpu.readMemory(cpu.wz);
@@ -3414,640 +3407,639 @@ function ldANNi (cpu: Z80Cpu) {
 }
 
 // 0x3b: DEC SP
-function decSp (cpu: Z80Cpu) {
+function decSp(cpu: Z80Cpu) {
   cpu.sp--;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x3c: INC A
-function incA (cpu: Z80Cpu) {
+function incA(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.a++] | cpu.flagCValue;
 }
 
 // 0x3d: DEC A
-function decA (cpu: Z80Cpu) {
+function decA(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.a--] | cpu.flagCValue;
 }
 
 // 0x3e: LD A,n
-function ldAN (cpu: Z80Cpu) {
+function ldAN(cpu: Z80Cpu) {
   cpu.a = cpu.fetchCodeByte();
 }
 
 // 0x3f: CCF
-function ccf (cpu: Z80Cpu) {
-  cpu.f =
-    cpu.flagsSZPVValue | (cpu.isCFlagSet() ? FlagsSetMask.H : FlagsSetMask.C);
+function ccf(cpu: Z80Cpu) {
+  cpu.f = cpu.flagsSZPVValue | (cpu.isCFlagSet() ? FlagsSetMask.H : FlagsSetMask.C);
   cpu.f = (cpu.f & ~FlagsSetMask.R3R5) | (cpu.a & FlagsSetMask.R3R5);
 }
 
 // 0x41: LD B,C
-function ldBC (cpu: Z80Cpu) {
+function ldBC(cpu: Z80Cpu) {
   cpu.b = cpu.c;
 }
 
 // 0x42: LD B,D
-function ldBD (cpu: Z80Cpu) {
+function ldBD(cpu: Z80Cpu) {
   cpu.b = cpu.d;
 }
 
 // 0x43: LD B,E
-function ldBE (cpu: Z80Cpu) {
+function ldBE(cpu: Z80Cpu) {
   cpu.b = cpu.e;
 }
 
 // 0x44: LD B,H
-function ldBH (cpu: Z80Cpu) {
+function ldBH(cpu: Z80Cpu) {
   cpu.b = cpu.h;
 }
 
 // 0x45: LD B,L
-function ldBL (cpu: Z80Cpu) {
+function ldBL(cpu: Z80Cpu) {
   cpu.b = cpu.l;
 }
 
 // 0x46: LD B,(HL)
-function ldBHli (cpu: Z80Cpu) {
+function ldBHli(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.hl);
 }
 
 // 0x47: LD B,A
-function ldBA (cpu: Z80Cpu) {
+function ldBA(cpu: Z80Cpu) {
   cpu.b = cpu.a;
 }
 
 // 0x48: LD C,B
-function ldCB (cpu: Z80Cpu) {
+function ldCB(cpu: Z80Cpu) {
   cpu.c = cpu.b;
 }
 
 // 0x4a: LD C,D
-function ldCD (cpu: Z80Cpu) {
+function ldCD(cpu: Z80Cpu) {
   cpu.c = cpu.d;
 }
 
 // 0x4b LD C,E
-function ldCE (cpu: Z80Cpu) {
+function ldCE(cpu: Z80Cpu) {
   cpu.c = cpu.e;
 }
 
 // 0x4c: LD C,H
-function ldCH (cpu: Z80Cpu) {
+function ldCH(cpu: Z80Cpu) {
   cpu.c = cpu.h;
 }
 
 // 0x4d: LD C,L
-function ldCL (cpu: Z80Cpu) {
+function ldCL(cpu: Z80Cpu) {
   cpu.c = cpu.l;
 }
 
 // 0x4e: LD C,(HL)
-function ldCHli (cpu: Z80Cpu) {
+function ldCHli(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.hl);
 }
 
 // 0x4f: LD C,A
-function ldCA (cpu: Z80Cpu) {
+function ldCA(cpu: Z80Cpu) {
   cpu.c = cpu.a;
 }
 
 // 0x50: LD D,B
-function ldDB (cpu: Z80Cpu) {
+function ldDB(cpu: Z80Cpu) {
   cpu.d = cpu.b;
 }
 
 // 0x51: LD D,C
-function ldDC (cpu: Z80Cpu) {
+function ldDC(cpu: Z80Cpu) {
   cpu.d = cpu.c;
 }
 
 // 0x53: LD D,E
-function ldDE (cpu: Z80Cpu) {
+function ldDE(cpu: Z80Cpu) {
   cpu.d = cpu.e;
 }
 
 // 0x54: LD D,H
-function ldDH (cpu: Z80Cpu) {
+function ldDH(cpu: Z80Cpu) {
   cpu.d = cpu.h;
 }
 
 // 0x55: LD D,L
-function ldDL (cpu: Z80Cpu) {
+function ldDL(cpu: Z80Cpu) {
   cpu.d = cpu.l;
 }
 
 // 0x56: LD D,(HL)
-function ldDHli (cpu: Z80Cpu) {
+function ldDHli(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.hl);
 }
 
 // 0x57: LD D,A
-function ldDA (cpu: Z80Cpu) {
+function ldDA(cpu: Z80Cpu) {
   cpu.d = cpu.a;
 }
 
 // 0x58: LD E,B
-function ldEB (cpu: Z80Cpu) {
+function ldEB(cpu: Z80Cpu) {
   cpu.e = cpu.b;
 }
 
 // 0x59: LD E,C
-function ldEC (cpu: Z80Cpu) {
+function ldEC(cpu: Z80Cpu) {
   cpu.e = cpu.c;
 }
 
 // 0x5a: LD E,D
-function ldED (cpu: Z80Cpu) {
+function ldED(cpu: Z80Cpu) {
   cpu.e = cpu.d;
 }
 
 // 0x5c: LD E,H
-function ldEH (cpu: Z80Cpu) {
+function ldEH(cpu: Z80Cpu) {
   cpu.e = cpu.h;
 }
 
 // 0x5d: LD E,L
-function ldEL (cpu: Z80Cpu) {
+function ldEL(cpu: Z80Cpu) {
   cpu.e = cpu.l;
 }
 
 // 0x5e: LD E,(HL)
-function ldEHli (cpu: Z80Cpu) {
+function ldEHli(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.hl);
 }
 
 // 0x5f: LD E,A
-function ldEA (cpu: Z80Cpu) {
+function ldEA(cpu: Z80Cpu) {
   cpu.e = cpu.a;
 }
 
 // 0x60: LD H,B
-function ldHB (cpu: Z80Cpu) {
+function ldHB(cpu: Z80Cpu) {
   cpu.h = cpu.b;
 }
 
 // 0x61: LD H,C
-function ldHC (cpu: Z80Cpu) {
+function ldHC(cpu: Z80Cpu) {
   cpu.h = cpu.c;
 }
 
 // 0x62: LD H,D
-function ldHD (cpu: Z80Cpu) {
+function ldHD(cpu: Z80Cpu) {
   cpu.h = cpu.d;
 }
 
 // 0x63: LD H,E
-function ldHE (cpu: Z80Cpu) {
+function ldHE(cpu: Z80Cpu) {
   cpu.h = cpu.e;
 }
 
 // 0x65: LD H,L
-function ldHL (cpu: Z80Cpu) {
+function ldHL(cpu: Z80Cpu) {
   cpu.h = cpu.l;
 }
 
 // 0x66: LD H,(HL)
-function ldHHli (cpu: Z80Cpu) {
+function ldHHli(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.hl);
 }
 
 // 0x67: LD H,A
-function ldHA (cpu: Z80Cpu) {
+function ldHA(cpu: Z80Cpu) {
   cpu.h = cpu.a;
 }
 
 // 0x68: LD L,B
-function ldLB (cpu: Z80Cpu) {
+function ldLB(cpu: Z80Cpu) {
   cpu.l = cpu.b;
 }
 
 // 0x69: LD L,C
-function ldLC (cpu: Z80Cpu) {
+function ldLC(cpu: Z80Cpu) {
   cpu.l = cpu.c;
 }
 
 // 0x6a: LD L,D
-function ldLD (cpu: Z80Cpu) {
+function ldLD(cpu: Z80Cpu) {
   cpu.l = cpu.d;
 }
 
 // 0x6b: LD L,E
-function ldLE (cpu: Z80Cpu) {
+function ldLE(cpu: Z80Cpu) {
   cpu.l = cpu.e;
 }
 
 // 0x6c: LD L,H
-function ldLH (cpu: Z80Cpu) {
+function ldLH(cpu: Z80Cpu) {
   cpu.l = cpu.h;
 }
 
 // 0x6e: LD L,(HL)
-function ldLHli (cpu: Z80Cpu) {
+function ldLHli(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.hl);
 }
 
 // 0x6f: LD L,A
-function ldLA (cpu: Z80Cpu) {
+function ldLA(cpu: Z80Cpu) {
   cpu.l = cpu.a;
 }
 
 // 0x70: LD (HL),B
-function ldHliB (cpu: Z80Cpu) {
+function ldHliB(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.b);
 }
 
 // 0x71: LD (HL),C
-function ldHliC (cpu: Z80Cpu) {
+function ldHliC(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.c);
 }
 
 // 0x72: LD (HL),D
-function ldHliD (cpu: Z80Cpu) {
+function ldHliD(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.d);
 }
 
 // 0x73: LD (HL),E
-function ldHliE (cpu: Z80Cpu) {
+function ldHliE(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.e);
 }
 
 // 0x74: LD (HL),H
-function ldHliH (cpu: Z80Cpu) {
+function ldHliH(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.h);
 }
 
 // 0x75: LD (HL),L
-function ldHliL (cpu: Z80Cpu) {
+function ldHliL(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.l);
 }
 
 // 0x76: HALT
-function halt (cpu: Z80Cpu) {
+function halt(cpu: Z80Cpu) {
   cpu.halted = true;
   cpu.pc--;
 }
 
 // 0x77: LD (HL),A
-function ldHliA (cpu: Z80Cpu) {
+function ldHliA(cpu: Z80Cpu) {
   cpu.writeMemory(cpu.hl, cpu.a);
 }
 
 // 0x78: LD A,B
-function ldAB (cpu: Z80Cpu) {
+function ldAB(cpu: Z80Cpu) {
   cpu.a = cpu.b;
 }
 
 // 0x79: LD A,C
-function ldAC (cpu: Z80Cpu) {
+function ldAC(cpu: Z80Cpu) {
   cpu.a = cpu.c;
 }
 
 // 0x7A: LD A,D
-function ldAD (cpu: Z80Cpu) {
+function ldAD(cpu: Z80Cpu) {
   cpu.a = cpu.d;
 }
 
 // 0x7B: LD A,E
-function ldAE (cpu: Z80Cpu) {
+function ldAE(cpu: Z80Cpu) {
   cpu.a = cpu.e;
 }
 
 // 0x7C: LD A,H
-function ldAH (cpu: Z80Cpu) {
+function ldAH(cpu: Z80Cpu) {
   cpu.a = cpu.h;
 }
 
 // 0x7D: LD A,L
-function ldAL (cpu: Z80Cpu) {
+function ldAL(cpu: Z80Cpu) {
   cpu.a = cpu.l;
 }
 
 // 0x7E: LD A,(HL)
-function ldAHli (cpu: Z80Cpu) {
+function ldAHli(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.hl);
 }
 
 // 0x80: ADD A,B
-function addAB (cpu: Z80Cpu) {
+function addAB(cpu: Z80Cpu) {
   cpu.add8(cpu.b);
 }
 
 // 0x81: ADD A,C
-function addAC (cpu: Z80Cpu) {
+function addAC(cpu: Z80Cpu) {
   cpu.add8(cpu.c);
 }
 
 // 0x82: ADD A,D
-function addAD (cpu: Z80Cpu) {
+function addAD(cpu: Z80Cpu) {
   cpu.add8(cpu.d);
 }
 
 // 0x83: ADD A,E
-function addAE (cpu: Z80Cpu) {
+function addAE(cpu: Z80Cpu) {
   cpu.add8(cpu.e);
 }
 
 // 0x84: ADD A,H
-function addAH (cpu: Z80Cpu) {
+function addAH(cpu: Z80Cpu) {
   cpu.add8(cpu.h);
 }
 
 // 0x85: ADD A,L
-function addAL (cpu: Z80Cpu) {
+function addAL(cpu: Z80Cpu) {
   cpu.add8(cpu.l);
 }
 
 // 0x86: ADD A,(HL)
-function addAHli (cpu: Z80Cpu) {
+function addAHli(cpu: Z80Cpu) {
   cpu.add8(cpu.readMemory(cpu.hl));
 }
 
 // 0x87: ADD A,A
-function addAA (cpu: Z80Cpu) {
+function addAA(cpu: Z80Cpu) {
   cpu.add8(cpu.a);
 }
 
 // 0x88: ADC A,B
-function adcAB (cpu: Z80Cpu) {
+function adcAB(cpu: Z80Cpu) {
   cpu.adc8(cpu.b);
 }
 
 // 0x89: ADC A,C
-function adcAC (cpu: Z80Cpu) {
+function adcAC(cpu: Z80Cpu) {
   cpu.adc8(cpu.c);
 }
 
 // 0x8A: ADC A,D
-function adcAD (cpu: Z80Cpu) {
+function adcAD(cpu: Z80Cpu) {
   cpu.adc8(cpu.d);
 }
 
 // 0x8B: ADC A,E
-function adcAE (cpu: Z80Cpu) {
+function adcAE(cpu: Z80Cpu) {
   cpu.adc8(cpu.e);
 }
 
 // 0x8C: ADC A,H
-function adcAH (cpu: Z80Cpu) {
+function adcAH(cpu: Z80Cpu) {
   cpu.adc8(cpu.h);
 }
 
 // 0x8D: ADC A,L
-function adcAL (cpu: Z80Cpu) {
+function adcAL(cpu: Z80Cpu) {
   cpu.adc8(cpu.l);
 }
 
 // 0x8E: ADC A,(HL)
-function adcAHli (cpu: Z80Cpu) {
+function adcAHli(cpu: Z80Cpu) {
   cpu.adc8(cpu.readMemory(cpu.hl));
 }
 
 // 0x8F: ADC A,A
-function adcAA (cpu: Z80Cpu) {
+function adcAA(cpu: Z80Cpu) {
   cpu.adc8(cpu.a);
 }
 
 // 0x90: SUB A,B
-function subAB (cpu: Z80Cpu) {
+function subAB(cpu: Z80Cpu) {
   cpu.sub8(cpu.b);
 }
 
 // 0x91: SUB A,C
-function subAC (cpu: Z80Cpu) {
+function subAC(cpu: Z80Cpu) {
   cpu.sub8(cpu.c);
 }
 
 // 0x92: SUB A,D
-function subAD (cpu: Z80Cpu) {
+function subAD(cpu: Z80Cpu) {
   cpu.sub8(cpu.d);
 }
 
 // 0x93: SUB A,E
-function subAE (cpu: Z80Cpu) {
+function subAE(cpu: Z80Cpu) {
   cpu.sub8(cpu.e);
 }
 
 // 0x94: SUB A,H
-function subAH (cpu: Z80Cpu) {
+function subAH(cpu: Z80Cpu) {
   cpu.sub8(cpu.h);
 }
 
 // 0x95: SUB A,L
-function subAL (cpu: Z80Cpu) {
+function subAL(cpu: Z80Cpu) {
   cpu.sub8(cpu.l);
 }
 
 // 0x96: SUB A,(HL)
-function subAHli (cpu: Z80Cpu) {
+function subAHli(cpu: Z80Cpu) {
   cpu.sub8(cpu.readMemory(cpu.hl));
 }
 
 // 0x97: SUB A,A
-function subAA (cpu: Z80Cpu) {
+function subAA(cpu: Z80Cpu) {
   cpu.sub8(cpu.a);
 }
 
 // 0x98: SBC A,B
-function sbcAB (cpu: Z80Cpu) {
+function sbcAB(cpu: Z80Cpu) {
   cpu.sbc8(cpu.b);
 }
 
 // 0x99: SBC A,C
-function sbcAC (cpu: Z80Cpu) {
+function sbcAC(cpu: Z80Cpu) {
   cpu.sbc8(cpu.c);
 }
 
 // 0x9A: SBC A,D
-function sbcAD (cpu: Z80Cpu) {
+function sbcAD(cpu: Z80Cpu) {
   cpu.sbc8(cpu.d);
 }
 
 // 0x9B: SBC A,E
-function sbcAE (cpu: Z80Cpu) {
+function sbcAE(cpu: Z80Cpu) {
   cpu.sbc8(cpu.e);
 }
 
 // 0x9C: SBC A,H
-function sbcAH (cpu: Z80Cpu) {
+function sbcAH(cpu: Z80Cpu) {
   cpu.sbc8(cpu.h);
 }
 
 // 0x9D: SBC A,L
-function sbcAL (cpu: Z80Cpu) {
+function sbcAL(cpu: Z80Cpu) {
   cpu.sbc8(cpu.l);
 }
 
 // 0x9E: SBC A,(HL)
-function sbcAHli (cpu: Z80Cpu) {
+function sbcAHli(cpu: Z80Cpu) {
   cpu.sbc8(cpu.readMemory(cpu.hl));
 }
 
 // 0x9f: SBC A,A
-function sbcAA (cpu: Z80Cpu) {
+function sbcAA(cpu: Z80Cpu) {
   cpu.sbc8(cpu.a);
 }
 
 // 0xa0: AND A,B
-function andAB (cpu: Z80Cpu) {
+function andAB(cpu: Z80Cpu) {
   cpu.and8(cpu.b);
 }
 
 // 0xa1: AND A,C
-function andAC (cpu: Z80Cpu) {
+function andAC(cpu: Z80Cpu) {
   cpu.and8(cpu.c);
 }
 
 // 0xa2: AND A,D
-function andAD (cpu: Z80Cpu) {
+function andAD(cpu: Z80Cpu) {
   cpu.and8(cpu.d);
 }
 
 // 0xa3: AND A,E
-function andAE (cpu: Z80Cpu) {
+function andAE(cpu: Z80Cpu) {
   cpu.and8(cpu.e);
 }
 
 // 0xa4: AND A,H
-function andAH (cpu: Z80Cpu) {
+function andAH(cpu: Z80Cpu) {
   cpu.and8(cpu.h);
 }
 
 // 0xa5: AND A,L
-function andAL (cpu: Z80Cpu) {
+function andAL(cpu: Z80Cpu) {
   cpu.and8(cpu.l);
 }
 
 // 0xa6: AND A,(HL)
-function andAHli (cpu: Z80Cpu) {
+function andAHli(cpu: Z80Cpu) {
   cpu.and8(cpu.readMemory(cpu.hl));
 }
 
 // 0xa7: AND A,A
-function andAA (cpu: Z80Cpu) {
+function andAA(cpu: Z80Cpu) {
   cpu.and8(cpu.a);
 }
 
 // 0xa8: XOR A,B
-function xorAB (cpu: Z80Cpu) {
+function xorAB(cpu: Z80Cpu) {
   cpu.xor8(cpu.b);
 }
 
 // 0xa9: XOR A,C
-function xorAC (cpu: Z80Cpu) {
+function xorAC(cpu: Z80Cpu) {
   cpu.xor8(cpu.c);
 }
 // 0xaa: XOR A,D
-function xorAD (cpu: Z80Cpu) {
+function xorAD(cpu: Z80Cpu) {
   cpu.xor8(cpu.d);
 }
 
 // 0xab: XOR A,E
-function xorAE (cpu: Z80Cpu) {
+function xorAE(cpu: Z80Cpu) {
   cpu.xor8(cpu.e);
 }
 
 // 0xac: XOR A,H
-function xorAH (cpu: Z80Cpu) {
+function xorAH(cpu: Z80Cpu) {
   cpu.xor8(cpu.h);
 }
 
 // 0xad: XOR A,L
-function xorAL (cpu: Z80Cpu) {
+function xorAL(cpu: Z80Cpu) {
   cpu.xor8(cpu.l);
 }
 
 // 0xae: XOR A,(HL)
-function xorAHli (cpu: Z80Cpu) {
+function xorAHli(cpu: Z80Cpu) {
   cpu.xor8(cpu.readMemory(cpu.hl));
 }
 
 // 0xaf: XOR A,A
-function xorAA (cpu: Z80Cpu) {
+function xorAA(cpu: Z80Cpu) {
   cpu.xor8(cpu.a);
 }
 
 // 0xb0: OR A,B
-function orAB (cpu: Z80Cpu) {
+function orAB(cpu: Z80Cpu) {
   cpu.or8(cpu.b);
 }
 
 // 0xb1: OR A,C
-function orAC (cpu: Z80Cpu) {
+function orAC(cpu: Z80Cpu) {
   cpu.or8(cpu.c);
 }
 
 // 0xb2: OR A,D
-function orAD (cpu: Z80Cpu) {
+function orAD(cpu: Z80Cpu) {
   cpu.or8(cpu.d);
 }
 
 // 0xb3: OR A,E
-function orAE (cpu: Z80Cpu) {
+function orAE(cpu: Z80Cpu) {
   cpu.or8(cpu.e);
 }
 
 // 0xb4: OR A,H
-function orAH (cpu: Z80Cpu) {
+function orAH(cpu: Z80Cpu) {
   cpu.or8(cpu.h);
 }
 
 // 0xb5: OR A,L
-function orAL (cpu: Z80Cpu) {
+function orAL(cpu: Z80Cpu) {
   cpu.or8(cpu.l);
 }
 
 // 0xb6: OR A,(HL)
-function orAHli (cpu: Z80Cpu) {
+function orAHli(cpu: Z80Cpu) {
   cpu.or8(cpu.readMemory(cpu.hl));
 }
 
 // 0xb7: OR A,A
-function orAA (cpu: Z80Cpu) {
+function orAA(cpu: Z80Cpu) {
   cpu.or8(cpu.a);
 }
 
 // 0xb8: CP B
-function cpB (cpu: Z80Cpu) {
+function cpB(cpu: Z80Cpu) {
   cpu.cp8(cpu.b);
 }
 
 // 0xb9: CP C
-function cpC (cpu: Z80Cpu) {
+function cpC(cpu: Z80Cpu) {
   cpu.cp8(cpu.c);
 }
 
 // 0xba: CP D
-function cpD (cpu: Z80Cpu) {
+function cpD(cpu: Z80Cpu) {
   cpu.cp8(cpu.d);
 }
 
 // 0xbb: CP E
-function cpE (cpu: Z80Cpu) {
+function cpE(cpu: Z80Cpu) {
   cpu.cp8(cpu.e);
 }
 
 // 0xbc: CP H
-function cpH (cpu: Z80Cpu) {
+function cpH(cpu: Z80Cpu) {
   cpu.cp8(cpu.h);
 }
 
 // 0xbd: CP L
-function cpL (cpu: Z80Cpu) {
+function cpL(cpu: Z80Cpu) {
   cpu.cp8(cpu.l);
 }
 
 // 0xbe: CP (HL)
-function cpHli (cpu: Z80Cpu) {
+function cpHli(cpu: Z80Cpu) {
   cpu.cp8(cpu.readMemory(cpu.hl));
 }
 
 // 0xbf: CP A
-function cpA (cpu: Z80Cpu) {
+function cpA(cpu: Z80Cpu) {
   cpu.cp8(cpu.a);
 }
 
 // 0xc0: RET NZ
-function retNz (cpu: Z80Cpu) {
+function retNz(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (!cpu.isZFlagSet()) {
     ret(cpu);
@@ -4055,7 +4047,7 @@ function retNz (cpu: Z80Cpu) {
 }
 
 // 0xc1: POP BC
-function popBc (cpu: Z80Cpu) {
+function popBc(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.b = cpu.readMemory(cpu.sp);
@@ -4063,7 +4055,7 @@ function popBc (cpu: Z80Cpu) {
 }
 
 // 0xc2: JP NZ,nn
-function jpNz (cpu: Z80Cpu) {
+function jpNz(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isZFlagSet()) {
@@ -4072,14 +4064,14 @@ function jpNz (cpu: Z80Cpu) {
 }
 
 // 0xc3: JP nn
-function jp (cpu: Z80Cpu) {
+function jp(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   cpu.pc = cpu.wz;
 }
 
 // 0xc4: CALL NZ,nn
-function callNz (cpu: Z80Cpu) {
+function callNz(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isZFlagSet()) {
@@ -4088,7 +4080,7 @@ function callNz (cpu: Z80Cpu) {
 }
 
 // 0xc5: PUSH BC
-function pushBc (cpu: Z80Cpu) {
+function pushBc(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.b);
@@ -4097,17 +4089,17 @@ function pushBc (cpu: Z80Cpu) {
 }
 
 // 0xc6: ADD A,N
-function addAN (cpu: Z80Cpu) {
+function addAN(cpu: Z80Cpu) {
   cpu.add8(cpu.fetchCodeByte());
 }
 
 // 0xc7: RST 00
-function rst00 (cpu: Z80Cpu) {
+function rst00(cpu: Z80Cpu) {
   cpu.rstCore(0x0000);
 }
 
 // 0xc8: RET Z
-function retZ (cpu: Z80Cpu) {
+function retZ(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (cpu.isZFlagSet()) {
     ret(cpu);
@@ -4115,7 +4107,7 @@ function retZ (cpu: Z80Cpu) {
 }
 
 // 0xc9: RET
-function ret (cpu: Z80Cpu) {
+function ret(cpu: Z80Cpu) {
   cpu.wl = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.wh = cpu.readMemory(cpu.sp);
@@ -4124,7 +4116,7 @@ function ret (cpu: Z80Cpu) {
 }
 
 // 0xca: JP Z,nn
-function jpZ (cpu: Z80Cpu) {
+function jpZ(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isZFlagSet()) {
@@ -4133,7 +4125,7 @@ function jpZ (cpu: Z80Cpu) {
 }
 
 // 0xcc: CALL Z,nn
-function callZ (cpu: Z80Cpu) {
+function callZ(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isZFlagSet()) {
@@ -4142,24 +4134,24 @@ function callZ (cpu: Z80Cpu) {
 }
 
 // 0xcd: CALL nn
-function call (cpu: Z80Cpu) {
+function call(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   cpu.callCore();
 }
 
 // 0xce: ADC A,N
-function adcAN (cpu: Z80Cpu) {
+function adcAN(cpu: Z80Cpu) {
   cpu.adc8(cpu.fetchCodeByte());
 }
 
 // 0xcf: RST 08
-function rst08 (cpu: Z80Cpu) {
+function rst08(cpu: Z80Cpu) {
   cpu.rstCore(0x0008);
 }
 
 // 0xd0: RET NC
-function retNc (cpu: Z80Cpu) {
+function retNc(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (!cpu.isCFlagSet()) {
     ret(cpu);
@@ -4167,7 +4159,7 @@ function retNc (cpu: Z80Cpu) {
 }
 
 // 0xd1: POP DE
-function popDe (cpu: Z80Cpu) {
+function popDe(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.d = cpu.readMemory(cpu.sp);
@@ -4175,7 +4167,7 @@ function popDe (cpu: Z80Cpu) {
 }
 
 // 0xd2: JP NC,nn
-function jpNc (cpu: Z80Cpu) {
+function jpNc(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isCFlagSet()) {
@@ -4184,7 +4176,7 @@ function jpNc (cpu: Z80Cpu) {
 }
 
 // 0xd3: OUT (n),A
-function outNA (cpu: Z80Cpu) {
+function outNA(cpu: Z80Cpu) {
   const nn = cpu.fetchCodeByte();
   const port = nn | (cpu.a << 8);
   cpu.wh = cpu.a;
@@ -4193,7 +4185,7 @@ function outNA (cpu: Z80Cpu) {
 }
 
 // 0xd4: CALL NC,nn
-function callNc (cpu: Z80Cpu) {
+function callNc(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isCFlagSet()) {
@@ -4202,7 +4194,7 @@ function callNc (cpu: Z80Cpu) {
 }
 
 // 0xd5: PUSH DE
-function pushDe (cpu: Z80Cpu) {
+function pushDe(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.d);
@@ -4211,17 +4203,17 @@ function pushDe (cpu: Z80Cpu) {
 }
 
 // 0xd6: SUB A,N
-function subAN (cpu: Z80Cpu) {
+function subAN(cpu: Z80Cpu) {
   cpu.sub8(cpu.fetchCodeByte());
 }
 
 // 0xd7: RST 10
-function rst10 (cpu: Z80Cpu) {
+function rst10(cpu: Z80Cpu) {
   cpu.rstCore(0x0010);
 }
 
 // 0xd8: RET C
-function retC (cpu: Z80Cpu) {
+function retC(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (cpu.isCFlagSet()) {
     ret(cpu);
@@ -4229,7 +4221,7 @@ function retC (cpu: Z80Cpu) {
 }
 
 // 0xd9: EXX
-function exx (cpu: Z80Cpu) {
+function exx(cpu: Z80Cpu) {
   let tmp = cpu.bc;
   cpu.bc = cpu.bc_;
   cpu.bc_ = tmp;
@@ -4242,7 +4234,7 @@ function exx (cpu: Z80Cpu) {
 }
 
 // 0xda: JP C,nn
-function jpC (cpu: Z80Cpu) {
+function jpC(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isCFlagSet()) {
@@ -4251,14 +4243,14 @@ function jpC (cpu: Z80Cpu) {
 }
 
 // 0xdb: IN A,(n)
-function inAN (cpu: Z80Cpu) {
+function inAN(cpu: Z80Cpu) {
   const inTemp = cpu.fetchCodeByte() | (cpu.a << 8);
   cpu.a = cpu.readPort(inTemp);
   cpu.wz = inTemp + 1;
 }
 
 // 0xdc: CALL C,nn
-function callC (cpu: Z80Cpu) {
+function callC(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isCFlagSet()) {
@@ -4267,17 +4259,17 @@ function callC (cpu: Z80Cpu) {
 }
 
 // 0xde: SBC A,N
-function sbcAN (cpu: Z80Cpu) {
+function sbcAN(cpu: Z80Cpu) {
   cpu.sbc8(cpu.fetchCodeByte());
 }
 
 // 0xdf: RST 18
-function rst18 (cpu: Z80Cpu) {
+function rst18(cpu: Z80Cpu) {
   cpu.rstCore(0x0018);
 }
 
 // 0xe0: RET PO
-function retPo (cpu: Z80Cpu) {
+function retPo(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (!cpu.isPvFlagSet()) {
     ret(cpu);
@@ -4285,7 +4277,7 @@ function retPo (cpu: Z80Cpu) {
 }
 
 // 0xe1: POP HL
-function popHl (cpu: Z80Cpu) {
+function popHl(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.h = cpu.readMemory(cpu.sp);
@@ -4293,7 +4285,7 @@ function popHl (cpu: Z80Cpu) {
 }
 
 // 0xe2: JP PO,nn
-function jpPo (cpu: Z80Cpu) {
+function jpPo(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isPvFlagSet()) {
@@ -4302,7 +4294,7 @@ function jpPo (cpu: Z80Cpu) {
 }
 
 // 0xe3: EX (SP),HL
-function exSpiHl (cpu: Z80Cpu) {
+function exSpiHl(cpu: Z80Cpu) {
   const sp1 = cpu.sp + 1;
   const tempL = cpu.readMemory(cpu.sp);
   const tempH = cpu.readMemory(sp1);
@@ -4316,7 +4308,7 @@ function exSpiHl (cpu: Z80Cpu) {
 }
 
 // 0xe4: CALL PO,nn
-function callPo (cpu: Z80Cpu) {
+function callPo(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isPvFlagSet()) {
@@ -4325,7 +4317,7 @@ function callPo (cpu: Z80Cpu) {
 }
 
 // 0xe5: PUSH HL
-function pushHl (cpu: Z80Cpu) {
+function pushHl(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.h);
@@ -4334,17 +4326,17 @@ function pushHl (cpu: Z80Cpu) {
 }
 
 // 0xe6: AND A,N
-function andAN (cpu: Z80Cpu) {
+function andAN(cpu: Z80Cpu) {
   cpu.and8(cpu.fetchCodeByte());
 }
 
 // 0xe7: RST 20
-function rst20 (cpu: Z80Cpu) {
+function rst20(cpu: Z80Cpu) {
   cpu.rstCore(0x0020);
 }
 
 // 0xe8: RET PE
-function retPe (cpu: Z80Cpu) {
+function retPe(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (cpu.isPvFlagSet()) {
     ret(cpu);
@@ -4352,12 +4344,12 @@ function retPe (cpu: Z80Cpu) {
 }
 
 // 0xe9: JP (HL)
-function jpHl (cpu: Z80Cpu) {
+function jpHl(cpu: Z80Cpu) {
   cpu.pc = cpu.hl;
 }
 
 // 0xea: JP PE,nn
-function jpPe (cpu: Z80Cpu) {
+function jpPe(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isPvFlagSet()) {
@@ -4366,14 +4358,14 @@ function jpPe (cpu: Z80Cpu) {
 }
 
 // 0xeb: EX DE,HL
-function exDeHl (cpu: Z80Cpu) {
+function exDeHl(cpu: Z80Cpu) {
   const tmp = cpu.de;
   cpu.de = cpu.hl;
   cpu.hl = tmp;
 }
 
 // 0xec: CALL PE,nn
-function callPe (cpu: Z80Cpu) {
+function callPe(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isPvFlagSet()) {
@@ -4382,17 +4374,17 @@ function callPe (cpu: Z80Cpu) {
 }
 
 // 0xee: XOR A,N
-function xorAN (cpu: Z80Cpu) {
+function xorAN(cpu: Z80Cpu) {
   cpu.xor8(cpu.fetchCodeByte());
 }
 
 // 0xef: RST 28
-function rst28 (cpu: Z80Cpu) {
+function rst28(cpu: Z80Cpu) {
   cpu.rstCore(0x0028);
 }
 
 // 0xf0: RET P
-function retP (cpu: Z80Cpu) {
+function retP(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (!cpu.isSFlagSet()) {
     ret(cpu);
@@ -4400,7 +4392,7 @@ function retP (cpu: Z80Cpu) {
 }
 
 // 0xf1: POP AF
-function popAf (cpu: Z80Cpu) {
+function popAf(cpu: Z80Cpu) {
   cpu.f = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.a = cpu.readMemory(cpu.sp);
@@ -4408,7 +4400,7 @@ function popAf (cpu: Z80Cpu) {
 }
 
 // 0xf2: JP P,nn
-function jpP (cpu: Z80Cpu) {
+function jpP(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isSFlagSet()) {
@@ -4417,12 +4409,12 @@ function jpP (cpu: Z80Cpu) {
 }
 
 // 0xf3: DI
-function di (cpu: Z80Cpu) {
+function di(cpu: Z80Cpu) {
   cpu.iff2 = cpu.iff1 = false;
 }
 
 // 0xf4: CALL P,nn
-function callP (cpu: Z80Cpu) {
+function callP(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (!cpu.isSFlagSet()) {
@@ -4431,7 +4423,7 @@ function callP (cpu: Z80Cpu) {
 }
 
 // 0xf5: PUSH AF
-function pushAf (cpu: Z80Cpu) {
+function pushAf(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.a);
@@ -4440,17 +4432,17 @@ function pushAf (cpu: Z80Cpu) {
 }
 
 // 0xf6: OR A,N
-function orAN (cpu: Z80Cpu) {
+function orAN(cpu: Z80Cpu) {
   cpu.or8(cpu.fetchCodeByte());
 }
 
 // 0xf7: RST 30
-function rst30 (cpu: Z80Cpu) {
+function rst30(cpu: Z80Cpu) {
   cpu.rstCore(0x0030);
 }
 
 // 0xf8: RET M
-function retM (cpu: Z80Cpu) {
+function retM(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   if (cpu.isSFlagSet()) {
     ret(cpu);
@@ -4458,13 +4450,13 @@ function retM (cpu: Z80Cpu) {
 }
 
 // 0xf9: LD SP,HL
-function ldSpHl (cpu: Z80Cpu) {
+function ldSpHl(cpu: Z80Cpu) {
   cpu.tactPlus2WithAddress(cpu.ir);
   cpu.sp = cpu.hl;
 }
 
 // 0xfa: JP M,nn
-function jpM (cpu: Z80Cpu) {
+function jpM(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isSFlagSet()) {
@@ -4473,13 +4465,13 @@ function jpM (cpu: Z80Cpu) {
 }
 
 // 0xfb: EI
-function ei (cpu: Z80Cpu) {
+function ei(cpu: Z80Cpu) {
   cpu.iff2 = cpu.iff1 = true;
   cpu.eiBacklog = 2;
 }
 
 // 0xfc: CALL M,nn
-function callM (cpu: Z80Cpu) {
+function callM(cpu: Z80Cpu) {
   cpu.wl = cpu.fetchCodeByte();
   cpu.wh = cpu.fetchCodeByte();
   if (cpu.isSFlagSet()) {
@@ -4488,12 +4480,12 @@ function callM (cpu: Z80Cpu) {
 }
 
 // 0xfe: CP A,N
-function cpAN (cpu: Z80Cpu) {
+function cpAN(cpu: Z80Cpu) {
   cpu.cp8(cpu.fetchCodeByte());
 }
 
 // 0xff: RST 38
-function rst38 (cpu: Z80Cpu) {
+function rst38(cpu: Z80Cpu) {
   cpu.rstCore(0x0038);
 }
 
@@ -4501,1346 +4493,1346 @@ function rst38 (cpu: Z80Cpu) {
 // Z80 bit operations
 
 // 0x00: RLC B
-function rlcB (cpu: Z80Cpu) {
+function rlcB(cpu: Z80Cpu) {
   cpu.b = cpu.rlc8(cpu.b);
 }
 
 // 0x01: RLC C
-function rlcC (cpu: Z80Cpu) {
+function rlcC(cpu: Z80Cpu) {
   cpu.c = cpu.rlc8(cpu.c);
 }
 
 // 0x02: RLC D
-function rlcD (cpu: Z80Cpu) {
+function rlcD(cpu: Z80Cpu) {
   cpu.d = cpu.rlc8(cpu.d);
 }
 
 // 0x03: RLC E
-function rlcE (cpu: Z80Cpu) {
+function rlcE(cpu: Z80Cpu) {
   cpu.e = cpu.rlc8(cpu.e);
 }
 
 // 0x04: RLC H
-function rlcH (cpu: Z80Cpu) {
+function rlcH(cpu: Z80Cpu) {
   cpu.h = cpu.rlc8(cpu.h);
 }
 
 // 0x05: RLC L
-function rlcL (cpu: Z80Cpu) {
+function rlcL(cpu: Z80Cpu) {
   cpu.l = cpu.rlc8(cpu.l);
 }
 
 // 0x06: RLC (HL)
-function rlcHli (cpu: Z80Cpu) {
+function rlcHli(cpu: Z80Cpu) {
   const tmp = cpu.rlc8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x07: RLC A
-function rlcA (cpu: Z80Cpu) {
+function rlcA(cpu: Z80Cpu) {
   cpu.a = cpu.rlc8(cpu.a);
 }
 
 // 0x08: RRC B
-function rrcB (cpu: Z80Cpu) {
+function rrcB(cpu: Z80Cpu) {
   cpu.b = cpu.rrc8(cpu.b);
 }
 
 // 0x09: RRC C
-function rrcC (cpu: Z80Cpu) {
+function rrcC(cpu: Z80Cpu) {
   cpu.c = cpu.rrc8(cpu.c);
 }
 
 // 0x0a: RRC D
-function rrcD (cpu: Z80Cpu) {
+function rrcD(cpu: Z80Cpu) {
   cpu.d = cpu.rrc8(cpu.d);
 }
 
 // 0x0b: RRC E
-function rrcE (cpu: Z80Cpu) {
+function rrcE(cpu: Z80Cpu) {
   cpu.e = cpu.rrc8(cpu.e);
 }
 
 // 0x0c: RRC H
-function rrcH (cpu: Z80Cpu) {
+function rrcH(cpu: Z80Cpu) {
   cpu.h = cpu.rrc8(cpu.h);
 }
 
 // 0x0d: RRC L
-function rrcL (cpu: Z80Cpu) {
+function rrcL(cpu: Z80Cpu) {
   cpu.l = cpu.rrc8(cpu.l);
 }
 
 // 0x0e: RRC (HL)
-function rrcHli (cpu: Z80Cpu) {
+function rrcHli(cpu: Z80Cpu) {
   const tmp = cpu.rrc8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x0f: RRC A
-function rrcA (cpu: Z80Cpu) {
+function rrcA(cpu: Z80Cpu) {
   cpu.a = cpu.rrc8(cpu.a);
 }
 
 // 0x10: RL B
-function rlB (cpu: Z80Cpu) {
+function rlB(cpu: Z80Cpu) {
   cpu.b = cpu.rl8(cpu.b);
 }
 
 // 0x11: RL C
-function rlC (cpu: Z80Cpu) {
+function rlC(cpu: Z80Cpu) {
   cpu.c = cpu.rl8(cpu.c);
 }
 
 // 0x12: RL D
-function rlD (cpu: Z80Cpu) {
+function rlD(cpu: Z80Cpu) {
   cpu.d = cpu.rl8(cpu.d);
 }
 
 // 0x13: RL E
-function rlE (cpu: Z80Cpu) {
+function rlE(cpu: Z80Cpu) {
   cpu.e = cpu.rl8(cpu.e);
 }
 
 // 0x14: RL H
-function rlH (cpu: Z80Cpu) {
+function rlH(cpu: Z80Cpu) {
   cpu.h = cpu.rl8(cpu.h);
 }
 
 // 0x15: RL L
-function rlL (cpu: Z80Cpu) {
+function rlL(cpu: Z80Cpu) {
   cpu.l = cpu.rl8(cpu.l);
 }
 
 // 0x16: RL (HL)
-function rlHli (cpu: Z80Cpu) {
+function rlHli(cpu: Z80Cpu) {
   const tmp = cpu.rl8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x17: RL A
-function rlA (cpu: Z80Cpu) {
+function rlA(cpu: Z80Cpu) {
   cpu.a = cpu.rl8(cpu.a);
 }
 
 // 0x18: RR B
-function rrB (cpu: Z80Cpu) {
+function rrB(cpu: Z80Cpu) {
   cpu.b = cpu.rr8(cpu.b);
 }
 
 // 0x19: RR C
-function rrC (cpu: Z80Cpu) {
+function rrC(cpu: Z80Cpu) {
   cpu.c = cpu.rr8(cpu.c);
 }
 
 // 0x1a: RR D
-function rrD (cpu: Z80Cpu) {
+function rrD(cpu: Z80Cpu) {
   cpu.d = cpu.rr8(cpu.d);
 }
 
 // 0x1b: RR E
-function rrE (cpu: Z80Cpu) {
+function rrE(cpu: Z80Cpu) {
   cpu.e = cpu.rr8(cpu.e);
 }
 
 // 0x1c: RR H
-function rrH (cpu: Z80Cpu) {
+function rrH(cpu: Z80Cpu) {
   cpu.h = cpu.rr8(cpu.h);
 }
 
 // 0x1d: RR L
-function rrL (cpu: Z80Cpu) {
+function rrL(cpu: Z80Cpu) {
   cpu.l = cpu.rr8(cpu.l);
 }
 
 // 0x1e: RR (HL)
-function rrHli (cpu: Z80Cpu) {
+function rrHli(cpu: Z80Cpu) {
   const tmp = cpu.rr8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x1f: RR A
-function rrA (cpu: Z80Cpu) {
+function rrA(cpu: Z80Cpu) {
   cpu.a = cpu.rr8(cpu.a);
 }
 
 // 0x20: SLA B
-function slaB (cpu: Z80Cpu) {
+function slaB(cpu: Z80Cpu) {
   cpu.b = cpu.sla8(cpu.b);
 }
 
 // 0x21: SLA C
-function slaC (cpu: Z80Cpu) {
+function slaC(cpu: Z80Cpu) {
   cpu.c = cpu.sla8(cpu.c);
 }
 
 // 0x22: SLA D
-function slaD (cpu: Z80Cpu) {
+function slaD(cpu: Z80Cpu) {
   cpu.d = cpu.sla8(cpu.d);
 }
 
 // 0x23: SLA E
-function slaE (cpu: Z80Cpu) {
+function slaE(cpu: Z80Cpu) {
   cpu.e = cpu.sla8(cpu.e);
 }
 
 // 0x24: SLA H
-function slaH (cpu: Z80Cpu) {
+function slaH(cpu: Z80Cpu) {
   cpu.h = cpu.sla8(cpu.h);
 }
 
 // 0x25: SLA L
-function slaL (cpu: Z80Cpu) {
+function slaL(cpu: Z80Cpu) {
   cpu.l = cpu.sla8(cpu.l);
 }
 
 // 0x26: SLA (HL)
-function slaHli (cpu: Z80Cpu) {
+function slaHli(cpu: Z80Cpu) {
   const tmp = cpu.sla8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x27: SLA A
-function slaA (cpu: Z80Cpu) {
+function slaA(cpu: Z80Cpu) {
   cpu.a = cpu.sla8(cpu.a);
 }
 
 // 0x28: SRA B
-function sraB (cpu: Z80Cpu) {
+function sraB(cpu: Z80Cpu) {
   cpu.b = cpu.sra8(cpu.b);
 }
 
 // 0x29: SRA C
-function sraC (cpu: Z80Cpu) {
+function sraC(cpu: Z80Cpu) {
   cpu.c = cpu.sra8(cpu.c);
 }
 
 // 0x2A: SRA D
-function sraD (cpu: Z80Cpu) {
+function sraD(cpu: Z80Cpu) {
   cpu.d = cpu.sra8(cpu.d);
 }
 
 // 0x2B: SRA E
-function sraE (cpu: Z80Cpu) {
+function sraE(cpu: Z80Cpu) {
   cpu.e = cpu.sra8(cpu.e);
 }
 
 // 0x2C: SRA H
-function sraH (cpu: Z80Cpu) {
+function sraH(cpu: Z80Cpu) {
   cpu.h = cpu.sra8(cpu.h);
 }
 
 // 0x2D: SRA L
-function sraL (cpu: Z80Cpu) {
+function sraL(cpu: Z80Cpu) {
   cpu.l = cpu.sra8(cpu.l);
 }
 
 // 0x2E: SLA (HL)
-function sraHli (cpu: Z80Cpu) {
+function sraHli(cpu: Z80Cpu) {
   const tmp = cpu.sra8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x2F: SRA A
-function sraA (cpu: Z80Cpu) {
+function sraA(cpu: Z80Cpu) {
   cpu.a = cpu.sra8(cpu.a);
 }
 
 // 0x30: SLL B
-function sllB (cpu: Z80Cpu) {
+function sllB(cpu: Z80Cpu) {
   cpu.b = cpu.sll8(cpu.b);
 }
 
 // 0x31: SLL C
-function sllC (cpu: Z80Cpu) {
+function sllC(cpu: Z80Cpu) {
   cpu.c = cpu.sll8(cpu.c);
 }
 
 // 0x32: SLL D
-function sllD (cpu: Z80Cpu) {
+function sllD(cpu: Z80Cpu) {
   cpu.d = cpu.sll8(cpu.d);
 }
 
 // 0x33: SLL E
-function sllE (cpu: Z80Cpu) {
+function sllE(cpu: Z80Cpu) {
   cpu.e = cpu.sll8(cpu.e);
 }
 
 // 0x34: SLL H
-function sllH (cpu: Z80Cpu) {
+function sllH(cpu: Z80Cpu) {
   cpu.h = cpu.sll8(cpu.h);
 }
 
 // 0x35: SLL L
-function sllL (cpu: Z80Cpu) {
+function sllL(cpu: Z80Cpu) {
   cpu.l = cpu.sll8(cpu.l);
 }
 
 // 0x36: SLL (HL)
-function sllHli (cpu: Z80Cpu) {
+function sllHli(cpu: Z80Cpu) {
   const tmp = cpu.sll8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x37: SLL A
-function sllA (cpu: Z80Cpu) {
+function sllA(cpu: Z80Cpu) {
   cpu.a = cpu.sll8(cpu.a);
 }
 
 // 0x38: SRL B
-function srlB (cpu: Z80Cpu) {
+function srlB(cpu: Z80Cpu) {
   cpu.b = cpu.srl8(cpu.b);
 }
 
 // 0x39: SRL C
-function srlC (cpu: Z80Cpu) {
+function srlC(cpu: Z80Cpu) {
   cpu.c = cpu.srl8(cpu.c);
 }
 
 // 0x3A: SRL D
-function srlD (cpu: Z80Cpu) {
+function srlD(cpu: Z80Cpu) {
   cpu.d = cpu.srl8(cpu.d);
 }
 
 // 0x3B: SRL E
-function srlE (cpu: Z80Cpu) {
+function srlE(cpu: Z80Cpu) {
   cpu.e = cpu.srl8(cpu.e);
 }
 
 // 0x3C: SRL H
-function srlH (cpu: Z80Cpu) {
+function srlH(cpu: Z80Cpu) {
   cpu.h = cpu.srl8(cpu.h);
 }
 
 // 0x3D: SRL L
-function srlL (cpu: Z80Cpu) {
+function srlL(cpu: Z80Cpu) {
   cpu.l = cpu.srl8(cpu.l);
 }
 
 // 0x3E: SRL (HL)
-function srlHli (cpu: Z80Cpu) {
+function srlHli(cpu: Z80Cpu) {
   const tmp = cpu.srl8(cpu.readMemory(cpu.hl));
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x3F: SRL A
-function srlA (cpu: Z80Cpu) {
+function srlA(cpu: Z80Cpu) {
   cpu.a = cpu.srl8(cpu.a);
 }
 
 // 0x40: BIT 0,B
-function bit0B (cpu: Z80Cpu) {
+function bit0B(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.b);
 }
 
 // 0x41: BIT 0,C
-function bit0C (cpu: Z80Cpu) {
+function bit0C(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.c);
 }
 
 // 0x42: BIT 0,D
-function bit0D (cpu: Z80Cpu) {
+function bit0D(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.d);
 }
 
 // 0x43: BIT 0,E
-function bit0E (cpu: Z80Cpu) {
+function bit0E(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.e);
 }
 
 // 0x44: BIT 0,H
-function bit0H (cpu: Z80Cpu) {
+function bit0H(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.h);
 }
 
 // 0x45: BIT 0,L
-function bit0L (cpu: Z80Cpu) {
+function bit0L(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.l);
 }
 
 // 0x46: BIT 0,(HL)
-function bit0Hli (cpu: Z80Cpu) {
+function bit0Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(0, tmp);
 }
 
 // 0x47: BIT 0,A
-function bit0A (cpu: Z80Cpu) {
+function bit0A(cpu: Z80Cpu) {
   cpu.bit8(0, cpu.a);
 }
 
 // 0x48: BIT 1,B
-function bit1B (cpu: Z80Cpu) {
+function bit1B(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.b);
 }
 
 // 0x49: BIT 1,C
-function bit1C (cpu: Z80Cpu) {
+function bit1C(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.c);
 }
 
 // 0x4A: BIT 1,D
-function bit1D (cpu: Z80Cpu) {
+function bit1D(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.d);
 }
 
 // 0x4B: BIT 1,E
-function bit1E (cpu: Z80Cpu) {
+function bit1E(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.e);
 }
 
 // 0x4C: BIT 1,H
-function bit1H (cpu: Z80Cpu) {
+function bit1H(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.h);
 }
 
 // 0x4D: BIT 1,L
-function bit1L (cpu: Z80Cpu) {
+function bit1L(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.l);
 }
 
 // 0x4E: BIT 1,(HL)
-function bit1Hli (cpu: Z80Cpu) {
+function bit1Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(1, tmp);
 }
 
 // 0x4F: BIT 1,A
-function bit1A (cpu: Z80Cpu) {
+function bit1A(cpu: Z80Cpu) {
   cpu.bit8(1, cpu.a);
 }
 
 // 0x50: BIT 2,B
-function bit2B (cpu: Z80Cpu) {
+function bit2B(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.b);
 }
 
 // 0x51: BIT 2,C
-function bit2C (cpu: Z80Cpu) {
+function bit2C(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.c);
 }
 
 // 0x52: BIT 2,D
-function bit2D (cpu: Z80Cpu) {
+function bit2D(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.d);
 }
 
 // 0x53: BIT 2,E
-function bit2E (cpu: Z80Cpu) {
+function bit2E(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.e);
 }
 
 // 0x54: BIT 2,H
-function bit2H (cpu: Z80Cpu) {
+function bit2H(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.h);
 }
 
 // 0x55: BIT 2,L
-function bit2L (cpu: Z80Cpu) {
+function bit2L(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.l);
 }
 
 // 0x56: BIT 2,(HL)
-function bit2Hli (cpu: Z80Cpu) {
+function bit2Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(2, tmp);
 }
 
 // 0x57: BIT 2,A
-function bit2A (cpu: Z80Cpu) {
+function bit2A(cpu: Z80Cpu) {
   cpu.bit8(2, cpu.a);
 }
 
 // 0x58: BIT 3,B
-function bit3B (cpu: Z80Cpu) {
+function bit3B(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.b);
 }
 
 // 0x59: BIT 3,C
-function bit3C (cpu: Z80Cpu) {
+function bit3C(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.c);
 }
 
 // 0x5A: BIT 3,D
-function bit3D (cpu: Z80Cpu) {
+function bit3D(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.d);
 }
 
 // 0x5B: BIT 3,E
-function bit3E (cpu: Z80Cpu) {
+function bit3E(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.e);
 }
 
 // 0x5C: BIT 3,H
-function bit3H (cpu: Z80Cpu) {
+function bit3H(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.h);
 }
 
 // 0x5D: BIT 3,L
-function bit3L (cpu: Z80Cpu) {
+function bit3L(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.l);
 }
 
 // 0x5E: BIT 3,(HL)
-function bit3Hli (cpu: Z80Cpu) {
+function bit3Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(3, tmp);
 }
 
 // 0x5F: BIT 3,A
-function bit3A (cpu: Z80Cpu) {
+function bit3A(cpu: Z80Cpu) {
   cpu.bit8(3, cpu.a);
 }
 
 // 0x60: BIT 4,B
-function bit4B (cpu: Z80Cpu) {
+function bit4B(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.b);
 }
 
 // 0x61: BIT 4,C
-function bit4C (cpu: Z80Cpu) {
+function bit4C(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.c);
 }
 
 // 0x62: BIT 4,D
-function bit4D (cpu: Z80Cpu) {
+function bit4D(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.d);
 }
 
 // 0x63: BIT 4,E
-function bit4E (cpu: Z80Cpu) {
+function bit4E(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.e);
 }
 
 // 0x64: BIT 4,H
-function bit4H (cpu: Z80Cpu) {
+function bit4H(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.h);
 }
 
 // 0x65: BIT 4,L
-function bit4L (cpu: Z80Cpu) {
+function bit4L(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.l);
 }
 
 // 0x66: BIT 4,(HL)
-function bit4Hli (cpu: Z80Cpu) {
+function bit4Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(4, tmp);
 }
 
 // 0x67: BIT 4,A
-function bit4A (cpu: Z80Cpu) {
+function bit4A(cpu: Z80Cpu) {
   cpu.bit8(4, cpu.a);
 }
 
 // 0x68: BIT 5,B
-function bit5B (cpu: Z80Cpu) {
+function bit5B(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.b);
 }
 
 // 0x69: BIT 5,C
-function bit5C (cpu: Z80Cpu) {
+function bit5C(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.c);
 }
 
 // 0x6A: BIT 5,D
-function bit5D (cpu: Z80Cpu) {
+function bit5D(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.d);
 }
 
 // 0x6B: BIT 5,E
-function bit5E (cpu: Z80Cpu) {
+function bit5E(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.e);
 }
 
 // 0x6C: BIT 5,H
-function bit5H (cpu: Z80Cpu) {
+function bit5H(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.h);
 }
 
 // 0x6D: BIT 5,L
-function bit5L (cpu: Z80Cpu) {
+function bit5L(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.l);
 }
 
 // 0x6E: BIT 5,(HL)
-function bit5Hli (cpu: Z80Cpu) {
+function bit5Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(5, tmp);
 }
 
 // 0x6F: BIT 5,A
-function bit5A (cpu: Z80Cpu) {
+function bit5A(cpu: Z80Cpu) {
   cpu.bit8(5, cpu.a);
 }
 
 // 0x70: BIT 6,B
-function bit6B (cpu: Z80Cpu) {
+function bit6B(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.b);
 }
 
 // 0x71: BIT 6,C
-function bit6C (cpu: Z80Cpu) {
+function bit6C(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.c);
 }
 
 // 0x72: BIT 6,D
-function bit6D (cpu: Z80Cpu) {
+function bit6D(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.d);
 }
 
 // 0x73: BIT 6,E
-function bit6E (cpu: Z80Cpu) {
+function bit6E(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.e);
 }
 
 // 0x74: BIT 6,H
-function bit6H (cpu: Z80Cpu) {
+function bit6H(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.h);
 }
 
 // 0x75: BIT 6,L
-function bit6L (cpu: Z80Cpu) {
+function bit6L(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.l);
 }
 
 // 0x76: BIT 6,(HL)
-function bit6Hli (cpu: Z80Cpu) {
+function bit6Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(6, tmp);
 }
 
 // 0x77: BIT 6,A
-function bit6A (cpu: Z80Cpu) {
+function bit6A(cpu: Z80Cpu) {
   cpu.bit8(6, cpu.a);
 }
 
 // 0x78: BIT 7,B
-function bit7B (cpu: Z80Cpu) {
+function bit7B(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.b);
 }
 
 // 0x79: BIT 7,C
-function bit7C (cpu: Z80Cpu) {
+function bit7C(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.c);
 }
 
 // 0x7A: BIT 7,D
-function bit7D (cpu: Z80Cpu) {
+function bit7D(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.d);
 }
 
 // 0x7B: BIT 7,E
-function bit7E (cpu: Z80Cpu) {
+function bit7E(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.e);
 }
 
 // 0x7C: BIT 7,H
-function bit7H (cpu: Z80Cpu) {
+function bit7H(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.h);
 }
 
 // 0x7D: BIT 7,L
-function bit7L (cpu: Z80Cpu) {
+function bit7L(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.l);
 }
 
 // 0x7E: BIT 7,(HL)
-function bit7Hli (cpu: Z80Cpu) {
+function bit7Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.bit8W(7, tmp);
 }
 
 // 0x7F: BIT 7,A
-function bit7A (cpu: Z80Cpu) {
+function bit7A(cpu: Z80Cpu) {
   cpu.bit8(7, cpu.a);
 }
 
 // 0x80: RES 0,B
-function res0B (cpu: Z80Cpu) {
+function res0B(cpu: Z80Cpu) {
   cpu.b &= 0xfe;
 }
 
 // 0x81: RES 0,C
-function res0C (cpu: Z80Cpu) {
+function res0C(cpu: Z80Cpu) {
   cpu.c &= 0xfe;
 }
 
 // 0x82: RES 0,D
-function res0D (cpu: Z80Cpu) {
+function res0D(cpu: Z80Cpu) {
   cpu.d &= 0xfe;
 }
 
 // 0x83: RES 0,E
-function res0E (cpu: Z80Cpu) {
+function res0E(cpu: Z80Cpu) {
   cpu.e &= 0xfe;
 }
 
 // 0x84: RES 0,H
-function res0H (cpu: Z80Cpu) {
+function res0H(cpu: Z80Cpu) {
   cpu.h &= 0xfe;
 }
 
 // 0x85: RES 0,L
-function res0L (cpu: Z80Cpu) {
+function res0L(cpu: Z80Cpu) {
   cpu.l &= 0xfe;
 }
 
 // 0x86: RES 0,(HL)
-function res0Hli (cpu: Z80Cpu) {
+function res0Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x87: RES 0,A
-function res0A (cpu: Z80Cpu) {
+function res0A(cpu: Z80Cpu) {
   cpu.a &= 0xfe;
 }
 
 // 0x88: RES 1,B
-function res1B (cpu: Z80Cpu) {
+function res1B(cpu: Z80Cpu) {
   cpu.b &= 0xfd;
 }
 
 // 0x89: RES 1,C
-function res1C (cpu: Z80Cpu) {
+function res1C(cpu: Z80Cpu) {
   cpu.c &= 0xfd;
 }
 
 // 0x8A: RES 1,D
-function res1D (cpu: Z80Cpu) {
+function res1D(cpu: Z80Cpu) {
   cpu.d &= 0xfd;
 }
 
 // 0x8B: RES 1,E
-function res1E (cpu: Z80Cpu) {
+function res1E(cpu: Z80Cpu) {
   cpu.e &= 0xfd;
 }
 
 // 0x8C: RES 1,H
-function res1H (cpu: Z80Cpu) {
+function res1H(cpu: Z80Cpu) {
   cpu.h &= 0xfd;
 }
 
 // 0x8D: RES 1,L
-function res1L (cpu: Z80Cpu) {
+function res1L(cpu: Z80Cpu) {
   cpu.l &= 0xfd;
 }
 
 // 0x8E: RES 1,(HL)
-function res1Hli (cpu: Z80Cpu) {
+function res1Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x8F: RES 1,A
-function res1A (cpu: Z80Cpu) {
+function res1A(cpu: Z80Cpu) {
   cpu.a &= 0xfd;
 }
 
 // 0x90: RES 2,B
-function res2B (cpu: Z80Cpu) {
+function res2B(cpu: Z80Cpu) {
   cpu.b &= 0xfb;
 }
 
 // 0x91: RES 2,C
-function res2C (cpu: Z80Cpu) {
+function res2C(cpu: Z80Cpu) {
   cpu.c &= 0xfb;
 }
 
 // 0x92: RES 2,D
-function res2D (cpu: Z80Cpu) {
+function res2D(cpu: Z80Cpu) {
   cpu.d &= 0xfb;
 }
 
 // 0x93: RES 2,E
-function res2E (cpu: Z80Cpu) {
+function res2E(cpu: Z80Cpu) {
   cpu.e &= 0xfb;
 }
 
 // 0x94: RES 2,H
-function res2H (cpu: Z80Cpu) {
+function res2H(cpu: Z80Cpu) {
   cpu.h &= 0xfb;
 }
 
 // 0x95: RES 2,L
-function res2L (cpu: Z80Cpu) {
+function res2L(cpu: Z80Cpu) {
   cpu.l &= 0xfb;
 }
 
 // 0x96: RES 2,(HL)
-function res2Hli (cpu: Z80Cpu) {
+function res2Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x97: RES 2,A
-function res2A (cpu: Z80Cpu) {
+function res2A(cpu: Z80Cpu) {
   cpu.a &= 0xfb;
 }
 
 // 0x98: RES 3,B
-function res3B (cpu: Z80Cpu) {
+function res3B(cpu: Z80Cpu) {
   cpu.b &= 0xf7;
 }
 
 // 0x99: RES 3,C
-function res3C (cpu: Z80Cpu) {
+function res3C(cpu: Z80Cpu) {
   cpu.c &= 0xf7;
 }
 
 // 0x9A: RES 3,D
-function res3D (cpu: Z80Cpu) {
+function res3D(cpu: Z80Cpu) {
   cpu.d &= 0xf7;
 }
 
 // 0x9B: RES 3,E
-function res3E (cpu: Z80Cpu) {
+function res3E(cpu: Z80Cpu) {
   cpu.e &= 0xf7;
 }
 
 // 0x9C: RES 3,H
-function res3H (cpu: Z80Cpu) {
+function res3H(cpu: Z80Cpu) {
   cpu.h &= 0xf7;
 }
 
 // 0x9D: RES 3,L
-function res3L (cpu: Z80Cpu) {
+function res3L(cpu: Z80Cpu) {
   cpu.l &= 0xf7;
 }
 
 // 0x9E: RES 3,(HL)
-function res3Hli (cpu: Z80Cpu) {
+function res3Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0x9F: RES 3,A
-function res3A (cpu: Z80Cpu) {
+function res3A(cpu: Z80Cpu) {
   cpu.a &= 0xf7;
 }
 
 // 0xA0: RES 4,B
-function res4B (cpu: Z80Cpu) {
+function res4B(cpu: Z80Cpu) {
   cpu.b &= 0xef;
 }
 
 // 0xA1: RES 4,C
-function res4C (cpu: Z80Cpu) {
+function res4C(cpu: Z80Cpu) {
   cpu.c &= 0xef;
 }
 
 // 0xA2: RES 4,D
-function res4D (cpu: Z80Cpu) {
+function res4D(cpu: Z80Cpu) {
   cpu.d &= 0xef;
 }
 
 // 0xA3: RES 4,E
-function res4E (cpu: Z80Cpu) {
+function res4E(cpu: Z80Cpu) {
   cpu.e &= 0xef;
 }
 
 // 0xA4: RES 4,H
-function res4H (cpu: Z80Cpu) {
+function res4H(cpu: Z80Cpu) {
   cpu.h &= 0xef;
 }
 
 // 0xA5: RES 4,L
-function res4L (cpu: Z80Cpu) {
+function res4L(cpu: Z80Cpu) {
   cpu.l &= 0xef;
 }
 
 // 0xA6: RES 4,(HL)
-function res4Hli (cpu: Z80Cpu) {
+function res4Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xef;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xA7: RES 4,A
-function res4A (cpu: Z80Cpu) {
+function res4A(cpu: Z80Cpu) {
   cpu.a &= 0xef;
 }
 
 // 0xA8: RES 5,B
-function res5B (cpu: Z80Cpu) {
+function res5B(cpu: Z80Cpu) {
   cpu.b &= 0xdf;
 }
 
 // 0xA9: RES 5,C
-function res5C (cpu: Z80Cpu) {
+function res5C(cpu: Z80Cpu) {
   cpu.c &= 0xdf;
 }
 
 // 0xAA: RES 5,D
-function res5D (cpu: Z80Cpu) {
+function res5D(cpu: Z80Cpu) {
   cpu.d &= 0xdf;
 }
 
 // 0xAB: RES 5,E
-function res5E (cpu: Z80Cpu) {
+function res5E(cpu: Z80Cpu) {
   cpu.e &= 0xdf;
 }
 
 // 0xAC: RES 5,H
-function res5H (cpu: Z80Cpu) {
+function res5H(cpu: Z80Cpu) {
   cpu.h &= 0xdf;
 }
 
 // 0xAD: RES 5,L
-function res5L (cpu: Z80Cpu) {
+function res5L(cpu: Z80Cpu) {
   cpu.l &= 0xdf;
 }
 
 // 0xAE: RES 5,(HL)
-function res5Hli (cpu: Z80Cpu) {
+function res5Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xAF: RES 5,A
-function res5A (cpu: Z80Cpu) {
+function res5A(cpu: Z80Cpu) {
   cpu.a &= 0xdf;
 }
 
 // 0xB0: RES 6,B
-function res6B (cpu: Z80Cpu) {
+function res6B(cpu: Z80Cpu) {
   cpu.b &= 0xbf;
 }
 
 // 0xB1: RES 6,C
-function res6C (cpu: Z80Cpu) {
+function res6C(cpu: Z80Cpu) {
   cpu.c &= 0xbf;
 }
 
 // 0xB2: RES 6,D
-function res6D (cpu: Z80Cpu) {
+function res6D(cpu: Z80Cpu) {
   cpu.d &= 0xbf;
 }
 
 // 0xB3: RES 6,E
-function res6E (cpu: Z80Cpu) {
+function res6E(cpu: Z80Cpu) {
   cpu.e &= 0xbf;
 }
 
 // 0xB4: RES 6,H
-function res6H (cpu: Z80Cpu) {
+function res6H(cpu: Z80Cpu) {
   cpu.h &= 0xbf;
 }
 
 // 0xB5: RES 6,L
-function res6L (cpu: Z80Cpu) {
+function res6L(cpu: Z80Cpu) {
   cpu.l &= 0xbf;
 }
 
 // 0xB6: RES 6,(HL)
-function res6Hli (cpu: Z80Cpu) {
+function res6Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xB7: RES 6,A
-function res6A (cpu: Z80Cpu) {
+function res6A(cpu: Z80Cpu) {
   cpu.a &= 0xbf;
 }
 
 // 0xB8: RES 7,B
-function res7B (cpu: Z80Cpu) {
+function res7B(cpu: Z80Cpu) {
   cpu.b &= 0x7f;
 }
 
 // 0xB9: RES 7,C
-function res7C (cpu: Z80Cpu) {
+function res7C(cpu: Z80Cpu) {
   cpu.c &= 0x7f;
 }
 
 // 0xBA: RES 7,D
-function res7D (cpu: Z80Cpu) {
+function res7D(cpu: Z80Cpu) {
   cpu.d &= 0x7f;
 }
 
 // 0xBB: RES 7,E
-function res7E (cpu: Z80Cpu) {
+function res7E(cpu: Z80Cpu) {
   cpu.e &= 0x7f;
 }
 
 // 0xBC: RES 7,H
-function res7H (cpu: Z80Cpu) {
+function res7H(cpu: Z80Cpu) {
   cpu.h &= 0x7f;
 }
 
 // 0xBD: RES 7,L
-function res7L (cpu: Z80Cpu) {
+function res7L(cpu: Z80Cpu) {
   cpu.l &= 0x7f;
 }
 
 // 0xBE: RES 7,(HL)
-function res7Hli (cpu: Z80Cpu) {
+function res7Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xBF: RES 7,A
-function res7A (cpu: Z80Cpu) {
+function res7A(cpu: Z80Cpu) {
   cpu.a &= 0x7f;
 }
 
 // 0xC0: SET 0,B
-function set0B (cpu: Z80Cpu) {
+function set0B(cpu: Z80Cpu) {
   cpu.b |= 0x1;
 }
 
 // 0xC1: SET 0,C
-function set0C (cpu: Z80Cpu) {
+function set0C(cpu: Z80Cpu) {
   cpu.c |= 0x1;
 }
 
 // 0xC2: SET 0,D
-function set0D (cpu: Z80Cpu) {
+function set0D(cpu: Z80Cpu) {
   cpu.d |= 0x1;
 }
 
 // 0xC3: SET 0,E
-function set0E (cpu: Z80Cpu) {
+function set0E(cpu: Z80Cpu) {
   cpu.e |= 0x1;
 }
 
 // 0xC4: SET 0,H
-function set0H (cpu: Z80Cpu) {
+function set0H(cpu: Z80Cpu) {
   cpu.h |= 0x1;
 }
 
 // 0xC5: SET 0,L
-function set0L (cpu: Z80Cpu) {
+function set0L(cpu: Z80Cpu) {
   cpu.l |= 0x1;
 }
 
 // 0xC6: SET 0,(HL)
-function set0Hli (cpu: Z80Cpu) {
+function set0Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x1;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xC7: SET 0,A
-function set0A (cpu: Z80Cpu) {
+function set0A(cpu: Z80Cpu) {
   cpu.a |= 0x1;
 }
 
 // 0xC8: SET 1,B
-function set1B (cpu: Z80Cpu) {
+function set1B(cpu: Z80Cpu) {
   cpu.b |= 0x2;
 }
 
 // 0xC9: SET 1,C
-function set1C (cpu: Z80Cpu) {
+function set1C(cpu: Z80Cpu) {
   cpu.c |= 0x2;
 }
 
 // 0xCA: SET 1,D
-function set1D (cpu: Z80Cpu) {
+function set1D(cpu: Z80Cpu) {
   cpu.d |= 0x2;
 }
 
 // 0xCB: SET 1,E
-function set1E (cpu: Z80Cpu) {
+function set1E(cpu: Z80Cpu) {
   cpu.e |= 0x2;
 }
 
 // 0xCC: SET 1,H
-function set1H (cpu: Z80Cpu) {
+function set1H(cpu: Z80Cpu) {
   cpu.h |= 0x2;
 }
 
 // 0xCD: SET 1,L
-function set1L (cpu: Z80Cpu) {
+function set1L(cpu: Z80Cpu) {
   cpu.l |= 0x2;
 }
 
 // 0xCE: SET 1,(HL)
-function set1Hli (cpu: Z80Cpu) {
+function set1Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x2;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xCF: SET 1,A
-function set1A (cpu: Z80Cpu) {
+function set1A(cpu: Z80Cpu) {
   cpu.a |= 0x2;
 }
 
 // 0xD0: SET 2,B
-function set2B (cpu: Z80Cpu) {
+function set2B(cpu: Z80Cpu) {
   cpu.b |= 0x4;
 }
 
 // 0xD1: SET 2,C
-function set2C (cpu: Z80Cpu) {
+function set2C(cpu: Z80Cpu) {
   cpu.c |= 0x4;
 }
 
 // 0xD2: SET 2,D
-function set2D (cpu: Z80Cpu) {
+function set2D(cpu: Z80Cpu) {
   cpu.d |= 0x4;
 }
 
 // 0xD3: SET 2,E
-function set2E (cpu: Z80Cpu) {
+function set2E(cpu: Z80Cpu) {
   cpu.e |= 0x4;
 }
 
 // 0xD4: SET 2,H
-function set2H (cpu: Z80Cpu) {
+function set2H(cpu: Z80Cpu) {
   cpu.h |= 0x4;
 }
 
 // 0xD5: SET 2,L
-function set2L (cpu: Z80Cpu) {
+function set2L(cpu: Z80Cpu) {
   cpu.l |= 0x4;
 }
 
 // 0xD6: SET 2,(HL)
-function set2Hli (cpu: Z80Cpu) {
+function set2Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x4;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xD7: SET 2,A
-function set2A (cpu: Z80Cpu) {
+function set2A(cpu: Z80Cpu) {
   cpu.a |= 0x4;
 }
 
 // 0xD8: SET 3,B
-function set3B (cpu: Z80Cpu) {
+function set3B(cpu: Z80Cpu) {
   cpu.b |= 0x8;
 }
 
 // 0xD9: SET 3,C
-function set3C (cpu: Z80Cpu) {
+function set3C(cpu: Z80Cpu) {
   cpu.c |= 0x8;
 }
 
 // 0xDA: SET 3,D
-function set3D (cpu: Z80Cpu) {
+function set3D(cpu: Z80Cpu) {
   cpu.d |= 0x8;
 }
 
 // 0xDB: SET 3,E
-function set3E (cpu: Z80Cpu) {
+function set3E(cpu: Z80Cpu) {
   cpu.e |= 0x8;
 }
 
 // 0xDC: SET 3,H
-function set3H (cpu: Z80Cpu) {
+function set3H(cpu: Z80Cpu) {
   cpu.h |= 0x8;
 }
 
 // 0xDD: SET 3,L
-function set3L (cpu: Z80Cpu) {
+function set3L(cpu: Z80Cpu) {
   cpu.l |= 0x8;
 }
 
 // 0xDE: SET 3,(HL)
-function set3Hli (cpu: Z80Cpu) {
+function set3Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x8;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xDF: SET 3,A
-function set3A (cpu: Z80Cpu) {
+function set3A(cpu: Z80Cpu) {
   cpu.a |= 0x8;
 }
 
 // 0xE0: SET 4,B
-function set4B (cpu: Z80Cpu) {
+function set4B(cpu: Z80Cpu) {
   cpu.b |= 0x10;
 }
 
 // 0xE1: SET 4,C
-function set4C (cpu: Z80Cpu) {
+function set4C(cpu: Z80Cpu) {
   cpu.c |= 0x10;
 }
 
 // 0xE2: SET 4,D
-function set4D (cpu: Z80Cpu) {
+function set4D(cpu: Z80Cpu) {
   cpu.d |= 0x10;
 }
 
 // 0xE3: SET 4,E
-function set4E (cpu: Z80Cpu) {
+function set4E(cpu: Z80Cpu) {
   cpu.e |= 0x10;
 }
 
 // 0xE4: SET 4,H
-function set4H (cpu: Z80Cpu) {
+function set4H(cpu: Z80Cpu) {
   cpu.h |= 0x10;
 }
 
 // 0xE5: SET 4,L
-function set4L (cpu: Z80Cpu) {
+function set4L(cpu: Z80Cpu) {
   cpu.l |= 0x10;
 }
 
 // 0xE6: SET 4,(HL)
-function set4Hli (cpu: Z80Cpu) {
+function set4Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x10;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xE7: SET 4,A
-function set4A (cpu: Z80Cpu) {
+function set4A(cpu: Z80Cpu) {
   cpu.a |= 0x10;
 }
 
 // 0xE8: SET 5,B
-function set5B (cpu: Z80Cpu) {
+function set5B(cpu: Z80Cpu) {
   cpu.b |= 0x20;
 }
 
 // 0xE9: SET 5,C
-function set5C (cpu: Z80Cpu) {
+function set5C(cpu: Z80Cpu) {
   cpu.c |= 0x20;
 }
 
 // 0xEA: SET 5,D
-function set5D (cpu: Z80Cpu) {
+function set5D(cpu: Z80Cpu) {
   cpu.d |= 0x20;
 }
 
 // 0xEB: SET 5,E
-function set5E (cpu: Z80Cpu) {
+function set5E(cpu: Z80Cpu) {
   cpu.e |= 0x20;
 }
 
 // 0xEC: SET 5,H
-function set5H (cpu: Z80Cpu) {
+function set5H(cpu: Z80Cpu) {
   cpu.h |= 0x20;
 }
 
 // 0xED: SET 5,L
-function set5L (cpu: Z80Cpu) {
+function set5L(cpu: Z80Cpu) {
   cpu.l |= 0x20;
 }
 
 // 0xEE: SET 5,(HL)
-function set5Hli (cpu: Z80Cpu) {
+function set5Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x20;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xEF: SET 5,A
-function set5A (cpu: Z80Cpu) {
+function set5A(cpu: Z80Cpu) {
   cpu.a |= 0x20;
 }
 
 // 0xF0: SET 6,B
-function set6B (cpu: Z80Cpu) {
+function set6B(cpu: Z80Cpu) {
   cpu.b |= 0x40;
 }
 
 // 0xF1: SET 6,C
-function set6C (cpu: Z80Cpu) {
+function set6C(cpu: Z80Cpu) {
   cpu.c |= 0x40;
 }
 
 // 0xF2: SET 6,D
-function set6D (cpu: Z80Cpu) {
+function set6D(cpu: Z80Cpu) {
   cpu.d |= 0x40;
 }
 
 // 0xF3: SET 6,E
-function set6E (cpu: Z80Cpu) {
+function set6E(cpu: Z80Cpu) {
   cpu.e |= 0x40;
 }
 
 // 0xF4: SET 6,H
-function set6H (cpu: Z80Cpu) {
+function set6H(cpu: Z80Cpu) {
   cpu.h |= 0x40;
 }
 
 // 0xF5: SET 6,L
-function set6L (cpu: Z80Cpu) {
+function set6L(cpu: Z80Cpu) {
   cpu.l |= 0x40;
 }
 
 // 0xF6: SET 6,(HL)
-function set6Hli (cpu: Z80Cpu) {
+function set6Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x40;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xF7: SET 6,A
-function set6A (cpu: Z80Cpu) {
+function set6A(cpu: Z80Cpu) {
   cpu.a |= 0x40;
 }
 
 // 0xF8: SET 7,B
-function set7B (cpu: Z80Cpu) {
+function set7B(cpu: Z80Cpu) {
   cpu.b |= 0x80;
 }
 
 // 0xF9: SET 7,C
-function set7C (cpu: Z80Cpu) {
+function set7C(cpu: Z80Cpu) {
   cpu.c |= 0x80;
 }
 
 // 0xFA: SET 7,D
-function set7D (cpu: Z80Cpu) {
+function set7D(cpu: Z80Cpu) {
   cpu.d |= 0x80;
 }
 
 // 0xFB: SET 7,E
-function set7E (cpu: Z80Cpu) {
+function set7E(cpu: Z80Cpu) {
   cpu.e |= 0x80;
 }
 
 // 0xFC: SET 7,H
-function set7H (cpu: Z80Cpu) {
+function set7H(cpu: Z80Cpu) {
   cpu.h |= 0x80;
 }
 
 // 0xFD: SET 7,L
-function set7L (cpu: Z80Cpu) {
+function set7L(cpu: Z80Cpu) {
   cpu.l |= 0x80;
 }
 
 // 0xFE: SET 7,(HL)
-function set7Hli (cpu: Z80Cpu) {
+function set7Hli(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl) | 0x80;
   cpu.tactPlus1WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, tmp);
 }
 
 // 0xFF: SET 7,A
-function set7A (cpu: Z80Cpu) {
+function set7A(cpu: Z80Cpu) {
   cpu.a |= 0x80;
 }
 
@@ -5848,1400 +5840,1400 @@ function set7A (cpu: Z80Cpu) {
 // Z80 indexed bit operations
 
 // 0x00: RLC (IX+d),B
-function xrlcB (cpu: Z80Cpu) {
+function xrlcB(cpu: Z80Cpu) {
   cpu.b = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x01: RLC (IX+d),C
-function xrlcC (cpu: Z80Cpu) {
+function xrlcC(cpu: Z80Cpu) {
   cpu.c = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x02: RLC (IX+d),D
-function xrlcD (cpu: Z80Cpu) {
+function xrlcD(cpu: Z80Cpu) {
   cpu.d = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x03: RLC (IX+d),E
-function xrlcE (cpu: Z80Cpu) {
+function xrlcE(cpu: Z80Cpu) {
   cpu.e = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x04: RLC (IX+d),H
-function xrlcH (cpu: Z80Cpu) {
+function xrlcH(cpu: Z80Cpu) {
   cpu.h = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x05: RLC (IX+d),L
-function xrlcL (cpu: Z80Cpu) {
+function xrlcL(cpu: Z80Cpu) {
   cpu.l = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x06: RLC (IX+d)
-function xrlc (cpu: Z80Cpu) {
+function xrlc(cpu: Z80Cpu) {
   const tmp = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x07: RLC (IX+d),A
-function xrlcA (cpu: Z80Cpu) {
+function xrlcA(cpu: Z80Cpu) {
   cpu.a = cpu.rlc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x08: RRC (IX+d),B
-function xrrcB (cpu: Z80Cpu) {
+function xrrcB(cpu: Z80Cpu) {
   cpu.b = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x09: RRC (IX+d),C
-function xrrcC (cpu: Z80Cpu) {
+function xrrcC(cpu: Z80Cpu) {
   cpu.c = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x0A: RRC (IX+d),D
-function xrrcD (cpu: Z80Cpu) {
+function xrrcD(cpu: Z80Cpu) {
   cpu.d = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x0B: RRC (IX+d),E
-function xrrcE (cpu: Z80Cpu) {
+function xrrcE(cpu: Z80Cpu) {
   cpu.e = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x0C: RRC (IX+d),H
-function xrrcH (cpu: Z80Cpu) {
+function xrrcH(cpu: Z80Cpu) {
   cpu.h = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x0D: RRC (IX+d),L
-function xrrcL (cpu: Z80Cpu) {
+function xrrcL(cpu: Z80Cpu) {
   cpu.l = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x0E: RRC (IX+d)
-function xrrc (cpu: Z80Cpu) {
+function xrrc(cpu: Z80Cpu) {
   const tmp = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x0F: RRC (IX+d),A
-function xrrcA (cpu: Z80Cpu) {
+function xrrcA(cpu: Z80Cpu) {
   cpu.a = cpu.rrc8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x10: RL (IX+d),B
-function xrlB (cpu: Z80Cpu) {
+function xrlB(cpu: Z80Cpu) {
   cpu.b = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x11: RL (IX+d),C
-function xrlC (cpu: Z80Cpu) {
+function xrlC(cpu: Z80Cpu) {
   cpu.c = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x12: RL (IX+d),D
-function xrlD (cpu: Z80Cpu) {
+function xrlD(cpu: Z80Cpu) {
   cpu.d = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x13: RL (IX+d),E
-function xrlE (cpu: Z80Cpu) {
+function xrlE(cpu: Z80Cpu) {
   cpu.e = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x14: RL (IX+d),H
-function xrlH (cpu: Z80Cpu) {
+function xrlH(cpu: Z80Cpu) {
   cpu.h = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x15: RL (IX+d),L
-function xrlL (cpu: Z80Cpu) {
+function xrlL(cpu: Z80Cpu) {
   cpu.l = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x16: RL (IX+d)
-function xrl (cpu: Z80Cpu) {
+function xrl(cpu: Z80Cpu) {
   const tmp = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x17: RL (IX+d),A
-function xrlA (cpu: Z80Cpu) {
+function xrlA(cpu: Z80Cpu) {
   cpu.a = cpu.rl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x18: RR (IX+d),B
-function xrrB (cpu: Z80Cpu) {
+function xrrB(cpu: Z80Cpu) {
   cpu.b = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x19: RR (IX+d),C
-function xrrC (cpu: Z80Cpu) {
+function xrrC(cpu: Z80Cpu) {
   cpu.c = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x1A: RR (IX+d),D
-function xrrD (cpu: Z80Cpu) {
+function xrrD(cpu: Z80Cpu) {
   cpu.d = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x1B: RR (IX+d),E
-function xrrE (cpu: Z80Cpu) {
+function xrrE(cpu: Z80Cpu) {
   cpu.e = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x1C: RR (IX+d),H
-function xrrH (cpu: Z80Cpu) {
+function xrrH(cpu: Z80Cpu) {
   cpu.h = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x1D: RR (IX+d),L
-function xrrL (cpu: Z80Cpu) {
+function xrrL(cpu: Z80Cpu) {
   cpu.l = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x1E: RR (IX+d)
-function xrr (cpu: Z80Cpu) {
+function xrr(cpu: Z80Cpu) {
   const tmp = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x1F: RR (IX+d),A
-function xrrA (cpu: Z80Cpu) {
+function xrrA(cpu: Z80Cpu) {
   cpu.a = cpu.rr8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x20: SLA (IX+d),B
-function xslaB (cpu: Z80Cpu) {
+function xslaB(cpu: Z80Cpu) {
   cpu.b = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x21: SLA (IX+d),C
-function xslaC (cpu: Z80Cpu) {
+function xslaC(cpu: Z80Cpu) {
   cpu.c = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x22: SLA (IX+d),D
-function xslaD (cpu: Z80Cpu) {
+function xslaD(cpu: Z80Cpu) {
   cpu.d = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x23: SLA (IX+d),E
-function xslaE (cpu: Z80Cpu) {
+function xslaE(cpu: Z80Cpu) {
   cpu.e = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x24: SLA (IX+d),H
-function xslaH (cpu: Z80Cpu) {
+function xslaH(cpu: Z80Cpu) {
   cpu.h = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x25: SLA (IX+d),L
-function xslaL (cpu: Z80Cpu) {
+function xslaL(cpu: Z80Cpu) {
   cpu.l = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x26: SLA (IX+d)
-function xsla (cpu: Z80Cpu) {
+function xsla(cpu: Z80Cpu) {
   const tmp = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x27: SLA (IX+d),A
-function xslaA (cpu: Z80Cpu) {
+function xslaA(cpu: Z80Cpu) {
   cpu.a = cpu.sla8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x28: SRA (IX+d),B
-function xsraB (cpu: Z80Cpu) {
+function xsraB(cpu: Z80Cpu) {
   cpu.b = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x29: SRA (IX+d),C
-function xsraC (cpu: Z80Cpu) {
+function xsraC(cpu: Z80Cpu) {
   cpu.c = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x2A: SRA (IX+d),D
-function xsraD (cpu: Z80Cpu) {
+function xsraD(cpu: Z80Cpu) {
   cpu.d = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x2B: SRA (IX+d),E
-function xsraE (cpu: Z80Cpu) {
+function xsraE(cpu: Z80Cpu) {
   cpu.e = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x2C: SRA (IX+d),H
-function xsraH (cpu: Z80Cpu) {
+function xsraH(cpu: Z80Cpu) {
   cpu.h = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x2D: SRA (IX+d),L
-function xsraL (cpu: Z80Cpu) {
+function xsraL(cpu: Z80Cpu) {
   cpu.l = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x2E: SRA (IX+d)
-function xsra (cpu: Z80Cpu) {
+function xsra(cpu: Z80Cpu) {
   const tmp = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x2F: SRA (IX+d),A
-function xsraA (cpu: Z80Cpu) {
+function xsraA(cpu: Z80Cpu) {
   cpu.a = cpu.sra8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x30: SLL (IX+d),B
-function xsllB (cpu: Z80Cpu) {
+function xsllB(cpu: Z80Cpu) {
   cpu.b = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x31: SLL (IX+d),C
-function xsllC (cpu: Z80Cpu) {
+function xsllC(cpu: Z80Cpu) {
   cpu.c = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x32: SLL (IX+d),D
-function xsllD (cpu: Z80Cpu) {
+function xsllD(cpu: Z80Cpu) {
   cpu.d = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x33: SLL (IX+d),E
-function xsllE (cpu: Z80Cpu) {
+function xsllE(cpu: Z80Cpu) {
   cpu.e = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x34: SLL (IX+d),H
-function xsllH (cpu: Z80Cpu) {
+function xsllH(cpu: Z80Cpu) {
   cpu.h = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x35: SLL (IX+d),L
-function xsllL (cpu: Z80Cpu) {
+function xsllL(cpu: Z80Cpu) {
   cpu.l = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x36: SLL (IX+d)
-function xsll (cpu: Z80Cpu) {
+function xsll(cpu: Z80Cpu) {
   const tmp = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x37: SLL (IX+d),A
-function xsllA (cpu: Z80Cpu) {
+function xsllA(cpu: Z80Cpu) {
   cpu.a = cpu.sll8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x38: SRL (IX+d),B
-function xsrlB (cpu: Z80Cpu) {
+function xsrlB(cpu: Z80Cpu) {
   cpu.b = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x39: SRL (IX+d),C
-function xsrlC (cpu: Z80Cpu) {
+function xsrlC(cpu: Z80Cpu) {
   cpu.c = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x3A: SRL (IX+d),D
-function xsrlD (cpu: Z80Cpu) {
+function xsrlD(cpu: Z80Cpu) {
   cpu.d = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x3B: SRL (IX+d),E
-function xsrlE (cpu: Z80Cpu) {
+function xsrlE(cpu: Z80Cpu) {
   cpu.e = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x3C: SRL (IX+d),H
-function xsrlH (cpu: Z80Cpu) {
+function xsrlH(cpu: Z80Cpu) {
   cpu.h = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x3D: SRL (IX+d),L
-function xsrlL (cpu: Z80Cpu) {
+function xsrlL(cpu: Z80Cpu) {
   cpu.l = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x3E: SRL (IX+d)
-function xsrl (cpu: Z80Cpu) {
+function xsrl(cpu: Z80Cpu) {
   const tmp = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x3F: SRL (IX+d),A
-function xsrlA (cpu: Z80Cpu) {
+function xsrlA(cpu: Z80Cpu) {
   cpu.a = cpu.srl8(cpu.readMemory(cpu.wz));
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x40-47: BIT 0,(IX+d)
-function xbit0 (cpu: Z80Cpu) {
+function xbit0(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(0, tmp);
 }
 
 // 0x48-4f: BIT 1,(IX+d)
-function xbit1 (cpu: Z80Cpu) {
+function xbit1(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(1, tmp);
 }
 
 // 0x50-57: BIT 2,(IX+d)
-function xbit2 (cpu: Z80Cpu) {
+function xbit2(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(2, tmp);
 }
 
 // 0x58-5F: BIT 3,(IX+d)
-function xbit3 (cpu: Z80Cpu) {
+function xbit3(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(3, tmp);
 }
 
 // 0x60-67: BIT 4,(IX+d)
-function xbit4 (cpu: Z80Cpu) {
+function xbit4(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(4, tmp);
 }
 
 // 0x68-6F: BIT 5,(IX+d)
-function xbit5 (cpu: Z80Cpu) {
+function xbit5(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(5, tmp);
 }
 
 // 0x70-77: BIT 6,(IX+d)
-function xbit6 (cpu: Z80Cpu) {
+function xbit6(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(6, tmp);
 }
 
 // 0x78-7f: BIT 7,(IX+d)
-function xbit7 (cpu: Z80Cpu) {
+function xbit7(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz);
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.bit8W(7, tmp);
 }
 
 // 0x80: RES 0,(IX+d),B
-function xres0B (cpu: Z80Cpu) {
+function xres0B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x81: RES 0,(IX+d),C
-function xres0C (cpu: Z80Cpu) {
+function xres0C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x82: RES 0,(IX+d),D
-function xres0D (cpu: Z80Cpu) {
+function xres0D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x83: RES 0,(IX+d),E
-function xres0E (cpu: Z80Cpu) {
+function xres0E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x84: RES 0,(IX+d),H
-function xres0H (cpu: Z80Cpu) {
+function xres0H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x85: RES 0,(IX+d),L
-function xres0L (cpu: Z80Cpu) {
+function xres0L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x86: RES 0,(IX+d)
-function xres0 (cpu: Z80Cpu) {
+function xres0(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x87: RES 0,(IX+d),A
-function xres0A (cpu: Z80Cpu) {
+function xres0A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xfe;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x88: RES 1,(IX+d),B
-function xres1B (cpu: Z80Cpu) {
+function xres1B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x89: RES 1,(IX+d),C
-function xres1C (cpu: Z80Cpu) {
+function xres1C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x8A: RES 1,(IX+d),D
-function xres1D (cpu: Z80Cpu) {
+function xres1D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x8B: RES 1,(IX+d),E
-function xres1E (cpu: Z80Cpu) {
+function xres1E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x8C: RES 1,(IX+d),H
-function xres1H (cpu: Z80Cpu) {
+function xres1H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x8D: RES 1,(IX+d),L
-function xres1L (cpu: Z80Cpu) {
+function xres1L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x8E: RES 1,(IX+d)
-function xres1 (cpu: Z80Cpu) {
+function xres1(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x8F: RES 1,(IX+d),A
-function xres1A (cpu: Z80Cpu) {
+function xres1A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xfd;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x90: RES 2,(IX+d),B
-function xres2B (cpu: Z80Cpu) {
+function xres2B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x91: RES 2,(IX+d),C
-function xres2C (cpu: Z80Cpu) {
+function xres2C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x92: RES 2,(IX+d),D
-function xres2D (cpu: Z80Cpu) {
+function xres2D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x93: RES 2,(IX+d),E
-function xres2E (cpu: Z80Cpu) {
+function xres2E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x94: RES 2,(IX+d),H
-function xres2H (cpu: Z80Cpu) {
+function xres2H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x95: RES 2,(IX+d),L
-function xres2L (cpu: Z80Cpu) {
+function xres2L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x96: RES 2,(IX+d)
-function xres2 (cpu: Z80Cpu) {
+function xres2(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x97: RES 2,(IX+d),A
-function xres2A (cpu: Z80Cpu) {
+function xres2A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xfb;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0x98: RES 3,(IX+d),B
-function xres3B (cpu: Z80Cpu) {
+function xres3B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0x99: RES 3,(IX+d),C
-function xres3C (cpu: Z80Cpu) {
+function xres3C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0x9A: RES 3,(IX+d),D
-function xres3D (cpu: Z80Cpu) {
+function xres3D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0x9B: RES 3,(IX+d),E
-function xres3E (cpu: Z80Cpu) {
+function xres3E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0x9C: RES 3,(IX+d),H
-function xres3H (cpu: Z80Cpu) {
+function xres3H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0x9D: RES 3,(IX+d),L
-function xres3L (cpu: Z80Cpu) {
+function xres3L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0x9E: RES 3,(IX+d)
-function xres3 (cpu: Z80Cpu) {
+function xres3(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0x9F: RES 3,(IX+d),A
-function xres3A (cpu: Z80Cpu) {
+function xres3A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xf7;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xA0: RES 4,(IX+d),B
-function xres4B (cpu: Z80Cpu) {
+function xres4B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xA1: RES 4,(IX+d),C
-function xres4C (cpu: Z80Cpu) {
+function xres4C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xA2: RES 4,(IX+d),D
-function xres4D (cpu: Z80Cpu) {
+function xres4D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xA3: RES 4,(IX+d),E
-function xres4E (cpu: Z80Cpu) {
+function xres4E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xA4: RES 4,(IX+d),H
-function xres4H (cpu: Z80Cpu) {
+function xres4H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xA5: RES 4,(IX+d),L
-function xres4L (cpu: Z80Cpu) {
+function xres4L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xA6: RES 4,(IX+d)
-function xres4 (cpu: Z80Cpu) {
+function xres4(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xA7: RES 4,(IX+d),A
-function xres4A (cpu: Z80Cpu) {
+function xres4A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xef;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xA8: RES 5,(IX+d),B
-function xres5B (cpu: Z80Cpu) {
+function xres5B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xA9: RES 5,(IX+d),C
-function xres5C (cpu: Z80Cpu) {
+function xres5C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xAA: RES 5,(IX+d),D
-function xres5D (cpu: Z80Cpu) {
+function xres5D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xAB: RES 5,(IX+d),E
-function xres5E (cpu: Z80Cpu) {
+function xres5E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xAC: RES 5,(IX+d),H
-function xres5H (cpu: Z80Cpu) {
+function xres5H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xAD: RES 5,(IX+d),L
-function xres5L (cpu: Z80Cpu) {
+function xres5L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xAE: RES 5,(IX+d)
-function xres5 (cpu: Z80Cpu) {
+function xres5(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xAF: RES 5,(IX+d),A
-function xres5A (cpu: Z80Cpu) {
+function xres5A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xdf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xB0: RES 6,(IX+d),B
-function xres6B (cpu: Z80Cpu) {
+function xres6B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xB1: RES 6,(IX+d),C
-function xres6C (cpu: Z80Cpu) {
+function xres6C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xB2: RES 6,(IX+d),D
-function xres6D (cpu: Z80Cpu) {
+function xres6D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xB3: RES 6,(IX+d),E
-function xres6E (cpu: Z80Cpu) {
+function xres6E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xB4: RES 6,(IX+d),H
-function xres6H (cpu: Z80Cpu) {
+function xres6H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xB5: RES 6,(IX+d),L
-function xres6L (cpu: Z80Cpu) {
+function xres6L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xB6: RES 6,(IX+d)
-function xres6 (cpu: Z80Cpu) {
+function xres6(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xB7: RES 6,(IX+d),A
-function xres6A (cpu: Z80Cpu) {
+function xres6A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0xbf;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xB8: RES 7,(IX+d),B
-function xres7B (cpu: Z80Cpu) {
+function xres7B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xB9: RES 7,(IX+d),C
-function xres7C (cpu: Z80Cpu) {
+function xres7C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xBA: RES 7,(IX+d),D
-function xres7D (cpu: Z80Cpu) {
+function xres7D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xBB: RES 7,(IX+d),E
-function xres7E (cpu: Z80Cpu) {
+function xres7E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xBC: RES 7,(IX+d),H
-function xres7H (cpu: Z80Cpu) {
+function xres7H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xBD: RES 7,(IX+d),L
-function xres7L (cpu: Z80Cpu) {
+function xres7L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xBE: RES 7,(IX+d)
-function xres7 (cpu: Z80Cpu) {
+function xres7(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xBF: RES 7,(IX+d),A
-function xres7A (cpu: Z80Cpu) {
+function xres7A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) & 0x7f;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xC0: RES 0,(IX+d),B
-function xset0B (cpu: Z80Cpu) {
+function xset0B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xC1: RES 0,(IX+d),C
-function xset0C (cpu: Z80Cpu) {
+function xset0C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xC2: RES 0,(IX+d),D
-function xset0D (cpu: Z80Cpu) {
+function xset0D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xC3: RES 0,(IX+d),E
-function xset0E (cpu: Z80Cpu) {
+function xset0E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xC4: RES 0,(IX+d),H
-function xset0H (cpu: Z80Cpu) {
+function xset0H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xC5: RES 0,(IX+d),L
-function xset0L (cpu: Z80Cpu) {
+function xset0L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xC6: RES 0,(IX+d)
-function xset0 (cpu: Z80Cpu) {
+function xset0(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xC7: RES 0,(IX+d),A
-function xset0A (cpu: Z80Cpu) {
+function xset0A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x1;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xC8: RES 1,(IX+d),B
-function xset1B (cpu: Z80Cpu) {
+function xset1B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xC9: RES 1,(IX+d),C
-function xset1C (cpu: Z80Cpu) {
+function xset1C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xCA: RES 1,(IX+d),D
-function xset1D (cpu: Z80Cpu) {
+function xset1D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xCB: RES 1,(IX+d),E
-function xset1E (cpu: Z80Cpu) {
+function xset1E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xCC: RES 1,(IX+d),H
-function xset1H (cpu: Z80Cpu) {
+function xset1H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xCD: RES 1,(IX+d),L
-function xset1L (cpu: Z80Cpu) {
+function xset1L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xCE: RES 1,(IX+d)
-function xset1 (cpu: Z80Cpu) {
+function xset1(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xCF: RES 1,(IX+d),A
-function xset1A (cpu: Z80Cpu) {
+function xset1A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x2;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xD0: RES 2,(IX+d),B
-function xset2B (cpu: Z80Cpu) {
+function xset2B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xD1: RES 2,(IX+d),C
-function xset2C (cpu: Z80Cpu) {
+function xset2C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xD2: RES 2,(IX+d),D
-function xset2D (cpu: Z80Cpu) {
+function xset2D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xD3: RES 2,(IX+d),E
-function xset2E (cpu: Z80Cpu) {
+function xset2E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xD4: RES 2,(IX+d),H
-function xset2H (cpu: Z80Cpu) {
+function xset2H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xD5: RES 2,(IX+d),L
-function xset2L (cpu: Z80Cpu) {
+function xset2L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xD6: RES 2,(IX+d)
-function xset2 (cpu: Z80Cpu) {
+function xset2(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xD7: RES 2,(IX+d),A
-function xset2A (cpu: Z80Cpu) {
+function xset2A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x4;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xD8: RES 3,(IX+d),B
-function xset3B (cpu: Z80Cpu) {
+function xset3B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xD9: RES 3,(IX+d),C
-function xset3C (cpu: Z80Cpu) {
+function xset3C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xDA: RES 3,(IX+d),D
-function xset3D (cpu: Z80Cpu) {
+function xset3D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xDB: RES 3,(IX+d),E
-function xset3E (cpu: Z80Cpu) {
+function xset3E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xDC: RES 3,(IX+d),H
-function xset3H (cpu: Z80Cpu) {
+function xset3H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xDD: RES 3,(IX+d),L
-function xset3L (cpu: Z80Cpu) {
+function xset3L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xDE: RES 3,(IX+d)
-function xset3 (cpu: Z80Cpu) {
+function xset3(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xDF: RES 3,(IX+d),A
-function xset3A (cpu: Z80Cpu) {
+function xset3A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x8;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xE0: RES 4,(IX+d),B
-function xset4B (cpu: Z80Cpu) {
+function xset4B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xE1: RES 4,(IX+d),C
-function xset4C (cpu: Z80Cpu) {
+function xset4C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xE2: RES 4,(IX+d),D
-function xset4D (cpu: Z80Cpu) {
+function xset4D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xE3: RES 4,(IX+d),E
-function xset4E (cpu: Z80Cpu) {
+function xset4E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xE4: RES 4,(IX+d),H
-function xset4H (cpu: Z80Cpu) {
+function xset4H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xE5: RES 4,(IX+d),L
-function xset4L (cpu: Z80Cpu) {
+function xset4L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xE6: RES 4,(IX+d)
-function xset4 (cpu: Z80Cpu) {
+function xset4(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xE7: RES 4,(IX+d),A
-function xset4A (cpu: Z80Cpu) {
+function xset4A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x10;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xE8: RES 5,(IX+d),B
-function xset5B (cpu: Z80Cpu) {
+function xset5B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xE9: RES 5,(IX+d),C
-function xset5C (cpu: Z80Cpu) {
+function xset5C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xEA: RES 5,(IX+d),D
-function xset5D (cpu: Z80Cpu) {
+function xset5D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xEB: RES 5,(IX+d),E
-function xset5E (cpu: Z80Cpu) {
+function xset5E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xEC: RES 5,(IX+d),H
-function xset5H (cpu: Z80Cpu) {
+function xset5H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xED: RES 5,(IX+d),L
-function xset5L (cpu: Z80Cpu) {
+function xset5L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xEE: RES 5,(IX+d)
-function xset5 (cpu: Z80Cpu) {
+function xset5(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xEF: RES 5,(IX+d),A
-function xset5A (cpu: Z80Cpu) {
+function xset5A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x20;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xF0: RES 6,(IX+d),B
-function xset6B (cpu: Z80Cpu) {
+function xset6B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xF1: RES 6,(IX+d),C
-function xset6C (cpu: Z80Cpu) {
+function xset6C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xF2: RES 6,(IX+d),D
-function xset6D (cpu: Z80Cpu) {
+function xset6D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xF3: RES 6,(IX+d),E
-function xset6E (cpu: Z80Cpu) {
+function xset6E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xF4: RES 6,(IX+d),H
-function xset6H (cpu: Z80Cpu) {
+function xset6H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xF5: RES 6,(IX+d),L
-function xset6L (cpu: Z80Cpu) {
+function xset6L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xF6: RES 6,(IX+d)
-function xset6 (cpu: Z80Cpu) {
+function xset6(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xF7: RES 6,(IX+d),A
-function xset6A (cpu: Z80Cpu) {
+function xset6A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x40;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
 }
 
 // 0xF8: RES 7,(IX+d),B
-function xset7B (cpu: Z80Cpu) {
+function xset7B(cpu: Z80Cpu) {
   cpu.b = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.b);
 }
 
 // 0xF9: RES 7,(IX+d),C
-function xset7C (cpu: Z80Cpu) {
+function xset7C(cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.c);
 }
 
 // 0xFA: RES 7,(IX+d),D
-function xset7D (cpu: Z80Cpu) {
+function xset7D(cpu: Z80Cpu) {
   cpu.d = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.d);
 }
 
 // 0xFB: RES 7,(IX+d),E
-function xset7E (cpu: Z80Cpu) {
+function xset7E(cpu: Z80Cpu) {
   cpu.e = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.e);
 }
 
 // 0xFC: RES 7,(IX+d),H
-function xset7H (cpu: Z80Cpu) {
+function xset7H(cpu: Z80Cpu) {
   cpu.h = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.h);
 }
 
 // 0xFD: RES 7,(IX+d),L
-function xset7L (cpu: Z80Cpu) {
+function xset7L(cpu: Z80Cpu) {
   cpu.l = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.l);
 }
 
 // 0xFE: RES 7,(IX+d)
-function xset7 (cpu: Z80Cpu) {
+function xset7(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, tmp);
 }
 
 // 0xFF: RES 7,(IX+d),A
-function xset7A (cpu: Z80Cpu) {
+function xset7A(cpu: Z80Cpu) {
   cpu.a = cpu.readMemory(cpu.wz) | 0x80;
   cpu.tactPlus1WithAddress(cpu.wz);
   cpu.writeMemory(cpu.wz, cpu.a);
@@ -7251,57 +7243,57 @@ function xset7A (cpu: Z80Cpu) {
 // Z80 indexed operations
 
 // 0x09: ADD IX,BC
-function addXBc (cpu: Z80Cpu) {
+function addXBc(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.bc);
 }
 
 // 0x19: ADD IX,DE
-function addXDe (cpu: Z80Cpu) {
+function addXDe(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.de);
 }
 
 // 0x21: LD IX,nn
-function ldXNN (cpu: Z80Cpu) {
+function ldXNN(cpu: Z80Cpu) {
   cpu.indexL = cpu.fetchCodeByte();
   cpu.indexH = cpu.fetchCodeByte();
 }
 
 // 0x22: LD (nn),IX
-function ldNNiX (cpu: Z80Cpu) {
+function ldNNiX(cpu: Z80Cpu) {
   cpu.store16(cpu.indexL, cpu.indexH);
 }
 
 // 0x23: INC IX
-function incX (cpu: Z80Cpu) {
+function incX(cpu: Z80Cpu) {
   cpu.indexReg++;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x24: INC XH
-function incXh (cpu: Z80Cpu) {
+function incXh(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.indexH++] | cpu.flagCValue;
 }
 
 // 0x25: DEC XH
-function decXh (cpu: Z80Cpu) {
+function decXh(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.indexH--] | cpu.flagCValue;
 }
 
 // 0x26: LD XH,n
-function ldXhN (cpu: Z80Cpu) {
+function ldXhN(cpu: Z80Cpu) {
   cpu.indexH = cpu.fetchCodeByte();
 }
 
 // 0x29: ADD IX,IX
-function addXX (cpu: Z80Cpu) {
+function addXX(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.indexReg);
 }
 
 // 0x2A: LD IX,(nn)
-function ldXNNi (cpu: Z80Cpu) {
+function ldXNNi(cpu: Z80Cpu) {
   let addr = (cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8)) & 0xffff;
   cpu.indexL = cpu.readMemory(addr);
   cpu.wz = addr = (addr + 1) & 0xffff;
@@ -7309,28 +7301,28 @@ function ldXNNi (cpu: Z80Cpu) {
 }
 
 // 0x2B: DEC IX
-function decX (cpu: Z80Cpu) {
+function decX(cpu: Z80Cpu) {
   cpu.indexReg--;
   cpu.tactPlus2WithAddress(cpu.ir);
 }
 
 // 0x2C: INC XL
-function incXl (cpu: Z80Cpu) {
+function incXl(cpu: Z80Cpu) {
   cpu.f = incFlags[cpu.indexL++] | cpu.flagCValue;
 }
 
 // 0x2d: DEC XL
-function decXl (cpu: Z80Cpu) {
+function decXl(cpu: Z80Cpu) {
   cpu.f = decFlags[cpu.indexL--] | cpu.flagCValue;
 }
 
 // 0x2e: LD XL,n
-function ldXlN (cpu: Z80Cpu) {
+function ldXlN(cpu: Z80Cpu) {
   cpu.indexL = cpu.fetchCodeByte();
 }
 
 // 0x34: INC (IX+d)
-function incXi (cpu: Z80Cpu) {
+function incXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7342,7 +7334,7 @@ function incXi (cpu: Z80Cpu) {
 }
 
 // 0x35: DEC (IX+d)
-function decXi (cpu: Z80Cpu) {
+function decXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7354,7 +7346,7 @@ function decXi (cpu: Z80Cpu) {
 }
 
 // 0x36: LD (IX+d),n
-function ldXiN (cpu: Z80Cpu) {
+function ldXiN(cpu: Z80Cpu) {
   const dist = cpu.fetchCodeByte();
   cpu.wz = cpu.indexReg + sbyte(dist);
   const value = cpu.fetchCodeByte();
@@ -7363,23 +7355,23 @@ function ldXiN (cpu: Z80Cpu) {
 }
 
 // 0x39: ADD IX,SP
-function addXSp (cpu: Z80Cpu) {
+function addXSp(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.sp);
 }
 
 // 0x44: LD B,XH
-function ldBXh (cpu: Z80Cpu) {
+function ldBXh(cpu: Z80Cpu) {
   cpu.b = cpu.indexH;
 }
 
 // 0x45: LD B,XL
-function ldBXl (cpu: Z80Cpu) {
+function ldBXl(cpu: Z80Cpu) {
   cpu.b = cpu.indexL;
 }
 
 // 0x46: LD B,(IX+d)
-function ldBXi (cpu: Z80Cpu) {
+function ldBXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7388,17 +7380,17 @@ function ldBXi (cpu: Z80Cpu) {
 }
 
 // 0x4C: LD C,XH
-function ldCXh (cpu: Z80Cpu) {
+function ldCXh(cpu: Z80Cpu) {
   cpu.c = cpu.indexH;
 }
 
 // 0x4D: LD C,XL
-function ldCXl (cpu: Z80Cpu) {
+function ldCXl(cpu: Z80Cpu) {
   cpu.c = cpu.indexL;
 }
 
 // 0x4E: LD C,(IX+d)
-function ldCXi (cpu: Z80Cpu) {
+function ldCXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7406,17 +7398,17 @@ function ldCXi (cpu: Z80Cpu) {
   cpu.c = cpu.readMemory(cpu.wz);
 }
 // 0x54: LD D,XH
-function ldDXh (cpu: Z80Cpu) {
+function ldDXh(cpu: Z80Cpu) {
   cpu.d = cpu.indexH;
 }
 
 // 0x55: LD D,XL
-function ldDXl (cpu: Z80Cpu) {
+function ldDXl(cpu: Z80Cpu) {
   cpu.d = cpu.indexL;
 }
 
 // 0x56: LD D,(IX+d)
-function ldDXi (cpu: Z80Cpu) {
+function ldDXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7425,17 +7417,17 @@ function ldDXi (cpu: Z80Cpu) {
 }
 
 // 0x5C: LD E,XH
-function ldEXh (cpu: Z80Cpu) {
+function ldEXh(cpu: Z80Cpu) {
   cpu.e = cpu.indexH;
 }
 
 // 0x5D: LD E,XL
-function ldEXl (cpu: Z80Cpu) {
+function ldEXl(cpu: Z80Cpu) {
   cpu.e = cpu.indexL;
 }
 
 // 0x5E: LD E,(IX+d)
-function ldEXi (cpu: Z80Cpu) {
+function ldEXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7444,32 +7436,32 @@ function ldEXi (cpu: Z80Cpu) {
 }
 
 // 0x60: LD XH,B
-function ldXhB (cpu: Z80Cpu) {
+function ldXhB(cpu: Z80Cpu) {
   cpu.indexH = cpu.b;
 }
 
 // 0x61: LD XH,C
-function ldXhC (cpu: Z80Cpu) {
+function ldXhC(cpu: Z80Cpu) {
   cpu.indexH = cpu.c;
 }
 
 // 0x62: LD XH,D
-function ldXhD (cpu: Z80Cpu) {
+function ldXhD(cpu: Z80Cpu) {
   cpu.indexH = cpu.d;
 }
 
 // 0x63: LD XH,E
-function ldXhE (cpu: Z80Cpu) {
+function ldXhE(cpu: Z80Cpu) {
   cpu.indexH = cpu.e;
 }
 
 // 0x65: LD XH,XL
-function ldXhXl (cpu: Z80Cpu) {
+function ldXhXl(cpu: Z80Cpu) {
   cpu.indexH = cpu.indexL;
 }
 
 // 0x66: LD H,(IX+d)
-function ldHXi (cpu: Z80Cpu) {
+function ldHXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7478,37 +7470,37 @@ function ldHXi (cpu: Z80Cpu) {
 }
 
 // 0x67: LD XH,A
-function ldXhA (cpu: Z80Cpu) {
+function ldXhA(cpu: Z80Cpu) {
   cpu.indexH = cpu.a;
 }
 
 // 0x68: LD XL,B
-function ldXlB (cpu: Z80Cpu) {
+function ldXlB(cpu: Z80Cpu) {
   cpu.indexL = cpu.b;
 }
 
 // 0x69: LD XL,C
-function ldXlC (cpu: Z80Cpu) {
+function ldXlC(cpu: Z80Cpu) {
   cpu.indexL = cpu.c;
 }
 
 // 0x6A: LD XL,D
-function ldXlD (cpu: Z80Cpu) {
+function ldXlD(cpu: Z80Cpu) {
   cpu.indexL = cpu.d;
 }
 
 // 0x6B: LD XL,E
-function ldXlE (cpu: Z80Cpu) {
+function ldXlE(cpu: Z80Cpu) {
   cpu.indexL = cpu.e;
 }
 
 // 0x6C: LD XL,XH
-function ldXlXh (cpu: Z80Cpu) {
+function ldXlXh(cpu: Z80Cpu) {
   cpu.indexL = cpu.indexH;
 }
 
 // 0x6E: LD L,(IX+d)
-function ldLXi (cpu: Z80Cpu) {
+function ldLXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7517,12 +7509,12 @@ function ldLXi (cpu: Z80Cpu) {
 }
 
 // 0x6F: LD XL,A
-function ldXlA (cpu: Z80Cpu) {
+function ldXlA(cpu: Z80Cpu) {
   cpu.indexL = cpu.a;
 }
 
 // 0x70: LD (IX+d),B
-function ldXiB (cpu: Z80Cpu) {
+function ldXiB(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7531,7 +7523,7 @@ function ldXiB (cpu: Z80Cpu) {
 }
 
 // 0x71: LD (IX+d),C
-function ldXiC (cpu: Z80Cpu) {
+function ldXiC(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7540,7 +7532,7 @@ function ldXiC (cpu: Z80Cpu) {
 }
 
 // 0x72: LD (IX+d),D
-function ldXiD (cpu: Z80Cpu) {
+function ldXiD(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7549,7 +7541,7 @@ function ldXiD (cpu: Z80Cpu) {
 }
 
 // 0x73: LD (IX+d),E
-function ldXiE (cpu: Z80Cpu) {
+function ldXiE(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7558,7 +7550,7 @@ function ldXiE (cpu: Z80Cpu) {
 }
 
 // 0x74: LD (IX+d),H
-function ldXiH (cpu: Z80Cpu) {
+function ldXiH(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7567,7 +7559,7 @@ function ldXiH (cpu: Z80Cpu) {
 }
 
 // 0x75: LD (IX+d),L
-function ldXiL (cpu: Z80Cpu) {
+function ldXiL(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7576,7 +7568,7 @@ function ldXiL (cpu: Z80Cpu) {
 }
 
 // 0x77: LD (IX+d),A
-function ldXiA (cpu: Z80Cpu) {
+function ldXiA(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7585,17 +7577,17 @@ function ldXiA (cpu: Z80Cpu) {
 }
 
 // 0x7C: LD A,XH
-function ldAXh (cpu: Z80Cpu) {
+function ldAXh(cpu: Z80Cpu) {
   cpu.a = cpu.indexH;
 }
 
 // 0x7D: LD A,XL
-function ldAXl (cpu: Z80Cpu) {
+function ldAXl(cpu: Z80Cpu) {
   cpu.a = cpu.indexL;
 }
 
 // 0x7E: LD A,(IX+d)
-function ldAXi (cpu: Z80Cpu) {
+function ldAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7604,17 +7596,17 @@ function ldAXi (cpu: Z80Cpu) {
 }
 
 // 0x84: ADD A,XH
-function addAXh (cpu: Z80Cpu) {
+function addAXh(cpu: Z80Cpu) {
   cpu.add8(cpu.indexH);
 }
 
 // 0x85: ADD A,XL
-function addAXl (cpu: Z80Cpu) {
+function addAXl(cpu: Z80Cpu) {
   cpu.add8(cpu.indexL);
 }
 
 // 0x86: ADD A,(IX+d)
-function addAXi (cpu: Z80Cpu) {
+function addAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7623,17 +7615,17 @@ function addAXi (cpu: Z80Cpu) {
 }
 
 // 0x8C: ADC A,XH
-function adcAXh (cpu: Z80Cpu) {
+function adcAXh(cpu: Z80Cpu) {
   cpu.adc8(cpu.indexH);
 }
 
 // 0x8D: ADC A,XL
-function adcAXl (cpu: Z80Cpu) {
+function adcAXl(cpu: Z80Cpu) {
   cpu.adc8(cpu.indexL);
 }
 
 // 0x8E: ADC A,(IX+d)
-function adcAXi (cpu: Z80Cpu) {
+function adcAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7642,17 +7634,17 @@ function adcAXi (cpu: Z80Cpu) {
 }
 
 // 0x94: SUB A,XH
-function subAXh (cpu: Z80Cpu) {
+function subAXh(cpu: Z80Cpu) {
   cpu.sub8(cpu.indexH);
 }
 
 // 0x95: ADC A,XL
-function subAXl (cpu: Z80Cpu) {
+function subAXl(cpu: Z80Cpu) {
   cpu.sub8(cpu.indexL);
 }
 
 // 0x96: SUB A,(IX+d)
-function subAXi (cpu: Z80Cpu) {
+function subAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7661,17 +7653,17 @@ function subAXi (cpu: Z80Cpu) {
 }
 
 // 0x9C: SBC A,XH
-function sbcAXh (cpu: Z80Cpu) {
+function sbcAXh(cpu: Z80Cpu) {
   cpu.sbc8(cpu.indexH);
 }
 
 // 0x9D: SBC A,XL
-function sbcAXl (cpu: Z80Cpu) {
+function sbcAXl(cpu: Z80Cpu) {
   cpu.sbc8(cpu.indexL);
 }
 
 // 0x9E: SBC A,(IX+d)
-function sbcAXi (cpu: Z80Cpu) {
+function sbcAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7680,17 +7672,17 @@ function sbcAXi (cpu: Z80Cpu) {
 }
 
 // 0xA4: AND A,XH
-function andAXh (cpu: Z80Cpu) {
+function andAXh(cpu: Z80Cpu) {
   cpu.and8(cpu.indexH);
 }
 
 // 0xA5: AND A,XL
-function andAXl (cpu: Z80Cpu) {
+function andAXl(cpu: Z80Cpu) {
   cpu.and8(cpu.indexL);
 }
 
 // 0xA6: AND A,(IX+d)
-function andAXi (cpu: Z80Cpu) {
+function andAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7699,17 +7691,17 @@ function andAXi (cpu: Z80Cpu) {
 }
 
 // 0xAC: XOR A,XH
-function xorAXh (cpu: Z80Cpu) {
+function xorAXh(cpu: Z80Cpu) {
   cpu.xor8(cpu.indexH);
 }
 
 // 0xAD: XOR A,XL
-function xorAXl (cpu: Z80Cpu) {
+function xorAXl(cpu: Z80Cpu) {
   cpu.xor8(cpu.indexL);
 }
 
 // 0xAE: XOR A,(IX+d)
-function xorAXi (cpu: Z80Cpu) {
+function xorAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7718,17 +7710,17 @@ function xorAXi (cpu: Z80Cpu) {
 }
 
 // 0xB4: OR A,XH
-function orAXh (cpu: Z80Cpu) {
+function orAXh(cpu: Z80Cpu) {
   cpu.or8(cpu.indexH);
 }
 
 // 0xB5: OR A,XL
-function orAXl (cpu: Z80Cpu) {
+function orAXl(cpu: Z80Cpu) {
   cpu.or8(cpu.indexL);
 }
 
 // 0xB6: OR A,(IX+d)
-function orAXi (cpu: Z80Cpu) {
+function orAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7737,17 +7729,17 @@ function orAXi (cpu: Z80Cpu) {
 }
 
 // 0xBC: CP XH
-function cpAXh (cpu: Z80Cpu) {
+function cpAXh(cpu: Z80Cpu) {
   cpu.cp8(cpu.indexH);
 }
 
 // 0xBD: CP XL
-function cpAXl (cpu: Z80Cpu) {
+function cpAXl(cpu: Z80Cpu) {
   cpu.cp8(cpu.indexL);
 }
 
 // 0xBE: CP (IX+d)
-function cpAXi (cpu: Z80Cpu) {
+function cpAXi(cpu: Z80Cpu) {
   const dist = cpu.readMemory(cpu.pc);
   cpu.tactPlus5WithAddress(cpu.pc);
   cpu.pc++;
@@ -7756,7 +7748,7 @@ function cpAXi (cpu: Z80Cpu) {
 }
 
 // 0xE1: POP IX
-function popX (cpu: Z80Cpu) {
+function popX(cpu: Z80Cpu) {
   cpu.indexL = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.indexH = cpu.readMemory(cpu.sp);
@@ -7764,7 +7756,7 @@ function popX (cpu: Z80Cpu) {
 }
 
 // 0xe3: EX (SP),IX
-function exSpiX (cpu: Z80Cpu) {
+function exSpiX(cpu: Z80Cpu) {
   const sp1 = cpu.sp + 1;
   const tempL = cpu.readMemory(cpu.sp);
   const tempH = cpu.readMemory(sp1);
@@ -7778,7 +7770,7 @@ function exSpiX (cpu: Z80Cpu) {
 }
 
 // 0xe5: PUSH IX
-function pushX (cpu: Z80Cpu) {
+function pushX(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.indexH);
@@ -7787,12 +7779,12 @@ function pushX (cpu: Z80Cpu) {
 }
 
 // 0xe9: JP (IX)
-function jpX (cpu: Z80Cpu) {
+function jpX(cpu: Z80Cpu) {
   cpu.pc = cpu.indexReg;
 }
 
 // 0xf9: LD SP,IX
-function ldSpX (cpu: Z80Cpu) {
+function ldSpX(cpu: Z80Cpu) {
   cpu.tactPlus2WithAddress(cpu.ir);
   cpu.sp = cpu.indexReg;
 }
@@ -7801,74 +7793,74 @@ function ldSpX (cpu: Z80Cpu) {
 // Z80 extended operations
 
 // 0x40: IN B,(C)
-function inBC (cpu: Z80Cpu) {
+function inBC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.b = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.b];
 }
 
 // 0x41: OUT (C),B
-function outCB (cpu: Z80Cpu) {
+function outCB(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.b);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x42: SBC HL,BC
-function sbcHlBc (cpu: Z80Cpu) {
+function sbcHlBc(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.sbc16(cpu.bc);
 }
 
 // 0x43: LD (nn),BC
-function ldNniBc (cpu: Z80Cpu) {
+function ldNniBc(cpu: Z80Cpu) {
   cpu.store16(cpu.c, cpu.b);
 }
 
 // 0x44: NEG
-function neg (cpu: Z80Cpu) {
+function neg(cpu: Z80Cpu) {
   var tmp = cpu.a;
   cpu.a = 0;
   cpu.sub8(tmp);
 }
 
 // 0x45: RETN
-function retn (cpu: Z80Cpu) {
+function retn(cpu: Z80Cpu) {
   cpu.iff1 = cpu.iff2;
   ret(cpu);
 }
 
 // 0x46: IM 0
-function im0 (cpu: Z80Cpu) {
+function im0(cpu: Z80Cpu) {
   cpu.interruptMode = 0;
 }
 
 // 0x47: LD I,A
-function ldIA (cpu: Z80Cpu) {
+function ldIA(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.i = cpu.a;
 }
 
 // 0x48: IN C,(C)
-function inCC (cpu: Z80Cpu) {
+function inCC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.c = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.c];
 }
 
 // 0x49: OUT (C),C
-function outCC (cpu: Z80Cpu) {
+function outCC(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.c);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x4A: ADC HL,BC
-function adcHlBc (cpu: Z80Cpu) {
+function adcHlBc(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.adc16(cpu.bc);
 }
 
 // 0x4B: LD BC,(nn)
-function ldBcNni (cpu: Z80Cpu) {
+function ldBcNni(cpu: Z80Cpu) {
   let tmp = cpu.fetchCodeByte();
   tmp += cpu.fetchCodeByte() << 8;
   cpu.c = cpu.readMemory(tmp);
@@ -7878,68 +7870,68 @@ function ldBcNni (cpu: Z80Cpu) {
 }
 
 // 0x4F: LD R,A
-function ldRA (cpu: Z80Cpu) {
+function ldRA(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.r = cpu.a;
 }
 
 // 0x50: IN D,(C)
-function inDC (cpu: Z80Cpu) {
+function inDC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.d = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.d];
 }
 
 // 0x51: OUT (C),D
-function outCD (cpu: Z80Cpu) {
+function outCD(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.d);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x52: SBC HL,DE
-function sbcHlDe (cpu: Z80Cpu) {
+function sbcHlDe(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.sbc16(cpu.de);
 }
 
 // 0x53: LD (nn),DE
-function ldNniDe (cpu: Z80Cpu) {
+function ldNniDe(cpu: Z80Cpu) {
   cpu.store16(cpu.e, cpu.d);
 }
 
 // 0x56: IM 1
-function im1 (cpu: Z80Cpu) {
+function im1(cpu: Z80Cpu) {
   cpu.interruptMode = 1;
 }
 
 // 0x57: LD A,I
-function ldAI (cpu: Z80Cpu) {
+function ldAI(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.a = cpu.i;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
 }
 
 // 0x58: IN E,(C)
-function inEC (cpu: Z80Cpu) {
+function inEC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.e = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.e];
 }
 
 // 0x59: OUT (C),E
-function outCE (cpu: Z80Cpu) {
+function outCE(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.e);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x5A: ADC HL,DE
-function adcHlDe (cpu: Z80Cpu) {
+function adcHlDe(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.adc16(cpu.de);
 }
 
 // 0x5B: LD DE,(nn)
-function ldDeNni (cpu: Z80Cpu) {
+function ldDeNni(cpu: Z80Cpu) {
   let tmp = cpu.fetchCodeByte();
   tmp += cpu.fetchCodeByte() << 8;
   cpu.e = cpu.readMemory(tmp);
@@ -7949,43 +7941,43 @@ function ldDeNni (cpu: Z80Cpu) {
 }
 
 // 0x5E: IM 2
-function im2 (cpu: Z80Cpu) {
+function im2(cpu: Z80Cpu) {
   cpu.interruptMode = 2;
 }
 
 // 0x5F: LD A,R
-function ldAR (cpu: Z80Cpu) {
+function ldAR(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.a = cpu.r;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
 }
 
 // 0x60: IN H,(C)
-function inHC (cpu: Z80Cpu) {
+function inHC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.h = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.h];
 }
 
 // 0x61: OUT (C),H
-function outCH (cpu: Z80Cpu) {
+function outCH(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.h);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x62: SBC HL,HL
-function sbcHlHl (cpu: Z80Cpu) {
+function sbcHlHl(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.sbc16(cpu.hl);
 }
 
 // 0x63: LD (nn),HL
-function ldNniHl (cpu: Z80Cpu) {
+function ldNniHl(cpu: Z80Cpu) {
   cpu.store16(cpu.l, cpu.h);
 }
 
 // 0x67: RRD
-function rrd (cpu: Z80Cpu) {
+function rrd(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus4WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, (cpu.a << 4) | (tmp >>> 4));
@@ -7995,26 +7987,26 @@ function rrd (cpu: Z80Cpu) {
 }
 
 // 0x68: IN L,(C)
-function inLC (cpu: Z80Cpu) {
+function inLC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.l = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.l];
 }
 
 // 0x69: OUT (C),L
-function outCL (cpu: Z80Cpu) {
+function outCL(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.l);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x6A: ADC HL,HL
-function adcHlHl (cpu: Z80Cpu) {
+function adcHlHl(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.adc16(cpu.hl);
 }
 
 // 0x6B: LD HL,(nn)
-function ldHlNni (cpu: Z80Cpu) {
+function ldHlNni(cpu: Z80Cpu) {
   let tmp = cpu.fetchCodeByte();
   tmp += cpu.fetchCodeByte() << 8;
   cpu.l = cpu.readMemory(tmp);
@@ -8024,7 +8016,7 @@ function ldHlNni (cpu: Z80Cpu) {
 }
 
 // 0x6F: RLD
-function rld (cpu: Z80Cpu) {
+function rld(cpu: Z80Cpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.tactPlus4WithAddress(cpu.hl);
   cpu.writeMemory(cpu.hl, (tmp << 4) | (cpu.a & 0x0f));
@@ -8034,50 +8026,50 @@ function rld (cpu: Z80Cpu) {
 }
 
 // 0x70: IN (C)
-function in0C (cpu: Z80Cpu) {
+function in0C(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   const tmp = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[tmp];
 }
 
 // 0x71: OUT (C),0
-function outC0 (cpu: Z80Cpu) {
+function outC0(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, 0);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x72: SBC HL,SP
-function sbcHlSp (cpu: Z80Cpu) {
+function sbcHlSp(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.sbc16(cpu.sp);
 }
 
 // 0x73: LD (nn),SP
-function ldNniSp (cpu: Z80Cpu) {
+function ldNniSp(cpu: Z80Cpu) {
   cpu.store16(cpu.sp & 0xff, cpu.sp >>> 8);
 }
 
 // 0x78: IN A,(C)
-function inAC (cpu: Z80Cpu) {
+function inAC(cpu: Z80Cpu) {
   cpu.wz = cpu.bc + 1;
   cpu.a = cpu.readPort(cpu.bc);
   cpu.f = cpu.flagCValue | sz53Table[cpu.a];
 }
 
 // 0x79: OUT (C),A
-function outCA (cpu: Z80Cpu) {
+function outCA(cpu: Z80Cpu) {
   cpu.writePort(cpu.bc, cpu.a);
   cpu.wz = cpu.bc + 1;
 }
 
 // 0x7A: ADC HL,SP
-function adcHlSp (cpu: Z80Cpu) {
+function adcHlSp(cpu: Z80Cpu) {
   cpu.tactPlus7WithAddress(cpu.ir);
   cpu.adc16(cpu.sp);
 }
 
 // 0x7B: LD SP,(nn)
-function ldSpNni (cpu: Z80Cpu) {
+function ldSpNni(cpu: Z80Cpu) {
   let tmp = cpu.fetchCodeByte();
   tmp += cpu.fetchCodeByte() << 8;
   const val = cpu.readMemory(tmp);
@@ -8087,7 +8079,7 @@ function ldSpNni (cpu: Z80Cpu) {
 }
 
 // 0xA0: LDI
-function ldi (cpu: Z80Cpu) {
+function ldi(cpu: Z80Cpu) {
   let tmp = cpu.readMemory(cpu.hl);
   cpu.bc--;
   cpu.writeMemory(cpu.de, tmp);
@@ -8103,11 +8095,10 @@ function ldi (cpu: Z80Cpu) {
 }
 
 // 0xA1: CPI
-function cpi (cpu: Z80Cpu) {
+function cpi(cpu: Z80Cpu) {
   const value = cpu.readMemory(cpu.hl);
   let tmp = (cpu.a - value) & 0xff;
-  const lookup =
-    ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
+  const lookup = ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.hl++;
   cpu.bc--;
@@ -8125,7 +8116,7 @@ function cpi (cpu: Z80Cpu) {
 }
 
 // 0xA2: INI
-function ini (cpu: Z80Cpu) {
+function ini(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
@@ -8141,7 +8132,7 @@ function ini (cpu: Z80Cpu) {
 }
 
 // 0xA3: OUTI
-function outi (cpu: Z80Cpu) {
+function outi(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
@@ -8157,7 +8148,7 @@ function outi (cpu: Z80Cpu) {
 }
 
 // 0xA8: LDD
-function ldd (cpu: Z80Cpu) {
+function ldd(cpu: Z80Cpu) {
   let tmp = cpu.readMemory(cpu.hl);
   cpu.bc--;
   cpu.writeMemory(cpu.de, tmp);
@@ -8173,11 +8164,10 @@ function ldd (cpu: Z80Cpu) {
 }
 
 // 0xA9: CPD
-function cpd (cpu: Z80Cpu) {
+function cpd(cpu: Z80Cpu) {
   const value = cpu.readMemory(cpu.hl);
   let tmp = (cpu.a - value) & 0xff;
-  const lookup =
-    ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
+  const lookup = ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.hl--;
   cpu.bc--;
@@ -8195,7 +8185,7 @@ function cpd (cpu: Z80Cpu) {
 }
 
 // 0xAA: IND
-function ind (cpu: Z80Cpu) {
+function ind(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
@@ -8211,7 +8201,7 @@ function ind (cpu: Z80Cpu) {
 }
 
 // 0xAB: OUTD
-function outd (cpu: Z80Cpu) {
+function outd(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
@@ -8227,7 +8217,7 @@ function outd (cpu: Z80Cpu) {
 }
 
 // 0xB0: LDIR
-function ldir (cpu: Z80Cpu) {
+function ldir(cpu: Z80Cpu) {
   let tmp = cpu.readMemory(cpu.hl);
   cpu.writeMemory(cpu.de, tmp);
   cpu.tactPlus2WithAddress(cpu.de);
@@ -8248,11 +8238,10 @@ function ldir (cpu: Z80Cpu) {
 }
 
 // 0xB1: CPIR
-function cpir (cpu: Z80Cpu) {
+function cpir(cpu: Z80Cpu) {
   const value = cpu.readMemory(cpu.hl);
   let tmp = (cpu.a - value) & 0xff;
-  var lookup =
-    ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
+  var lookup = ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.bc--;
   cpu.f =
@@ -8276,7 +8265,7 @@ function cpir (cpu: Z80Cpu) {
 }
 
 // 0xB2: INIR
-function inir (cpu: Z80Cpu) {
+function inir(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
@@ -8296,7 +8285,7 @@ function inir (cpu: Z80Cpu) {
 }
 
 // 0xB3: OTIR
-function otir (cpu: Z80Cpu) {
+function otir(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
@@ -8315,7 +8304,7 @@ function otir (cpu: Z80Cpu) {
 }
 
 // 0xB8: LDDR
-function lddr (cpu: Z80Cpu) {
+function lddr(cpu: Z80Cpu) {
   let tmp = cpu.readMemory(cpu.hl);
   cpu.writeMemory(cpu.de, tmp);
   cpu.tactPlus2WithAddress(cpu.de);
@@ -8336,11 +8325,10 @@ function lddr (cpu: Z80Cpu) {
 }
 
 // 0xB9: CPDR
-function cpdr (cpu: Z80Cpu) {
+function cpdr(cpu: Z80Cpu) {
   const value = cpu.readMemory(cpu.hl);
   let tmp = (cpu.a - value) & 0xff;
-  var lookup =
-    ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
+  var lookup = ((cpu.a & 0x08) >>> 3) | ((value & 0x08) >>> 2) | ((tmp & 0x08) >>> 1);
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.bc--;
   cpu.f =
@@ -8364,7 +8352,7 @@ function cpdr (cpu: Z80Cpu) {
 }
 
 // 0xBA: INDR
-function indr (cpu: Z80Cpu) {
+function indr(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
@@ -8385,7 +8373,7 @@ function indr (cpu: Z80Cpu) {
 }
 
 // 0xBB: OTDR
-function otdr (cpu: Z80Cpu) {
+function otdr(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;

@@ -97,9 +97,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize the memory
     this.memoryDevice = new MemoryDevice(this);
+    this.nextRegDevice = new NextRegDevice(this);
 
     // --- Create and initialize devices
-    this.nextRegDevice = new NextRegDevice(this);
     this.divMmcDevice = new DivMmcDevice(this);
     this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
@@ -113,14 +113,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       NextScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
-    this.nextRegDevice = new NextRegDevice(this);
     this.hardReset();
   }
 
   reset(): void {
     super.reset();
     this.memoryDevice.reset();
-    this.nextRegDevice.reset();
     this.divMmcDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();
@@ -131,6 +129,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.keyboardDevice.reset();
     this.screenDevice.reset();
     this.beeperDevice.reset();
+
+    // --- This device is the last to reset, as it may override the reset of other devices
+    this.nextRegDevice.reset();
   }
 
   async setup(): Promise<void> {
@@ -356,6 +357,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   delayPortWrite(address: number): void {
     this.delayContendedIo(address);
+  }
+
+  /**
+   * Execute this method before fetching the opcode of the next instruction
+   */
+  beforeOpcodeFetch(): void {
+    // --- Implement this method in derived classes
+  }
+
+  /**
+   * Execute this method after fetching the opcode of the next instruction
+   */
+  afterOpcodeFetch(): void {
+    // --- Implement this method in derived classes
   }
 
   /**

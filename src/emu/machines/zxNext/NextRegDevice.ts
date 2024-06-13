@@ -2759,6 +2759,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   reset(): void {
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x01); // --- Sign the last reset was soft reset
+    this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
+    this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
+    this.directSetRegValue(0xba, 0x00); // --- Delayed mapping for all RSTs with DivMMC
+    this.directSetRegValue(0xbb, 0xCD); // --- Enable automap on $3dxx, and $1ff8-1fff, $0562, $04c6, 0x0066 delayed
 
     // --- Copy alternate ROM bits 0:3 to bits 4:7
     const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;

@@ -168,7 +168,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.enableAltRom &&
       this.altRomVisibleOnlyForWrites &&
       divMmcDevice.conmem &&
-      !divMmcDevice.divifaceAutomaticPaging
+      !divMmcDevice.automaticPaging
     ) {
       // --- Write to the alternative ROM area
       this.memory[this.getAltRomOffset() + address] = data;
@@ -181,7 +181,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       layer2Device.enableMappingForWrites &&
       layer2Size === 0xc000 &&
       !divMmcDevice.conmem &&
-      !divMmcDevice.divifaceAutomaticPaging &&
+      !divMmcDevice.automaticPaging &&
       address < layer2Size
     ) {
       const offset = this.getLayer2MemoryOffset();
