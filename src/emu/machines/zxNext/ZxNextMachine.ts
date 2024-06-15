@@ -26,6 +26,7 @@ import { OFFS_NEXT_ROM, MemoryDevice } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { NextScreenDevice } from "./NextScreenDevice";
+import { MouseDevice } from "./MouseDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -65,6 +66,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the screen device of ZX Spectrum 48K
    */
   screenDevice: NextScreenDevice;
+
+  mouseDevice: MouseDevice;
 
   /**
    * Represents the beeper device of ZX Spectrum 48K
@@ -113,6 +116,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       NextScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
+    this.mouseDevice = new MouseDevice(this);
     this.hardReset();
   }
 
@@ -128,6 +132,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.copperDevice.reset();
     this.keyboardDevice.reset();
     this.screenDevice.reset();
+    this.mouseDevice.reset();
     this.beeperDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices

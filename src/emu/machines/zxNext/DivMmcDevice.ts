@@ -1,10 +1,16 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _conmem: boolean;
   private _mapram: boolean;
   private _bank: number;
+  private _pagedIn: boolean;
+  private _pageInRequested: boolean;
+  private _pageInDelayed: boolean;
+  private _pageOutRequested: boolean;
+  private _canWritePage1: boolean;
 
   readonly rstTraps: TrapInfo[] = [];
   autoMapOn3dxx: boolean;
@@ -15,6 +21,8 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   automapOn04c6: boolean;
   automapOn0066: boolean;
   automapOn0066Delayed: boolean;
+  enableAutomap: boolean;
+  multifaceType: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     for (let i = 0; i < 8; i++) {
@@ -27,7 +35,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this._conmem = false;
     this._mapram = false;
     this._bank = 0;
-    this.automaticPaging = false;
+    this._pagedIn = false;
+    this._pageInRequested = false;
+    this._pageOutRequested = false;
     for (let i = 0; i < 8; i++) {
       this.rstTraps[i].enabled = false;
       this.rstTraps[i].onlyWithRom3 = false;
@@ -63,6 +73,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       this._mapram = false;
     }
     this._bank = value & 0x0f;
+    this._canWritePage1 = !this._mapram || this._bank !== 0x03;
+    if (this._conmem) {
+      // --- Instant mapping when CONMEM is active
+      this.pageIn();
+    }
   }
 
   set nextRegB8Value(value: number) {
@@ -111,14 +126,138 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   getRstTrapActive(index: number): boolean {
     return this.rstTraps[index].enabled;
-  
   }
 
-  automaticPaging: boolean;
+  get pagedIn(): boolean {
+    return this._pagedIn;
+  }
+
+  get canWritePage1(): boolean {
+    return this._canWritePage1;
+  }
+
+  get pageInRequested(): boolean {
+    return this._pageInRequested;
+  }
+
+  get pageOutRequested(): boolean {
+    return this._pageOutRequested;
+  }
+
+  // --- Pages in ROM/RAM into the lower 16K, if requested so
+  beforeOpcodeFecth(): void {
+    if (!this.enableAutomap || this._pagedIn) {
+      // --- No page in/out if automap is disabled or the memory is already paged in
+      return;
+    }
+
+    // --- We need to know if ROM 3 is paged in
+    const memoryDevice = this.machine.memoryDevice;
+    const rom3PagedIn =
+      !memoryDevice.enableAltRom &&
+      (memoryDevice.selectedRomMsb | memoryDevice.selectedRomLsb) === 0x03;
+
+    // --- Check for traps
+    const pc = this.machine.pc;
+    switch (pc) {
+      case 0x0000:
+      case 0x0008:
+      case 0x0010:
+      case 0x0018:
+      case 0x0020:
+      case 0x0028:
+      case 0x0030:
+      case 0x0038:
+        const rstIdx = this.machine.pc >> 3;
+        if (this.rstTraps[rstIdx].enabled && (!this.rstTraps[rstIdx].onlyWithRom3 || rom3PagedIn)) {
+          this._pageInRequested = true;
+          this._pageInDelayed = !this.rstTraps[2].instantMapping;
+        }
+        break;
+      case 0x0066:
+        // TODO: Implement it when NMI button handling is implemented
+        break;
+      case 0x04c6:
+        if (this.automapOn04c6 && rom3PagedIn) {
+          this._pageInRequested = true;
+          this._pageInDelayed = true;
+        }
+        break;
+      case 0x0562:
+        if (this.automapOn0562 && rom3PagedIn) {
+          this._pageInRequested = true;
+          this._pageInDelayed = true;
+        }
+        break;
+      case 0x04d7:
+        if (this.automapOn04d7 && rom3PagedIn) {
+          this._pageInRequested = true;
+          this._pageInDelayed = true;
+        }
+        break;
+      case 0x056a:
+        if (this.automapOn056a && rom3PagedIn) {
+          this._pageInRequested = true;
+          this._pageInDelayed = true;
+        }
+        break;   
+      default:
+        if (pc >= 0x3d00 && pc <= 0x3dff && this.autoMapOn3dxx && rom3PagedIn) {
+          this._pageInRequested = true;
+          this._pageInDelayed = false;
+        } else if (pc >= 0x1ff8 && pc <= 0x1fff && !this.disableAutomapOn1ff8) {
+          this._pageOutRequested = true;
+        }
+    }
+
+    // --- Page in, if reqested
+    if (this._pageInRequested && !this._pageInDelayed) {
+      this.pageIn();
+      this._pageInRequested = false;
+    }
+  }
+
+  // --- Pages in and out ROM/RAM into the lower 16K, if requested so
+  afterOpcodeFetch(): void {
+    // --- Check for delayed page in
+    if (this._pageInRequested && this._pageInDelayed && !this._pageOutRequested) {
+      this.pageIn();
+      this._pageInRequested = false;
+      this._pageInDelayed = false;
+      return;
+    }
+
+    if (this._pageOutRequested) {
+      this.pageOut();
+      this._pageOutRequested = false;
+    } 
+  }
+
+  // --- Pages in ROM/RAM into the lower 16K
+  private pageIn(): void {
+    this._pagedIn = true;
+    const memoryDevice = this.machine.memoryDevice;
+
+    // --- Page 0
+    if (this._conmem || !this._mapram) {
+      memoryDevice.setPageInfo(0, OFFS_DIVMMC_ROM, 0xff, 0xff);
+    } else {
+      memoryDevice.setPageInfo(0, OFFS_DIVMMC_RAM + 3 * 0x2000, 0xff, 0xff);
+    }
+
+    // --- Page 1
+    memoryDevice.setPageInfo(1, OFFS_DIVMMC_RAM + this.bank * 0x2000, 0xff, 0xff);
+  }
+
+  // --- Pages out ROM/RAM from the lower 16K
+  private pageOut(): void {
+    this._pagedIn = false;
+    this.machine.memoryDevice.updateMemoryConfig();
+  }
 }
 
 type TrapInfo = {
   enabled: boolean;
   onlyWithRom3: boolean;
   instantMapping: boolean;
-}
+};

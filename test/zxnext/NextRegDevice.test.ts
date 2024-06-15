@@ -3,9 +3,9 @@ import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 describe("Next - NextRegDevice", function () {
-  it("Hard reset", () => {
+  it("Hard reset", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
 
     // --- Act
@@ -154,9 +154,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xfa)).toBe(0xff);
   });
 
-  it("Hard reset & soft reset", () => {
+  it("Hard reset & soft reset", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
 
     // --- Act
@@ -306,9 +306,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xfa)).toBe(0xff);
   });
 
-  it("Soft reset sets reg $8c", () => {
+  it("Soft reset sets reg $8c", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
     d.hardReset();
     d.directSetRegValue(0x8c, 0x05);
@@ -321,9 +321,9 @@ describe("Next - NextRegDevice", function () {
     expect(value).toBe(0x55);
   });
 
-  it("Reg $00 read", () => {
+  it("Reg $00 read", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
 
     // --- Act
     const value = readNextReg(m, 0x00);
@@ -332,9 +332,9 @@ describe("Next - NextRegDevice", function () {
     expect(value).toBe(0x08);
   });
 
-  it("Reg $01 read", () => {
+  it("Reg $01 read", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
 
     // --- Act
     const value = readNextReg(m, 0x01);

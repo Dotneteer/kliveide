@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 
 describe("Next - NextIoPortManager", function () {
-  it("Initialization", () => {
+  it("Initialization", async () => {
     // --- Act
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.portManager;
 
     // --- Assert
@@ -26,9 +26,9 @@ describe("Next - NextIoPortManager", function () {
     { v: 0x07, allRam: true, config: 3, msb: 2 }
   ];
   cases0x1ffd.forEach((c) => {
-    it(`0x1fff with ${c.v.toString(16)}`, () => {
+    it(`0x1fff with ${c.v.toString(16)}`, async () => {
       // --- Arrange
-      const machine = createTestNextMachine();
+      const machine = await createTestNextMachine();
       const io = machine.portManager;
       const mem = machine.memoryDevice;
 
@@ -42,8 +42,8 @@ describe("Next - NextIoPortManager", function () {
     });
   });
 
-  it("0x7ffd paging disabled works", () => {
-    const machine = createTestNextMachine();
+  it("0x7ffd paging disabled works", async () => {
+    const machine = await createTestNextMachine();
     const io = machine.portManager;
     const mem = machine.memoryDevice;
     io.writePort(0x7ffd, 0x3f);
@@ -83,9 +83,9 @@ describe("Next - NextIoPortManager", function () {
     { v: 0x1f, rom: 0x01, shadow: true, bank: 0x07 },
 ];
   cases0x7ffd.forEach((c) => {
-    it(`0x7ffd with ${c.v.toString(16)}`, () => {
+    it(`0x7ffd with ${c.v.toString(16)}`, async () => {
       // --- Arrange
-      const machine = createTestNextMachine();
+      const machine = await createTestNextMachine();
       const io = machine.portManager;
       const mem = machine.memoryDevice;
 

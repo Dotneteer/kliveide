@@ -8,7 +8,7 @@ export const OFFS_MULTIFACE_MEM = 0x01_4000;
 export const OFFS_ALT_ROM_0 = 0x01_8000;
 export const OFFS_ALT_ROM_1 = 0x01_c000;
 export const OFFS_DIVMMC_RAM = 0x02_0000;
-export const OFFS_NEXT_RAM = 0x40_0000;
+export const OFFS_NEXT_RAM = 0x04_0000;
 export const OFFS_ERR_PAGE = 2048 * 1024;
 
 /**
@@ -101,8 +101,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
     this.mmuRegs[1] = 0xff;
-    this.mmuRegs[2] = 0x0A;
-    this.mmuRegs[3] = 0x0B;
+    this.mmuRegs[2] = 0x0a;
+    this.mmuRegs[3] = 0x0b;
     this.mmuRegs[4] = 0x04;
     this.mmuRegs[5] = 0x05;
     this.mmuRegs[6] = 0x00;
@@ -136,6 +136,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     };
   }
 
+  getPageInfo(pageIndex: number): MemoryPageInfo {  
+    if (pageIndex < 0 || pageIndex > 7) {
+      throw new Error(`Invalid page index ${pageIndex}`);
+    }
+    return this.pageInfo[pageIndex];
+  }
+
   /**
    * Reads the byte at the specified memory address
    * @param address 16-bit memory address to read
@@ -162,14 +169,17 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeMemory(address: number, data: number): void {
     const divMmcDevice = this.machine.divMmcDevice;
+
+    // --- Check DivMMC device
+    if (divMmcDevice.pagedIn) {
+      if (address < 0x2000 || !divMmcDevice.canWritePage1) {
+        // --- Do not allow to write into the DivMMC ROM or write-protected page 1
+        return;
+      }
+    }
+
     // --- Check if alternate ROM is being written
-    if (
-      address < 0x4000 &&
-      this.enableAltRom &&
-      this.altRomVisibleOnlyForWrites &&
-      divMmcDevice.conmem &&
-      !divMmcDevice.automaticPaging
-    ) {
+    if (address < 0x4000 && this.enableAltRom && this.altRomVisibleOnlyForWrites) {
       // --- Write to the alternative ROM area
       this.memory[this.getAltRomOffset() + address] = data;
     }
@@ -177,13 +187,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Check Layer 2
     const layer2Device = this.machine.layer2Device;
     const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
-    if (
-      layer2Device.enableMappingForWrites &&
-      layer2Size === 0xc000 &&
-      !divMmcDevice.conmem &&
-      !divMmcDevice.automaticPaging &&
-      address < layer2Size
-    ) {
+    if (layer2Device.enableMappingForWrites && layer2Size === 0xc000 && address < layer2Size) {
       const offset = this.getLayer2MemoryOffset();
       this.memory[offset + address] = data;
       return;
@@ -200,6 +204,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       // --- Do not write to the invalid page
       return;
     }
+
     this.memory[slotInfo.offset + (address & 0x1fff)] = data;
   }
 
@@ -236,7 +241,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (!this.pagingEnabled) return;
 
     // --- Update port value changes
-    this.selectedBankLsb = value & 0x07;
+    const newBank16k = this.selectedBankLsb = value & 0x07;
+    this.mmuRegs[6] = newBank16k * 2;
+    this.mmuRegs[7] = newBank16k * 2 + 1;
     this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
     this.selectedRomLsb = (value >> 4) & 0x01;
     this.pagingEnabled = (value & 0x20) == 0x00;
@@ -412,7 +419,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Updates the memory configuration based on the current settings
    */
-  private updateMemoryConfig(): void {
+  updateMemoryConfig(): void {
     if (this.allRamMode) {
       // --- All RAM page setup
       this._wasInAllRamMode = true;
@@ -491,7 +498,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   private setMemorySlotByMmu(slotNo: number): void {
     const bank8k = this.mmuRegs[slotNo];
     let offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
-    this.setPageInfo(slotNo, offset, bank8k << 1, bank8k);
+    this.setPageInfo(slotNo, offset, bank8k >> 1, bank8k);
   }
 
   private setRomSlotByMmu(slotNo: number, pageNo): void {

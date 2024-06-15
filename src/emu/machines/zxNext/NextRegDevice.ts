@@ -392,7 +392,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x0a,
       description: "Peripheral 5 Setting",
-      writeFn: this.writePeripheral5Setting,
+      writeFn: (v) => {
+        machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
+        machine.divMmcDevice.enableAutomap = (v & 0x10) !== 0;
+        machine.mouseDevice.swapButtons = (v & 0x08) !== 0;
+        machine.mouseDevice.dpi = v & 0x03;
+      },
+      readFn: () =>
+        (machine.divMmcDevice.multifaceType << 6) |
+        (machine.divMmcDevice.enableAutomap ? 0x10 : 0x00) |
+        (machine.mouseDevice.swapButtons ? 0x08 : 0x00) |
+        (machine.mouseDevice.dpi & 0x03),
       slices: [
         {
           mask: 0xc0,
@@ -945,42 +955,42 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x50,
       description: "MMU slot 0",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(0, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(0, v)
     });
     r({
       id: 0x51,
       description: "MMU slot 1",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(1, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(1, v)
     });
     r({
       id: 0x52,
       description: "MMU slot 2",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(2, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(2, v)
     });
     r({
       id: 0x53,
       description: "MMU slot 3",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(3, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(3, v)
     });
     r({
       id: 0x54,
       description: "MMU slot 4",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(4, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(4, v)
     });
     r({
       id: 0x55,
       description: "MMU slot 5",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(5, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(5, v)
     });
     r({
       id: 0x56,
       description: "MMU slot 6",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(6, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(6, v)
     });
     r({
       id: 0x57,
       description: "MMU slot 7",
-      writeFn: (v) => (machine.memoryDevice.setNextRegMmmuValue(7, v))
+      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(7, v)
     });
     r({
       id: 0x60,
@@ -2762,7 +2772,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
     this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
     this.directSetRegValue(0xba, 0x00); // --- Delayed mapping for all RSTs with DivMMC
-    this.directSetRegValue(0xbb, 0xCD); // --- Enable automap on $3dxx, and $1ff8-1fff, $0562, $04c6, 0x0066 delayed
+    this.directSetRegValue(0xbb, 0xcd); // --- Enable automap on $3dxx, and $1ff8-1fff, $0562, $04c6, 0x0066 delayed
 
     // --- Copy alternate ROM bits 0:3 to bits 4:7
     const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;
@@ -2896,8 +2906,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.r09_SilenceHdmiAudio = (value & 0x04) !== 0;
     this.r09_ScanlineWeight = value & 0x03;
   }
-
-  private writePeripheral5Setting(value: number): void {}
 
   private writeJoystickIoMode(value: number): void {}
 

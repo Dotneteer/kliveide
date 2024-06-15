@@ -742,24 +742,21 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     // --- Second, let's execute the M1 machine cycle that reads the next opcode from the memory.
+    // --- For IX and IY indexed bit operations, the opcode is already read, the next byte is the displacement.
     const m1Active = this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB;
     if (m1Active) {
-      // --- During M1, DivMMC may page in/out memory banks
+      // --- During M1, DivMMC may page out memory banks
       this.beforeOpcodeFetch();
     }
     this.opCode = this.readMemory(this.pc);
     if (m1Active) {
-      // --- During M1, DivMMC may page in/out memory banks
+      this.refreshMemory();
+      this.tactPlus1();
+
+      // --- After the M1 refresh cycle, DivMMC may page out memory banks
       this.afterOpcodeFetch;
     }
     this.pc++;
-
-    // --- Third, let's refresh the memory by updating the value of Register R. It takes one T-state.
-    if (m1Active) {
-      // --- Indexed bit operation consider the third byte as an address offset, so no memory refresh occurs.
-      this.refreshMemory();
-      this.tactPlus1();
-    }
 
     // --- It's time to execute the fetched instruction
     switch (this.prefix) {
