@@ -99,6 +99,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.allRamMode = false;
     this.specialConfig = 0;
 
+    this.enableAltRom = false;
+    this.altRomVisibleOnlyForWrites = false;
+    this.lockRom1 = false;
+    this.lockRom0 = false;
+    this.reg8CLowNibble = 0;
+
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
     this.mmuRegs[1] = 0xff;
@@ -126,7 +132,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param readerFn Optional memory reader function
    * @param writerFn Optional memory writer function (if not specified, the memory is read-only)
    */
-  setPageInfo(pageIndex: number, readOffset: number, writeOffset: number | null, bank16k: number, bank8k: number) {
+  setPageInfo(
+    pageIndex: number,
+    readOffset: number,
+    writeOffset: number | null,
+    bank16k: number,
+    bank8k: number
+  ) {
     if (pageIndex < 0 || pageIndex > 7) {
       throw new Error(`Invalid page index ${pageIndex}`);
     }
@@ -138,7 +150,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     };
   }
 
-  getPageInfo(pageIndex: number): MemoryPageInfo {  
+  getPageInfo(pageIndex: number): MemoryPageInfo {
     if (pageIndex < 0 || pageIndex > 7) {
       throw new Error(`Invalid page index ${pageIndex}`);
     }
@@ -161,7 +173,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Read the memory according to bank information
     const slotInfo = this.pageInfo[address >>> 13];
-    return this.memory[slotInfo.readOffset + (address & 0x1fff)];
+    const addr = slotInfo.readOffset + (address & 0x1fff)
+    const memValue = this.memory[addr];
+    return memValue;
   }
 
   /**
@@ -243,12 +257,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (!this.pagingEnabled) return;
 
     // --- Update port value changes
-    const newBank16k = this.selectedBankLsb = value & 0x07;
+    const newBank16k = (this.selectedBankLsb = value & 0x07);
     this.mmuRegs[6] = this.selectedBankMsb * 8 + newBank16k * 2;
     this.mmuRegs[7] = this.mmuRegs[6] + 1;
-    this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
+    this.useShadowScreen = !!((value >> 3) & 0x01);
     this.selectedRomLsb = (value >> 4) & 0x01;
-    this.pagingEnabled = (value & 0x20) == 0x00;
+    this.pagingEnabled = !(value & 0x20);
     this.updateMemoryConfig();
   }
 
@@ -430,33 +444,34 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
       switch (this.specialConfig) {
         case 0:
-          this.setMemorySlotAndMmu(0, 0);
-          this.setMemorySlotAndMmu(1, 1);
-          this.setMemorySlotAndMmu(2, 2);
-          this.setMemorySlotAndMmu(3, 3);
+          this.setRamSlotAndMmu(0, 0);
+          this.setRamSlotAndMmu(1, 1);
+          this.setRamSlotAndMmu(2, 2);
+          this.setRamSlotAndMmu(3, 3);
           break;
         case 1:
           // --- 0x01: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x6000
-          this.setMemorySlotAndMmu(0, 4);
-          this.setMemorySlotAndMmu(1, 5);
-          this.setMemorySlotAndMmu(2, 6);
-          this.setMemorySlotAndMmu(3, 7);
+          this.setRamSlotAndMmu(0, 4);
+          this.setRamSlotAndMmu(1, 5);
+          this.setRamSlotAndMmu(2, 6);
+          this.setRamSlotAndMmu(3, 7);
           break;
         case 2:
           // --- 0x10: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x8000
-          this.setMemorySlotAndMmu(0, 4);
-          this.setMemorySlotAndMmu(1, 5);
-          this.setMemorySlotAndMmu(2, 6);
-          this.setMemorySlotAndMmu(3, 3);
+          this.setRamSlotAndMmu(0, 4);
+          this.setRamSlotAndMmu(1, 5);
+          this.setRamSlotAndMmu(2, 6);
+          this.setRamSlotAndMmu(3, 3);
           break;
         case 3:
           // --- 0x11: 16K RAM at 0x0000, 16K RAM at 0x4000
-          this.setMemorySlotAndMmu(0, 4);
-          this.setMemorySlotAndMmu(1, 7);
-          this.setMemorySlotAndMmu(2, 6);
-          this.setMemorySlotAndMmu(3, 3);
+          this.setRamSlotAndMmu(0, 4);
+          this.setRamSlotAndMmu(1, 7);
+          this.setRamSlotAndMmu(2, 6);
+          this.setRamSlotAndMmu(3, 3);
           break;
       }
+      return;      
     } else {
       if (this._wasInAllRamMode) {
         // --- Restore the original configuration
@@ -472,16 +487,15 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       }
 
       // --- Normal mode page setup
-      const romPage = this.selectedRomMsb | this.selectedRomLsb;
-      this.setRomSlotByMmu(0, romPage * 2);
-      this.setRomSlotByMmu(1, romPage * 2 + 1);
+      this.setRomSlotByMmu(0);
+      this.setRomSlotByMmu(1);
 
-      this.setMemorySlotByMmu(2);
-      this.setMemorySlotByMmu(3);
-      this.setMemorySlotByMmu(4);
-      this.setMemorySlotByMmu(5);
-      this.setMemorySlotByMmu(6);
-      this.setMemorySlotByMmu(7);
+      this.setRamSlotByMmu(2);
+      this.setRamSlotByMmu(3);
+      this.setRamSlotByMmu(4);
+      this.setRamSlotByMmu(5);
+      this.setRamSlotByMmu(6);
+      this.setRamSlotByMmu(7);
     }
   }
 
@@ -490,35 +504,60 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param slotNo
    * @param bank16k
    */
-  private setMemorySlotAndMmu(slotNo: number, bank16k: number): void {
+  private setRamSlotAndMmu(slotNo: number, bank16k: number): void {
     let bank8k = bank16k * 2;
-    let offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
-    this.setPageInfo(slotNo * 2, offset, offset, bank16k, bank8k);
+    if (bank8k >= this.maxPages) {
+      this.setPageInfo(slotNo * 2, OFFS_ERR_PAGE, null, bank16k, bank8k);
+    } else {
+      let offset = OFFS_NEXT_RAM + bank8k * 0x2000;
+      this.setPageInfo(slotNo * 2, offset, offset, bank16k, bank8k);
+    }
     bank8k++;
-    offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
-    this.setPageInfo(slotNo * 2 + 1, offset, offset, bank16k, bank8k);
+    if (bank8k >= this.maxPages) {
+      this.setPageInfo(slotNo * 2 + 1, OFFS_ERR_PAGE, null, bank16k, bank8k);
+    } else {
+      let offset = OFFS_NEXT_RAM + bank8k * 0x2000;
+      this.setPageInfo(slotNo * 2 + 1, offset, offset, bank16k, bank8k);
+    }
   }
 
-  private setMemorySlotByMmu(slotNo: number): void {
-    const bank8k = this.mmuRegs[slotNo];
-    let offset = bank8k >= this.maxPages ? OFFS_ERR_PAGE : OFFS_NEXT_RAM + bank8k * 0x2000;
-    this.setPageInfo(slotNo, offset, offset, bank8k >> 1, bank8k);
+  private setRamSlotByMmu(pageNo: number): void {
+    const bank8k = this.mmuRegs[pageNo];
+    if (bank8k >= this.maxPages) {
+      this.setPageInfo(pageNo, OFFS_ERR_PAGE, null, bank8k >> 1, bank8k);
+    } else {
+      let offset = OFFS_NEXT_RAM + bank8k * 0x2000;
+      this.setPageInfo(pageNo, offset, offset, bank8k >> 1, bank8k);
+    }
   }
 
-  private setRomSlotByMmu(slotNo: number, pageNo: number): void {
+  private setRomSlotByMmu(slotNo: number): void {
+    slotNo = slotNo & 0x01;
+    const romPage = this.selectedRomMsb | this.selectedRomLsb;
+    const slotIndex = romPage * 2 + slotNo;
     const bank8k = this.mmuRegs[slotNo];
     if (bank8k !== 0xff) {
       // --- It is not a ROM, uset the MMU reg value
-      this.setMemorySlotByMmu(slotNo);
+      this.setRamSlotByMmu(slotIndex);
       return;
     }
 
     // --- It is a ROM, use the specified page number
-    const romOffs = OFFS_NEXT_ROM + pageNo * 0x2000;
-    const altRomOffs = this.getAltRomOffset();
+    const romOffs = OFFS_NEXT_ROM + slotIndex * 0x2000;
+    const altRomOffs = this.getAltRomOffset() + slotNo * 0x2000;
     if (this.enableAltRom) {
       if (this.altRomVisibleOnlyForWrites) {
-        this.setPageInfo(slotNo, romOffs, altRomOffs, 0xff, 0xff);
+        const page =
+          !this.lockRom0 && !this.lockRom1
+            ? this.selectedRomMsb + this.selectedRomLsb
+            : (this.lockRom1 ? 2 : 0) + (this.lockRom0 ? 1 : 0);
+        this.setPageInfo(
+          slotNo,
+          OFFS_NEXT_ROM + page * 0x4000 + slotNo * 0x2000,
+          altRomOffs,
+          0xff,
+          0xff
+        );
       } else {
         this.setPageInfo(slotNo, altRomOffs, null, 0xff, 0xff);
       }
@@ -532,7 +571,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       ? OFFS_ALT_ROM_1
       : this.lockRom0
         ? OFFS_ALT_ROM_0
-        : this.selectedBankLsb
+        : this.selectedRomLsb
           ? OFFS_ALT_ROM_1
           : OFFS_ALT_ROM_0;
   }

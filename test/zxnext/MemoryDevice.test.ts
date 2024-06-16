@@ -12,7 +12,7 @@ const nextRom3Signature0 = [0xf3, 0xaf, 0x01, 0x3b, 0x24, 0xc3, 0xe8, 0x3b]; // 
 const nextRom3Signature1 = [0x0d, 0xcd, 0x79, 0x1c, 0xcd, 0xc3, 0x1f, 0xcd]; // 0x2000
 const AltRom0Signature0 = [0x00, 0x18, 0x08, 0x11, 0x08, 0x02, 0xc9, 0x00]; // 0x0000
 const AltRom0Signature1 = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // 0x2000
-const AltRom1Signature0 = [0xc3, 0x1c, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]; // 0x0030
+const AltRom1Signature0 = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // 0x0000
 const AltRom1Signature1 = [0xff, 0x00, 0x21, 0x00, 0xf7, 0x11, 0x01, 0xf7]; // 0x2000
 
 describe("Next - MemoryDevice", async function () {
@@ -43,6 +43,7 @@ describe("Next - MemoryDevice", async function () {
   const m = await createTestNextMachine();
   const memDevice = m.memoryDevice;
   const io = m.portManager;
+  const nrDevice = m.nextRegDevice;
 
   for (let i = 0; i < 8; i++) {
     it(`0x7ffd changes RAM bank to ${i}`, async () => {
@@ -136,6 +137,99 @@ describe("Next - MemoryDevice", async function () {
     expect(isRom(memDevice, 1)).toBe(true);
     expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
   });
+
+  for (let i = 0; i < 8; i++) {
+    it(`ROM 0 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x00);
+      io.writePort(0x1ffd, 0x00);
+      nrDevice.directSetRegValue(0x8c, i << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, nextRom0Signature0)).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, nextRom0Signature1)).toBe(true);
+    });
+  }
+
+  for (let i = 0; i < 8; i++) {
+    it(`ROM 1 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x10);
+      io.writePort(0x1ffd, 0x00);
+      nrDevice.directSetRegValue(0x8c, i << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, nextRom1Signature0)).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, nextRom1Signature1)).toBe(true);
+    });
+  }
+
+  for (let i = 0; i < 8; i++) {
+    it(`ROM 2 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x00);
+      io.writePort(0x1ffd, 0x04);
+      nrDevice.directSetRegValue(0x8c, i << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, nextRom2Signature0)).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, nextRom2Signature1)).toBe(true);
+    });
+  }
+
+  for (let i = 0; i < 8; i++) {
+    it(`ROM 3 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x10);
+      io.writePort(0x1ffd, 0x04);
+      nrDevice.directSetRegValue(0x8c, i << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, nextRom3Signature0)).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
+    });
+  }
+
+  const altPages0 = [
+    [AltRom0Signature0, AltRom0Signature1],
+    [AltRom0Signature0, AltRom0Signature1],
+    [AltRom1Signature0, AltRom1Signature1],
+    [AltRom1Signature0, AltRom1Signature1],
+    [nextRom0Signature0, nextRom0Signature1],
+    [nextRom1Signature0, nextRom1Signature1],
+    [nextRom2Signature0, nextRom2Signature1],
+    [nextRom3Signature0, nextRom3Signature1]
+  ]
+  altPages0.forEach((signatures, idx) => {
+    it(`ROM 0 pages in Alt ROM (R8C: ${((idx + 8) << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x00);
+      io.writePort(0x1ffd, 0x00);
+      nrDevice.directSetRegValue(0x8c, (idx + 8) << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, signatures[0])).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, signatures[1])).toBe(true);
+    });
+  });
+
+  const altPages1 = [
+    [AltRom1Signature0, AltRom1Signature1],
+    [AltRom0Signature0, AltRom0Signature1],
+    [AltRom1Signature0, AltRom1Signature1],
+    [AltRom1Signature0, AltRom1Signature1],
+    [nextRom1Signature0, nextRom1Signature1],
+    [nextRom1Signature0, nextRom1Signature1],
+    [nextRom2Signature0, nextRom2Signature1],
+    [nextRom3Signature0, nextRom3Signature1]
+  ]
+  altPages1.forEach((signatures, idx) => {
+    it(`ROM 1 pages in Alt ROM (R8C: ${((idx + 8) << 4).toString(16)})`, async () => {
+      io.writePort(0x7ffd, 0x10);
+      io.writePort(0x1ffd, 0x00);
+      nrDevice.directSetRegValue(0x8c, (idx + 8) << 4); 
+      expect(isRom(memDevice, 0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, signatures[0])).toBe(true);
+      expect(isRom(memDevice, 1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, signatures[1])).toBe(true);
+    });
+  });
+
 });
 
 describe("Next MMUs - RAM", async function () {
@@ -171,7 +265,9 @@ function isRom(m: MemoryDevice, page: number): boolean {
   const offset = page * 0x2000;
   const firstByte = m.readMemory(offset);
   m.writeMemory(offset, (firstByte ^ 0xff) & 0xff);
-  return m.readMemory(offset) === firstByte;
+  const readback = m.readMemory(offset);
+  m.writeMemory(offset, firstByte);
+  return readback === firstByte;
 }
 
 function isRam(m: MemoryDevice, page: number): boolean {
