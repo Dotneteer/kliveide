@@ -22,7 +22,7 @@ import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./sprites/SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
-import { OFFS_NEXT_ROM, MemoryDevice } from "./MemoryDevice";
+import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { NextScreenDevice } from "./NextScreenDevice";
@@ -141,10 +141,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   async setup(): Promise<void> {
     // --- Get the ZX Spectrum Next ROM file
-    const romContents = await this.loadRomFromFile("roms/enNextZx.rom");
-
-    // --- Initialize the machine's ROM
+    let romContents = await this.loadRomFromFile("roms/enNextZX.rom");
     this.memoryDevice.upload(romContents, OFFS_NEXT_ROM);
+
+    // --- Get the ZX Spectrum Next ROM file
+    romContents = await this.loadRomFromFile("roms/enNxtmmc.rom");
+    this.memoryDevice.upload(romContents, OFFS_DIVMMC_ROM);
+
+    // --- Get the alternate ROM file
+    romContents = await this.loadRomFromFile("roms/enAltZX.rom");
+    this.memoryDevice.upload(romContents, OFFS_ALT_ROM_0);
   }
 
   /**
