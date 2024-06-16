@@ -216,12 +216,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Write the memory according to bank information
     const slotInfo = this.pageInfo[address >>> 13];
-    if (slotInfo.readOffset === OFFS_ERR_PAGE) {
+    if (slotInfo.writeOffset === OFFS_ERR_PAGE) {
       // --- Do not write to the invalid page
       return;
     }
 
-    this.memory[slotInfo.readOffset + (address & 0x1fff)] = data;
+    this.memory[slotInfo.writeOffset + (address & 0x1fff)] = data;
   }
 
   /**
