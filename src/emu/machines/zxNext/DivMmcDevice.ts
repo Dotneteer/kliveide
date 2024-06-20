@@ -74,7 +74,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
     this._bank = value & 0x0f;
     this._canWritePage1 = !this._mapram || this._bank !== 0x03;
-    if (this._conmem) {
+    if (this.enableAutomap && this._conmem) {
       // --- Instant mapping when CONMEM is active
       this.pageIn();
     }
@@ -145,7 +145,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
-  beforeOpcodeFecth(): void {
+  beforeOpcodeFetch(): void {
     if (!this.enableAutomap || this._pagedIn) {
       // --- No page in/out if automap is disabled or the memory is already paged in
       return;
@@ -171,7 +171,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         const rstIdx = this.machine.pc >> 3;
         if (this.rstTraps[rstIdx].enabled && (!this.rstTraps[rstIdx].onlyWithRom3 || rom3PagedIn)) {
           this._pageInRequested = true;
-          this._pageInDelayed = !this.rstTraps[2].instantMapping;
+          this._pageInDelayed = !this.rstTraps[rstIdx].instantMapping;
         }
         break;
       case 0x0066:
@@ -200,7 +200,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
           this._pageInRequested = true;
           this._pageInDelayed = true;
         }
-        break;   
+        break;
       default:
         if (pc >= 0x3d00 && pc <= 0x3dff && this.autoMapOn3dxx && rom3PagedIn) {
           this._pageInRequested = true;
@@ -230,7 +230,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._pageOutRequested) {
       this.pageOut();
       this._pageOutRequested = false;
-    } 
+    }
   }
 
   // --- Pages in ROM/RAM into the lower 16K
@@ -240,13 +240,15 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Page 0
     if (this._conmem || !this._mapram) {
-      memoryDevice.setPageInfo(0, OFFS_DIVMMC_ROM, 0xff, 0xff);
+      memoryDevice.setPageInfo(0, OFFS_DIVMMC_ROM, null, 0xff, 0xff);
     } else {
-      memoryDevice.setPageInfo(0, OFFS_DIVMMC_RAM + 3 * 0x2000, 0xff, 0xff);
+      const offset = OFFS_DIVMMC_RAM + 3 * 0x2000;
+      memoryDevice.setPageInfo(0, offset, offset, 0xff, 0xff);
     }
 
     // --- Page 1
-    memoryDevice.setPageInfo(1, OFFS_DIVMMC_RAM + this.bank * 0x2000, 0xff, 0xff);
+    const offset = OFFS_DIVMMC_RAM + this.bank * 0x2000;
+    memoryDevice.setPageInfo(1, offset, offset, 0xff, 0xff);
   }
 
   // --- Pages out ROM/RAM from the lower 16K

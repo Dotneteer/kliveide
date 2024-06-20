@@ -374,14 +374,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Execute this method before fetching the opcode of the next instruction
    */
   beforeOpcodeFetch(): void {
-    // --- Implement this method in derived classes
+    this.divMmcDevice.beforeOpcodeFetch();
   }
 
   /**
    * Execute this method after fetching the opcode of the next instruction
    */
   afterOpcodeFetch(): void {
-    // --- Implement this method in derived classes
+    this.divMmcDevice.afterOpcodeFetch();
   }
 
   /**

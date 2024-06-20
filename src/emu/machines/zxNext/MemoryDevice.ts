@@ -162,6 +162,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param address 16-bit memory address to read
    */
   readMemory(address: number): number {
+    address &= 0xffff;
     const layer2Device = this.machine.layer2Device;
     const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
 
@@ -184,6 +185,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param data Data to write
    */
   writeMemory(address: number, data: number): void {
+    address &= 0xffff;
     const divMmcDevice = this.machine.divMmcDevice;
 
     // --- Check DivMMC device

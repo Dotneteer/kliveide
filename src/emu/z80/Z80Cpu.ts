@@ -754,7 +754,7 @@ export class Z80Cpu implements IZ80Cpu {
       this.tactPlus1();
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
-      this.afterOpcodeFetch;
+      this.afterOpcodeFetch();
     }
     this.pc++;
 
