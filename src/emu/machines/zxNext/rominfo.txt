@@ -207,3 +207,70 @@ Experimental code:
   ei
   nbrk
   ret
+
+REG 8E values
+
+R8E --> 00: DFFD Bit 0=0, 7FFD Bank=0, No change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 00/01
+R8E --> 01: DFFD Bit 0=0, 7FFD Bank=0, No change to MMU 6/7, normal paging mode, ROM=1
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: 00 C3 00 3F FF FF FF FF (enNextZX.rom, ROM 1)
+  RAM Bank: 00/01
+R8E --> 02: DFFD Bit 0=0, 7FFD Bank=0, No change to MMU 6/7, normal paging mode, ROM=1
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: 00 18 FD 00 00 00 00 00 (enNextZX.rom, ROM 2)
+  RAM Bank: 00/01
+R8E --> 03: DFFD Bit 0=0, 7FFD Bank=0, No change to MMU 6/7, normal paging mode, ROM=1
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: F3 AF 01 3B 24 C3 E8 3B (enNextZX.rom, ROM 3)
+  RAM Bank: 00/01
+R8E --> 80, 81, 82, 83: same as 00, 01, 02, 03
+  RAM Bank: 00
+  Selected RAM bank is not paged in
+R8E --> A0, A1, A2, A3: same as 00, 01, 02, 03
+  RAM Bank: 00/01
+  Selected RAM bank is not paged in
+R8E --> 10: DFFD Bit 0=0, 7FFD Bank=1, No change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 00/01
+  Selected RAM bank is not paged in
+R8E --> 20: DFFD Bit 0=0, 7FFD Bank=1, No change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 00 01
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 00/01
+  Selected RAM bank is not paged in
+R8E --> 18: DFFD Bit 0=0, 7FFD Bank=1, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 02 03
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 02/03
+R8E --> 28: DFFD Bit 0=0, 7FFD Bank=2, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 02 03
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 04/05
+R8E --> 88: DFFD Bit 0=1, 7FFD Bank=0, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 10 11
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 10/11
+R8E --> 98: DFFD Bit 0=1, 7FFD Bank=1, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 12 13
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 12/13
+R8E --> A8: DFFD Bit 0=1, 7FFD Bank=2, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 14 15
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 14/15
+DFFD set to 6
+R8E --> A8: DFFD Bit 0=1, 7FFD Bank=2, Change to MMU 6/7, normal paging mode, ROM=0
+  MMU: FF FF 0A 0B 04 05 14 15
+  ROM: F3 C3 EF 00 45 44 08 02 (enNextZX.rom, ROM 0)
+  RAM Bank: 14/15
+  ** DFFD port is reset to 1**
+
+DivMMC:
+
+--> 80 (CONMEM set, no MAPRAM, Bank 00)
+  0000: F3 C3 6A 00 44 56 08 02 (enNxtmmc.rom) 
+  2000: RAM

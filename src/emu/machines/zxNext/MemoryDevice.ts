@@ -341,9 +341,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Bit 3 indicates
     if (value & 0x08) {
       // --- Change RAM bank, MMU6, and MMU7
-      this.selectedBankMsb = (value & 0x0e) | ((value & 0x80) >> 7);
+      this.selectedBankMsb = (value & 0x80) >> 7;
       this.selectedBankLsb = (value >> 4) & 0x07;
-      // TODO: Set MMUs
+      this.mmuRegs[6] = (this.selectedBankMsb << 4) | (this.selectedBankLsb << 1);
+      this.mmuRegs[7] = this.mmuRegs[6] + 1;
     }
 
     // --- Set the AllRAM flag
@@ -354,6 +355,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.selectedRomMsb = value & 0x02;
       this.selectedRomLsb = value & 0x01;
     }
+
+    this.updateMemoryConfig();
   }
 
   /**
