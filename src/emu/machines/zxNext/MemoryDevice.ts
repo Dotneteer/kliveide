@@ -211,11 +211,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    // --- Check ROM is being written
-    if (address < 0x4000 && !this.allRamMode) {
-      return;
-    }
-
     // --- Write the memory according to bank information
     const slotInfo = this.pageInfo[address >>> 13];
     if (slotInfo.writeOffset === OFFS_ERR_PAGE) {
