@@ -13,7 +13,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _canWritePage1: boolean;
 
   readonly rstTraps: TrapInfo[] = [];
-  autoMapOn3dxx: boolean;
+  automapOn3dxx: boolean;
   disableAutomapOn1ff8: boolean;
   automapOn056a: boolean;
   automapOn04d7: boolean;
@@ -114,7 +114,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextRegBBValue(value: number) {
-    this.autoMapOn3dxx = (value & 0x80) !== 0;
+    this.automapOn3dxx = (value & 0x80) !== 0;
     this.disableAutomapOn1ff8 = (value & 0x40) !== 0;
     this.automapOn056a = (value & 0x20) !== 0;
     this.automapOn04d7 = (value & 0x10) !== 0;
@@ -146,7 +146,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
-    if (!this.enableAutomap || this._pagedIn) {
+    if (!this.enableAutomap) {
       // --- No page in/out if automap is disabled or the memory is already paged in
       return;
     }
@@ -202,7 +202,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         }
         break;
       default:
-        if (pc >= 0x3d00 && pc <= 0x3dff && this.autoMapOn3dxx && rom3PagedIn) {
+        if (pc >= 0x3d00 && pc <= 0x3dff && this.automapOn3dxx && rom3PagedIn) {
           this._pageInRequested = true;
           this._pageInDelayed = false;
         } else if (pc >= 0x1ff8 && pc <= 0x1fff && !this.disableAutomapOn1ff8) {

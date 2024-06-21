@@ -1766,6 +1766,526 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
     expect(pageAfter.writeOffset).toBe(null);   
   });
+
+  it("$056A does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn056a = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x056a;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xeb);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$056A does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn056a = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x056a;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xeb);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$056A automaps with ROM 3 (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn056a = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x056a;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xbf);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04d7 does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn04d7 = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x04d7;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x2a);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04d7 does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn04d7 = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x04d7;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x2a);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04d7 automaps with ROM 3 (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn04d7 = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x04d7;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x47);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$0562 does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn0562 = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x0562;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x52);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$0562 does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn0562 = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x0562;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x52);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$0562 automaps with ROM 3 (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn0562 = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x0562;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xDB);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04c6 does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn04c6 = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x04c6;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x70);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04c6 does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn04c6 = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x04c6;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x70);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$04c6 automaps with ROM 3 (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn04c6 = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x04c6;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x21);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3d00 does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x3d00;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x65);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3d00 does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x3d00;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x65);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3d00 automaps with ROM 3 (enabled, instant)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x3d00;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x00);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3df0 does not automaps with ROM (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = false;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x3df0;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x8a);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3df0 does not automaps with ROM (enabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = true;
+    d.port0xe3Value = 0x00;
+    m.pc = 0x3df0;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x8a);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$3df0 automaps with ROM 3 (enabled, instant)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.automapOn3dxx = true;
+    d.port0xe3Value = 0x00;
+    memDevice.port1ffdValue = 0x04;
+    memDevice.port7ffdValue = 0x10;
+    m.pc = 0x3df0;
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0x00);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$1ff8 does not page out (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.disableAutomapOn1ff8 = true;
+    d.port0xe3Value = 0x00;
+    d.rstTraps[4].enabled = true;
+    d.rstTraps[4].instantMapping = true;
+    m.pc = 0x0020;
+    m.executeCpuCycle();
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.pc = 0x1ff8;
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xf1);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$1ff8 pages out (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.port0xe3Value = 0x00;
+    d.disableAutomapOn1ff8 = false;
+    d.rstTraps[4].enabled = true;
+    d.rstTraps[4].instantMapping = true;
+    m.pc = 0x0020;
+    m.executeCpuCycle();
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.pc = 0x1ff8;
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xf1);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$1fff does not page out (disabled)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.disableAutomapOn1ff8 = true;
+    d.port0xe3Value = 0x00;
+    d.rstTraps[4].enabled = true;
+    d.rstTraps[4].instantMapping = true;
+    m.pc = 0x0020;
+    m.executeCpuCycle();
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.pc = 0x1fff;
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xc9);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
+
+  it("$1fff pages out (enabled, delayed)", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    d.enableAutomap = true;
+    d.port0xe3Value = 0x00;
+    d.disableAutomapOn1ff8 = false;
+    d.rstTraps[4].enabled = true;
+    d.rstTraps[4].instantMapping = true;
+    m.pc = 0x0020;
+    m.executeCpuCycle();
+
+    // --- Act
+    const pageBefore = m.memoryDevice.getPageInfo(0);
+    m.pc = 0x1fff;
+    m.executeCpuCycle();
+    const pageAfter = m.memoryDevice.getPageInfo(0);
+
+    // --- Assert
+    expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);   
+    expect(pageBefore.writeOffset).toBe(null);   
+    expect(m.opCode).toBe(0xc9);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);   
+    expect(pageAfter.writeOffset).toBe(null);   
+  });
 });
 
 function romSlotSignatureMatches(m: MemoryDevice, page: number, signature: number[]): boolean {
