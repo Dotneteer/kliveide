@@ -187,11 +187,11 @@ export async function processMainToEmuMessages (
           screenDevice.renderingTactTable[machine.currentFrameTact]?.phase
         ],
         bor: borderColors[screenDevice.borderColor & 0x07],
-        flo: (machine as ZxSpectrumBase).floatingBusDevice.readFloatingBus(),
+        flo: (machine as ZxSpectrumBase).floatingBusDevice?.readFloatingBus(),
         con: machine.totalContentionDelaySinceStart,
         lco: machine.contentionDelaySincePause,
         ear: (machine as ZxSpectrumBase).beeperDevice.earBit,
-        mic: (machine as ZxSpectrumBase).tapeDevice.micBit,
+        mic: (machine as ZxSpectrumBase).tapeDevice?.micBit,
         keyLines: [
           kbDevice.getKeyLineValue(0),
           kbDevice.getKeyLineValue(1),

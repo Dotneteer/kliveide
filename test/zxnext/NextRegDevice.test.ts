@@ -3,9 +3,9 @@ import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 describe("Next - NextRegDevice", function () {
-  it("Hard reset", () => {
+  it("Hard reset", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
 
     // --- Act
@@ -154,9 +154,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xfa)).toBe(0xff);
   });
 
-  it("Hard reset & soft reset", () => {
+  it("Hard reset & soft reset", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
 
     // --- Act
@@ -278,10 +278,10 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xa2)).toBe(0xff);
     expect(d.directGetRegValue(0xa8)).toBe(0xff);
     expect(d.directGetRegValue(0xa9)).toBe(0xff);
-    expect(d.directGetRegValue(0xb8)).toBe(0xff);
-    expect(d.directGetRegValue(0xb9)).toBe(0xff);
-    expect(d.directGetRegValue(0xba)).toBe(0xff);
-    expect(d.directGetRegValue(0xbb)).toBe(0xff);
+    expect(d.directGetRegValue(0xb8)).toBe(0x83);
+    expect(d.directGetRegValue(0xb9)).toBe(0x01);
+    expect(d.directGetRegValue(0xba)).toBe(0x00);
+    expect(d.directGetRegValue(0xbb)).toBe(0xcd);
     expect(d.directGetRegValue(0xc0)).toBe(0xff);
     expect(d.directGetRegValue(0xc2)).toBe(0xff);
     expect(d.directGetRegValue(0xc3)).toBe(0xff);
@@ -306,9 +306,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xfa)).toBe(0xff);
   });
 
-  it("Soft reset sets reg $8c", () => {
+  it("Soft reset sets reg $8c", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
     const d = m.nextRegDevice;
     d.hardReset();
     d.directSetRegValue(0x8c, 0x05);
@@ -321,9 +321,9 @@ describe("Next - NextRegDevice", function () {
     expect(value).toBe(0x55);
   });
 
-  it("Reg $00 read", () => {
+  it("Reg $00 read", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
 
     // --- Act
     const value = readNextReg(m, 0x00);
@@ -332,9 +332,9 @@ describe("Next - NextRegDevice", function () {
     expect(value).toBe(0x08);
   });
 
-  it("Reg $01 read", () => {
+  it("Reg $01 read", async () => {
     // --- Arrange
-    const m = createTestNextMachine();
+    const m = await createTestNextMachine();
 
     // --- Act
     const value = readNextReg(m, 0x01);

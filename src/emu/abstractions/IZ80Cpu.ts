@@ -315,6 +315,16 @@ export interface IZ80Cpu {
   executeCpuCycle(): void;
 
   /**
+   * Execute this method before fetching the opcode of the next instruction
+   */
+  beforeOpcodeFetch(): void;
+
+  /**
+   * Execute this method after fetching the opcode of the next instruction
+   */
+  afterOpcodeFetch(): void;
+
+  /**
    * Read the byte at the specified memory address.
    * @param address 16-bit memory address
    * @return The byte read from the memory
