@@ -80,6 +80,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
+  get nextRegB8Value(): number {
+    return (
+      (this.rstTraps[0].enabled ? 0x01 : 0x00) |
+      (this.rstTraps[1].enabled ? 0x02 : 0x00) |
+      (this.rstTraps[2].enabled ? 0x04 : 0x00) |
+      (this.rstTraps[3].enabled ? 0x08 : 0x00) |
+      (this.rstTraps[4].enabled ? 0x10 : 0x00) |
+      (this.rstTraps[5].enabled ? 0x20 : 0x00) |
+      (this.rstTraps[6].enabled ? 0x40 : 0x00) |
+      (this.rstTraps[7].enabled ? 0x80 : 0x00)
+    );
+  }
+
   set nextRegB8Value(value: number) {
     this.rstTraps[0].enabled = (value & 0x01) !== 0;
     this.rstTraps[1].enabled = (value & 0x02) !== 0;
@@ -89,6 +102,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.rstTraps[5].enabled = (value & 0x20) !== 0;
     this.rstTraps[6].enabled = (value & 0x40) !== 0;
     this.rstTraps[7].enabled = (value & 0x80) !== 0;
+  }
+
+  get nextRegB9Value(): number {
+    return (
+      (this.rstTraps[0].onlyWithRom3 ? 0x01 : 0x00) |
+      (this.rstTraps[1].onlyWithRom3 ? 0x02 : 0x00) |
+      (this.rstTraps[2].onlyWithRom3 ? 0x04 : 0x00) |
+      (this.rstTraps[3].onlyWithRom3 ? 0x08 : 0x00) |
+      (this.rstTraps[4].onlyWithRom3 ? 0x10 : 0x00) |
+      (this.rstTraps[5].onlyWithRom3 ? 0x20 : 0x00) |
+      (this.rstTraps[6].onlyWithRom3 ? 0x40 : 0x00) |
+      (this.rstTraps[7].onlyWithRom3 ? 0x80 : 0x00)
+    );
   }
 
   set nextRegB9Value(value: number) {
@@ -102,6 +128,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.rstTraps[7].onlyWithRom3 = (value & 0x80) !== 0;
   }
 
+  get nextRegBAValue(): number {
+    return (
+      (this.rstTraps[0].instantMapping ? 0x01 : 0x00) |
+      (this.rstTraps[1].instantMapping ? 0x02 : 0x00) |
+      (this.rstTraps[2].instantMapping ? 0x04 : 0x00) |
+      (this.rstTraps[3].instantMapping ? 0x08 : 0x00) |
+      (this.rstTraps[4].instantMapping ? 0x10 : 0x00) |
+      (this.rstTraps[5].instantMapping ? 0x20 : 0x00) |
+      (this.rstTraps[6].instantMapping ? 0x40 : 0x00) |
+      (this.rstTraps[7].instantMapping ? 0x80 : 0x00)
+    );
+  }
+
   set nextRegBAValue(value: number) {
     this.rstTraps[0].instantMapping = (value & 0x01) !== 0;
     this.rstTraps[1].instantMapping = (value & 0x02) !== 0;
@@ -111,6 +150,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.rstTraps[5].instantMapping = (value & 0x20) !== 0;
     this.rstTraps[6].instantMapping = (value & 0x40) !== 0;
     this.rstTraps[7].instantMapping = (value & 0x80) !== 0;
+  }
+
+  get nextRegBBValue(): number {
+    return (
+      (this.automapOn3dxx ? 0x80 : 0x00) |
+      (this.disableAutomapOn1ff8 ? 0x40 : 0x00) |
+      (this.automapOn056a ? 0x20 : 0x00) |
+      (this.automapOn04d7 ? 0x10 : 0x00) |
+      (this.automapOn0562 ? 0x08 : 0x00) |
+      (this.automapOn04c6 ? 0x04 : 0x00) |
+      (this.automapOn0066 ? 0x02 : 0x00) |
+      (this.automapOn0066Delayed ? 0x01 : 0x00)
+    );
   }
 
   set nextRegBBValue(value: number) {

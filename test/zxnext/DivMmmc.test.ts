@@ -25,8 +25,8 @@ describe("Next - DivMmcDevice", async function () {
     expect(d.pageInRequested).toBe(false);
     expect(d.pageOutRequested).toBe(false);
     for (let i = 0; i < 8; i++) {
-      expect(d.rstTraps[i].enabled).toBe(false);
-      expect(d.rstTraps[i].onlyWithRom3).toBe(false);
+      expect(d.rstTraps[i].enabled).toBe((0x83 & (1 << i)) !== 0);
+      expect(d.rstTraps[i].onlyWithRom3).toBe(i === 0);
       expect(d.rstTraps[i].instantMapping).toBe(false);
     }
   });
@@ -166,6 +166,7 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = true;
+    d.rstTraps[0].onlyWithRom3 = false;
     d.rstTraps[0].instantMapping = true;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
@@ -191,6 +192,7 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = true;
+    d.rstTraps[0].onlyWithRom3 = false;
     d.rstTraps[0].instantMapping = false;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;

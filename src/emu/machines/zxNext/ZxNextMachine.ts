@@ -27,6 +27,7 @@ import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { NextScreenDevice } from "./NextScreenDevice";
 import { MouseDevice } from "./MouseDevice";
+import { InterruptDevice } from "./InterruptDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -40,6 +41,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   portManager: NextIoPortManager;
 
   memoryDevice: MemoryDevice;
+
+  interruptDevice: InterruptDevice
 
   nextRegDevice: NextRegDevice;
 
@@ -101,6 +104,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Create and initialize the memory
     this.memoryDevice = new MemoryDevice(this);
     this.nextRegDevice = new NextRegDevice(this);
+    this.interruptDevice = new InterruptDevice(this);
 
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
@@ -123,6 +127,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   reset(): void {
     super.reset();
     this.memoryDevice.reset();
+    this.interruptDevice.reset();
     this.divMmcDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();

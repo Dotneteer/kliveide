@@ -1,6 +1,7 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
 import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
+import { InterruptDevice } from "@emu/machines/zxNext/InterruptDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
@@ -25,6 +26,8 @@ export interface IZxNextMachine extends IZ80Machine {
   portManager: NextIoPortManager;
 
   memoryDevice: MemoryDevice;
+
+  interruptDevice: InterruptDevice;
 
   nextRegDevice: NextRegDevice;
 

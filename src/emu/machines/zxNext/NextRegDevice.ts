@@ -694,7 +694,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x22,
       description: "Line Interrupt control",
-      writeFn: this.writeLineInterruptControl,
+      readFn: () => machine.interruptDevice.nextReg22Value,
+      writeFn: (v) => (machine.interruptDevice.nextReg22Value = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -720,7 +721,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x23,
       description: "Line Interrupt Value LSB",
-      writeFn: this.writeLineInterruptValueLsb
+      readFn: () => machine.interruptDevice.nextReg23Value,
+      writeFn: (v) => machine.interruptDevice.nextReg23Value = v & 0xff,
     });
     r({
       id: 0x24,
@@ -2130,7 +2132,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb8,
       description: "DivMMC Entry Points 0",
-      writeFn: this.writeDivMmcEntryPoints0,
+      readFn: () => machine.divMmcDevice.nextRegB8Value,
+      writeFn: (v) => machine.divMmcDevice.nextRegB8Value = v,
       slices: [
         {
           mask: 0x80,
@@ -2176,7 +2179,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb9,
       description: "DivMMC Entry Points Valid 0",
-      writeFn: this.writeDivMmcEntryPointsValid0,
+      readFn: () => machine.divMmcDevice.nextRegB9Value,
+      writeFn: (v) => machine.divMmcDevice.nextRegB9Value = v,
       slices: [
         {
           mask: 0x80,
@@ -2222,7 +2226,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xba,
       description: "DivMMC Entry Points Timing 0",
-      writeFn: this.writeDivMmcEntryPointsTiming0,
+      readFn: () => machine.divMmcDevice.nextRegBAValue,
+      writeFn: (v) => machine.divMmcDevice.nextRegBAValue = v,
       slices: [
         {
           mask: 0x80,
@@ -2268,7 +2273,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xbb,
       description: "DivMMC Entry Points 1",
-      writeFn: this.writeDivMmcEntryPoints1,
+      readFn: () => machine.divMmcDevice.nextRegBBValue,
+      writeFn: (v) => machine.divMmcDevice.nextRegBBValue = v,
       slices: [
         {
           mask: 0x80,
@@ -2316,7 +2322,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc0,
       description: "Interrupt Control",
-      writeFn: this.writeInterruptControl,
+      readFn: () => this.machine.interruptDevice.nextRegC0Value,
+      writeFn: (v) => machine.interruptDevice.nextRegC0Value = v, 
       slices: [
         {
           mask: 0xe0,
@@ -2832,9 +2839,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * @param value
    */
   setNextRegisterValue(value: number): void {
-    this.regValues[this.lastRegister] = value;
     const regInfo = this.regs[this.lastRegister];
-    regInfo?.writeFn?.(value);
+    if (!regInfo?.writeFn) {
+      return;
+    }
+    this.regValues[this.lastRegister] = value;
+    regInfo.writeFn(value);
   }
 
   /**
@@ -2934,10 +2944,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private writeActiveVideoLineLsb(value: number): void {}
 
   private writeGenerateMaskableInterrupt(value: number): void {}
-
-  private writeLineInterruptControl(value: number): void {}
-
-  private writeLineInterruptValueLsb(value: number): void {}
 
   private writeReserved0x24(value: number): void {}
 
@@ -3104,16 +3110,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readMdPadButtons(): number {
     return 0x00;
   }
-
-  private writeDivMmcEntryPoints0(value: number): void {}
-
-  private writeDivMmcEntryPointsValid0(value: number): void {}
-
-  private writeDivMmcEntryPointsTiming0(value: number): void {}
-
-  private writeDivMmcEntryPoints1(value: number): void {}
-
-  private writeInterruptControl(value: number): void {}
 
   private writeNmiReturnAddressLsb(value: number): void {}
 
