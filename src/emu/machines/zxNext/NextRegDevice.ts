@@ -1,6 +1,7 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
+import { m } from "nextra/dist/types-c8e621b7";
 
 type NextRegreadFn = () => number;
 type NextRegWriteFn = (value: number) => void;
@@ -722,7 +723,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x23,
       description: "Line Interrupt Value LSB",
       readFn: () => machine.interruptDevice.nextReg23Value,
-      writeFn: (v) => machine.interruptDevice.nextReg23Value = v & 0xff,
+      writeFn: (v) => (machine.interruptDevice.nextReg23Value = v & 0xff)
     });
     r({
       id: 0x24,
@@ -2133,7 +2134,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xb8,
       description: "DivMMC Entry Points 0",
       readFn: () => machine.divMmcDevice.nextRegB8Value,
-      writeFn: (v) => machine.divMmcDevice.nextRegB8Value = v,
+      writeFn: (v) => (machine.divMmcDevice.nextRegB8Value = v),
       slices: [
         {
           mask: 0x80,
@@ -2180,7 +2181,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xb9,
       description: "DivMMC Entry Points Valid 0",
       readFn: () => machine.divMmcDevice.nextRegB9Value,
-      writeFn: (v) => machine.divMmcDevice.nextRegB9Value = v,
+      writeFn: (v) => (machine.divMmcDevice.nextRegB9Value = v),
       slices: [
         {
           mask: 0x80,
@@ -2227,7 +2228,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xba,
       description: "DivMMC Entry Points Timing 0",
       readFn: () => machine.divMmcDevice.nextRegBAValue,
-      writeFn: (v) => machine.divMmcDevice.nextRegBAValue = v,
+      writeFn: (v) => (machine.divMmcDevice.nextRegBAValue = v),
       slices: [
         {
           mask: 0x80,
@@ -2274,7 +2275,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xbb,
       description: "DivMMC Entry Points 1",
       readFn: () => machine.divMmcDevice.nextRegBBValue,
-      writeFn: (v) => machine.divMmcDevice.nextRegBBValue = v,
+      writeFn: (v) => (machine.divMmcDevice.nextRegBBValue = v),
       slices: [
         {
           mask: 0x80,
@@ -2323,7 +2324,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xc0,
       description: "Interrupt Control",
       readFn: () => this.machine.interruptDevice.nextRegC0Value,
-      writeFn: (v) => machine.interruptDevice.nextRegC0Value = v, 
+      writeFn: (v) => (machine.interruptDevice.nextRegC0Value = v),
       slices: [
         {
           mask: 0xe0,
@@ -2349,12 +2350,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc2,
       description: "NMI Return Address LSB",
-      writeFn: this.writeNmiReturnAddressLsb
+      readFn: () => this.machine.interruptDevice.nmiReturnAddressLsb,
+      writeFn: (v) => (machine.interruptDevice.nextRegC2Value = v & 0xff)
     });
     r({
       id: 0xc3,
       description: "NMI Return Address MSB",
-      writeFn: this.writeNmiReturnAddressMsb
+      readFn: () => this.machine.interruptDevice.nmiReturnAddressMsb,
+      writeFn: (v) => (machine.interruptDevice.nextRegC3Value = v & 0xff)
     });
     r({
       id: 0xc4,
@@ -2380,7 +2383,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc5,
       description: "Interrupt Enable 1",
-      writeFn: this.writeInterruptEnable1,
+      readFn: () => this.machine.interruptDevice.nextRegC5Value,
+      writeFn: (v) => (machine.interruptDevice.nextRegC5Value = v),
       slices: [
         {
           mask: 0x80,
@@ -2426,7 +2430,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc6,
       description: "Interrupt Enable 2",
-      writeFn: this.writeInterruptEnable2,
+      readFn: () => this.machine.interruptDevice.nextRegC6Value,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegC6Value = v),
       slices: [
         {
           mask: 0x40,

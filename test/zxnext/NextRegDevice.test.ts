@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { write } from "original-fs";
 
 describe("Next - NextRegDevice", function () {
   it("Hard reset", async () => {
@@ -132,11 +131,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xba)).toBe(0x00);
     expect(d.directGetRegValue(0xbb)).toBe(0xcd);
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
-    expect(d.directGetRegValue(0xc2)).toBe(0xff);
-    expect(d.directGetRegValue(0xc3)).toBe(0xff);
+    expect(d.directGetRegValue(0xc2)).toBe(0x00);
+    expect(d.directGetRegValue(0xc3)).toBe(0x00);
     expect(d.directGetRegValue(0xc4)).toBe(0xff);
-    expect(d.directGetRegValue(0xc5)).toBe(0xff);
-    expect(d.directGetRegValue(0xc6)).toBe(0xff);
+    expect(d.directGetRegValue(0xc5)).toBe(0x00);
+    expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0xff);
     expect(d.directGetRegValue(0xc8)).toBe(0xff);
     expect(d.directGetRegValue(0xc9)).toBe(0xff);
@@ -284,11 +283,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xba)).toBe(0x00);
     expect(d.directGetRegValue(0xbb)).toBe(0xcd);
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
-    expect(d.directGetRegValue(0xc2)).toBe(0xff);
-    expect(d.directGetRegValue(0xc3)).toBe(0xff);
+    expect(d.directGetRegValue(0xc2)).toBe(0x00);
+    expect(d.directGetRegValue(0xc3)).toBe(0x00);
     expect(d.directGetRegValue(0xc4)).toBe(0xff);
-    expect(d.directGetRegValue(0xc5)).toBe(0xff);
-    expect(d.directGetRegValue(0xc6)).toBe(0xff);
+    expect(d.directGetRegValue(0xc5)).toBe(0x00);
+    expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0xff);
     expect(d.directGetRegValue(0xc8)).toBe(0xff);
     expect(d.directGetRegValue(0xc9)).toBe(0xff);
@@ -611,6 +610,157 @@ describe("Next - NextRegDevice", function () {
     expect(intDevice.currentInterruptMode).toBe(0x01);
   });
 
+  it("Reg $c2 write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc2, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc2)).toBe(0xa5);
+  });
+
+  it("Reg $c3 write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc3, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc3)).toBe(0xa5);
+  });
+
+  it("Reg $c5 write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc5, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc5)).toBe(0xa5);
+    expect(intDevice.ctcChannelEnabled[7]).toBe(true);
+    expect(intDevice.ctcChannelEnabled[6]).toBe(false);
+    expect(intDevice.ctcChannelEnabled[5]).toBe(true);
+    expect(intDevice.ctcChannelEnabled[4]).toBe(false);
+    expect(intDevice.ctcChannelEnabled[3]).toBe(false);
+    expect(intDevice.ctcChannelEnabled[2]).toBe(true);
+    expect(intDevice.ctcChannelEnabled[1]).toBe(false);
+    expect(intDevice.ctcChannelEnabled[0]).toBe(true);
+  });
+
+  it("Reg $c6 uart1TxEmpty", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x40);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x40);
+    expect(intDevice.uart1TxEmpty).toBe(true);
+    expect(intDevice.uart1RxNearFull).toBe(false);
+    expect(intDevice.uart1RxAvailable).toBe(false);
+    expect(intDevice.uart0TxEmpty).toBe(false);
+    expect(intDevice.uart0RxNearFull).toBe(false);
+    expect(intDevice.uart0RxAvailable).toBe(false);
+  });
+
+  it("Reg $c6 uart1TxNearFull", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x20);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x20);
+    expect(intDevice.uart1TxEmpty).toBe(false);
+    expect(intDevice.uart1RxNearFull).toBe(true);
+    expect(intDevice.uart1RxAvailable).toBe(false);
+    expect(intDevice.uart0TxEmpty).toBe(false);
+    expect(intDevice.uart0RxNearFull).toBe(false);
+    expect(intDevice.uart0RxAvailable).toBe(false);
+  });
+
+  it("Reg $c6 uart1TxAvailable", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x10);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x10);
+    expect(intDevice.uart1TxEmpty).toBe(false);
+    expect(intDevice.uart1RxNearFull).toBe(false);
+    expect(intDevice.uart1RxAvailable).toBe(true);
+    expect(intDevice.uart0TxEmpty).toBe(false);
+    expect(intDevice.uart0RxNearFull).toBe(false);
+    expect(intDevice.uart0RxAvailable).toBe(false);
+  });
+
+  it("Reg $c6 uart0RxEmpty", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x04);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x04);
+    expect(intDevice.uart1TxEmpty).toBe(false);
+    expect(intDevice.uart1RxNearFull).toBe(false);
+    expect(intDevice.uart1RxAvailable).toBe(false);
+    expect(intDevice.uart0TxEmpty).toBe(true);
+    expect(intDevice.uart0RxNearFull).toBe(false);
+    expect(intDevice.uart0RxAvailable).toBe(false);
+  });
+
+  it("Reg $c6 uart0RxNearFull", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x02);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x02);
+    expect(intDevice.uart1TxEmpty).toBe(false);
+    expect(intDevice.uart1RxNearFull).toBe(false);
+    expect(intDevice.uart1RxAvailable).toBe(false);
+    expect(intDevice.uart0TxEmpty).toBe(false);
+    expect(intDevice.uart0RxNearFull).toBe(true);
+    expect(intDevice.uart0RxAvailable).toBe(false);
+  });
+
+  it("Reg $c6 uart0RxAvailable", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc6, 0x01);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc6)).toBe(0x01);
+    expect(intDevice.uart1TxEmpty).toBe(false);
+    expect(intDevice.uart1RxNearFull).toBe(false);
+    expect(intDevice.uart1RxAvailable).toBe(false);
+    expect(intDevice.uart0TxEmpty).toBe(false);
+    expect(intDevice.uart0RxNearFull).toBe(false);
+    expect(intDevice.uart0RxAvailable).toBe(true);
+  });
 });
 
 function writeNextReg(m: IZxNextMachine, reg: number, value: number) {
