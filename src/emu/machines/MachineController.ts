@@ -280,7 +280,7 @@ export class MachineController implements IMachineController {
           if (this._machineState === MachineControllerState.Running) {
             await this.pause();
           }
-          this.run(
+          await this.run(
             FrameTerminationMode.UntilExecutionPoint,
             debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
             step.rom,
