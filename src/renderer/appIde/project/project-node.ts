@@ -208,8 +208,29 @@ export function compareProjectNode(a: ProjectNode, b: ProjectNode): number {
  * Gets the file type entry for the specified filename
  * @param filename Filename to get the file type entry for
  */
-export function getFileTypeEntry(filename: string): FileTypeEditor | null {
+export function getFileTypeEntry(filename: string, languageExts?: any): FileTypeEditor | null {
   if (!filename) return null;
+
+  // --- Get the language extensions
+  const languageHash: Record<string, string[]> = {};
+  if (languageExts && typeof languageExts === "object" && !Array.isArray(languageExts)) {
+    Object.keys(languageExts).forEach((key) => {
+      const value = languageExts[key];
+      if (typeof value !== "string") return;
+      languageHash[key] = value.split("|").map((v) => v.trim());
+    });
+  }
+
+  // --- Check for language extensions
+  let languageFound = "";
+  const hashes = Object.keys(languageHash);
+  for (const hash of hashes) {
+    if (languageHash[hash].some((ext) => filename.endsWith(ext))) {
+      languageFound = hash;
+      break;
+    }
+  }
+
   for (const typeEntry of fileTypeRegistry) {
     let match = false;
     switch (typeEntry.matchType) {
@@ -220,7 +241,7 @@ export function getFileTypeEntry(filename: string): FileTypeEditor | null {
         match = filename.startsWith(typeEntry.pattern);
         break;
       case "ends":
-        match = filename.endsWith(typeEntry.pattern);
+        match = filename.endsWith(typeEntry.pattern) || languageFound === typeEntry.subType;
         break;
       case "contains":
         match = filename.indexOf(typeEntry.pattern) >= 0;
