@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { JoystickMode } from "@emu/machines/zxNext/NextRegDevice";
 
 describe("Next - NextRegDevice", function () {
   it("Hard reset", async () => {
@@ -65,7 +66,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x37)).toBe(0xff);
     expect(d.directGetRegValue(0x38)).toBe(0xff);
     expect(d.directGetRegValue(0x39)).toBe(0xff);
-    expect(d.directGetRegValue(0x40)).toBe(0xff);
+    expect(d.directGetRegValue(0x40)).toBe(0x00);
     expect(d.directGetRegValue(0x41)).toBe(0xff);
     expect(d.directGetRegValue(0x42)).toBe(0x0f);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
@@ -133,17 +134,17 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0xff);
+    expect(d.directGetRegValue(0xc4)).toBe(0x01);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0xff);
-    expect(d.directGetRegValue(0xc8)).toBe(0xff);
-    expect(d.directGetRegValue(0xc9)).toBe(0xff);
-    expect(d.directGetRegValue(0xca)).toBe(0xff);
+    expect(d.directGetRegValue(0xc8)).toBe(0x00);
+    expect(d.directGetRegValue(0xc9)).toBe(0x00);
+    expect(d.directGetRegValue(0xca)).toBe(0x00);
     expect(d.directGetRegValue(0xcb)).toBe(0xff);
-    expect(d.directGetRegValue(0xcc)).toBe(0xff);
-    expect(d.directGetRegValue(0xcd)).toBe(0xff);
-    expect(d.directGetRegValue(0xce)).toBe(0xff);
+    expect(d.directGetRegValue(0xcc)).toBe(0x00);
+    expect(d.directGetRegValue(0xcd)).toBe(0x00);
+    expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0xff);
     expect(d.directGetRegValue(0xd8)).toBe(0xff);
     expect(d.directGetRegValue(0xd9)).toBe(0xff);
@@ -217,7 +218,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x37)).toBe(0xff);
     expect(d.directGetRegValue(0x38)).toBe(0xff);
     expect(d.directGetRegValue(0x39)).toBe(0xff);
-    expect(d.directGetRegValue(0x40)).toBe(0xff);
+    expect(d.directGetRegValue(0x40)).toBe(0x00);
     expect(d.directGetRegValue(0x41)).toBe(0xff);
     expect(d.directGetRegValue(0x42)).toBe(0x0f);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
@@ -285,17 +286,17 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0xff);
+    expect(d.directGetRegValue(0xc4)).toBe(0x01);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0xff);
-    expect(d.directGetRegValue(0xc8)).toBe(0xff);
-    expect(d.directGetRegValue(0xc9)).toBe(0xff);
-    expect(d.directGetRegValue(0xca)).toBe(0xff);
+    expect(d.directGetRegValue(0xc8)).toBe(0x00);
+    expect(d.directGetRegValue(0xc9)).toBe(0x00);
+    expect(d.directGetRegValue(0xca)).toBe(0x00);
     expect(d.directGetRegValue(0xcb)).toBe(0xff);
-    expect(d.directGetRegValue(0xcc)).toBe(0xff);
-    expect(d.directGetRegValue(0xcd)).toBe(0xff);
-    expect(d.directGetRegValue(0xce)).toBe(0xff);
+    expect(d.directGetRegValue(0xcc)).toBe(0x00);
+    expect(d.directGetRegValue(0xcd)).toBe(0x00);
+    expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0xff);
     expect(d.directGetRegValue(0xd8)).toBe(0xff);
     expect(d.directGetRegValue(0xd9)).toBe(0xff);
@@ -337,7 +338,7 @@ describe("Next - NextRegDevice", function () {
     const m = await createTestNextMachine();
 
     // --- Act
-    writeNextReg(m, 0x00, 0x55)
+    writeNextReg(m, 0x00, 0x55);
 
     // --- Assert
     const value = readNextReg(m, 0x00);
@@ -365,6 +366,102 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(value).toBe(0x32);
+  });
+
+  const joystick1Modes = [
+    { value: 0x00, mode: JoystickMode.Sinclair2 },
+    { value: 0x40, mode: JoystickMode.Kempston1 },
+    { value: 0x80, mode: JoystickMode.Cursor },
+    { value: 0xc0, mode: JoystickMode.Sinclair1 },
+    { value: 0x08, mode: JoystickMode.Kempston2 },
+    { value: 0x48, mode: JoystickMode.MD1 },
+    { value: 0x88, mode: JoystickMode.MD2 },
+    { value: 0xc8, mode: JoystickMode.UserDefined }
+  ];
+  joystick1Modes.forEach((jm) => {
+    it(`Reg $05 Joystick 1 mode ${jm.value}`, async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const nrDevice = m.nextRegDevice;
+
+      // --- Act
+      writeNextReg(m, 0x05, jm.value);
+
+      // --- Assert
+      expect(nrDevice.r05_Joystick1Mode).toBe(jm.mode);
+    });
+  });
+
+  const joystick2Modes = [
+    { value: 0x00, mode: JoystickMode.Sinclair2 },
+    { value: 0x10, mode: JoystickMode.Kempston1 },
+    { value: 0x20, mode: JoystickMode.Cursor },
+    { value: 0x30, mode: JoystickMode.Sinclair1 },
+    { value: 0x02, mode: JoystickMode.Kempston2 },
+    { value: 0x12, mode: JoystickMode.MD1 },
+    { value: 0x22, mode: JoystickMode.MD2 },
+    { value: 0x32, mode: JoystickMode.UserDefined }
+  ];
+  joystick2Modes.forEach((jm) => {
+    it(`Reg $05 Joystick2 mode ${jm.value}`, async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const nrDevice = m.nextRegDevice;
+
+      // --- Act
+      writeNextReg(m, 0x05, jm.value);
+
+      // --- Assert
+      expect(nrDevice.r05_Joystick2Mode).toBe(jm.mode);
+    });
+  });
+
+  it("Reg $05 60 Hz mode #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+
+    // --- Act
+    writeNextReg(m, 0x05, 0x00);
+
+    // --- Assert
+    expect(nrDevice.r05_60HzMode).toBe(false);
+  });
+
+  it("Reg $05 60 Hz mode #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+
+    // --- Act
+    writeNextReg(m, 0x05, 0x04);
+
+    // --- Assert
+    expect(nrDevice.r05_60HzMode).toBe(true);
+  });
+
+  it("Reg $05 scandouber #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+
+    // --- Act
+    writeNextReg(m, 0x05, 0x00);
+
+    // --- Assert
+    expect(nrDevice.r05_ScanDoublerEnabled).toBe(false);
+  });
+
+  it("Reg $05 scandouber #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+
+    // --- Act
+    writeNextReg(m, 0x05, 0x01);
+
+    // --- Assert
+    expect(nrDevice.r05_ScanDoublerEnabled).toBe(true);
   });
 
   it("Reg $22 intSignalActive", async () => {
@@ -447,6 +544,58 @@ describe("Next - NextRegDevice", function () {
     expect(intDevice.lineInterruptMsb).toBe(0x100);
   });
 
+  it("Reg $22 ulaDisableInterrupt alias in $c4 #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    writeNextReg(m, 0xc4, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x22, 0x04);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x00);
+  });
+
+  it("Reg $22 ulaDisableInterrupt alias in $c4 #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    writeNextReg(m, 0xc4, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x22, 0x00);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x01);
+  });
+
+  it("Reg $22 lineEnableInterrupt alias in $c4 #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    writeNextReg(m, 0xc4, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x22, 0x06);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x02);
+  });
+
+  it("Reg $22 lineEnableInterrupt alias in $c4 #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    writeNextReg(m, 0xc4, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x22, 0x02);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x03);
+  });
+
   it("Reg $23 read", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -465,10 +614,166 @@ describe("Next - NextRegDevice", function () {
     const intDevice = m.interruptDevice;
 
     // --- Act
-    writeNextReg(m, 0x23, 0x5A);
+    writeNextReg(m, 0x23, 0x5a);
 
     // --- Assert
-    expect(readNextReg(m, 0x23)).toBe(0x5A);
+    expect(readNextReg(m, 0x23)).toBe(0x5a);
+  });
+
+  it("Reg $40 write #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x40, 0x5a);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x5a);
+  });
+
+  it("Reg $40 write #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x40, 0xa5);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0xa5);
+  });
+
+  it("Reg $42 write #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x42, 0x3f);
+
+    // --- Assert
+    expect(pal.ulaNextByteFormat).toBe(0x3f);
+  });
+
+  it("Reg $42 write #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x42, 0x1f);
+
+    // --- Assert
+    expect(pal.ulaNextByteFormat).toBe(0x1f);
+  });
+
+  it("Reg $43 disablePaletteWriteAutoInc", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x80);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x80);
+    expect(pal.disablePaletteWriteAutoInc).toBe(true);
+    expect(pal.selectedPalette).toBe(0x00);
+    expect(pal.secondSpritePalette).toBe(false);
+    expect(pal.secondLayer2Palette).toBe(false);
+    expect(pal.secondUlaPalette).toBe(false);
+    expect(pal.enableUlaNextMode).toBe(false);
+  });
+
+  it("Reg $43 selectedPalette", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x50);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x50);
+    expect(pal.disablePaletteWriteAutoInc).toBe(false);
+    expect(pal.selectedPalette).toBe(0x05);
+    expect(pal.secondSpritePalette).toBe(false);
+    expect(pal.secondLayer2Palette).toBe(false);
+    expect(pal.secondUlaPalette).toBe(false);
+    expect(pal.enableUlaNextMode).toBe(false);
+  });
+
+  it("Reg $43 secondSpritePalette", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x08);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x08);
+    expect(pal.disablePaletteWriteAutoInc).toBe(false);
+    expect(pal.selectedPalette).toBe(0x00);
+    expect(pal.secondSpritePalette).toBe(true);
+    expect(pal.secondLayer2Palette).toBe(false);
+    expect(pal.secondUlaPalette).toBe(false);
+    expect(pal.enableUlaNextMode).toBe(false);
+  });
+
+  it("Reg $43 secondLayer2Palette", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x04);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x04);
+    expect(pal.disablePaletteWriteAutoInc).toBe(false);
+    expect(pal.selectedPalette).toBe(0x00);
+    expect(pal.secondSpritePalette).toBe(false);
+    expect(pal.secondLayer2Palette).toBe(true);
+    expect(pal.secondUlaPalette).toBe(false);
+    expect(pal.enableUlaNextMode).toBe(false);
+  });
+
+  it("Reg $43 secondUlaPalette", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x02);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x02);
+    expect(pal.disablePaletteWriteAutoInc).toBe(false);
+    expect(pal.selectedPalette).toBe(0x00);
+    expect(pal.secondSpritePalette).toBe(false);
+    expect(pal.secondLayer2Palette).toBe(false);
+    expect(pal.secondUlaPalette).toBe(true);
+    expect(pal.enableUlaNextMode).toBe(false);
+  });
+
+  it("Reg $43 enableUlaNextMode", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const pal = m.paletteDevice;
+
+    // --- Act
+    writeNextReg(m, 0x43, 0x01);
+
+    // --- Assert
+    expect(readNextReg(m, 0x43)).toBe(0x01);
+    expect(pal.disablePaletteWriteAutoInc).toBe(false);
+    expect(pal.selectedPalette).toBe(0x00);
+    expect(pal.secondSpritePalette).toBe(false);
+    expect(pal.secondLayer2Palette).toBe(false);
+    expect(pal.secondUlaPalette).toBe(false);
+    expect(pal.enableUlaNextMode).toBe(true);
   });
 
   it("Reg $b8 write", async () => {
@@ -634,6 +939,62 @@ describe("Next - NextRegDevice", function () {
     expect(readNextReg(m, 0xc3)).toBe(0xa5);
   });
 
+  it("Reg $c4 write #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc4, 0x80);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x80);
+    expect(intDevice.ulaInterruptDisabled).toBe(true);
+    expect(intDevice.lineInterruptEnabled).toBe(false);
+  });
+
+  it("Reg $c4 write #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc4, 0x81);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x81);
+    expect(intDevice.ulaInterruptDisabled).toBe(false);
+    expect(intDevice.lineInterruptEnabled).toBe(false);
+  });
+
+  it("Reg $c4 write #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc4, 0x02);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x02);
+    expect(intDevice.ulaInterruptDisabled).toBe(true);
+    expect(intDevice.lineInterruptEnabled).toBe(true);
+  });
+
+  it("Reg $c4 write #4", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xc4, 0x03);
+
+    // --- Assert
+    expect(readNextReg(m, 0xc4)).toBe(0x03);
+    expect(intDevice.ulaInterruptDisabled).toBe(false);
+    expect(intDevice.lineInterruptEnabled).toBe(true);
+  });
+
   it("Reg $c5 write", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -644,14 +1005,14 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0xc5)).toBe(0xa5);
-    expect(intDevice.ctcChannelEnabled[7]).toBe(true);
-    expect(intDevice.ctcChannelEnabled[6]).toBe(false);
-    expect(intDevice.ctcChannelEnabled[5]).toBe(true);
-    expect(intDevice.ctcChannelEnabled[4]).toBe(false);
-    expect(intDevice.ctcChannelEnabled[3]).toBe(false);
-    expect(intDevice.ctcChannelEnabled[2]).toBe(true);
-    expect(intDevice.ctcChannelEnabled[1]).toBe(false);
-    expect(intDevice.ctcChannelEnabled[0]).toBe(true);
+    expect(intDevice.ctcIntEnabled[7]).toBe(true);
+    expect(intDevice.ctcIntEnabled[6]).toBe(false);
+    expect(intDevice.ctcIntEnabled[5]).toBe(true);
+    expect(intDevice.ctcIntEnabled[4]).toBe(false);
+    expect(intDevice.ctcIntEnabled[3]).toBe(false);
+    expect(intDevice.ctcIntEnabled[2]).toBe(true);
+    expect(intDevice.ctcIntEnabled[1]).toBe(false);
+    expect(intDevice.ctcIntEnabled[0]).toBe(true);
   });
 
   it("Reg $c6 uart1TxEmpty", async () => {
@@ -760,6 +1121,735 @@ describe("Next - NextRegDevice", function () {
     expect(intDevice.uart0TxEmpty).toBe(false);
     expect(intDevice.uart0RxNearFull).toBe(false);
     expect(intDevice.uart0RxAvailable).toBe(true);
+  });
+
+  it("Reg $c8 lineInterruptStatus", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.lineInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc8, 0x01);
+
+    // --- Assert
+    expect(intDevice.lineInterruptStatus).toBe(true);
+    expect(intDevice.ulaInterruptStatus).toBe(false);
+  });
+
+  it("Reg $c8 ulaInterruptStatus", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ulaInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc8, 0x02);
+
+    // --- Assert
+    expect(intDevice.lineInterruptStatus).toBe(false);
+    expect(intDevice.ulaInterruptStatus).toBe(true);
+  });
+
+  it("Reg $c8 lineInterruptStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.lineInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc8, 0x02);
+
+    // --- Assert
+    expect(intDevice.lineInterruptStatus).toBe(false);
+  });
+
+  it("Reg $c8 lineInterruptStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.lineInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc8, 0x02);
+
+    // --- Assert
+    expect(intDevice.lineInterruptStatus).toBe(true);
+  });
+
+  it("Reg $c8 ulaInterruptStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ulaInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc8, 0x01);
+
+    // --- Assert
+    expect(intDevice.ulaInterruptStatus).toBe(false);
+  });
+
+  it("Reg $c8 ulaInterruptStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ulaInterruptStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc8, 0x01);
+
+    // --- Assert
+    expect(intDevice.ulaInterruptStatus).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 0 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[0] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x01);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[0]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 0 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[0] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x01);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[0]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 1 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[1] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x02);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[1]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 1 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[1] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x02);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[1]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 2 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[2] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x04);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[2]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 2 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[2] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x04);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[2]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 3 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[3] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x08);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[3]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 3 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[3] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x08);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[3]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 4 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[4] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x10);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[4]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 4 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[4] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x10);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[4]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 5 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[5] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x20);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[5]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 5 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[5] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x20);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[5]).toBe(true);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 6 - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[6] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc9, 0x40);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[6]).toBe(false);
+  });
+
+  it("Reg $c9 ctcChannelInterruptStatus 6 - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.ctcIntStatus[6] = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xc9, 0x40);
+
+    // --- Assert
+    expect(intDevice.ctcIntStatus[6]).toBe(true);
+  });
+
+  it("Reg $ca uart1TxEmptyStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1TxEmptyStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x40);
+
+    // --- Assert
+    expect(intDevice.uart1TxEmptyStatus).toBe(false);
+  });
+
+  it("Reg $ca uart1TxEmptyStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1TxEmptyStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x40);
+
+    // --- Assert
+    expect(intDevice.uart1TxEmptyStatus).toBe(true);
+  });
+
+  it("Reg $ca uart1RxNearFullStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1RxNearFullStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x20);
+
+    // --- Assert
+    expect(intDevice.uart1RxNearFullStatus).toBe(false);
+  });
+
+  it("Reg $ca uart1RxNearFullStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1RxNearFullStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x20);
+
+    // --- Assert
+    expect(intDevice.uart1RxNearFullStatus).toBe(true);
+  });
+
+  it("Reg $ca uart1RxAvailableStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1RxAvailableStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x10);
+
+    // --- Assert
+    expect(intDevice.uart1RxAvailableStatus).toBe(false);
+  });
+
+  it("Reg $ca uart1RxAvailableStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart1RxAvailableStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x10);
+
+    // --- Assert
+    expect(intDevice.uart1RxAvailableStatus).toBe(true);
+  });
+
+  it("Reg $ca uart0TxEmptyStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0TxEmptyStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x04);
+
+    // --- Assert
+    expect(intDevice.uart0TxEmptyStatus).toBe(false);
+  });
+
+  it("Reg $ca uart0TxEmptyStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0TxEmptyStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x04);
+
+    // --- Assert
+    expect(intDevice.uart0TxEmptyStatus).toBe(true);
+  });
+
+  it("Reg $ca uart0RxNearFullStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0RxNearFullStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x02);
+
+    // --- Assert
+    expect(intDevice.uart0RxNearFullStatus).toBe(false);
+  });
+
+  it("Reg $ca uart0RxNearFullStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0RxNearFullStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x02);
+
+    // --- Assert
+    expect(intDevice.uart0RxNearFullStatus).toBe(true);
+  });
+
+  it("Reg $ca uart0RxAvailableStatus - clear", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0RxAvailableStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xca, 0x01);
+
+    // --- Assert
+    expect(intDevice.uart0RxAvailableStatus).toBe(false);
+  });
+
+  it("Reg $ca uart0RxAvailableStatus - no clear with HW IM2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+    intDevice.uart0RxAvailableStatus = true;
+
+    // --- Act
+    writeNextReg(m, 0xc0, 0x01);
+    writeNextReg(m, 0xca, 0x01);
+
+    // --- Assert
+    expect(intDevice.uart0RxAvailableStatus).toBe(true);
+  });
+
+  it("Reg $cc enableNmiToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcc, 0x80);
+
+    // --- Assert
+    expect(intDevice.enableNmiToIntDma).toBe(true);
+    expect(intDevice.enableLineIntToIntDma).toBe(false);
+    expect(intDevice.enableUlaIntToIntDma).toBe(false);
+  });
+
+  it("Reg $cc enableLineIntToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcc, 0x02);
+
+    // --- Assert
+    expect(intDevice.enableNmiToIntDma).toBe(false);
+    expect(intDevice.enableLineIntToIntDma).toBe(true);
+    expect(intDevice.enableUlaIntToIntDma).toBe(false);
+  });
+
+  it("Reg $cc enableUlaIntToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcc, 0x01);
+
+    // --- Assert
+    expect(intDevice.enableNmiToIntDma).toBe(false);
+    expect(intDevice.enableLineIntToIntDma).toBe(false);
+    expect(intDevice.enableUlaIntToIntDma).toBe(true);
+  });
+
+  it("Reg $cd enableCtcToIntDma 0", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x01);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x02);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x04);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x08);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 4", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x10);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 5", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x20);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 6", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x40);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(true);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(false);
+  });
+
+  it("Reg $cd enableCtcToIntDma 7", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xcd, 0x80);
+
+    // --- Assert
+    expect(intDevice.enableCtcToIntDma[0]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[1]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[2]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[3]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[4]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[5]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[6]).toBe(false);
+    expect(intDevice.enableCtcToIntDma[7]).toBe(true);
+  });
+
+  it("Reg $ce enableUart1EmptyToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x40);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(true);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(false);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(false);
+  });
+
+  it("Reg $ce enableUart1RxNearFullToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x20);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(true);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(false);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(false);
+  });
+
+  it("Reg $ce enableUart1RxAvailableToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x10);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(true);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(false);
+  });
+
+  it("Reg $ce enableUart0TxEmptyToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x04);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(false);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(true);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(false);
+  });
+
+  it("Reg $ce enableUart0RxNearFullToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x02);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(false);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(true);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(false);
+  });
+
+  it("Reg $ce enableUart0RxAvailableToIntDma", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const intDevice = m.interruptDevice;
+
+    // --- Act
+    writeNextReg(m, 0xce, 0x01);
+
+    // --- Assert
+    expect(intDevice.enableUart1TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart1RxAvailableToIntDma).toBe(false);
+    expect(intDevice.enableUart0TxEmptyToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxNearFullToIntDma).toBe(false);
+    expect(intDevice.enableUart0RxAvailableToIntDma).toBe(true);
   });
 });
 

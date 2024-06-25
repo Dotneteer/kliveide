@@ -1,7 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
-import { m } from "nextra/dist/types-c8e621b7";
 
 type NextRegreadFn = () => number;
 type NextRegWriteFn = (value: number) => void;
@@ -25,10 +24,32 @@ export type NextRegValueSlice = {
   view?: "flag" | "number";
 };
 
+export enum JoystickMode {
+  Sinclair2 = 0b000, // --- 12345
+  Kempston1 = 0b001, // --- port 0x1f
+  Cursor = 0b010, // --- 56780
+  Sinclair1 = 0b011, // --- 67890
+  Kempston2 = 0b100, // --- port 0x37
+  MD1 = 0b101, // --- 3 or 6 button joystick, port 0x1f
+  MD2 = 0b110, // --- 3 or 6 button joystick, port 0x37
+  UserDefined = 0b111 // --- User-defined keys joystick
+}
+
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regs: NextRegInfo[] = [];
   private lastRegister: number = 0;
   private readonly regValues: number[] = [];
+
+  // --- Reg 0x03 state
+  r03_DisplayTiming: number = 0;
+  r03_UserLockOnDisplayTiming = false;
+  r03_MachineType: number = 0;
+
+  // --- Reg 0x05 state
+  r05_Joystick1Mode: JoystickMode = 0;
+  r05_Joystick2Mode: JoystickMode = 0;
+  r05_60HzMode = false;
+  r05_ScanDoublerEnabled = false;
 
   // --- Reg 0x07 state
   r07_ActualCpuSpeed = 0;
@@ -44,7 +65,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   r09_ScanlineWeight = 0;
 
   // --- Reg 0x44 state
-  r44_FirstWrite = false;
+  r44_SecondWrite = false;
   r44_PaletteValue9Bit = 0;
 
   /**
@@ -124,7 +145,33 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x03,
       description: "Machine Type",
-      writeFn: this.writeMachineType,
+      readFn: () =>
+        (this.r44_SecondWrite ? 0x80 : 0x00) | // --- NextReg 0x44 second byte indicator
+        (this.r03_DisplayTiming << 4) |
+        (this.r03_UserLockOnDisplayTiming ? 0x08 : 0x00) |
+        this.r03_MachineType,
+      writeFn: (v) => {
+        if (v & 0x80 && this.r03_UserLockOnDisplayTiming && v & 0x08) {
+          switch (this.r03_DisplayTiming) {
+            case 0b000:
+              this.r03_DisplayTiming = 0b001;
+              break;
+            case 0b001:
+            case 0b010:
+            case 0b011:
+            case 0b100:
+              break;
+            default:
+              this.r03_DisplayTiming = 0b011;
+              break;
+          }
+        }
+        this.r03_UserLockOnDisplayTiming =
+          v & 0x08 ? !this.r03_UserLockOnDisplayTiming : this.r03_UserLockOnDisplayTiming;
+        this.r03_DisplayTiming = (v & 0x70) >> 4;
+        this.r03_UserLockOnDisplayTiming = (v & 0x08) !== 0;
+        this.r03_MachineType = v & 0x07;
+      },
       slices: [
         {
           mask: 0x80,
@@ -175,7 +222,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x05,
       description: "Peripheral 1 Setting",
-      writeFn: this.writePeripheral1Setting,
+      writeFn: (v) => {
+        this.r05_Joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
+        this.r05_Joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
+        this.r05_60HzMode = (v & 0x04) !== 0;
+        this.r05_ScanDoublerEnabled = (v & 0x01) !== 0;
+      },
       slices: [
         {
           mask: 0xc8,
@@ -876,7 +928,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x40,
       description: "Palette Index",
-      writeFn: this.writePaletteIndex
+      readFn: () => machine.paletteDevice.nextReg40Value,
+      writeFn: (v) => (machine.paletteDevice.nextReg40Value = v & 0xff)
     });
     r({
       id: 0x41,
@@ -886,12 +939,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x42,
       description: "ULANext Attribute Byte Format",
-      writeFn: this.writeUlaNextAttrFormat
+      readFn: () => machine.paletteDevice.ulaNextByteFormat,
+      writeFn: (v) => (machine.paletteDevice.ulaNextByteFormat = v & 0xff)
     });
     r({
       id: 0x43,
       description: "Palette Control",
-      writeFn: this.writePaletteControl,
+      readFn: () => machine.paletteDevice.nextReg43Value,
+      writeFn: (v) => (machine.paletteDevice.nextReg43Value = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -2362,7 +2417,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc4,
       description: "Interrupt Enable 0",
-      writeFn: this.writeInterruptEnable0,
+      readFn: () => this.machine.interruptDevice.nextRegC4Value,
+      writeFn: (v) => (machine.interruptDevice.nextRegC4Value = v),
       slices: [
         {
           mask: 0x80,
@@ -2467,7 +2523,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc8,
       description: "Interrupt Status 0",
-      writeFn: this.writeInterruptStatus0,
+      readFn: () => this.machine.interruptDevice.nextRegC8Value,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegC8Value = v),
       slices: [
         {
           mask: 0x02,
@@ -2483,7 +2540,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc9,
       description: "Interrupt Status 1",
-      writeFn: this.writeInterruptStatus1,
+      readFn: () => this.machine.interruptDevice.nextRegC9Value,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegC9Value = v),
       slices: [
         {
           mask: 0x80,
@@ -2529,7 +2587,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xca,
       description: "Interrupt Status 2",
-      writeFn: this.writeInterruptStatus2,
+      readFn: () => this.machine.interruptDevice.nextRegCAValue,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegCAValue = v),
       slices: [
         {
           mask: 0x40,
@@ -2565,7 +2624,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xcc,
       description: "DMA Interrupt Enable 0",
-      writeFn: this.writeDmaInterruptEnable0,
+      readFn: () => machine.interruptDevice.nextRegCCValue,
+      writeFn: (v) => (machine.interruptDevice.nextRegCCValue = v),
       slices: [
         {
           mask: 0x80,
@@ -2586,7 +2646,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xcd,
       description: "DMA Interrupt Enable 1",
-      writeFn: this.writeDmaInterruptEnable1,
+      readFn: () => this.machine.interruptDevice.nextRegCDValue,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegCDValue = v),
       slices: [
         {
           mask: 0x80,
@@ -2632,7 +2693,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xce,
       description: "DMA Interrupt Enable 2",
-      writeFn: this.writeDmaInterruptEnable2,
+      readFn: () => this.machine.interruptDevice.nextRegCEValue,
+      writeFn: (v) => (this.machine.interruptDevice.nextRegCEValue = v),
       slices: [
         {
           mask: 0x40,
@@ -2821,7 +2883,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.commonReset();
 
     // --- Apply other hard reset settings
-    this.r44_FirstWrite = true;
+    this.r44_SecondWrite = false;
   }
 
   /**
@@ -2889,11 +2951,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   private writeReset(value: number): void {}
 
-  private writeMachineType(value: number): void {}
-
   private writeConfigMapping(value: number): void {}
-
-  private writePeripheral1Setting(value: number): void {}
 
   private writePeripheral2Setting(value: number): void {}
 
@@ -3002,20 +3060,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   private writeSpriteAttribute4AutoInc(value: number): void {}
 
-  private writePaletteIndex(value: number): void {}
-
   private writePaletteValue8Bit(value: number): void {}
-
-  private writeUlaNextAttrFormat(value: number): void {}
 
   private writePaletteControl(value: number): void {}
 
   private writePaletteValue9Bit(value: number): void {
-    if (this.r44_FirstWrite) {
-      this.r44_FirstWrite = false;
+    if (this.r44_SecondWrite) {
+      this.r44_SecondWrite = false;
       this.r44_PaletteValue9Bit = value;
     } else {
-      this.r44_FirstWrite = true;
+      this.r44_SecondWrite = true;
       this.r44_PaletteValue9Bit = (this.r44_PaletteValue9Bit << 1) | (value & 0x01);
     }
   }
@@ -3115,28 +3169,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readMdPadButtons(): number {
     return 0x00;
   }
-
-  private writeNmiReturnAddressLsb(value: number): void {}
-
-  private writeNmiReturnAddressMsb(value: number): void {}
-
-  private writeInterruptEnable0(value: number): void {}
-
-  private writeInterruptEnable1(value: number): void {}
-
-  private writeInterruptEnable2(value: number): void {}
-
-  private writeInterruptStatus0(value: number): void {}
-
-  private writeInterruptStatus1(value: number): void {}
-
-  private writeInterruptStatus2(value: number): void {}
-
-  private writeDmaInterruptEnable0(value: number): void {}
-
-  private writeDmaInterruptEnable1(value: number): void {}
-
-  private writeDmaInterruptEnable2(value: number): void {}
 
   private writeIoTraps(value: number): void {}
 
