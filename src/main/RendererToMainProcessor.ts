@@ -37,7 +37,8 @@ import {
   dimMenuAction,
   refreshExcludedProjectItemsAction,
   saveProjectSettingAction,
-  saveUserSettingAction
+  saveUserSettingAction,
+  setBuildRootAction
 } from "../common/state/actions";
 import {
   getCompiler,
@@ -471,6 +472,18 @@ export async function processRendererToMainMessages (
         type: "MainGetBuildFunctionsResponse",
         functions: collectedBuildTasks.map(t => t.id)
       };
+
+    case "MainCheckBuildRoot":
+      if (!mainStore.getState().project?.buildRoots) {
+        break;
+      }
+      const buildRoots = mainStore.getState().project.buildRoots;
+      if (buildRoots.includes(message.filename)) {
+        buildRoots.splice(buildRoots.indexOf(message.filename), 1);
+        dispatch(setBuildRootAction(buildRoots));
+        await saveKliveProject();
+      }
+      break;
 
     case "EmuMachineCommand":
       // --- A client wants to send a machine command (start, pause, stop, etc.)

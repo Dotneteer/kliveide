@@ -22,7 +22,7 @@
     "editor.defaultFormatter": "numso.prettier-standard-vscode"
   },
   "[json]": {
-    "editor.defaultFormatter": "numso.prettier-standard-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[xml]": {
     "editor.defaultFormatter": "DotJoshJohnson.xml"

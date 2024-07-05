@@ -15,6 +15,8 @@ import kliveProjectInEditor from '../../public/images/getting-started/klive-proj
 
 The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
 
+> **Note**: In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
+
 ## The New Project Dialog
 
 With the **File | New project** menu command, you can create a new Klive project:
@@ -34,11 +36,17 @@ A Klive project is a folder with a `klive.project` file in it. The file is a JSO
 
 <Image src={projectInExplorer} alt="ProjectInExplorer" width="248" height="200" style={{marginTop: 24}} />
 
-The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last file, `klive.project`, contains information about the current project. As you work with the project, this file may store more settings (e.g., breakpoints, some integration settings, etc.)
+The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last two files contain essential information related to the current project.
 
-When you open a folder that is not a Klive project, you cannot see the home icon:
+- `klive.project` is the file that stores project settings, including the machine type, IDE options, breakpoints, etc. Klive IDE does not allow editing it in its code editor.
+- `build.tsx` is a script file that executes within the IDE. It contains functions representing build commands.
 
-<Image src={nonKliveProject} alt="NonKliveProject" width="248" height="155" style={{marginTop: 24}} />
+By changing the functions' body, you can customize the build (and create new build-related commands).
+
+
+When you open a folder that is not a Klive project (does not have a valid `klive.project` file), you cannot see the home icon:
+
+<Image src={nonKliveProject} alt="NonKliveProject" width="247" height="194" style={{marginTop: 24}} />
 
 ## The Build Root
 
@@ -48,7 +56,7 @@ When you develop your code, you may work with multiple files — Klive needs to 
 
 You can change the build root any time by right-clicking on a file and selecting the **Promote to Build Root** command.
 
-<Image src={promoteBuildRoot} alt="BuildRootSign" width="307" height="325" style={{marginTop: 24}} />
+<Image src={promoteBuildRoot} alt="BuildRootSign" width="320" height="277" style={{marginTop: 24}} />
 
 > **Note**: The Promote to Build Root command is available only for particular file types Klive supports.
 
@@ -84,3 +92,38 @@ The project file uses JSON format. When you click it in the Explorer, you can lo
 <Image src={kliveProjectInEditor} alt="KliveProjectInEditor" width="675" height="310" style={{marginTop: 24}} />
 
 > **Note**: Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
+
+## Updating Old Projects
+
+If you created your Klive project before v0.32.0, you might have a project without a `build.ksx` file. After v0.4.0, these projects will not compile, inject, or run your code, as it needs the `build.ksx` file. Follow these steps to fix the issue:
+
+1. Open your project in Klive.
+2. With the **New file** context menu, add a new file to your project root folder. (It must be the same level as the `klive.project` file.)
+3. Type the following code into the `build.ksx` file:
+
+```javascript
+export function buildCode() {
+  $command("klive.compile")
+}
+
+export function injectCode() {
+  $command("klive.inject")
+}
+
+export function runCode() {
+  $command("klive.run")
+}
+
+export function debugCode() {
+  $command("klive.debug")
+}
+
+export function exportCode() {
+  $command("display-dialog export")
+}
+```
+
+4. Close the project.
+5. Open the project again; Klive recognizes the `build.ksx` file and prepares the build functions accordingly.
+6. Now, you should be able to compile, inject, and run your code.
+

@@ -10,3 +10,5 @@ export const KEY_MAPPINGS = "keymappings";
 export const MEDIA_TAPE = "tape";
 export const MEDIA_DISK_A = "diskA";
 export const MEDIA_DISK_B = "diskB";
+
+export const LANGUAGE_SETTINGS = "languages";

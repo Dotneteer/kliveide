@@ -980,7 +980,7 @@ async function compileCode(
     return { message: "No build root selected in the current Klive project." };
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
-  const language = getFileTypeEntry(fullPath)?.subType;
+  const language = getFileTypeEntry(fullPath, context.store)?.subType;
 
   // --- Compile the build root
   out.color("bright-blue");

@@ -69,7 +69,8 @@ import {
   MainCloseScriptRequest,
   MainGetBuildFunctionsRequest,
   MainGetBuildFunctionsResponse,
-  MainRemoveCompletedScriptsRequest
+  MainRemoveCompletedScriptsRequest,
+  MainCheckBuildRootRequest
 } from "./any-to-main";
 import { ForwardActionRequest } from "./forwarding";
 import {
@@ -244,6 +245,7 @@ export type RequestMessage =
   | MainCloseScriptRequest
   | MainRemoveCompletedScriptsRequest
   | MainGetBuildFunctionsRequest
+  | MainCheckBuildRootRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest

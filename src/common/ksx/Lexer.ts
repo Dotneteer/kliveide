@@ -1113,8 +1113,6 @@ function isIdStart (ch: string): boolean {
   return (
     (ch >= "a" && ch <= "z") ||
     (ch >= "A" && ch <= "Z") ||
-    ch === "#" ||
-    ch === "@" ||
     ch === "_" ||
     ch === "$"
   );

@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.31.1",
+  "version": "0.32.0",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -83,9 +83,9 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
     "electron-updater": "^6.1.8",
-    "next": "^14.1.1",
-    "nextra": "^2.13.2",
-    "nextra-theme-docs": "^2.13.2"
+    "next": "^14.2.4",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4"
   },
   "build": {
     "appId": "dotneteer.kliveide",
