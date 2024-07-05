@@ -20,7 +20,8 @@ import {
   STATIC_MEMORY_DUMP_VIEWER,
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
-  DISASSEMBLY_EDITOR
+  DISASSEMBLY_EDITOR,
+  UNKNOWN_EDITOR
 } from "@state/common-ids";
 import { BUILD_FILE, PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -84,6 +85,7 @@ import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appId
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
+import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -225,6 +227,10 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
 
 // --- Set up document panel renderers
 export const documentPanelRegistry: DocumentRendererInfo[] = [
+  {
+    id: UNKNOWN_EDITOR,
+    renderer: createUnknownFileViewerPanel
+  },
   {
     id: CODE_EDITOR,
     renderer: createCodeEditorPanel
@@ -602,6 +608,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true
   }
 ];
+
+export const unknownFileType: FileTypeEditor = {
+  pattern: "*",
+  editor: UNKNOWN_EDITOR,
+  icon: "code",
+  iconFill: "--console-ansi-bright-yellow"
+};
 
 // --- Supported custom languages
 export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [

@@ -262,6 +262,12 @@ export interface MainGetBuildFunctionsRequest extends MessageBase {
   type: "MainGetBuildFunctions";
 }
 
+// --- Get the names of available build functions
+export interface MainCheckBuildRootRequest extends MessageBase {
+  type: "MainCheckBuildRoot";
+  filename: string;
+}
+
 // --- The response with a text file's contents
 export interface TextContentsResponse extends MessageBase {
   type: "TextContents";

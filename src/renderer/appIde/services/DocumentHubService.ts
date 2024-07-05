@@ -216,7 +216,7 @@ class DocumentHubService implements IDocumentHubService {
     // --- Rename the document instance
     (document.id = newId),
       (document.name = getNodeFile(newId)),
-      (document.iconName = getFileTypeEntry(newId)?.icon);
+      (document.iconName = getFileTypeEntry(newId, this.store)?.icon);
 
     // TODO: move file into new doc ID
 

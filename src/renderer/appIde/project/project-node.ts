@@ -1,7 +1,11 @@
 import { ITreeNode, ITreeView, TreeNode, TreeView } from "@renderer/core/tree-node";
-import { customLanguagesRegistry, fileTypeRegistry } from "@renderer/registry";
+import { customLanguagesRegistry, fileTypeRegistry, unknownFileType } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
 import { getIsWindows } from "@renderer/os-utils";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { LANGUAGE_SETTINGS } from "@common/structs/project-const";
 
 /**
  * This interface represents a project node for transferring data
@@ -133,13 +137,14 @@ export function getNodeExtension(node: ProjectNode | string): string {
 
 export function buildProjectTree(
   root: ProjectNodeWithChildren,
+  store: Store<AppState>,
   expandedList?: string[]
 ): ITreeView<ProjectNode> {
   return new TreeView<ProjectNode>(toTreeNode(root), false);
 
   function toTreeNode(node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
     // --- Get the file type information
-    const fileTypeEntry = getFileTypeEntry(node.name);
+    const fileTypeEntry = getFileTypeEntry(node.name, store) ?? unknownFileType;
     if (fileTypeEntry) {
       node.icon = fileTypeEntry.icon;
       node.iconFill = fileTypeEntry.iconFill;
@@ -208,8 +213,32 @@ export function compareProjectNode(a: ProjectNode, b: ProjectNode): number {
  * Gets the file type entry for the specified filename
  * @param filename Filename to get the file type entry for
  */
-export function getFileTypeEntry(filename: string): FileTypeEditor | null {
+export function getFileTypeEntry(filename: string, store: Store<AppState>): FileTypeEditor | null {
   if (!filename) return null;
+
+  // --- Get the language extensions
+  const reader = createSettingsReader(store);
+  const languageExts = reader.readSetting(LANGUAGE_SETTINGS);
+  const languageHash: Record<string, string[]> = {};
+
+  if (languageExts && typeof languageExts === "object" && !Array.isArray(languageExts)) {
+    Object.keys(languageExts).forEach((key) => {
+      const value = languageExts[key];
+      if (typeof value !== "string") return;
+      languageHash[key] = value.split("|").map((v) => v.trim());
+    });
+  }
+
+  // --- Check for language extensions
+  let languageFound = "";
+  const hashes = Object.keys(languageHash);
+  for (const hash of hashes) {
+    if (languageHash[hash].some((ext) => filename.endsWith(ext))) {
+      languageFound = hash;
+      break;
+    }
+  }
+
   for (const typeEntry of fileTypeRegistry) {
     let match = false;
     switch (typeEntry.matchType) {
@@ -220,7 +249,7 @@ export function getFileTypeEntry(filename: string): FileTypeEditor | null {
         match = filename.startsWith(typeEntry.pattern);
         break;
       case "ends":
-        match = filename.endsWith(typeEntry.pattern);
+        match = filename.endsWith(typeEntry.pattern) || languageFound === typeEntry.subType;
         break;
       case "contains":
         match = filename.indexOf(typeEntry.pattern) >= 0;

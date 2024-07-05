@@ -1,9 +1,5 @@
 import styles from "./ExplorerPanel.module.scss";
-import {
-  useDispatch,
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { ITreeNode, ITreeView, TreeNode } from "@renderer/core/tree-node";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
@@ -35,19 +31,14 @@ import {
   incExploreViewVersionAction,
   setBuildRootAction
 } from "@state/actions";
-import { PROJECT_FILE } from "@common/structs/project-const";
+import { LANGUAGE_SETTINGS, PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
-import {
-  EXCLUDED_PROJECT_ITEMS_DIALOG,
-  NEW_PROJECT_DIALOG
-} from "@common/messaging/dialog-ids";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
+import { createSettingsReader } from "@common/utils/SettingsReader";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -62,9 +53,7 @@ const ExplorerPanel = () => {
 
   // --- The state representing the project tree
   const [tree, setTree] = useState<ITreeView<ProjectNode>>(null);
-  const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>(
-    []
-  );
+  const [visibleNodes, setVisibleNodes] = useState<ITreeNode<ProjectNode>[]>([]);
 
   // --- Visibility of dialogs
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -76,21 +65,17 @@ const ExplorerPanel = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   // --- Information about a project (Is any project open? Is it a Klive project?)
-  const folderPath = useSelector(s => s.project?.folderPath);
-  const excludedItems = useSelector(s => s.project?.excludedItems);
-  const isKliveProject = useSelector(s => s.project?.isKliveProject);
-  const buildRoots = useSelector(s => s.project?.buildRoots ?? EMPTY_ARRAY);
-  const hasExcludedItems = useSelector(
-    s => s.project?.excludedItems?.length > 0
-  );
+  const folderPath = useSelector((s) => s.project?.folderPath);
+  const excludedItems = useSelector((s) => s.project?.excludedItems);
+  const isKliveProject = useSelector((s) => s.project?.isKliveProject);
+  const buildRoots = useSelector((s) => s.project?.buildRoots ?? EMPTY_ARRAY);
+  const hasExcludedItems = useSelector((s) => s.project?.excludedItems?.length > 0);
   const isWindows = !!store.getState().isWindows;
 
   // --- State and helpers for the selected node's context menu
-  const [selectedContextNode, setSelectedContextNode] =
-    useState<ITreeNode<ProjectNode>>(null);
+  const [selectedContextNode, setSelectedContextNode] = useState<ITreeNode<ProjectNode>>(null);
   const [contextInfo, setContextInfo] = useState<FileTypeEditor>();
-  const selectedContextNodeIsFolder =
-    selectedContextNode?.data?.isFolder ?? false;
+  const selectedContextNodeIsFolder = selectedContextNode?.data?.isFolder ?? false;
   const selectedNodeIsProjectFile =
     selectedContextNode &&
     !selectedContextNode?.data.isFolder &&
@@ -102,7 +87,7 @@ const ExplorerPanel = () => {
     : false;
 
   // --- Is the screen dimmed?
-  const dimmed = useSelector(s => s.dimMenu);
+  const dimmed = useSelector((s) => s.dimMenu);
 
   // --- APIs used to manage the tree view
   const svApi = useRef<ScrollViewerApi>();
@@ -110,7 +95,7 @@ const ExplorerPanel = () => {
 
   // --- State used for tree refresh
   const [lastExpanded, setLastExpanded] = useState<string[]>(null);
-  const explorerViewVersion = useSelector(s => s.ideView?.explorerViewVersion);
+  const explorerViewVersion = useSelector((s) => s.ideView?.explorerViewVersion);
 
   // --- This function refreshes the Explorer tree
   const refreshTree = () => {
@@ -126,7 +111,7 @@ const ExplorerPanel = () => {
       {selectedNodeIsRoot && (
         <>
           <ContextMenuItem
-            text='Refresh'
+            text="Refresh"
             clicked={() => {
               folderCache.clear();
               store.dispatch(incExploreViewVersionAction());
@@ -137,14 +122,14 @@ const ExplorerPanel = () => {
       {selectedContextNodeIsFolder && (
         <>
           <ContextMenuItem
-            text='New file...'
+            text="New file..."
             clicked={() => {
               setNewItemIsFolder(false);
               setIsNewItemDialogOpen(true);
             }}
           />
           <ContextMenuItem
-            text='New folder...'
+            text="New folder..."
             clicked={() => {
               setNewItemIsFolder(true);
               setIsNewItemDialogOpen(true);
@@ -152,14 +137,14 @@ const ExplorerPanel = () => {
           />
           <ContextMenuSeparator />
           <ContextMenuItem
-            text='Expand all'
+            text="Expand all"
             clicked={() => {
               selectedContextNode.expandAll();
               refreshTree();
             }}
           />
           <ContextMenuItem
-            text='Collapse all'
+            text="Collapse all"
             clicked={() => {
               selectedContextNode.collapseAll();
               refreshTree();
@@ -180,24 +165,20 @@ const ExplorerPanel = () => {
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text='Rename...'
+        text="Rename..."
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => setIsRenameDialogOpen(true)}
       />
       <ContextMenuItem
-        text='Exclude'
-        disabled={
-          selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject
-        }
+        text="Exclude"
+        disabled={selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject}
         clicked={async () => {
-          await ideCommandsService.executeCommand(
-            `p:x "${selectedContextNode.data.projectPath}"`
-          );
+          await ideCommandsService.executeCommand(`p:x "${selectedContextNode.data.projectPath}"`);
         }}
       />
       <ContextMenuItem
         dangerous={true}
-        text='Delete'
+        text="Delete"
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
         clicked={() => setIsDeleteDialogOpen(true)}
       />
@@ -205,17 +186,10 @@ const ExplorerPanel = () => {
         <>
           <ContextMenuSeparator />
           <ContextMenuItem
-            text={
-              selectedNodeIsBuildRoot
-                ? "Demote from Build Root"
-                : "Promote to Build Root"
-            }
+            text={selectedNodeIsBuildRoot ? "Demote from Build Root" : "Promote to Build Root"}
             clicked={async () => {
               dispatch(
-                setBuildRootAction(
-                  [selectedContextNode.data.projectPath],
-                  !selectedNodeIsBuildRoot
-                )
+                setBuildRootAction([selectedContextNode.data.projectPath], !selectedNodeIsBuildRoot)
               );
               await saveProject(messenger);
             }}
@@ -253,6 +227,10 @@ const ExplorerPanel = () => {
         // --- Start renaming the item
         const newFullName = `${getNodeDir(selectedContextNode.data.fullPath)}/${newName}`;
         await projectService.performAllDelayedSavesNow();
+
+        // --- Check if the item was a build root
+        const oldProjectFolder = getNodeDir(selectedContextNode.data.projectPath);
+        const wasBuildRoot = buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0;
         const response = await messenger.sendMessage({
           type: "MainRenameFileEntry",
           oldName: selectedContextNode.data.fullPath,
@@ -269,16 +247,17 @@ const ExplorerPanel = () => {
             message: response.message
           });
           if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(
-              `Error displaying message dialog: ${dlgResponse.message}`
-            );
+            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
           }
         } else {
           // --- Succesfully renamed
-          projectService.renameDocument(
-            selectedContextNode.data.fullPath,
-            newFullName
-          );
+          projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
+
+          if (wasBuildRoot) {
+            const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;
+            dispatch(setBuildRootAction([newProjectPath], true));
+            await messenger.sendMessage({ type: "MainSaveProject" });
+          }
 
           // --- Refresh the tree and notify other objects listening to a rename
           refreshTree();
@@ -318,15 +297,19 @@ const ExplorerPanel = () => {
             message: response.message
           });
           if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(
-              `Error displaying message dialog: ${dlgResponse.message}`
-            );
+            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
           }
         } else {
           // --- Succesfully deleted
           selectedContextNode.parentNode.removeChild(selectedContextNode);
           refreshTree();
           projectService.signItemDeleted(selectedContextNode);
+
+          // --- Check if build root should be deleted
+          await messenger.sendMessage({
+            type: "MainCheckBuildRoot",
+            filename: selectedContextNode.data.projectPath
+          });
         }
       }}
       onClose={() => {
@@ -340,9 +323,7 @@ const ExplorerPanel = () => {
     <NewItemDialog
       isFolder={newItemIsFolder}
       path={selectedContextNode?.data?.name}
-      itemNames={(selectedContextNode.children ?? []).map(
-        item => item.data.name
-      )}
+      itemNames={(selectedContextNode.children ?? []).map((item) => item.data.name)}
       onAdd={async (newName: string) => {
         // --- Expand the context node
         selectedContextNode.isExpanded = true;
@@ -364,13 +345,11 @@ const ExplorerPanel = () => {
             message: response.message
           });
           if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(
-              `Error displaying message dialog: ${dlgResponse.message}`
-            );
+            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
           }
         } else {
           // --- Succesfully added
-          const fileTypeEntry = getFileTypeEntry(newName);
+          const fileTypeEntry = getFileTypeEntry(newName, store);
           const newNode = new TreeNode<ProjectNode>({
             isFolder: newItemIsFolder,
             name: newName,
@@ -382,9 +361,7 @@ const ExplorerPanel = () => {
             newNode.data.subType = fileTypeEntry.subType;
             newNode.data.isBinary = fileTypeEntry.isBinary;
           }
-          selectedContextNode.insertAndSort(newNode, (a, b) =>
-            compareProjectNode(a.data, b.data)
-          );
+          selectedContextNode.insertAndSort(newNode, (a, b) => compareProjectNode(a.data, b.data));
           refreshTree();
           projectService.signItemAdded(newNode);
           const newIndex = tree.findIndex(newNode);
@@ -394,9 +371,7 @@ const ExplorerPanel = () => {
 
           setTimeout(async () => {
             if (!newNode.data.isFolder) {
-              await ideCommandsService.executeCommand(
-                `nav "${newNode.data.fullPath}"`
-              );
+              await ideCommandsService.executeCommand(`nav "${newNode.data.fullPath}"`);
             }
           }, 0);
         }
@@ -421,10 +396,10 @@ const ExplorerPanel = () => {
         tabIndex={idx}
         onContextMenu={(e: MouseEvent) => {
           setSelectedContextNode(node);
-          setContextInfo(getFileTypeEntry(node?.data?.fullPath));
+          setContextInfo(getFileTypeEntry(node?.data?.fullPath, store));
           contextMenuApi.show(e);
         }}
-        onMouseDown={e => {
+        onMouseDown={(e) => {
           if (e.button === 0) {
             setSelected(idx);
           }
@@ -436,9 +411,7 @@ const ExplorerPanel = () => {
           setLastExpanded(getExpandedItems(tree.rootNode));
 
           if (!node.data.isFolder) {
-            await ideCommandsService.executeCommand(
-              `nav "${node.data.fullPath}"`
-            );
+            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
           }
         }}
         onDoubleClick={async () => {
@@ -447,16 +420,11 @@ const ExplorerPanel = () => {
             await documentHubService.setActiveDocument(node.data.fullPath);
             projectService.setPermanent(node.data.fullPath);
           } else {
-            await ideCommandsService.executeCommand(
-              `nav "${node.data.fullPath}"`
-            );
+            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}"`);
           }
         }}
       >
-        <div
-          className={styles.indent}
-          style={{ width: (node.level + 1) * 16 }}
-        ></div>
+        <div className={styles.indent} style={{ width: (node.level + 1) * 16 }}></div>
         {node.data.isFolder && (
           <Icon
             iconName={node.isExpanded ? "chevron-down" : "chevron-right"}
@@ -474,12 +442,7 @@ const ExplorerPanel = () => {
           />
         )}
         {isRoot && isKliveProject && (
-          <Icon
-            iconName='home'
-            fill='--console-ansi-bright-magenta'
-            width={16}
-            height={16}
-          />
+          <Icon iconName="home" fill="--console-ansi-bright-magenta" width={16} height={16} />
         )}
         <LabelSeparator width={8} />
         <span className={styles.name}>{node.data.name}</span>
@@ -488,30 +451,19 @@ const ExplorerPanel = () => {
         {isRoot && isKliveProject && hasExcludedItems && (
           <div
             className={styles.iconRight}
-            onClick={e => {
+            onClick={(e) => {
               e.stopPropagation();
               dispatch(displayDialogAction(EXCLUDED_PROJECT_ITEMS_DIALOG));
             }}
           >
-            <Icon
-              xclass={styles.actionButton}
-              iconName='exclude'
-              width={16}
-              height={16}
-            />
+            <Icon xclass={styles.actionButton} iconName="exclude" width={16} height={16} />
           </div>
         )}
-        {!node.data.isFolder &&
-          buildRoots.indexOf(node.data.projectPath) >= 0 && (
-            <div className={styles.iconRight}>
-              <Icon
-                iconName='combine'
-                fill='--console-ansi-bright-green'
-                width={16}
-                height={16}
-              />
-            </div>
-          )}
+        {!node.data.isFolder && buildRoots.indexOf(node.data.projectPath) >= 0 && (
+          <div className={styles.iconRight}>
+            <Icon iconName="combine" fill="--console-ansi-bright-green" width={16} height={16} />
+          </div>
+        )}
       </div>
     );
   };
@@ -540,14 +492,13 @@ const ExplorerPanel = () => {
       directory: folderPath
     });
     if (response.type === "ErrorResponse") {
-      reportMessagingError(
-        `MainGetDirectoryContent call failed: ${response.message}`
-      );
+      reportMessagingError(`MainGetDirectoryContent call failed: ${response.message}`);
     } else if (response.type !== "MainGetDirectoryContentResponse") {
       reportUnexpectedMessageType(response.type);
     } else {
       // --- Build the folder tree
-      const projectTree = buildProjectTree(response.contents, lastExpanded);
+      const projectTree = buildProjectTree(response.contents, store, lastExpanded);
+      console.log(projectTree);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
       projectService.setProjectTree(projectTree);
@@ -567,19 +518,16 @@ const ExplorerPanel = () => {
       const docId = node.data.fullPath;
       const deletedDoc = projectService.getDocumentById(docId);
       if (deletedDoc?.usedIn) {
-        deletedDoc.usedIn.forEach(docHub => docHub.closeDocument(docId));
+        deletedDoc.usedIn.forEach((docHub) => docHub.closeDocument(docId));
       }
     };
 
     // --- Rename the renamed item in all document hubs
-    const itemRenamed = (info: {
-      oldName: string;
-      node: ITreeNode<ProjectNode>;
-    }) => {
+    const itemRenamed = (info: { oldName: string; node: ITreeNode<ProjectNode> }) => {
       const docId = info.node.data.fullPath;
       const renamedDoc = projectService.getDocumentById(docId);
       if (renamedDoc?.usedIn) {
-        renamedDoc.usedIn.forEach(docHub =>
+        renamedDoc.usedIn.forEach((docHub) =>
           docHub.renameDocument(info.oldName, info.node.data.fullPath)
         );
       }
@@ -632,10 +580,10 @@ const ExplorerPanel = () => {
           items={visibleNodes}
           approxSize={24}
           fixItemHeight={true}
-          svApiLoaded={api => (svApi.current = api)}
-          vlApiLoaded={api => (vlApi.current = api)}
-          getItemKey={index => tree.getViewNodeByIndex(index).data.fullPath}
-          itemRenderer={idx => projectItemRenderer(idx)}
+          svApiLoaded={(api) => (svApi.current = api)}
+          vlApiLoaded={(api) => (vlApi.current = api)}
+          getItemKey={(index) => tree.getViewNodeByIndex(index).data.fullPath}
+          itemRenderer={(idx) => projectItemRenderer(idx)}
         />
       </div>
     ) : null
@@ -643,7 +591,7 @@ const ExplorerPanel = () => {
     <>
       <div className={styles.noFolder}>You have not yet opened a folder.</div>
       <Button
-        text='Open Folder'
+        text="Open Folder"
         disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
@@ -652,15 +600,13 @@ const ExplorerPanel = () => {
             type: "MainOpenFolder"
           });
           if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `MainOpenFolder call failed: ${response.message}`
-            );
+            reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
           }
         }}
       />
       <div className={styles.noFolder}>or</div>
       <Button
-        text='Create a Klive Project'
+        text="Create a Klive Project"
         disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
@@ -672,18 +618,15 @@ const ExplorerPanel = () => {
   );
 };
 
-function getExpandedItems (root: ITreeNode<ProjectNode>): string[] {
+function getExpandedItems(root: ITreeNode<ProjectNode>): string[] {
   const result: string[] = [];
   getExpandedItemsRecursive(root, result);
   return result;
 
-  function getExpandedItemsRecursive (
-    node: ITreeNode<ProjectNode>,
-    results: string[]
-  ) {
+  function getExpandedItemsRecursive(node: ITreeNode<ProjectNode>, results: string[]) {
     if (node.isExpanded && node.data.isFolder) {
       result.push(node.data.projectPath);
-      node.children.forEach(child => getExpandedItemsRecursive(child, results));
+      node.children.forEach((child) => getExpandedItemsRecursive(child, results));
     }
   }
 }
