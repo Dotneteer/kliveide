@@ -1,0 +1,54 @@
+# Changing default file extensions
+
+Klive ships with file extensions associated with particular build systems (languages). You can change the default file extensions and use your own in your projects. In this document, you can learn how to do that.
+
+The current version of Klive supports these languages; each has an identifier that you will need when changing file extensions:
+
+**Klive Z80 Assembler**: `kz80-asm`
+
+This language uses the Z80 syntax of Klive's built-in [Z80 Assembler](/z80-assembly/z80-assembler). This compiler is associated with the files with the `.kz80.asm` extension. The built-in assembler generates debugging information, so source code debugging is available.
+
+**ZX BASIC (Boriel Basic)**: `zxbas`
+
+You can install ZX BASIC on your machine and [integrate it with Klive](/working-with-ide/zxb). The ZX BASIC compiler is associated with the `.zxbas` extension. Klive does not support ZX BASIC source code debugging.
+
+**ZXB Z80 Assembler**: `zxbasm`
+
+When you install ZX BASIC on your machine, it comes with its assembler. This compiler is associated with the `.zxb.asm` extension. Klive does not support ZXB Assembler source code debugging.
+
+If you want to change the default file extensions to a particular language, you can use the `set` interactive command to carry out this change.
+
+Let's assume you want to change the `.z80.asm` file extension used by the Klive Z80 Assembler to accept files with `.asm` and `.kasm`. You can carry out this change with these steps:
+
+1. Issue the following command in the interactive command prompt:
+
+```text
+set languages.kz80-asm ".asm|.kasm"
+```
+
+2. Change the file extension of the previous source code file (with the Rename context menu) to `.asm` or `.kasm`, according to your preference.
+3. Close the project and open it again.
+4. Set the renamed file as the build root (if not the build root).
+5. Now, you can use the compile, inject, and run commands.
+
+> **Note**: In the current Klive release, you must close and reopen the project to let the file association settings work. In the future, Klive will not require this extra step.
+
+You should use the `set` command with these parameters:
+
+```text
+set languages.<language-identifier> "<file-extension-1>|<file-extension-2>|...|<file-extension-n>"
+```
+
+Use the language identifiers described above and the file extensions you want to associate with them. The file extensions must be separated by the `|` character. Do not forget to start the file extension with a dot.
+
+When you open the `klive.project` file, you can see the effect of the `set` command:
+
+```json
+{
+  "settings": {
+    "languages": {
+      "kz80-asm": ".asm|.kasm"
+    }
+  }
+}
+```

@@ -71,7 +71,7 @@ describe("KSX Parser - statements", () => {
     { expr: "false", top: "Literal" },
     { expr: "Infinity", top: "Literal" },
     { expr: "typeof a", top: "UnaryExpression" },
-    { expr: "#item", top: "Identifier" },
+    { expr: "$item", top: "Identifier" },
     { expr: "null", top: "Literal" },
     { expr: "undefined", top: "Literal" }
   ];

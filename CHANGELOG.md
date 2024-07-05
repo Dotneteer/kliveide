@@ -1,5 +1,13 @@
 # Klive IDE Changelog
 
+## 0.32.0
+
+### Features
+
+- Klive now has a scripting system that uses JavaScript-like language.
+- The IDE has a new customizable build system (rudimentary) that uses scripts in the `build.ksx` file. *Note*, if you use an old project format, you may need to update it. See instructions [here]().
+- You can change the default file extensions and associate them with compilers.
+
 ## 0.31.1
 
 ### Fixes

@@ -183,7 +183,7 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
       common: [
         // identifiers and keywords
         [
-          /[a-z_$][\w$]*/,
+          /[a-z_][\w$]*/,
           {
             cases: {
               "@keywords": "keyword",
@@ -193,7 +193,7 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
           }
         ],
         // special identifiers
-        [/[#@][\w$]*/, "type.identifier"],
+        [/[$][\w$]*/, "type.identifier"],
 
         [/[A-Z][\w\$]*/, "type.identifier"], // to show class names nicely
         // [/[A-Z][\w\$]*/, 'identifier'],

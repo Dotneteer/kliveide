@@ -1,19 +1,19 @@
 export function buildCode() {
-  #command("klive.compile")
+  $command("klive.compile")
 }
 
 export function injectCode() {
-  #command("klive.inject")
+  $command("klive.inject")
 }
 
 export function runCode() {
-  #command("klive.run")
+  $command("klive.run")
 }
 
 export function debugCode() {
-  #command("klive.debug")
+  $command("klive.debug")
 }
 
 export function exportCode() {
-  #command("display-dialog export")
+  $command("display-dialog export")
 }
