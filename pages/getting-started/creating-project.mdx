@@ -15,7 +15,7 @@ import kliveProjectInEditor from '../../public/images/getting-started/klive-proj
 
 The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
 
-> **Note**: In Klive v0.4.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
+> **Note**: In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
 
 ## The New Project Dialog
 
@@ -93,11 +93,37 @@ The project file uses JSON format. When you click it in the Explorer, you can lo
 
 > **Note**: Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
 
-## The Build File
-
-_TBD_
-
 ## Updating Old Projects
 
-_TBD_
+If you created your Klive project before v0.4.0, you might have a project without a `build.ksx` file. After v0.4.0, these projects will not compile, inject, or run your code, as it needs the `build.ksx` file. Follow these steps to fix the issue:
+
+1. Open your project in Klive.
+2. With the **New file** context menu, add a new file to your project root folder. (It must be the same level as the `klive.project` file.)
+3. Type the following code into the `build.ksx` file:
+
+```javascript
+export function buildCode() {
+  $command("klive.compile")
+}
+
+export function injectCode() {
+  $command("klive.inject")
+}
+
+export function runCode() {
+  $command("klive.run")
+}
+
+export function debugCode() {
+  $command("klive.debug")
+}
+
+export function exportCode() {
+  $command("display-dialog export")
+}
+```
+
+4. Close the project.
+5. Open the project again; Klive recognizes the `build.ksx` file and prepares the build functions accordingly.
+6. Now, you should be able to compile, inject, and run your code.
 

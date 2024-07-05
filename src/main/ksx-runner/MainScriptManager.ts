@@ -425,10 +425,10 @@ class MainScriptManager implements IScriptManager {
     return {
       delay: (ms: number) => new Promise((res) => setTimeout(res, ms)),
       Output: callContext.output,
-      "#notifications": createNotifications(callContext),
-      "#project": await createProjectStructure(),
-      "#command": (commandText: string) => executeIdeCommand(this.id, commandText),
-      "#emu": createEmulatorApi(callContext),
+      "$notifications": createNotifications(callContext),
+      "$project": await createProjectStructure(),
+      "$command": (commandText: string) => executeIdeCommand(this.id, commandText),
+      "$emu": createEmulatorApi(callContext),
       Z88dk: createZ88dk(callContext)
     };
   }

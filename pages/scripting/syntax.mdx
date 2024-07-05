@@ -1,0 +1,766 @@
+# Scripting Syntax
+
+The Klive scripting language is a subset of JavaScript. It uses similar expressions and statements, and its evaluation and execution semantics match those of JavaScript.
+
+## Comments
+
+Klive allows you two kinds of comments:
+- **Block comments**. Any text wrapped between `/*` and `*/` is a block comment. Note you cannot nest block comments to each other, and block comments within a string literal are not considered a comment but part of the string.
+- **End-of-line comments**. Any text following the `//` token till the end of the current line is considered a comment.
+
+Examples:
+
+```js
+const nums = [ 12, 31, 23, 117 /* , 123 */];
+const sqrNums = nums.map(n => n * n); // Create the squares of numbers
+```
+
+## Expressions
+
+Klive scripting expressions follow the syntax of JavaScript expressions. Thus, if you know JavaScript, you can immediately write expressions. The operators and other syntax elements are very close to other "curly-brace" programming languages, such as C, C++, Java, and C# (and many others), so you'll get the hang of it in seconds.
+
+The JavaScript syntax nature of binding expressions is crucial not just because of the notations. With Klive, you can use all objects available in the global namespace of JavaScript, including the `Math` object, the fundamental types like `Number`, `String`, `Date`, and many others.
+
+You can use these elements in Klive expressions:
+- Identifiers
+- Literals
+  - Numbers
+  - Strings
+  - Boolean values (`false` and `true`)
+  - `null` and `undefined`
+  - Array literals
+  - Object literals
+- Operators
+
+### Identifiers
+
+Klive scripting identifiers may start with one of these characters: `$`, `_`,  or any English alphabet letters (from `a` to `z` and `A` to `Z`). The continuation characters can be of the same set as the start character, and you can also use decimal digits (from `0` to `9`). Other characters (such as Unicode letters, symbols, or emojis) are not allowed in identifiers.
+
+> **Note**: Be aware that Klive uses slightly different identifier syntax than JavaScript.
+
+Here are a few examples of valid identifiers:
+
+```javascript
+saveButton
+$item
+$saveCommand
+_a123
+```
+
+### Literals
+
+You can use the same numbers (integers and floating-point numbers) as in JavaScript, and also the `NaN` value
+(not-a-number) and `Infinity` (the result coming from a divide by zero).
+
+Array and object literals also allow you the same syntax as in JavaScript. Here are a few samples:
+
+```js
+[1, 2, 3] // An array of three numbers
+["Hello", "World", 42, true] // An array of four values
+{a: 1, b: 2, c: 3} // An object with three properties
+{
+  hey: 123,
+  ho: false,
+  hi: 123.e-2,
+  what: NaN,
+  is: ["this", "object-like"],
+  thing: {
+      that: null,
+      seems: "completely",
+      stupid: "?"
+  }
+} // A compound object literal
+```
+
+Strings allow the same characters as JavaScript, including inline Unicode and the following escape characters:
+
+- `\b`: Backspace
+- `\f`: Form Feed
+- `\n`: New Line
+- `\r`: Carriage Return
+- `\t`: Horizontal Tabulator
+- `\v`: Vertical Tabulator
+- `\S`: Non-breaking Space
+- `\\`: Backslash
+- `\'`: Single quote
+- `\"`: Double quote
+- `\xhh`: Hexadecimal character (here, `hh` represents two hexadecimal digits).
+- `\uhhhh`: Unicode code point between `U+0000` and `U+FFFF` (here `hhhh` represents four hexadecimal digits).
+- `\u{hHHHHH}`: Unicode code point between `U+0000` and `U+10FFFF` (here `hHHHHH` represents one to six hexadecimal
+digits).
+
+### Operators
+
+You can use most of the JavaScript operators in Klive scripts. Here, you can read the list of them; the operators are grouped according to their precedence, starting with the highest one:
+
+**Precedence group #1**
+
+- **Grouping**: `( … )`, for example `(6 * 7)`
+
+**Precedence group #2**
+
+- **Member access**:  `… . …`, for example `a.b`
+- **Computed member access**: `… […]`, for example `a[b]`
+- **Function call**: `… (…)`, for example `addItem(a, b, c)`
+- **Optional chaining**: `… ?. …`, for example: `prop?.value`
+
+**Precedence group #3**
+
+- **Postfix increment**: `… ++`, for example: `counter++`
+- **Postfix decrement**: `… --`, for example: `counter--`
+
+**Precedence group #4**
+
+- **Logical NOT**: `! …`, for example `!value`
+- **Bitwise NOT**: `~ …`, for example `~bits`
+- **Unary plus**: `+ …`, for example `+b`
+- **Unary negation**: `- …`, for example `-b`
+- **Prefix increment**: `++ …`, for example: `++counter`
+- **Prefix decrement**: `-- …`, for example: `--counter`
+- **Type query**: `typeof …`, for example `typeof myValue`
+- **Property delete**: `delete …`, for example `delete a.prop`
+
+**Precedence group #5**
+
+- **Exponentiation**: `… ** …`, for example, `2 ** 3`. (This operator has a right-to-left associativity.)
+
+**Precedence group #6**
+
+- **Multiplication**: `… * …`, for example `a * 12`
+- **Division**: `… / …`, for example `a / b`,
+- **Remainder**: `… % …` for example `value % 2`
+
+**Precedence group #7**
+
+- **Addition**: `… + …`, for example, `a + b`
+- **Subtraction**: `… - …`, for example: `present - absent`
+
+**Precedence group #8**
+
+- **Bitwise left shift**: `… << …`, for example `value << 3`
+- **Bitwise right shift**: `… >> …`, for example `other >> 2`
+- **Bitwise unsigned shift**: `… >>> …`, for example `value >>> b`
+
+**Precedence group #9**
+
+- **Less than**: `… < …`, for example `a < b`
+- **Less than or equal**: `… <= …`, for example `a <= b`
+- **Greater than**: `… > …`, for example `a > b`
+- **Greater than or equal**: `… >= …`, for example `a >= b`
+- **Inclusion test**: `… in …`, for example `a in [1, 2, 3]`
+
+**Precedence group #10**
+
+- **Equality**: `… == …`, for example `"2" == 2`
+- **Inequality**: `… != …`, for example `"2" != a`
+- **Strict equality**: `… === …`, for example `"2" === 2`
+- **Inequality**: `… !== …`, for example `"2" !== a`
+
+**Precedence group #11**
+
+- **Bitwise AND**: `… & …`, for example `apple & pear`
+
+**Precedence group #12**
+
+- **Bitwise XOR**: `… ^ …`, for example `sprite ^ mask`
+
+**Precedence group #13**
+
+- **Bitwise OR**: `… | …`, for example `walnut | peanut`
+
+**Precedence group #14**
+
+- **Logical AND**: `… && …`, for example `x && y`
+
+**Precedence group #15**
+
+- **Logical OR**: `… || …`, for example `me || you`
+- **Nullish coalescing operator**: `… ?? …`, for example `value ?? ""`
+
+**Precedence group #16**
+
+- **Assignment**: `… = …`, for example, `i = 2`
+- **Addition assignment**: `… += …`, for example, `i += 1`
+- **Subtraction assignment**: `… -= …`, for example, `i -= 1`
+- **Exponentiation assignment**: `… **= …`, for example, `i **= 3`
+- **Multiplication assignment**: `… *= …`, for example, `i *= 2`
+- **Division assignment**: `… /= …`, for example, `i /= 4`
+- **Remainder assignment**: `… *= …`, for example, `i %= 16`
+- **Bitwise left shift assignment**: `… <<= …`, for example, `i <<= 1`
+- **Bitwise right shift assignment**: `… >>= …`, for example, `i >>= 4`
+- **Bitwise unsigned right shift assignment**: `… >>>= …`, for example, `i >>>= 8`
+- **Conditional (ternary) operator**: `… ? … : …`, for example `a % 2 ? "off" : "on"`
+- **Arrow function**: `… => …`, for example, `(a, b) => a * b`
+- **Spread**: `... …`, for example, `... [1, 2, 3]`
+
+**Precedence group #17**
+
+- **Comma/Sequence**: `… , …`, for example: `a, b, c, other`
+
+> Note that you cannot use these JavaScript operators with binding expressions: `new`, `void`, `await`, `instanceof`, assigment operators (none
+of them), `yield`, and `yield*`.
+
+### Arrow Functions
+
+Klive allows you to define arrow functions. Though you can define arrow functions in attribute or property values. Arrow functions have the same syntax as in JavaScript. Here are a few examples:
+
+```js
+() => Math.sqrt(Math.PI);
+```
+
+This arrow function has no arguments. It retrieves the square root of PI.
+
+```js
+(a, b) => Math.sqrt(a ** 2 + b ** 2);
+```
+
+This arrow function calculates the hypotenuse of a right-angled triangle from its leg dimensions. It has two arguments, `a` and `b`, the leg dimensions.
+
+```javascript
+(n) => {
+  let sum = 0;
+  for (let i = 1; i < n; i++) sum += i;
+  return sum;
+}
+```
+
+This arrow function uses statements to calculate the sum of numbers from one to the given `n`. As it has a body (and not just a single expression), it uses the `return` statement to retrieve the result.
+
+Arrow function arguments support the destructure pattern. You can learn more about them [here](#destructuring).
+
+Here is an example:
+
+```js
+({x, y}) => x ** 2 + y ** 2;
+```
+
+Assuming you assigned the arrow function to the `myCalc` variable, this is how you can invoke it from an event handler:
+
+```js
+const coords = { x: 12, y: -23 };
+// ...
+myCalc(coords);
+```
+
+## Statements
+
+Klive scripting provides several statements to express programming logic. Most of these statements have the same semantics as their counterpart in JavaScript.
+
+> **Note**: The statements can be optionally closed with a semicolon. There are a few contexts where the closing semicolons are required to avoid ambiguity. It is a suggested practice to conclude statements with a semicolon always.
+
+### Variable declarations
+
+You can use the `let` and `const` statements to declare variables and optionally set their initial values. While an initial value is optional for the `let` statement, it is required for `const`. You can change the values of variables declared with `let`. However, the value of `const` variables can be set only once, at their initialization. The engine raises an error if you try to modify the value of a variable.
+
+Here are a few examples:
+
+```js
+let x; // No initial value
+let y = 0, z; // Multiple declarations
+let sum = 0; // Initialize sum to zero
+const factor = 1.5; // Factor cannot be changed later
+```
+
+> **Note**: Klive scripting does not support the `var` keyword; it allows only `let` and `const.`
+
+### Destructuring
+
+You can use destructure operators with variable expressions. Klive supports a similar syntax to JavaScript; however, it does not support extracting rest values and providing default values.
+
+Examples:
+
+```js
+const {a, b} = someObject;
+// const a = someObject.a, b = someObject.b
+
+const {a, b, other: { c, d }} = someObject;
+// const a = someObject.a, b = someObject.b, c = someObject.other.c, d = someObject.other.d
+
+const {a, b:myB} = someObject;
+// const a = someObject.a, myB = someObject.b
+
+let {a, b, other: { c:myC }} = someObject;
+// let a = someObject.a, b = someObject.b, myC = someObject.other.c
+
+const [a, b] = someArray;
+// const a = someArray[0], b = someArray[1}
+
+const [a, b,, c] = someArray;
+// const a = someArray[0], b = someArray[1}, c = someArray[3]
+
+let [a,,, {b:myB, c}] = someArray;
+// let a = someArray[0], myB = someArray[3].b, c = someArray[3].c 
+```
+
+### Function Declarations
+
+You can define functions in Klive scripting. The syntax is similar to JavaScript. You can define functions with or without parameters, and you can use the `return` statement to return a value from the function.
+
+Here are a few examples:
+
+```javascript
+function add(a, b) {
+  return a + b;
+}
+```
+
+```javascript
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+```
+
+> **Note**: Klive **does** support declaring functions within functions.
+
+### Empty Statement
+
+An `empty statement` is used to provide no statement, although the JavaScript syntax would expect one. The script indicates it with a semicolon (`;`).
+
+> **Hint**: It is a good idea to comment on the intentional use of the empty statement, as it is not apparent to distinguish from a usual semicolon.
+
+Example:
+
+```js
+// This for loop has no iteration body
+for (let i = 0; i < 10; i++); // The closing ";" indicates the empty statement
+````
+
+### Block Statement
+
+You can group multiple statements into a single *block statement*, wrapping them between `{` and `}`. For example, you can put multiple individual statements into the body of a for-loop:
+
+```js
+let sum = 0;
+for (let i = 0; i < 10; i++) {
+  sum += i;
+  console.log("Current sum is", sum);
+}
+```
+
+Block statements have their separate identifier scope. Variables declared within them will hide external variables with the same name. For example, in the following sample, the log output will show 42 in the first line and 1234 in the second, as the declaration of `myNumber` in the block statement hides `myNumber` declared outside of the block statement:
+
+```js
+let myNumber = 1234;
+{
+  let myNumber = 42;
+  console.log(myNumber); 
+}
+console.log(myNumber);
+```
+
+> **Note**: You do not need to put a closing semicolon after a block statement.
+
+### Expression Statement
+
+When you write an expression in the context of other statements, Klive represents that expression as an expression statement. For example, here, the highlighted line are expression statements:
+
+```js {3,4,5}
+let sum = 0;
+for (let i = 0; i < 10; i++) {
+  sum += i;
+  console.log("Current sum is", sum);
+  123 + 456;
+}
+```
+
+> **Note**: Though there is no use in evaluating the value of `123 + 456` expression statement, the engine does that (in every iteration) and omits the result.
+
+### The `if...else` Statement
+
+The `if...else` statement executes a statement if a specified condition is *truthy*. If the condition is *falsy*, another statement in the optional else clause will be executed.
+
+> **Note**: A *truthy* value is a value that is considered `true` when encountered in a Boolean context: All values are *truthy* unless they are defined as *falsy*. That is, all values are *truthy* except `false`, `0`, `-0`, `""`, `null`, `undefined`, and `NaN`.
+
+Here are a few examples:
+
+```js
+// Example #1
+if (a > 3) doThis();
+
+// Example #2
+if (a > 3) doThis(); else doThat();
+
+// Example #3
+if (a > 3) {
+  doThisFirst();
+  andThen()
+}
+else doThat();
+```
+
+> **Note**: Example #2 shows that you need a closing semicolon before `else`, as the consequent ("then") branch of the `if...else` statement is a single (non-block) statement.
+
+### The `while` Statement
+
+The `while` statement creates a loop that executes a specified statement as long as the test condition evaluates to true. The condition is evaluated before executing the statement.
+
+Here are a few examples:
+
+```js
+// Example #1
+let sum = 0;
+let counter = 1;
+while (counter <= 10) sum += counter++; 
+```
+```js
+// Example #2
+let sum = 0;
+let counter = 1;
+while (counter <= 10) {
+  sum += counter;
+  counter++;
+} 
+```
+
+### The `do...while` Statement
+
+The `do...while` statement creates a loop that executes a specified statement until the test condition evaluates to false. The condition is evaluated after executing the statement, resulting in the specified statement executing at least once.
+
+```js
+// Example #1
+let sum = 0;
+let counter = 1;
+do sum += counter++; while (counter <= 10)  
+```
+```js
+// Example #2
+let sum = 0;
+let counter = 1;
+do {
+  sum += counter;
+  counter++;
+} while (counter <= 10)
+```
+
+### The `for` Statement
+
+The for statement creates a loop that consists of three optional expressions, enclosed in parentheses and separated by semicolons, followed by a statement (usually a block statement) to be executed in the loop.
+
+- **Initialization**. An expression or variable declaration that is evaluated once before the loop begins. This expression may optionally declare new variables with the `let` keyword; these variables are local to the loop.
+- **Condition**. An expression to be evaluated before each loop iteration. If this expression evaluates to true, the loop's body is executed. Otherwise, execution exits the loop and goes to the first statement after the loop construct. This conditional test is optional. If omitted, the condition always evaluates to true.
+- **Update**. An optional expression to be evaluated at the end of each iteration before the next evaluation of the condition.
+
+Examples:
+
+```js
+// Example #1
+let sum = 0;
+for (let i = 0; i < 10; i++) {
+  sum +=i;  
+}
+```
+
+```js
+// Example #2
+let sum = 0;
+let i;
+for (i = 0; i < 10; i++) {
+  sum += i;  
+}
+```
+
+You can declare multiple variables in the loop initialization and add multiple update expressions (as a sequence expression):
+
+```js
+let sum = 0;
+for (let i = 0, j = 3; i < 10; i++, j += 3) {
+  sum += i + j;  
+}
+```
+
+### The `for...in` Statement
+
+The `for...in` statement iterates over all enumerable string properties of an object including inherited enumerable properties.
+
+- **Variable**. This variable receives a string property name on each iteration. It may be either a declaration with const, or let, or a variable name. Variables declared with `const` or `let` are local to the `for...in` loop's scope.
+- **Object**. An object whose enumerable properties are iterated over.
+
+Examples:
+
+```js
+const obj = { a: 12, b: 34, c: "Hello" }
+for (const key in obj) {
+  console.log(obj[key]);
+}
+```
+
+This code snippet will display this output:
+
+```text
+12
+34
+Hello
+```
+
+### The `for...of` Statement
+
+The `for...of` statement executes a loop that operates on a sequence of values sourced from an iterable object (such as `Array`, `String`, `Map`, `Set`, and others.
+
+- **Variable**. This variable receives a value from the sequence on each iteration. It may be either a declaration with const, or let, or a variable name. Variables declared with `const` or `let` are local to the `for...in` loop's scope.
+- **Object**. An iterable object. The source of the sequence of values on which the loop operates.
+
+Examples: 
+
+```js
+const values = [1, 2, 3, 5, 8, 13, 21]
+for (const value of values) {
+  console.log(value);  
+}
+```
+
+### The `break` Statement
+
+The `break` statement terminates the current loop or switch statement and transfers program control to the statement following the terminated statement.
+
+Examples:
+
+```js
+// Sum up numbers from 1 to 10
+let sum = 0;
+let counter = 1;
+while (true) {
+  if (counter > 10) break;
+  sum += counter++;
+}
+```
+
+```js
+// Dispatch options
+switch (option) {
+  case 0:
+    doThis();
+    break;
+  case 1:
+    doThat();
+    break;
+  case 2:
+    doSpecial();
+    break;
+  default:
+    doExceptional();  
+    break;  
+}
+```
+
+### The `continue` Statement
+
+The `continue` statement terminates execution of the statements in the current iteration of the current or labeled loop, and continues execution of the loop with the next iteration.
+
+In contrast to the `break` statement, `continue` does not terminate the execution of the loop entirely, but instead:
+- In a `while` or `do...while` loop, it jumps back to the condition.
+- In a `for` loop, it jumps to the update expression.
+- In a `for...in`, or `for...of` loop, it jumps to the next iteration.
+
+Example:
+
+```js
+  
+let sum = 0;
+for (let i = 1; i <= 100; i++) {
+  if (i % 3 === 2) continue;
+  sum += i;
+  console.log("Current sum", sum);
+}
+```
+
+### The `return` Statement
+
+The `return` statement ends function execution and specifies a value to be returned to the function caller. If the value is omitted, `undefined` is returned.
+
+Examples:
+
+```js
+(n) => {
+  let sum = 0;
+  for (let i = 1; i <= n; i++) sum += i;
+  return sum;
+}
+```
+
+```js
+(n) => {
+  if (n % 3 === 2) return;
+  console.log("Remainder of " + n + " is not equal to 2");
+}
+```
+
+### The `switch` Statement
+
+The `switch` statement evaluates an expression, matching the expression's value against a series of `case` clauses, and executes statements after the first case clause with a matching value until a break statement is encountered. The `default` clause of a switch statement will be executed if no case matches the expression's value.
+
+If the control flow of the executing `case` clause does not reach a `break` statement concluding the particular case, the execution continues with the subsequent `case` clause until there remains any.
+
+Examples:
+
+```js
+// Dispatch options
+switch (option) {
+  case 0:
+    doThis();
+    break;
+  case 1:
+    doThat();
+    break;
+  case 2:
+    doSpecial();
+    break;
+  default:
+    doExceptional();  
+    break;  
+}
+```
+
+```js
+// Case 0 flows to case 1
+switch (option) {
+  case 0:
+    doThis();
+  case 1:
+    doThat();
+    break;
+  case 2:
+    doSpecial();
+    break;
+}
+```
+
+```js
+// Multiple cases with the same execution
+switch (option) {
+  case 0:
+  case 3:
+  case 6:
+    doThis();
+    break;
+  case 1:
+  case 2:
+  case 5:
+    doThat();
+    break;
+  default:
+    doExceptional();  
+    break;  
+}
+```
+
+### The `throw` Statement
+
+The `throw` statement throws a user-defined error value. Execution of the current function will stop (the statements after throw won't be executed), and control will be passed to the first `catch` block in the call stack. If no `catch` block exists among caller functions, the code will terminate.
+
+The `throw` keyword can be followed by any kind of expression.
+
+Examples:
+
+```js
+(values) => {
+  if (!values.every(v => typeof v === "number")) {
+    throw "Can only add numbers";
+  }
+  return values.reduce((a, b) => a + b);
+}
+```
+
+```js
+const handler = (err, data) => {
+  if (err) {
+    throw err;
+  }
+  console.log(data);
+}
+```
+
+### The `try...catch` Statement
+
+The `try...catch` statement comprises a try block and either a `catch` block, a `finally` block, or both. The code in the `try` block is executed first, and if it throws an exception, the code in the `catch` block will be executed. The code in the `finally` block will always be executed before the control flow exits the entire construct.
+
+The `catch` block can have an optional identifier to hold the caught error for the associated `catch` block. If the `catch` block does not use the exception's value, you can omit the identifier.
+
+Examples:
+
+**Unconditional error**
+
+```js
+try {
+  throw "myError";
+} catch (e) {
+  // Log the error
+  console.log(e);
+}
+```
+
+Log:
+
+```text
+myError
+```
+
+**Testing the error condition**
+
+```js
+try {
+  readData(); // may throw three types of exceptions
+} catch (e) {
+  if (e === "DataReadError") {
+    // Statements to handle data read errors
+  } else if (typeof e === "number") {
+    // Statements to handle a particular numeric error code
+  } else if (e.errorType) {
+    // Statements to handle some other error
+  } else {
+    // Statements to handle any unspecified exceptions
+    console.log(e);
+  }
+}
+```
+
+**Nested try blocks**
+
+```js
+try {
+  try {
+    throw "Something strange";
+  } catch (e) {
+    console.error("inner", e);
+    throw e;
+  } finally {
+    console.log("finally");
+  }
+} catch (e) {
+  console.error("outer", e);
+}
+```
+
+Log:
+
+```text
+inner Something strange
+finally
+outer Something strange
+```
+
+**Returning from finally**
+
+```js
+(() => {
+  try {
+    try {
+      throw "weird";
+    } catch (e) {
+      console.error("inner", e);
+      throw e;
+    } finally {
+      console.log("finally");
+      return;
+    }
+  } catch (e) {
+    console.error("outer", e);
+  }
+})();
+```
+
+Log:
+
+```text
+inner weird
+finally
+```

@@ -183,7 +183,7 @@ describe("KSX Parser - arrow expressions", () => {
       '    entityId: "apiFile",\n' +
       "    entityDisplayName: item,\n" +
       "    params: {\n" +
-      "      nodeId: #props.nodeId,\n" +
+      "      nodeId: $props.nodeId,\n" +
       "      id: item\n" +
       "    }\n" +
       "  })\n" +
