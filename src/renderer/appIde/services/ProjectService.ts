@@ -258,7 +258,7 @@ class ProjectService implements IProjectService {
     file: string,
     isBinary?: boolean
   ): Promise<string | Uint8Array> {
-    const fileTypeEntry = getFileTypeEntry(file);
+    const fileTypeEntry = getFileTypeEntry(file, this.store);
     let contents: string | Uint8Array;
     if (isBinary ?? fileTypeEntry?.isBinary) {
       // --- Read a binary file file
@@ -505,7 +505,7 @@ class ProjectService implements IProjectService {
       throw new Error(`Cannot find file node for ${oldId}`);
     }
 
-    const fileTypeEntry = getFileTypeEntry(newId);
+    const fileTypeEntry = getFileTypeEntry(newId, this.store);
     renamedNode.data.icon = fileTypeEntry?.icon;
 
     // --- Change the properties of the renamed node

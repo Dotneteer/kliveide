@@ -1,6 +1,6 @@
 import { ScrollViewer, ScrollViewerApi } from "@controls/ScrollViewer";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CloseMode, DocumentTab } from "./DocumentTab";
@@ -21,6 +21,7 @@ import { getFileTypeEntry } from "../project/project-node";
  */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
+  const { store } = useRendererContext();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion();
@@ -54,7 +55,7 @@ export const DocumentsHeader = () => {
     if (openDocs) {
       setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
     }
-    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name));
+    setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name, store));
   }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
 
   // --- Make sure that the index is visible

@@ -31,13 +31,14 @@ import {
   incExploreViewVersionAction,
   setBuildRootAction
 } from "@state/actions";
-import { PROJECT_FILE } from "@common/structs/project-const";
+import { LANGUAGE_SETTINGS, PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
+import { createSettingsReader } from "@common/utils/SettingsReader";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -348,7 +349,7 @@ const ExplorerPanel = () => {
           }
         } else {
           // --- Succesfully added
-          const fileTypeEntry = getFileTypeEntry(newName);
+          const fileTypeEntry = getFileTypeEntry(newName, store);
           const newNode = new TreeNode<ProjectNode>({
             isFolder: newItemIsFolder,
             name: newName,
@@ -395,7 +396,7 @@ const ExplorerPanel = () => {
         tabIndex={idx}
         onContextMenu={(e: MouseEvent) => {
           setSelectedContextNode(node);
-          setContextInfo(getFileTypeEntry(node?.data?.fullPath));
+          setContextInfo(getFileTypeEntry(node?.data?.fullPath, store));
           contextMenuApi.show(e);
         }}
         onMouseDown={(e) => {
@@ -496,7 +497,8 @@ const ExplorerPanel = () => {
       reportUnexpectedMessageType(response.type);
     } else {
       // --- Build the folder tree
-      const projectTree = buildProjectTree(response.contents, lastExpanded);
+      const projectTree = buildProjectTree(response.contents, store, lastExpanded);
+      console.log(projectTree);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
       projectService.setProjectTree(projectTree);

@@ -43,10 +43,8 @@ import {
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
-import { createSettingsReader } from "@common/utils/SettingsReader";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
-const LANGUAGE_SETTINGS = "languages";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 
@@ -989,9 +987,7 @@ async function compileCode(
     return { message: "No build root selected in the current Klive project." };
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
-  const reader = createSettingsReader(context.store);
-  const languageExts = reader.readSetting(LANGUAGE_SETTINGS);
-  const language = getFileTypeEntry(fullPath, languageExts)?.subType;
+  const language = getFileTypeEntry(fullPath, context.store)?.subType;
 
   // --- Compile the build root
   out.color("bright-blue");
