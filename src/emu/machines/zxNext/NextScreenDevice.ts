@@ -5,6 +5,9 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
+  displayTiming: number;
+  userLockOnDisplayTiming: boolean;
+  machineType: number;
   timexScreenMode: number;
   timexColorCombination: number;
 
@@ -21,6 +24,10 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    * Reset the device to its initial state.
    */
   reset(): void {
+    this.displayTiming = 0;
+    this.userLockOnDisplayTiming = false;
+    this.machineType = 0;
+
     // --- Set default color values
     this.borderColor = 7;
     this._flashFlag = false;

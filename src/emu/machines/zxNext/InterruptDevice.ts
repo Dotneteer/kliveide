@@ -41,6 +41,13 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   readonly ctcIntStatus: boolean[] = [];
   readonly enableCtcToIntDma: boolean[] = [];
 
+  busResetRequested: boolean;
+  mfNmiByIoTrap: boolean;
+  mfNmiByNextReg: boolean;
+  divMccNmiBtNextReg: boolean;
+  lastWasHardReset: boolean;
+  lastWasSoftReset: boolean;
+
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -61,9 +68,26 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
       this.ctcIntStatus[i] = false;
       this.enableCtcToIntDma[i] = false;
     }
+    this.busResetRequested = false;
+    this.mfNmiByIoTrap = false;
+    this.mfNmiByNextReg = false;
+    this.divMccNmiBtNextReg = false;
+    this.lastWasHardReset = false;
+    this.lastWasSoftReset = false;
   }
 
   dispose(): void {}
+
+  get nextReg02Value(): number {
+    return (
+      (this.busResetRequested ? 0x80 : 0x00) |
+      (this.mfNmiByIoTrap ? 0x10 : 0x00) |
+      (this.mfNmiByNextReg ? 0x08 : 0x00) |
+      (this.divMccNmiBtNextReg ? 0x04 : 0x00) |
+      (this.lastWasHardReset ? 0x02 : 0x00) |
+      (this.lastWasSoftReset ? 0x01 : 0x00)
+    );
+  }
 
   get nextReg22Value(): number {
     return (

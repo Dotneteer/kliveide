@@ -11,6 +11,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   private _secondLayer2Palette: boolean;
   private _secondUlaPalette: boolean;
   private _enableUlaNextMode: boolean;
+  private _firstWrite: boolean;
 
   ulaFirst: number[] = [];
   ulaSecond: number[] = [];
@@ -28,6 +29,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   reset(): void {
     this._paletteIndex = 0;
+    this._firstWrite = true;
     for (let i = 0; i < 256; i++) {
       let color = (i << 1) | (i & 2 ? 1 : 0);
 
@@ -80,9 +82,19 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   set nextReg40Value(value: number) {
     this._paletteIndex = value & 0xff;
+    this._firstWrite = true;
+  }
+
+  get nextReg41Value(): number {
+    return this.getCurrentPalette()[this._paletteIndex];
   }
 
   set nextReg41Value(value: number) {
+    this.getCurrentPalette()[this._paletteIndex] = value << 1;
+    if (!this._disablePaletteWriteAutoInc) {
+      this._paletteIndex = (this._paletteIndex + 1) & 0xff;
+    }
+    this._firstWrite = true;
   }
 
   get nextReg43Value(): number {
@@ -103,6 +115,31 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this._secondLayer2Palette = (value & 0x04) !== 0;
     this._secondUlaPalette = (value & 0x02) !== 0;
     this._enableUlaNextMode = (value & 0x01) !== 0;
+    this._firstWrite = true;
+  }
+
+  get nextReg44Value(): number {
+    const value = this.getCurrentPalette()[this._paletteIndex];
+    return ((value & 0x300) >> 2) | (value & 0x01);
+  }
+
+  set nextReg44Value(value: number) {
+    const palette = this.getCurrentPalette();
+    if (this._firstWrite) {
+      palette[this._paletteIndex] = (value & 0xff) << 1;
+    } else {
+      palette[this._paletteIndex] = palette[this._paletteIndex] | (value & 0x01);
+      if (!this._disablePaletteWriteAutoInc) {
+        this._paletteIndex = (this._paletteIndex + 1) & 0xff;
+      }
+    }
+    if (palette === this.layer2First || palette === this.layer2Second) {
+      if (value & 0x80) {
+        // --- Sign priority color for Layer 2 palettes
+        palette[this._paletteIndex] |= 0x200;
+      }
+    }
+    this._firstWrite = !this._firstWrite;
   }
 
   get paletteIndex(): number {
@@ -131,6 +168,31 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   get enableUlaNextMode(): boolean {
     return this._enableUlaNextMode;
+  }
+
+  get firstWrite(): boolean {
+    return this._firstWrite;
+  }
+
+  getCurrentPalette(): number[] {
+    switch (this._selectedPalette) {
+      case 0:
+        return this.ulaFirst;
+      case 1:
+        return this.layer2First;
+      case 2:
+        return this.spriteFirst;
+      case 3:
+        return this.tilemapFirst;
+      case 4:
+        return this.ulaSecond;
+      case 5:
+        return this.layer2Second;
+      case 6:
+        return this.spriteSecond;
+      default:
+        return this.tilemapSecond;
+    }
   }
 }
 
@@ -646,7 +708,7 @@ export const zxNext9BitColors: string[] = [
   "#FFFF92",
   "#FFFFB6",
   "#FFFFDB",
-  "#FFFFFF",
+  "#FFFFFF"
 ];
 
 export const zxNext8BitColors: string[] = [
@@ -905,5 +967,5 @@ export const zxNext8BitColors: string[] = [
   "#FFFF00",
   "#FFFF49",
   "#FFFFB6",
-  "#FFFFFF",
+  "#FFFFFF"
 ];

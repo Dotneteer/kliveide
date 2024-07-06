@@ -142,6 +142,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();
+
+    // --- Set default machine type
+    this.nextRegDevice.configMode = false; 
+    this.screenDevice.machineType = 0x03; // ZX Spectrum Next
   }
 
   async setup(): Promise<void> {
