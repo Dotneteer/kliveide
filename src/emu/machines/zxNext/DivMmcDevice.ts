@@ -23,6 +23,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   automapOn0066Delayed: boolean;
   enableAutomap: boolean;
   multifaceType: number;
+  enableDivMmcNmiByDriveButton: boolean;
+  enableMultifaceNmiByM1Button: boolean;
+  resetDivMmcMapramFlag: boolean;
 
   constructor(public readonly machine: IZxNextMachine) {
     for (let i = 0; i < 8; i++) {
@@ -43,6 +46,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       this.rstTraps[i].onlyWithRom3 = false;
       this.rstTraps[i].instantMapping = false;
     }
+    this.enableDivMmcNmiByDriveButton = false;
+    this.enableMultifaceNmiByM1Button = false;
+    this.resetDivMmcMapramFlag = false;
   }
 
   dispose(): void {}
@@ -68,7 +74,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     const mapramBit = (value & 0x40) !== 0;
     if (!this._mapram) {
       this._mapram = mapramBit;
-    } else if (!mapramBit && this.machine.nextRegDevice.r09_ResetDivMmcMapram) {
+    } else if (!mapramBit && this.resetDivMmcMapramFlag) {
       // --- Allow resetting MAPRAM only if the R09 register Bit 3 is set
       this._mapram = false;
     }

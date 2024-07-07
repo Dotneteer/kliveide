@@ -10,6 +10,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   machineType: number;
   timexScreenMode: number;
   timexColorCombination: number;
+  hz60Mode: boolean;
+  scanDoublerEnabled: boolean;
+  scanlineWeight: number;
+  videoTimingMode: number;
+  enableLoresMode: boolean;
+  layerPriority: number;
+
+  activeVideoLine: number;
 
   constructor(
     public readonly machine: IZxNextMachine,
@@ -27,6 +35,13 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.displayTiming = 0;
     this.userLockOnDisplayTiming = false;
     this.machineType = 0;
+    this.hz60Mode = false;
+    this.scanDoublerEnabled = false;
+    this.scanlineWeight = 0;
+    this.videoTimingMode = 0;
+    this.enableLoresMode = false;
+    this.layerPriority = 0;
+    this.activeVideoLine = 0;
 
     // --- Set default color values
     this.borderColor = 7;

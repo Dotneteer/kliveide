@@ -22,6 +22,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   tilemapFirst: number[] = [];
   tilemapSecond: number[] = [];
   ulaNextByteFormat: number;
+  storedPaletteValue: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -30,6 +31,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   reset(): void {
     this._paletteIndex = 0;
     this._secondWrite = false;
+    this.storedPaletteValue = 0;
     for (let i = 0; i < 256; i++) {
       let color = (i << 1) | (i & 2 ? 1 : 0);
 
@@ -90,6 +92,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg41Value(value: number) {
+    this.storedPaletteValue = value & 0xff;
     this.getCurrentPalette()[this._paletteIndex] = value << 1;
     if (!this._disablePaletteWriteAutoInc) {
       this._paletteIndex = (this._paletteIndex + 1) & 0xff;
@@ -124,6 +127,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg44Value(value: number) {
+    this.storedPaletteValue = value & 0xff;
     const palette = this.getCurrentPalette();
     if (!this._secondWrite) {
       palette[this._paletteIndex] = (value & 0xff) << 1;

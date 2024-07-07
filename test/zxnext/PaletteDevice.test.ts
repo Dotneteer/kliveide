@@ -444,4 +444,247 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.secondWrite).toBe(false);
   });
 
+  it("Setting palette control resets second byte flag", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x43, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1c);
+    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(true);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("9-bit palette fill with ULA first", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.ulaFirst[0x1f]).toBe(0x1ff); // Unchanged
+    expect(pal.ulaFirst[0x20]).toBe(0x41);
+    expect(pal.ulaFirst[0x21]).toBe(0x43);
+    expect(pal.ulaFirst[0x22]).toBe(0x45);
+    expect(pal.ulaFirst[0x23]).toBe(0x47);
+    expect(pal.ulaFirst[0x24]).toBe(0x28); // Unchanged
+  });
+
+  it("9-bit palette fill with ULA second", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x40)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.ulaSecond[0x1f]).toBe(0x1ff); // Unchanged
+    expect(pal.ulaSecond[0x20]).toBe(0x41);
+    expect(pal.ulaSecond[0x21]).toBe(0x43);
+    expect(pal.ulaSecond[0x22]).toBe(0x45);
+    expect(pal.ulaSecond[0x23]).toBe(0x47);
+    expect(pal.ulaSecond[0x24]).toBe(0x28); // Unchanged
+  });
+
+  it("9-bit palette fill with Layer2 first", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x10)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.layer2First[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.layer2First[0x20]).toBe(0x41);
+    expect(pal.layer2First[0x21]).toBe(0x43);
+    expect(pal.layer2First[0x22]).toBe(0x245);
+    expect(pal.layer2First[0x23]).toBe(0x47);
+    expect(pal.layer2First[0x24]).toBe(0x48); // Unchanged
+  });
+
+  it("9-bit palette fill with Layer2 second", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x50)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.layer2Second[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.layer2Second[0x20]).toBe(0x41);
+    expect(pal.layer2Second[0x21]).toBe(0x43);
+    expect(pal.layer2Second[0x22]).toBe(0x245);
+    expect(pal.layer2Second[0x23]).toBe(0x47);
+    expect(pal.layer2Second[0x24]).toBe(0x48); // Unchanged
+  });
+
+  it("9-bit palette fill with sprite first", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x20)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.spriteFirst[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.spriteFirst[0x20]).toBe(0x41);
+    expect(pal.spriteFirst[0x21]).toBe(0x43);
+    expect(pal.spriteFirst[0x22]).toBe(0x45);
+    expect(pal.spriteFirst[0x23]).toBe(0x47);
+    expect(pal.spriteFirst[0x24]).toBe(0x48); // Unchanged
+  });
+
+  it("9-bit palette fill with sprite second", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x60)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.spriteSecond[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.spriteSecond[0x20]).toBe(0x41);
+    expect(pal.spriteSecond[0x21]).toBe(0x43);
+    expect(pal.spriteSecond[0x22]).toBe(0x45);
+    expect(pal.spriteSecond[0x23]).toBe(0x47);
+    expect(pal.spriteSecond[0x24]).toBe(0x48); // Unchanged
+  });
+
+  it("9-bit palette fill with tilemap first", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x30)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.tilemapFirst[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.tilemapFirst[0x20]).toBe(0x41);
+    expect(pal.tilemapFirst[0x21]).toBe(0x43);
+    expect(pal.tilemapFirst[0x22]).toBe(0x45);
+    expect(pal.tilemapFirst[0x23]).toBe(0x47);
+    expect(pal.tilemapFirst[0x24]).toBe(0x48); // Unchanged
+  });
+
+  it("9-bit palette fill with tilemap second", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x70)
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x21);
+    nrDevice.directSetRegValue(0x44, 0x01);
+    nrDevice.directSetRegValue(0x44, 0x22);
+    nrDevice.directSetRegValue(0x44, 0x81);
+    nrDevice.directSetRegValue(0x44, 0x23);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x24);
+    expect(pal.tilemapSecond[0x1f]).toBe(0x3f); // Unchanged
+    expect(pal.tilemapSecond[0x20]).toBe(0x41);
+    expect(pal.tilemapSecond[0x21]).toBe(0x43);
+    expect(pal.tilemapSecond[0x22]).toBe(0x45);
+    expect(pal.tilemapSecond[0x23]).toBe(0x47);
+    expect(pal.tilemapSecond[0x24]).toBe(0x48); // Unchanged
+  });
 });

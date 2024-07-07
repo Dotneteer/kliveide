@@ -19,7 +19,7 @@ import { NextRegDevice } from "./NextRegDevice";
 import { Layer2Device } from "./Layer2Device";
 import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
-import { SpriteDevice } from "./sprites/SpriteDevice";
+import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
@@ -28,6 +28,9 @@ import { DivMmcDevice } from "./DivMmcDevice";
 import { NextScreenDevice } from "./NextScreenDevice";
 import { MouseDevice } from "./MouseDevice";
 import { InterruptDevice } from "./InterruptDevice";
+import { JoystickDevice } from "./JoystickDevice";
+import { NextSoundDevice } from "./NextSoundDevice";
+import { UlaDevice } from "./UlaDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -71,6 +74,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   screenDevice: NextScreenDevice;
 
   mouseDevice: MouseDevice;
+
+  joystickDevice: JoystickDevice;
+
+  soundDevice: NextSoundDevice;
+
+  ulaDevice: UlaDevice;
 
   /**
    * Represents the beeper device of ZX Spectrum 48K
@@ -121,6 +130,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
+    this.joystickDevice = new JoystickDevice(this);
+    this.soundDevice = new NextSoundDevice(this);
+    this.ulaDevice = new UlaDevice(this);
     this.hardReset();
   }
 
@@ -138,6 +150,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.keyboardDevice.reset();
     this.screenDevice.reset();
     this.mouseDevice.reset();
+    this.joystickDevice.reset();
+    this.soundDevice.reset();
+    this.ulaDevice.reset();
     this.beeperDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices

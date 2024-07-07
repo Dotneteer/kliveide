@@ -3,14 +3,17 @@ import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { InterruptDevice } from "@emu/machines/zxNext/InterruptDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
+import { JoystickDevice } from "@emu/machines/zxNext/JoystickDevice";
 import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
 import { MouseDevice } from "@emu/machines/zxNext/MouseDevice";
 import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
 import { NextScreenDevice } from "@emu/machines/zxNext/NextScreenDevice";
+import { NextSoundDevice } from "@emu/machines/zxNext/NextSoundDevice";
 import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
-import { SpriteDevice } from "@emu/machines/zxNext/sprites/SpriteDevice";
+import { SpriteDevice } from "@emu/machines/zxNext/SpriteDevice";
 import { TilemapDevice } from "@emu/machines/zxNext/TilemapDevice";
+import { UlaDevice } from "@emu/machines/zxNext/UlaDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
@@ -48,6 +51,12 @@ export interface IZxNextMachine extends IZ80Machine {
   screenDevice: NextScreenDevice
 
   mouseDevice: MouseDevice;
+
+  joystickDevice: JoystickDevice;
+
+  soundDevice: NextSoundDevice;
+
+  ulaDevice: UlaDevice;
 
   /**
    * Reads the screen memory byte
