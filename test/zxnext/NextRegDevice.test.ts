@@ -1169,7 +1169,7 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x5a);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $40 write #2", async () => {
@@ -1224,7 +1224,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #1", async () => {
@@ -1244,7 +1244,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #2", async () => {
@@ -1264,7 +1264,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #3", async () => {
@@ -1284,7 +1284,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #4", async () => {
@@ -1304,7 +1304,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #5", async () => {
@@ -1324,7 +1324,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #6", async () => {
@@ -1344,7 +1344,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #7", async () => {
@@ -1364,7 +1364,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 selectedPalette #8", async () => {
@@ -1384,7 +1384,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 secondSpritePalette", async () => {
@@ -1403,7 +1403,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 secondLayer2Palette", async () => {
@@ -1422,7 +1422,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(true);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 secondUlaPalette", async () => {
@@ -1441,7 +1441,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(true);
     expect(pal.enableUlaNextMode).toBe(false);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $43 enableUlaNextMode", async () => {
@@ -1460,7 +1460,7 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondLayer2Palette).toBe(false);
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(true);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Reg $70 resolution #1", async () => {

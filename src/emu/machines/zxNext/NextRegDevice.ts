@@ -140,7 +140,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x03,
       description: "Machine Type",
       readFn: () =>
-        (machine.paletteDevice.firstWrite ? 0x00 : 0x80) |
+        (machine.paletteDevice.secondWrite ? 0x80 : 0x00) |
         (machine.screenDevice.displayTiming << 4) |
         (machine.screenDevice.userLockOnDisplayTiming ? 0x08 : 0x00) |
         machine.screenDevice.machineType,

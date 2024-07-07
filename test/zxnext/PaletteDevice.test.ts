@@ -9,7 +9,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0);
-    expect(pal.firstWrite).toBe(true);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("Palette index is set", async () => {
@@ -32,7 +32,7 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
     nrDevice.directSetRegValue(0x40, 0x1b);
     nrDevice.directSetRegValue(0x41, 0x30);
-    const firstWriteBefore = pal.firstWrite;
+    const secondWriteBefore = pal.secondWrite;
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x1c);
@@ -40,8 +40,8 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1c);
-    expect(firstWriteBefore).toBe(true);
-    expect(pal.firstWrite).toBe(true);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
   });
 
   it("8-bit palette fill with ULA first", async () => {
@@ -243,4 +243,205 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.tilemapSecond[0x23]).toBe(0x46);
     expect(pal.tilemapSecond[0x24]).toBe(0x48); // Unchanged
   });
+
+  it("Setting LSB of 9-bit palette value", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1c);
+    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(true);
+  });
+
+  it("Setting 8-bit palette value resets second byte flag", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x41, 0x20);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit palette value #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x00);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit palette value #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.ulaFirst[0x1c]).toBe(0x41);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit palette value #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x80);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit palette value #4", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x00)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x81);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.ulaFirst[0x1c]).toBe(0x41);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit Layer 2 palette value #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x10)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x00);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.layer2First[0x1c]).toBe(0x40);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit Layer 2 palette value #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x10)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x01);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.layer2First[0x1c]).toBe(0x41);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit Layer 2 palette value #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x10)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x80);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.layer2First[0x1c]).toBe(0x240);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Setting LSB and MSB of 9-bit Layer 2 palette value #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const nrDevice = m.nextRegDevice;
+    const pal = m.paletteDevice;
+    nrDevice.directSetRegValue(0x43, 0x10)
+    const secondWriteBefore = pal.secondWrite;
+
+    // --- Act
+    nrDevice.directSetRegValue(0x40, 0x1c);
+    nrDevice.directSetRegValue(0x44, 0x20);
+    nrDevice.directSetRegValue(0x44, 0x81);
+
+    // --- Assert
+    expect(pal.paletteIndex).toBe(0x1d);
+    expect(pal.layer2First[0x1c]).toBe(0x241);
+    expect(secondWriteBefore).toBe(false);
+    expect(pal.secondWrite).toBe(false);
+  });
+
 });
