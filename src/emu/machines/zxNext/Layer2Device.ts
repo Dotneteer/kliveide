@@ -22,8 +22,7 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
   resolution: Layer2Resolution;
   paletteOffset: number;
 
-  scrollXLsb: number;
-  scrollXMsb: number;
+  scrollX: number;
   scrollY: number;
 
   clipWindowX1: number;
@@ -48,8 +47,7 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
     this.shadowRamBank = 11;
     this.resolution = Layer2Resolution.R256x192x8;
     this.paletteOffset = 0;
-    this.scrollXLsb = 0;
-    this.scrollXMsb = 0;
+    this.scrollX = 0;
     this.scrollY = 0;
 
     this.clipWindowX1 = 0;

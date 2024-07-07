@@ -61,6 +61,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- Reg $29 state
   ps2KeymapAddressLsb: number;
 
+  // --- Reg $2a state
+  ps2KeymapDataMsb: boolean;
+
+  // --- Reg $2b state
+  ps2KeymapDataLsb: number;
+
   /**
    * Initialize the floating port device and assign it to its host machine.
    * @param machine The machine hosting this device
@@ -753,8 +759,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x16,
       description: "Layer2 X Scroll LSB",
-      readFn: () => machine.layer2Device.scrollXLsb,
-      writeFn: (v) => (machine.layer2Device.scrollXLsb = v & 0xff)
+      readFn: () => machine.layer2Device.scrollX & 0xff,
+      writeFn: (v) =>
+        (machine.layer2Device.scrollX = (machine.layer2Device.scrollX & 0x100) | (v & 0xff))
     });
     r({
       id: 0x17,
@@ -936,7 +943,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2a,
       description: "PS/2 Keymap Data MSB",
-      writeFn: this.writePs2KeymapDataMsb,
+      readFn: () => (this.ps2KeymapDataMsb ? 0x01 : 0x00),
+      writeFn: (v) => (this.ps2KeymapDataMsb = !!(v & 0x01)),
       slices: [
         {
           mask: 0x01,
@@ -947,7 +955,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2b,
       description: "PS/2 Keymap Data LSB",
-      writeFn: this.writePs2KeymapDataLsb
+      readFn: () => this.ps2KeymapDataLsb,
+      writeFn: (v) => (this.ps2KeymapDataLsb = v & 0xff)
     });
     r({
       id: 0x2c,
@@ -967,7 +976,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2f,
       description: "Tilemap X Scroll MSB",
-      writeFn: this.writeTilemapXScrollMsb,
+      readFn: () => (machine.tilemapDevice.scrollX & 0x300) >> 8,
+      writeFn: (v) =>
+        (machine.tilemapDevice.scrollX =
+          ((v & 0x03) << 8) | (machine.tilemapDevice.scrollX & 0xff)),
       slices: [
         {
           mask: 0x03,
@@ -978,22 +990,28 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x30,
       description: "Tilemap X Scroll LSB",
-      writeFn: this.writeTilemapXScrollLsb
+      readFn: () => machine.tilemapDevice.scrollX & 0xff,
+      writeFn: (v) => {
+        machine.tilemapDevice.scrollX = (machine.tilemapDevice.scrollX & 0x300) | (v & 0xff);
+      }
     });
     r({
       id: 0x31,
       description: "Tilemap Offset Y",
-      writeFn: this.writeTilemapOffsetY
+      readFn: () => machine.tilemapDevice.scrollY,
+      writeFn: v => (machine.tilemapDevice.scrollY = v & 0xff)
     });
     r({
       id: 0x32,
       description: "LoRes X Scroll",
-      writeFn: this.writeLoResXScroll
+      readFn: () => machine.ulaDevice.loResScrollX,
+      writeFn: v => machine.ulaDevice.loResScrollX = v & 0xff
     });
     r({
       id: 0x33,
       description: "LoRes Y Scroll",
-      writeFn: this.writeLoResYScroll
+      readFn: () => machine.ulaDevice.loResScrollY,
+      writeFn: v => machine.ulaDevice.loResScrollY = v & 0xff
     });
     r({
       id: 0x34,
@@ -1454,8 +1472,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x71,
       description: "Layer 2 X Scroll MSB",
-      readFn: () => machine.layer2Device.scrollXMsb,
-      writeFn: (v) => (machine.layer2Device.scrollXMsb = v & 0x01),
+      readFn: () => (machine.layer2Device.scrollX & 0x100) >> 8,
+      writeFn: (v) =>
+        (machine.layer2Device.scrollX = ((v & 0x01) << 8) | (machine.layer2Device.scrollX & 0xff)),
       slices: [
         {
           mask: 0x01,
@@ -2540,13 +2559,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xc2,
       description: "NMI Return Address LSB",
-      readFn: () => this.machine.interruptDevice.nmiReturnAddressLsb,
+      readFn: () => this.machine.interruptDevice.nmiReturnAddress & 0xff,
       writeFn: (v) => (machine.interruptDevice.nextRegC2Value = v & 0xff)
     });
     r({
       id: 0xc3,
       description: "NMI Return Address MSB",
-      readFn: () => this.machine.interruptDevice.nmiReturnAddressMsb,
+      readFn: () => this.machine.interruptDevice.nmiReturnAddress >> 8,
       writeFn: (v) => (machine.interruptDevice.nextRegC3Value = v & 0xff)
     });
     r({
@@ -2983,6 +3002,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.hotkey50_60HzEnabled = true;
     this.ps2KeymapAddressLsb = 0x00;
     this.ps2KeymapAddressMsb = false;
+    this.ps2KeymapDataLsb = 0x00;
+    this.ps2KeymapDataMsb = false;
 
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
@@ -3018,6 +3039,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.lastReadValue = 0xff;
     this.ps2KeymapAddressLsb = 0x00;
     this.ps2KeymapAddressMsb = false;
+    this.ps2KeymapDataLsb = 0x00;
+    this.ps2KeymapDataMsb = false;
 
     // --- We assume fast boot
     this.directSetRegValue(0x02, 0x00); // --- Generate DivMMC interrupt & hard reset
@@ -3104,41 +3127,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.regs[id] = { id, description, readFn, writeFn };
   }
 
-  private writeActiveVideoLineMsb(value: number): void {}
-
-  private writeActiveVideoLineLsb(value: number): void {}
-
   private writeGenerateMaskableInterrupt(value: number): void {}
 
   private writeReserved0x24(value: number): void {}
-
-  private writeUlaXScroll(value: number): void {}
-
-  private writeUlaYScroll(value: number): void {}
-
-  private writePs2KeymapAddressMsb(value: number): void {}
-
-  private writePs2KeymapAddressLsb(value: number): void {}
-
-  private writePs2KeymapDataMsb(value: number): void {}
-
-  private writePs2KeymapDataLsb(value: number): void {}
 
   private writeDacBMirrorLeft(value: number): void {}
 
   private writeDacAandDMirrorMono(value: number): void {}
 
   private writeDacCMirrorRight(value: number): void {}
-
-  private writeTilemapXScrollMsb(value: number): void {}
-
-  private writeTilemapXScrollLsb(value: number): void {}
-
-  private writeTilemapOffsetY(value: number): void {}
-
-  private writeLoResXScroll(value: number): void {}
-
-  private writeLoResYScroll(value: number): void {}
 
   private writeSpriteNumber(value: number): void {}
 

@@ -5,13 +5,11 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   private _intSignalActive: boolean;
   private _ulaInterruptDisabled: boolean;
   private _lineInterruptEnabled: boolean;
-  private _lineInterruptMsb: number;
-  private _lineInterruptLsb: number;
+  private _lineInterrupt: number;
   private _im2TopBits: number;
   private _enableStacklessNmi: boolean;
   private _hwIm2Mode: boolean;
-  private _nmiReturnAddressLsb: number;
-  private _nmiReturnAddressMsb: number;
+  private _nmiReturnAddress: number;
   private _expBusIntSignalActive: boolean;
   private _uart0TxEmpty: boolean;
   private _uart0RxNearFull: boolean;
@@ -56,13 +54,11 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this._intSignalActive = false;
     this._ulaInterruptDisabled = false;
     this._lineInterruptEnabled = false;
-    this._lineInterruptMsb = 0x00;
-    this._lineInterruptLsb = 0x00;
+    this._lineInterrupt = 0x00;
     this._im2TopBits = 0x00;
     this._enableStacklessNmi = false;
     this._hwIm2Mode = false;
-    this._nmiReturnAddressLsb = 0x00;
-    this._nmiReturnAddressMsb = 0x00;
+    this._nmiReturnAddress = 0x00;
     for (let i = 0; i < 8; i++) {
       this.ctcIntEnabled[i] = false;
       this.ctcIntStatus[i] = false;
@@ -94,7 +90,7 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
       (this._intSignalActive ? 0x80 : 0x00) |
       (this._ulaInterruptDisabled ? 0x04 : 0x00) |
       (this._lineInterruptEnabled ? 0x02 : 0x00) |
-      (this._lineInterruptMsb ? 0x01 : 0x00)
+      ((this._lineInterrupt & 0x100) ? 0x01 : 0x00)
     );
   }
 
@@ -102,15 +98,15 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this._intSignalActive = (value & 0x80) !== 0;
     this._ulaInterruptDisabled = (value & 0x04) !== 0;
     this._lineInterruptEnabled = (value & 0x02) !== 0;
-    this._lineInterruptMsb = value & 0x01 ? 0x100 : 0x00;
+    this._lineInterrupt = ((value & 0x01) << 8) | (this._lineInterrupt & 0xff);
   }
 
   get nextReg23Value(): number {
-    return this._lineInterruptLsb;
+    return this._lineInterrupt & 0xff;
   }
 
   set nextReg23Value(value: number) {
-    this._lineInterruptLsb = value;
+    this._lineInterrupt = (this._lineInterrupt & 0x100) | (value & 0xff);
   }
 
   get nextRegC0Value(): number {
@@ -129,11 +125,11 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextRegC2Value(value: number) {
-    this._nmiReturnAddressLsb = value;
+    this._nmiReturnAddress = (this._nmiReturnAddress & 0xff00) | value;
   }
 
   set nextRegC3Value(value: number) {
-    this._nmiReturnAddressMsb = value;
+    this._nmiReturnAddress = ((value & 0xff) << 8) | (this._nmiReturnAddress & 0xff);
   }
 
   get nextRegC4Value(): number {
@@ -349,12 +345,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     return this._lineInterruptEnabled;
   }
 
-  get lineInterruptMsb(): number {
-    return this._lineInterruptMsb;
-  }
-
-  get lineInterruptLsb(): number {
-    return this._lineInterruptLsb;
+  get lineInterrupt(): number {
+    return this._lineInterrupt;
   }
 
   get im2TopBits(): number {
@@ -373,12 +365,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     return this._hwIm2Mode;
   }
 
-  get nmiReturnAddressLsb(): number {
-    return this._nmiReturnAddressLsb;
-  }
-
-  get nmiReturnAddressMsb(): number {
-    return this._nmiReturnAddressMsb;
+  get nmiReturnAddress(): number {
+    return this._nmiReturnAddress;
   }
 
   get expBusIntSignalActive(): boolean {
