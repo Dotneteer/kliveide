@@ -44,6 +44,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   lockRom1: boolean;
   lockRom0: boolean;
   reg8CLowNibble: number;
+  configRomRamBank: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
 
@@ -104,6 +105,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.lockRom1 = false;
     this.lockRom0 = false;
     this.reg8CLowNibble = 0;
+    this.configRomRamBank = 0;
 
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
@@ -208,11 +210,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (layer2Device.enableMappingForWrites && layer2Size === 0xc000 && address < layer2Size) {
       const offset = this.getLayer2MemoryOffset();
       this.memory[offset + address] = data;
-      return;
-    }
-
-    // --- Check ROM is being written
-    if (address < 0x4000 && !this.allRamMode) {
       return;
     }
 

@@ -4,7 +4,8 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 export enum Layer2Resolution {
   R256x192x8 = 0,
   R320x256x8 = 1,
-  R640x256x4 = 2
+  R640x256x4 = 2,
+  OTHER = 3
 }
 
 export class Layer2Device implements IGenericDevice<IZxNextMachine> {
@@ -17,10 +18,11 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
 
   activeRamBank: number;
   shadowRamBank: number;
+  transparencyColor: number;
   resolution: Layer2Resolution;
+  paletteOffset: number;
 
-  scrollXLsb: number;
-  scrollXMsb: number;
+  scrollX: number;
   scrollY: number;
 
   clipWindowX1: number;
@@ -44,14 +46,14 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
     this.activeRamBank = 8;
     this.shadowRamBank = 11;
     this.resolution = Layer2Resolution.R256x192x8;
-    this.scrollXLsb = 0;
-    this.scrollXMsb = 0;
+    this.paletteOffset = 0;
+    this.scrollX = 0;
     this.scrollY = 0;
 
     this.clipWindowX1 = 0;
-    this.clipWindowX2 = 255;
+    this.clipWindowX2 = 159;
     this.clipWindowY1 = 0;
-    this.clipWindowY2 = 191;
+    this.clipWindowY2 = 255;
     this.clipIndex = 0;
   }
 
@@ -79,5 +81,57 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
     this.enableMappingForReads = (value & 0x04) !== 0;
     this.visible = (value & 0x02) !== 0;
     this.enableMappingForWrites = (value & 0x01) !== 0;
+  }
+
+  /**
+   * Gets the clip window coordinate according to the current clip index
+   */
+  get nextReg18Value(): number {
+    switch (this.clipIndex) {
+      case 0:
+        return this.clipWindowX1;
+      case 1:
+        return this.clipWindowX2;
+      case 2:
+        return this.clipWindowY1;
+      default:
+        return this.clipWindowY2;
+    }
+  }
+
+  /**
+   * Sets the clip window cordinate according to the current clip index
+   */
+  set nextReg18Value(value: number) {
+    switch (this.clipIndex) {
+      case 0:
+        this.clipWindowX1 = value;
+        break;
+      case 1:
+        this.clipWindowX2 = value;
+        break;
+      case 2:
+        this.clipWindowY1 = value;
+        break;
+      default:
+        this.clipWindowY2 = value;
+        break;
+    }
+    this.clipIndex = (this.clipIndex + 1) & 0x03;
+  }
+
+  /**
+   * Gets the value of Reg 0x70
+   */
+  get nextReg70Value(): number {
+    return (this.resolution << 4) | this.paletteOffset;
+  }
+
+  /**
+   * Sets the value of Reg 0x70
+   */
+  set nextReg70Value(value: number) {
+    this.resolution = (value & 0x30) >> 4;
+    this.paletteOffset = value & 0x0f;
   }
 }

@@ -1,27 +1,34 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
+export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
+  spriteIdLockstep: boolean;
+  sprite0OnTop: boolean;
+  enableSprites: boolean;
+  enableSpriteClipping: boolean;
+  enableSpritesOverBorder: boolean;
+
   clipWindowX1: number;
   clipWindowX2: number;
   clipWindowY1: number;
   clipWindowY2: number;
   clipIndex: number;
-  scrollX: number;
-  scrollY: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
 
   reset(): void {
+    this.spriteIdLockstep = false;
+    this.sprite0OnTop = false;
+    this.enableSpriteClipping = false;
+    this.enableSprites = false;
+    this.enableSpritesOverBorder = false;
     this.clipIndex = 0;
     this.clipWindowX1 = 0;
-    this.clipWindowX2 = 159;
+    this.clipWindowX2 = 255;
     this.clipWindowY1 = 0;
-    this.clipWindowY2 = 255;
-    this.scrollX = 0;
-    this.scrollY = 0;
+    this.clipWindowY2 = 191;
   }
 
   dispose(): void {}
@@ -29,7 +36,7 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Gets the clip window coordinate according to the current clip index
    */
-  get nextReg1bValue(): number {
+  get nextReg19Value(): number {
     switch (this.clipIndex) {
       case 0:
         return this.clipWindowX1;
@@ -45,7 +52,7 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Sets the clip window cordinate according to the current clip index
    */
-  set nextReg1bValue(value: number) {
+  set nextReg19Value(value: number) {
     switch (this.clipIndex) {
       case 0:
         this.clipWindowX1 = value;
