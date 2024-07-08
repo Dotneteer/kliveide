@@ -9,6 +9,7 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
   clipIndex: number;
   scrollX: number;
   scrollY: number;
+  transparencyIndex: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -22,6 +23,7 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowY2 = 255;
     this.scrollX = 0;
     this.scrollY = 0;
+    this.transparencyIndex = 0x0f;
   }
 
   dispose(): void {}

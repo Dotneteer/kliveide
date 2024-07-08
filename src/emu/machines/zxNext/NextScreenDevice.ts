@@ -19,6 +19,8 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
 
   activeVideoLine: number;
 
+  fallbackColor: number;
+
   constructor(
     public readonly machine: IZxNextMachine,
     configuration: ScreenConfiguration
@@ -42,6 +44,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.enableLoresMode = false;
     this.layerPriority = 0;
     this.activeVideoLine = 0;
+    this.fallbackColor = 0xe3;
 
     // --- Set default color values
     this.borderColor = 7;

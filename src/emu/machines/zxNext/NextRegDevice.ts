@@ -29,7 +29,7 @@ export type NextRegValueSlice = {
   view?: "flag" | "number";
 };
 
-const writeOnlyRegs: number[] = [0x04, 0xc7, 0xcb, 0xcf];
+const writeOnlyRegs: number[] = [0x04, 0x60, 0x63, 0xc7, 0xcb, 0xcf];
 
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regs: NextRegInfo[] = [];
@@ -999,19 +999,19 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x31,
       description: "Tilemap Offset Y",
       readFn: () => machine.tilemapDevice.scrollY,
-      writeFn: v => (machine.tilemapDevice.scrollY = v & 0xff)
+      writeFn: (v) => (machine.tilemapDevice.scrollY = v & 0xff)
     });
     r({
       id: 0x32,
       description: "LoRes X Scroll",
       readFn: () => machine.ulaDevice.loResScrollX,
-      writeFn: v => machine.ulaDevice.loResScrollX = v & 0xff
+      writeFn: (v) => (machine.ulaDevice.loResScrollX = v & 0xff)
     });
     r({
       id: 0x33,
       description: "LoRes Y Scroll",
       readFn: () => machine.ulaDevice.loResScrollY,
-      writeFn: v => machine.ulaDevice.loResScrollY = v & 0xff
+      writeFn: (v) => (machine.ulaDevice.loResScrollY = v & 0xff)
     });
     r({
       id: 0x34,
@@ -1149,17 +1149,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x4a,
       description: "Fallback Colour",
-      writeFn: this.writeFallbackColour
+      writeFn: (v) => (machine.screenDevice.fallbackColor = v & 0xff)
     });
     r({
       id: 0x4b,
       description: "Sprite Transparency Index",
-      writeFn: this.writeSpriteTransparencyIndex
+      writeFn: (v) => (machine.spriteDevice.transparencyIndex = v & 0xff)
     });
     r({
       id: 0x4c,
       description: "Tilemap Transparency Index",
-      writeFn: this.writeTilemapTransparencyIndex
+      writeFn: (v) => (machine.tilemapDevice.transparencyIndex = v & 0xff)
     });
     r({
       id: 0x50,
@@ -1204,17 +1204,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x60,
       description: "Copper Data 8-bit Write",
-      writeFn: this.writeCopperData8BitWrite
+      writeFn: (v) => (machine.copperDevice.nextReg60Value = v & 0xff)
     });
     r({
       id: 0x61,
       description: "Copper Address LSB",
-      writeFn: this.writeCopperAddressLsb
+      writeFn: v => (machine.copperDevice.nextReg61Value = v & 0xff)
     });
     r({
       id: 0x62,
       description: "Copper Control",
-      writeFn: this.writeCopperControl,
+      readFn: () => machine.copperDevice.nextReg62Value,
+      writeFn: (v) => (machine.copperDevice.nextReg62Value = v & 0xff),
       slices: [
         {
           mask: 0xc0,
@@ -1236,12 +1237,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x63,
       description: "Copper Data 16-bit Write",
-      writeFn: this.writeCopperData16BitWrite
+      writeFn: v => machine.copperDevice.nextReg63Value = v & 0xff
     });
     r({
       id: 0x64,
       description: "Vertical Line Count Offset",
-      writeFn: this.writeVerticalLineCountOffset
+      writeFn: v => machine.copperDevice.verticalLineOffset = v & 0xff
     });
     r({
       id: 0x68,
@@ -3159,21 +3160,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   private writeSpriteAttribute4AutoInc(value: number): void {}
 
-  private writeFallbackColour(value: number): void {}
-
-  private writeSpriteTransparencyIndex(value: number): void {}
-
-  private writeTilemapTransparencyIndex(value: number): void {}
-
-  private writeCopperData8BitWrite(value: number): void {}
-
   private writeCopperAddressLsb(value: number): void {}
-
-  private writeCopperControl(value: number): void {}
-
-  private writeCopperData16BitWrite(value: number): void {}
-
-  private writeVerticalLineCountOffset(value: number): void {}
 
   private writeUlaControl(value: number): void {}
 

@@ -14,6 +14,8 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   clipWindowY2: number;
   clipIndex: number;
 
+  transparencyIndex: number;
+
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -29,6 +31,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowX2 = 255;
     this.clipWindowY1 = 0;
     this.clipWindowY2 = 191;
+    this.transparencyIndex = 0xe3;
   }
 
   dispose(): void {}

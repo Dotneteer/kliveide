@@ -83,10 +83,10 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x55)).toBe(0x05);
     expect(d.directGetRegValue(0x56)).toBe(0x00);
     expect(d.directGetRegValue(0x57)).toBe(0x01);
-    expect(d.directGetRegValue(0x60)).toBe(0xff);
+    expect(d.directGetRegValue(0x60)).toBe(0x01);
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
-    expect(d.directGetRegValue(0x63)).toBe(0xff);
+    expect(d.directGetRegValue(0x63)).toBe(0x00);
     expect(d.directGetRegValue(0x64)).toBe(0xff);
     expect(d.directGetRegValue(0x68)).toBe(0xff);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
@@ -235,10 +235,10 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x55)).toBe(0x05);
     expect(d.directGetRegValue(0x56)).toBe(0x00);
     expect(d.directGetRegValue(0x57)).toBe(0x01);
-    expect(d.directGetRegValue(0x60)).toBe(0xff);
+    expect(d.directGetRegValue(0x60)).toBe(0x01);
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
-    expect(d.directGetRegValue(0x63)).toBe(0xff);
+    expect(d.directGetRegValue(0x63)).toBe(0x00);
     expect(d.directGetRegValue(0x64)).toBe(0xff);
     expect(d.directGetRegValue(0x68)).toBe(0xff);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
@@ -2834,6 +2834,352 @@ describe("Next - NextRegDevice", function () {
     expect(pal.secondUlaPalette).toBe(false);
     expect(pal.enableUlaNextMode).toBe(true);
     expect(pal.secondWrite).toBe(false);
+  });
+
+  it("Reg $4a write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+
+    // --- Act
+    writeNextReg(m, 0x4a, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0x4a)).toBe(0xa5);
+    expect(m.screenDevice.fallbackColor).toBe(0xa5);
+  });
+
+  it("Reg $4b write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+
+    // --- Act
+    writeNextReg(m, 0x4b, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0x4b)).toBe(0xa5);
+    expect(m.spriteDevice.transparencyIndex).toBe(0xa5);
+  });
+
+  it("Reg $4c write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+
+    // --- Act
+    writeNextReg(m, 0x4c, 0xa5);
+
+    // --- Assert
+    expect(readNextReg(m, 0x4c)).toBe(0xa5);
+    expect(m.tilemapDevice.transparencyIndex).toBe(0xa5);
+  });
+
+  it("Reg $60 first write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x000);
+
+    // --- Act
+    writeNextReg(m, 0x60, 0xaa);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x001);
+  });
+
+  it("Reg $60 second write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x000);
+    writeNextReg(m, 0x60, 0xaa);
+
+    // --- Act
+    writeNextReg(m, 0x60, 0x55);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0x55);
+    expect(m.copperDevice.instructionAddress).toBe(0x002);
+  });
+
+  it("Reg $60 address after first write gets to zero", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x7ff);
+
+    // --- Act
+    writeNextReg(m, 0x60, 0xaa);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x7ff)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x000)).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x000);
+  });
+
+  it("Reg $60 address after second write gets to zero", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x7fe);
+    writeNextReg(m, 0x60, 0xaa);
+
+    // --- Act
+    writeNextReg(m, 0x60, 0x55);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x7fe)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x7ff)).toBe(0x55);
+    expect(m.copperDevice.instructionAddress).toBe(0x000);
+  });
+
+  it("Reg $61 write #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    writeNextReg(m, 0x62, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x61, 0xbe);
+
+    // --- Assert
+    expect(readNextReg(m, 0x61)).toBe(0xbe);
+    expect(m.copperDevice.instructionAddress).toBe(0xbe);
+  });
+
+  it("Reg $61 write #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    writeNextReg(m, 0x62, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x61, 0xbe);
+
+    // --- Assert
+    expect(readNextReg(m, 0x61)).toBe(0xbe);
+    expect(m.copperDevice.instructionAddress).toBe(0x4be);
+  });
+
+  it("Reg $62 startMode #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x00);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x00);
+    expect(m.copperDevice.startMode).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x0000);
+  });
+
+  it("Reg $62 startMode #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x40);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x40);
+    expect(m.copperDevice.startMode).toBe(0x01);
+    expect(m.copperDevice.instructionAddress).toBe(0x0000);
+  });
+
+  it("Reg $62 startMode #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x80);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x80);
+    expect(m.copperDevice.startMode).toBe(0x02);
+    expect(m.copperDevice.instructionAddress).toBe(0x0000);
+  });
+
+  it("Reg $62 startMode #4", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0xc0);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0xc0);
+    expect(m.copperDevice.startMode).toBe(0x03);
+    expect(m.copperDevice.instructionAddress).toBe(0x0000);
+  });
+
+  it("Reg $62 address MSB #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x00);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x00);
+    expect(m.copperDevice.startMode).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x0000);
+  });
+
+  it("Reg $62 address MSB #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x01);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x01);
+    expect(m.copperDevice.startMode).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x0100);
+  });
+
+  it("Reg $62 address MSB #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x06);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x06);
+    expect(m.copperDevice.startMode).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x0600);
+  });
+
+  it("Reg $62 address MSB #4", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+
+    // --- Act
+    writeNextReg(m, 0x62, 0x07);
+
+    // --- Assert
+    expect(readNextReg(m, 0x62)).toBe(0x07);
+    expect(m.copperDevice.startMode).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x0700);
+  });
+
+  it("Reg $63 first even write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x000);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0xaa);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0x00);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x001);
+  });
+
+  it("Reg $63 first even write, second odd write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x000);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0xaa);
+    writeNextReg(m, 0x63, 0x55);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0x55);
+    expect(m.copperDevice.instructionAddress).toBe(0x002);
+  });
+
+  it("Reg $63 first odd write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x001);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0xaa);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0x00);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0xaa);
+    expect(m.copperDevice.instructionAddress).toBe(0x002);
+  });
+
+  it("Reg $63 first odd write, second even", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x001);
+    writeNextReg(m, 0x63, 0xaa);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0x55);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0x00);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x002)).toBe(0x00);
+    expect(m.copperDevice.instructionAddress).toBe(0x003);
+  });
+
+  it("Reg $63 first odd write, second even, third odd", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x001);
+    writeNextReg(m, 0x63, 0xaa);
+    writeNextReg(m, 0x63, 0x55);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0x23);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x000)).toBe(0x00);
+    expect(m.copperDevice.readMemory(0x001)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x002)).toBe(0x55);
+    expect(m.copperDevice.readMemory(0x003)).toBe(0x23);
+    expect(m.copperDevice.instructionAddress).toBe(0x004);
+  });
+
+  it("Reg $63 address gets zero after two writes", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const copperDevice = m.copperDevice;
+    copperDevice.setInstructionAddress(0x7fe);
+
+    // --- Act
+    writeNextReg(m, 0x63, 0xaa);
+    writeNextReg(m, 0x63, 0x55);
+
+    // --- Assert
+    expect(m.copperDevice.readMemory(0x7fe)).toBe(0xaa);
+    expect(m.copperDevice.readMemory(0x7ff)).toBe(0x55);
+    expect(m.copperDevice.instructionAddress).toBe(0x000);
+  });
+
+  it("Reg $64 write", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+
+    // --- Act
+    writeNextReg(m, 0x64, 0xbe);
+
+    // --- Assert
+    expect(readNextReg(m, 0x64)).toBe(0xbe);
+    expect(m.copperDevice.verticalLineOffset).toBe(0xbe);
   });
 
   it("Reg $70 resolution #1", async () => {
