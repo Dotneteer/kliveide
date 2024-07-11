@@ -13,7 +13,6 @@ import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { MachineModel } from "@common/machines/info-types";
-import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
 import { Layer2Device } from "./Layer2Device";
@@ -31,6 +30,8 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
+import { LoResDevice } from "./LoResDevice";
+import { NextKeyboardDevice } from "./NextKeyboardDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -66,7 +67,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
-  keyboardDevice: ISpectrumKeyboardDevice;
+  keyboardDevice: NextKeyboardDevice;
 
   /**
    * Represents the screen device of ZX Spectrum 48K
@@ -80,6 +81,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   soundDevice: NextSoundDevice;
 
   ulaDevice: UlaDevice;
+
+  loResDevice: LoResDevice;
 
   /**
    * Represents the beeper device of ZX Spectrum 48K
@@ -123,7 +126,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.spriteDevice = new SpriteDevice(this);
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
-    this.keyboardDevice = new KeyboardDevice(this);
+    this.keyboardDevice = new NextKeyboardDevice(this);
     this.screenDevice = new NextScreenDevice(
       this,
       NextScreenDevice.ZxSpectrum48PalScreenConfiguration
@@ -133,6 +136,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
     this.ulaDevice = new UlaDevice(this);
+    this.loResDevice = new LoResDevice(this);
     this.hardReset();
   }
 
@@ -153,6 +157,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.ulaDevice.reset();
+    this.loResDevice.reset();
     this.beeperDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices

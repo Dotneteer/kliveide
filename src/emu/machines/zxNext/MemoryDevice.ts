@@ -45,6 +45,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   lockRom0: boolean;
   reg8CLowNibble: number;
   configRomRamBank: number;
+  mappingMode: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
 
@@ -106,6 +107,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.lockRom0 = false;
     this.reg8CLowNibble = 0;
     this.configRomRamBank = 0;
+    this.mappingMode = 0;
 
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
@@ -356,6 +358,20 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     this.updateMemoryConfig();
+  }
+
+  /**
+   * Gets the value to be read from the Next register $8F
+   */
+  get nextReg8FValue(): number {
+    return this.mappingMode;
+  }
+
+  /**
+   * Sets the value of the Next register $8F
+   */
+  set nextReg8FValue(value: number) {
+    this.mappingMode = value & 0x03;
   }
 
   /**

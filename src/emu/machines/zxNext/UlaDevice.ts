@@ -9,8 +9,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
   clipIndex: number;
   scrollX: number;
   scrollY: number;
-  loResScrollX: number;
-  loResScrollY: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -24,8 +22,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowY2 = 191;
     this.scrollX = 0;
     this.scrollY = 0;
-    this.loResScrollX = 0;
-    this.loResScrollY = 0;
   }
 
   dispose(): void {}
@@ -66,4 +62,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
     }
     this.clipIndex = (this.clipIndex + 1) & 0x03;
   }
+
+
 }
