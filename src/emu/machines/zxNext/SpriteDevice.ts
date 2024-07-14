@@ -14,7 +14,55 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   clipWindowY2: number;
   clipIndex: number;
 
+  transparencyIndex: number;
+
+  patternIndex: number;
+  patternSubIndex: number;
+  spriteIndex: number;
+  spriteSubIndex: number;
+  spriteMirrorIndex: number;
+
+  tooManySpritesPerLine: boolean;
+  collisionDetected: boolean;
+
+  patternMemory8Bit: Uint8Array;
+  pattermMemory4Bit: Uint8Array;
+  spriteMemory: SpriteAttributes[];
+
+  lastVisibileSpriteIndex: number;
+
   constructor(public readonly machine: IZxNextMachine) {
+    // --- Allocate pattern memory
+    this.patternMemory8Bit = new Uint8Array(0x4000);
+    this.pattermMemory4Bit = new Uint8Array(0x8000);
+    this.spriteMemory = new Array(128);
+    for (let i = 0; i < 128; i++) {
+      this.spriteMemory[i] = {
+        x: 0,
+        y: 0,
+        paletteOffset: 0,
+        mirrorX: false,
+        mirrorY: false,
+        rotate: false,
+        attributeFlag1: false,
+        enableVisibility: false,
+        has5AttributeBytes: false,
+        patternIndex: 0,
+        colorMode: 0,
+        attributeFlag2: false,
+        scaleX: 0,
+        scaleY: 0
+      };
+    }
+
+    this.patternIndex = 0;
+    this.patternSubIndex = 0;
+    this.spriteIndex = 0;
+    this.spriteMirrorIndex = 0;
+    this.spriteSubIndex = 0;
+    this.lastVisibileSpriteIndex = -1;
+    this.tooManySpritesPerLine = false;
+    this.collisionDetected = false;
     this.reset();
   }
 
@@ -29,9 +77,24 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowX2 = 255;
     this.clipWindowY1 = 0;
     this.clipWindowY2 = 191;
+    this.transparencyIndex = 0xe3;
   }
 
   dispose(): void {}
+
+  readPort303bValue(): number {
+    const result = (this.tooManySpritesPerLine ? 0x02 : 0) | (this.collisionDetected ? 0x01 : 0);
+    this.tooManySpritesPerLine = false;
+    this.collisionDetected = false;
+    return result;
+  }
+
+  writePort303bValue(value: number): void {
+    this.patternIndex = value & 0x3f;
+    this.patternSubIndex = value & 0x80;
+    this.spriteIndex = value & 0x7f;
+    this.spriteSubIndex = 0;
+  }
 
   /**
    * Gets the clip window coordinate according to the current clip index
@@ -69,4 +132,137 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
     this.clipIndex = (this.clipIndex + 1) & 0x03;
   }
+
+  get nextReg34Value(): number {
+    return this.spriteMirrorIndex;
+  }
+
+  set nextReg34Value(value: number) {
+    if (this.spriteIdLockstep) {
+      this.writePort303bValue(value);
+    } else {
+      this.spriteMirrorIndex = value & 0x7f;
+    }
+  }
+
+  writeSpriteAttribute(value: number): void {
+    this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
+    const attributes = this.spriteMemory[this.spriteIndex];
+    if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
+      this.spriteSubIndex++;
+      attributes.colorMode = 0x00;
+      attributes.attributeFlag2 = false;
+      attributes.scaleX = 0;
+      attributes.scaleY = 0;
+    }
+
+    // --- Increment subindex and sprite index
+    this.spriteSubIndex++;
+    if (this.spriteSubIndex >= 5) {
+      this.spriteSubIndex = 0;
+      this.spriteIndex = (this.spriteSubIndex + 1) & 0x1f;
+    }
+  }
+
+  writeSpriteAttributeDirect(attrIndex: number, value: number): void {
+    const spriteIndex = this.spriteIdLockstep ? this.spriteIndex : this.spriteMirrorIndex;
+    this.writeIndexedSpriteAttribute(spriteIndex, attrIndex, value);
+  }
+
+  writeSpriteAttributeDirectWithAutoInc(attrIndex: number, value: number): void {
+    this.writeSpriteAttributeDirect(attrIndex, value);
+    if (this.spriteIdLockstep) {
+      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      this.spriteSubIndex = 0;
+    } else {
+      this.spriteMirrorIndex = (this.spriteMirrorIndex + 1) & 0x7f;
+    }
+  }
+
+  writeSpritePattern(value: number): void {
+    // --- Write the pattern byte
+    const memIndex = (this.patternIndex << 8) + this.patternSubIndex;
+    this.patternMemory8Bit[memIndex] = value;
+    this.pattermMemory4Bit[memIndex * 2] = (value & 0xf0) >> 4;
+    this.pattermMemory4Bit[memIndex * 2 + 1] = value & 0x0f;
+
+    // --- Increment the pattern index
+    this.patternSubIndex = (this.patternSubIndex + 1) & 0xff;
+    if (!this.patternSubIndex) {
+      this.patternIndex = (this.patternIndex + 1) & 0x3f;
+    }
+  }
+
+  private writeIndexedSpriteAttribute(spriteIdx: number, attridx: number, value: number): void {
+    // --- Update the spite attributes
+    const attributes = this.spriteMemory[spriteIdx];
+    switch (attridx) {
+      case 0:
+        attributes.x = (attributes.x & 0x100) | (value & 0xff);
+        break;
+      case 1:
+        attributes.y = (attributes.y & 0x100) | (value & 0xff);
+        break;
+      case 2:
+        attributes.paletteOffset = (value & 0xf0) >> 4;
+        attributes.mirrorX = (value & 0x08) !== 0;
+        attributes.mirrorY = (value & 0x04) !== 0;
+        attributes.rotate = (value & 0x02) !== 0;
+        attributes.attributeFlag1 = (value & 0x01) !== 0;
+        break;
+      case 3:
+        attributes.enableVisibility = (value & 0x80) !== 0;
+        attributes.has5AttributeBytes = (value & 0x40) !== 0;
+        attributes.patternIndex = value & 0x3f;
+        break;
+      default:
+        attributes.colorMode = (value & 0xc0) >> 6;
+        attributes.attributeFlag2 = (value & 0x20) !== 0;
+        attributes.scaleX = (value & 0x18) >> 3;
+        attributes.scaleY = (value & 0x06) >> 1;
+        if (attributes.colorMode !== 0x01) {
+          // --- Anchor sprite
+          attributes.x = ((value & 0x01) << 8) | (attributes.x & 0xff);
+        }
+        break;
+    }
+
+    // --- Select the last visible sprite
+    if (attridx === 3 && attributes.enableVisibility) {
+      if (spriteIdx > this.lastVisibileSpriteIndex) {
+        // --- This is the last visible sprite
+        this.lastVisibileSpriteIndex = spriteIdx;
+      } else {
+        // --- Search for the last visible sprites
+        this.lastVisibileSpriteIndex = -1;
+        for (let i = 127; i > 0; i++) {
+          if (this.spriteMemory[i].enableVisibility) {
+            this.lastVisibileSpriteIndex = i;
+            break;
+          }
+        }
+      }
+    }
+  }
 }
+
+export type SpriteAttributes = {
+  x: number;
+  y: number;
+  paletteOffset: number;
+  mirrorX: boolean;
+  mirrorY: boolean;
+  rotate: boolean;
+  attributeFlag1: boolean;
+  enableVisibility: boolean;
+  has5AttributeBytes: boolean;
+  patternIndex: number;
+  colorMode: number;
+  attributeFlag2: boolean;
+  scaleX: number;
+  scaleY: number;
+};
+
+export type SpriteInfo = {
+  attributes: SpriteAttributes;
+};

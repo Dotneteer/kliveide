@@ -29,7 +29,7 @@ export type NextRegValueSlice = {
   view?: "flag" | "number";
 };
 
-const writeOnlyRegs: number[] = [0x04, 0xc7, 0xcb, 0xcf];
+const writeOnlyRegs: number[] = [0x04, 0x60, 0x63, 0xc7, 0xcb, 0xcf];
 
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regs: NextRegInfo[] = [];
@@ -66,6 +66,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Reg $2b state
   ps2KeymapDataLsb: number;
+
+  // --- Reg $7f state
+  userRegister0: number;
+
+  // --- Reg $d8 state
+  fdcIoTrap: boolean;
+
+  // --- Reg $d9 state
+  ioTrapCause: number;
 
   /**
    * Initialize the floating port device and assign it to its host machine.
@@ -858,7 +867,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x20,
       description: "Generate Maskable Interrupt",
-      writeFn: this.writeGenerateMaskableInterrupt,
+      readFn: () => machine.interruptDevice.nextReg20Value,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -912,7 +922,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x24,
       description: "Reserved",
-      writeFn: this.writeReserved0x24
+      readFn: () => this.lastReadValue,
+      writeFn: () => {}
     });
     r({
       id: 0x26,
@@ -961,17 +972,20 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2c,
       description: "DAC B Mirror (left)",
-      writeFn: this.writeDacBMirrorLeft
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2d,
       description: "DAC A+D Mirror (mono)",
-      writeFn: this.writeDacAandDMirrorMono
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2e,
       description: "DAC C Mirror (right)",
-      writeFn: this.writeDacCMirrorRight
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2f,
@@ -999,24 +1013,25 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x31,
       description: "Tilemap Offset Y",
       readFn: () => machine.tilemapDevice.scrollY,
-      writeFn: v => (machine.tilemapDevice.scrollY = v & 0xff)
+      writeFn: (v) => (machine.tilemapDevice.scrollY = v & 0xff)
     });
     r({
       id: 0x32,
       description: "LoRes X Scroll",
-      readFn: () => machine.ulaDevice.loResScrollX,
-      writeFn: v => machine.ulaDevice.loResScrollX = v & 0xff
+      readFn: () => machine.loResDevice.scrollX,
+      writeFn: (v) => (machine.loResDevice.scrollX = v & 0xff)
     });
     r({
       id: 0x33,
       description: "LoRes Y Scroll",
-      readFn: () => machine.ulaDevice.loResScrollY,
-      writeFn: v => machine.ulaDevice.loResScrollY = v & 0xff
+      readFn: () => machine.loResDevice.scrollY,
+      writeFn: (v) => (machine.loResDevice.scrollY = v & 0xff)
     });
     r({
       id: 0x34,
       description: "Sprite Number",
-      writeFn: this.writeSpriteNumber,
+      readFn: () => machine.spriteDevice.nextReg34Value,
+      writeFn: v => machine.spriteDevice.nextReg34Value = v & 0xff,
       slices: [
         {
           mask: 0x7f,
@@ -1027,52 +1042,52 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x35,
       description: "Sprite Attribute 0",
-      writeFn: this.writeSpriteAttribute0
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(0, v),
     });
     r({
       id: 0x75,
       description: "Sprite Attribute 0 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute0AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(0, v),
     });
     r({
       id: 0x36,
       description: "Sprite Attribute 1",
-      writeFn: this.writeSpriteAttribute1
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(1, v),
     });
     r({
       id: 0x76,
       description: "Sprite Attribute 1 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute1AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(1, v),
     });
     r({
       id: 0x37,
       description: "Sprite Attribute 2",
-      writeFn: this.writeSpriteAttribute2
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(2, v),
     });
     r({
       id: 0x77,
       description: "Sprite Attribute 2 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute2AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(2, v),
     });
     r({
       id: 0x38,
       description: "Sprite Attribute 3",
-      writeFn: this.writeSpriteAttribute3
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(3, v),
     });
     r({
       id: 0x78,
       description: "Sprite Attribute 3 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute3AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(3, v),
     });
     r({
       id: 0x39,
       description: "Sprite Attribute 4",
-      writeFn: this.writeSpriteAttribute4
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(4, v),
     });
     r({
       id: 0x79,
       description: "Sprite Attribute 4 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute4AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(4, v),
     });
     r({
       id: 0x40,
@@ -1149,17 +1164,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x4a,
       description: "Fallback Colour",
-      writeFn: this.writeFallbackColour
+      writeFn: (v) => (machine.screenDevice.fallbackColor = v & 0xff)
     });
     r({
       id: 0x4b,
       description: "Sprite Transparency Index",
-      writeFn: this.writeSpriteTransparencyIndex
+      writeFn: (v) => (machine.spriteDevice.transparencyIndex = v & 0xff)
     });
     r({
       id: 0x4c,
       description: "Tilemap Transparency Index",
-      writeFn: this.writeTilemapTransparencyIndex
+      writeFn: (v) => (machine.tilemapDevice.transparencyIndex = v & 0xff)
     });
     r({
       id: 0x50,
@@ -1204,17 +1219,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x60,
       description: "Copper Data 8-bit Write",
-      writeFn: this.writeCopperData8BitWrite
+      writeFn: (v) => (machine.copperDevice.nextReg60Value = v & 0xff)
     });
     r({
       id: 0x61,
       description: "Copper Address LSB",
-      writeFn: this.writeCopperAddressLsb
+      writeFn: (v) => (machine.copperDevice.nextReg61Value = v & 0xff)
     });
     r({
       id: 0x62,
       description: "Copper Control",
-      writeFn: this.writeCopperControl,
+      readFn: () => machine.copperDevice.nextReg62Value,
+      writeFn: (v) => (machine.copperDevice.nextReg62Value = v & 0xff),
       slices: [
         {
           mask: 0xc0,
@@ -1236,17 +1252,23 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x63,
       description: "Copper Data 16-bit Write",
-      writeFn: this.writeCopperData16BitWrite
+      writeFn: (v) => (machine.copperDevice.nextReg63Value = v & 0xff)
     });
     r({
       id: 0x64,
       description: "Vertical Line Count Offset",
-      writeFn: this.writeVerticalLineCountOffset
+      writeFn: (v) => (machine.copperDevice.verticalLineOffset = v & 0xff)
     });
     r({
       id: 0x68,
       description: "ULA Control",
-      writeFn: this.writeUlaControl,
+      readFn: () =>
+        machine.ulaDevice.nextReg68Value |
+        (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0),
+      writeFn: (v) => {
+        machine.ulaDevice.nextReg68Value = v & 0xff;
+        machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1321,7 +1343,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6a,
       description: "LoRes Control",
-      writeFn: this.writeLoResControl,
+      readFn: () => machine.loResDevice.nextReg6aValue,
+      writeFn: (v) => (machine.loResDevice.nextReg6aValue = v & 0xff),
       slices: [
         {
           mask: 0x20,
@@ -1343,7 +1366,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6b,
       description: "Tilemap Control",
-      writeFn: this.writeTilemapControl,
+      readFn: () => machine.tilemapDevice.nextReg6bValue,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6bValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1384,7 +1408,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6c,
       description: "Default Tilemap Attribute",
-      writeFn: this.writeDefaultTilemapAttribute,
+      readFn: () => machine.tilemapDevice.nextReg6cValue,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6cValue = v & 0xff),
       slices: [
         {
           mask: 0xf0,
@@ -1415,7 +1440,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6e,
       description: "Tilemap Base Address",
-      writeFn: this.writeTilemapBaseAddress,
+      readFn: () => machine.tilemapDevice.nextReg6eValue,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6eValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1432,7 +1458,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6f,
       description: "Tile Definitions Base Address",
-      writeFn: this.writeTileDefinitionsBaseAddress,
+      readFn: () => machine.tilemapDevice.nextReg6fValue,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6fValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1485,12 +1512,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x7f,
       description: "User Register 0",
-      writeFn: this.writeUserRegister0
+      writeFn: (v) => (this.userRegister0 = v & 0xff)
     });
     r({
       id: 0x80,
       description: "Expansion Bus Enable",
-      writeFn: this.writeExpansionBusEnable,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1536,7 +1563,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x81,
       description: "Expansion Bus Control",
-      writeFn: this.writeExpansionBusControl,
+      readFn: () => (this.regValues[0x81] ?? 0x00) & 0xf3,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1583,7 +1611,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x82,
       description: "Internal Port Decoding Enables (#1)",
-      writeFn: this.writeInternalPortDecodingEnables1,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1629,7 +1657,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables (#2)",
-      writeFn: this.writeInternalPortDecodingEnables2,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1675,7 +1703,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x84,
       description: "Internal Port Decoding Enables (#3)",
-      writeFn: this.writeInternalPortDecodingEnables3,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1721,7 +1749,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x85,
       description: "Internal Port Decoding Enables (#4)",
-      writeFn: this.writeInternalPortDecodingEnables4,
+      readFn: () => (this.regValues[0x85] ?? 0x00) & 0x8f,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1752,7 +1781,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x86,
       description: "Expansion Bus Decoding Enables (#1)",
-      writeFn: this.writeExpansionBusDecodingEnables1,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1798,7 +1827,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x87,
       description: "Expansion Bus Decoding Enables (#2)",
-      writeFn: this.writeExpansionBusDecodingEnables2,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1844,7 +1873,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x88,
       description: "Expansion Bus Decoding Enables (#3)",
-      writeFn: this.writeExpansionBusDecodingEnables3,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1890,7 +1919,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x89,
       description: "Expansion Bus Decoding Enables (#4)",
-      writeFn: this.writeExpansionBusDecodingEnables4,
+      readFn: () => (this.regValues[0x89] ?? 0x00) & 0x8f,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -1921,7 +1951,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8a,
       description: "Expansion Bus IO Propagate",
-      writeFn: this.writeExpansionBusIoPropagate,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x20,
@@ -2045,7 +2075,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8f,
       description: "Memory Mapping Mode",
-      writeFn: this.writeMemoryMappingMode,
+      readFn: () => this.machine.memoryDevice.nextReg8FValue,
+      writeFn: (v) => (this.machine.memoryDevice.nextReg8FValue = v & 0xff),
       slices: [
         {
           mask: 0x03,
@@ -2062,47 +2093,49 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x90,
       description: "PI GPIO Output Enable (#1)",
-      writeFn: this.writeGpioOutputEnable1
+      writeFn: () => {}
     });
     r({
       id: 0x91,
       description: "PI GPIO Output Enable (#2)",
-      writeFn: this.writeGpioOutputEnable2
+      writeFn: () => {}
     });
     r({
       id: 0x92,
       description: "PI GPIO Output Enable (#3)",
-      writeFn: this.writeGpioOutputEnable3
+      writeFn: () => {}
     });
     r({
       id: 0x93,
       description: "PI GPIO Output Enable (#4)",
-      writeFn: this.writeGpioOutputEnable4
+      readFn: () => (this.regValues[0x93] ?? 0x00) & 0x0f,
+      writeFn: () => {}
     });
     r({
       id: 0x98,
       description: "PI GPIO (#1)",
-      writeFn: this.writeGpio1
+      writeFn: () => {}
     });
     r({
       id: 0x99,
       description: "PI GPIO (#2)",
-      writeFn: this.writeGpio2
+      writeFn: () => {}
     });
     r({
       id: 0x9a,
       description: "PI GPIO (#3)",
-      writeFn: this.writeGpio3
+      writeFn: () => {}
     });
     r({
       id: 0x9b,
       description: "PI GPIO (#4)",
-      writeFn: this.writeGpio4
+      readFn: () => (this.regValues[0x9b] ?? 0x00) & 0x0f,
+      writeFn: () => {}
     });
     r({
       id: 0xa0,
       description: "PI Peripheral Enable",
-      writeFn: this.writePiPeripheralEnable,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x20,
@@ -2129,7 +2162,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xa2,
       description: "PI I2S Audio Control",
-      writeFn: this.writePiI2sAudioControl,
+      readFn: () => ((this.regValues[0xa2] ?? 0x00) & 0xdf) | 0x02,
+      writeFn: () => {},
       slices: [
         {
           mask: 0xc0,
@@ -2165,14 +2199,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       ]
     });
     r({
-      id: 0xa3,
-      description: "PI I2S Clock Divide (Master Mode)",
-      writeFn: this.writePiI2sClockDivide
-    });
-    r({
       id: 0xa8,
       description: "ESP Wifi GPIO Output Enable",
-      writeFn: this.writeEspWifiGpioOutputEnable,
+      readFn: () => (this.regValues[0xa8] ?? 0x00) & 0x01,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x04,
@@ -2188,7 +2218,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xa9,
       description: "ESP Wifi GPIO",
-      writeFn: this.writeEspWifiGpio,
+      readFn: () => (this.regValues[0xa9] ?? 0x00) & 0x05,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x04,
@@ -2204,7 +2235,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb0,
       description: "Extended Keys 0",
-      readFn: this.readExtKeys0,
+      readFn: () => machine.keyboardDevice.nextRegB0Value,
       slices: [
         {
           mask: 0x80,
@@ -2250,7 +2281,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb1,
       description: "Extended Keys 1",
-      readFn: this.readExtKeys1,
+      readFn: () => machine.keyboardDevice.nextRegB1Value,
       slices: [
         {
           mask: 0x80,
@@ -2296,7 +2327,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb2,
       description: "Extended MD Pad Buttons",
-      readFn: this.readMdPadButtons,
+      readFn: () => machine.keyboardDevice.nextRegB2Value,
       slices: [
         {
           mask: 0x80,
@@ -2884,7 +2915,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xd8,
       description: "I/O Traps (experimental)",
-      writeFn: this.writeIoTraps,
+      readFn: () => (this.fdcIoTrap ? 0x01 : 0x00),
+      writeFn: (v) => (this.fdcIoTrap = !!(v & 0x01)),
       slices: [
         {
           mask: 0x01,
@@ -2895,22 +2927,23 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xd9,
       description: "I/O Trap Write (experimental)",
-      writeFn: this.writeIoTrapWrite
+      writeFn: () => {}
     });
     r({
       id: 0xda,
       description: "I/O Trap Cause (experimental)",
-      writeFn: this.writeIoTrapWrite
+      readFn: () => this.ioTrapCause & 0x03,
+      writeFn: () => {}
     });
     r({
       id: 0xf0,
       description: "XDEV CMD",
-      writeFn: this.writeXdevCmd
+      writeFn: () => {}
     });
     r({
       id: 0xf8,
       description: "XADC REG",
-      writeFn: this.writeXadcReg,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -2926,12 +2959,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xf9,
       description: "XADC D0",
-      writeFn: this.writeXadcD0
+      writeFn: () => {}
     });
     r({
-      id: 0xf9,
+      id: 0xfa,
       description: "XADC D1",
-      writeFn: this.writeXadcD1
+      writeFn: () => {}
     });
   }
 
@@ -3004,6 +3037,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.ps2KeymapAddressMsb = false;
     this.ps2KeymapDataLsb = 0x00;
     this.ps2KeymapDataMsb = false;
+    this.fdcIoTrap = false;
+    this.ioTrapCause = 0x00;
 
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
@@ -3020,10 +3055,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x55, 0x05); // --- MMU5: Map Bank 05 into 0xa000-0xbfff
     this.directSetRegValue(0x56, 0x00); // --- MMU6: Map Bank 00 into 0xc000-0xdfff
     this.directSetRegValue(0x57, 0x01); // --- MMU7: Map Bank 01 into 0xe000-0xffff
+    this.directSetRegValue(0xa9, 0x05); // --- Write ESP GPIO2, Write ESP GPIO0
     this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
     this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
     this.directSetRegValue(0xba, 0x00); // --- Delayed mapping for all RSTs with DivMMC
     this.directSetRegValue(0xbb, 0xcd); // --- Enable automap on $3dxx, and $1ff8-1fff, $0562, $04c6, 0x0066 delayed
+
+    // --- Copy expansion bus enable bit 0:3 to bits 4:7
+    const bit0to3ExpBus = this.directGetRegValue(0x80) & 0x0f;
+    this.directSetRegValue(0x80, (bit0to3ExpBus << 4) | bit0to3ExpBus);
 
     // --- Copy alternate ROM bits 0:3 to bits 4:7
     const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;
@@ -3126,140 +3166,4 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private registerNextReg({ id, description, readFn, writeFn }: NextRegInfo): void {
     this.regs[id] = { id, description, readFn, writeFn };
   }
-
-  private writeGenerateMaskableInterrupt(value: number): void {}
-
-  private writeReserved0x24(value: number): void {}
-
-  private writeDacBMirrorLeft(value: number): void {}
-
-  private writeDacAandDMirrorMono(value: number): void {}
-
-  private writeDacCMirrorRight(value: number): void {}
-
-  private writeSpriteNumber(value: number): void {}
-
-  private writeSpriteAttribute0(value: number): void {}
-
-  private writeSpriteAttribute0AutoInc(value: number): void {}
-
-  private writeSpriteAttribute1(value: number): void {}
-
-  private writeSpriteAttribute1AutoInc(value: number): void {}
-
-  private writeSpriteAttribute2(value: number): void {}
-
-  private writeSpriteAttribute2AutoInc(value: number): void {}
-
-  private writeSpriteAttribute3(value: number): void {}
-
-  private writeSpriteAttribute3AutoInc(value: number): void {}
-
-  private writeSpriteAttribute4(value: number): void {}
-
-  private writeSpriteAttribute4AutoInc(value: number): void {}
-
-  private writeFallbackColour(value: number): void {}
-
-  private writeSpriteTransparencyIndex(value: number): void {}
-
-  private writeTilemapTransparencyIndex(value: number): void {}
-
-  private writeCopperData8BitWrite(value: number): void {}
-
-  private writeCopperAddressLsb(value: number): void {}
-
-  private writeCopperControl(value: number): void {}
-
-  private writeCopperData16BitWrite(value: number): void {}
-
-  private writeVerticalLineCountOffset(value: number): void {}
-
-  private writeUlaControl(value: number): void {}
-
-  private writeLoResControl(value: number): void {}
-
-  private writeTilemapControl(value: number): void {}
-
-  private writeDefaultTilemapAttribute(value: number): void {}
-
-  private writeTilemapBaseAddress(value: number): void {}
-
-  private writeTileDefinitionsBaseAddress(value: number): void {}
-
-  private writeUserRegister0(value: number): void {}
-
-  private writeExpansionBusEnable(value: number): void {}
-
-  private writeExpansionBusControl(value: number): void {}
-
-  private writeInternalPortDecodingEnables1(value: number): void {}
-
-  private writeInternalPortDecodingEnables2(value: number): void {}
-
-  private writeInternalPortDecodingEnables3(value: number): void {}
-
-  private writeInternalPortDecodingEnables4(value: number): void {}
-
-  private writeExpansionBusDecodingEnables1(value: number): void {}
-
-  private writeExpansionBusDecodingEnables2(value: number): void {}
-
-  private writeExpansionBusDecodingEnables3(value: number): void {}
-
-  private writeExpansionBusDecodingEnables4(value: number): void {}
-
-  private writeExpansionBusIoPropagate(value: number): void {}
-
-  private writeMemoryMappingMode(value: number): void {}
-
-  private writeGpioOutputEnable1(value: number): void {}
-
-  private writeGpioOutputEnable2(value: number): void {}
-
-  private writeGpioOutputEnable3(value: number): void {}
-
-  private writeGpioOutputEnable4(value: number): void {}
-
-  private writeGpio1(value: number): void {}
-
-  private writeGpio2(value: number): void {}
-
-  private writeGpio3(value: number): void {}
-
-  private writeGpio4(value: number): void {}
-
-  private writePiPeripheralEnable(value: number): void {}
-
-  private writePiI2sAudioControl(value: number): void {}
-
-  private writePiI2sClockDivide(value: number): void {}
-
-  private writeEspWifiGpioOutputEnable(value: number): void {}
-
-  private writeEspWifiGpio(value: number): void {}
-
-  private readExtKeys0(): number {
-    return 0x00;
-  }
-
-  private readExtKeys1(): number {
-    return 0x00;
-  }
-
-  private readMdPadButtons(): number {
-    return 0x00;
-  }
-
-  private writeIoTraps(value: number): void {}
-
-  private writeIoTrapWrite(value: number): void {}
-
-  private writeXdevCmd(value: number): void {}
-
-  private writeXadcReg(value: number): void {}
-
-  private writeXadcD0(value: number): void {}
-
-  private writeXadcD1(value: number): void {}
 }

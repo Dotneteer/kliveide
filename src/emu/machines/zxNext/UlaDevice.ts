@@ -9,8 +9,11 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
   clipIndex: number;
   scrollX: number;
   scrollY: number;
-  loResScrollX: number;
-  loResScrollY: number;
+  disableUlaOutput: boolean;
+  blendingInSluMode: number;
+  enableUlaPlus: boolean;
+  halfPixelScroll: boolean;
+  enableStencilMode: boolean;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -24,8 +27,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowY2 = 191;
     this.scrollX = 0;
     this.scrollY = 0;
-    this.loResScrollX = 0;
-    this.loResScrollY = 0;
   }
 
   dispose(): void {}
@@ -65,5 +66,21 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
         break;
     }
     this.clipIndex = (this.clipIndex + 1) & 0x03;
+  }
+
+  get nextReg68Value(): number {
+    return (this.disableUlaOutput ? 0x80 : 0) |
+      ((this.blendingInSluMode & 0x03) << 5) |
+      (this.enableUlaPlus ? 0x08 : 0) |
+      (this.halfPixelScroll ? 0x04 : 0) |
+      (this.enableStencilMode ? 0x01 : 0);
+  }
+
+  set nextReg68Value(value: number) {
+    this.disableUlaOutput = (value & 0x80) !== 0;
+    this.blendingInSluMode = (value & 0x60) >> 5;
+    this.enableUlaPlus = (value & 0x08) !== 0;
+    this.halfPixelScroll = (value & 0x04) !== 0;
+    this.enableStencilMode = (value & 0x01) !== 0;
   }
 }
