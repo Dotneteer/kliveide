@@ -17,14 +17,14 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   private _uart1TxEmpty: boolean;
   private _uart1RxNearFull: boolean;
   private _uart1RxAvailable: boolean;
-  private _lineInterruptStatus: boolean;
-  private _ulaInterruptStatus: boolean;
-  private _uart0TxEmptyStatus: boolean;
-  private _uart0RxNearFullStatus: boolean;
-  private _uart0RxAvailableStatus: boolean;
-  private _uart1TxEmptyStatus: boolean;
-  private _uart1RxNearFullStatus: boolean;
-  private _uart1RxAvailableStatus: boolean;
+  private _lineInterruptStatus: boolean; // --- im2_int_status(0)
+  private _ulaInterruptStatus: boolean;  // --- im2_int_status(11)
+  private _uart0TxEmptyStatus: boolean;  // --- im2_int_status(12)
+  private _uart0RxNearFullStatus: boolean; // --- im2_int_status(1) (shared with uart0RxAvailable)
+  private _uart0RxAvailableStatus: boolean; // --- im2_int_status(1)
+  private _uart1TxEmptyStatus: boolean; // --- im2_int_status(13)
+  private _uart1RxNearFullStatus: boolean; // --- im2_int_status(2) (shared with uart1RxAvailable)
+  private _uart1RxAvailableStatus: boolean; // --- im2_int_status(2)
   private _enableNmiToIntDma: boolean;
   private _enableLineIntToIntDma: boolean;
   private _enableUlaIntToIntDma: boolean;
@@ -36,7 +36,7 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   private _enableUart1RxAvailableToIntDma: boolean;
 
   readonly ctcIntEnabled: boolean[] = [];
-  readonly ctcIntStatus: boolean[] = [];
+  readonly ctcIntStatus: boolean[] = []; // --- im2_int_status(3-10)
   readonly enableCtcToIntDma: boolean[] = [];
 
   busResetRequested: boolean;
@@ -83,6 +83,15 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
       (this.lastWasHardReset ? 0x02 : 0x00) |
       (this.lastWasSoftReset ? 0x01 : 0x00)
     );
+  }
+
+  get nextReg20Value(): number {
+    return (this._lineInterruptStatus ? 0x80 : 0x00) |
+    (this._ulaInterruptStatus ? 0x40 : 0x00) |
+    (this.ctcIntStatus[3] ? 0x08 : 0x00) |
+    (this.ctcIntStatus[2] ? 0x04 : 0x00) |
+    (this.ctcIntStatus[1] ? 0x02 : 0x00) |
+    (this.ctcIntStatus[0] ? 0x01 : 0x00);
   }
 
   get nextReg22Value(): number {
@@ -246,11 +255,11 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   get nextRegCAValue(): number {
     return (
       (this._uart1TxEmptyStatus ? 0x40 : 0x00) |
-      (this._uart1RxNearFullStatus ? 0x20 : 0x00) |
+      (this._uart1TxEmptyStatus ? 0x20 : 0x00) |
       (this._uart1RxAvailableStatus ? 0x10 : 0x00) |
       (this._uart0TxEmptyStatus ? 0x04 : 0x00) |
       (this._uart0RxNearFullStatus ? 0x02 : 0x00) |
-      (this._uart0RxAvailableStatus ? 0x01 : 0x00)
+      (this._uart0RxNearFullStatus ? 0x01 : 0x00)
     );
   }
 

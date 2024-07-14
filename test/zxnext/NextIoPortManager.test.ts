@@ -99,4 +99,5 @@ describe("Next - NextIoPortManager", function () {
       expect(mem.selectedBankLsb).toBe(c.bank);
     });
   });
+
 });

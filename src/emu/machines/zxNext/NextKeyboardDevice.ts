@@ -28,6 +28,49 @@ export class NextKeyboardDevice extends KeyboardDevice {
   capsLockPressed: boolean;
   extendPressed: boolean;
 
+  rightPadXPressed: boolean;
+  rightPadZPressed: boolean;
+  rightPadYPressed: boolean;
+  rightPadModePressed: boolean;
+  leftPadXPressed: boolean;
+  leftPadZPressed: boolean;
+  leftPadYPressed: boolean;
+  leftPadModePressed: boolean;
+
+  cancelExtendedKeyEntries: boolean;
+
+  reset(): void {
+    super.reset();
+    this.semicolonPressed = false;
+    this.doubleQuotePressed = false;
+    this.commaPressed = false;
+    this.dotPressed = false;
+    this.upPressed = false;
+    this.downPressed = false;
+    this.leftPressed = false;
+    this.rightPressed = false;
+
+    this.deletePressed = false;
+    this.editPressed = false;
+    this.breakPressed = false;
+    this.invVideoPressed = false;
+    this.trueVideoPressed = false;
+    this.graphPressed = false;
+    this.capsLockPressed = false;
+    this.extendPressed = false;
+
+    this.rightPadXPressed = false;
+    this.rightPadZPressed = false;
+    this.rightPadYPressed = false;
+    this.rightPadModePressed = false;
+    this.leftPadXPressed = false;
+    this.leftPadZPressed = false;
+    this.leftPadYPressed = false;
+    this.leftPadModePressed = false;
+
+    this.cancelExtendedKeyEntries = false;
+  }
+
   get nextRegB0Value(): number {
     return (
       (this.semicolonPressed ? 0x80 : 0x00) |
@@ -51,6 +94,19 @@ export class NextKeyboardDevice extends KeyboardDevice {
       (this.graphPressed ? 0x04 : 0x00) |
       (this.capsLockPressed ? 0x02 : 0x00) |
       (this.extendPressed ? 0x01 : 0x00)
+    );
+  }
+
+  get nextRegB2Value(): number {
+    return (
+      (this.rightPadXPressed ? 0x80 : 0x00) |
+      (this.rightPadZPressed ? 0x40 : 0x00) |
+      (this.rightPadYPressed ? 0x20 : 0x00) |
+      (this.rightPadModePressed ? 0x10 : 0x00) |
+      (this.leftPadXPressed ? 0x08 : 0x00) |
+      (this.leftPadZPressed ? 0x04 : 0x00) |
+      (this.leftPadYPressed ? 0x02 : 0x00) |
+      (this.leftPadModePressed ? 0x01 : 0x00)
     );
   }
 }

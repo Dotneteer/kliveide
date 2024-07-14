@@ -50,14 +50,6 @@ import {
   writeMultifaceP3DisablePort,
   writeMultifaceP3EnablePort
 } from "./MultifacePortHandler";
-import {
-  readSpriteAttributePort,
-  readSpritePatternPort,
-  readSpriteSlotPort,
-  writeSpriteAttributePort,
-  writeSpritePatternPort,
-  writeSpriteSlotPort
-} from "./SpritePortHandler";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;
@@ -84,16 +76,16 @@ export class NextIoPortManager {
       port: 0xfe,
       pmask: 0b0000_0000_0000_0001,
       value: 0b0000_0000_0000_0000,
-      readerFns: readUlaPort,
-      writerFns: writeUlaPort
+      readerFns: (p) => readUlaPort(p),
+      writerFns: (p, v) => writeUlaPort(p, v)
     });
     r({
       description: "Timex video, floating bus",
       port: 0xff,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
-      readerFns: readFloatingBusPort,
-      writerFns: writeFloatingBusPort
+      readerFns: (p) => readFloatingBusPort(p),
+      writerFns: (p, v) =>writeFloatingBusPort(p, v)
     });
     r({
       description: "ZX Spectrum 128 memory",
@@ -478,24 +470,35 @@ export class NextIoPortManager {
       port: 0x303b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0011_0000_0011_1011,
-      readerFns: readSpriteSlotPort,
-      writerFns: writeSpriteSlotPort
+      readerFns: () => {
+        const spriteDevice = machine.spriteDevice;
+        const result = (spriteDevice.tooManySpritesPerLine ? 0x02 : 0) |
+          (spriteDevice.collisionDetected ? 0x01 : 0);
+        spriteDevice.tooManySpritesPerLine = false;
+        spriteDevice.collisionDetected = false;
+        return result;  
+      },
+      writerFns: (_, v) =>  {
+        const spriteDevice = machine.spriteDevice;
+        spriteDevice.patternIndex = v & 0x3f;
+        spriteDevice.patternSubIndex = v & 0x80;
+        spriteDevice.spriteIndex = v & 0x7f;
+        spriteDevice.spriteSubIndex = 0;
+      }
     });
     r({
       description: "Sprite attributes",
       port: 0x57,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_0111,
-      readerFns: readSpriteAttributePort,
-      writerFns: writeSpriteAttributePort
+      writerFns: (_, v) => machine.spriteDevice.writeSpriteAttribute(v)
     });
     r({
       description: "Sprite pattern",
       port: 0x5b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1011,
-      readerFns: readSpritePatternPort,
-      writerFns: writeSpritePatternPort
+      writerFns: (_, v) => machine.spriteDevice.writeSpritePattern(v)
     });
   }
 

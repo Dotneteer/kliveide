@@ -867,7 +867,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x20,
       description: "Generate Maskable Interrupt",
-      writeFn: this.writeGenerateMaskableInterrupt,
+      readFn: () => machine.interruptDevice.nextReg20Value,
+      writeFn: () => {},
       slices: [
         {
           mask: 0x80,
@@ -921,7 +922,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x24,
       description: "Reserved",
-      writeFn: this.writeReserved0x24
+      readFn: () => this.lastReadValue,
+      writeFn: () => {}
     });
     r({
       id: 0x26,
@@ -970,17 +972,20 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2c,
       description: "DAC B Mirror (left)",
-      writeFn: this.writeDacBMirrorLeft
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2d,
       description: "DAC A+D Mirror (mono)",
-      writeFn: this.writeDacAandDMirrorMono
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2e,
       description: "DAC C Mirror (right)",
-      writeFn: this.writeDacCMirrorRight
+      readFn: () => 0x00,
+      writeFn: () => {}
     });
     r({
       id: 0x2f,
@@ -1256,7 +1261,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x68,
       description: "ULA Control",
-      writeFn: this.writeUlaControl,
+      readFn: () =>
+        machine.ulaDevice.nextReg68Value |
+        (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0),
+      writeFn: (v) => {
+        machine.ulaDevice.nextReg68Value = v & 0xff;
+        machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1355,7 +1366,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x6b,
       description: "Tilemap Control",
       readFn: () => machine.tilemapDevice.nextReg6bValue,
-      writeFn: v => machine.tilemapDevice.nextReg6bValue = v & 0xff,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6bValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1397,7 +1408,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x6c,
       description: "Default Tilemap Attribute",
       readFn: () => machine.tilemapDevice.nextReg6cValue,
-      writeFn: v => machine.tilemapDevice.nextReg6cValue = v & 0xff,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6cValue = v & 0xff),
       slices: [
         {
           mask: 0xf0,
@@ -1429,7 +1440,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x6e,
       description: "Tilemap Base Address",
       readFn: () => machine.tilemapDevice.nextReg6eValue,
-      writeFn: v => machine.tilemapDevice.nextReg6eValue = v & 0xff,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6eValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1447,7 +1458,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x6f,
       description: "Tile Definitions Base Address",
       readFn: () => machine.tilemapDevice.nextReg6fValue,
-      writeFn: v => machine.tilemapDevice.nextReg6fValue = v & 0xff,
+      writeFn: (v) => (machine.tilemapDevice.nextReg6fValue = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1500,7 +1511,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x7f,
       description: "User Register 0",
-      writeFn: v => this.userRegister0 = v & 0xff
+      writeFn: (v) => (this.userRegister0 = v & 0xff)
     });
     r({
       id: 0x80,
@@ -2064,7 +2075,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x8f,
       description: "Memory Mapping Mode",
       readFn: () => this.machine.memoryDevice.nextReg8FValue,
-      writeFn: v => this.machine.memoryDevice.nextReg8FValue = v & 0xff,
+      writeFn: (v) => (this.machine.memoryDevice.nextReg8FValue = v & 0xff),
       slices: [
         {
           mask: 0x03,
@@ -2315,7 +2326,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb2,
       description: "Extended MD Pad Buttons",
-      readFn: this.readMdPadButtons,
+      readFn: () => machine.keyboardDevice.nextRegB2Value,
       slices: [
         {
           mask: 0x80,
@@ -2904,7 +2915,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xd8,
       description: "I/O Traps (experimental)",
       readFn: () => (this.fdcIoTrap ? 0x01 : 0x00),
-      writeFn: v => this.fdcIoTrap = !!(v & 0x01),
+      writeFn: (v) => (this.fdcIoTrap = !!(v & 0x01)),
       slices: [
         {
           mask: 0x01,
@@ -3155,16 +3166,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.regs[id] = { id, description, readFn, writeFn };
   }
 
-  private writeGenerateMaskableInterrupt(value: number): void {}
-
-  private writeReserved0x24(value: number): void {}
-
-  private writeDacBMirrorLeft(value: number): void {}
-
-  private writeDacAandDMirrorMono(value: number): void {}
-
-  private writeDacCMirrorRight(value: number): void {}
-
   private writeSpriteNumber(value: number): void {}
 
   private writeSpriteAttribute0(value: number): void {}
@@ -3188,28 +3189,4 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private writeSpriteAttribute4AutoInc(value: number): void {}
 
   private writeUlaControl(value: number): void {}
-
-  private readExtKeys0(): number {
-    return 0x00;
-  }
-
-  private readExtKeys1(): number {
-    return 0x00;
-  }
-
-  private readMdPadButtons(): number {
-    return 0x00;
-  }
-
-  private writeIoTraps(value: number): void {}
-
-  private writeIoTrapWrite(value: number): void {}
-
-  private writeXdevCmd(value: number): void {}
-
-  private writeXadcReg(value: number): void {}
-
-  private writeXadcD0(value: number): void {}
-
-  private writeXadcD1(value: number): void {}
 }

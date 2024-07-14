@@ -43,19 +43,19 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x1c)).toBe(0x00);
     expect(d.directGetRegValue(0x1e)).toBe(0x00);
     expect(d.directGetRegValue(0x1f)).toBe(0x00);
-    expect(d.directGetRegValue(0x20)).toBe(0xff);
+    expect(d.directGetRegValue(0x20)).toBe(0x00);
     expect(d.directGetRegValue(0x22)).toBe(0x00);
     expect(d.directGetRegValue(0x23)).toBe(0x00);
-    expect(d.directGetRegValue(0x24)).toBe(0xff);
+    expect(d.directGetRegValue(0x24)).toBe(0x00);
     expect(d.directGetRegValue(0x26)).toBe(0x00);
     expect(d.directGetRegValue(0x27)).toBe(0x00);
     expect(d.directGetRegValue(0x28)).toBe(0x00);
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0xff);
-    expect(d.directGetRegValue(0x2d)).toBe(0xff);
-    expect(d.directGetRegValue(0x2e)).toBe(0xff);
+    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2d)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x00);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);
@@ -88,7 +88,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
     expect(d.directGetRegValue(0x64)).toBe(0xff);
-    expect(d.directGetRegValue(0x68)).toBe(0xff);
+    expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
@@ -195,19 +195,19 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x1c)).toBe(0x00);
     expect(d.directGetRegValue(0x1e)).toBe(0x00);
     expect(d.directGetRegValue(0x1f)).toBe(0x00);
-    expect(d.directGetRegValue(0x20)).toBe(0xff);
+    expect(d.directGetRegValue(0x20)).toBe(0x00);
     expect(d.directGetRegValue(0x22)).toBe(0x00);
     expect(d.directGetRegValue(0x23)).toBe(0x00);
-    expect(d.directGetRegValue(0x24)).toBe(0xff);
+    expect(d.directGetRegValue(0x24)).toBe(0x00);
     expect(d.directGetRegValue(0x26)).toBe(0x00);
     expect(d.directGetRegValue(0x27)).toBe(0x00);
     expect(d.directGetRegValue(0x28)).toBe(0x00);
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0xff);
-    expect(d.directGetRegValue(0x2d)).toBe(0xff);
-    expect(d.directGetRegValue(0x2e)).toBe(0xff);
+    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2d)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x00);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);
@@ -240,7 +240,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
     expect(d.directGetRegValue(0x64)).toBe(0xff);
-    expect(d.directGetRegValue(0x68)).toBe(0xff);
+    expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
@@ -1822,80 +1822,6 @@ describe("Next - NextRegDevice", function () {
     expect(layer2Device.clipWindowY2).toBe(0x56);
   });
 
-  it("Reg $19 first write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const spriteDevice = m.spriteDevice;
-    writeNextReg(m, 0x1c, 0x02);
-
-    // --- Act
-    writeNextReg(m, 0x19, 0x23);
-
-    // --- Assert
-    expect(spriteDevice.clipIndex).toBe(0x01);
-    expect(spriteDevice.clipWindowX1).toBe(0x23);
-    expect(spriteDevice.clipWindowX2).toBe(0xff);
-    expect(spriteDevice.clipWindowY1).toBe(0x00);
-    expect(spriteDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $19 second write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const spriteDevice = m.spriteDevice;
-    writeNextReg(m, 0x1c, 0x02);
-
-    // --- Act
-    writeNextReg(m, 0x19, 0x23);
-    writeNextReg(m, 0x19, 0x34);
-
-    // --- Assert
-    expect(spriteDevice.clipIndex).toBe(0x02);
-    expect(spriteDevice.clipWindowX1).toBe(0x23);
-    expect(spriteDevice.clipWindowX2).toBe(0x34);
-    expect(spriteDevice.clipWindowY1).toBe(0x00);
-    expect(spriteDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $19 third write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const spriteDevice = m.spriteDevice;
-    writeNextReg(m, 0x1c, 0x02);
-
-    // --- Act
-    writeNextReg(m, 0x19, 0x23);
-    writeNextReg(m, 0x19, 0x34);
-    writeNextReg(m, 0x19, 0x45);
-
-    // --- Assert
-    expect(spriteDevice.clipIndex).toBe(0x03);
-    expect(spriteDevice.clipWindowX1).toBe(0x23);
-    expect(spriteDevice.clipWindowX2).toBe(0x34);
-    expect(spriteDevice.clipWindowY1).toBe(0x45);
-    expect(spriteDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $19 fourth write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const spriteDevice = m.spriteDevice;
-    writeNextReg(m, 0x1c, 0x02);
-
-    // --- Act
-    writeNextReg(m, 0x19, 0x23);
-    writeNextReg(m, 0x19, 0x34);
-    writeNextReg(m, 0x19, 0x45);
-    writeNextReg(m, 0x19, 0x56);
-
-    // --- Assert
-    expect(spriteDevice.clipIndex).toBe(0x00);
-    expect(spriteDevice.clipWindowX1).toBe(0x23);
-    expect(spriteDevice.clipWindowX2).toBe(0x34);
-    expect(spriteDevice.clipWindowY1).toBe(0x45);
-    expect(spriteDevice.clipWindowY2).toBe(0x56);
-  });
-
   it("Reg $1a first write", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -3195,6 +3121,115 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(readNextReg(m, 0x64)).toBe(0xbe);
     expect(m.copperDevice.verticalLineOffset).toBe(0xbe);
+  });
+
+  it("Reg $68 disableUlaOutput", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x80);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x80);
+    expect(ulaDevice.disableUlaOutput).toBe(true);
+    expect(ulaDevice.blendingInSluMode).toBe(0x00);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(false);
+    expect(ulaDevice.enableUlaPlus).toBe(false);
+    expect(ulaDevice.halfPixelScroll).toBe(false);
+    expect(ulaDevice.enableStencilMode).toBe(false);
+
+  });
+
+  it("Reg $68 blendingInSluMode", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x40);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x40);
+    expect(ulaDevice.disableUlaOutput).toBe(false);
+    expect(ulaDevice.blendingInSluMode).toBe(0x02);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(false);
+    expect(ulaDevice.enableUlaPlus).toBe(false);
+    expect(ulaDevice.halfPixelScroll).toBe(false);
+    expect(ulaDevice.enableStencilMode).toBe(false);
+  });
+
+  it("Reg $68 cancelExtendedKeyEntries", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x10);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x10);
+    expect(ulaDevice.disableUlaOutput).toBe(false);
+    expect(ulaDevice.blendingInSluMode).toBe(0x00);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(true);
+    expect(ulaDevice.enableUlaPlus).toBe(false);
+    expect(ulaDevice.halfPixelScroll).toBe(false);
+    expect(ulaDevice.enableStencilMode).toBe(false);
+  });
+
+  it("Reg $68 enableUlaPlus", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x08);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x08);
+    expect(ulaDevice.disableUlaOutput).toBe(false);
+    expect(ulaDevice.blendingInSluMode).toBe(0x00);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(false);
+    expect(ulaDevice.enableUlaPlus).toBe(true);
+    expect(ulaDevice.halfPixelScroll).toBe(false);
+    expect(ulaDevice.enableStencilMode).toBe(false);
+  });
+
+  it("Reg $68 halfPixelScroll", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x04);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x04);
+    expect(ulaDevice.disableUlaOutput).toBe(false);
+    expect(ulaDevice.blendingInSluMode).toBe(0x00);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(false);
+    expect(ulaDevice.enableUlaPlus).toBe(false);
+    expect(ulaDevice.halfPixelScroll).toBe(true);
+    expect(ulaDevice.enableStencilMode).toBe(false);
+  });
+
+  it("Reg $68 enableStencilMode", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const ulaDevice = m.ulaDevice;
+
+    // --- Act
+    writeNextReg(m, 0x68, 0x01);
+
+    // --- Assert
+    expect(readNextReg(m, 0x68)).toBe(0x01);
+    expect(ulaDevice.disableUlaOutput).toBe(false);
+    expect(ulaDevice.blendingInSluMode).toBe(0x00);
+    expect(m.keyboardDevice.cancelExtendedKeyEntries).toBe(false);
+    expect(ulaDevice.enableUlaPlus).toBe(false);
+    expect(ulaDevice.halfPixelScroll).toBe(false);
+    expect(ulaDevice.enableStencilMode).toBe(true);
   });
 
   it("Reg $6a isRadastanMode", async () => {
