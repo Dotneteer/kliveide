@@ -1030,7 +1030,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x34,
       description: "Sprite Number",
-      writeFn: this.writeSpriteNumber,
+      readFn: () => machine.spriteDevice.nextReg34Value,
+      writeFn: v => machine.spriteDevice.nextReg34Value = v & 0xff,
       slices: [
         {
           mask: 0x7f,
@@ -1041,52 +1042,52 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x35,
       description: "Sprite Attribute 0",
-      writeFn: this.writeSpriteAttribute0
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(0, v),
     });
     r({
       id: 0x75,
       description: "Sprite Attribute 0 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute0AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(0, v),
     });
     r({
       id: 0x36,
       description: "Sprite Attribute 1",
-      writeFn: this.writeSpriteAttribute1
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(1, v),
     });
     r({
       id: 0x76,
       description: "Sprite Attribute 1 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute1AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(1, v),
     });
     r({
       id: 0x37,
       description: "Sprite Attribute 2",
-      writeFn: this.writeSpriteAttribute2
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(2, v),
     });
     r({
       id: 0x77,
       description: "Sprite Attribute 2 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute2AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(2, v),
     });
     r({
       id: 0x38,
       description: "Sprite Attribute 3",
-      writeFn: this.writeSpriteAttribute3
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(3, v),
     });
     r({
       id: 0x78,
       description: "Sprite Attribute 3 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute3AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(3, v),
     });
     r({
       id: 0x39,
       description: "Sprite Attribute 4",
-      writeFn: this.writeSpriteAttribute4
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(4, v),
     });
     r({
       id: 0x79,
       description: "Sprite Attribute 4 with automatic post increment of Sprite Number",
-      writeFn: this.writeSpriteAttribute4AutoInc
+      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(4, v),
     });
     r({
       id: 0x40,
@@ -3165,28 +3166,4 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private registerNextReg({ id, description, readFn, writeFn }: NextRegInfo): void {
     this.regs[id] = { id, description, readFn, writeFn };
   }
-
-  private writeSpriteNumber(value: number): void {}
-
-  private writeSpriteAttribute0(value: number): void {}
-
-  private writeSpriteAttribute0AutoInc(value: number): void {}
-
-  private writeSpriteAttribute1(value: number): void {}
-
-  private writeSpriteAttribute1AutoInc(value: number): void {}
-
-  private writeSpriteAttribute2(value: number): void {}
-
-  private writeSpriteAttribute2AutoInc(value: number): void {}
-
-  private writeSpriteAttribute3(value: number): void {}
-
-  private writeSpriteAttribute3AutoInc(value: number): void {}
-
-  private writeSpriteAttribute4(value: number): void {}
-
-  private writeSpriteAttribute4AutoInc(value: number): void {}
-
-  private writeUlaControl(value: number): void {}
 }

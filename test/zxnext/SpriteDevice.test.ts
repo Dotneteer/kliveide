@@ -23,6 +23,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(0);
     expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
     expect(spr.lastVisibileSpriteIndex).toBe(-1);
   });
@@ -435,7 +436,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(3);
   });
 
-  it("0xxx57 (Sprites Attribute) fourth third byte #1", async () => {
+  it("0xxx57 (Sprites Attribute) fourth byte #1", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -468,7 +469,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fourth third byte #2", async () => {
+  it("0xxx57 (Sprites Attribute) fourth byte #2", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -501,7 +502,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fourth third byte #3", async () => {
+  it("0xxx57 (Sprites Attribute) fourth byte #3", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -534,7 +535,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fourth third byte #4", async () => {
+  it("0xxx57 (Sprites Attribute) fourth byte #4", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -567,7 +568,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(4);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #1", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #1", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -601,7 +602,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #2", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #2", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -635,7 +636,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #3", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #3", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -669,7 +670,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #4", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #4", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -703,7 +704,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #5", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #5", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -737,7 +738,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #6", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #6", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -771,7 +772,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #7", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #7", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -805,7 +806,7 @@ describe("Next - SpriteDevice", async function () {
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("0xxx57 (Sprites Attribute) fifth third byte #8", async () => {
+  it("0xxx57 (Sprites Attribute) fifth byte #8", async () => {
     const machine = await createTestNextMachine();
     const io = machine.portManager;
     const spr = machine.spriteDevice;
@@ -850,7 +851,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0]).toBe(0xff);
     expect(pat4[0]).toBe(0x0f);
     expect(pat4[1]).toBe(0x0f);
@@ -869,7 +870,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x80]).toBe(0xff);
     expect(pat4[0x100]).toBe(0x0f);
     expect(pat4[0x101]).toBe(0x0f);
@@ -888,7 +889,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x400]).toBe(0xff);
     expect(pat4[0x800]).toBe(0x0f);
     expect(pat4[0x801]).toBe(0x0f);
@@ -907,7 +908,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x480]).toBe(0xff);
     expect(pat4[0x900]).toBe(0x0f);
     expect(pat4[0x901]).toBe(0x0f);
@@ -927,7 +928,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0]).toBe(0xff);
     expect(pat4[0]).toBe(0x0f);
     expect(pat4[1]).toBe(0x0f);
@@ -950,7 +951,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x80]).toBe(0xff);
     expect(pat4[0x100]).toBe(0x0f);
     expect(pat4[0x101]).toBe(0x0f);
@@ -973,7 +974,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x400]).toBe(0xff);
     expect(pat4[0x800]).toBe(0x0f);
     expect(pat4[0x801]).toBe(0x0f);
@@ -996,7 +997,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     expect(pat8[0x480]).toBe(0xff);
     expect(pat4[0x900]).toBe(0x0f);
     expect(pat4[0x901]).toBe(0x0f);
@@ -1020,11 +1021,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 100; i++) {
       expect(pat8[i]).toBe(i);
-      expect(pat4[2*i]).toBe((i >> 4));
-      expect(pat4[2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[2 * i]).toBe(i >> 4);
+      expect(pat4[2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(100);
@@ -1043,11 +1044,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 100; i++) {
       expect(pat8[0x80 + i]).toBe(i);
-      expect(pat4[0x100 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x100 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x100 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x100 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(0x80 + 100);
@@ -1066,11 +1067,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 100; i++) {
       expect(pat8[0x400 + i]).toBe(i);
-      expect(pat4[0x800 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x800 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x800 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x800 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x04);
     expect(spr.patternSubIndex).toBe(100);
@@ -1089,11 +1090,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 100; i++) {
       expect(pat8[0x480 + i]).toBe(i);
-      expect(pat4[0x900 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x900 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x900 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x900 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x04);
     expect(spr.patternSubIndex).toBe(0x80 + 100);
@@ -1112,11 +1113,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x100; i++) {
       expect(pat8[i]).toBe(i);
-      expect(pat4[2*i]).toBe((i >> 4));
-      expect(pat4[2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[2 * i]).toBe(i >> 4);
+      expect(pat4[2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(1);
     expect(spr.patternSubIndex).toBe(0x00);
@@ -1135,11 +1136,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x100; i++) {
       expect(pat8[0x80 + i]).toBe(i);
-      expect(pat4[0x100 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x100 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x100 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x100 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(1);
     expect(spr.patternSubIndex).toBe(0x80);
@@ -1158,11 +1159,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x100; i++) {
       expect(pat8[0x400 + i]).toBe(i);
-      expect(pat4[0x800 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x800 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x800 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x800 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x05);
     expect(spr.patternSubIndex).toBe(0x00);
@@ -1181,11 +1182,11 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x100; i++) {
       expect(pat8[0x480 + i]).toBe(i);
-      expect(pat4[0x900 + 2*i]).toBe((i >> 4));
-      expect(pat4[0x900 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x900 + 2 * i]).toBe(i >> 4);
+      expect(pat4[0x900 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x05);
     expect(spr.patternSubIndex).toBe(0x80);
@@ -1199,16 +1200,16 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Act
     for (let i = 0; i < 0x102; i++) {
-      io.writePort(((i << 8) & 0xff) | 0x5b, (i & 0xff));
+      io.writePort(((i << 8) & 0xff) | 0x5b, i & 0xff);
     }
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x102; i++) {
       expect(pat8[i]).toBe(i & 0xff);
-      expect(pat4[2*i]).toBe(((i >> 4) & 0x0f));
-      expect(pat4[2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[2 * i]).toBe((i >> 4) & 0x0f);
+      expect(pat4[2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(1);
     expect(spr.patternSubIndex).toBe(0x02);
@@ -1222,16 +1223,16 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Act
     for (let i = 0; i < 0x102; i++) {
-      io.writePort(((i << 8) & 0xff) | 0x5b, (i & 0xff));
+      io.writePort(((i << 8) & 0xff) | 0x5b, i & 0xff);
     }
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x102; i++) {
       expect(pat8[0x80 + i]).toBe(i & 0xff);
-      expect(pat4[0x100 + 2*i]).toBe((i >> 4) & 0x0f);
-      expect(pat4[0x100 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x100 + 2 * i]).toBe((i >> 4) & 0x0f);
+      expect(pat4[0x100 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(1);
     expect(spr.patternSubIndex).toBe(0x82);
@@ -1245,16 +1246,16 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Act
     for (let i = 0; i < 0x102; i++) {
-      io.writePort(((i << 8) & 0xff) | 0x5b, (i & 0xff));
+      io.writePort(((i << 8) & 0xff) | 0x5b, i & 0xff);
     }
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x102; i++) {
       expect(pat8[0x400 + i]).toBe(i & 0xff);
-      expect(pat4[0x800 + 2*i]).toBe((i >> 4) & 0x0f);
-      expect(pat4[0x800 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x800 + 2 * i]).toBe((i >> 4) & 0x0f);
+      expect(pat4[0x800 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x05);
     expect(spr.patternSubIndex).toBe(0x02);
@@ -1273,14 +1274,1325 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const pat8 = spr.patternMemory8Bit;
-    const pat4 = spr.pattermMemory4Bit
+    const pat4 = spr.pattermMemory4Bit;
     for (let i = 0; i < 0x102; i++) {
       expect(pat8[0x480 + i]).toBe(i & 0xff);
-      expect(pat4[0x900 + 2*i]).toBe((i >> 4) & 0x0f);
-      expect(pat4[0x900 + 2*i + 1]).toBe(i & 0x0f);
+      expect(pat4[0x900 + 2 * i]).toBe((i >> 4) & 0x0f);
+      expect(pat4[0x900 + 2 * i + 1]).toBe(i & 0x0f);
     }
     expect(spr.patternIndex).toBe(0x05);
     expect(spr.patternSubIndex).toBe(0x82);
+  });
+
+  it("Reg $34 with lockStep #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spriteDevice = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+
+    // --- Act
+    writeNextReg(m, 0x34, 0x80);
+
+    // --- Assert
+    expect(spriteDevice.patternIndex).toBe(0x00);
+    expect(spriteDevice.patternSubIndex).toBe(0x80);
+    expect(spriteDevice.spriteIndex).toBe(0x00);
+    expect(spriteDevice.spriteSubIndex).toBe(0x00);
+    expect(spriteDevice.spriteMirrorIndex).toBe(0x00);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.spriteMirrorIndex);
+  });
+
+  it("Reg $34 with lockStep #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spriteDevice = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+
+    // --- Act
+    writeNextReg(m, 0x34, 0xc4);
+
+    // --- Assert
+    expect(spriteDevice.patternIndex).toBe(0x04);
+    expect(spriteDevice.patternSubIndex).toBe(0x80);
+    expect(spriteDevice.spriteIndex).toBe(0x44);
+    expect(spriteDevice.spriteSubIndex).toBe(0x00);
+    expect(spriteDevice.spriteMirrorIndex).toBe(0x00);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.spriteMirrorIndex);
+  });
+
+  it("Reg $34 with no lockStep #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spriteDevice = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x34, 0x80);
+
+    // --- Assert
+    expect(spriteDevice.spriteMirrorIndex).toBe(0x00);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.spriteMirrorIndex);
+  });
+
+  it("Reg $34 with no lockStep #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spriteDevice = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x34, 0xc3);
+
+    // --- Assert
+    expect(spriteDevice.spriteMirrorIndex).toBe(0x43);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.spriteMirrorIndex);
+  });
+
+  it("Reg $34 with no lockStep #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spriteDevice = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x34, 0x43);
+
+    // --- Assert
+    expect(spriteDevice.spriteMirrorIndex).toBe(0x43);
+    expect(readNextReg(m, 0x34)).toBe(spriteDevice.spriteMirrorIndex);
+  });
+
+  it("Reg $35 with lockStep #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $35 with lockStep #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(4);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $35 with lockStep #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x84);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(4);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $35 with no lockStep #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x00);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $35 with no lockStep #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $35 with no lockStep #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x84);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x35, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $36 with lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $36 with lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $36 with lockStep #3", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x84);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $36 with no lockStep #1", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x00);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $36 with no lockStep #2", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $36 with no lockStep #3", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x84);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x36, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $37 with lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $37 with lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $37 with lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $37 with lockStep #3", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x84);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $37 with no lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x00);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $37 with no lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x37, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $38 with lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x38, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $38 with lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x38, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $38 with lockStep #3", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x84);
+
+    // --- Act
+    writeNextReg(m, 0x38, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $38 with no lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x00);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x38, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $38 with no lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x38, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $39 with lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x00);
+
+    // --- Act
+    writeNextReg(m, 0x39, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $39 with lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x39, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $39 with lockStep #3", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x84);
+
+    // --- Act
+    writeNextReg(m, 0x39, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x04);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $39 with no lockStep #1", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x00);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x39, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[0];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $39 with no lockStep #2", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x39, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x04);
+  });
+
+  it("Reg $75 with lockStep", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x75, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(5);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $75 with no lockStep", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x75, 0x23);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x23);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x05);
+  });
+
+  it("Reg $76 with lockStep", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x76, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x05);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $76 with no lockStep", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x76, 0x45);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x45);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x05);
+  });
+
+  it("Reg $77 with lockStep", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x77, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x05);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $77 with no lockStep", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x77, 0xa0);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x0a);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x05);
+  });
+
+  it("Reg $78 with lockStep", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x78, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x05);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $78 with no lockStep", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x78, 0x80);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(true);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x05);
+  });
+
+  it("Reg $79 with lockStep", async () => {
+    const m = await createTestNextMachine();
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x10);
+    writeNextReg(m, 0x34, 0x04);
+
+    // --- Act
+    writeNextReg(m, 0x79, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x05);
+    expect(spr.spriteSubIndex).toBe(0x00);
+    expect(spr.spriteMirrorIndex).toBe(0);
+  });
+
+  it("Reg $79 with no lockStep", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const spr = m.spriteDevice;
+    writeNextReg(m, 0x09, 0x00);
+    writeNextReg(m, 0x34, 0x04);
+    io.writePort(0x303b, 0x43);
+
+    // --- Act
+    writeNextReg(m, 0x79, 0x18);
+
+    // --- Assert
+    const attrs = spr.spriteMemory[4];
+    expect(attrs.x).toBe(0x00);
+    expect(attrs.y).toBe(0x00);
+    expect(attrs.paletteOffset).toBe(0x00);
+    expect(attrs.mirrorX).toBe(false);
+    expect(attrs.mirrorY).toBe(false);
+    expect(attrs.rotate).toBe(false);
+    expect(attrs.attributeFlag1).toBe(false);
+    expect(attrs.enableVisibility).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.patternIndex).toBe(0x00);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.attributeFlag2).toBe(false);
+    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleY).toBe(0);
+
+    expect(spr.spriteIndex).toBe(0x43);
+    expect(spr.spriteSubIndex).toBe(0);
+    expect(spr.spriteMirrorIndex).toBe(0x05);
   });
 
 });

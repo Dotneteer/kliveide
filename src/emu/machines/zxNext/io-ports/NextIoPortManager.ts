@@ -85,7 +85,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
       readerFns: (p) => readFloatingBusPort(p),
-      writerFns: (p, v) =>writeFloatingBusPort(p, v)
+      writerFns: (p, v) => writeFloatingBusPort(p, v)
     });
     r({
       description: "ZX Spectrum 128 memory",
@@ -470,21 +470,8 @@ export class NextIoPortManager {
       port: 0x303b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0011_0000_0011_1011,
-      readerFns: () => {
-        const spriteDevice = machine.spriteDevice;
-        const result = (spriteDevice.tooManySpritesPerLine ? 0x02 : 0) |
-          (spriteDevice.collisionDetected ? 0x01 : 0);
-        spriteDevice.tooManySpritesPerLine = false;
-        spriteDevice.collisionDetected = false;
-        return result;  
-      },
-      writerFns: (_, v) =>  {
-        const spriteDevice = machine.spriteDevice;
-        spriteDevice.patternIndex = v & 0x3f;
-        spriteDevice.patternSubIndex = v & 0x80;
-        spriteDevice.spriteIndex = v & 0x7f;
-        spriteDevice.spriteSubIndex = 0;
-      }
+      readerFns: () => machine.spriteDevice.readPort303bValue(),
+      writerFns: (_, v) => machine.spriteDevice.writePort303bValue(v)
     });
     r({
       description: "Sprite attributes",
