@@ -31,7 +31,7 @@ describe("Next - DivMmcDevice", async function () {
     }
   });
 
-  it("DivMMC does not respond any reg value while disabled", async () => {
+  it("DivMMC does not respond any reg values between 0x00 and 0x7f while disabled", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
     const divmmc = m.divMmcDevice;
@@ -40,7 +40,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Act
     let differs = 0;
     divmmc.enableAutomap = false;
-    for (let i = 0; i < 0x100; i++) {
+    for (let i = 0; i < 0x80; i++) {
       divmmc.port0xe3Value = i;
       if (
         !romSlotSignatureMatches(memory, 0, nextRom0Signature0) ||

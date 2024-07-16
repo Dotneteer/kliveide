@@ -44,7 +44,7 @@ const CommandResultPanel = ({ document, contents }: DocumentProps) => {
           iconName='copy'
           title={"Copy to clipboard"}
           clicked={async () => {
-            navigator.clipboard.writeText(buffer.getBufferText());
+            navigator.clipboard.writeText(buffer.getBufferText().replaceAll("\xa0", " "));
             dispatch(
               setIdeStatusMessageAction(
                 "Command output text copied to the clipboard",

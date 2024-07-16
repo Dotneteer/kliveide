@@ -80,9 +80,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
     this._bank = value & 0x0f;
     this._canWritePage1 = !this._mapram || this._bank !== 0x03;
-    if (this.enableAutomap && this._conmem) {
+    if (this._conmem) {
       // --- Instant mapping when CONMEM is active
       this.pageIn();
+    } else {
+      this.pageOut();
     }
   }
 
