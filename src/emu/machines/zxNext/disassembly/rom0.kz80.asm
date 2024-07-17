@@ -1,28 +1,26 @@
 Rom0Start
             di
             jp InitSys
-            ld b,l
-            ld b,h
-            ex af,af'
-            ld (bc),a
+            db $45, $44, $08, $02
 Rst08
             jp L15E0
-            ld hl,($2A2E)
-            rst $38
-            nop
+            db $2a, $2e, $2a, $ff, $00
+;
+; Invoke RST $10 in ROM 3
+;
 Rst10
             rst $28
-            djnz L0013
-L0013       ret
+            dw $0010
+            ret
             jp InitSys
             nop
+;
+; Invokes a ROM 1 subroutine.
+; The subroutine address is specified in the two bytes following the RST $18 call instruction.
+;
 Rst18
             jp L3E80
-            inc a
-            ld b,h
-            ld c,c
-            ld d,d
-            cp (hl)
+            db $3c, $44, $49, $52, $BE
 ;
 ; Invokes a ROM 2 subroutine.
 ; The subroutine address is specified in the two bytes following the RST $20 call instruction.
@@ -411,71 +409,72 @@ TestDone
             nextreg $D8,$01        ; Enable +3 FDC traps on ports 0x2ffd and 0x3ffd
             ld a,$05
             call GetNRegA          ; Get Next Register $05 (Peripheral 1 Setting) value
-            and $05
-            or $5A
-            out (c),a
-            ld a,$08
-            call GetNRegA
-            or $4E
-            out (c),a
-            ld a,$06
-            call GetNRegA
-            and $44
-            or $AB
-            out (c),a
-            and $FC
-            out (c),a
-            ld a,$0A
-            call GetNRegA
-            or $10
-            out (c),a
-            call CopySwap
-            ld h,d
-            ld l,e
-            ld (hl),c
-            inc de
-            ld bc,$015F
-            ldir
-            ld hl,$5BFF
-            ld ($5B6A),hl
-            ld sp,hl
-            rst $18
-            ld (hl),c
-            inc (hl)
-            ld a,$CF
-            ld ($5B5D),a
-            ld hl,$0040
-            ld ($5C38),hl
-            exx
-            ld a,c
-            ld (YLOC),a
-            ld (UDG),hl
-            push bc
+            and $05                ; Keep only 50/60Hz mode and the scandoubler bit 
+            or $5A                 ; Set Joystick 1 & 2 mode to MD1
+            out (c),a              ; Write back to Next Register $05
+            ld a,$08               
+            call GetNRegA          ; Get Next Register $08 (Peripheral 3 Setting) value 
+            or $4E                 ; Disable RAM and port contention
+                                   ; Enable 8-bit DACs, port 0xff Timex video mode read, and turbosound
+            out (c),a              ; Write back to Next Register $08
+            ld a,$06               
+            call GetNRegA          ; Get Next Register $06 (Peripheral 2 Setting) value
+            and $44                ; Keep the Divert BEEP to internal speaker and PS/2 mode bits
+            or $AB                 ; Enable F8, F5/F6, F3 hot keys, Multiface NMI by M1 button
+                                   ; Hold all AY in reset
+            out (c),a              ; Write back to Next Register $06
+            and $FC                ; Reset Bit 0 and 1 --> Audio chip mode to YM
+            out (c),a              ; Write back to Next Register $06
+            ld a,$0A               
+            call GetNRegA          ; Get Next Register $0A (Peripheral 5 Setting) value
+            or $10                 ; Enable DivMMC automap
+            out (c),a              ; Write back to Next Register $0A
+            call CopySwap          ; Copy the ROM swap routines to the system variables area
+            ld h,d                 ; After the operation DE points to the next available byte in,
+            ld l,e                 ; the system variables area ($5B52, OLDHL)
+            ld (hl),c              ; Store 0 to OLDHL LSB (after CopySwap BC = 0)
+            inc de                 ; DE points to HL + 1
+            ld bc,$015F            ; BC = $015F (351)
+            ldir                   ; Fill the system variable area ($5B52-$5CB1) with zeros
+            ld hl,$5BFF            ; HL = $5BFF, this address will be used as the top of the stack
+            ld (OLDSP),hl          ; Store this address to the OLDSP system variable ($5B6A)
+            ld sp,hl               ; Set the stack pointer to $5BFF
+            rst $18                
+            dw $3471               ; Invokes the InitStack ($3471) subroutine in ROM 1
+            ld a,$CF               ; "RST $08" instruction
+            ld (RAMRST),a          ; RST 8 instruction. Used by ROM 1 to report old errors to ROM 3.
+            ld hl,$0040            ; Length of warning buzz
+            ld (RASP),hl           ; Store to RASP ($5C38)
+            exx                    ; Restore alternate registers
+            ld a,c                 ; A = bank number
+            ld (YLOC),a            ; Store the bank number to YLOC
+            ld (UDG),hl            ; Store the start address of the UDG area to UDG 
+            push bc                ; Save the bank number
             call L2329
             rst $18
             cp c
             inc d
             ld hl,$3C00
-            ld ($5C36),hl
+            ld (CHARS),hl
             set 4,(iy+$01)
             ld a,$FF
-            ld (iy),a
-            ld ($5B77),a
-            ld ($5B78),a
-            ld ($5B88),a
-            ld ($5B89),a
-            ld a,$54
-            ld ($5B79),a
-            ld ($5B7A),a
-            ld hl,$5CB6
-            ld ($5C4F),hl
-            ld de,$15AF
+            ld (iy),a              ; ERRNR, set to $FF (One less than the report code)
+            ld (RCSTEP),a
+            ld (RCSTEP+1 ),a
+            ld (STRIP2+4),a            
+            ld (STRIP2+5),a
+            ld a,$54               ; "T"
+            ld (LODDRV),a
+            ld (SAVDRV),a
+            ld hl,$5CB6            ; Start of CHANS area 
+            ld (CHANS),hl
+            ld de,$15AF            
             ld bc,$0015
             ex de,hl
             rst $28
             jp LEB33
             dec hl
-            ld ($5C57),hl
+            ld (DATADD),hl
             inc hl
             ld ($5C53),hl
             ld ($5C4B),hl
@@ -859,7 +858,7 @@ L053F       push hl
             ld (RETADDR),hl
             pop bc
             pop hl
-            ld de,($5C4F)
+            ld de,(CHANS)
             and a
             sbc hl,de
             push hl
@@ -902,16 +901,16 @@ L0577       push hl
             ld d,l
             ld d,$E1
             ld (RETADDR),hl
-            ld hl,($5C57)
+            ld hl,(DATADD)
             ld de,($5C53)
             dec de
             and a
             sbc hl,de
             jr nc,L059F
-            ld ($5C57),de
+            ld (DATADD),de
 L059F       pop bc
             pop hl
-            ld de,($5C4F)
+            ld de,(CHANS)
             and a
             sbc hl,de
             push hl
@@ -1135,10 +1134,10 @@ L070B       pop af
             and a
             jr z,L0744
             inc a
-            ld hl,($5C36)
+            ld hl,(CHARS)
             push hl
             inc hl
-            ld ($5C36),hl
+            ld (CHARS),hl
             ld l,a
             ld h,$00
             add hl,hl
@@ -1154,7 +1153,7 @@ L070B       pop af
             ld a,$20
             rst $10
             pop hl
-            ld ($5C36),hl
+            ld (CHARS),hl
 L0744       ld hl,($D6E2)
             ld a,h
             xor l
@@ -2525,14 +2524,14 @@ L0EE8       ld a,($5B7B)
             ld (hl),a
             out (c),e
             inc hl
-            ld bc,($5C36)
+            ld bc,(CHARS)
             ld e,(hl)
             ld (hl),c
             inc hl
             ld d,(hl)
             ld (hl),b
             inc hl
-            ld ($5C36),de
+            ld (CHARS),de
             call L0F3B
             ld a,($D5B8)
             cp $08
@@ -3102,6 +3101,7 @@ L12D1       push af
 ; Reads the Next Register
 ; IN:  A = Register Number
 ; OUT: A = Next Register Value
+;      BC = Next register value port
 ;            
 GetNRegA
             ld bc,$243B            ; Use the standard next register read pattern
@@ -3719,8 +3719,8 @@ L15C9       nextreg $8E,$08
 L15CD       ex af,af'
             pop af
             ld ($5B52),hl
-            ld hl,($5B6A)
-L15D5       ld ($5B6A),sp
+            ld hl,(OLDSP)
+L15D5       ld (OLDSP),sp
             ld sp,hl
             ld hl,($5B52)
             push af
@@ -3729,8 +3729,8 @@ L15D5       ld ($5B6A),sp
 L15E0       ex af,af'
             pop af
             ld ($5B52),hl
-            ld hl,($5B6A)
-            ld ($5B6A),sp
+            ld hl,(OLDSP)
+            ld (OLDSP),sp
             ld sp,hl
             ld hl,($5B52)
             push af
@@ -4185,7 +4185,7 @@ L18EF       cp $2C
 L1912       ld a,$08
 L1914       call L22D4
             ex de,hl
-            ld hl,($5C36)
+            ld hl,(CHARS)
             inc d
             inc h
             ld bc,$0300
@@ -6310,8 +6310,8 @@ L270A       pop bc
             ld a,h
             cp $5C
             jr c,L271C
-            ld hl,($5B6A)
-            ld ($5B6A),sp
+            ld hl,(OLDSP)
+            ld (OLDSP),sp
             ld sp,hl
 L271C       ld ($5B8E),a
             push bc
@@ -6363,8 +6363,8 @@ L276E       ld hl,($5B8A)
 L2779       ld a,($5B8E)
             cp $5C
             ret c
-            ld hl,($5B6A)
-            ld ($5B6A),sp
+            ld hl,(OLDSP)
+            ld (OLDSP),sp
             ld sp,hl
             ret
 L2788       ld a,b
@@ -6606,8 +6606,8 @@ L292A       bit 2,(iy+$02)
             ld (hl),l
             ld a,$C0
             call L27B3
-            ld hl,($5B6A)
-            ld ($5B6A),sp
+            ld hl,(OLDSP)
+            ld (OLDSP),sp
             ld sp,hl
             rst $18
             ld e,$00
@@ -8144,7 +8144,7 @@ L33AC       ld a,(hl)
             scf
             ret
 L33BD       ld hl,$E3B6
-            ld de,$5B89
+            ld de,STRIP2+5
             ld bc,$0022
             jr c,L33C9
             ex de,hl
@@ -8241,7 +8241,7 @@ L3463       ld bc,$0000
             dec l
             ld bc,$7932
             ld e,e
-            ld ($5B7A),a
+            ld (SAVDRV),a
             pop hl
             push hl
             ld (hl),a
@@ -9643,12 +9643,17 @@ InvRom2
             ld b,(hl)              ; Read the next byte following the return address (MSB)
             inc hl                 ; Move to next byte
             ex (sp),hl             ; Restore the return address to the stack
-            push $3E13             ; 
-            push bc                ; Save the BC register
-            ld bc,(OLDBC)          ; Load BC back from OLDBC
-            nextreg $8E,$02        ; Switch to ROM 02
-            ret                    ; Jump to the address pointed by the 
-L3E18       ld a,($5C38)
+            push RetFromR2         ; Return address ROM 2 call completes ($3E13)
+                                   ; Note that the RetFromR2 address will be in ROM 2:
+                                   ;   nextreg $8E,$00
+                                   ;   ret
+                                   ; These instructions will switch back to ROM 0
+            push bc                ; Address of the ROM 1 routine to call to the stack
+            ld bc,(OLDBC)          ; Restore the previous value of BC
+RetFromR2   
+            nextreg $8E,$02        ; Switch to ROM 2
+            ret                    ; Jump to the ROM 2 routine
+L3E18       ld a,(RASP)
             srl a
             ld hl,$0C80
 L3E20       push ix
@@ -9701,18 +9706,26 @@ L3E69       call L11E0
             cp $49
             jr z,L3E5D
             jr L3E69
-L3E80       ld (OLDBC),bc
-            ex (sp),hl
-            ld c,(hl)
-            inc hl
-            ld b,(hl)
-            inc hl
-            ex (sp),hl
-            push $3E93
-            push bc
-L3E8F       ld bc,(OLDBC)
-            nextreg $8E,$01
-            ret
+;
+;  
+;
+L3E80       ld (OLDBC),bc          ; Store BC to OLDBC
+            ex (sp),hl             ; Get the return address
+            ld c,(hl)              ; Read the next byte following the return address (LSB) 
+            inc hl                 ; Move to next byte
+            ld b,(hl)              ; Read the next byte following the return address (MSB)
+            inc hl                 ; Move to next byte
+            ex (sp),hl             ; Restore the return address to the stack
+            push RetFromR1         ; Return address when back from ROM 1 ($3E93)
+                                   ; Note that the RetFromR2 address will be in ROM 1:
+                                   ;   nextreg $8E,$00
+                                   ;   ret
+                                   ; These instructions will switch back to ROM 0
+            push bc                ; Address of the ROM 1 routine to call
+            ld bc,(OLDBC)          ; Restore the previous value of BC
+RetFromR1
+            nextreg $8E,$01        ; Switch to ROM 1
+            ret                    ; Jump to the ROM 1 routine
 L3E98       ld hl,($5C5D)
             push hl
             ld hl,($5C51)
