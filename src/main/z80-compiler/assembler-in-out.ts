@@ -221,7 +221,7 @@ export class SourceFileItem implements ISourceFileItem {
   public readonly filename: string;
 
   constructor (filename: string) {
-    this.filename = path.normalize(filename);
+    this.filename = path.normalize(filename).replace(/\\/g, "/");
   }
 
   /**

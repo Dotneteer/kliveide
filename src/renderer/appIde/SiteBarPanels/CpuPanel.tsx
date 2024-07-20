@@ -221,14 +221,14 @@ const CpuPanel = () => {
       <div className={styles.cols}>
         <Label text='I' width={LAB_WIDTH} />
         <Value
-          text={toHexa2(cpuState?.ir ? cpuState.ir >>> 8 : undefined)}
-          tooltip={toTitle(cpuState?.ir ? cpuState.ir >>> 8 : undefined, "I")}
+          text={toHexa2(cpuState?.ir ? cpuState.ir >>> 8 : 0)}
+          tooltip={toTitle(cpuState?.ir ? cpuState.ir >>> 8 : 0, "I")}
           width={R16_WIDTH}
         />
         <Label text='R' width={LAB_WIDTH} />
         <Value
-          text={toHexa2(cpuState?.ir ? cpuState.ir & 0xff : undefined)}
-          tooltip={toTitle(cpuState?.ir ? cpuState.ir & 0xff : undefined, "R")}
+          text={toHexa2(cpuState?.ir ? cpuState.ir & 0xff : 0)}
+          tooltip={toTitle(cpuState?.ir ? cpuState.ir & 0xff : 0, "R")}
           width={R16_WIDTH}
         />
       </div>
@@ -268,10 +268,10 @@ const CpuPanel = () => {
           tooltip='Interrupt flip-flop #1'
         />
         <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text='IFF2' width={LAB_WIDTH - 3} />
+        <Label text='IFF2' width={LAB_WIDTH+1} />
         <Flag
           value={cpuState?.iff2}
-          width={FLAG_WIDTH + 3}
+          width={FLAG_WIDTH}
           adjustLeft={false}
           center={false}
           tooltip='Interrupt flip-flop #2'
@@ -287,7 +287,7 @@ const CpuPanel = () => {
           tooltip='Interrupt signal'
         />
         <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text='HLT' width={LAB_WIDTH - 3} />
+        <Label text='HLT' width={LAB_WIDTH+1} />
         <Flag
           value={cpuState?.halted}
           width={R16_WIDTH + 3}

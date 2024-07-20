@@ -81,7 +81,7 @@ const IDE_QP = "?ide"; // IDE discriminator
 process.env.DIST_ELECTRON = join(__dirname, "../..");
 process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
 process.env.PUBLIC = app.isPackaged
-  ? join(process.env.DIST, "../out/main")
+  ? process.resourcesPath
   : join(process.env.DIST_ELECTRON, "src/public");
 
 // --- Disable GPU Acceleration for Windows 7

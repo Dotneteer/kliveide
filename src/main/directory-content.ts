@@ -44,7 +44,7 @@ export async function getDirectoryContent (
       isFolder: false,
       name,
       fullPath: entryPath.replace(/\\/g, "/"),
-      projectPath: projectRelative,
+      projectPath: projectRelative.replace(/\\/g, "/"),
       children: []
     };
     if (fileEntryInfo.isFile()) {
