@@ -8387,6 +8387,3 @@ function otdr(cpu: Z80Cpu) {
   cpu.tactPlus5WithAddress(cpu.hl);
   cpu.pc -= 2;
 }
-
-// --------------------------------------------------------------------------------------------------------------------
-// Z80 Extended instructions (ZX Spectrum Next)

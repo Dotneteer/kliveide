@@ -445,12 +445,12 @@ TestDone
             ld (RAMRST),a          ; RST 8 instruction. Used by ROM 1 to report old errors to ROM 3.
             ld hl,$0040            ; Length of warning buzz
             ld (RASP),hl           ; Store to RASP ($5C38)
-            exx                    ; Restore alternate registers
-            ld a,c                 ; A = bank number
-            ld (YLOC),a            ; Store the bank number to YLOC
+            exx                    ; Restore alternate registers. At this point, B = 0, C = highest bank number
+            ld a,c                 ; A = highest bank number
+            ld (YLOC),a            ; Store the highest bank number to YLOC
             ld (UDG),hl            ; Store the start address of the UDG area to UDG 
-            push bc                ; Save the bank number
-            call L2329
+            push bc                ; Save BC
+            call L2329             ; --> 2799
             rst $18
             cp c
             inc d
@@ -4209,7 +4209,7 @@ L192C       push hl
             jp L1633
             ld d,h
             pop hl
-            call L27BD
+            call SetMmu2
 L1942       ld d,$56
             jp L27BA
 L1947       push bc
@@ -4222,7 +4222,7 @@ L1947       push bc
             ex (sp),hl
             push af
             dec d
-            call L27BD
+            call SetMmu2
             pop af
             pop hl
             pop de
@@ -4833,7 +4833,7 @@ L1DC6       ld a,h
             ldir
             pop hl
             ld d,$54
-            call L27BD
+            call SetMmu2
             ld hl,$F350
 L1DE6       ld a,(ix+$24)
             bit 4,(ix+$25)
@@ -5607,33 +5607,37 @@ L230C       nop
 L2324       jr nz,L232E
 L2326       dec c
             jr c,L2329
-L2329       push $2386
-            ld e,b
-L232E       ld d,$54
-            call L270A
-            dec e
-            jr z,L2372
-            ld hl,$A000
+;
+;
+;    
+L2329       push $2386          ; Push the return address to the stack
+            ld e,b              ; Copy the value of B to E
+L232E       ld d,$54            ; Address MMU register $54 ($8000-$9FFF) page
+            call L270A          ; Set MMU $54 to $0B (Upper 8K of the 16K Bank 5), 
+                                ; MMU $55 to $10 (Lower 8K of the 16K Bank 8)
+            dec e               ; Was E 1?
+            jr z,L2372          ; If so, jump to L2372
+            ld hl,$A000         
             ld de,$A001
             ld bc,$0151
             ld (hl),l
-            ldir
-            ld a,(YLOC)
-            inc a
-            add a,a
-            ld ($A050),a
+            ldir                ; Fill the memory from $A000 to $A151 with zeros
+            ld a,(YLOC)         ; A = Highest bank number
+            inc a               ; A = A + 1, number of available RAM banks
+            add a,a             ; A = A * 2
+            ld ($A050),a        ; Store the number of available RAM banks in $A050
             ld a,$10
-            ld ($A051),a
-            ld hl,$FFFF
-            ld ($A000),hl
-            ld ($A028),hl
-            ld a,l
-            ld ($A002),a
-            ld ($A02A),a
-            ld hl,$3FF7
-            ld ($A020),hl
-            ld ($A048),hl
-            ld hl,$0001
+            ld ($A051),a        ; Store $10 in $A051
+            ld hl,$FFFF             
+            ld ($A000),hl       ; Store $FFFF in $A000
+            ld ($A028),hl       ; Store $FFFF in $A028
+            ld a,l              ; A = $FF
+            ld ($A002),a        ; Store $FF in $A002
+            ld ($A02A),a        ; Store $FF in $A02A
+            ld hl,$3FF7         ; HL = $3FF7
+            ld ($A020),hl       ; Store $3FF7 in $A020
+            ld ($A048),hl       ; Store $3FF7 in $A048
+            ld hl,$0001         ; HL = $0001
             rst $20
             cp l
             ld bc,$327B
@@ -5648,6 +5652,7 @@ L2372       ld hl,$3D00
             inc hl
             ld d,$54
             jp L2799
+L2386
             call L2708
             call L264D
             ld hl,$F700
@@ -6304,19 +6309,22 @@ L26F9       ld a,($5C7F)
             dec a
             ret
 L2708       ld d,$56
-L270A       pop bc
-            ld hl,$0000
-            add hl,sp
-            ld a,h
-            cp $5C
-            jr c,L271C
-            ld hl,(OLDSP)
-            ld (OLDSP),sp
-            ld sp,hl
-L271C       ld ($5B8E),a
-            push bc
+;
+;
+;
+L270A       pop bc                 ; Pop the return address from the stack
+            ld hl,$0000            ; Clear the HL register 
+            add hl,sp              ; Add the stack pointer to HL
+            ld a,h                 ; Load the high byte of HL (actually, sp) into A
+            cp $5C                 ; Is SP below $5C?
+            jr c,L271C             ; If so, jump to L271C
+            ld hl,(OLDSP)          ; Load the old stack pointer from OLDSP into HL  
+            ld (OLDSP),sp          ; Save the current stack pointer in OLDSP
+            ld sp,hl               ; Restore the old stack pointer
+L271C       ld (STRIPE2 + 10),a    ; Store the high byte of the previous SP value in STRIPE2 + 10
+            push bc                ; Push the return address back onto the stack
             call L27BA
-            ld ($5B8A),hl
+            ld (STRIPE2 + 6),hl
             ret
 L2727       ld e,$80
             jr L272D
@@ -6396,24 +6404,35 @@ L27B0       rst $18
             dec c
 L27B3       ld d,$56
 L27B5       ld hl,($5B8A)
-            jr L27BD
+            jr SetMmu2
+;
+; Set the value of the MMU register pair to $10
+;            
 L27BA       ld hl,$100B
-L27BD       push bc
-            ld bc,$243B
-            out (c),d
-            inc b
-            in a,(c)
-            out (c),l
-            ld l,a
-            dec b
-            inc d
-            out (c),d
-            inc b
-            in a,(c)
-            out (c),h
-            ld h,a
-            pop bc
-            ret
+;
+; Set the value of the MMU register pair
+; IN: D = MMU register index
+;     L = MMU register value
+;     H = D+1 MMU register value
+; OUT: L = Previous MMU register value
+;      H = Previous D+1 MMU register value
+SetMmu2     
+            push bc                ; Save BC on the stack
+            ld bc,$243B            ; Next register index port
+            out (c),d              ; Set the index of the MMU register 
+            inc b                  ; To port $253b (Next register value port)
+            in a,(c)               ; A = the MMU register's current value 
+            out (c),l              ; Set the MMU register to L
+            ld l,a                 ; Save the MMU register's previous value to L
+            dec b                  ; Back to port $243b
+            inc d                  ; D = MMU register index + 1
+            out (c),d              ; Set the index of the next MMU register (the original D + 1)
+            inc b                  ; To port $253b (Next register value port)
+            in a,(c)               ; A = the MMU register's current value
+            out (c),h              ; Set the MMU register to H
+            ld h,a                 ; Save the MMU register's previous value to H
+            pop bc                 ; Restore BC
+            ret                    ; Done
 L27D5       set 7,(iy+$37)
             and a
             jr z,L27DF

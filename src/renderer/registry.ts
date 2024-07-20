@@ -58,7 +58,8 @@ import {
   MC_DISK_SUPPORT,
   MF_BLINK,
   MF_PSG,
-  MF_ULA
+  MF_ULA,
+  MI_ZXNEXT
 } from "@common/machines/constants";
 import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
@@ -86,6 +87,7 @@ import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPan
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
+import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -139,6 +141,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     expandedOnInit: true
   },
   {
+    id: "nextRegPanel",
+    title: "Next Registers",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    noScrollViewer: false,
+    renderer: nextRegPanelRenderer,
+    restrictTo: [MI_ZXNEXT]
+  },
+  {
     id: "ulaPanel",
     title: "ULA & I/O",
     hostActivity: ACTIVITY_DEBUG_ID,
@@ -190,7 +200,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_SCRIPTING_ID,
     renderer: scriptingHistoryPanelRenderer,
     initialSize: 500
-  }
+  },
 ];
 
 // --- Set up tool panels
