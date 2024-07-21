@@ -1,12 +1,10 @@
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { readFloatingBusPort, writeFloatingBusPort } from "./FloatingBusHandler";
 import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
   writeSpectrumP3FdcControlPort
 } from "./SpectrumP3FdcControlPortHandler";
-import { writePentagon1024MemoryPort } from "./PentagonMemoryPortHandler";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
@@ -67,6 +65,7 @@ export class NextIoPortManager {
   private readonly ports: PortDescriptor[] = [];
   private readonly portMap: Map<number, PortDescriptor> = new Map();
   private readonly portCollisions: Map<number, string[]> = new Map();
+  private _portTimexValue = 0;
 
   constructor(machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
@@ -84,8 +83,10 @@ export class NextIoPortManager {
       port: 0xff,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
-      readerFns: (p) => readFloatingBusPort(p),
-      writerFns: (p, v) => writeFloatingBusPort(p, v)
+      readerFns: () => this._portTimexValue,
+      writerFns: (_, v) => {
+        this._portTimexValue = v & 0xff;
+      }
     });
     r({
       description: "ZX Spectrum 128 memory",
@@ -134,7 +135,7 @@ export class NextIoPortManager {
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: writePentagon1024MemoryPort
+      writerFns: () => {}
     });
     r({
       description: "NextREG Register Select",

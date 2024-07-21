@@ -516,6 +516,9 @@ export async function processRendererToMainMessages (
     case "EmuGetNecUpd765State":
     case "EmuStartScript":
     case "EmuStopScript":
+    case "EmuGetNextRegDescriptors":  
+    case "EmuGetNextRegState":
+    case "EmuGetNextMemoryMapping":  
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();

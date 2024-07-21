@@ -1,206 +1,97 @@
-import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
+import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useRef, useState } from "react";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
+import { useEffect, useState } from "react";
+import { toHexa2 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
-import { SysVar, SysVarType } from "@abstractions/SysVar";
-import { TooltipFactory } from "@controls/Tooltip";
+import {} from "@controls/Tooltip";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { NextRegDescriptor, RegValueState } from "@emu/machines/zxNext/NextRegDevice";
 
 const VAR_WIDTH = 64;
-const VALUE_WIDTH = 40;
+const WRITE_VALUE_WIDTH = 60;
+const VALUE_WIDTH = 32;
 
-type SysVarData = {
-  sysVar: SysVar;
-  length: number;
-  value?: number;
-  valueList?: Uint8Array;
-};
+let nextRegDescriptors: Record<number, NextRegDescriptor>;
 
 const NextRegPanel = () => {
   const { messenger } = useRendererContext();
-  const [sysVars, setSysVars] = useState<SysVarData[]>([]);
+  const [lastRegIndex, setLastRegIndex] = useState<number>();
+  const [regVals, setRegVals] = useState<RegValueState[]>();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
-  // --- This function queries the breakpoints from the emulator
-  const refreshSysVars = async () => {
-    // --- Get breakpoint information
-    const sysVarsResponse = await messenger.sendMessage({
-      type: "EmuGetSysVars"
-    });
-    if (sysVarsResponse.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetSysVars call failed: ${sysVarsResponse.message}`);
-    } else if (sysVarsResponse.type !== "EmuGetSysVarsResponse") {
-      reportUnexpectedMessageType(sysVarsResponse.type);
-    } else {
-      const memResponse = await messenger.sendMessage({
-        type: "EmuGetMemory"
+  useEffect(() => {
+    if (messenger && !nextRegDescriptors) {
+      messenger.sendMessage({ type: "EmuGetNextRegDescriptors" }).then((response) => {
+        if (response.type === "EmuGetNextRegDescriptorsResponse") {
+          const descr = response.descriptors;
+          nextRegDescriptors = {};
+          descr.forEach((d) => {
+            nextRegDescriptors[d.id] = d;
+          });
+        }
+        console.log("NextRegDescriptors", nextRegDescriptors);
       });
-      if (memResponse.type === "ErrorResponse") {
-        reportMessagingError(`EmuGetMemoty call failed: ${memResponse.message}`);
-      } else if (memResponse.type !== "EmuGetMemoryResponse") {
-        reportUnexpectedMessageType(memResponse.type);
-      } else {
-        const memory = memResponse.memory;
-        const vars = sysVarsResponse.sysVars.map((sv) => {
-          const addr = sv.address;
-          let value: number;
-          let valueList: Uint8Array;
-          let length = 1;
-          switch (sv.type) {
-            case SysVarType.Byte:
-            case SysVarType.Flags:
-              value = memory[addr];
-              break;
-            case SysVarType.Word:
-              value = memory[addr] + (memory[addr + 1] << 8);
-              length = 2;
-              break;
-            case SysVarType.Array:
-              valueList = new Uint8Array(sv.length ?? 0);
-              length = valueList.length;
-              for (let i = 0; i < (sv.length ?? 0); i++) {
-                valueList[i] = memory[addr + i];
-              }
-          }
-          return {
-            sysVar: sv,
-            value,
-            valueList,
-            length
-          } as SysVarData;
-        });
-        setSysVars(vars);
-      }
+    }
+  }, [messenger]);
+
+  // --- This function queries the breakpoints from the emulator
+  const refreshNextDeviceState = async () => {
+    // --- Get breakpoint information
+    const response = await messenger.sendMessage({
+      type: "EmuGetNextRegState"
+    });
+    if (response.type === "ErrorResponse") {
+      reportMessagingError(`EmuGetNextRegState call failed: ${response.message}`);
+    } else if (response.type !== "EmuGetNextRegStateResponse") {
+      reportUnexpectedMessageType(response.type);
+    } else {
+      setLastRegIndex(response.lastRegisterIndex);
+      setRegVals(response.regs);
     }
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
     (async function () {
-      await refreshSysVars();
+      await refreshNextDeviceState();
     })();
   }, [machineState]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(500, async () => {
-    await refreshSysVars();
+    await refreshNextDeviceState();
   });
 
   return (
-    <div className={styles.sysVarsPanel}>
-      {sysVars.length === 0 && <div className={styles.center}>No system variables available</div>}
-      {sysVars.length > 0 && (
-        <VirtualizedListView
-          items={sysVars}
-          approxSize={20}
-          fixItemHeight={true}
-          itemRenderer={(idx) => {
-            const item = sysVars[idx];
-            const sysVar = item.sysVar;
-            const value = item.value;
-            const length = item.length;
-            const type = sysVar.type;
-            const tooltip = `${sysVar.name}: $${toHexa4(sysVar.address)} (${
-              sysVar.address
-            }), length: ${length}\n${sysVar.description}`;
-            return (
-              <div className={styles.sysVar}>
-                <LabelSeparator width={4} />
-                <Label text={sysVar.name} width={VAR_WIDTH} tooltip={tooltip} />
-                <div className={styles.sysVarValue}>
-                  {type === SysVarType.Byte && (
-                    <>
-                      <LabelSeparator width={2} />
-                      <Value text={toHexa2(value ?? 0)} width={VALUE_WIDTH} />
-                      <Secondary text={`(${value})`} />
-                    </>
-                  )}
-                  {type === SysVarType.Word && (
-                    <>
-                      <LabelSeparator width={2} />
-                      <Value text={toHexa4(value ?? 0)} width={VALUE_WIDTH} />
-                      <Secondary text={`(${value})`} />
-                    </>
-                  )}
-                  {type === SysVarType.Array && <FullDumpSection sysVarData={item} />}
-                  {type === SysVarType.Flags && (
-                    <FlagRow value={value} flagDescriptions={sysVar.flagDecriptions} />
-                  )}
-                </div>
-              </div>
-            );
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-type FullDumpProps = {
-  sysVarData: SysVarData;
-};
-
-const FullDumpSection = ({ sysVarData }: FullDumpProps) => {
-  const dumpItems: JSX.Element[] = [];
-  for (let i = 0; i < (sysVarData.valueList?.length ?? 0); i += 8) {
-    const dumpValue = <DumpSection key={i} sysVarData={sysVarData} index={i} />;
-    dumpItems.push(dumpValue);
-  }
-  return <div className={styles.dumpRows}>{dumpItems}</div>;
-};
-
-type DumpProps = {
-  sysVarData: SysVarData;
-  index: number;
-};
-
-const DumpSection = ({ sysVarData, index }: DumpProps) => {
-  const byteItems: JSX.Element[] = [];
-  for (let i = index; i < index + 8 && i < (sysVarData.valueList?.length ?? 0); i++) {
-    const byteValue = (
-      <ByteValue
-        key={i}
-        address={sysVarData.sysVar.address + i}
-        value={sysVarData.valueList[i]}
-        tooltip={sysVarData.sysVar.byteDescriptions?.[i] ?? ""}
+    <div className={styles.nextRegPanel}>
+      <div className={styles.regItem}>
+        <LabelSeparator width={4} />
+        <Label text={`Last Reg Index:`} />
+        <LabelSeparator width={4} />
+        <Value text={toHexa2(lastRegIndex ?? 0)} />
+      </div>
+      <VirtualizedListView
+        items={regVals ?? []}
+        approxSize={20}
+        fixItemHeight={true}
+        itemRenderer={(idx) => {
+          const item = regVals[idx];
+          return (
+            <div className={styles.regItem}>
+              <LabelSeparator width={4} />
+              <Label text={`Reg ${toHexa2(item.id)}:`} width={VAR_WIDTH} tooltip={nextRegDescriptors[item.id]?.description}/>
+              {item.lastWrite !== undefined && (
+                <Secondary text={`${item.value !== undefined ? toHexa2(item.value) : "X"} --> `} width={WRITE_VALUE_WIDTH} />
+              )}
+              {item.value !== undefined && (
+                <Value text={`${toHexa2(item.value)}`} width={VALUE_WIDTH} />
+              )}
+            </div>
+          );
+        }}
       />
-    );
-    byteItems.push(byteValue);
-  }
-  return <div className={styles.dumpSection}>{byteItems}</div>;
-};
-
-type ByteValueProps = {
-  address: number;
-  value: number;
-  tooltip?: string;
-};
-
-const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const title = `Address: $${toHexa4(address)}, Value: $${toHexa2(
-    value
-  )} (${value})\n${tooltip ?? ""}`;
-  const toolTipLines = title.split("\n");
-  return (
-    <div ref={ref} className={styles.byteValue}>
-      {toHexa2(value)}
-      {tooltip && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
-      )}
     </div>
   );
 };

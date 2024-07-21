@@ -88,6 +88,7 @@ import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/Disassembl
 import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
+import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -139,6 +140,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: cpuPanelRenderer,
     expandedOnInit: true
+  },
+  {
+    id: "nextMemoryMappingPanel",
+    title: "Next Memory Mapping",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: nextMemMappingPanelRenderer,
+    restrictTo: [MI_ZXNEXT]
   },
   {
     id: "nextRegPanel",

@@ -16,6 +16,8 @@ const UNDEFINED_REG = 0xff;
 export type NextRegInfo = {
   id: number;
   description: string;
+  isReadOnly?: boolean;
+  isWriteOnly?: boolean;
   readFn?: NextRegreadFn;
   writeFn?: NextRegWriteFn;
   slices?: NextRegValueSlice[];
@@ -29,11 +31,28 @@ export type NextRegValueSlice = {
   view?: "flag" | "number";
 };
 
-const writeOnlyRegs: number[] = [0x04, 0x60, 0x63, 0xc7, 0xcb, 0xcf];
+export type NextRegDescriptor = Omit<NextRegInfo, "readFn" | "writeFn">;
+
+export type NextRegDeviceState = {
+  lastRegisterIndex: number;
+  regs: RegValueState[];
+};
+
+export type RegValueState = {
+  id: number;
+  lastWrite?: number;
+  value?: number;
+};
+
+const readOnlyRegs: number[] = [0x00, 0x01, 0x0e, 0x0f, 0x1e, 0x1f, 0xb0, 0xb1, 0xb2];
+const writeOnlyRegs: number[] = [
+  0x04, 0x35, 0x36, 0x37, 0x38, 0x39, 0x60, 0x63, 0x75, 0x76, 0x77, 0x78, 0x79, 0xc7, 0xcb, 0xcf
+];
 
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regs: NextRegInfo[] = [];
   private lastRegister: number = 0;
+  private readonly regLastWriteValues: number[] = [];
   private readonly regValues: number[] = [];
 
   configMode: boolean = false;
@@ -1031,7 +1050,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x34,
       description: "Sprite Number",
       readFn: () => machine.spriteDevice.nextReg34Value,
-      writeFn: v => machine.spriteDevice.nextReg34Value = v & 0xff,
+      writeFn: (v) => (machine.spriteDevice.nextReg34Value = v & 0xff),
       slices: [
         {
           mask: 0x7f,
@@ -1042,52 +1061,52 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x35,
       description: "Sprite Attribute 0",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(0, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirect(0, v)
     });
     r({
       id: 0x75,
       description: "Sprite Attribute 0 with automatic post increment of Sprite Number",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(0, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(0, v)
     });
     r({
       id: 0x36,
       description: "Sprite Attribute 1",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(1, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirect(1, v)
     });
     r({
       id: 0x76,
       description: "Sprite Attribute 1 with automatic post increment of Sprite Number",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(1, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(1, v)
     });
     r({
       id: 0x37,
       description: "Sprite Attribute 2",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(2, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirect(2, v)
     });
     r({
       id: 0x77,
       description: "Sprite Attribute 2 with automatic post increment of Sprite Number",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(2, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(2, v)
     });
     r({
       id: 0x38,
       description: "Sprite Attribute 3",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(3, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirect(3, v)
     });
     r({
       id: 0x78,
       description: "Sprite Attribute 3 with automatic post increment of Sprite Number",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(3, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(3, v)
     });
     r({
       id: 0x39,
       description: "Sprite Attribute 4",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirect(4, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirect(4, v)
     });
     r({
       id: 0x79,
       description: "Sprite Attribute 4 with automatic post increment of Sprite Number",
-      writeFn: v => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(4, v),
+      writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(4, v)
     });
     r({
       id: 0x40,
@@ -1179,42 +1198,50 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x50,
       description: "MMU slot 0",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(0, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(0),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(0, v)
     });
     r({
       id: 0x51,
       description: "MMU slot 1",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(1, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(1),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(1, v)
     });
     r({
       id: 0x52,
       description: "MMU slot 2",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(2, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(2),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(2, v)
     });
     r({
       id: 0x53,
       description: "MMU slot 3",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(3, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(3),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(3, v)
     });
     r({
       id: 0x54,
       description: "MMU slot 4",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(4, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(4),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(4, v)
     });
     r({
       id: 0x55,
       description: "MMU slot 5",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(5, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(5),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(5, v)
     });
     r({
       id: 0x56,
       description: "MMU slot 6",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(6, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(6),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(6, v)
     });
     r({
       id: 0x57,
       description: "MMU slot 7",
-      writeFn: (v) => machine.memoryDevice.setNextRegMmmuValue(7, v)
+      readFn: () => machine.memoryDevice.getNextRegMmuValue(7),
+      writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(7, v)
     });
     r({
       id: 0x60,
@@ -3131,6 +3158,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     if (!regInfo?.writeFn) {
       return;
     }
+    this.regLastWriteValues[this.lastRegister] = value;
     if (!writeOnlyRegs.includes(this.lastRegister)) {
       this.regValues[this.lastRegister] = value;
     }
@@ -3152,9 +3180,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     if (regInfo.readFn) {
       return (this.lastReadValue = regInfo.readFn());
     }
-    return (this.lastReadValue = writeOnlyRegs.includes(reg)
-      ? this.lastReadValue
-      : this.regValues[reg] ?? UNDEFINED_REG);
+    return writeOnlyRegs.includes(reg) ? this.lastReadValue : this.regValues[reg] ?? UNDEFINED_REG;
   }
 
   directSetRegValue(reg: number, value: number): void {
@@ -3163,7 +3189,49 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     regInfo?.writeFn?.(value);
   }
 
+  getDescriptors(): NextRegDescriptor[] {
+    const sorted = this.regs.slice(0).sort((a, b) => a.id - b.id);
+    return sorted.map((reg) => ({
+      id: reg.id,
+      description: reg.description,
+      isReadOnly: reg.isReadOnly,
+      isWriteOnly: reg.isWriteOnly,
+      slices: reg.slices
+    }));
+  }
+
+  getNextRegDeviceState(): NextRegDeviceState {
+    const regs: RegValueState[] = [];
+    for (const regInfo of this.regs) {
+      if (!regInfo) continue;
+      let lastWrite: number | undefined;
+      let value: number | undefined;
+      if (!regInfo.isReadOnly) {
+        lastWrite = this.regLastWriteValues[regInfo.id];
+      }
+      if (!regInfo.isWriteOnly) {
+        value = regInfo.readFn ? regInfo.readFn() : this.regValues[regInfo.id];
+      }
+      regs.push({
+        id: regInfo.id,
+        lastWrite,
+        value
+      });
+    }
+    return {
+      lastRegisterIndex: this.lastRegister,
+      regs
+    };
+  }
+
   private registerNextReg({ id, description, readFn, writeFn }: NextRegInfo): void {
-    this.regs[id] = { id, description, readFn, writeFn };
+    this.regs[id] = {
+      id,
+      description,
+      isReadOnly: readOnlyRegs.includes(id),
+      isWriteOnly: writeOnlyRegs.includes(id),
+      readFn,
+      writeFn
+    };
   }
 }

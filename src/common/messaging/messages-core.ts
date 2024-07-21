@@ -105,7 +105,13 @@ import {
   EmuGetBlinkStateResponse,
   EmuSetDiskWriteProtectionRequest,
   EmuStartScriptRequest,
-  EmuStopScriptRequest
+  EmuStopScriptRequest,
+  EmuGetNextRegDescriptorsRequest,
+  EmuGetNextRegDescriptorsResponse,
+  EmuGetNextRegStateResponse,
+  EmuGetNextRegStateRequest,
+  EmuGetNextMemoryMappingRequest,
+  EmuGetNextMemoryMappingResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -207,6 +213,9 @@ export type RequestMessage =
   | EmuGetBlinkStateRequest
   | EmuStartScriptRequest
   | EmuStopScriptRequest
+  | EmuGetNextRegDescriptorsRequest
+  | EmuGetNextRegStateRequest
+  | EmuGetNextMemoryMappingRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -287,6 +296,9 @@ export type ResponseMessage =
   | EmuGetSysVarsResponse
   | EmuGetNecUpd765Response
   | EmuGetBlinkStateResponse
+  | EmuGetNextRegDescriptorsResponse
+  | EmuGetNextRegStateResponse
+  | EmuGetNextMemoryMappingResponse
   | IdeExecuteCommandResponse
   | IdeGetProjectStructureResponse;
 

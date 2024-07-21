@@ -1,7 +1,6 @@
 import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
 import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
-import { ISpectrumKeyboardDevice } from "../zxSpectrum/ISpectrumKeyboardDevice";
 import { ITapeDevice } from "../../abstractions/ITapeDevice";
 import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -188,8 +187,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   hardReset(): void {
     super.hardReset();
     this.reset();
-    this.memoryDevice.hardReset();
     this.nextRegDevice.hardReset();
+    this.memoryDevice.hardReset();
   }
 
   get64KFlatMemory(): Uint8Array {
@@ -347,8 +346,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param value Register value;
    */
   tbblueOut(address: number, value: number): void {
-    this.nextRegDevice.directSetRegValue(address, value);
-    super.tbblueOut(address, value);
+    this.nextRegDevice.setNextRegisterIndex(address);
+    this.nextRegDevice.setNextRegisterValue(value);
   }
 
   /**

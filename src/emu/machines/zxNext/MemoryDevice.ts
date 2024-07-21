@@ -85,12 +85,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     for (let i = OFFS_ERR_PAGE; i < OFFS_ERR_PAGE + 0x2000; i++) {
       this.memory[i] = 0x7e;
     }
-
-    // --- Init the device flags and values
     this.reset();
   }
 
   reset(): void {
+    this._wasInAllRamMode = true;
     this.selectedRomLsb = 0;
     this.selectedRomMsb = 0;
     this.selectedBankLsb = 0;
@@ -121,9 +120,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Set memory pages according to the default configuration
     this.updateMemoryConfig();
+    console.log("MemoryDevice reset", this.pageInfo.slice(0).map((p) => ({...p})));
   }
 
-  hardReset(): void {}
+  hardReset(): void {
+  }
 
   dispose(): void {}
 
@@ -178,7 +179,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Read the memory according to bank information
     const slotInfo = this.pageInfo[address >>> 13];
-    const addr = slotInfo.readOffset + (address & 0x1fff)
+    const addr = slotInfo.readOffset + (address & 0x1fff);
     const memValue = this.memory[addr];
     return memValue;
   }
@@ -240,6 +241,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     return bank << (13 + 0x40_0000);
   }
 
+  get port1ffdValue(): number {
+    return (this.allRamMode ? 0x01 : 0x00) | (this.specialConfig << 1);
+  }
+
   /**
    * Updates the memory configuration based on the new 0x1ffd port value
    */
@@ -248,6 +253,15 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.specialConfig = (value >> 1) & 0x03;
     this.selectedRomMsb = this.specialConfig & 0x02;
     this.updateMemoryConfig();
+  }
+
+  get port7ffdValue(): number {
+    return (
+      this.selectedBankLsb |
+      (this.useShadowScreen ? 0x08 : 0x00) |
+      (this.selectedRomLsb << 4) |
+      (this.pagingEnabled ? 0x00 : 0x20)
+    );
   }
 
   /**
@@ -265,6 +279,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.selectedRomLsb = (value >> 4) & 0x01;
     this.pagingEnabled = !(value & 0x20);
     this.updateMemoryConfig();
+  }
+
+  get portDffdValue(): number {
+    return this.selectedBankMsb;
   }
 
   /**
@@ -290,7 +308,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param index MMU register index
    * @param value Value to set
    */
-  setNextRegMmmuValue(index: number, value: number): void {
+  setNextRegMmuValue(index: number, value: number): void {
     this.mmuRegs[index & 0x07] = value;
     this.updateMemoryConfig();
   }
@@ -489,7 +507,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
           this.setRamSlotAndMmu(3, 3);
           break;
       }
-      return;      
+      return;
     } else {
       if (this._wasInAllRamMode) {
         // --- Restore the original configuration
@@ -515,6 +533,36 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.setRamSlotByMmu(6);
       this.setRamSlotByMmu(7);
     }
+  }
+
+  getMemoryMappings() {
+    return {
+      allRamBanks: this.getAllRamMappings(),
+      selectedRom: this.selectedRomMsb + this.selectedRomLsb,
+      selectedBank: this.selectedBankMsb + this.selectedBankLsb,
+      port7ffd: this.port7ffdValue,
+      port1ffd: this.port1ffdValue,
+      portDffd: this.portDffdValue,
+      portEff7: 0x00,
+      portLayer2: 0x00,
+      portTimex: 0x00
+    };
+  }
+
+  getAllRamMappings(): number[] | undefined {
+    if (this.allRamMode) {
+      switch (this.specialConfig) {
+        case 0:
+          return [0, 1, 2, 3];
+        case 1:
+          return [4, 5, 6, 7];
+        case 2:
+          return [4, 5, 6, 3];
+        case 3:
+          return [4, 7, 6, 3];
+      }
+    }
+    return undefined;
   }
 
   /**

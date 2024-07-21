@@ -388,8 +388,10 @@ export class MachineController implements IMachineController {
       case MachineControllerState.Stopped:
         // --- First start (after stop), reset the machine
         if (this.machine.softResetOnFirstStart) {
+          console.log("Soft reset on first start");
           this.machine.reset();
         } else {
+          console.log("Hard reset on first start");
           await this.machine.hardReset();
         }
 

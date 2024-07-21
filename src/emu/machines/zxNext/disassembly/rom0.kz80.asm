@@ -400,8 +400,8 @@ TestDone
 ;
             nextreg $B8,$82        ; Enable DivMMC automap on $0008 and $0038
             nextreg $B9,$00        ; Enable all DivMMC entry points only when ROM 3 is present
-            nextreg $BA,$00        ; All DivMMC mappins are delayed 
-            nextreg $BB,$F2        ; Enable DivMMC automap on 0x3Dxx (nstruction fetch, instant, ROM3)
+            nextreg $BA,$00        ; All DivMMC mappings are delayed 
+            nextreg $BB,$F2        ; Enable DivMMC automap on 0x3Dxx (instruction fetch, instant, ROM3)
                                    ; Disable automap on addresses 0x1FF8-0x1FFF (instruction fetch, delayed)
                                    ; Enable automap on address 0x056A (instruction fetch, delayed, ROM3)
                                    ; Enable automap on address 0x04D7 (instruction fetch, delayed, ROM3)
@@ -6406,7 +6406,7 @@ L27B3       ld d,$56
 L27B5       ld hl,($5B8A)
             jr SetMmu2
 ;
-; Set the value of the MMU register pair to $10
+; Set the value of the MMU register pair to $0B/$10
 ;            
 L27BA       ld hl,$100B
 ;
