@@ -117,8 +117,10 @@ export const machineRegistry: MachineInfo[] = [
     machineId: MI_ZXNEXT,
     displayName: "ZX Spectrum Next",
     features: {
-      [MF_TAPE_SUPPORT]: true,
-      [MF_ULA]: true
+      [MF_TAPE_SUPPORT]: false,
+      [MF_ULA]: true,
+      [MF_ROM]: 4,
+      [MF_BANK]: 224
     },
     mediaIds: [MEDIA_TAPE],
     toolInfo: {

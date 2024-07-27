@@ -48,6 +48,7 @@ import {
   writeMultifaceP3DisablePort,
   writeMultifaceP3EnablePort
 } from "./MultifacePortHandler";
+import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;
@@ -67,7 +68,7 @@ export class NextIoPortManager {
   private readonly portCollisions: Map<number, string[]> = new Map();
   private _portTimexValue = 0;
 
-  constructor(machine: IZxNextMachine) {
+  constructor(public readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
 
     r({
@@ -520,6 +521,11 @@ export class NextIoPortManager {
   }
 
   writePort(port: number, value: number): void {
+    if (!excluded.includes(port)) {
+      console.log(
+        `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+      );
+    }
     const descriptor = this.portMap.get(port);
     if (!descriptor) return;
 
@@ -574,3 +580,5 @@ export class NextIoPortManager {
     }
   }
 }
+
+const excluded = [0x243b, 0x253b, 0x7ffd, 0x1ffd, 0xdffd];

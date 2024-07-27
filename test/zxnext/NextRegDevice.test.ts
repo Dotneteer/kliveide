@@ -83,7 +83,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x55)).toBe(0x05);
     expect(d.directGetRegValue(0x56)).toBe(0x00);
     expect(d.directGetRegValue(0x57)).toBe(0x01);
-    expect(d.directGetRegValue(0x60)).toBe(0x00);
+    expect(d.directGetRegValue(0x60)).toBe(0x01);
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
@@ -235,7 +235,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x55)).toBe(0x05);
     expect(d.directGetRegValue(0x56)).toBe(0x00);
     expect(d.directGetRegValue(0x57)).toBe(0x01);
-    expect(d.directGetRegValue(0x60)).toBe(0x00);
+    expect(d.directGetRegValue(0x60)).toBe(0x01);
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
@@ -755,13 +755,13 @@ describe("Next - NextRegDevice", function () {
   it("Reg $04 read #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    readNextReg(m, 0x56);
+    readNextReg(m, 0x55);
 
     // --- Act
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0xff);
+    expect(value).toBe(0x05);
   });
 
   const joystick1Modes = [

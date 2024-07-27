@@ -78,6 +78,14 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Set up memory data (with no pageinfo yet)
     this.pageInfo = [];
+    for (let i = 0; i < 8; i++) {
+      this.pageInfo.push({
+        readOffset: OFFS_ERR_PAGE,
+        writeOffset: null,
+        bank16k: 0xff,
+        bank8k: 0xff
+      });
+    }
     this.memory = new Uint8Array(2048 * 1024 + 0x2000);
 
     // --- The last 8K represents the invalid page, where the corresponding MMU register's value is mapped
@@ -120,11 +128,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Set memory pages according to the default configuration
     this.updateMemoryConfig();
-    console.log("MemoryDevice reset", this.pageInfo.slice(0).map((p) => ({...p})));
   }
 
-  hardReset(): void {
-  }
+  hardReset(): void {}
 
   dispose(): void {}
 
@@ -435,11 +441,29 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Gets the current partition labels for all 16K/8K partitions
    */
   getPartitionLabels(): string[] {
-    return this.pageInfo.map((b) => {
-      if (b.bank16k === 0xff) {
-        return `ROM`;
+    return this.pageInfo.map((b, idx) => {
+      if (idx >= 2 || b.bank16k < 224) {
+        return toHexa2(b.bank16k);
       }
-      return toHexa2(b.bank16k);
+      let offs = b.readOffset;
+      if (offs < OFFS_DIVMMC_ROM) {
+        return `R${(offs - OFFS_NEXT_ROM) >> 14}`;
+      }
+      if (offs >= OFFS_ALT_ROM_0 && offs < OFFS_ALT_ROM_1) {
+        return `A0`;
+      }
+      if (offs >= OFFS_ALT_ROM_1 && offs < OFFS_DIVMMC_RAM) {
+        return `A1`;
+      }
+      if (offs >= OFFS_DIVMMC_ROM && offs < OFFS_MULTIFACE_MEM) {
+        return `DM`;
+      }
+      if (idx) {
+        if (offs >= OFFS_DIVMMC_RAM && offs < OFFS_NEXT_RAM) {
+          return `D${(offs - OFFS_DIVMMC_RAM) >> 13}`;
+        }
+      }
+      return `UN`;
     });
   }
 

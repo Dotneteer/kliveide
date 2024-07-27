@@ -52,6 +52,7 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       const msb = this._api.fetch().opcode;
       const routine = (msb << 8) | lsb;
       this._api.addDisassemblyItem({
+        partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
         opCodes: `${intToX2(lsb)} ${intToX2(msb)}`,
         instruction: `.defw $${intToX4(routine)}`,

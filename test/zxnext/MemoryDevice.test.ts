@@ -374,11 +374,11 @@ describe("Next MMUs - RAM", async function () {
     }
     for (let j = 2; j < 8; j++) {
       it(`Set MMU[${j}] to ${i}`, async () => {
-        memDevice.setNextRegMmmuValue(j, i);
+        memDevice.setNextRegMmuValue(j, i);
         expect(isRam(memDevice, j)).toBe(true);
         expect(isPagedIn(memDevice, j, i)).toBe(true);
 
-        memDevice.setNextRegMmmuValue(j, mmuOld[j]);
+        memDevice.setNextRegMmuValue(j, mmuOld[j]);
       });
     }
   }
