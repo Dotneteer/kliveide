@@ -1,7 +1,7 @@
 /**
  * Available floppy disk formats
  */
-export enum FloppyDiskFormat {
+export const enum FloppyDiskFormat {
   // --- Standard CPCEMU disk format (used in the built-in +3 disk drive)
   Cpc,
 

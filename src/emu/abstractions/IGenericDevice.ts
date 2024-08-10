@@ -1,4 +1,4 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
  * This interface represents the operations of a generic device and is intended to be the base interface of all device

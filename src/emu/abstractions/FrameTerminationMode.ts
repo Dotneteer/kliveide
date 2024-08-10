@@ -1,7 +1,7 @@
 /**
  * This enum defines the termination condition for the machine frame.
  */
-export enum FrameTerminationMode {
+export const enum FrameTerminationMode {
   /**
    * Normal mode: the frame terminates when the current frame completes.
    */

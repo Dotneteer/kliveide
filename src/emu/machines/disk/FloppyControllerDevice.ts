@@ -1,13 +1,13 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import type { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
+import type { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
 
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { DISK_A_CHANGES, DISK_A_WP, DISK_B_CHANGES, DISK_B_WP } from "../machine-props";
-import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
 import { DiskCrc } from "./DiskCrc";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 

@@ -1,4 +1,4 @@
-import { IZ88MemoryCard } from "./IZ88MemoryCard";
+import type { IZ88MemoryCard } from "./IZ88MemoryCard";
 
 /**
  * Represents information about a particular Z88 8K page

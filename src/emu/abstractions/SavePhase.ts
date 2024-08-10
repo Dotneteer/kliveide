@@ -1,7 +1,7 @@
 /**
  * This enumeration defines the phases of the SAVE operation
  */
-export enum SavePhase {
+export const enum SavePhase {
   /**
    * No SAVE operation is in progress
    */

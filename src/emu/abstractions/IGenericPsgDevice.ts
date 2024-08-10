@@ -1,6 +1,6 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { IAudioDevice } from "./IAudioDevice";
-import { PsgChipState } from "./PsgChipState";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IAudioDevice } from "./IAudioDevice";
+import type { PsgChipState } from "./PsgChipState";
 
 /**
  * Represents the AY-3-8910 PSG chip as a device

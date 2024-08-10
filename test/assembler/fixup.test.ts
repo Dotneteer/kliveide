@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
-import { ExpressionValueType } from "@abstractions/IZ80CompilerService";
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
 
 describe("Assembler - fixups", async () => {
   it("equ: fixup", async () => {

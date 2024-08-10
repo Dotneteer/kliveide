@@ -1,12 +1,12 @@
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import type { EvaluationContext } from "./EvaluationContext";
+import type { AppState } from "@common/state/AppState";
+import type { Store } from "@common/state/redux-light";
 
-import { EvaluationContext } from "./EvaluationContext";
-import { AppState } from "../../common/state/AppState";
-import { Store } from "../../common/state/redux-light";
-import { setScriptsStatusAction } from "../../common/state/actions";
-import { MessengerBase } from "../../common/messaging/MessengerBase";
-import { IdeDisplayOutputRequest } from "../../common/messaging/any-to-ide";
-import { PANE_ID_SCRIPTIMG } from "../../common/integration/constants";
+import { setScriptsStatusAction } from "@common/state/actions";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
+import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 
 /**
  * Concludes a running script and handles the UI messages related to it

@@ -1,5 +1,6 @@
+import type { Token } from "./Token";
+
 import { InputStream } from "./InputStream";
-import { Token } from "./Token";
 import { TokenType } from "./TokenType";
 import { parseRegExpLiteral } from "@eslint-community/regexpp";
 

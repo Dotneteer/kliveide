@@ -1,6 +1,6 @@
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { AppState } from "@common/state/AppState";
+import type { Store } from "@common/state/redux-light";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
  * This type stores common information about a particular emulated machine

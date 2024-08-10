@@ -1,5 +1,5 @@
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { IZ88ScreenDevice } from "./IZ88ScreenDevice";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 

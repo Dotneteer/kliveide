@@ -1,5 +1,5 @@
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import { INTFlags, STAFlags } from "./IZ88BlinkDevice";
 
 /**

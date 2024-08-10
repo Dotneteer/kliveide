@@ -1,4 +1,4 @@
-import { Statement } from "./source-tree";
+import type { Statement } from "./source-tree";
 
 // An item of the queue we use for processing a statement
 export type StatementQueueItem = {

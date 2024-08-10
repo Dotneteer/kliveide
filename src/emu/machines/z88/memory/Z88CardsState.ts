@@ -1,4 +1,4 @@
-import { CardSlotState } from "./CardSlotState";
+import type { CardSlotState } from "./CardSlotState";
 
 /**
  * Represents the Z88 card states

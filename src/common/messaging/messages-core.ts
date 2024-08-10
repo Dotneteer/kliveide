@@ -16,7 +16,7 @@
 // |-----------------------------------------------------|
 // ====================================================================================================================
 
-import {
+import type {
   MainReadTextFileRequest,
   MainReadBinaryFileRequest,
   MainDisplayMessageBoxRequest,
@@ -72,8 +72,8 @@ import {
   MainRemoveCompletedScriptsRequest,
   MainCheckBuildRootRequest
 } from "./any-to-main";
-import { ForwardActionRequest } from "./forwarding";
-import {
+import type { ForwardActionRequest } from "./forwarding";
+import type {
   EmuSetMachineTypeRequest,
   EmuMachineCommandRequest,
   EmuSetTapeFileRequest,

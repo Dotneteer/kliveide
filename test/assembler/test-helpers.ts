@@ -7,7 +7,7 @@ import {
   AssemblerOutput
 } from "@main/z80-compiler/assembler-in-out";
 import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
-import { SpectrumModelType } from "@abstractions/IZ80CompilerService";
+import { SpectrumModelType } from "@abstractions/CompilerInfo";
 
 export async function testExpression (
   source: string,

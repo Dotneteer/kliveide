@@ -1,4 +1,4 @@
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
 import { CardType } from "@emu/machines/z88/memory/CardType";
 
@@ -7,7 +7,6 @@ import { CardType } from "@emu/machines/z88/memory/CardType";
  */
 export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
   private _chipMask: number;
-  private _slot: number;
 
   /**
    * Initializes the card with the specified size
@@ -15,9 +14,6 @@ export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
    * @param size The size of the memory card in bytes
    */
   constructor (public readonly host: IZ88Machine, public readonly size: number) {
-    // --- Sign the card is not inserted into any slot
-    this._slot = -1;
-
     // --- Calculate the chip (address line) mask
     switch (size) {
       case 0x00_0000:

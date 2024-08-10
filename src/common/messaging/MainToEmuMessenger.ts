@@ -1,4 +1,5 @@
-import { Channel, RequestMessage, ResponseMessage } from "./messages-core";
+import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
+
 import { MessengerBase } from "./MessengerBase";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 

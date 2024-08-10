@@ -1,7 +1,7 @@
 /**
  * This enum defines the MIC pulse types according to their widths
  */
-export enum MicPulseType {
+export const enum MicPulseType {
   /**
    * No pulse information
    */

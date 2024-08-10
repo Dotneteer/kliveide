@@ -1,8 +1,5 @@
-import {
-  Channel,
-  RequestMessage,
-  ResponseMessage
-} from "@messaging/messages-core";
+import type { Channel, RequestMessage, ResponseMessage } from "@messaging/messages-core";
+
 import { MessengerBase } from "@messaging/MessengerBase";
 
 const ipcRenderer = window.electron.ipcRenderer;
@@ -14,12 +11,10 @@ export class EmuToMainMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
-  constructor () {
+  constructor() {
     super();
-    ipcRenderer?.on(
-      this.responseChannel,
-      (_ev: any, response: ResponseMessage) =>
-        this.processResponse(response)
+    ipcRenderer?.on(this.responseChannel, (_ev: any, response: ResponseMessage) =>
+      this.processResponse(response)
     );
   }
 
@@ -27,7 +22,7 @@ export class EmuToMainMessenger extends MessengerBase {
    * Sends out the message
    * @param message Message to send
    */
-  protected send (message: RequestMessage): void {
+  protected send(message: RequestMessage): void {
     message.sourceId = "emu";
     ipcRenderer?.send(this.requestChannel, Object.assign({}, message));
   }
@@ -35,14 +30,14 @@ export class EmuToMainMessenger extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  get requestChannel (): Channel {
+  get requestChannel(): Channel {
     return "EmuToMain";
   }
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel (): Channel {
+  get responseChannel(): Channel {
     return "EmuToMainResponse";
   }
 }

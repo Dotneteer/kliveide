@@ -1,10 +1,9 @@
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import type { CompilerOptions } from "@abstractions/CompilerInfo";
 import type { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
-
-import { MessageBase } from "./messages-core";
-import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
-import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import type { MessageBase } from "./messages-core";
+import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 // --- Read the contents of a text file
 export interface MainReadTextFileRequest extends MessageBase {

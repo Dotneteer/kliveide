@@ -1,12 +1,14 @@
-import { DiskSurface, createDiskSurface } from "./DiskSurface";
-import { DiskInformation } from "./DiskInformation";
-import { readDiskData } from "./disk-readers";
-import { FloppyControllerDevice } from "./FloppyControllerDevice";
-import {
+import type { DiskSurface } from "./DiskSurface";
+import type { DiskInformation } from "./DiskInformation";
+import type {
   IFloppyDiskDrive,
   ChangedSectors,
   SectorChanges
 } from "@emu/abstractions/IFloppyDiskDrive";
+
+import { createDiskSurface } from "./DiskSurface";
+import { readDiskData } from "./disk-readers";
+import { FloppyControllerDevice } from "./FloppyControllerDevice";
 
 // --- Percentage of motor speed increment in a single complete frame
 const MOTOR_SPEED_INCREMENT = 2;
@@ -20,7 +22,7 @@ const STEP_RND_FACTOR = 34;
  * This class represents a single floppy disk device
  */
 export class FloppyDiskDrive implements IFloppyDiskDrive {
-  constructor (
+  constructor(
     public readonly controller: FloppyControllerDevice,
     public readonly unitNumber: number
   ) {
@@ -28,7 +30,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Resets the drive
-  reset (): void {
+  reset(): void {
     delete this.contents;
     delete this.disk;
     delete this.surface;
@@ -57,18 +59,18 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   selected: boolean;
 
   // --- Indicates if the drive has a disk loaded
-  get hasDiskLoaded (): boolean {
+  get hasDiskLoaded(): boolean {
     return !!this.contents;
   }
 
   // --- Selects the drive for active/inactive operation
-  selectDrive (selected: boolean): void {
+  selectDrive(selected: boolean): void {
     this.selected = selected;
     this.loadHead(selected);
   }
 
   // --- Loads the disk with the specified contents into the drive
-  loadDisk (contents: Uint8Array, writeProtected: boolean): void {
+  loadDisk(contents: Uint8Array, writeProtected: boolean): void {
     // --- Load the disk data
     this.contents = contents;
     this.disk = readDiskData(contents);
@@ -84,7 +86,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Ejects the disk from the drive
-  ejectDisk (): void {
+  ejectDisk(): void {
     delete this.contents;
     delete this.disk;
     delete this.surface;
@@ -160,30 +162,27 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   dirtySectors: ChangedSectors;
 
   // --- Turn on the floppy drive's motor
-  turnOnMotor (): void {
+  turnOnMotor(): void {
     if (this.motorOn) return;
     this.motorOn = true;
     this.motorAccelerating = true;
   }
 
   // --- Turn off the floppy drive's motor
-  turnOffMotor (): void {
+  turnOffMotor(): void {
     if (!this.motorOn) return;
     this.motorOn = false;
     this.motorAccelerating = false;
   }
 
   // --- Carry out chores when a machine frame has been completed
-  onFrameCompleted (): void {
+  onFrameCompleted(): void {
     this.ready = this.motorSpeed === 100 && this.hasDiskLoaded;
     if (this.motorAccelerating === undefined) return;
     if (this.motorAccelerating) {
       // --- Handle acceleration
       if (this.motorSpeed < 100) {
-        this.motorSpeed = Math.min(
-          100,
-          this.motorSpeed + MOTOR_SPEED_INCREMENT
-        );
+        this.motorSpeed = Math.min(100, this.motorSpeed + MOTOR_SPEED_INCREMENT);
       } else {
         delete this.motorAccelerating;
       }
@@ -199,7 +198,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Step one cylinder into the specified direction
-  step (directionIn: boolean): void {
+  step(directionIn: boolean): void {
     if (directionIn) {
       // --- Direction out
       if (this.currentCylinder > 0) {
@@ -216,7 +215,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Loads or unloads the drive's head
-  loadHead (load: boolean): void {
+  loadHead(load: boolean): void {
     if (!this.hasDiskLoaded || this.headLoaded === load) {
       return;
     }
@@ -225,14 +224,11 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Sets the data position to the current cylinder's surface data using the specified random factor
-  setDataToCurrentCylinder (randomFactor: number): void {
+  setDataToCurrentCylinder(randomFactor: number): void {
     if (!this.hasDiskLoaded) return;
 
     const head = this.currentHead;
-    if (
-      (this.disk.numSides === 1 && head === 1) ||
-      this.currentCylinder >= this.disk.numTracks
-    ) {
+    if ((this.disk.numSides === 1 && head === 1) || this.currentCylinder >= this.disk.numTracks) {
       // --- No data available for the disk
       this.currentTrackIndex = -1;
       return;
@@ -243,26 +239,22 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.dataPosInTrack = 0;
     if (randomFactor > 0) {
       // --- Generate a bpt/fact +-10% triangular distribution skip in bytes
-      const trackLength =
-        this.surface.tracks[this.currentTrackIndex].trackLength;
+      const trackLength = this.surface.tracks[this.currentTrackIndex].trackLength;
 
       // --- Random number between -9 and 9
       const rand = this.controller.disableRandomSeek
         ? 2
-        : (Math.floor(Math.random() * 10) % 10) +
-          (Math.floor(Math.random() * 10) % 10) -
-          9;
+        : (Math.floor(Math.random() * 10) % 10) + (Math.floor(Math.random() * 10) % 10) - 9;
       this.dataPosInTrack +=
         Math.floor(trackLength / randomFactor) +
         Math.floor((trackLength * rand) / randomFactor / 100);
-      while (this.dataPosInTrack >= trackLength)
-        this.dataPosInTrack -= trackLength;
+      while (this.dataPosInTrack >= trackLength) this.dataPosInTrack -= trackLength;
     }
     this.atIndexWhole = !this.dataPosInTrack;
   }
 
   // --- Read the next data from the disk
-  readData (): void {
+  readData(): void {
     if (!this.positionData(false)) {
       // --- Positioning the data is not done yet.
       return;
@@ -271,7 +263,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Write the current data to the disk
-  writeData (): void {
+  writeData(): void {
     if (!this.positionData(true)) {
       // --- Positioning the data is not done yet.
       return;
@@ -280,7 +272,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Wait while the revolution reaches the index hole
-  waitIndexHole (): void {
+  waitIndexHole(): void {
     if (!this.selected || !this.ready) {
       return;
     }
@@ -304,17 +296,11 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     return changes;
   }
 
-
   // --- Helpers
 
   // --- Positions the data to the specified operation
-  private positionData (write: boolean): boolean {
-    if (
-      !this.selected ||
-      !this.ready ||
-      !this.headLoaded ||
-      this.currentTrackIndex < 0
-    ) {
+  private positionData(write: boolean): boolean {
+    if (!this.selected || !this.ready || !this.headLoaded || this.currentTrackIndex < 0) {
       if (this.hasDiskLoaded && this.motorOn && this.motorSpeed === 100) {
         // --- The disk is spinnng
         if (this.dataPosInTrack >= this.surface.bytesPerTrack) {
@@ -339,7 +325,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Reads the next data from the disk (after positioning)
-  private readDataValue (): void {
+  private readDataValue(): void {
     const trackSurface = this.surface.tracks[this.currentTrackIndex];
     this.currentData = trackSurface.trackData[this.dataPosInTrack];
     if (trackSurface.clockData.testBit(this.dataPosInTrack)) {
@@ -364,7 +350,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
   }
 
   // --- Writes the current data to the disk (after positioning)
-  private writeDataValue (): void {
+  private writeDataValue(): void {
     const trackSurface = this.surface.tracks[this.currentTrackIndex];
     if (this.writeProtected) {
       this.dataPosInTrack++;
@@ -372,10 +358,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
       return;
     }
     trackSurface.trackData[this.dataPosInTrack] = this.currentData & 0x00ff;
-    trackSurface.clockData.setBit(
-      this.dataPosInTrack,
-      !!(this.currentData & 0xff00)
-    );
+    trackSurface.clockData.setBit(this.dataPosInTrack, !!(this.currentData & 0xff00));
     trackSurface.fmData.setBit(this.dataPosInTrack, !!(this.marks & 0x01));
     trackSurface.fmData.setBit(this.dataPosInTrack, false);
     this.dirtySectors.add(this.sectorKey());
@@ -387,7 +370,7 @@ export class FloppyDiskDrive implements IFloppyDiskDrive {
     this.atIndexWhole = !this.dataPosInTrack;
   }
 
-  private sectorKey (): number {
+  private sectorKey(): number {
     return this.currentTrackIndex * 100 + this.currentSectorIndex;
   }
 }

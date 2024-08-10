@@ -1,6 +1,6 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
-import {
+import type { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
+import type {
   CommandDescriptor,
   IntRequest,
   OperationPhase,

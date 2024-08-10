@@ -1,5 +1,5 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 
 /**
  * This interface defines the properties and operations of the Cambridge Z88 Blink device.

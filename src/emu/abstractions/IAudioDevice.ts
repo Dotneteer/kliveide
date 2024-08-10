@@ -1,5 +1,5 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { IGenericDevice } from "./IGenericDevice";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IGenericDevice } from "./IGenericDevice";
 
 /**
  * This interface represents anaudio device that creates sound samples according to a particular sample rate.

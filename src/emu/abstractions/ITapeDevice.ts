@@ -1,6 +1,6 @@
-import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { TapeMode } from "./TapeMode";
+import type { IGenericDevice } from "./IGenericDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { TapeMode } from "./TapeMode";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's tape device.

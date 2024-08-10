@@ -1,3 +1,5 @@
+import type { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
+
 import {
   MI_SPECTRUM_48,
   MI_SPECTRUM_128,
@@ -20,7 +22,6 @@ import {
   MC_Z88_SLOT0,
   MI_ZXNEXT
 } from "./constants";
-import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
