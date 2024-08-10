@@ -1,3 +1,4 @@
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
@@ -140,10 +141,9 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase {
       this.partition = partitionType === "R" ? -(partition + 1) : partition;
       if (partition !== undefined) {
         // --- TODO: Fix this!
-        // const roms = context.machineInfo.roms ?? 0;
-        // const banks = context.machineInfo.banks ?? 0;
-        const roms = 0;
-        const banks = 0;
+        const roms = context.machineInfo?.features?.[MF_ROM] ?? 0;
+        const banks = context.machineInfo?.features?.[MF_BANK] ?? 0;
+        console.log(context.machineInfo, roms, banks);
         if (
           (roms === 0 && this.partition < 0) ||
           (banks === 0 && this.partition >= 0)

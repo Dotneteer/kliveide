@@ -24,6 +24,7 @@ import { MachineInfo } from "@common/machines/info-types";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

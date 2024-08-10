@@ -80,9 +80,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
     this._bank = value & 0x0f;
     this._canWritePage1 = !this._mapram || this._bank !== 0x03;
-    if (this.enableAutomap && this._conmem) {
+    if (this._conmem) {
       // --- Instant mapping when CONMEM is active
       this.pageIn();
+    } else {
+      this.pageOut();
     }
   }
 
@@ -305,8 +307,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Page 1
+    console.log("DivMMC pageIn bank", this.bank);
     const offset = OFFS_DIVMMC_RAM + this.bank * 0x2000;
-    memoryDevice.setPageInfo(1, offset, this._mapram  && this.bank === 3 ? null : offset, 0xff, 0xff);
+    memoryDevice.setPageInfo(1, offset, this._mapram && this.bank === 3 ? null : offset, 0xff, 0xff);
   }
 
   // --- Pages out ROM/RAM from the lower 16K

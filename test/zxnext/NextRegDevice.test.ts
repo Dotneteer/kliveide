@@ -62,11 +62,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x32)).toBe(0x00);
     expect(d.directGetRegValue(0x33)).toBe(0x00);
     expect(d.directGetRegValue(0x34)).toBe(0x00);
-    expect(d.directGetRegValue(0x35)).toBe(0xff);
-    expect(d.directGetRegValue(0x36)).toBe(0xff);
-    expect(d.directGetRegValue(0x37)).toBe(0xff);
-    expect(d.directGetRegValue(0x38)).toBe(0xff);
-    expect(d.directGetRegValue(0x39)).toBe(0xff);
+    expect(d.directGetRegValue(0x35)).toBe(0x00);
+    expect(d.directGetRegValue(0x36)).toBe(0x00);
+    expect(d.directGetRegValue(0x37)).toBe(0x00);
+    expect(d.directGetRegValue(0x38)).toBe(0x00);
+    expect(d.directGetRegValue(0x39)).toBe(0x00);
     expect(d.directGetRegValue(0x40)).toBe(0x00);
     expect(d.directGetRegValue(0x41)).toBe(0x00);
     expect(d.directGetRegValue(0x42)).toBe(0x0f);
@@ -97,11 +97,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x6f)).toBe(0x00);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
-    expect(d.directGetRegValue(0x75)).toBe(0xff);
-    expect(d.directGetRegValue(0x76)).toBe(0xff);
-    expect(d.directGetRegValue(0x77)).toBe(0xff);
-    expect(d.directGetRegValue(0x78)).toBe(0xff);
-    expect(d.directGetRegValue(0x79)).toBe(0xff);
+    expect(d.directGetRegValue(0x75)).toBe(0x00);
+    expect(d.directGetRegValue(0x76)).toBe(0x00);
+    expect(d.directGetRegValue(0x77)).toBe(0x00);
+    expect(d.directGetRegValue(0x78)).toBe(0x00);
+    expect(d.directGetRegValue(0x79)).toBe(0x00);
     expect(d.directGetRegValue(0x7f)).toBe(0xff);
     expect(d.directGetRegValue(0x80)).toBe(0xff);
     expect(d.directGetRegValue(0x81)).toBe(0x00);
@@ -214,11 +214,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x32)).toBe(0x00);
     expect(d.directGetRegValue(0x33)).toBe(0x00);
     expect(d.directGetRegValue(0x34)).toBe(0x00);
-    expect(d.directGetRegValue(0x35)).toBe(0xff);
-    expect(d.directGetRegValue(0x36)).toBe(0xff);
-    expect(d.directGetRegValue(0x37)).toBe(0xff);
-    expect(d.directGetRegValue(0x38)).toBe(0xff);
-    expect(d.directGetRegValue(0x39)).toBe(0xff);
+    expect(d.directGetRegValue(0x35)).toBe(0x00);
+    expect(d.directGetRegValue(0x36)).toBe(0x00);
+    expect(d.directGetRegValue(0x37)).toBe(0x00);
+    expect(d.directGetRegValue(0x38)).toBe(0x00);
+    expect(d.directGetRegValue(0x39)).toBe(0x00);
     expect(d.directGetRegValue(0x40)).toBe(0x00);
     expect(d.directGetRegValue(0x41)).toBe(0x00);
     expect(d.directGetRegValue(0x42)).toBe(0x0f);
@@ -249,11 +249,11 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x6f)).toBe(0x00);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
-    expect(d.directGetRegValue(0x75)).toBe(0xff);
-    expect(d.directGetRegValue(0x76)).toBe(0xff);
-    expect(d.directGetRegValue(0x77)).toBe(0xff);
-    expect(d.directGetRegValue(0x78)).toBe(0xff);
-    expect(d.directGetRegValue(0x79)).toBe(0xff);
+    expect(d.directGetRegValue(0x75)).toBe(0x00);
+    expect(d.directGetRegValue(0x76)).toBe(0x00);
+    expect(d.directGetRegValue(0x77)).toBe(0x00);
+    expect(d.directGetRegValue(0x78)).toBe(0x00);
+    expect(d.directGetRegValue(0x79)).toBe(0x00);
     expect(d.directGetRegValue(0x7f)).toBe(0xff);
     expect(d.directGetRegValue(0x80)).toBe(0xff);
     expect(d.directGetRegValue(0x81)).toBe(0x00);
@@ -755,13 +755,13 @@ describe("Next - NextRegDevice", function () {
   it("Reg $04 read #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    readNextReg(m, 0x56);
+    readNextReg(m, 0x55);
 
     // --- Act
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0x00);
+    expect(value).toBe(0x05);
   });
 
   const joystick1Modes = [
@@ -5089,6 +5089,14 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0xfa)).toBe(0x5a);
+  });
+
+  it("getDeviceState works", async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+
+    // --- Act
+    m.nextRegDevice.getNextRegDeviceState();
   });
 });
 

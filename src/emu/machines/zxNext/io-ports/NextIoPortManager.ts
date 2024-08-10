@@ -1,12 +1,10 @@
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { readFloatingBusPort, writeFloatingBusPort } from "./FloatingBusHandler";
 import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
   writeSpectrumP3FdcControlPort
 } from "./SpectrumP3FdcControlPortHandler";
-import { writePentagon1024MemoryPort } from "./PentagonMemoryPortHandler";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
@@ -50,6 +48,7 @@ import {
   writeMultifaceP3DisablePort,
   writeMultifaceP3EnablePort
 } from "./MultifacePortHandler";
+import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;
@@ -67,8 +66,9 @@ export class NextIoPortManager {
   private readonly ports: PortDescriptor[] = [];
   private readonly portMap: Map<number, PortDescriptor> = new Map();
   private readonly portCollisions: Map<number, string[]> = new Map();
+  private _portTimexValue = 0;
 
-  constructor(machine: IZxNextMachine) {
+  constructor(public readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
 
     r({
@@ -84,8 +84,10 @@ export class NextIoPortManager {
       port: 0xff,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
-      readerFns: (p) => readFloatingBusPort(p),
-      writerFns: (p, v) => writeFloatingBusPort(p, v)
+      readerFns: () => this._portTimexValue,
+      writerFns: (_, v) => {
+        this._portTimexValue = v & 0xff;
+      }
     });
     r({
       description: "ZX Spectrum 128 memory",
@@ -134,7 +136,7 @@ export class NextIoPortManager {
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: writePentagon1024MemoryPort
+      writerFns: () => {}
     });
     r({
       description: "NextREG Register Select",
@@ -498,6 +500,11 @@ export class NextIoPortManager {
   }
 
   readPort(port: number): number {
+    if (!excluded.includes(port)) {
+      console.log(
+        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+      );
+    }
     const descriptor = this.portMap.get(port);
     if (!descriptor?.readerFns) return 0xff;
 
@@ -519,6 +526,11 @@ export class NextIoPortManager {
   }
 
   writePort(port: number, value: number): void {
+    if (!excluded.includes(port)) {
+      console.log(
+        `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+      );
+    }
     const descriptor = this.portMap.get(port);
     if (!descriptor) return;
 
@@ -573,3 +585,5 @@ export class NextIoPortManager {
     }
   }
 }
+
+const excluded = [0x243b, 0x253b, 0x7ffd, 0x1ffd, 0xdffd];

@@ -3,6 +3,11 @@
  */
 export type FetchResult = {
   /**
+   * The optional partition
+   */
+  partitionLabel?: string;
+
+  /**
    * Offset the opcode was read from
    */
   offset: number;

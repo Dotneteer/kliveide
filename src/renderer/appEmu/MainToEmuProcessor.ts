@@ -1,11 +1,7 @@
 import { AppServices } from "@renderer/abstractions/AppServices";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import {
-  DISK_A_WP,
-  DISK_B_WP,
-  REWIND_REQUESTED
-} from "@emu/machines/machine-props";
+import { DISK_A_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
@@ -34,32 +30,20 @@ import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
 import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
 import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
-import {
-  MEDIA_DISK_A,
-  MEDIA_DISK_B,
-  MEDIA_TAPE
-} from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-const borderColors = [
-  "Black",
-  "Blue",
-  "Red",
-  "Magenta",
-  "Green",
-  "Cyan",
-  "Yellow",
-  "White"
-];
+const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
 /**
  * Process the messages coming from the emulator to the main process
  * @param message Emulator message
  * @returns Message response
  */
-export async function processMainToEmuMessages (
+export async function processMainToEmuMessages(
   message: RequestMessage,
   store: Store<AppState>,
   emuToMain: MessengerBase,
@@ -73,11 +57,7 @@ export async function processMainToEmuMessages (
 
     case "EmuSetMachineType":
       // --- Change the current machine type to a new one
-      await machineService.setMachineType(
-        message.machineId,
-        message.modelId,
-        message.config
-      );
+      await machineService.setMachineType(message.machineId, message.modelId, message.config);
       break;
 
     case "EmuMachineCommand": {
@@ -189,11 +169,9 @@ export async function processMainToEmuMessages (
         type: "EmuGetUlaStateResponse",
         fcl: machine.currentFrameTact ?? 0,
         frm: machine.frames,
-        ras,
-        pos,
-        pix: RenderingPhase[
-          screenDevice.renderingTactTable[machine.currentFrameTact]?.phase
-        ] ?? "None",
+        ras: Math.floor(machine.currentFrameTact / machine.screenWidthInPixels),
+        pos: machine.currentFrameTact % machine.screenWidthInPixels,
+        pix: RenderingPhase[screenDevice.renderingTactTable[machine.currentFrameTact]?.phase],
         bor: borderColors[screenDevice.borderColor & 0x07],
         flo: (machine as ZxSpectrumBase).floatingBusDevice?.readFloatingBus(),
         con: machine.totalContentionDelaySinceStart,
@@ -229,14 +207,10 @@ export async function processMainToEmuMessages (
     case "EmuGetBlinkState":
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const blinkDevice = (controller.machine as any)
-        .blinkDevice as IZ88BlinkDevice;
-      const keyboardDevice = (controller.machine as any)
-        .keyboardDevice as IZ88KeyboardDevice;
-      const beeperDevice = (controller.machine as any)
-        .beeperDevice as IZ88BeeperDevice;
-      const screenDevice = (controller.machine as any)
-        .screenDevice as IZ88ScreenDevice;
+      const blinkDevice = (controller.machine as any).blinkDevice as IZ88BlinkDevice;
+      const keyboardDevice = (controller.machine as any).keyboardDevice as IZ88KeyboardDevice;
+      const beeperDevice = (controller.machine as any).beeperDevice as IZ88BeeperDevice;
+      const screenDevice = (controller.machine as any).screenDevice as IZ88ScreenDevice;
       if (!blinkDevice || !keyboardDevice || !beeperDevice || !screenDevice) {
         break;
       }
@@ -282,7 +256,7 @@ export async function processMainToEmuMessages (
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
       const execBreakpoints = controller.debugSupport.breakpoints
-        .map(bp => ({
+        .map((bp) => ({
           ...bp
         }))
         .sort((a, b) => {
@@ -341,19 +315,14 @@ export async function processMainToEmuMessages (
     case "EmuRemoveBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.removeBreakpoint(
-        message.breakpoint
-      );
+      const status = controller.debugSupport.removeBreakpoint(message.breakpoint);
       return flagResponse(status);
     }
 
     case "EmuEnableBreakpoint": {
       const controller = machineService.getMachineController();
       if (!controller) return noControllerResponse();
-      const status = controller.debugSupport.enableBreakpoint(
-        message.breakpoint,
-        message.enable
-      );
+      const status = controller.debugSupport.enableBreakpoint(message.breakpoint, message.enable);
       return flagResponse(status);
     }
 
@@ -365,9 +334,7 @@ export async function processMainToEmuMessages (
       if (message.partition === undefined) {
         memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
       } else {
-        memory = (controller.machine as IZxSpectrumMachine).get16KPartition(
-          message.partition
-        );
+        memory = (controller.machine as IZxSpectrumMachine).get16KPartition(message.partition);
       }
       return {
         type: "EmuGetMemoryResponse",
@@ -466,16 +433,48 @@ export async function processMainToEmuMessages (
       const result = await runner.stopScript(message.id);
       return flagResponse(result);
     }
+
+    case "EmuGetNextRegDescriptors": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const machine = controller.machine;
+      return {
+        type: "EmuGetNextRegDescriptorsResponse",
+        descriptors: (machine as IZxNextMachine)?.nextRegDevice?.getDescriptors()
+      };
+    }
+
+    case "EmuGetNextRegState": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const machine = controller.machine;
+      const devState = (machine as IZxNextMachine)?.nextRegDevice?.getNextRegDeviceState();
+      return {
+        type: "EmuGetNextRegStateResponse",
+        lastRegisterIndex: devState?.lastRegisterIndex,
+        regs: devState?.regs
+      };
+    }
+
+    case "EmuGetNextMemoryMapping": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const machine = controller.machine as IZxNextMachine;
+      return {
+        type: "EmuGetNextMemoryMappingResponse",
+        ...(machine.memoryDevice.getMemoryMappings()),
+      };
+    }
   }
   return defaultResponse();
 
   // --- Retrieves a controller error message
-  function noControllerResponse (): ErrorResponse {
+  function noControllerResponse(): ErrorResponse {
     return errorResponse("Machine controller not available");
   }
 
   // --- Parses and sets the tape file
-  async function setTapeFile (message: EmuSetTapeFileRequest): Promise<void> {
+  async function setTapeFile(message: EmuSetTapeFileRequest): Promise<void> {
     // --- Try to read a .TZX file
     let dataBlocks: TapeDataBlock[] = [];
     const reader = new BinaryReader(message.contents);
@@ -494,9 +493,7 @@ export async function processMainToEmuMessages (
             message: `Error while processing tape file ${message.file} (${result})`
           });
           if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `Error displaying message dialog: ${response.message}`
-            );
+            reportMessagingError(`Error displaying message dialog: ${response.message}`);
           }
         }
         return;
@@ -504,9 +501,7 @@ export async function processMainToEmuMessages (
         dataBlocks = tapReader.dataBlocks;
       }
     } else {
-      dataBlocks = tzxReader.dataBlocks
-        .map(b => b.getDataBlock())
-        .filter(b => b);
+      dataBlocks = tzxReader.dataBlocks.map((b) => b.getDataBlock()).filter((b) => b);
     }
 
     // --- Store the tape file in the media store
@@ -529,15 +524,13 @@ export async function processMainToEmuMessages (
         message: `Tape file ${message.file} successfully set.`
       });
       if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `Error displaying message dialog: ${response.message}`
-        );
+        reportMessagingError(`Error displaying message dialog: ${response.message}`);
       }
     }
   }
 
   // --- Parses and sets the specified disk file
-  async function setDiskFile (message: EmuSetDiskFileRequest): Promise<void> {
+  async function setDiskFile(message: EmuSetDiskFileRequest): Promise<void> {
     // --- Get disk information
     const controller = machineService.getMachineController();
     const mediaId = message.diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
@@ -565,9 +558,7 @@ export async function processMainToEmuMessages (
             : `Disk successfully ejected from drive ${drive}`
         });
         if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `Error displaying message dialog: ${response.message}`
-          );
+          reportMessagingError(`Error displaying message dialog: ${response.message}`);
         }
       }
     } catch (err) {
@@ -579,9 +570,7 @@ export async function processMainToEmuMessages (
           message: `Error while processing disk file ${message.file} (${err})`
         });
         if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `Error displaying message dialog: ${response.message}`
-          );
+          reportMessagingError(`Error displaying message dialog: ${response.message}`);
         }
       }
       return;
@@ -589,9 +578,7 @@ export async function processMainToEmuMessages (
   }
 
   // --- Sets or removes write protection
-  function setDiskWriteProtection (
-    message: EmuSetDiskWriteProtectionRequest
-  ): void {
+  function setDiskWriteProtection(message: EmuSetDiskWriteProtectionRequest): void {
     const controller = machineService.getMachineController();
     const propName = message.diskIndex ? DISK_B_WP : DISK_A_WP;
     controller.machine.setMachineProperty(propName, message.protect);
@@ -603,12 +590,9 @@ let emuScriptRunner: EmuScriptRunner | undefined;
 /**
  * Get the EmuScriptRunner instance
  */
-function getEmuScriptRunner (): EmuScriptRunner {
+function getEmuScriptRunner(): EmuScriptRunner {
   if (!emuScriptRunner) {
-    emuScriptRunner = new EmuScriptRunner(
-      getCachedStore(),
-      getCachedMessenger()
-    );
+    emuScriptRunner = new EmuScriptRunner(getCachedStore(), getCachedMessenger());
   }
   return emuScriptRunner;
 }

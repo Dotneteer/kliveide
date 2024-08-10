@@ -50,10 +50,10 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * @returns True, if the custom disassembler wants to disassemble the next instruction(s);
    * otherwise, false
    */
-  beforeInstruction (fecthResult: FetchResult): boolean {
+  beforeInstruction (fetchResult: FetchResult): boolean {
     // --- Handle RST #08 byte code
     if (this._inRst08Mode) {
-      const address = fecthResult.offset;
+      const address = fetchResult.offset;
       const errorCode = this._api.fetch().opcode;
       this._inRst08Mode = false;
       this._api.addDisassemblyItem({
@@ -66,7 +66,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
 
     // --- Handle RST #28 byte codes
     if (this._inRst28Mode) {
-      const address = fecthResult.offset;
+      const address = fetchResult.offset;
       const calcCode = this._api.fetch().opcode;
       this.disassembleCalculatorEntry(address, calcCode);
       return true;

@@ -1,7 +1,6 @@
 import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
 import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
-import { ISpectrumKeyboardDevice } from "../zxSpectrum/ISpectrumKeyboardDevice";
 import { ITapeDevice } from "../../abstractions/ITapeDevice";
 import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -46,7 +45,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   memoryDevice: MemoryDevice;
 
-  interruptDevice: InterruptDevice
+  interruptDevice: InterruptDevice;
 
   nextRegDevice: NextRegDevice;
 
@@ -164,7 +163,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.nextRegDevice.reset();
 
     // --- Set default machine type
-    this.nextRegDevice.configMode = false; 
+    this.nextRegDevice.configMode = false;
     this.screenDevice.machineType = 0x03; // ZX Spectrum Next
   }
 
@@ -188,8 +187,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   hardReset(): void {
     super.hardReset();
     this.reset();
-    this.memoryDevice.hardReset();
     this.nextRegDevice.hardReset();
+    this.memoryDevice.hardReset();
   }
 
   get64KFlatMemory(): Uint8Array {
@@ -206,6 +205,75 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   getCurrentPartitionLabels(): string[] {
     return this.memoryDevice.getPartitionLabels();
+  }
+
+  /**
+   * Gets the partition in which the specified address is paged in
+   * @param address Address to get the partition for
+   */
+  getPartition(address: number): number | undefined {
+    const pageIndex = address >> 13;
+    const page = this.memoryDevice.getPageInfo(pageIndex);
+    if (page.bank16k === 0xff) {
+      const romLabel = this.memoryDevice.getPartitionLabelForPage(pageIndex);
+      switch (romLabel) {
+        case "UN":
+          return undefined;
+        case "R0":
+          return -1;
+        case "R1":
+          return -2;
+        case "R2":
+          return -3;
+        case "R3":
+          return -4;
+        case "A0":
+          return -5;
+        case "A1":
+          return -6;
+        case "DM":
+          return -7;
+        default:
+          return -8 - parseInt(romLabel.substring(1));
+      }
+    } else {
+      return page.bank16k;
+    }
+  }
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  parsePartitionLabel(label: string): number | undefined {
+    switch (label) {
+      case "UN":
+        return undefined;
+      case "R0":
+        return -1;
+      case "R1":
+        return -2;
+      case "R2":
+        return -3;
+      case "R3":
+        return -4;
+      case "A0":
+        return -5;
+      case "A1":
+        return -6;
+      case "DM":
+        return -7;
+      default:
+        if (label.startsWith("d") || label.startsWith("D")) {
+          const part = label.substring(1);
+          if (part.match(/^\d+$/)) {
+            let partition = parseInt(part);
+            return partition >= 0 && partition <= 15 ? -8 - partition : undefined;
+          }
+          return -8 - parseInt(label.substring(1));
+        }
+        return label.match(/^\d+$/) ? parseInt(label) : undefined;
+    }
   }
 
   /**
@@ -347,8 +415,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param value Register value;
    */
   tbblueOut(address: number, value: number): void {
-    this.nextRegDevice.directSetRegValue(address, value);
-    super.tbblueOut(address, value);
+    this.nextRegDevice.setNextRegisterIndex(address);
+    this.nextRegDevice.setNextRegisterValue(value);
   }
 
   /**

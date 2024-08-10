@@ -68,4 +68,11 @@ describe("Bootrom", () => {
     //   outFile
     // );
   });
+
+  it("Fix xa0", () => {
+    const filename = "/Users/dotneteer/source/kliveide/src/emu/machines/zxNext/disassembly/rom0.kz80.asm";
+    const contents = fs.readFileSync(filename, "utf8");
+    const updated = contents.replaceAll("\xa0", " ");
+    fs.writeFileSync(filename, updated);
+  });
 });

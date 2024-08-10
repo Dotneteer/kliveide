@@ -1,0 +1,16 @@
+@import "@styles/core.scss";
+
+.nextRegPanel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+
+  .regItem {
+    display: flex;
+    flex-direction: row;
+    padding: 2px;
+  }
+}

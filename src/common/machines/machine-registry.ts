@@ -23,11 +23,8 @@ import {
 import { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
 import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
-import {
-  MEDIA_DISK_A,
-  MEDIA_DISK_B,
-  MEDIA_TAPE
-} from "../../common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
+import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
 
 /**
  * The registry of available machine types with their available models
@@ -120,10 +117,15 @@ export const machineRegistry: MachineInfo[] = [
     machineId: MI_ZXNEXT,
     displayName: "ZX Spectrum Next",
     features: {
-      [MF_TAPE_SUPPORT]: true,
-      [MF_ULA]: true
+      [MF_TAPE_SUPPORT]: false,
+      [MF_ULA]: true,
+      [MF_ROM]: 4,
+      [MF_BANK]: 224
     },
     mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
+    }
   },
   {
     machineId: MI_Z88,
@@ -294,12 +296,12 @@ export const machineRegistry: MachineInfo[] = [
  * Gets all available machine models
  * @returns
  */
-export function getAllMachineModels (): MachineWithModel[] {
+export function getAllMachineModels(): MachineWithModel[] {
   const result: MachineWithModel[] = [];
   for (const machine of machineRegistry) {
     if (machine.models) {
       result.push(
-        ...machine.models.map(m => ({
+        ...machine.models.map((m) => ({
           ...m,
           machineId: machine.machineId
         }))
@@ -320,17 +322,14 @@ export function getAllMachineModels (): MachineWithModel[] {
  * @param modelId Model ID
  * @returns Machine configuration
  */
-export function getModelConfig (
-  machineId: string,
-  modelId?: string
-): MachineConfigSet | undefined {
-  const machine = machineRegistry.find(m => m.machineId === machineId);
+export function getModelConfig(machineId: string, modelId?: string): MachineConfigSet | undefined {
+  const machine = machineRegistry.find((m) => m.machineId === machineId);
   if (!machine) {
     return undefined;
   }
   if (!modelId) {
     return machine.config;
   }
-  const model = machine.models?.find(m => m.modelId === modelId);
+  const model = machine.models?.find((m) => m.modelId === modelId);
   return model?.config;
 }

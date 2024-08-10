@@ -1,0 +1,14 @@
+@import "@styles/core.scss";
+
+.memMappingPanel {
+  @include side-panel-content;
+  user-select: none;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+}
+
+.item {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 0;
+}

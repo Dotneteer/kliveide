@@ -498,7 +498,6 @@ const ExplorerPanel = () => {
     } else {
       // --- Build the folder tree
       const projectTree = buildProjectTree(response.contents, store, lastExpanded);
-      console.log(projectTree);
       setTree(projectTree);
       setVisibleNodes(projectTree.getVisibleNodes());
       projectService.setProjectTree(projectTree);

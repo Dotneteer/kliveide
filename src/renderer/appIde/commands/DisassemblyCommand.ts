@@ -116,7 +116,7 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
         memSections,
         memory,
         partitions,
-        {}
+        { allowExtendedSet: true }
       );
       const disassItems = (
         await disassembler.disassemble(this.startAddress, this.endAddress)

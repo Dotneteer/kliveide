@@ -357,9 +357,13 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * Gets the partition in which the specified address is paged in
    * @param _address Address to get the partition for
    */
-  getPartition(_address: number): number | undefined {
-    return undefined;
-  }
+  abstract getPartition(_address: number): number | undefined;
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  abstract parsePartitionLabel(label: string): number | undefined;
 
   /**
    * Executes the specified custom command
@@ -660,6 +664,41 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   protected afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
+
+  /**
+   * Checks if the next instruction to be executed is a call instruction or not
+   * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
+   */
+  getCallInstructionLength(): number {
+    // --- We intentionally avoid using ReadMemory() directly
+    // --- So that we can prevent false memory touching.
+    var opCode = this.doReadMemory(this.pc);
+
+    // --- CALL instruction
+    if (opCode == 0xcd) return 3;
+
+    // --- Call instruction with condition
+    if ((opCode & 0xc7) == 0xc4) return 3;
+
+    // --- Check for RST instructions
+    if ((opCode & 0xc7) == 0xc7) return 1;
+
+    // --- Check for HALT instruction
+    if (opCode == 0x76) return 1;
+
+    // --- Check for extended instruction prefix
+    if (opCode != 0xed) return 0;
+
+    // --- Check for I/O and block transfer instructions
+    opCode = this.doReadMemory(this.pc + 1);
+    if ((opCode & 0xb4) === 0xb0) {
+      return 2;
+    }
+    if (extendedInstructionLenghts[opCode] !== undefined) {
+      return extendedInstructionLenghts[opCode];
+    }
+    return 0;
+  }
 }
 
 // --- Represents a queued event
@@ -667,4 +706,36 @@ type QueuedEvent = {
   eventTact: number;
   eventFn: (data: any) => void;
   data: any;
+};
+
+const extendedInstructionLenghts: Record<number, number> = {
+  0xa4: 2,
+  0xa5: 2,
+  0xb4: 2,
+  0xac: 2,
+  0xbc: 2,
+  0xb7: 2,
+  0x90: 2,
+  0x30: 2,
+  0x31: 2,
+  0x32: 2,
+  0x33: 2,
+  0x34: 4,
+  0x35: 4,
+  0x36: 4,
+  0x23: 2,
+  0x24: 2,
+  0x8a: 4,
+  0x91: 4,
+  0x92: 4,
+  0x93: 2,
+  0x94: 2,
+  0x95: 2,
+  0x27: 3,
+  0x28: 2,
+  0x29: 2,
+  0x2a: 2,
+  0x2b: 2,
+  0x2c: 2,
+  0x98: 2
 };
