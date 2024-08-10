@@ -1,14 +1,14 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { ILiteEvent } from "@abstractions/ILiteEvent";
 
-import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
-import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
-import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { IMachineEventHandler } from "./IMachineEventHandler";
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { MachineConfigSet } from "@common/machines/info-types";
+import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
+import type { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
+import type { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { IMachineEventHandler } from "./IMachineEventHandler";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware

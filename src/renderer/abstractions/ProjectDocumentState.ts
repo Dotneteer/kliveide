@@ -1,5 +1,5 @@
-import { ProjectNode } from "@renderer/appIde/project/project-node";
-import { IDocumentHubService } from "./IDocumentHubService";
+import type { ProjectNode } from "@abstractions/ProjectNode";
+import type { IDocumentHubService } from "./IDocumentHubService";
 
 /**
  * This type describes the state information of a particular project document.

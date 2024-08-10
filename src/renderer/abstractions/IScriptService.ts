@@ -1,5 +1,5 @@
-import { ILiteEvent } from "@emu/utils/lite-event";
-import { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
+import type { ILiteEvent } from "@abstractions/ILiteEvent";
+import type { OutputPaneBuffer } from "@renderer/appIde/ToolArea/OutputPaneBuffer";
 
 /**
  * This interface represents the service that can manage scripts.

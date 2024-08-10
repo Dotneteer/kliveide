@@ -1,10 +1,10 @@
-import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
-import { ILiteEvent } from "@emu/utils/lite-event";
-import { ProjectNode } from "../appIde/project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { ProjectDocumentState } from "./ProjectDocumentState";
-import { VolatileDocumentInfo } from "./VolatileDocumentInfo";
-import { IDocumentHubService } from "./IDocumentHubService";
+import type { ProjectDocumentState } from "./ProjectDocumentState";
+import type { VolatileDocumentInfo } from "./VolatileDocumentInfo";
+import type { IDocumentHubService } from "./IDocumentHubService";
+import type { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
+import type { ILiteEvent } from "@abstractions/ILiteEvent";
+import type { ProjectNode } from "@abstractions/ProjectNode";
 
 /**
  * This service is responsible to manage the hierarchy and contents of project files

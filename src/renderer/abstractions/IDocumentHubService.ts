@@ -1,5 +1,5 @@
-import { DocumentApi } from "./DocumentApi";
-import { ProjectDocumentState } from "./ProjectDocumentState";
+import type { DocumentApi } from "./DocumentApi";
+import type { ProjectDocumentState } from "./ProjectDocumentState";
 
 /**
  * Represents a service managing a collection of document views

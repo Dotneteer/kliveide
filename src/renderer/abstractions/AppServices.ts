@@ -1,10 +1,10 @@
-import { IMachineService } from "./IMachineService";
-import { IIdeCommandService } from "./IIdeCommandService";
-import { IOutputPaneService } from "./IOutputPaneService";
-import { IProjectService } from "./IProjectService";
-import { IUiService } from "@renderer/core/UiServices";
-import { IValidationService } from "@renderer/core/ValidationService";
-import { IScriptService } from "./IScriptService";
+import type { IMachineService } from "./IMachineService";
+import type { IIdeCommandService } from "./IIdeCommandService";
+import type { IOutputPaneService } from "./IOutputPaneService";
+import type { IProjectService } from "./IProjectService";
+import type { IUiService } from "@renderer/core/UiServices";
+import type { IValidationService } from "@renderer/core/ValidationService";
+import type { IScriptService } from "./IScriptService";
 
 /**
  * This type defines the services the IDE provides

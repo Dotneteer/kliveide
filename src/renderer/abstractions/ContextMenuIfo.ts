@@ -1,5 +1,5 @@
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
 
 export type ContextMenuInfo = {
   separator?: boolean;

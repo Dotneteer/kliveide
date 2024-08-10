@@ -1,5 +1,5 @@
-import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { PanelRenderer } from "./PanelRenderer";
+import type { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import type { PanelRenderer } from "./PanelRenderer";
 
 /**
  * Represents the information about a tool and its renderer

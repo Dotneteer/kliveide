@@ -1,13 +1,13 @@
 import fs from "fs";
-import { mainStore } from "../../main/main-store";
+import { mainStore } from "@main/main-store";
 import { CmdLineOptionDescriptor, CmdLineOptionSet } from "../OptionDescriptor";
-import { createSettingsReader } from "../../common/utils/SettingsReader";
-import { Z88DK_INSTALL_FOLDER } from "../../main/z88dk-integration/z88dk-config";
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { Z88DK_INSTALL_FOLDER } from "@main/z88dk-integration/z88dk-config";
 import {
   CliCommandRunner,
   ErrorFilterDescriptor
-} from "../../main/cli-integration/CliCommandRunner";
-import { SimpleAssemblerOutput } from "../../main/compiler-integration/compiler-registry";
+} from "@main/cli-integration/CliCommandRunner";
+import { SimpleAssemblerOutput } from "@main/compiler-integration/compiler-registry";
 
 const ZCC_OUTPUT_FILE = "_output.bin";
 

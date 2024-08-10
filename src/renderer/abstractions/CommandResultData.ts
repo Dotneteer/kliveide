@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
+import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 
 /**
  * Represents the data passed to a command result documents

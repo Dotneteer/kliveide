@@ -1,7 +1,7 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { Unsubscribe } from "@state/redux-light";
-import { IMachineController } from "./IMachineController";
-import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { Unsubscribe } from "@state/redux-light";
+import type { IMachineController } from "./IMachineController";
+import type { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
 
 /**
  * This function type represents the event handler when a machine type is changing

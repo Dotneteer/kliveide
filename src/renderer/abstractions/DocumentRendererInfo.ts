@@ -1,4 +1,4 @@
-import { PanelRenderer } from "./PanelRenderer";
+import type { PanelRenderer } from "./PanelRenderer";
 
 /**
  * Represents the information about a tool and its renderer
