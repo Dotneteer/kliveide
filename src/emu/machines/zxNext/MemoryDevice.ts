@@ -441,30 +441,37 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Gets the current partition labels for all 16K/8K partitions
    */
   getPartitionLabels(): string[] {
-    return this.pageInfo.map((b, idx) => {
-      if (idx >= 2 || b.bank16k < 224) {
-        return toHexa2(b.bank16k);
+    const result: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      result.push(this.getPartitionLabelForPage(i));
+    }
+    return result;
+  }
+
+  getPartitionLabelForPage(pageIndex: number): string {
+    const pageInfo = this.pageInfo[pageIndex & 0x07];
+    if (pageInfo.bank16k < 224) {
+      return toHexa2(pageInfo.bank16k);
+    }
+    let offs = pageInfo.readOffset;
+    if (offs < OFFS_DIVMMC_ROM) {
+      return `R${(offs - OFFS_NEXT_ROM) >> 14}`;
+    }
+    if (offs >= OFFS_ALT_ROM_0 && offs < OFFS_ALT_ROM_1) {
+      return `A0`;
+    }
+    if (offs >= OFFS_ALT_ROM_1 && offs < OFFS_DIVMMC_RAM) {
+      return `A1`;
+    }
+    if (offs >= OFFS_DIVMMC_ROM && offs < OFFS_MULTIFACE_MEM) {
+      return `DM`;
+    }
+    if (pageIndex) {
+      if (offs >= OFFS_DIVMMC_RAM && offs < OFFS_NEXT_RAM) {
+        return `D${(offs - OFFS_DIVMMC_RAM) >> 13}`;
       }
-      let offs = b.readOffset;
-      if (offs < OFFS_DIVMMC_ROM) {
-        return `R${(offs - OFFS_NEXT_ROM) >> 14}`;
-      }
-      if (offs >= OFFS_ALT_ROM_0 && offs < OFFS_ALT_ROM_1) {
-        return `A0`;
-      }
-      if (offs >= OFFS_ALT_ROM_1 && offs < OFFS_DIVMMC_RAM) {
-        return `A1`;
-      }
-      if (offs >= OFFS_DIVMMC_ROM && offs < OFFS_MULTIFACE_MEM) {
-        return `DM`;
-      }
-      if (idx) {
-        if (offs >= OFFS_DIVMMC_RAM && offs < OFFS_NEXT_RAM) {
-          return `D${(offs - OFFS_DIVMMC_RAM) >> 13}`;
-        }
-      }
-      return `UN`;
-    });
+    }
+    return `UN`;
   }
 
   /**

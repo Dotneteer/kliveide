@@ -12,12 +12,7 @@ import {
   ZxSpectrumBase
 } from "../ZxSpectrumBase";
 import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
-import {
-  AUDIO_SAMPLE_RATE,
-  TAPE_MODE,
-  TAPE_SAVER,
-  REWIND_REQUESTED
-} from "../machine-props";
+import { AUDIO_SAMPLE_RATE, TAPE_MODE, TAPE_SAVER, REWIND_REQUESTED } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128PsgDevice } from "../zxSpectrum128/ZxSpectrum128PsgDevice";
@@ -68,7 +63,6 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   specialConfigMode = 0;
   diskMotorOn = false;
 
-
   /**
    * Represents the PSG device of ZX Spectrum +3E
    */
@@ -82,7 +76,10 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor (private readonly store: Store<AppState>, model: MachineModel) {
+  constructor(
+    private readonly store: Store<AppState>,
+    model: MachineModel
+  ) {
     try {
       super();
       switch (model?.config?.[MC_DISK_SUPPORT]) {
@@ -130,7 +127,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Sets up the machine (async)
    */
-  async setup (): Promise<void> {
+  async setup(): Promise<void> {
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
     this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
@@ -141,7 +138,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Dispose the resources held by the machine
    */
-  dispose (): void {
+  dispose(): void {
     this.keyboardDevice?.dispose();
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
@@ -159,7 +156,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
+  hardReset(): void {
     super.hardReset();
     for (let i = 0; i < 8; i++) {
       this.memory.resetPartition(i);
@@ -170,7 +167,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * This method emulates resetting a machine with a hardware reset button.
    */
-  reset (): void {
+  reset(): void {
     // --- Reset the CPU
     super.reset();
 
@@ -220,10 +217,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
     // --- Set default property values
     this.setMachineProperty(TAPE_MODE, TapeMode.Passive);
-    this.setMachineProperty(
-      TAPE_SAVER,
-      new TapeSaver(this.tapeDevice as TapeDevice)
-    );
+    this.setMachineProperty(TAPE_SAVER, new TapeSaver(this.tapeDevice as TapeDevice));
     this.setMachineProperty(REWIND_REQUESTED);
 
     // --- Prepare for running a new machine loop
@@ -242,7 +236,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
    */
-  get isSpectrum48RomSelected (): boolean {
+  get isSpectrum48RomSelected(): boolean {
     return this.selectedRom === 3;
   }
 
@@ -251,7 +245,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param offset Offset from the beginning of the screen memory
    * @returns The byte at the specified screen memory location
    */
-  readScreenMemory (offset: number): number {
+  readScreenMemory(offset: number): number {
     const value = this.memory.memory[this.screenStartOffset + (offset & 0x3fff)];
     this.lastUlaReadValue = value;
     return value;
@@ -261,15 +255,31 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
    */
-  getPartition (address: number): number | undefined {
+  getPartition(address: number): number | undefined {
     return this.memory.getAddressPartition(address);
+  }
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  parsePartitionLabel(label: string): number | undefined {
+    if (!label) return undefined;
+    const isRom = label.startsWith("R") || label.startsWith("r");
+    const index = isRom ? label.substring(1) : label;
+    if (!index.match(/^\d+$/)) {
+      return undefined;
+    }
+    let partition = parseInt(index, 10);
+    partition = isRom ? -partition - 1 : partition;
+    return partition >= -4 && partition < 8 ? partition : undefined;
   }
 
   /**
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */
-  get64KFlatMemory (): Uint8Array {
+  get64KFlatMemory(): Uint8Array {
     return this.memory.get64KFlatMemory();
   }
 
@@ -277,21 +287,21 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
    * @param index Partition index
    */
-  get16KPartition (index: number): Uint8Array {
+  get16KPartition(index: number): Uint8Array {
     return this.memory.get16KPartition(index);
   }
 
   /**
    * Gets the current partition values for all 16K/8K partitions
    */
-  getCurrentPartitions (): number[] {
+  getCurrentPartitions(): number[] {
     return this.memory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
-  getCurrentPartitionLabels (): string[] {
+  getCurrentPartitionLabels(): string[] {
     return this.memory.getPartitionLabels();
   }
 
@@ -299,7 +309,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples (): number[] {
+  getAudioSamples(): number[] {
     const beeperSamples = this.beeperDevice.getAudioSamples();
     const psgSamples = this.psgDevice.getAudioSamples();
     const samplesCount = Math.min(beeperSamples.length, psgSamples.length);
@@ -313,7 +323,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
-  get tactsInDisplayLine (): number {
+  get tactsInDisplayLine(): number {
     return this.screenDevice.screenWidth;
   }
 
@@ -322,7 +332,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @returns The byte read from the memory
    */
-  doReadMemory (address: number): number {
+  doReadMemory(address: number): number {
     const valueRead = this.memory.readMemory(address);
     if (this.isContendedMemoryAddress(address)) {
       this.lastContendedValue = valueRead;
@@ -335,7 +345,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @param value Byte to write into the memory
    */
-  doWriteMemory (address: number, value: number): void {
+  doWriteMemory(address: number, value: number): void {
     this.memory.writeMemory(address, value);
     if (this.isContendedMemoryAddress(address)) {
       this.lastContendedValue = value;
@@ -350,7 +360,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * delay values for a particular machine frame tact in _contentionValues.Independently of the memory address,
    * the Z80 CPU takes 3 T-states to read or write the memory contents.
    */
-  delayAddressBusAccess (address: number): void {
+  delayAddressBusAccess(address: number): void {
     if (!this.isContendedMemoryAddress(address)) {
       return;
     }
@@ -367,7 +377,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param address Memory address to test
    * @returns True, if the memory address is in contended memory
    */
-  isContendedMemoryAddress (address: number): boolean {
+  isContendedMemoryAddress(address: number): boolean {
     const page = address & 0xc000;
     if (this.inSpecialPagingMode) {
       if (page === 0xc000) {
@@ -387,7 +397,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (address: number): number {
+  doReadPort(address: number): number {
     if ((address & 0x0001) === 0) {
       // --- Standard ZX Spectrum 48 I/O read
       return this.readPort0XfeUpdated(address);
@@ -414,7 +424,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
       return this.hasFloppy ? this.floppyDevice.readDataRegister() : 0xff;
     }
 
-    return (address in zxSpectrumP32FloatingBusPorts && this.pagingEnabled)
+    return address in zxSpectrumP32FloatingBusPorts && this.pagingEnabled
       ? this.floatingBusDevice.readFloatingBus()
       : 0xff;
   }
@@ -424,7 +434,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param address Port address
    * @returns Byte value read from the generic port
    */
-  private readPort0XfeUpdated (address: number): number {
+  private readPort0XfeUpdated(address: number): number {
     let portValue = this.keyboardDevice.getKeyLineStatus(address);
 
     // --- Check for LOAD mode
@@ -446,7 +456,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (address: number, value: number): void {
+  doWritePort(address: number, value: number): void {
     // --- Standard ZX Spectrum 48 port
     if ((address & 0x0001) === 0) {
       this.writePort0xFE(value);
@@ -467,12 +477,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
         if (this.inSpecialPagingMode) {
           this.setupSpecialMemoryConfig();
         } else {
-          pm.setPageInfo(
-            6,
-            pm.getPartitionOffset(this.selectedBank),
-            this.selectedBank,
-            false
-          );
+          pm.setPageInfo(6, pm.getPartitionOffset(this.selectedBank), this.selectedBank, false);
           pm.setPageInfo(
             7,
             0x2000 + pm.getPartitionOffset(this.selectedBank),
@@ -484,13 +489,10 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
       // --- Choose screen (Bank 5 or 7)
       this.useShadowScreen = ((value >> 3) & 0x01) === 0x01;
-      this.screenStartOffset = this.memory.getPartitionOffset(
-        this.useShadowScreen ? 7 : 5
-      );
+      this.screenStartOffset = this.memory.getPartitionOffset(this.useShadowScreen ? 7 : 5);
 
       // --- Choose ROM bank for Slot 0 (0x0000-0x3fff)
-      this.selectedRom =
-        ((value >> 4) & 0x01) | (this.specialConfigMode & 0x02);
+      this.selectedRom = ((value >> 4) & 0x01) | (this.specialConfigMode & 0x02);
       this.setupSelectedRom();
 
       // --- Enable/disable paging
@@ -503,8 +505,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
       // --- Special paging mode
       this.inSpecialPagingMode = (value & 0x01) !== 0;
       this.specialConfigMode = (value >> 1) & 0x03;
-      this.selectedRom =
-        (this.selectedRom & 0x01) | (this.specialConfigMode & 0x02);
+      this.selectedRom = (this.selectedRom & 0x01) | (this.specialConfigMode & 0x02);
       this.setupSelectedRom();
 
       // --- Disk motor
@@ -538,14 +539,14 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Width of the screen in native machine screen pixels
    */
-  get screenWidthInPixels (): number {
+  get screenWidthInPixels(): number {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
-  get screenHeightInPixels (): number {
+  get screenHeightInPixels(): number {
     return this.screenDevice.screenLines;
   }
 
@@ -553,7 +554,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Gets the buffer that stores the rendered pixels
    * @returns
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
@@ -562,7 +563,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param partition Partition to upload the ROM contents to
    * @param data ROM contents
    */
-  uploadRomBytes (partition: number, data: Uint8Array): void {
+  uploadRomBytes(partition: number, data: Uint8Array): void {
     this.memory.rawCopy(this.memory.getPartitionOffset(partition), data);
   }
 
@@ -570,16 +571,14 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(model: string): CodeInjectionFlow {
     if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
           rom: 0,
           execPoint: SPP3_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(
-            SPP3_MAIN_WAITING_LOOP
-          )})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SPP3_MAIN_WAITING_LOOP)})`
         },
         {
           type: "Start"
@@ -615,9 +614,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 3,
           execPoint: SP48_MAIN_ENTRY,
-          message: `Main execution cycle point reached (ROM3/$${toHexa4(
-            SP48_MAIN_ENTRY
-          )})`
+          message: `Main execution cycle point reached (ROM3/$${toHexa4(SP48_MAIN_ENTRY)})`
         },
         {
           type: "Inject"
@@ -634,9 +631,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 0,
           execPoint: SPP3_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(
-            SPP3_MAIN_WAITING_LOOP
-          )})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SPP3_MAIN_WAITING_LOOP)})`
         },
         {
           type: "Start"
@@ -658,9 +653,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 1,
           execPoint: SPP3_RETURN_TO_EDITOR,
-          message: `Main execution cycle point reached (ROM1/$${toHexa4(
-            SPP3_RETURN_TO_EDITOR
-          )})`
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(SPP3_RETURN_TO_EDITOR)})`
         },
         {
           type: "Inject"
@@ -671,9 +664,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(
-      `Code for machine model '${model}' cannot run on this virtual machine.`
-    );
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
   }
 
   /**
@@ -681,7 +672,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (clockMultiplierChanged: boolean): void {
+  onInitNewFrame(clockMultiplierChanged: boolean): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 
@@ -699,7 +690,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Check for current tape mode after each executed instruction
    */
-  afterInstructionExecuted (): void {
+  afterInstructionExecuted(): void {
     super.afterInstructionExecuted();
     this.psgDevice.calculateCurrentAudioValue();
   }
@@ -708,7 +699,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (): void {
+  onTactIncremented(): void {
     super.onTactIncremented();
     this.psgDevice.setNextAudioSample();
   }
@@ -716,23 +707,19 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Gets the structure describing system variables
    */
-  get sysVars (): SysVar[] {
+  get sysVars(): SysVar[] {
     return [...zxSpectrum128SysVars, ...zxSpectrum48SysVars];
   }
 
   /**
    * Sets up the special memory configuration mode
    */
-  private setupSpecialMemoryConfig (): void {
+  private setupSpecialMemoryConfig(): void {
     const pm = this.memory;
     const part0 = this.specialConfigMode ? 4 : 0;
     pm.setPageInfo(0, pm.getPartitionOffset(part0), part0, false);
     pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(part0), part0, false);
-    const part1 = this.specialConfigMode
-      ? this.specialConfigMode === 3
-        ? 7
-        : 5
-      : 1;
+    const part1 = this.specialConfigMode ? (this.specialConfigMode === 3 ? 7 : 5) : 1;
     pm.setPageInfo(2, pm.getPartitionOffset(part1), part1, false);
     pm.setPageInfo(3, 0x2000 + pm.getPartitionOffset(part1), part1, false);
     const part2 = this.specialConfigMode ? 6 : 2;
@@ -746,7 +733,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Sets the memory configuration when the selected ROM index changes
    */
-  private setupSelectedRom () {
+  private setupSelectedRom() {
     if (this.selectedRom !== this.previousRom) {
       this.previousRom = this.selectedRom;
       const pm = this.memory;
@@ -754,18 +741,8 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
         this.setupSpecialMemoryConfig();
       } else {
         const romPartition = -this.selectedRom - 1;
-        pm.setPageInfo(
-          0,
-          pm.getPartitionOffset(romPartition),
-          romPartition,
-          true
-        );
-        pm.setPageInfo(
-          1,
-          0x2000 + pm.getPartitionOffset(romPartition),
-          romPartition,
-          true
-        );
+        pm.setPageInfo(0, pm.getPartitionOffset(romPartition), romPartition, true);
+        pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(romPartition), romPartition, true);
       }
     }
   }

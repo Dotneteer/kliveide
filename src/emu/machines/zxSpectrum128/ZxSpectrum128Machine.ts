@@ -3,12 +3,7 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
-import {
-  AUDIO_SAMPLE_RATE,
-  REWIND_REQUESTED,
-  TAPE_MODE,
-  TAPE_SAVER
-} from "../machine-props";
+import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import {
   SP128_MAIN_WAITING_LOOP,
@@ -53,7 +48,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor () {
+  constructor() {
     super();
     // --- Set up machine attributes
     this.baseClockFrequency = 3_546_900;
@@ -79,7 +74,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Sets up the machine (async)
    */
-  async setup (): Promise<void> {
+  async setup(): Promise<void> {
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
     this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
@@ -88,7 +83,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Dispose the resources held by the machine
    */
-  dispose (): void {
+  dispose(): void {
     this.keyboardDevice?.dispose();
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
@@ -105,7 +100,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
+  hardReset(): void {
     super.hardReset();
     for (let i = 0; i < 8; i++) {
       this.memory.resetPartition(i);
@@ -116,7 +111,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * This method emulates resetting a machine with a hardware reset button.
    */
-  reset (): void {
+  reset(): void {
     // --- Reset the CPU
     super.reset();
 
@@ -158,10 +153,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
     // --- Set default property values
     this.setMachineProperty(TAPE_MODE, TapeMode.Passive);
-    this.setMachineProperty(
-      TAPE_SAVER,
-      new TapeSaver(this.tapeDevice as TapeDevice)
-    );
+    this.setMachineProperty(TAPE_SAVER, new TapeSaver(this.tapeDevice as TapeDevice));
     this.setMachineProperty(REWIND_REQUESTED);
 
     // --- Prepare for running a new machine loop
@@ -176,7 +168,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
    */
-  get isSpectrum48RomSelected (): boolean {
+  get isSpectrum48RomSelected(): boolean {
     return this.selectedRom === 1;
   }
 
@@ -185,7 +177,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param offset Offset from the beginning of the screen memory
    * @returns The byte at the specified screen memory location
    */
-  readScreenMemory (offset: number): number {
+  readScreenMemory(offset: number): number {
     return this.memory.memory[this.screenStartOffset + (offset & 0x3fff)];
   }
 
@@ -193,15 +185,31 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the partition in which the specified address is paged in
    * @param address Address to get the partition for
    */
-  getPartition (address: number): number | undefined {
+  getPartition(address: number): number | undefined {
     return this.memory.getAddressPartition(address);
+  }
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  parsePartitionLabel(label: string): number | undefined {
+    if (!label) return undefined;
+    const isRom = label.startsWith("R") || label.startsWith("r");
+    const index = isRom ? label.substring(1) : label;
+    if (!index.match(/^\d+$/)) {
+      return undefined;
+    }
+    let partition = parseInt(index, 10);
+    partition = isRom ? -partition - 1 : partition;
+    return partition >= -2 && partition < 8 ? partition : undefined;
   }
 
   /**
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */
-  get64KFlatMemory (): Uint8Array {
+  get64KFlatMemory(): Uint8Array {
     return this.memory.get64KFlatMemory();
   }
 
@@ -209,21 +217,21 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
    * @param index Partition index
    */
-  get16KPartition (index: number): Uint8Array {
+  get16KPartition(index: number): Uint8Array {
     return this.memory.get16KPartition(index);
   }
 
   /**
    * Gets the current partition values for all 16K/8K partitions
    */
-  getCurrentPartitions (): number[] {
+  getCurrentPartitions(): number[] {
     return this.memory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
-  getCurrentPartitionLabels (): string[] {
+  getCurrentPartitionLabels(): string[] {
     return this.memory.getPartitionLabels();
   }
 
@@ -231,7 +239,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples (): number[] {
+  getAudioSamples(): number[] {
     const beeperSamples = this.beeperDevice.getAudioSamples();
     const psgSamples = this.psgDevice.getAudioSamples();
     const samplesCount = Math.min(beeperSamples.length, psgSamples.length);
@@ -245,7 +253,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
-  get tactsInDisplayLine (): number {
+  get tactsInDisplayLine(): number {
     return this.screenDevice.screenWidth;
   }
 
@@ -254,7 +262,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @returns The byte read from the memory
    */
-  doReadMemory (address: number): number {
+  doReadMemory(address: number): number {
     return this.memory.readMemory(address);
   }
 
@@ -263,7 +271,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @param value Byte to write into the memory
    */
-  doWriteMemory (address: number, value: number): void {
+  doWriteMemory(address: number, value: number): void {
     this.memory.writeMemory(address, value);
   }
 
@@ -275,10 +283,9 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * delay values for a particular machine frame tact in _contentionValues.Independently of the memory address,
    * the Z80 CPU takes 3 T-states to read or write the memory contents.
    */
-  delayAddressBusAccess (address: number): void {
+  delayAddressBusAccess(address: number): void {
     const page = address & 0xc000;
-    if (page != 0x4000 && (page != 0xc000 || (this.selectedBank & 0x01) !== 1))
-      return;
+    if (page != 0x4000 && (page != 0xc000 || (this.selectedBank & 0x01) !== 1)) return;
 
     // --- We read from contended memory
     const delay = this.contentionValues[this.currentFrameTact];
@@ -295,7 +302,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (address: number): number {
+  doReadPort(address: number): number {
     if ((address & 0x0001) === 0) {
       // --- Standard ZX Spectrum 48 I/O read
       return this.readPort0Xfe(address);
@@ -323,7 +330,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortRead (address: number): void {
+  delayPortRead(address: number): void {
     this.delayContendedIo(address);
   }
 
@@ -335,7 +342,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (address: number, value: number): void {
+  doWritePort(address: number, value: number): void {
     // --- Standard ZX Spectrum 48 port
     if ((address & 0x0001) === 0) {
       this.writePort0xFE(value);
@@ -353,12 +360,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         // --- Update the bank page
         this.previousBank = this.selectedBank;
         const pm = this.memory;
-        pm.setPageInfo(
-          6,
-          pm.getPartitionOffset(this.selectedBank),
-          this.selectedBank,
-          false
-        );
+        pm.setPageInfo(6, pm.getPartitionOffset(this.selectedBank), this.selectedBank, false);
         pm.setPageInfo(
           7,
           0x2000 + pm.getPartitionOffset(this.selectedBank),
@@ -369,9 +371,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
 
       // --- Choose screen (Bank 5 or 7)
       this.useShadowScreen = ((value >> 3) & 0x01) == 0x01;
-      this.screenStartOffset = this.memory.getPartitionOffset(
-        this.useShadowScreen ? 7 : 5
-      );
+      this.screenStartOffset = this.memory.getPartitionOffset(this.useShadowScreen ? 7 : 5);
 
       // --- Choose ROM bank for Slot 0 (0x0000-0x3fff)
       this.selectedRom = (value >> 4) & 0x01;
@@ -380,18 +380,8 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         this.previousRom = this.selectedRom;
         const romPartition = -this.selectedRom - 1;
         const pm = this.memory;
-        pm.setPageInfo(
-          0,
-          pm.getPartitionOffset(romPartition),
-          romPartition,
-          true
-        );
-        pm.setPageInfo(
-          1,
-          0x2000 + pm.getPartitionOffset(romPartition),
-          romPartition,
-          true
-        );
+        pm.setPageInfo(0, pm.getPartitionOffset(romPartition), romPartition, true);
+        pm.setPageInfo(1, 0x2000 + pm.getPartitionOffset(romPartition), romPartition, true);
       }
 
       // --- Enable/disable paging
@@ -416,21 +406,21 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * This function implements the I/O port write delay of the CPU.
    * @param address Port address
    */
-  delayPortWrite (address: number): void {
+  delayPortWrite(address: number): void {
     this.delayContendedIo(address);
   }
 
   /**
    * Width of the screen in native machine screen pixels
    */
-  get screenWidthInPixels (): number {
+  get screenWidthInPixels(): number {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
-  get screenHeightInPixels (): number {
+  get screenHeightInPixels(): number {
     return this.screenDevice.screenLines;
   }
 
@@ -438,7 +428,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the buffer that stores the rendered pixels
    * @returns
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
@@ -447,7 +437,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param partition Partition to upload the ROM contents to
    * @param data ROM contents
    */
-  uploadRomBytes (partition: number, data: Uint8Array): void {
+  uploadRomBytes(partition: number, data: Uint8Array): void {
     this.memory.rawCopy(this.memory.getPartitionOffset(partition), data);
   }
 
@@ -455,16 +445,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(model: string): CodeInjectionFlow {
     if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
           rom: 0,
           execPoint: SP128_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(
-            SP128_MAIN_WAITING_LOOP
-          )})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SP128_MAIN_WAITING_LOOP)})`
         },
         {
           type: "Start"
@@ -500,9 +488,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 1,
           execPoint: SP48_MAIN_ENTRY,
-          message: `Main execution cycle point reached (ROM1/$${toHexa4(
-            SP48_MAIN_ENTRY
-          )})`
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(SP48_MAIN_ENTRY)})`
         },
         {
           type: "Inject"
@@ -519,9 +505,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 0,
           execPoint: SP128_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(
-            SP128_MAIN_WAITING_LOOP
-          )})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SP128_MAIN_WAITING_LOOP)})`
         },
         {
           type: "Start"
@@ -543,9 +527,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
           type: "ReachExecPoint",
           rom: 1,
           execPoint: SP128_RETURN_TO_EDITOR,
-          message: `Main execution cycle point reached (ROM1/$${toHexa4(
-            SP128_RETURN_TO_EDITOR
-          )})`
+          message: `Main execution cycle point reached (ROM1/$${toHexa4(SP128_RETURN_TO_EDITOR)})`
         },
         {
           type: "Inject"
@@ -556,9 +538,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(
-      `Code for machine model '${model}' cannot run on this virtual machine.`
-    );
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
   }
 
   /**
@@ -566,7 +546,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (): void {
+  onInitNewFrame(): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 
@@ -581,7 +561,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Check for current tape mode after each executed instruction
    */
-  afterInstructionExecuted (): void {
+  afterInstructionExecuted(): void {
     super.afterInstructionExecuted();
     this.psgDevice.calculateCurrentAudioValue();
   }
@@ -590,7 +570,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (): void {
+  onTactIncremented(): void {
     super.onTactIncremented();
     this.psgDevice.setNextAudioSample();
   }
@@ -598,7 +578,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   /**
    * Gets the structure describing system variables
    */
-  get sysVars (): SysVar[] {
+  get sysVars(): SysVar[] {
     return [...zxSpectrum128SysVars, ...zxSpectrum48SysVars];
   }
 }
@@ -640,8 +620,7 @@ export const zxSpectrum128SysVars: SysVar[] = [
     address: 0x5b5d,
     name: "RAMRST",
     type: SysVarType.Byte,
-    description:
-      "RST 8 instruction. Used by ROM 1 to report old errors to ROM 3"
+    description: "RST 8 instruction. Used by ROM 1 to report old errors to ROM 3"
   },
   {
     address: 0x5b5e,
@@ -755,8 +734,7 @@ export const zxSpectrum128SysVars: SysVar[] = [
     address: 0x5b75,
     name: "RCSTART",
     type: SysVarType.Word,
-    description:
-      "Starting line number for renumbering. The default value is 10."
+    description: "Starting line number for renumbering. The default value is 10."
   },
   {
     address: 0x5b77,
@@ -768,8 +746,7 @@ export const zxSpectrum128SysVars: SysVar[] = [
     address: 0x5b79,
     name: "LODDRV",
     type: SysVarType.Byte,
-    description:
-      "Holds 'T' if LOAD, VERIFY, MERGE are from tape;\notherwise holds 'A', 'B' or 'M'"
+    description: "Holds 'T' if LOAD, VERIFY, MERGE are from tape;\notherwise holds 'A', 'B' or 'M'"
   },
   {
     address: 0x5b7a,

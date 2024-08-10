@@ -357,9 +357,13 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * Gets the partition in which the specified address is paged in
    * @param _address Address to get the partition for
    */
-  getPartition(_address: number): number | undefined {
-    return undefined;
-  }
+  abstract getPartition(_address: number): number | undefined;
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  abstract parsePartitionLabel(label: string): number | undefined;
 
   /**
    * Executes the specified custom command
