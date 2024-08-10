@@ -1,4 +1,5 @@
-import { SysVar } from "@abstractions/SysVar";
+import type { SysVar } from "@abstractions/SysVar";
+
 import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";

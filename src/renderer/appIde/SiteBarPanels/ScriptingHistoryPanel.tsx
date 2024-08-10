@@ -1,10 +1,11 @@
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "@renderer/utils/classnames";
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";

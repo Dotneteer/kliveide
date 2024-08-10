@@ -15,7 +15,7 @@ import {
 } from "@renderer/reportError";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import {
   addBreakpoint,
   getBreakpoints,

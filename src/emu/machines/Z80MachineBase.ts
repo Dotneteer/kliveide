@@ -1,3 +1,5 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+
 import { IFileProvider } from "@renderer/core/IFileProvider";
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { ExecutionContext } from "../abstractions/ExecutionContext";
@@ -11,7 +13,6 @@ import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { MachineConfigSet } from "@common/machines/info-types";
 
 /**

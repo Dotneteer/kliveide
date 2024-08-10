@@ -1,9 +1,10 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { SysVar } from "@abstractions/SysVar";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import type { SysVar } from "@abstractions/SysVar";
+
 import { MessageBase } from "./messages-core";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 // --- Set the emulator's machine type to use

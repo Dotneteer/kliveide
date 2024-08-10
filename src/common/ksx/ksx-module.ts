@@ -1,6 +1,8 @@
-import { EvaluationContext, ModuleResolver, PackageResolver } from "./EvaluationContext";
+import type { EvaluationContext, ModuleResolver, PackageResolver } from "./EvaluationContext";
+import type { ErrorCodes, ParserErrorMessage } from "./ParserError";
+
 import { Parser } from "./Parser";
-import { ErrorCodes, ParserErrorMessage, errorMessages } from "./ParserError";
+import { errorMessages } from "./ParserError";
 import { TokenType } from "./TokenType";
 import { obtainClosures } from "./eval-tree-common";
 import {
@@ -180,7 +182,7 @@ export async function parseKsxModule (
 
       if (!imported) {
         // --- Error in the imported module
-        return;
+        return null;
       }
 
       // --- Successful import

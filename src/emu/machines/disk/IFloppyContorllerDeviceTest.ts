@@ -1,4 +1,4 @@
-import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import {
   CommandDescriptor,

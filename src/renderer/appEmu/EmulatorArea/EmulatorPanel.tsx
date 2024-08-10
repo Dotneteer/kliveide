@@ -1,3 +1,5 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
 import {
@@ -22,7 +24,6 @@ import {
 } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";

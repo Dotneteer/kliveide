@@ -1,14 +1,8 @@
-import {
-  FloppyLogEntry,
-  PortOperationType
-} from "@abstractions/FloppyLogEntry";
+import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+
+import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import {
-  DISK_A_CHANGES,
-  DISK_A_WP,
-  DISK_B_CHANGES,
-  DISK_B_WP
-} from "../machine-props";
+import { DISK_A_CHANGES, DISK_A_WP, DISK_B_CHANGES, DISK_B_WP } from "../machine-props";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
@@ -169,13 +163,11 @@ export class FloppyControllerDevice
   scan: ScanType;
 
   // --- Initializes the controller
-  constructor (
+  constructor(
     public readonly machine: IZxSpectrumMachine,
     private readonly hasDriveB = false
   ) {
-    machine.machinePropertyChanged.on(args =>
-      this.onMachinePropertiesChanged(args)
-    );
+    machine.machinePropertyChanged.on((args) => this.onMachinePropertiesChanged(args));
     this.reset();
   }
 
@@ -186,7 +178,7 @@ export class FloppyControllerDevice
   driveB?: IFloppyDiskDrive = new FloppyDiskDrive(this, 1);
 
   // --- Resets the device
-  reset (): void {
+  reset(): void {
     // --- Allow randomization
     this.disableRandomSeek = false;
 
@@ -234,10 +226,7 @@ export class FloppyControllerDevice
   }
 
   // --- Respond to floppy file changes
-  onMachinePropertiesChanged (args: {
-    propertyName: string;
-    newValue?: any;
-  }): void {
+  onMachinePropertiesChanged(args: { propertyName: string; newValue?: any }): void {
     switch (args.propertyName) {
       case MEDIA_DISK_A:
         const newDiskA = args.newValue;
@@ -274,14 +263,14 @@ export class FloppyControllerDevice
   }
 
   // --- Dispose the resources held by the device
-  dispose (): void {
+  dispose(): void {
     this.driveA = undefined;
     this.driveB = undefined;
     this.currentDrive = undefined;
   }
 
   // --- Gets the value of the data register (8-bit)
-  readDataRegister (): number {
+  readDataRegister(): number {
     let result = 0;
 
     if (!(this.msr & MSR_RQM) || !(this.msr & MSR_DIO)) {
@@ -306,8 +295,7 @@ export class FloppyControllerDevice
     } else if (this.command.id === Command.SenseInt) {
       // --- Sense Interrupt Status has two result bytes, ST0 and PCN as stored
       // --- Because of multiple interrupts,we retrieve the stored bytes and not ST0 and PCN direcly
-      result =
-        this.senseIntRes[this.command.resultLength - this.resultBytesLeft];
+      result = this.senseIntRes[this.command.resultLength - this.resultBytesLeft];
     } else if (this.command.resultLength - this.resultBytesLeft < 3) {
       // --- For other commands, the first three result bytes are always ST0, ST1, ST2
       switch (this.command.resultLength - this.resultBytesLeft) {
@@ -323,8 +311,7 @@ export class FloppyControllerDevice
       }
     } else {
       // --- Send back the other result bytes
-      result =
-        this.dataRegister[this.command.resultLength - this.resultBytesLeft - 2];
+      result = this.dataRegister[this.command.resultLength - this.resultBytesLeft - 2];
     }
     this.resultBytesLeft--;
     if (!this.resultBytesLeft) {
@@ -356,7 +343,7 @@ export class FloppyControllerDevice
   }
 
   // --- Gets the value of the Main Status Register
-  readMainStatusRegister (): number {
+  readMainStatusRegister(): number {
     const flags: string[] = [];
     const data = this.msr;
     if (data & MSR_RQM) {
@@ -386,7 +373,7 @@ export class FloppyControllerDevice
   }
 
   // --- Writes the value of the data register (8-bit)
-  writeDataRegister (value: number): void {
+  writeDataRegister(value: number): void {
     // --- Split to a byte
     value &= 0xff;
     let terminated = false;
@@ -433,10 +420,7 @@ export class FloppyControllerDevice
       //
       // --- If a SENSE INTERRUPT STATUS command is issued when no active interrupt condition is present,
       // --- the status register ST0 will return a value of $80 (invalid command) ... (82078 44pin)
-      if (
-        this.intReq === IntRequest.None &&
-        this.command.id == Command.SenseInt
-      ) {
+      if (this.intReq === IntRequest.None && this.command.id == Command.SenseInt) {
         // --- This command will be INVALID
         this.identifyCommand(0x00);
       }
@@ -483,15 +467,10 @@ export class FloppyControllerDevice
 
         // --- Set the current drive's head
         this.hd = (this.dataRegister[0] & 0x04) >> 2 ? 1 : 0;
-        this.currentDrive.currentHead = this.currentDrive.hasTwoHeads
-          ? this.hd
-          : 0;
+        this.currentDrive.currentHead = this.currentDrive.hasTwoHeads ? this.hd : 0;
 
         // --- Identify READ_DELETED_DATA/WRITE_DELETED_DATA
-        if (
-          this.command.id === Command.ReadData ||
-          this.command.id === Command.WriteData
-        ) {
+        if (this.command.id === Command.ReadData || this.command.id === Command.WriteData) {
           this.deletedData = !!((this.commandRegister & 0x08) >> 3);
           this.sk = !!((this.dataRegister[0] & 0x20) >> 5);
         }
@@ -601,17 +580,17 @@ export class FloppyControllerDevice
   }
 
   // --- Gets the log entries
-  getLogEntries (): FloppyLogEntry[] {
+  getLogEntries(): FloppyLogEntry[] {
     return this.opLog.slice(0);
   }
 
   // --- Clears all log entries
-  clearLogEntries (): void {
+  clearLogEntries(): void {
     this.opLog.length = 0;
   }
 
   // --- Turn on the floppy drive's motor
-  turnOnMotor (): void {
+  turnOnMotor(): void {
     if (!this.currentDrive.motorOn) {
       this.currentDrive.turnOnMotor();
       this.log({
@@ -624,7 +603,7 @@ export class FloppyControllerDevice
   }
 
   // --- Turn off the floppy drive's motor
-  turnOffMotor (): void {
+  turnOffMotor(): void {
     if (this.currentDrive.motorOn) {
       this.currentDrive.turnOffMotor();
       this.log({
@@ -637,18 +616,18 @@ export class FloppyControllerDevice
   }
 
   // --- Get the floppy drive's motor speed
-  getMotorSpeed (): number {
+  getMotorSpeed(): number {
     return this.currentDrive.motorSpeed;
   }
 
   // --- Get the floppy drive's save light value
-  getFloppySaveLight (): boolean {
+  getFloppySaveLight(): boolean {
     // TODO: Implement this
     return false;
   }
 
   // --- Carry out chores when a machine frame has been completed
-  onFrameCompleted (): void {
+  onFrameCompleted(): void {
     this.driveA?.onFrameCompleted();
     const driveAChanges = this.driveA?.getChangedSectors();
     if (driveAChanges && driveAChanges.size > 0) {
@@ -664,7 +643,7 @@ export class FloppyControllerDevice
   // ==========================================================================
   // Helpers
   // --- Adds a new item to the operation log
-  private log (entry: FloppyLogEntry): void {
+  private log(entry: FloppyLogEntry): void {
     if (entry.opType === PortOperationType.ReadMsr) return;
     if (this.opLog.length >= MAX_LOG_ENTRIES) {
       this.opLog.shift();
@@ -673,32 +652,25 @@ export class FloppyControllerDevice
   }
 
   // --- Registers an event
-  private registerEvent (
-    ms: number,
-    eventFn: (data: any) => void,
-    data: any
-  ): void {
+  private registerEvent(ms: number, eventFn: (data: any) => void, data: any): void {
     const machine = this.machine;
     const eventTact =
-      machine.tacts +
-      ((machine.baseClockFrequency * machine.clockMultiplier) / 1000) * ms;
+      machine.tacts + ((machine.baseClockFrequency * machine.clockMultiplier) / 1000) * ms;
     machine.queueEvent(eventTact, eventFn, data);
   }
 
   // --- Unregisters an event
-  private removeEvent (eventFn: (data: any) => void): void {
+  private removeEvent(eventFn: (data: any) => void): void {
     this.machine.removeEvent(eventFn);
   }
 
   // --- Identifies the command to execute
-  private identifyCommand (value: number): void {
+  private identifyCommand(value: number): void {
     this.commandRegister = value;
 
     // --- Invalid by default
     let cmd = commandTable[commandTable.length - 1];
-    const tableCmd = commandTable.find(
-      c => (this.commandRegister & c.mask) === c.value
-    );
+    const tableCmd = commandTable.find((c) => (this.commandRegister & c.mask) === c.value);
     if (tableCmd) {
       cmd = tableCmd;
     }
@@ -709,7 +681,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Specify command
-  private processSpecify (): void {
+  private processSpecify(): void {
     this.stepRate = 0x10 - (this.dataRegister[0] >> 4);
     this.headUnloadTime = (this.dataRegister[0] & 0x0f) << 4;
     if (this.headUnloadTime === 0) this.headUnloadTime = 128;
@@ -720,14 +692,11 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Sense Drive Status command
-  private processSenseDrive (): void {
+  private processSenseDrive(): void {
     if (this.us & 0x01) {
       if (this.hasDriveB) {
         this.sr3 = this.driveB.currentHead ? SR3_HD : 0x00;
-        this.sr3 |=
-          !this.driveB.hasDiskLoaded || this.driveB.writeProtected
-            ? SR3_WP
-            : 0x00;
+        this.sr3 |= !this.driveB.hasDiskLoaded || this.driveB.writeProtected ? SR3_WP : 0x00;
         this.sr3 |= this.driveB.track0Mark ? SR3_T0 : 0x00;
         this.sr3 |= this.driveB.hasTwoHeads ? SR3_TS : 0x00;
         this.sr3 |= this.driveB.ready ? SR3_RD : 0x00;
@@ -737,10 +706,7 @@ export class FloppyControllerDevice
       }
     } else {
       this.sr3 = this.driveA.currentHead ? SR3_HD : 0x00;
-      this.sr3 |=
-        !this.driveA.hasDiskLoaded || this.driveA.writeProtected
-          ? SR3_WP
-          : 0x00;
+      this.sr3 |= !this.driveA.hasDiskLoaded || this.driveA.writeProtected ? SR3_WP : 0x00;
       this.sr3 |= this.driveA.track0Mark ? SR3_T0 : 0x00;
       this.sr3 |= this.driveA.hasTwoHeads ? SR3_TS : 0x00;
       this.sr3 |= this.driveA.ready ? SR3_RD : 0x00;
@@ -748,7 +714,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Sense Interrupt Status command
-  private processSenseInterrupt (): void {
+  private processSenseInterrupt(): void {
     // --- Iterate through drives to find the first one with terminated seek
     for (let i = 0; i < 4; i++) {
       if (this.seekStatus[i] >= SeekStatus.NormalTermination) {
@@ -788,7 +754,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Recalibrate command
-  private processRecalibrate (): void {
+  private processRecalibrate(): void {
     // --- Previous seek in progress?
     if (this.msr & (1 << this.us)) {
       return;
@@ -814,7 +780,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Seek command
-  private processSeek (): void {
+  private processSeek(): void {
     // --- Previous seek in progress?
     if (this.msr & (1 << this.us)) {
       return;
@@ -827,12 +793,9 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Read Data command
-  private processReadData (): void {
+  private processReadData(): void {
     this.expRecordLength =
-      0x80 <<
-      (this.dataRegister[4] > MAX_SIZE_CODE
-        ? MAX_SIZE_CODE
-        : this.dataRegister[4]);
+      0x80 << (this.dataRegister[4] > MAX_SIZE_CODE ? MAX_SIZE_CODE : this.dataRegister[4]);
     if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
       this.expRecordLength = this.dataRegister[7];
     }
@@ -842,7 +805,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Write Data command
-  private processWriteData (): boolean {
+  private processWriteData(): boolean {
     const drive = this.currentDrive;
     if (drive.writeProtected) {
       this.sr1 |= SR1_NW;
@@ -850,10 +813,7 @@ export class FloppyControllerDevice
       return true;
     }
     this.expRecordLength =
-      0x80 <<
-      (this.dataRegister[4] > MAX_SIZE_CODE
-        ? MAX_SIZE_CODE
-        : this.dataRegister[4]);
+      0x80 << (this.dataRegister[4] > MAX_SIZE_CODE ? MAX_SIZE_CODE : this.dataRegister[4]);
     if (this.dataRegister[4] === 0 && this.dataRegister[7] < 128) {
       this.expRecordLength = this.dataRegister[7];
     }
@@ -864,7 +824,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handle the Write ID command
-  private processWriteId (): boolean {
+  private processWriteId(): boolean {
     const drive = this.currentDrive;
     if (drive.writeProtected) {
       this.sr1 |= SR1_NW;
@@ -873,33 +833,27 @@ export class FloppyControllerDevice
     }
     // --- Max. 8192 byte/sector
     this.expRecordLength =
-      0x80 <<
-      (this.dataRegister[1] > MAX_SIZE_CODE
-        ? MAX_SIZE_CODE
-        : this.dataRegister[1]);
+      0x80 << (this.dataRegister[1] > MAX_SIZE_CODE ? MAX_SIZE_CODE : this.dataRegister[1]);
     this.commandWithLoadHead();
     return false;
   }
 
   // --- Handle the Scan command
-  private processScan (): void {
+  private processScan(): void {
     // --- & 0x0c >> 2 == 00 - equal, 10 - low, 11 - high
     this.scan =
       (this.commandRegister & 0x0c) >> 2 === 0
         ? ScanType.Eq
         : (this.commandRegister & 0x0c) >> 2 === 0x03
-        ? ScanType.Hi
-        : ScanType.Lo;
+          ? ScanType.Hi
+          : ScanType.Lo;
     this.expRecordLength =
-      0x80 <<
-      (this.dataRegister[4] > MAX_SIZE_CODE
-        ? MAX_SIZE_CODE
-        : this.dataRegister[4]);
+      0x80 << (this.dataRegister[4] > MAX_SIZE_CODE ? MAX_SIZE_CODE : this.dataRegister[4]);
     this.commandWithLoadHead();
   }
 
   // --- Processes the data coming from the CPU while a Write Data command is in progress
-  private processDataWhileWriting (value: number): void {
+  private processDataWhileWriting(value: number): void {
     const drive = this.currentDrive;
     // --- Write data
     this.dataOffset++;
@@ -930,7 +884,7 @@ export class FloppyControllerDevice
   }
 
   // --- Processes the data coming from the CPU while a Write ID command is in progress
-  private processDataWhileFormatting (value: number): void {
+  private processDataWhileFormatting(value: number): void {
     this.dataRegister[this.dataOffset + 5] = value; // --- Read ID fields
     this.dataOffset++;
     const drive = this.currentDrive;
@@ -1056,7 +1010,7 @@ export class FloppyControllerDevice
   }
 
   // --- Processes the data coming from the CPU while a Scan command is in progress
-  private processDataWhileScanning (value: number): void {
+  private processDataWhileScanning(value: number): void {
     const d = this.currentDrive;
     this.dataOffset++;
     d.readData();
@@ -1109,7 +1063,7 @@ export class FloppyControllerDevice
   }
 
   // --- Turn the operation phase to sending back result
-  private signCommandResult (): void {
+  private signCommandResult(): void {
     // --- Set up result phase
     this.commandBytesReceived = 0;
     this.resultBytesLeft = this.command.resultLength;
@@ -1138,7 +1092,7 @@ export class FloppyControllerDevice
   }
 
   // --- Get the next data byte to sende back in the result phase of Read Data
-  private getReadDataResult (): number {
+  private getReadDataResult(): number {
     const drive = this.currentDrive;
 
     this.dataOffset++; // --- count read bytes
@@ -1154,10 +1108,7 @@ export class FloppyControllerDevice
         this.dataOffset++;
       }
     }
-    if (
-      this.command.id == Command.ReadData &&
-      this.dataOffset === this.sectorLength
-    ) {
+    if (this.command.id == Command.ReadData && this.dataOffset === this.sectorLength) {
       // --- Read the CRC
       drive.readData();
       this.crcAdd();
@@ -1188,7 +1139,7 @@ export class FloppyControllerDevice
   }
 
   // --- Makes a seek step
-  private seekStep (start: boolean): void {
+  private seekStep(start: boolean): void {
     let driveIndex = 0;
     if (start) {
       // --- We are at the start of the seek operation
@@ -1225,8 +1176,7 @@ export class FloppyControllerDevice
 
     // --- There is need to seek?
     if (
-      this.presentCylinderNumbers[driveIndex] ===
-        this.newCylinderNumbers[driveIndex] &&
+      this.presentCylinderNumbers[driveIndex] === this.newCylinderNumbers[driveIndex] &&
       this.seekStatus[driveIndex] === SeekStatus.Recalibrate &&
       !drive.track0Mark
     ) {
@@ -1243,10 +1193,8 @@ export class FloppyControllerDevice
 
     // --- We have not reached the target cylinder yet
     if (
-      this.presentCylinderNumbers[driveIndex] ===
-        this.newCylinderNumbers[driveIndex] ||
-      (this.seekStatus[driveIndex] === SeekStatus.Recalibrate &&
-        drive.track0Mark)
+      this.presentCylinderNumbers[driveIndex] === this.newCylinderNumbers[driveIndex] ||
+      (this.seekStatus[driveIndex] === SeekStatus.Recalibrate && drive.track0Mark)
     ) {
       // --- Correct position
       if (this.seekStatus[driveIndex] === SeekStatus.Recalibrate) {
@@ -1267,8 +1215,7 @@ export class FloppyControllerDevice
       if (this.seekStatus[driveIndex] === SeekStatus.Recalibrate) {
         // --- Recalibrate
         this.presentCylinderNumbers[driveIndex] =
-          this.savedCylinderNumbers[driveIndex] -
-          (77 - this.presentCylinderNumbers[driveIndex]);
+          this.savedCylinderNumbers[driveIndex] - (77 - this.presentCylinderNumbers[driveIndex]);
       }
 
       // --- restore PCN, drive not ready termination
@@ -1282,14 +1229,10 @@ export class FloppyControllerDevice
     }
 
     // --- Send a step
-    if (
-      this.presentCylinderNumbers[driveIndex] !==
-      this.newCylinderNumbers[driveIndex]
-    ) {
+    if (this.presentCylinderNumbers[driveIndex] !== this.newCylinderNumbers[driveIndex]) {
       // --- Calculate the direction of the step
       const directionIn =
-        this.presentCylinderNumbers[driveIndex] >
-        this.newCylinderNumbers[driveIndex];
+        this.presentCylinderNumbers[driveIndex] > this.newCylinderNumbers[driveIndex];
 
       // --- Step into that direction
       drive.step(directionIn);
@@ -1309,7 +1252,7 @@ export class FloppyControllerDevice
   }
 
   // --- Seek to a specified id
-  private seekId (): SeekIdResult {
+  private seekId(): SeekIdResult {
     // --- Reset the Wrong Cylinder and Bad Cylinder flags
     this.sr2 &= ~(SR2_WC | SR2_BC);
 
@@ -1335,10 +1278,7 @@ export class FloppyControllerDevice
     }
 
     // --- Ok, we're on the right track, check the sector and the head
-    if (
-      this.idSector === this.dataRegister[3] &&
-      this.idHead === this.dataRegister[2]
-    ) {
+    if (this.idSector === this.dataRegister[3] && this.idHead === this.dataRegister[2]) {
       // --- The Track, Head, and Sector number match
       if (this.idLength !== this.dataRegister[4]) {
         // --- The Length field does not match, sign No Data
@@ -1359,7 +1299,7 @@ export class FloppyControllerDevice
 
   // --- Reads the DAM (Data Address Mark)
   // --- Return: false = found, true = not found
-  private readDataAddressMark (): boolean {
+  private readDataAddressMark(): boolean {
     const drive = this.currentDrive;
     let i = 0;
 
@@ -1450,17 +1390,14 @@ export class FloppyControllerDevice
   }
 
   // --- Loads the head and then executes the current command
-  private commandWithLoadHead (): void {
+  private commandWithLoadHead(): void {
     // --- The current command will use the head, so it must not be unloaded. Remove the
     // --- event handler that would unolad the head
     this.removeEvent(this.headEventHandler);
 
     if (this.headLoaded) {
       // --- Head already loaded, start the command usign the head
-      if (
-        this.command.id === Command.ReadData ||
-        this.command.id === Command.Scan
-      ) {
+      if (this.command.id === Command.ReadData || this.command.id === Command.Scan) {
         this.startReadData();
       } else if (this.command.id === Command.ReadId) {
         this.startReadId();
@@ -1482,7 +1419,7 @@ export class FloppyControllerDevice
   }
 
   // --- Start the Read ID command
-  private startReadId (): void {
+  private startReadId(): void {
     // --- Allow up to 2 revolutions to find the ID
     if (!this.readIdInProgress) {
       this.revCounter = 2;
@@ -1496,9 +1433,7 @@ export class FloppyControllerDevice
     if (this.revCounter) {
       // --- Yes, continue reading the ID
       let startPosition =
-        drive.dataPosInTrack >= (drive.surface?.bytesPerTrack ?? 0)
-          ? 0
-          : drive.dataPosInTrack;
+        drive.dataPosInTrack >= (drive.surface?.bytesPerTrack ?? 0) ? 0 : drive.dataPosInTrack;
       if (this.readId() !== ReadIdResult.NotFound) {
         // --- ID found (or CRC error)
         this.revCounter = 0;
@@ -1532,16 +1467,12 @@ export class FloppyControllerDevice
   }
 
   // --- Start the Read Data command
-  private startReadData (): void {
+  private startReadData(): void {
     const fdc = this;
 
     // --- Try reading the data unless the loop is broken
     while (true) {
-      if (
-        this.firstRw ||
-        this.readIdInProgress ||
-        this.dataRegister[5] > this.dataRegister[3]
-      ) {
+      if (this.firstRw || this.readIdInProgress || this.dataRegister[5] > this.dataRegister[3]) {
         if (!this.readIdInProgress) {
           // --- Read operation has not been started
           if (!this.firstRw) {
@@ -1561,8 +1492,7 @@ export class FloppyControllerDevice
         while (this.revCounter) {
           // --- Start position
           let startPosition =
-            this.currentDrive.dataPosInTrack >=
-            this.currentDrive.surface.bytesPerTrack
+            this.currentDrive.dataPosInTrack >= this.currentDrive.surface.bytesPerTrack
               ? 0
               : this.currentDrive.dataPosInTrack;
 
@@ -1653,7 +1583,7 @@ export class FloppyControllerDevice
     }
 
     // --- Helper for aborting the Read Data command
-    function abortReadData (): void {
+    function abortReadData(): void {
       // --- End of execution phase
       fdc.operationPhase = OperationPhase.Result;
       fdc.resultBytesLeft = fdc.command.resultLength;
@@ -1682,7 +1612,7 @@ export class FloppyControllerDevice
   }
 
   // --- Reads the current position ID
-  private readId (): ReadIdResult {
+  private readId(): ReadIdResult {
     const fdc = this;
     const drive = this.currentDrive;
 
@@ -1711,10 +1641,7 @@ export class FloppyControllerDevice
       }
 
       // --- Read the address end mark
-      if (
-        (this.mf && drive.currentData !== 0x00fe) ||
-        (!this.mf && drive.currentData !== 0xfffe)
-      ) {
+      if ((this.mf && drive.currentData !== 0x00fe) || (!this.mf && drive.currentData !== 0xfffe)) {
         continue;
       }
       this.crcAdd();
@@ -1727,8 +1654,7 @@ export class FloppyControllerDevice
       readNextDataByte();
       this.idSector = drive.currentData;
       readNextDataByte();
-      this.idLength =
-        drive.currentData > MAX_SIZE_CODE ? MAX_SIZE_CODE : drive.currentData;
+      this.idLength = drive.currentData > MAX_SIZE_CODE ? MAX_SIZE_CODE : drive.currentData;
       this.sectorLength = 0x80 << this.idLength;
 
       // --- Read CRC bytes
@@ -1756,7 +1682,7 @@ export class FloppyControllerDevice
     return ReadIdResult.NotFound;
 
     // --- Helper for reading a byte (and calculating CRC)
-    function readNextDataByte (addCrc = true): void {
+    function readNextDataByte(addCrc = true): void {
       drive.readData();
       if (addCrc) {
         fdc.crcAdd();
@@ -1768,17 +1694,13 @@ export class FloppyControllerDevice
   }
 
   // --- Start the Write Data command
-  private startWriteData (): void {
+  private startWriteData(): void {
     const drive = this.currentDrive;
     const fdc = this;
 
     // --- Try reading the data unless the loop is broken
     while (true) {
-      if (
-        this.firstRw ||
-        this.readIdInProgress ||
-        this.dataRegister[5] > this.dataRegister[3]
-      ) {
+      if (this.firstRw || this.readIdInProgress || this.dataRegister[5] > this.dataRegister[3]) {
         if (!this.readIdInProgress) {
           // --- Read operation has not been started
           if (!this.firstRw) {
@@ -1798,8 +1720,7 @@ export class FloppyControllerDevice
         while (this.revCounter) {
           // --- Start position
           let startPosition =
-            this.currentDrive.dataPosInTrack >=
-            this.currentDrive.surface.bytesPerTrack
+            this.currentDrive.dataPosInTrack >= this.currentDrive.surface.bytesPerTrack
               ? 0
               : this.currentDrive.dataPosInTrack;
           if (this.seekId() === SeekIdResult.Found) {
@@ -1865,8 +1786,7 @@ export class FloppyControllerDevice
             this.crcAdd();
           }
         }
-        drive.currentData =
-          (this.deletedData ? 0x00f8 : 0x00fb) | (this.mf ? 0x0000 : 0xff00);
+        drive.currentData = (this.deletedData ? 0x00f8 : 0x00fb) | (this.mf ? 0x0000 : 0xff00);
         // --- Write data mark
         drive.writeData();
         this.crcAdd();
@@ -1887,7 +1807,7 @@ export class FloppyControllerDevice
       return;
     }
 
-    function abortWriteData (): void {
+    function abortWriteData(): void {
       fdc.operationPhase = OperationPhase.Result;
       fdc.resultBytesLeft = fdc.command.resultLength;
       // --- End of cylinder is set if:
@@ -1904,7 +1824,7 @@ export class FloppyControllerDevice
   }
 
   // --- Start the Write ID command
-  private startWriteId (): void {
+  private startWriteId(): void {
     const drive = this.currentDrive;
 
     // --- Write 40 GAP bytes
@@ -1958,7 +1878,7 @@ export class FloppyControllerDevice
   }
 
   // --- Handles the timeout event
-  private timeoutEventHandler (data: any): void {
+  private timeoutEventHandler(data: any): void {
     const fdc = data as FloppyControllerDevice;
     fdc.sr0 |= SR0_AT;
     fdc.sr1 |= SR1_OR;
@@ -1967,13 +1887,13 @@ export class FloppyControllerDevice
 
   // --- This event unloads the head if no head-using operation is in progress after
   // --- the head unload time
-  private headEventHandler (data: any): void {
+  private headEventHandler(data: any): void {
     const fdc = data as FloppyControllerDevice;
     fdc.currentDrive.loadHead(false);
     fdc.headLoaded = false;
   }
 
-  private fdcEventHandler (data: any): void {
+  private fdcEventHandler(data: any): void {
     const fdc = data as FloppyControllerDevice;
     const cmdId = data.command.id;
     if (fdc.readIdInProgress) {
@@ -2000,12 +1920,12 @@ export class FloppyControllerDevice
   }
 
   // --- Preset the CRC value to its default
-  private crcPreset () {
+  private crcPreset() {
     this.crc.value = 0xffff;
   }
 
   // --- Add the drive's data byte to the CRC
-  private crcAdd (): void {
+  private crcAdd(): void {
     this.crc.add(this.currentDrive.currentData);
   }
 }

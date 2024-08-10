@@ -17,7 +17,7 @@ import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { delay } from "@renderer/utils/timing";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { MachineInfo } from "@common/machines/info-types";

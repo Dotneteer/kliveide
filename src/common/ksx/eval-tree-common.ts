@@ -1,6 +1,6 @@
-import { EvaluationContext } from "./EvaluationContext";
-import { LogicalThread } from "./LogicalThread";
-import {
+import type { EvaluationContext } from "./EvaluationContext";
+import type { LogicalThread } from "./LogicalThread";
+import type {
   ArrowExpression,
   AssignmentExpression,
   BinaryOpSymbols,
@@ -13,7 +13,8 @@ import {
   PrefixOpExpression,
   UnaryExpression
 } from "./source-tree";
-import { BlockScope } from "./BlockScope";
+import type { BlockScope } from "./BlockScope";
+
 import { isConstVar } from "./eval-tree-async";
 
 // --- Type guard to check for a Promise

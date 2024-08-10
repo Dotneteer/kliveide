@@ -118,10 +118,7 @@ import { AssemblyModule } from "./assembly-module";
 import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
 import { FixupEntry } from "./fixups";
-import {
-  ExpressionValueType,
-  SpectrumModelType
-} from "../../common/abstractions/IZ80CompilerService";
+import { ExpressionValueType, SpectrumModelType } from "@abstractions/CompilerInfo";
 
 /**
  * The file name of a direct text compilation

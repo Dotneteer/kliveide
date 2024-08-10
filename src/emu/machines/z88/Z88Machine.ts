@@ -1,3 +1,5 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { Z80MachineBase } from "../Z80MachineBase";
 import { IZ88BeeperDevice } from "./IZ88BeeperDevice";
@@ -5,7 +7,6 @@ import { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { Z88KeyCode } from "./Z88KeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { z88KeyMappings } from "./Z88KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";

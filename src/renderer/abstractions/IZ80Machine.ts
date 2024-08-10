@@ -1,12 +1,13 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { ILiteEvent } from "@abstractions/ILiteEvent";
+
 import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
-import { ILiteEvent } from "@emu/utils/lite-event";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "./KeyMapping";
 import { MachineConfigSet } from "@common/machines/info-types";
 
 /**

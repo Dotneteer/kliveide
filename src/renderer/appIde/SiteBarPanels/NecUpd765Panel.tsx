@@ -1,18 +1,14 @@
+import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+
 import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./NecUpd765Panel.module.scss";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
+import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
-import {
-  FloppyLogEntry,
-  PortOperationType
-} from "@abstractions/FloppyLogEntry";
+import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
 
 const NecUpd765Panel = () => {
@@ -26,9 +22,7 @@ const NecUpd765Panel = () => {
       type: "EmuGetNecUpd765State"
     });
     if (logResponse.type === "ErrorResponse") {
-      reportMessagingError(
-        `EmuGetNecUpd765State call failed: ${logResponse.message}`
-      );
+      reportMessagingError(`EmuGetNecUpd765State call failed: ${logResponse.message}`);
     } else if (logResponse.type !== "EmuGetNecUpd765StateResponse") {
       reportUnexpectedMessageType(logResponse.type);
     } else {
@@ -44,15 +38,13 @@ const NecUpd765Panel = () => {
 
   return (
     <div className={styles.necPanel}>
-      {log.length === 0 && (
-        <div className={styles.center}>No log entries collected </div>
-      )}
+      {log.length === 0 && <div className={styles.center}>No log entries collected </div>}
       {log.length > 0 && (
         <VirtualizedListView
           items={log}
           approxSize={20}
           fixItemHeight={true}
-          itemRenderer={idx => {
+          itemRenderer={(idx) => {
             const item = log[idx];
             if (!item) return null;
             let icon: string;

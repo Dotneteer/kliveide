@@ -1,6 +1,6 @@
-import { BlockScope } from "./BlockScope";
-import { LoopScope } from "./LoopScope";
-import { TryScope } from "./TryScope";
+import type { BlockScope } from "./BlockScope";
+import type { LoopScope } from "./LoopScope";
+import type { TryScope } from "./TryScope";
 
 // Represents a logical thread instance
 export type LogicalThread = {

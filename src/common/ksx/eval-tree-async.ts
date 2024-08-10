@@ -1,4 +1,4 @@
-import {
+import type {
   ArrayLiteral,
   ArrowExpression,
   AssignmentExpression,
@@ -18,8 +18,10 @@ import {
   UnaryExpression,
   VarDeclaration
 } from "./source-tree";
-import { LogicalThread } from "./LogicalThread";
-import { EvaluationContext } from "./EvaluationContext";
+import type { LogicalThread } from "./LogicalThread";
+import type { EvaluationContext } from "./EvaluationContext";
+import type { BlockScope } from "./BlockScope";
+
 import {
   evalArrow,
   evalAssignmentCore,
@@ -33,7 +35,6 @@ import {
   isPromise
 } from "./eval-tree-common";
 import { ensureMainThread } from "./process-statement-common";
-import { BlockScope } from "./BlockScope";
 import { isPlainObject } from "lodash";
 import { processDeclarationsAsync, processStatementQueueAsync } from "./process-statement-async";
 import { isBannedFunction } from "./banned-functions";

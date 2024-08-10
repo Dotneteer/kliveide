@@ -1,10 +1,11 @@
-import { EvaluationContext } from "./EvaluationContext";
+import type { EvaluationContext } from "./EvaluationContext";
+
 import { setScriptsStatusAction } from "../state/actions";
 
 /**
  * The abstract base class of all UI engine errors
  */
-export abstract class EngineError extends Error {
+abstract class EngineError extends Error {
   protected abstract readonly errorCategory: string;
   protected constructor (message: string) {
     super(message);
@@ -12,35 +13,10 @@ export abstract class EngineError extends Error {
   }
 }
 
-/**
- * Extracts information from the error object received from the backend
- */
-export class GenericBackendError extends EngineError {
-  readonly errorCategory = "GenericBackendError";
-  errorDetails: any;
-  constructor (public readonly info?: any) {
-    // `The backend raised an error. (reasonCode: ${info.reasonCode}, isBusiness: ${info.isBusiness}, message: ${info.message})`
-    let message = "";
-    if (info?.code) {
-      message += `[Error code: ${info.code}]\n`;
-    }
-    if (info?.details && typeof info.details === "string") {
-      message += `${info.details}`;
-    } else if (info?.message) {
-      message += `${info.message}`;
-    }
-    super(message || info?.message || "Unknown error");
-
-    this.errorDetails = info;
-    // --- Set the prototype explicitly.
-    Object.setPrototypeOf(this, GenericBackendError.prototype);
-  }
-}
-
-/**
+/**í
  * Custom exception indicating a parser error
  */
-export class ScriptParseError extends EngineError {
+class ScriptParseError extends EngineError {
   readonly errorCategory = "ScriptParserError";
   constructor (
     message: string,
@@ -61,19 +37,6 @@ export class StatementExecutionError extends EngineError {
   constructor (message: string, public readonly source: string) {
     super(message);
     Object.setPrototypeOf(this, StatementExecutionError.prototype);
-  }
-}
-
-/**
- * Signs that we get an unexpected type instead of a component definition
- */
-export class NotAComponentDefError extends EngineError {
-  readonly errorCategory = "NotAComponentError";
-  constructor () {
-    super(
-      "Must be a component definition, cannot use dynamic children here..."
-    );
-    Object.setPrototypeOf(this, NotAComponentDefError.prototype);
   }
 }
 
@@ -101,20 +64,6 @@ type ErrorInfo = {
 };
 
 const appErrors: ErrorInfo[] = [];
-
-/**
- * Get all errors collected during the last run
- */
-export function getAppErrors (): ErrorInfo[] {
-  return appErrors;
-}
-
-/**
- * Use this function to reset the errors raised by the execution engine
- */
-export function resetErrors (): void {
-  appErrors.length = 0;
-}
 
 /**
  * Use this function to report an error

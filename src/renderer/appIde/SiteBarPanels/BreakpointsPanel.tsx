@@ -4,7 +4,7 @@ import {
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";

@@ -1,3 +1,5 @@
+import type { SysVar } from "@abstractions/SysVar";
+
 import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
@@ -5,7 +7,7 @@ import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
-import { SysVar, SysVarType } from "@abstractions/SysVar";
+import { SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory } from "@controls/Tooltip";
 import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 

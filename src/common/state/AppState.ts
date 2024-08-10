@@ -1,9 +1,10 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { PANE_ID_EMU } from "../../common/integration/constants";
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 /**
  * Represents the state of the entire application

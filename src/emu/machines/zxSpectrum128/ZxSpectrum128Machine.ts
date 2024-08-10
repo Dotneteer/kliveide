@@ -1,4 +1,6 @@
-import { SysVar, SysVarType } from "@abstractions/SysVar";
+import type { SysVar } from "@abstractions/SysVar";
+
+import { SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";

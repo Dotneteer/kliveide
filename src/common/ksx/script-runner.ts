@@ -1,4 +1,5 @@
-import { ScriptRunInfo } from "../abstractions/ScriptRunInfo";
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+
 import { EvaluationContext } from "./EvaluationContext";
 import { AppState } from "../../common/state/AppState";
 import { Store } from "../../common/state/redux-light";

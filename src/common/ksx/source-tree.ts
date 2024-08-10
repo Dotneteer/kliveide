@@ -1,6 +1,6 @@
 // All binding expression tree node types
-import { BlockScope } from "./BlockScope";
-import { KsxModule } from "./ksx-module";
+import type { BlockScope } from "./BlockScope";
+import type { KsxModule } from "./ksx-module";
 
 type Node = Statement | Expression | SwitchCase;
 

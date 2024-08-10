@@ -1,14 +1,15 @@
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { SysVar } from "@abstractions/SysVar";
+
 import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
 import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
 import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
 import { ITapeDevice } from "../../abstractions/ITapeDevice";
-import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { MachineModel } from "@common/machines/info-types";

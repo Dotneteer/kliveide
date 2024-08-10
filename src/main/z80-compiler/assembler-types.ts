@@ -7,7 +7,7 @@ import {
   Z80AssemblyLine
 } from "./assembler-tree-nodes";
 import { ErrorCodes } from "./assembler-errors";
-import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
 
 /**
  * Represents the value of an evaluated expression

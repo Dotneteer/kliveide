@@ -37,7 +37,7 @@ import {
   MemorySection,
   MemorySectionType
 } from "../z80-disassembler/disassembly-helper";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";

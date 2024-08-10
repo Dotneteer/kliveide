@@ -1,5 +1,8 @@
 import fs from "fs";
-import { BinarySegment, SpectrumModelType } from "../../common/abstractions/IZ80CompilerService";
+
+import type { BinarySegment } from "@abstractions/CompilerInfo";
+
+import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "../../common/utils/SettingsReader";
 import {
   IKliveCompiler,

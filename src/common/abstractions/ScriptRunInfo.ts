@@ -1,5 +1,3 @@
-import { EvaluationContext } from "../ksx/EvaluationContext";
-
 export type ScriptStatus =
   | "pending"
   | "compiled"
@@ -20,9 +18,4 @@ export type ScriptRunInfo = {
   stopTime?: Date;
   specialScript?: string;
   scriptFunction?: string;
-};
-
-export type ScriptExecutionState = ScriptRunInfo & {
-  evalContext?: EvaluationContext;
-  execTask?: Promise<void>;
 };

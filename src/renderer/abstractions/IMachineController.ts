@@ -10,7 +10,7 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 /**

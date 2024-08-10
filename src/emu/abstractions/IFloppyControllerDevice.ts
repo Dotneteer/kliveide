@@ -1,6 +1,7 @@
+import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { IGenericDevice } from "./IGenericDevice";
-import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { IFloppyDiskDrive } from "./IFloppyDiskDrive";
 
 /**

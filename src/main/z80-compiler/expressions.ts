@@ -1,4 +1,4 @@
-import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
+import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
 import { ErrorCodes } from "./assembler-errors";
 import {
   BinaryExpression,
