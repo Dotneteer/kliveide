@@ -1,8 +1,4 @@
-import {
-  AssemblerErrorInfo,
-  BinarySegment,
-  CompilerOutput
-} from "@abstractions/IZ80CompilerService";
+import type { AssemblerErrorInfo, BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
 
 /**
  * Stores the compilers
@@ -31,10 +27,7 @@ export type InjectableOutput = SimpleAssemblerOutput & {
 /**
  * Output of a Klive compiler
  */
-export type KliveCompilerOutput =
-  | SimpleAssemblerOutput
-  | InjectableOutput
-  | CompilerOutput;
+export type KliveCompilerOutput = SimpleAssemblerOutput | InjectableOutput | CompilerOutput;
 
 /**
  * Defines the responsibilities of a compiler that can vork directly with a build root
@@ -62,10 +55,7 @@ export interface IKliveCompiler {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compileFile(
-    filename: string,
-    options?: Record<string, any>
-  ): Promise<KliveCompilerOutput>;
+  compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
 }
 
 /**
@@ -73,9 +63,7 @@ export interface IKliveCompiler {
  * @param output
  * @returns
  */
-export function isInjectableCompilerOutput (
-  output: KliveCompilerOutput
-): output is CompilerOutput {
+export function isInjectableCompilerOutput(output: KliveCompilerOutput): output is CompilerOutput {
   return (output as any)?.segments;
 }
 
@@ -84,9 +72,7 @@ export function isInjectableCompilerOutput (
  * @param output
  * @returns
  */
-export function isDebuggableCompilerOutput (
-  output: KliveCompilerOutput
-): output is CompilerOutput {
+export function isDebuggableCompilerOutput(output: KliveCompilerOutput): output is CompilerOutput {
   return (output as any)?.segments && (output as any)?.sourceFileList;
 }
 
@@ -94,7 +80,7 @@ export function isDebuggableCompilerOutput (
  * Registers the specified compiler
  * @param compiler Compiler to register
  */
-export function registerCompiler (compiler: IKliveCompiler): void {
+export function registerCompiler(compiler: IKliveCompiler): void {
   compilerRegistry[compiler.language] = compiler;
 }
 
@@ -102,6 +88,6 @@ export function registerCompiler (compiler: IKliveCompiler): void {
  * Gets the specified Klive compiler
  * @param id Compiler ID
  */
-export function getCompiler (id: string): IKliveCompiler | undefined {
+export function getCompiler(id: string): IKliveCompiler | undefined {
   return compilerRegistry[id];
 }

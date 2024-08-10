@@ -1,4 +1,4 @@
-import { ILiteEvent } from "@abstractions/ILiteEvent";
+import type { ILiteEvent } from "@abstractions/ILiteEvent";
 
 /**
  * This class implements a simple multi-subscriber event

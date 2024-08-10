@@ -25,7 +25,7 @@ import {
   showSideBarAction,
   showToolPanelsAction,
   toolPanelsOnTopAction
-} from "../common/state/actions";
+} from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
 import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
@@ -37,12 +37,12 @@ import {
   MEDIA_TAPE,
   PROJECT_MERGE_FILE,
   BUILD_FILE
-} from "../common/structs/project-const";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { EmuListBreakpointsResponse } from "../common/messaging/main-to-emu";
+} from "@common/structs/project-const";
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { EmuListBreakpointsResponse } from "@messaging/main-to-emu";
 import { setMachineType } from "./registeredMachines";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import { getModelConfig } from "../common/machines/machine-registry";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getModelConfig } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 

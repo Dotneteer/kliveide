@@ -85,7 +85,6 @@ export type BinarySegment = {
   readonly xorgValue?: number;
 };
 
-
 /**
  * Represents the entire compiler output
  */
@@ -156,6 +155,55 @@ export interface CompilerOutput extends CompiledModule {
    * Trace outputs
    */
   readonly traceOutput: string[];
+}
+
+/**
+ * Represents a compilation error
+ */
+export interface AssemblerErrorInfo {
+  /**
+   * Error code
+   */
+  readonly errorCode: string;
+  /**
+   * File in which the error is found
+   */
+  readonly filename: string;
+
+  /**
+   * Error line number
+   */
+  readonly line: number;
+
+  /**
+   * Error start position
+   */
+  readonly startPosition: number;
+
+  /**
+   * Error end position
+   */
+  readonly endPosition: number | null;
+
+  /**
+   * Error start column
+   */
+  readonly startColumn: number;
+
+  /**
+   * Error end column
+   */
+  readonly endColumn: number | null;
+
+  /**
+   * Complete error message
+   */
+  readonly message: string;
+
+  /**
+   * Is it just warning?
+   */
+  readonly isWarning?: boolean;
 }
 
 /**
@@ -450,55 +498,6 @@ type SourceFileItem = {
    */
   readonly includes: SourceFileItem[];
 };
-
-/**
- * Represents a compilation error
- */
-interface AssemblerErrorInfo {
-  /**
-   * Error code
-   */
-  readonly errorCode: string;
-  /**
-   * File in which the error is found
-   */
-  readonly filename: string;
-
-  /**
-   * Error line number
-   */
-  readonly line: number;
-
-  /**
-   * Error start position
-   */
-  readonly startPosition: number;
-
-  /**
-   * Error end position
-   */
-  readonly endPosition: number | null;
-
-  /**
-   * Error start column
-   */
-  readonly startColumn: number;
-
-  /**
-   * Error end column
-   */
-  readonly endColumn: number | null;
-
-  /**
-   * Complete error message
-   */
-  readonly message: string;
-
-  /**
-   * Is it just warning?
-   */
-  readonly isWarning?: boolean;
-}
 
 /**
  * Represents a file line in the compiled assembler output

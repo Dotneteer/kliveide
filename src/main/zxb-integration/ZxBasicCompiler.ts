@@ -1,14 +1,15 @@
 import fs from "fs";
 
 import type { BinarySegment } from "@abstractions/CompilerInfo";
-
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
-import { createSettingsReader } from "../../common/utils/SettingsReader";
-import {
+import type {
   IKliveCompiler,
   InjectableOutput,
   KliveCompilerOutput
-} from "../compiler-integration/compiler-registry";
+} from "@main/compiler-integration/compiler-registry";
+import type { ErrorFilterDescriptor } from "@main/cli-integration/CliCommandRunner";
+
+import { SpectrumModelType } from "@abstractions/CompilerInfo";
+import { createSettingsReader } from "@common/utils/SettingsReader";
 import { mainStore } from "../main-store";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -26,7 +27,7 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import { CliCommandRunner, ErrorFilterDescriptor } from "@main/cli-integration/CliCommandRunner";
+import { CliCommandRunner } from "@main/cli-integration/CliCommandRunner";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler

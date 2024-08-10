@@ -1,5 +1,5 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { IDivMmcDevice } from "./IDivMmcDevice";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IDivMmcDevice } from "./IDivMmcDevice";
 
 /**
  * Implements the DivIDE/DIVMMC interface

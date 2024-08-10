@@ -1,19 +1,19 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
+import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
+import type { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
+import type { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevice";
+import type { IScreenDevice } from "../abstractions/IScreenDevice";
+import type { ITapeDevice } from "../abstractions/ITapeDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 
 import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
-import { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
-import { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
-import { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevice";
-import { IScreenDevice } from "../abstractions/IScreenDevice";
-import { ITapeDevice } from "../abstractions/ITapeDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { TapeMode } from "../abstractions/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 
 /**

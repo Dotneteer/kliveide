@@ -1,5 +1,5 @@
-import { TokenStream, Token, TokenType } from "./token-stream";
-import {
+import type { Token } from "./token-stream";
+import type {
   Program,
   Z80AssemblyLine,
   PartialZ80AssemblyLine,
@@ -66,7 +66,6 @@ import {
   CallInstruction,
   RetInstruction,
   Operand,
-  OperandType,
   IncInstruction,
   DecInstruction,
   PushInstruction,
@@ -132,11 +131,11 @@ import {
   Expression,
   ExpressionNode
 } from "./assembler-tree-nodes";
-import {
-  ParserErrorMessage,
-  errorMessages,
-  ErrorCodes
-} from "./assembler-errors";
+import type { ParserErrorMessage, ErrorCodes } from "./assembler-errors";
+
+import { OperandType } from "./assembler-tree-nodes";
+import { TokenStream, TokenType } from "./token-stream";
+import { errorMessages } from "./assembler-errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 import { convertSpectrumString } from "./utils";
@@ -200,7 +199,7 @@ export class Z80AsmParser {
    */
   private async allowEvents(): Promise<void> {
     if (this._batchCounter++ % PARSER_BATCH_SIZE === 0) {
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     }
   }
 
@@ -215,10 +214,7 @@ export class Z80AsmParser {
     this.tokens.resetComment();
     while ((token = this.tokens.peek(true)).type !== TokenType.Eof) {
       // --- We skip empty lines
-      if (
-        token.type === TokenType.EolComment ||
-        token.type === TokenType.NewLine
-      ) {
+      if (token.type === TokenType.EolComment || token.type === TokenType.NewLine) {
         const endToken = this.tokens.get(true);
         if (this.tokens.lastComment) {
           assemblyLines.push(<Z80AssemblyLine>{
@@ -298,20 +294,14 @@ export class Z80AsmParser {
     }
 
     const mainToken = this.tokens.peek();
-    if (
-      mainToken.type === TokenType.NewLine ||
-      mainToken.type === TokenType.Eof
-    ) {
+    if (mainToken.type === TokenType.NewLine || mainToken.type === TokenType.Eof) {
       asmLine = <LabelOnlyLine>{
         type: "LabelOnlyLine",
         label
       };
     } else {
       // --- Is the token the start of line body?
-      if (
-        this.startsLineBody(mainToken) ||
-        mainToken.type === TokenType.Identifier
-      ) {
+      if (this.startsLineBody(mainToken) || mainToken.type === TokenType.Identifier) {
         this._macroParamsCollected.length = 0;
         asmLine = this.parseLineBody(this.getParsePoint());
         if (asmLine) {
@@ -682,10 +672,7 @@ export class Z80AsmParser {
       case TokenType.ModelPragma:
         const nextToken = this.tokens.peek();
         let modelId: string | null = null;
-        if (
-          nextToken.type === TokenType.Identifier ||
-          nextToken.type === TokenType.Next
-        ) {
+        if (nextToken.type === TokenType.Identifier || nextToken.type === TokenType.Next) {
           modelId = nextToken.text;
           this.tokens.get();
         } else {
@@ -730,9 +717,7 @@ export class Z80AsmParser {
       case TokenType.IncludeBinPragma:
         const incBinExpr = this.getExpression();
         const incBinOffsExpr = this.getExpression(true, true);
-        const incBinLenExpr = incBinOffsExpr
-          ? this.getExpression(true, true)
-          : null;
+        const incBinLenExpr = incBinOffsExpr ? this.getExpression(true, true) : null;
         return <IncBinPragma>{
           type: "IncBinPragma",
           filename: incBinExpr,
@@ -742,9 +727,7 @@ export class Z80AsmParser {
       case TokenType.CompareBinPragma:
         const compBinExpr = this.getExpression();
         const compBinOffsExpr = this.getExpression(true, true);
-        const compBinLenExpr = compBinOffsExpr
-          ? this.getExpression(true, true)
-          : null;
+        const compBinLenExpr = compBinOffsExpr ? this.getExpression(true, true) : null;
         return <CompareBinPragma>{
           type: "CompareBinPragma",
           filename: compBinExpr,
@@ -767,9 +750,7 @@ export class Z80AsmParser {
    *   | compoundInstruction
    *   ;
    */
-  private parseInstruction(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
+  private parseInstruction(parsePoint: ParsePoint): PartialZ80AssemblyLine | null {
     const { traits } = parsePoint;
     return traits.simple
       ? this.parseSimpleInstruction(parsePoint)
@@ -825,9 +806,7 @@ export class Z80AsmParser {
    *   | SETAE
    *   ;
    */
-  private parseSimpleInstruction(
-    parsePoint: ParsePoint
-  ): SimpleZ80Instruction | null {
+  private parseSimpleInstruction(parsePoint: ParsePoint): SimpleZ80Instruction | null {
     this.tokens.get();
     return {
       type: "SimpleZ80Instruction",
@@ -839,9 +818,7 @@ export class Z80AsmParser {
    *
    * @param parsePoint
    */
-  private parseCompoundInstruction(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
+  private parseCompoundInstruction(parsePoint: ParsePoint): PartialZ80AssemblyLine | null {
     const { start } = parsePoint;
     const parser = this;
     this.tokens.get();
@@ -1004,9 +981,7 @@ export class Z80AsmParser {
     }
     return null;
 
-    function oneOperand<T extends Z80InstructionWithOneOperand>(
-      instrType: Node["type"]
-    ): T | null {
+    function oneOperand<T extends Z80InstructionWithOneOperand>(instrType: Node["type"]): T | null {
       return <T>{
         type: instrType,
         operand: parser.getOperand()
@@ -1074,9 +1049,7 @@ export class Z80AsmParser {
    *
    * @param parsePoint
    */
-  private parseDirective(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
+  private parseDirective(parsePoint: ParsePoint): PartialZ80AssemblyLine | null {
     const { start } = parsePoint;
     const parser = this;
     switch (start.type) {
@@ -1157,10 +1130,7 @@ export class Z80AsmParser {
         const literal = parser.parseStringLiteral(token.text);
         parser.tokens.get();
         stringValue = literal.value;
-      } else if (
-        token.type !== TokenType.NewLine &&
-        token.type !== TokenType.Eof
-      ) {
+      } else if (token.type !== TokenType.NewLine && token.type !== TokenType.Eof) {
         parser.reportError("Z0108");
         return null;
       }
@@ -1299,7 +1269,7 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType: OperandType.NoneArg,
-        startToken,
+        startToken
       };
     }
 
@@ -1338,9 +1308,7 @@ export class Z80AsmParser {
         const register = ahead.text.toLowerCase();
         let sign = this.tokens.peek();
         let offsetSign =
-          sign.type === TokenType.Plus || sign.type === TokenType.Minus
-            ? sign.text
-            : undefined;
+          sign.type === TokenType.Plus || sign.type === TokenType.Minus ? sign.text : undefined;
         if (offsetSign) {
           this.tokens.get();
           expr = this.getExpression();
@@ -1439,9 +1407,7 @@ export class Z80AsmParser {
    *   | structEndMarker
    *   ;
    */
-  private parseStatement(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
+  private parseStatement(parsePoint: ParsePoint): PartialZ80AssemblyLine | null {
     const { start } = parsePoint;
     this.tokens.get();
     if (start.type === TokenType.Macro) {
@@ -2028,9 +1994,7 @@ export class Z80AsmParser {
     }
 
     let opType: Token | null;
-    while (
-      (opType = this.skipTokens(TokenType.LeftShift, TokenType.RightShift))
-    ) {
+    while ((opType = this.skipTokens(TokenType.LeftShift, TokenType.RightShift))) {
       const startToken = this.tokens.peek();
       const rightExpr = this.parseAddExpr();
       if (!rightExpr) {
@@ -2097,11 +2061,7 @@ export class Z80AsmParser {
 
     let opType: Token | null;
     while (
-      (opType = this.skipTokens(
-        TokenType.Multiplication,
-        TokenType.Divide,
-        TokenType.Modulo
-      ))
+      (opType = this.skipTokens(TokenType.Multiplication, TokenType.Divide, TokenType.Modulo))
     ) {
       const startToken = this.tokens.peek();
       const rightExpr = this.parseMinMaxExpr();
@@ -2195,8 +2155,7 @@ export class Z80AsmParser {
       if (
         !this.macroEmitPhase &&
         operand &&
-        (operand.operandType !== OperandType.Expression ||
-          operand.expr.type !== "MacroParameter")
+        (operand.operandType !== OperandType.Expression || operand.expr.type !== "MacroParameter")
       ) {
         this.reportError("Z1009", start);
       }
@@ -2231,9 +2190,7 @@ export class Z80AsmParser {
   /**
    * Parses macro-time function invocations
    */
-  private parseMacroTimeFuncInvocation(
-    parsePoint: ParsePoint
-  ): MacroTimeFunctionInvocation | null {
+  private parseMacroTimeFuncInvocation(parsePoint: ParsePoint): MacroTimeFunctionInvocation | null {
     const { start } = parsePoint;
     this.tokens.get();
     this.expectToken(TokenType.LPar, "Z0004");
@@ -2284,9 +2241,7 @@ export class Z80AsmParser {
       return <StringLiteral>{
         type: "StringLiteral",
         value: `(${
-          start.type === TokenType.LTextOf
-            ? reg16.text.toLowerCase()
-            : reg16.text.toUpperCase()
+          start.type === TokenType.LTextOf ? reg16.text.toLowerCase() : reg16.text.toUpperCase()
         })`
       };
     }
@@ -2448,12 +2403,7 @@ export class Z80AsmParser {
       // --- Skip the parsed literal
       this.tokens.get();
     }
-    return this.createExpressionNode(
-      literal.type,
-      literal,
-      start,
-      this.tokens.peek()
-    );
+    return this.createExpressionNode(literal.type, literal, start, this.tokens.peek());
   }
 
   /**
@@ -2634,11 +2584,7 @@ export class Z80AsmParser {
    * Tests the type of the next token
    * @param type Expected token type
    */
-  private expectToken(
-    type: TokenType,
-    errorCode?: ErrorCodes,
-    allowEof?: boolean
-  ) {
+  private expectToken(type: TokenType, errorCode?: ErrorCodes, allowEof?: boolean) {
     const next = this.tokens.peek();
     if (next.type === type || (allowEof && next.type === TokenType.Eof)) {
       // --- Skip the expected token
@@ -2683,16 +2629,11 @@ export class Z80AsmParser {
    * @param token Token that represents the error's position
    * @param options Error message options
    */
-  private reportError(
-    errorCode: ErrorCodes,
-    token?: Token,
-    options?: any[]
-  ): void {
+  private reportError(errorCode: ErrorCodes, token?: Token, options?: any[]): void {
     let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
     if (options) {
       options.forEach(
-        (_, idx) =>
-          (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
+        (_, idx) => (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
       );
     }
     if (!token) {
@@ -2707,11 +2648,7 @@ export class Z80AsmParser {
     });
     throw new ParserError(errorText, errorCode);
 
-    function replace(
-      input: string,
-      placeholder: string,
-      replacement: string
-    ): string {
+    function replace(input: string, placeholder: string, replacement: string): string {
       do {
         input = input.replace(placeholder, replacement);
       } while (input.includes(placeholder));

@@ -1,4 +1,4 @@
-import {
+import type {
   CompareBinPragma,
   Expression,
   IdentifierNode,
@@ -6,8 +6,8 @@ import {
   Statement,
   Z80AssemblyLine
 } from "./assembler-tree-nodes";
-import { ErrorCodes } from "./assembler-errors";
-import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import type { ErrorCodes } from "./assembler-errors";
+import type { ExpressionValueType } from "@abstractions/CompilerInfo";
 
 /**
  * Represents the value of an evaluated expression

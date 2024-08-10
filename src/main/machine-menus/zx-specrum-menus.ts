@@ -1,35 +1,27 @@
 import path from "path";
 import fs from "fs";
-import {
-  MF_TAPE_SUPPORT,
-  MC_DISK_SUPPORT
-} from "../../common/machines/constants";
-import {
-  MachineMenuRenderer,
-  MachineMenuItem
-} from "@common/machines/info-types";
-import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import { AppState } from "../../common/state/AppState";
+
+import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info-types";
+import type { AppState } from "@state/AppState";
+
+import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { createMachineCommand } from "@messaging/main-to-emu";
 import {
   setFastLoadAction,
   setVolatileDocStateAction,
   setMediaAction,
   displayDialogAction
-} from "../../common/state/actions";
-import { BASIC_PANEL_ID } from "../../common/state/common-ids";
-import { mainStore } from "../../main/main-store";
-import { saveKliveProject } from "../../main/projects";
-import { logEmuEvent } from "../../main/registeredMachines";
-import { appSettings } from "../../main/settings";
+} from "@state/actions";
+import { BASIC_PANEL_ID } from "@state/common-ids";
+import { mainStore } from "@main/main-store";
+import { saveKliveProject } from "@main/projects";
+import { logEmuEvent } from "@main/registeredMachines";
+import { appSettings } from "@main/settings";
 import { dialog, BrowserWindow, app } from "electron";
-import {
-  MEDIA_DISK_A,
-  MEDIA_DISK_B,
-  MEDIA_TAPE
-} from "../../common/structs/project-const";
-import { CREATE_DISK_DIALOG } from "../../common/messaging/dialog-ids";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
@@ -47,9 +39,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       type: "checkbox",
       checked: !!appState.emulatorState?.fastLoad,
       click: async () => {
-        mainStore.dispatch(
-          setFastLoadAction(!appState.emulatorState?.fastLoad)
-        );
+        mainStore.dispatch(setFastLoadAction(!appState.emulatorState?.fastLoad));
         await saveKliveProject();
       }
     });
@@ -107,7 +97,7 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     }
   ];
 
-  function createDiskMenu (index: number, suffix: string): void {
+  function createDiskMenu(index: number, suffix: string): void {
     const state = appState?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A] ?? {};
     floppySubMenu.push({ type: "separator" });
     if (state?.diskFile) {
@@ -164,17 +154,14 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
           show: !volatileDocs[BASIC_PANEL_ID]
         });
         mainStore.dispatch(
-          setVolatileDocStateAction(
-            BASIC_PANEL_ID,
-            !volatileDocs[BASIC_PANEL_ID]
-          )
+          setVolatileDocStateAction(BASIC_PANEL_ID, !volatileDocs[BASIC_PANEL_ID])
         );
       }
     }
   ];
 };
 
-export async function setSelectedTapeFile (filename: string): Promise<void> {
+export async function setSelectedTapeFile(filename: string): Promise<void> {
   // --- Read the file
   const tapeFileFolder = path.dirname(filename);
 
@@ -209,10 +196,7 @@ export async function setSelectedTapeFile (filename: string): Promise<void> {
  * @param browserWindow Host browser window
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function setTapeFile (
-  browserWindow: BrowserWindow,
-  state: AppState
-): Promise<void> {
+async function setTapeFile(browserWindow: BrowserWindow, state: AppState): Promise<void> {
   const lastFile = state.media?.[MEDIA_TAPE];
   const defaultPath =
     appSettings?.folders?.[TAPE_FILE_FOLDER] ||
@@ -238,14 +222,13 @@ async function setTapeFile (
  * @param index Disk drive index (0: A, 1: B)
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function setDiskFile (
+async function setDiskFile(
   browserWindow: BrowserWindow,
   index: number,
   suffix: string
 ): Promise<void> {
   const DISK_FILE_FOLDER = "diskFileFolder";
-  const lastFile =
-    mainStore.getState()?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A];
+  const lastFile = mainStore.getState()?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A];
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
@@ -284,9 +267,7 @@ async function setDiskFile (
       contents,
       diskIndex: index
     });
-    await logEmuEvent(
-      `Disk file in drive ${suffix.toUpperCase()} set to ${filename}`
-    );
+    await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
       "Error while reading disk file",
@@ -301,7 +282,7 @@ async function setDiskFile (
  * @param index Disk drive index (0: A, 1: B)
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function ejectDiskFile (index: number, suffix: string): Promise<void> {
+async function ejectDiskFile(index: number, suffix: string): Promise<void> {
   mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {}));
   try {
     await sendFromMainToEmu({
@@ -317,7 +298,7 @@ async function ejectDiskFile (index: number, suffix: string): Promise<void> {
   }
 }
 
-async function setDiskWriteProtection (
+async function setDiskWriteProtection(
   index: number,
   suffix: string,
   protect: boolean
@@ -329,9 +310,7 @@ async function setDiskWriteProtection (
       protect
     });
     await logEmuEvent(
-      `Write protection turned ${
-        protect ? "on" : "off"
-      } for drive ${suffix.toUpperCase()}`
+      `Write protection turned ${protect ? "on" : "off"} for drive ${suffix.toUpperCase()}`
     );
   } catch (err) {
     // --- Intentionally ignored

@@ -1,5 +1,6 @@
+import type { IZ80Cpu } from "../abstractions/IZ80Cpu";
+
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
-import { IZ80Cpu } from "../abstractions/IZ80Cpu";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 
 /**

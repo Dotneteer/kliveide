@@ -1,5 +1,6 @@
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { ScriptCallContext } from "./MainScriptManager";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { ScriptCallContext } from "./MainScriptManager";
+
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { sendFromMainToEmu } from "@common/messaging/MainToEmuMessenger";
 

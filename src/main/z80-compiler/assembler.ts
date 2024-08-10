@@ -1,11 +1,9 @@
 import fs from "fs";
 import path from "path";
 
-import { ErrorCodes, errorMessages, ParserErrorMessage } from "./assembler-errors";
-import { InputStream } from "./input-stream";
-import { Token, TokenStream } from "./token-stream";
-
-import {
+import type { ErrorCodes, ParserErrorMessage } from "./assembler-errors";
+import type { Token } from "./token-stream";
+import type {
   AdcInstruction,
   AddInstruction,
   AlignPragma,
@@ -58,7 +56,6 @@ import {
   NextRegInstruction,
   NodePosition,
   Operand,
-  OperandType,
   OrgPragma,
   OrInstruction,
   OutInstruction,
@@ -89,6 +86,11 @@ import {
   XorInstruction,
   Z80AssemblyLine
 } from "./assembler-tree-nodes";
+
+import { errorMessages } from "./assembler-errors";
+import { InputStream } from "./input-stream";
+import { TokenStream } from "./token-stream";
+import { OperandType } from "./assembler-tree-nodes";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { convertSpectrumString, readTextFile } from "./utils";
 import {

@@ -1,5 +1,3 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-
 export function readAyRegPort(ulaPort: number): number {
   // TODO: Implement this
   return 0xff;

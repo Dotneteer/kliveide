@@ -1,5 +1,5 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
@@ -307,7 +307,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Page 1
-    console.log("DivMMC pageIn bank", this.bank);
     const offset = OFFS_DIVMMC_RAM + this.bank * 0x2000;
     memoryDevice.setPageInfo(1, offset, this._mapram && this.bank === 3 ? null : offset, 0xff, 0xff);
   }

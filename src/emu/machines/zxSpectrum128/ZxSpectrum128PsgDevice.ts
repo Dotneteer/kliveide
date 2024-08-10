@@ -1,8 +1,9 @@
-import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
+import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { PsgChipState } from "@emu/abstractions/PsgChipState";
+
 import { AudioDeviceBase } from "../AudioDeviceBase";
 import { PsgChip } from "./PsgChip";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 // ---The number of ULA tacts that represent a single PSG clock tick
 const PSG_CLOCK_STEP = 16;

@@ -1,10 +1,11 @@
 import path from "path";
 import fs from "fs";
+
 import { mainStore } from "./main-store";
-import { BUILD_FILE } from "../common/structs/project-const";
-import { isModuleErrors, parseKsxModule } from "../common/ksx/ksx-module";
+import { BUILD_FILE } from "@common/structs/project-const";
+import { isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
-import { setIdeStatusMessageAction } from "../common/state/actions";
+import { setIdeStatusMessageAction } from "@common/state/actions";
 import { FunctionDeclaration } from "@common/ksx/source-tree";
 
 export async function processBuildFile (): Promise<void> {

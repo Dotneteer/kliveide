@@ -24,7 +24,7 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   },
   {
     machineId: MI_SPECTRUM_3E,
-    factory: (store, model) => new ZxSpectrumP3EMachine(store, model!)
+    factory: (_, model) => new ZxSpectrumP3EMachine(model!)
   },
   {
     machineId: MI_ZXNEXT,

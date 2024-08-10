@@ -1,4 +1,6 @@
 import type { SysVar } from "@abstractions/SysVar";
+import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 
 import { SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
@@ -15,11 +17,9 @@ import {
   ZxSpectrumBase
 } from "../ZxSpectrumBase";
 import { ZxSpectrum128FloatingBusDevice } from "./ZxSpectrum128FloatingBusDevice";
-import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { ZxSpectrum128PsgDevice } from "./ZxSpectrum128PsgDevice";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import { PagedMemory } from "../memory/PagedMemory";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 

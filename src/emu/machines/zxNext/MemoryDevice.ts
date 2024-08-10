@@ -1,5 +1,6 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;

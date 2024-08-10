@@ -1,14 +1,15 @@
 import fs from "fs";
-import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import { MachineMenuRenderer } from "../../common/machines/info-types";
-import { sendFromMainToEmu } from "../../common/messaging/MainToEmuMessenger";
-import { createMachineCommand } from "../../common/messaging/main-to-emu";
-import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "../../common/state/actions";
-import { mainStore } from "../../main/main-store";
-import { saveKliveProject } from "../../main/projects";
-import { getModelConfig } from "../../common/machines/machine-registry";
-import { MC_SCREEN_SIZE } from "../../common/machines/constants";
-import { setMachineType } from "../../main/registeredMachines";
+
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { MachineMenuRenderer } from "@common/machines/info-types";
+import { sendFromMainToEmu } from "@common/messaging/MainToEmuMessenger";
+import { createMachineCommand } from "@common/messaging/main-to-emu";
+import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "@common/state/actions";
+import { mainStore } from "@main/main-store";
+import { saveKliveProject } from "@main/projects";
+import { getModelConfig } from "@common/machines/machine-registry";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import { setMachineType } from "@main/registeredMachines";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";

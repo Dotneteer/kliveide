@@ -4,6 +4,7 @@ import fs from "fs";
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import type { KsxModule } from "@common/ksx/ksx-module";
+import type { AppState } from "@common/state/AppState";
 
 import { mainStore } from "../main-store";
 import {
@@ -20,7 +21,6 @@ import { concludeScript, sendScriptOutput } from "../../common/ksx/script-runner
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
-import { AppState } from "@common/state/AppState";
 import { createEmulatorApi } from "./emulator";
 import { createNotifications } from "./notifications";
 

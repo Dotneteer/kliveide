@@ -1,8 +1,7 @@
 import path from "path";
 
-import { SpectrumModelType } from "../../common/abstractions/CompilerInfo";
-import { ErrorCodes } from "./assembler-errors";
-import {
+import type { ErrorCodes } from "./assembler-errors";
+import type {
   IAssemblerErrorInfo,
   IBinarySegment,
   IFileLine,
@@ -11,6 +10,8 @@ import {
   SourceMap,
   SymbolValueMap
 } from "./assembler-types";
+
+import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { AssemblyModule } from "./assembly-module";
 
 /**

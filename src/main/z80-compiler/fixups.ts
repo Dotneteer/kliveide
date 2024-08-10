@@ -1,18 +1,15 @@
-import { ErrorCodes } from "./assembler-errors";
-import {
-  Expression,
-  NodePosition,
-  Z80AssemblyLine
-} from "./assembler-tree-nodes";
-import {
+import type { ErrorCodes } from "./assembler-errors";
+import type { Expression, NodePosition, Z80AssemblyLine } from "./assembler-tree-nodes";
+import type {
   FixupType,
   IEvaluationContext,
   IExpressionValue,
-  IValueInfo,
-  SymbolType
+  IValueInfo
 } from "./assembler-types";
+import type { SymbolInfoMap } from "./assembly-symbols";
+
+import { SymbolType } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
-import { SymbolInfoMap } from "./assembly-symbols";
 import { ExpressionEvaluator } from "./expressions";
 
 /**
@@ -20,10 +17,9 @@ import { ExpressionEvaluator } from "./expressions";
  * unresolved symbol value at the end of the compilation
  */
 export class FixupEntry extends ExpressionEvaluator {
-
   private readonly _symbols: Record<string, IValueInfo>;
 
-  constructor (
+  constructor(
     public readonly parentContext: IEvaluationContext,
     public readonly module: AssemblyModule,
     public readonly sourceLine: Z80AssemblyLine,
@@ -35,8 +31,7 @@ export class FixupEntry extends ExpressionEvaluator {
     public readonly structBytes: Map<number, number> | null = null
   ) {
     super();
-    if (expression)
-      this._symbols = FixupEntry.snapshotVars(module);
+    if (expression) this._symbols = FixupEntry.snapshotVars(module);
   }
 
   /**
@@ -47,7 +42,7 @@ export class FixupEntry extends ExpressionEvaluator {
   /**
    * Gets the source line the evaluation context is bound to
    */
-  getSourceLine (): Z80AssemblyLine {
+  getSourceLine(): Z80AssemblyLine {
     return this.sourceLine;
   }
 
@@ -55,14 +50,14 @@ export class FixupEntry extends ExpressionEvaluator {
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  setSourceLine (_sourceLine: Z80AssemblyLine): void {
+  setSourceLine(_sourceLine: Z80AssemblyLine): void {
     // --- The constructor already sets the source line
   }
 
   /**
    * Gets the current assembly address
    */
-  getCurrentAddress (): number {
+  getCurrentAddress(): number {
     return this.parentContext.getCurrentAddress();
   }
 
@@ -71,8 +66,8 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param symbol Symbol name
    * @param startFromGlobal Should resolution start from global scope?
    */
-  getSymbolValue (symbol: string, startFromGlobal?: boolean): IValueInfo | null {
-    let resolved = this._symbols?.[symbol]
+  getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null {
+    let resolved = this._symbols?.[symbol];
     if (!resolved) {
       if (startFromGlobal) {
         // --- Most be a compound symbol
@@ -94,7 +89,7 @@ export class FixupEntry extends ExpressionEvaluator {
   /**
    * Gets the current loop counter value
    */
-  getLoopCounterValue (): IExpressionValue {
+  getLoopCounterValue(): IExpressionValue {
     return this.parentContext.getLoopCounterValue();
   }
 
@@ -104,28 +99,27 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param node Error position
    * @param parameters Optional error parameters
    */
-  reportEvaluationError (
+  reportEvaluationError(
     context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
   ): void {
-    this.parentContext.reportEvaluationError(
-      context,
-      code,
-      node,
-      ...parameters
-    );
+    this.parentContext.reportEvaluationError(context, code, node, ...parameters);
   }
 
   private static snapshotVars(module: AssemblyModule): Record<string, IValueInfo> {
     let snapshot = module.parentModule ? FixupEntry.snapshotVars(module.parentModule) : {};
 
     const varsFilter = (s: SymbolInfoMap) => (k: string) => s[k].type === SymbolType.Var;
-    const vars = new Set(Object.keys(module.symbols).filter(varsFilter(module.symbols))
-      .concat(...module.localScopes.map(s => Object.keys(s.symbols).filter(varsFilter(s.symbols)))));
-    for (const v of vars)
-      snapshot[v] = module.resolveSimpleSymbol(v);
+    const vars = new Set(
+      Object.keys(module.symbols)
+        .filter(varsFilter(module.symbols))
+        .concat(
+          ...module.localScopes.map((s) => Object.keys(s.symbols).filter(varsFilter(s.symbols)))
+        )
+    );
+    for (const v of vars) snapshot[v] = module.resolveSimpleSymbol(v);
 
     return snapshot;
   }

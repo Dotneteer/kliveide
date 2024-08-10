@@ -1,18 +1,18 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
+import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { MachineModel } from "@common/machines/info-types";
 
-import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
-import { ISpectrumBeeperDevice } from "../zxSpectrum/ISpectrumBeeperDevice";
-import { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
-import { ITapeDevice } from "../../abstractions/ITapeDevice";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
+import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Z80NMachineBase } from "./Z80NMachineBase";
-import { MachineModel } from "@common/machines/info-types";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
 import { Layer2Device } from "./Layer2Device";
