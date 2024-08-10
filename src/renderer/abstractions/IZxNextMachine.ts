@@ -16,6 +16,7 @@ import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
 import { SpriteDevice } from "@emu/machines/zxNext/SpriteDevice";
 import { TilemapDevice } from "@emu/machines/zxNext/TilemapDevice";
 import { UlaDevice } from "@emu/machines/zxNext/UlaDevice";
+import { ISpectrumKeyboardDevice } from "@emu/machines/zxSpectrum/ISpectrumKeyboardDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**

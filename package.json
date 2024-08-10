@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -82,17 +82,17 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
-    "electron-updater": "^6.1.8",
+    "electron-updater": "^6.3.0",
     "next": "^14.2.4",
     "nextra": "^2.13.4",
-    "nextra-theme-docs": "^2.13.4"
+    "nextra-theme-docs": "^2.13.4",
+    "vite-plugin-copy": "^0.1.6"
   },
   "build": {
     "appId": "dotneteer.kliveide",
     "productName": "Klive IDE",
     "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
     "directories": {
-      "buildResources": "buildResources",
       "output": "artifacts/"
     },
     "mac": {
@@ -116,8 +116,11 @@
       }
     },
     "files": [
+      "**/*",
       "!.prettierrc",
+      "!.prettierrc.yaml",
       "!.vscode",
+      "!_input",
       "!CHANGELOG.md",
       "!next.config.js",
       "!_docs",
@@ -133,6 +136,34 @@
       "!node_modules/nextra*/**/*"
     ],
     "extraResources": [
+      {
+        "from": "src/public/roms",
+        "to": "roms",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "src/public/keymappings",
+        "to": "keymappings",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "src/public/project-templates",
+        "to": "project-templates",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "src/public/images",
+        "to": "images",
+        "filter": [
+          "**/*"
+        ]
+      },
       "node_modules/monaco-editor/min/vs/**/*"
     ]
   }

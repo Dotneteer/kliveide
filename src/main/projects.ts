@@ -92,7 +92,7 @@ export async function createKliveProject (
         const mergeContents = fs.readFileSync(mergeFile, "utf8");
         mergedProps = JSON.parse(mergeContents);
       }
-    } catch {
+    } catch (err) {
       // --- Intentionally ignored
     }
 

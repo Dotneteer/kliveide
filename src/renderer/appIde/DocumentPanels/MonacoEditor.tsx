@@ -26,7 +26,6 @@ import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
-  isWindowsAction
 } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";

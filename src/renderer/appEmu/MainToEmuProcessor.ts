@@ -157,9 +157,17 @@ export async function processMainToEmuMessages(
         (romP = (machine as ZxSpectrum128Machine).selectedRom),
           (ramB = (machine as ZxSpectrum128Machine).selectedBank);
       }
+      let ras = Math.floor(machine.currentFrameTact / machine.screenWidthInPixels);
+      if (isNaN(ras)) {
+        ras = 0;
+      }
+      let pos = machine.currentFrameTact % machine.screenWidthInPixels;
+      if (isNaN(pos)) {
+        pos = 0;
+      }
       return {
         type: "EmuGetUlaStateResponse",
-        fcl: machine.currentFrameTact,
+        fcl: machine.currentFrameTact ?? 0,
         frm: machine.frames,
         ras: Math.floor(machine.currentFrameTact / machine.screenWidthInPixels),
         pos: machine.currentFrameTact % machine.screenWidthInPixels,

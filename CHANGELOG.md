@@ -1,5 +1,16 @@
 # Klive IDE Changelog
 
+## 0.32.1
+
+### Features
+
+- ZX Spectrum Next implementation started
+
+### Fixes
+
+- The faulty install kit with the empty emulator and IDE windows is fixed.
+- Creating a new Klive IDE now also sets the build root file on Windows.
+
 ## 0.32.0
 
 ### Features
