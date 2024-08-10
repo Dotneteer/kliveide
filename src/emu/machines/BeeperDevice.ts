@@ -1,7 +1,8 @@
-import { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 import { AudioDeviceBase } from "./AudioDeviceBase";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 // --- This class implements the ZX Spectrum beeper device.
 export class SpectrumBeeperDevice

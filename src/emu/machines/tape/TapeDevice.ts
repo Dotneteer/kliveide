@@ -1,8 +1,10 @@
-import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
-import { ITapeDevice } from "@emu/abstractions/ITapeDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { MicPulseType } from "@emu/abstractions/MicPulseTypes";
+import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { ITapeSaver } from "./ITapeSaver";
+
 import { PlayPhase } from "@emu/abstractions/PlayPhase";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
+import { MicPulseType } from "@emu/abstractions/MicPulseTypes";
 import { SavePhase } from "@emu/abstractions/SavePhase";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import {
@@ -21,7 +23,6 @@ import {
   REWIND_REQUESTED,
   SAVED_TO_TAPE
 } from "../machine-props";
-import { ITapeSaver } from "./ITapeSaver";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { TzxHeader } from "./TzxHeader";

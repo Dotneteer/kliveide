@@ -1,4 +1,4 @@
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";

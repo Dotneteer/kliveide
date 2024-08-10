@@ -1,10 +1,11 @@
+import type { MachineMenuInfo } from "@common/machines/info-types";
+
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
   MI_Z88
-} from "../../common/machines/constants";
-import { MachineMenuInfo } from "../../common/machines/info-types";
+} from "@common/machines/constants";
 import {
   tapeMenuRenderer,
   spectrumIdeRenderer,

@@ -1,6 +1,8 @@
-import { KeyMappingResult } from "../../common/abstractions/KeyMappingResult";
-import { KeyMapping } from "../../renderer/abstractions/KeyMapping";
+import type { KeyMapping } from "@abstractions/KeyMapping";
+
 import { SpectrumKeyCode } from "../../emu/machines/zxSpectrum/SpectrumKeyCode";
+
+type KeyMappingResult = { mapping: KeyMapping; merge: boolean };
 
 /**
  * Parses the specified JSON source to valid key mappings

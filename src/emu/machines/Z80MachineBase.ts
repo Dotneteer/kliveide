@@ -1,18 +1,19 @@
-import { IFileProvider } from "@renderer/core/IFileProvider";
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { IFileProvider } from "@renderer/core/IFileProvider";
+import type { ExecutionContext } from "../abstractions/ExecutionContext";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "@common/machines/info-types";
+
 import { DebugStepMode } from "../abstractions/DebugStepMode";
-import { ExecutionContext } from "../abstractions/ExecutionContext";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
 import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
-import { MachineConfigSet } from "@common/machines/info-types";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.

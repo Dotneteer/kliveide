@@ -1,8 +1,9 @@
+import type { Z88PageInfo } from "./Z88PageInfo";
+import type { IZ88MemoryCard } from "./IZ88MemoryCard";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { Z88PageInfo } from "./Z88PageInfo";
-import { IZ88MemoryCard } from "./IZ88MemoryCard";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { MC_Z88_INTRAM } from "@common/machines/constants";
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
 import { COMFlags } from "../IZ88BlinkDevice";

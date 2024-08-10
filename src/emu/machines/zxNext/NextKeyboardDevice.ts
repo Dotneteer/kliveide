@@ -1,5 +1,6 @@
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export class NextKeyboardDevice extends KeyboardDevice {
   /**

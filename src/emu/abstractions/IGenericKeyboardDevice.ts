@@ -1,5 +1,5 @@
-import { IGenericDevice } from "./IGenericDevice";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IGenericDevice } from "./IGenericDevice";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 export type KeyCodeSet = Record<string, number>;
 

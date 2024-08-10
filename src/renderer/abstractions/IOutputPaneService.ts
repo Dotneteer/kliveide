@@ -1,5 +1,5 @@
-import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
-import { OutputPaneInfo } from "./OutputPaneInfo";
+import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
+import type { OutputPaneInfo } from "./OutputPaneInfo";
 
 /**
  * This interface defines the functions managing the output panes within the IDE

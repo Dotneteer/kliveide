@@ -1,4 +1,5 @@
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {

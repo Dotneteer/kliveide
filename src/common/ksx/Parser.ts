@@ -1,11 +1,6 @@
-import { Lexer } from "./Lexer";
-import {
-  ErrorCodes,
-  errorMessages,
-  ParserError,
-  ParserErrorMessage
-} from "./ParserError";
-import {
+import type { ErrorCodes, ParserErrorMessage } from "./ParserError";
+import type { Token } from "./Token";
+import type {
   ArrayDestructure,
   ArrayLiteral,
   ArrowExpression,
@@ -52,10 +47,12 @@ import {
   WhileStatement,
   ImportDeclaration
 } from "./source-tree";
+
+import { Lexer } from "./Lexer";
+import { errorMessages, ParserError } from "./ParserError";
 import { InputStream } from "./InputStream";
 import { tokenTraits } from "./TokenTrait";
 import { TokenType } from "./TokenType";
-import { Token } from "./Token";
 
 /**
  * States of the string parsing
@@ -93,35 +90,35 @@ export class Parser {
    * Initializes the parser with the specified source code
    * @param source Source code to parse
    */
-  constructor (public readonly source: string) {
+  constructor(public readonly source: string) {
     this._lexer = new Lexer(new InputStream(source));
   }
 
   /**
    * The errors raised during the parse phase
    */
-  get errors (): ParserErrorMessage[] {
+  get errors(): ParserErrorMessage[] {
     return this._parseErrors;
   }
 
   /**
    * Gets the current token
    */
-  get current (): Token {
+  get current(): Token {
     return this._lexer.peek();
   }
 
   /**
    * Checks if we're at the end of the expression
    */
-  get isEof (): boolean {
+  get isEof(): boolean {
     return this._lexer.peek().type === TokenType.Eof;
   }
 
   /**
    * Gets the characters remaining after parsing
    */
-  getTail (): string {
+  getTail(): string {
     return this._lexer.getTail();
   }
 
@@ -142,7 +139,7 @@ export class Parser {
    *   | returnStatement
    *   ;
    */
-  parseStatements (): Statement[] | null {
+  parseStatements(): Statement[] | null {
     const statements: Statement[] = [];
     while (!this.isEof) {
       const statement = this.parseStatement();
@@ -158,7 +155,7 @@ export class Parser {
   /**
    * Parses a single statement
    */
-  private parseStatement (allowSequence = true): Statement | null {
+  private parseStatement(allowSequence = true): Statement | null {
     const startToken = this._lexer.peek();
     switch (startToken.type) {
       case TokenType.Semicolon:
@@ -179,18 +176,10 @@ export class Parser {
         return this.parseReturnStatement();
       case TokenType.Break:
         this._lexer.get();
-        return this.createStatementNode<BreakStatement>(
-          "BreakStatement",
-          {},
-          startToken
-        );
+        return this.createStatementNode<BreakStatement>("BreakStatement", {}, startToken);
       case TokenType.Continue:
         this._lexer.get();
-        return this.createStatementNode<ContinueStatement>(
-          "ContinueStatement",
-          {},
-          startToken
-        );
+        return this.createStatementNode<ContinueStatement>("ContinueStatement", {}, startToken);
       case TokenType.For:
         return this.parseForStatement();
       case TokenType.Throw:
@@ -219,13 +208,9 @@ export class Parser {
    *   : ";"
    *   ;
    */
-  private parseEmptyStatement (): EmptyStatement | null {
+  private parseEmptyStatement(): EmptyStatement | null {
     const startToken = this._lexer.get();
-    return this.createStatementNode<EmptyStatement>(
-      "EmptyStatement",
-      {},
-      startToken
-    );
+    return this.createStatementNode<EmptyStatement>("EmptyStatement", {}, startToken);
   }
 
   /**
@@ -235,9 +220,7 @@ export class Parser {
    *   : expression
    *   ;
    */
-  private parseExpressionStatement (
-    allowSequence = true
-  ): ExpressionStatement | null {
+  private parseExpressionStatement(allowSequence = true): ExpressionStatement | null {
     const startToken = this._lexer.peek();
     const expression = this.getExpression(allowSequence);
     return expression
@@ -258,7 +241,7 @@ export class Parser {
    *   : "let" id ["=" expression] ("," id ["=" expression])*
    *   ;
    */
-  private parseLetStatement (): LetStatement | null {
+  private parseLetStatement(): LetStatement | null {
     const startToken = this._lexer.get();
     const declarations: VarDeclaration[] = [];
     while (true) {
@@ -296,21 +279,14 @@ export class Parser {
         expression = this.getExpression(false);
         if (expression === null) return null;
         declarationProps.expression = expression;
-      } else if (
-        declarationProps.arrayDestruct ||
-        declarationProps.objectDestruct
-      ) {
+      } else if (declarationProps.arrayDestruct || declarationProps.objectDestruct) {
         this.reportError("K009", initToken);
         return null;
       }
 
       // --- New declaration reached
       declarations.push(
-        this.createExpressionNode<VarDeclaration>(
-          "VarDeclaration",
-          declarationProps,
-          declStart
-        )
+        this.createExpressionNode<VarDeclaration>("VarDeclaration", declarationProps, declStart)
       );
 
       // --- Check for more declarations
@@ -335,7 +311,7 @@ export class Parser {
    *   : "const" id "=" expression
    *   ;
    */
-  private parseConstStatement (): ConstStatement | null {
+  private parseConstStatement(): ConstStatement | null {
     const startToken = this._lexer.get();
     const declarations: VarDeclaration[] = [];
     while (true) {
@@ -373,11 +349,7 @@ export class Parser {
 
       // --- New declaration reached
       declarations.push(
-        this.createExpressionNode<VarDeclaration>(
-          "VarDeclaration",
-          declarationProps,
-          declStart
-        )
+        this.createExpressionNode<VarDeclaration>("VarDeclaration", declarationProps, declStart)
       );
 
       // --- Check for more declarations
@@ -398,7 +370,7 @@ export class Parser {
   /**
    * Parses an object destructure expression
    */
-  private parseObjectDestructure (): ObjectDestructure[] | null {
+  private parseObjectDestructure(): ObjectDestructure[] | null {
     const result: ObjectDestructure[] = [];
 
     // --- Skip the starting left brace
@@ -432,10 +404,7 @@ export class Parser {
 
       // --- Check for next segment
       nextToken = this._lexer.peek();
-      if (
-        nextToken.type === TokenType.Comma ||
-        nextToken.type === TokenType.RBrace
-      ) {
+      if (nextToken.type === TokenType.Comma || nextToken.type === TokenType.RBrace) {
         result.push(
           this.createExpressionNode<ObjectDestructure>(
             "ObjectDestructure",
@@ -457,7 +426,7 @@ export class Parser {
     return result;
   }
 
-  private parseArrayDestructure (): ArrayDestructure[] | null {
+  private parseArrayDestructure(): ArrayDestructure[] | null {
     const result: ArrayDestructure[] = [];
 
     // --- Skip the starting left square
@@ -520,7 +489,7 @@ export class Parser {
    *   : "{" (statement [";"])* "}"
    *   ;
    */
-  private parseBlockStatement (): BlockStatement | null {
+  private parseBlockStatement(): BlockStatement | null {
     const startToken = this._lexer.get();
     const statements: Statement[] = [];
     while (this._lexer.peek().type !== TokenType.RBrace) {
@@ -532,11 +501,7 @@ export class Parser {
       }
     }
     this._lexer.get();
-    return this.createStatementNode<BlockStatement>(
-      "BlockStatement",
-      { statements },
-      startToken
-    );
+    return this.createStatementNode<BlockStatement>("BlockStatement", { statements }, startToken);
   }
 
   /**
@@ -546,7 +511,7 @@ export class Parser {
    *   : "if" "(" expression ")" statement ["else" statement]
    *   ;
    */
-  private parseIfStatement (): IfStatement | null {
+  private parseIfStatement(): IfStatement | null {
     const startToken = this._lexer.get();
     this.expectToken(TokenType.LParent, "K014");
     const condition = this.getExpression();
@@ -587,7 +552,7 @@ export class Parser {
    *   : "while" "(" condition ")" statement
    *   ;
    */
-  private parseWhileStatement (): WhileStatement | null {
+  private parseWhileStatement(): WhileStatement | null {
     const startToken = this._lexer.get();
     this.expectToken(TokenType.LParent, "K014");
     const condition = this.getExpression();
@@ -613,7 +578,7 @@ export class Parser {
    *   : "do" statement "while" "(" condition ")"
    *   ;
    */
-  private parseDoWhileStatement (): DoWhileStatement | null {
+  private parseDoWhileStatement(): DoWhileStatement | null {
     const startToken = this._lexer.get();
     const body = this.parseStatement();
     if (!body) return null;
@@ -643,7 +608,7 @@ export class Parser {
    *   : "return" expression?
    *   ;
    */
-  private parseReturnStatement (): ReturnStatement | null {
+  private parseReturnStatement(): ReturnStatement | null {
     const startToken = this._lexer.peek();
     this._lexer.get();
     let expression: Expression | undefined | null;
@@ -666,11 +631,7 @@ export class Parser {
    *   | forInOfStatement
    *   ;
    */
-  private parseForStatement ():
-    | ForStatement
-    | ForInStatement
-    | ForOfStatement
-    | null {
+  private parseForStatement(): ForStatement | ForInStatement | ForOfStatement | null {
     const startToken = this._lexer.peek();
     this._lexer.get();
     this.expectToken(TokenType.LParent, "K014");
@@ -679,38 +640,18 @@ export class Parser {
     let nextToken = this._lexer.peek();
     if (nextToken.type === TokenType.Identifier) {
       if (this._lexer.ahead(1).type === TokenType.In) {
-        return this.parseForInOfStatement(
-          startToken,
-          "none",
-          nextToken.text,
-          "ForInStatement"
-        );
+        return this.parseForInOfStatement(startToken, "none", nextToken.text, "ForInStatement");
       } else if (this._lexer.ahead(1).type === TokenType.Of) {
-        return this.parseForInOfStatement(
-          startToken,
-          "none",
-          nextToken.text,
-          "ForOfStatement"
-        );
+        return this.parseForInOfStatement(startToken, "none", nextToken.text, "ForOfStatement");
       }
     } else if (nextToken.type === TokenType.Let) {
       const idToken = this._lexer.ahead(1);
       if (idToken.type === TokenType.Identifier) {
         const inOfToken = this._lexer.ahead(2);
         if (inOfToken.type === TokenType.In) {
-          return this.parseForInOfStatement(
-            startToken,
-            "let",
-            idToken.text,
-            "ForInStatement"
-          );
+          return this.parseForInOfStatement(startToken, "let", idToken.text, "ForInStatement");
         } else if (inOfToken.type === TokenType.Of) {
-          return this.parseForInOfStatement(
-            startToken,
-            "let",
-            idToken.text,
-            "ForOfStatement"
-          );
+          return this.parseForInOfStatement(startToken, "let", idToken.text, "ForOfStatement");
         }
       }
     } else if (nextToken.type === TokenType.Const) {
@@ -718,19 +659,9 @@ export class Parser {
       if (idToken.type === TokenType.Identifier) {
         const inOfToken = this._lexer.ahead(2);
         if (inOfToken.type === TokenType.In) {
-          return this.parseForInOfStatement(
-            startToken,
-            "const",
-            idToken.text,
-            "ForInStatement"
-          );
+          return this.parseForInOfStatement(startToken, "const", idToken.text, "ForInStatement");
         } else if (inOfToken.type === TokenType.Of) {
-          return this.parseForInOfStatement(
-            startToken,
-            "const",
-            idToken.text,
-            "ForOfStatement"
-          );
+          return this.parseForInOfStatement(startToken, "const", idToken.text, "ForOfStatement");
         }
       }
     }
@@ -748,7 +679,7 @@ export class Parser {
         return null;
       }
       init = letStmt;
-      if (init.declarations.some(d => !d.expression)) {
+      if (init.declarations.some((d) => !d.expression)) {
         this.reportError("K011");
         return null;
       }
@@ -817,7 +748,7 @@ export class Parser {
    * @param id ID name
    * @param type Is it a for..in or a for..of?
    */
-  private parseForInOfStatement (
+  private parseForInOfStatement(
     startToken: Token,
     varBinding: ForVarBinding,
     id: string,
@@ -872,7 +803,7 @@ export class Parser {
    *   : "throw" expression
    *   ;
    */
-  private parseThrowStatement (): ThrowStatement | null {
+  private parseThrowStatement(): ThrowStatement | null {
     const startToken = this._lexer.peek();
     this._lexer.get();
     let expression: Expression | undefined | null;
@@ -902,7 +833,7 @@ export class Parser {
    * finallyClause
    *   : "finally" blockStatement
    */
-  private parseTryStatement (): TryStatement | null {
+  private parseTryStatement(): TryStatement | null {
     const startToken = this._lexer.peek();
     this._lexer.get();
     const parser = this;
@@ -957,7 +888,7 @@ export class Parser {
       startToken
     );
 
-    function getBlock (): BlockStatement | null {
+    function getBlock(): BlockStatement | null {
       const nextToken = parser._lexer.peek();
       if (nextToken.type !== TokenType.LBrace) {
         parser.reportError("K012", nextToken);
@@ -979,7 +910,7 @@ export class Parser {
    *   | "default" ":" statement*
    *   ;
    */
-  private parseSwitchStatement (): SwitchStatement | null {
+  private parseSwitchStatement(): SwitchStatement | null {
     const startToken = this._lexer.get();
 
     // --- Parse the switch expression
@@ -1073,7 +1004,7 @@ export class Parser {
    *   : "function" identifier "(" [parameterList] ")" blockStatement
    *   ;
    */
-  private parseFunctionDeclaration (): FunctionDeclaration | null {
+  private parseFunctionDeclaration(): FunctionDeclaration | null {
     const startToken = this._lexer.get();
 
     // --- Get the function name
@@ -1187,7 +1118,7 @@ export class Parser {
    *   : "export" (constStatement | functionDeclaration)
    *   ;
    */
-  private parseExport (): ConstStatement | FunctionDeclaration | null {
+  private parseExport(): ConstStatement | FunctionDeclaration | null {
     this._lexer.get();
     const nextToken = this._lexer.peek();
     if (nextToken.type === TokenType.Const) {
@@ -1212,7 +1143,7 @@ export class Parser {
    *   : identifier [ "as" identifier ]
    *   ;
    */
-  private parseImport (): ImportDeclaration | null {
+  private parseImport(): ImportDeclaration | null {
     // TODO: Implement import parsing
     const startToken = this._lexer.get();
     this.expectToken(TokenType.LBrace, "K012");
@@ -1289,7 +1220,7 @@ export class Parser {
    *   : sequenceExpr
    *   ;
    */
-  parseExpr (allowSequence = true): Expression | null {
+  parseExpr(allowSequence = true): Expression | null {
     return allowSequence
       ? this.parseSequenceExpression()
       : this.parseCondOrSpreadOrAsgnOrArrowExpr();
@@ -1299,7 +1230,7 @@ export class Parser {
    * sequenceExpr
    *   : conditionalExpr ( "," conditionalExpr )?
    */
-  private parseSequenceExpression (): Expression | null {
+  private parseSequenceExpression(): Expression | null {
     const start = this._lexer.peek();
     let leftExpr = this.parseCondOrSpreadOrAsgnOrArrowExpr();
     if (!leftExpr) {
@@ -1319,11 +1250,7 @@ export class Parser {
         if (this._lexer.peek().type === TokenType.Comma) {
           leftExpr.loose = true;
           sequence.push(
-            this.createExpressionNode<NoArgExpression>(
-              "NoArgExpression",
-              {},
-              this._lexer.peek()
-            )
+            this.createExpressionNode<NoArgExpression>("NoArgExpression", {}, this._lexer.peek())
           );
         } else {
           const nextExpr = this.parseCondOrSpreadOrAsgnOrArrowExpr();
@@ -1353,7 +1280,7 @@ export class Parser {
    *   | identifier "=" expr
    *   ;
    */
-  private parseCondOrSpreadOrAsgnOrArrowExpr (): Expression | null {
+  private parseCondOrSpreadOrAsgnOrArrowExpr(): Expression | null {
     const startToken = this._lexer.peek();
     if (startToken.type === TokenType.Spread) {
       // --- Spread expression
@@ -1424,10 +1351,7 @@ export class Parser {
    * @param start Start token
    * @param left Expression to the left from the arrow
    */
-  private parseArrowExpression (
-    start: Token,
-    left: Expression
-  ): ArrowExpression | null {
+  private parseArrowExpression(start: Token, left: Expression): ArrowExpression | null {
     // --- Check the left expression
     let isValid: boolean;
     const args: Expression[] = [];
@@ -1515,7 +1439,7 @@ export class Parser {
    *   : logicalOrExpr ( "??" logicalOrExpr )?
    *   ;
    */
-  private parseNullCoalescingExpr (): Expression | null {
+  private parseNullCoalescingExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseLogicalOrExpr();
     if (!leftExpr) {
@@ -1547,7 +1471,7 @@ export class Parser {
    *   : logicalAndExpr ( "||" logicalAndExpr )?
    *   ;
    */
-  private parseLogicalOrExpr (): Expression | null {
+  private parseLogicalOrExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseLogicalAndExpr();
     if (!leftExpr) {
@@ -1580,7 +1504,7 @@ export class Parser {
    *   : bitwiseOrExpr ( "&&" bitwiseOrExpr )?
    *   ;
    */
-  private parseLogicalAndExpr (): Expression | null {
+  private parseLogicalAndExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseBitwiseOrExpr();
     if (!leftExpr) {
@@ -1613,7 +1537,7 @@ export class Parser {
    *   : bitwiseXorExpr ( "|" bitwiseXorExpr )?
    *   ;
    */
-  private parseBitwiseOrExpr (): Expression | null {
+  private parseBitwiseOrExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseBitwiseXorExpr();
     if (!leftExpr) {
@@ -1646,7 +1570,7 @@ export class Parser {
    *   : bitwiseAndExpr ( "^" bitwiseAndExpr )?
    *   ;
    */
-  private parseBitwiseXorExpr (): Expression | null {
+  private parseBitwiseXorExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseBitwiseAndExpr();
     if (!leftExpr) {
@@ -1679,7 +1603,7 @@ export class Parser {
    *   : equExpr ( "&" equExpr )?
    *   ;
    */
-  private parseBitwiseAndExpr (): Expression | null {
+  private parseBitwiseAndExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseEquExpr();
     if (!leftExpr) {
@@ -1712,7 +1636,7 @@ export class Parser {
    *   : relOrInExpr ( ( "==" | "!=" | "===" | "!==" ) relOrInExpr )?
    *   ;
    */
-  private parseEquExpr (): Expression | null {
+  private parseEquExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseRelOrInExpr();
     if (!leftExpr) {
@@ -1754,7 +1678,7 @@ export class Parser {
    *   : shiftExpr ( ( "<" | "<=" | ">" | ">=", "in" ) shiftExpr )?
    *   ;
    */
-  private parseRelOrInExpr (): Expression | null {
+  private parseRelOrInExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseShiftExpr();
     if (!leftExpr) {
@@ -1796,7 +1720,7 @@ export class Parser {
    *   : addExpr ( ( "<<" | ">>" | ">>>" ) addExpr )?
    *   ;
    */
-  private parseShiftExpr (): Expression | null {
+  private parseShiftExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseAddExpr();
     if (!leftExpr) {
@@ -1838,7 +1762,7 @@ export class Parser {
    *   : multExpr ( ( "+" | "-" ) multExpr )?
    *   ;
    */
-  private parseAddExpr (): Expression | null {
+  private parseAddExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseMultExpr();
     if (!leftExpr) {
@@ -1872,7 +1796,7 @@ export class Parser {
    *   : exponentialExpr ( ( "*" | "/" | "%") exponentialExpr )?
    *   ;
    */
-  private parseMultExpr (): Expression | null {
+  private parseMultExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseExponentialExpr();
     if (!leftExpr) {
@@ -1880,13 +1804,7 @@ export class Parser {
     }
 
     let opType: Token | null;
-    while (
-      (opType = this.skipTokens(
-        TokenType.Multiply,
-        TokenType.Divide,
-        TokenType.Remainder
-      ))
-    ) {
+    while ((opType = this.skipTokens(TokenType.Multiply, TokenType.Divide, TokenType.Remainder))) {
       const startToken = this._lexer.peek();
       const rightExpr = this.parseExponentialExpr();
       if (!rightExpr) {
@@ -1912,7 +1830,7 @@ export class Parser {
    *   : unaryExpr ( "**" unaryExpr )?
    *   ;
    */
-  private parseExponentialExpr (): Expression | null {
+  private parseExponentialExpr(): Expression | null {
     const beginsWith = this._lexer.peek();
     let leftExpr = this.parseUnaryOrPrefixExpr();
     if (!leftExpr) {
@@ -1967,7 +1885,7 @@ export class Parser {
    *   | memberOrInvocationExpr
    *   ;
    */
-  private parseUnaryOrPrefixExpr (): Expression | null {
+  private parseUnaryOrPrefixExpr(): Expression | null {
     const startToken = this._lexer.peek();
     if (tokenTraits[startToken.type].canBeUnary) {
       this._lexer.get();
@@ -1985,10 +1903,7 @@ export class Parser {
       );
     }
 
-    if (
-      startToken.type === TokenType.IncOp ||
-      startToken.type === TokenType.DecOp
-    ) {
+    if (startToken.type === TokenType.IncOp || startToken.type === TokenType.DecOp) {
       this._lexer.get();
       const prefixOperand = this.parseMemberOrInvocationExpr();
       if (!prefixOperand) {
@@ -2016,7 +1931,7 @@ export class Parser {
    *   | primaryExpr "[" expr "]"
    *   ;
    */
-  private parseMemberOrInvocationExpr (): Expression | null {
+  private parseMemberOrInvocationExpr(): Expression | null {
     const startToken = this._lexer.peek();
     let primary = this.parsePrimaryExpr();
     if (!primary) {
@@ -2037,8 +1952,7 @@ export class Parser {
               this.reportError("K001");
               return null;
             }
-            args =
-              expr.type === "SequenceExpression" ? expr.expressions : [expr];
+            args = expr.type === "SequenceExpression" ? expr.expressions : [expr];
           }
           this.expectToken(TokenType.RParent, "K006");
           primary = this.createExpressionNode<FunctionInvocationExpression>(
@@ -2096,10 +2010,7 @@ export class Parser {
 
     // --- Check for postfix operators
     const nextToken = this._lexer.peek();
-    if (
-      nextToken.type === TokenType.IncOp ||
-      nextToken.type === TokenType.DecOp
-    ) {
+    if (nextToken.type === TokenType.IncOp || nextToken.type === TokenType.DecOp) {
       this._lexer.get();
       return this.createExpressionNode<PostfixOpExpression>(
         "PostfixOpExpression",
@@ -2123,7 +2034,7 @@ export class Parser {
    *   | "(" expr ")"
    *   ;
    */
-  private parsePrimaryExpr (): Expression | null {
+  private parsePrimaryExpr(): Expression | null {
     const start = this._lexer.peek();
     switch (start.type) {
       case TokenType.LParent:
@@ -2132,11 +2043,7 @@ export class Parser {
         if (this._lexer.peek().type === TokenType.RParent) {
           // --- No-arg
           this._lexer.get();
-          return this.createExpressionNode<NoArgExpression>(
-            "NoArgExpression",
-            {},
-            start
-          );
+          return this.createExpressionNode<NoArgExpression>("NoArgExpression", {}, start);
         }
 
         // --- Parenthesized
@@ -2264,14 +2171,13 @@ export class Parser {
   /**
    * Parses an array literal
    */
-  private parseArrayLiteral (): ArrayLiteral | null {
+  private parseArrayLiteral(): ArrayLiteral | null {
     const start = this._lexer.get();
     let expressions: Expression[] = [];
     if (this._lexer.peek().type !== TokenType.RSquare) {
       const expr = this.getExpression();
       if (expr) {
-        expressions =
-          expr.type === "SequenceExpression" ? expr.expressions : [expr];
+        expressions = expr.type === "SequenceExpression" ? expr.expressions : [expr];
       }
     }
     this.expectToken(TokenType.RSquare);
@@ -2287,7 +2193,7 @@ export class Parser {
   /**
    * Parses an object literal
    */
-  private parseObjectLiteral (): ObjectLiteral | null {
+  private parseObjectLiteral(): ObjectLiteral | null {
     const start = this._lexer.get();
     let props: (SpreadExpression | [Expression, Expression])[] = [];
     if (this._lexer.peek().type !== TokenType.RBrace) {
@@ -2384,7 +2290,7 @@ export class Parser {
     );
   }
 
-  private parseRegExpLiteral (): Literal | null {
+  private parseRegExpLiteral(): Literal | null {
     const startToken = this._lexer.peek();
     const result = this._lexer.getRegEx();
     if (result.success) {
@@ -2403,7 +2309,7 @@ export class Parser {
   /**
    * Gets an expression
    */
-  private getExpression (allowSequence = true): Expression | null {
+  private getExpression(allowSequence = true): Expression | null {
     const expr = this.parseExpr(allowSequence);
     if (expr) {
       return expr;
@@ -2421,11 +2327,7 @@ export class Parser {
    * @param errorCode Error to raise if the next token is not expected
    * @param allowEof Allow an EOF instead of the expected token?
    */
-  private expectToken (
-    type: TokenType,
-    errorCode?: ErrorCodes,
-    allowEof?: boolean
-  ): Token | null {
+  private expectToken(type: TokenType, errorCode?: ErrorCodes, allowEof?: boolean): Token | null {
     const next = this._lexer.peek();
     if (next.type === type || (allowEof && next.type === TokenType.Eof)) {
       // --- Skip the expected token
@@ -2439,7 +2341,7 @@ export class Parser {
    * Skips the next token if the type is the specified one
    * @param type Token type to check
    */
-  private skipToken (type: TokenType): Token | null {
+  private skipToken(type: TokenType): Token | null {
     const next = this._lexer.peek();
     if (next.type === type) {
       this._lexer.get();
@@ -2452,7 +2354,7 @@ export class Parser {
    * Skips the next token if the type is the specified one
    * @param types Token types to check
    */
-  private skipTokens (...types: TokenType[]): Token | null {
+  private skipTokens(...types: TokenType[]): Token | null {
     const next = this._lexer.peek();
     for (const type of types) {
       if (next.type === type) {
@@ -2469,16 +2371,11 @@ export class Parser {
    * @param token Token that represents the error's position
    * @param options Error message options
    */
-  private reportError (
-    errorCode: ErrorCodes,
-    token?: Token,
-    ...options: any[]
-  ): void {
+  private reportError(errorCode: ErrorCodes, token?: Token, ...options: any[]): void {
     let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
     if (options) {
       options.forEach(
-        (_, idx) =>
-          (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
+        (_, idx) => (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
       );
     }
     if (!token) {
@@ -2493,11 +2390,7 @@ export class Parser {
     });
     throw new ParserError(errorText, errorCode);
 
-    function replace (
-      input: string,
-      placeholder: string,
-      replacement: string
-    ): string {
+    function replace(input: string, placeholder: string, replacement: string): string {
       do {
         input = input.replace(placeholder, replacement);
       } while (input.includes(placeholder));
@@ -2513,7 +2406,7 @@ export class Parser {
    * @param endToken The token that ends the expression
    * @param source Expression source code to store to the node
    */
-  private createNode<T extends BaseNode> (
+  private createNode<T extends BaseNode>(
     type: BaseNode["type"],
     stump: any,
     startToken: Token,
@@ -2545,7 +2438,7 @@ export class Parser {
    * @param endToken The token that ends the expression
    * @param source Expression source code to store to the node
    */
-  private createExpressionNode<T extends Expression> (
+  private createExpressionNode<T extends Expression>(
     type: Expression["type"],
     stump: any = {},
     startToken?: Token,
@@ -2579,7 +2472,7 @@ export class Parser {
    * @param startToken The token that starts the statement
    * @param endToken The token that ends the statement
    */
-  private createStatementNode<T extends Statement> (
+  private createStatementNode<T extends Statement>(
     type: Statement["type"],
     stump: any,
     startToken: Token,
@@ -2596,12 +2489,8 @@ export class Parser {
       endPosition,
       startLine: startToken.location.startLine,
       startColumn: startToken.location.startColumn,
-      endLine: endToken
-        ? endToken.location.endLine
-        : startToken.location.endLine,
-      endColumn: endToken
-        ? endToken.location.endColumn
-        : startToken.location.endColumn,
+      endLine: endToken ? endToken.location.endLine : startToken.location.endLine,
+      endColumn: endToken ? endToken.location.endColumn : startToken.location.endColumn,
       source: this.source.substring(startPosition, endPosition - 1)
     } as Statement);
   }
@@ -2612,25 +2501,19 @@ export class Parser {
    * @param end Optional end token
    * @returns The source code for the token range
    */
-  private getSource (start: Token, end?: Token): string {
+  private getSource(start: Token, end?: Token): string {
     if (!end) end = this._lexer.peek();
-    return this.source.substring(
-      start.location.startPosition,
-      end.location.startPosition
-    );
+    return this.source.substring(start.location.startPosition, end.location.startPosition);
   }
 
   /**
    * Parses a binary literal
    * @param token Literal token
    */
-  private parseBinaryLiteral (token: Token): Literal {
+  private parseBinaryLiteral(token: Token): Literal {
     let value: number | bigint;
     const bigValue = BigInt(token.text.replace(/[_']/g, ""));
-    if (
-      bigValue < Number.MIN_SAFE_INTEGER ||
-      bigValue > Number.MAX_SAFE_INTEGER
-    ) {
+    if (bigValue < Number.MIN_SAFE_INTEGER || bigValue > Number.MAX_SAFE_INTEGER) {
       value = bigValue;
     } else {
       value = parseInt(token.text.substring(2).replace(/[_']/g, ""), 2);
@@ -2648,13 +2531,10 @@ export class Parser {
    * Parses a decimal literal
    * @param token Literal token
    */
-  private parseDecimalLiteral (token: Token): Literal {
+  private parseDecimalLiteral(token: Token): Literal {
     let value: number | bigint;
     const bigValue = BigInt(token.text.replace(/[_']/g, ""));
-    if (
-      bigValue < Number.MIN_SAFE_INTEGER ||
-      bigValue > Number.MAX_SAFE_INTEGER
-    ) {
+    if (bigValue < Number.MIN_SAFE_INTEGER || bigValue > Number.MAX_SAFE_INTEGER) {
       value = bigValue;
     } else {
       value = parseInt(token.text.replace(/[_']/g, ""), 10);
@@ -2672,13 +2552,10 @@ export class Parser {
    * Parses a hexadecimal literal
    * @param token Literal token
    */
-  private parseHexadecimalLiteral (token: Token): Literal {
+  private parseHexadecimalLiteral(token: Token): Literal {
     let value: number | bigint;
     const bigValue = BigInt(token.text.replace(/[_']/g, ""));
-    if (
-      bigValue < Number.MIN_SAFE_INTEGER ||
-      bigValue > Number.MAX_SAFE_INTEGER
-    ) {
+    if (bigValue < Number.MIN_SAFE_INTEGER || bigValue > Number.MAX_SAFE_INTEGER) {
       value = bigValue;
     } else {
       value = parseInt(token.text.substring(2).replace(/[_']/g, ""), 16);
@@ -2696,7 +2573,7 @@ export class Parser {
    * Parses a real literal
    * @param token Literal token
    */
-  private parseRealLiteral (token: Token): Literal {
+  private parseRealLiteral(token: Token): Literal {
     let value = parseFloat(token.text.replace(/[_']/g, ""));
     return this.createExpressionNode<Literal>(
       "Literal",
@@ -2711,11 +2588,8 @@ export class Parser {
    * Converts a string token to intrinsic string
    * @param token Literal token
    */
-  private parseStringLiteral (token: Token): Literal {
-    const input =
-      token.text.length < 2
-        ? ""
-        : token.text.substring(1, token.text.length - 1);
+  private parseStringLiteral(token: Token): Literal {
+    const input = token.text.length < 2 ? "" : token.text.substring(1, token.text.length - 1);
     let result = "";
     let state: StrParseState = StrParseState.Normal;
     let collect = 0;
@@ -2944,39 +2818,28 @@ export class Parser {
       token
     );
 
-    function isHexaDecimal (ch: string): boolean {
-      return (
-        (ch >= "0" && ch <= "9") ||
-        (ch >= "a" && ch <= "f") ||
-        (ch >= "A" && ch <= "F")
-      );
+    function isHexaDecimal(ch: string): boolean {
+      return (ch >= "0" && ch <= "9") || (ch >= "a" && ch <= "f") || (ch >= "A" && ch <= "F");
     }
   }
 
-  private convertToArrayDestructure (
-    seq: SequenceExpression | ArrayLiteral
-  ): Destructure | null {
+  private convertToArrayDestructure(seq: SequenceExpression | ArrayLiteral): Destructure | null {
     const result = this.createExpressionNode<Destructure>("Destructure", {
       arrayDestruct: []
     });
-    const items =
-      seq.type === "SequenceExpression" ? seq.expressions : seq.items;
+    const items = seq.type === "SequenceExpression" ? seq.expressions : seq.items;
 
     // --- Convert all items
     for (const item of items) {
       let arrayD: ArrayDestructure | undefined;
       switch (item.type) {
         case "NoArgExpression":
-          arrayD = this.createExpressionNode<ArrayDestructure>(
-            "ArrayDestructure",
-            {}
-          );
+          arrayD = this.createExpressionNode<ArrayDestructure>("ArrayDestructure", {});
           break;
         case "Identifier":
-          arrayD = this.createExpressionNode<ArrayDestructure>(
-            "ArrayDestructure",
-            { id: item.name }
-          );
+          arrayD = this.createExpressionNode<ArrayDestructure>("ArrayDestructure", {
+            id: item.name
+          });
           break;
         case "Destructure":
           result.arrayDestruct!.push(...item.arrayDestruct!);
@@ -2987,32 +2850,23 @@ export class Parser {
         case "ArrayLiteral": {
           const destructure = this.convertToArrayDestructure(item);
           if (destructure) {
-            arrayD = this.createExpressionNode<ArrayDestructure>(
-              "ArrayDestructure",
-              {
-                arrayDestruct: destructure.arrayDestruct
-              }
-            );
+            arrayD = this.createExpressionNode<ArrayDestructure>("ArrayDestructure", {
+              arrayDestruct: destructure.arrayDestruct
+            });
           }
           break;
         }
         case "ObjectDestructure":
-          arrayD = this.createExpressionNode<ArrayDestructure>(
-            "ArrayDestructure",
-            {
-              objectDestruct: item
-            }
-          );
+          arrayD = this.createExpressionNode<ArrayDestructure>("ArrayDestructure", {
+            objectDestruct: item
+          });
           break;
         case "ObjectLiteral": {
           const destructure = this.convertToObjectDestructure(item);
           if (destructure) {
-            arrayD = this.createExpressionNode<ArrayDestructure>(
-              "ArrayDestructure",
-              {
-                objectDestruct: destructure.objectDestruct
-              }
-            );
+            arrayD = this.createExpressionNode<ArrayDestructure>("ArrayDestructure", {
+              objectDestruct: destructure.objectDestruct
+            });
           }
           break;
         }
@@ -3028,9 +2882,7 @@ export class Parser {
     return result;
   }
 
-  private convertToObjectDestructure (
-    objLit: ObjectLiteral
-  ): Destructure | null {
+  private convertToObjectDestructure(objLit: ObjectLiteral): Destructure | null {
     const result = this.createExpressionNode<Destructure>("Destructure", {
       objectDestruct: []
     });
@@ -3053,40 +2905,30 @@ export class Parser {
       switch (propValue.type) {
         case "Identifier":
           if (propValue.name === propKey.name) {
-            objD = this.createExpressionNode<ObjectDestructure>(
-              "ObjectDestructure",
-              { id: propKey.name }
-            );
+            objD = this.createExpressionNode<ObjectDestructure>("ObjectDestructure", {
+              id: propKey.name
+            });
           } else {
-            objD = this.createExpressionNode<ObjectDestructure>(
-              "ObjectDestructure",
-              {
-                id: propKey.name,
-                alias: propValue.name
-              }
-            );
+            objD = this.createExpressionNode<ObjectDestructure>("ObjectDestructure", {
+              id: propKey.name,
+              alias: propValue.name
+            });
           }
           break;
         case "ArrayDestructure": {
-          objD = this.createExpressionNode<ObjectDestructure>(
-            "ObjectDestructure",
-            {
-              id: propKey.name,
-              arrayDestruct: propValue
-            }
-          );
+          objD = this.createExpressionNode<ObjectDestructure>("ObjectDestructure", {
+            id: propKey.name,
+            arrayDestruct: propValue
+          });
           break;
         }
         case "ArrayLiteral": {
           const destructure = this.convertToArrayDestructure(propValue);
           if (destructure) {
-            objD = this.createExpressionNode<ObjectDestructure>(
-              "ObjectDestructure",
-              {
-                id: propKey.name,
-                arrayDestruct: destructure.arrayDestruct
-              }
-            );
+            objD = this.createExpressionNode<ObjectDestructure>("ObjectDestructure", {
+              id: propKey.name,
+              arrayDestruct: destructure.arrayDestruct
+            });
           }
           break;
         }
@@ -3096,13 +2938,10 @@ export class Parser {
         case "ObjectLiteral": {
           const destructure = this.convertToObjectDestructure(propValue);
           if (destructure) {
-            objD = this.createExpressionNode<ObjectDestructure>(
-              "ObjectDestructure",
-              {
-                id: propKey.name,
-                objectDestruct: destructure.objectDestruct
-              }
-            );
+            objD = this.createExpressionNode<ObjectDestructure>("ObjectDestructure", {
+              id: propKey.name,
+              objectDestruct: destructure.objectDestruct
+            });
           }
           break;
         }
@@ -3120,7 +2959,7 @@ export class Parser {
   /**
    * Tests if the specified token can be the start of an expression
    */
-  private isExpressionStart (token: Token): boolean {
+  private isExpressionStart(token: Token): boolean {
     return tokenTraits[token.type]?.expressionStart ?? false;
   }
 }

@@ -1,16 +1,13 @@
-import { ErrorCodes } from "./assembler-errors";
-import {
-  IAssemblySymbolInfo,
-  IExpressionValue,
-  SymbolType
-} from "./assembler-types";
+import type { ErrorCodes } from "./assembler-errors";
+import type { IAssemblySymbolInfo, IExpressionValue } from "./assembler-types";
+import { SymbolType } from "./assembler-types";
 import { FixupEntry } from "./fixups";
 
 /**
  * This class represents an assembly symbol
  */
 export class AssemblySymbolInfo implements IAssemblySymbolInfo {
-  constructor (
+  constructor(
     public readonly name: string,
     public readonly type: SymbolType,
     public value: IExpressionValue
@@ -40,10 +37,7 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
    * @param name Label name
    * @param value Label value
    */
-  static createLabel (
-    name: string,
-    value: IExpressionValue
-  ): AssemblySymbolInfo {
+  static createLabel(name: string, value: IExpressionValue): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Label, value);
   }
 
@@ -52,7 +46,7 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
    * @param name Variable name
    * @param value Variable value
    */
-  static createVar (name: string, value: IExpressionValue): AssemblySymbolInfo {
+  static createVar(name: string, value: IExpressionValue): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Var, value);
   }
 }
@@ -97,7 +91,7 @@ export interface ISymbolScope {
 export class SymbolScope implements ISymbolScope {
   private _errorsReported = new Set<ErrorCodes>();
 
-  constructor (
+  constructor(
     public readonly ownerScope: SymbolScope | null,
     private readonly caseSensitive: boolean
   ) {}
@@ -155,7 +149,7 @@ export class SymbolScope implements ISymbolScope {
   /**
    * Tests if this context is a macro context
    */
-  get isMacroContext (): boolean {
+  get isMacroContext(): boolean {
     return !!this.macroArguments;
   }
 
@@ -163,7 +157,7 @@ export class SymbolScope implements ISymbolScope {
    *
    * @param code Signs that the specified error has been reported
    */
-  reportError (code: ErrorCodes): void {
+  reportError(code: ErrorCodes): void {
     this._errorsReported.add(code);
   }
 
@@ -171,7 +165,7 @@ export class SymbolScope implements ISymbolScope {
    * Checks if the specified error has been reported
    * @param code Error code to check
    */
-  isErrorReported (code: ErrorCodes): boolean {
+  isErrorReported(code: ErrorCodes): boolean {
     return this._errorsReported.has(code);
   }
 
@@ -180,7 +174,7 @@ export class SymbolScope implements ISymbolScope {
    * @param name Symbol name
    * @param symbol Symbol data
    */
-  addSymbol (name: string, symbol: AssemblySymbolInfo): void {
+  addSymbol(name: string, symbol: AssemblySymbolInfo): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -190,7 +184,7 @@ export class SymbolScope implements ISymbolScope {
   /**
    * Tests if the specified symbol has been defined
    */
-  containsSymbol (name: string): boolean {
+  containsSymbol(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -202,7 +196,7 @@ export class SymbolScope implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol (name: string): IAssemblySymbolInfo | undefined {
+  getSymbol(name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -213,7 +207,7 @@ export class SymbolScope implements ISymbolScope {
    * Adds booking for a local name
    * @param name Symbol name
    */
-  addLocalBooking (name: string): void {
+  addLocalBooking(name: string): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -224,7 +218,7 @@ export class SymbolScope implements ISymbolScope {
    * Checks if the specified symbol has been booked
    * @param name Name to test
    */
-  containsLocalBooking (name: string): boolean {
+  containsLocalBooking(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }

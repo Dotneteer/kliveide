@@ -1,6 +1,7 @@
-import { IZ88MemoryCard } from "./IZ88MemoryCard";
+import type { IZ88MemoryCard } from "./IZ88MemoryCard";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";

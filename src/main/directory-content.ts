@@ -1,15 +1,12 @@
 import path from "path";
 import fs from "fs";
 
+import type { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
+
 import { app } from "electron";
-import { ProjectNodeWithChildren } from "../renderer/appIde/project/project-node";
-import {
-  getKliveProjectStructure,
-} from "./projects";
-import {
-  appSettings,
-} from "./settings";
-import { pathStartsWith } from "../common/utils/path-utils";
+import { getKliveProjectStructure } from "./projects";
+import { appSettings } from "./settings";
+import { pathStartsWith } from "@common/utils/path-utils";
 
 type DirectoryContentFilter = (p: string) => boolean;
 
@@ -17,7 +14,7 @@ type DirectoryContentFilter = (p: string) => boolean;
  * Gets the contents of the specified directory
  * @param root
  */
-export async function getDirectoryContent (
+export async function getDirectoryContent(
   root: string,
   pred?: DirectoryContentFilter
 ): Promise<ProjectNodeWithChildren> {
@@ -27,13 +24,10 @@ export async function getDirectoryContent (
 
   let fileEntryCount = 0;
   const folderSegments = root.split(path.sep);
-  const lastFolder =
-    folderSegments.length > 0
-      ? folderSegments[folderSegments.length - 1]
-      : root;
+  const lastFolder = folderSegments.length > 0 ? folderSegments[folderSegments.length - 1] : root;
   return getFileEntryInfo(root, "", lastFolder);
 
-  function getFileEntryInfo (
+  function getFileEntryInfo(
     entryPath: string,
     projectRelative: string,
     name: string
@@ -59,11 +53,7 @@ export async function getDirectoryContent (
         const projectRelativeChild = path.join(projectRelative, name);
         if (pred(projectRelativeChild)) {
           entry.children.push(
-            getFileEntryInfo(
-              path.join(entryPath, name),
-              projectRelativeChild,
-              name
-            )
+            getFileEntryInfo(path.join(entryPath, name), projectRelativeChild, name)
           );
         }
       }
@@ -77,15 +67,14 @@ export async function getDirectoryContent (
  * This filter sieves off the excluded project items.
  * @returns a DirectoryContentFilter promise
  */
-export async function getProjectDirectoryContentFilter(
-): Promise<DirectoryContentFilter> {
+export async function getProjectDirectoryContentFilter(): Promise<DirectoryContentFilter> {
   if (!appSettings.excludedProjectItems) {
-    appSettings.excludedProjectItems = [ ".git" ];
+    appSettings.excludedProjectItems = [".git"];
   }
   const proj = await getKliveProjectStructure();
   const ignored = appSettings.excludedProjectItems
     .concat(proj.ide.excludedProjectItems)
     .filter((value, index, array) => array.indexOf(value) === index)
-    .map((v) => v.replace('/', path.sep));
-  return (p: string) => !ignored.some(v => pathStartsWith(p, v));
+    .map((v) => v.replace("/", path.sep));
+  return (p: string) => !ignored.some((v) => pathStartsWith(p, v));
 }

@@ -1,5 +1,6 @@
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { IdeScriptOutputRequest } from "../../common/messaging/any-to-ide";
+import type { IdeScriptOutputRequest } from "@messaging/any-to-ide";
+
+import { MessengerBase } from "@messaging/MessengerBase";
 
 class ScriptConsole {
   // --- The store is used to dispatch actions

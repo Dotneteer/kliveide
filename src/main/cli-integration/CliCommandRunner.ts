@@ -1,4 +1,5 @@
-import { AssemblerErrorInfo } from "@abstractions/IZ80CompilerService";
+import type { AssemblerErrorInfo } from "@abstractions/CompilerInfo";
+
 import { ExecaSyncError, execa } from "execa";
 import { CompilerResult } from "src/script-packages/z88dk/Zcc";
 

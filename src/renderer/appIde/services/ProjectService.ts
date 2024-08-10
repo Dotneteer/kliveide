@@ -9,7 +9,7 @@ import {
   getFileTypeEntry,
   getNodeFile
 } from "../project/project-node";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { VolatileDocumentInfo } from "@renderer/abstractions/VolatileDocumentInfo";

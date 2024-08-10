@@ -1,6 +1,6 @@
-import { IdeCommandContext } from "./IdeCommandContext";
-import { IdeCommandResult } from "./IdeCommandResult";
-import { ValidationMessage } from "./ValidationMessage";
+import type { IdeCommandContext } from "./IdeCommandContext";
+import type { IdeCommandResult } from "./IdeCommandResult";
+import type { ValidationMessage } from "./ValidationMessage";
 
 /**
  * This class represents information about commands

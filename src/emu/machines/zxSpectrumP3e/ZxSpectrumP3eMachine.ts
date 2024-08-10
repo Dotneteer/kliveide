@@ -1,5 +1,9 @@
-import { SysVar } from "@abstractions/SysVar";
-import { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
+import type { SysVar } from "@abstractions/SysVar";
+import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { MachineModel } from "@common/machines/info-types";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
@@ -21,15 +25,10 @@ import {
   ZxSpectrumP3eFloatingBusDevice,
   zxSpectrumP32FloatingBusPorts
 } from "./ZxSpectrumP3eFloatingBusDevice";
-import { Store } from "@common/state/redux-light";
-import { AppState } from "@common/state/AppState";
 import { PagedMemory } from "../memory/PagedMemory";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { MachineModel } from "@common/machines/info-types";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
-import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 
 /**
@@ -76,10 +75,7 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor(
-    private readonly store: Store<AppState>,
-    model: MachineModel
-  ) {
+  constructor(model: MachineModel) {
     try {
       super();
       switch (model?.config?.[MC_DISK_SUPPORT]) {

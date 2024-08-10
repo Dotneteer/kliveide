@@ -1,7 +1,9 @@
 import path from "path";
 import fs from "fs";
+
+import type { WindowState } from "./WindowStateManager";
+
 import { app } from "electron";
-import { WindowState } from "./WindowStateManager";
 import { mainStore } from "./main-store";
 import { getRecentProjects, setRecentProjects } from "./projects";
 

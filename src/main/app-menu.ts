@@ -10,6 +10,9 @@ import {
 import fs from "fs";
 import path from "path";
 import os from "os";
+
+import type { IdeExecuteCommandResponse } from "@messaging/any-to-ide";
+
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
@@ -34,11 +37,11 @@ import {
   setRestartTarget,
   showKeyboardAction,
   setKeyMappingsAction
-} from "../common/state/actions";
-import { MachineControllerState } from "../common/abstractions/MachineControllerState";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { createMachineCommand } from "../common/messaging/main-to-emu";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+} from "@state/actions";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { createMachineCommand } from "@messaging/main-to-emu";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -46,13 +49,12 @@ import {
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
   FIRST_STARTUP_DIALOG_IDE
-} from "../common/messaging/dialog-ids";
-import { IdeExecuteCommandResponse } from "../common/messaging/any-to-ide";
-import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "../common/state/common-ids";
+} from "@messaging/dialog-ids";
+import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "@state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
-import { createSettingsReader } from "../common/utils/SettingsReader";
+import { createSettingsReader } from "@common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
-import { machineRegistry } from "../common/machines/machine-registry";
+import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";

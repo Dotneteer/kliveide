@@ -1,7 +1,8 @@
+import type { DiskInformation, TrackInformation } from "./DiskInformation";
+
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
 import { DiskCrc } from "./DiskCrc";
-import { DiskInformation, TrackInformation } from "./DiskInformation";
 
 // --- Gap type indexes
 const GAP_MINIMAL_FM = 0;
@@ -44,9 +45,7 @@ interface SectorSurface {
  * @param contents Disk contents or a reader parsing the contents
  * @returns The surface view of the disk
  */
-export function createDiskSurface (
-  diskInfo: DiskInformation): DiskSurface {
-
+export function createDiskSurface(diskInfo: DiskInformation): DiskSurface {
   // --- Get the longest track
   let maxBytesPerTrack = 0;
   let gapType = GAP_MINIMAL_FM;
@@ -64,11 +63,11 @@ export function createDiskSurface (
     gapInfo.len[1]; // --- Gap 1
 
   // --- Iterate through all tracks to find the longest track size
-  diskInfo.tracks.forEach(t => {
+  diskInfo.tracks.forEach((t) => {
     let trackDataLength = 0;
 
     // --- Iterate through all sectors
-    t.sectors.forEach(s => {
+    t.sectors.forEach((s) => {
       // --- Add sector header block length
       trackDataLength +=
         gapInfo.sync_len + // -- Sync bytes
@@ -83,8 +82,7 @@ export function createDiskSurface (
 
       // --- Add sector data block length
       const lengthByN = 0x80 << s.N;
-      const sectorDataLength =
-        lengthByN > s.actualLength ? lengthByN : s.actualLength;
+      const sectorDataLength = lengthByN > s.actualLength ? lengthByN : s.actualLength;
       trackDataLength +=
         gapInfo.sync_len + // -- Sync bytes
         (gapInfo.mark !== 0xff ? 3 : 0) +
@@ -195,7 +193,7 @@ export function createDiskSurface (
  * @param clockData
  * @returns
  */
-function setSectorData (
+function setSectorData(
   track: TrackInformation,
   sectorSpan: BufferSpan,
   gapInfo: DiskGap,
@@ -204,7 +202,7 @@ function setSectorData (
   const sectors: SectorSurface[] = [];
   let offset = 0;
   const clockOffset = sectorSpan.startOffset;
-  track.sectors.forEach(s => {
+  track.sectors.forEach((s) => {
     // --- Take a note of the sector offset
     const sectorOffset = offset;
 
@@ -313,11 +311,7 @@ function setSectorData (
       ),
       tailData: new BufferSpan(
         sectorSpan.buffer,
-        sectorSpan.startOffset +
-          sectorOffset +
-          headerLength +
-          prefixLength +
-          storedDataLenght,
+        sectorSpan.startOffset + sectorOffset + headerLength + prefixLength + storedDataLenght,
         tailLength
       )
     });
@@ -345,6 +339,6 @@ const gaps: DiskGap[] = [
 ];
 
 const bytesPerTrackForDensity: number[] = [
-  6250 /* AUTO assumes DD */, 5208 /* 8" SD */, 10416 /* 8" DD */,
-  3125 /* SD */, 6250 /* DD */, 6500 /* DD+ e.g. Coin Op Hits */, 12500 /* HD */
+  6250 /* AUTO assumes DD */, 5208 /* 8" SD */, 10416 /* 8" DD */, 3125 /* SD */, 6250 /* DD */,
+  6500 /* DD+ e.g. Coin Op Hits */, 12500 /* HD */
 ];

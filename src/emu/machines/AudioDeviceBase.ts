@@ -1,5 +1,5 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { IAudioDevice } from "../abstractions/IAudioDevice";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IAudioDevice } from "@emu/abstractions/IAudioDevice";
 
 /**
  * This class represents the functionality of an audio device that can generate audio samples

@@ -1,7 +1,7 @@
 import { describe, it, expect, assert } from "vitest";
 import { EvaluationContext } from "@common/ksx/EvaluationContext";
 import { createMainScriptManager } from "@main/ksx-runner/MainScriptManager";
-import { ScriptStartInfo } from "@abstractions/IScriptManager";
+import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 
 describe("KSX ScriptManager", () => {
   it("Run works with new file", async () => {

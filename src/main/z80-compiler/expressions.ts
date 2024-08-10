@@ -1,6 +1,5 @@
-import { ExpressionValueType } from "../../common/abstractions/IZ80CompilerService";
-import { ErrorCodes } from "./assembler-errors";
-import {
+import type { ErrorCodes } from "./assembler-errors";
+import type {
   BinaryExpression,
   MacroTimeFunctionInvocation,
   ConditionalExpression,
@@ -8,16 +7,14 @@ import {
   FunctionInvocation,
   IdentifierNode,
   NodePosition,
-  OperandType,
   Symbol,
   UnaryExpression,
   Z80AssemblyLine
 } from "./assembler-tree-nodes";
-import {
-  IEvaluationContext,
-  IExpressionValue,
-  IValueInfo
-} from "./assembler-types";
+
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import { IEvaluationContext, IExpressionValue, IValueInfo } from "./assembler-types";
+import { OperandType } from "./assembler-tree-nodes";
 
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
@@ -48,7 +45,7 @@ export class ExpressionValue implements IExpressionValue {
    * Initializes a value expression
    * @param value Value to initialize
    */
-  constructor (value?: ExpressionValueType | boolean | number | string) {
+  constructor(value?: ExpressionValueType | boolean | number | string) {
     if (value === undefined) {
       this._type = ExpressionValueType.Error;
       return;
@@ -72,37 +69,35 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Gets the type of the expression
    */
-  get type (): ExpressionValueType {
+  get type(): ExpressionValueType {
     return this._type;
   }
 
   /**
    * Checks if the value of this expression is valid
    */
-  get isValid (): boolean {
-    return (
-      this !== ExpressionValue.NonEvaluated && this !== ExpressionValue.Error
-    );
+  get isValid(): boolean {
+    return this !== ExpressionValue.NonEvaluated && this !== ExpressionValue.Error;
   }
 
   /**
    * Checks if the value of this expression is not evaluated
    */
-  get isNonEvaluated (): boolean {
+  get isNonEvaluated(): boolean {
     return this === ExpressionValue.NonEvaluated;
   }
 
   /**
    * Gets the value of this instance
    */
-  get value (): number {
+  get value(): number {
     return this.asWord();
   }
 
   /**
    * Returns the value as a long integer
    */
-  asLong (): number {
+  asLong(): number {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
@@ -125,7 +120,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a real number
    */
-  asReal (): number {
+  asReal(): number {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? 1 : 0;
@@ -147,7 +142,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a string
    */
-  asString (): string {
+  asString(): string {
     switch (this.type) {
       case ExpressionValueType.Bool:
         return this._value ? "true" : "false";
@@ -164,7 +159,7 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a Boolean
    */
-  asBool (): boolean {
+  asBool(): boolean {
     switch (this.type) {
       case ExpressionValueType.Bool:
       case ExpressionValueType.Integer:
@@ -180,14 +175,14 @@ export class ExpressionValue implements IExpressionValue {
   /**
    * Returns the value as a 16-bit unsigned integer
    */
-  asWord (): number {
+  asWord(): number {
     return this.asLong() & 0xffff;
   }
 
   /**
    * Returns the value as an 8-bit unsigned integer
    */
-  asByte (): number {
+  asByte(): number {
     return this.asLong() & 0xff;
   }
 }
@@ -217,10 +212,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param symbol Symbol name
    * @param startFromGlobal Should resolution start from global scope?
    */
-  abstract getSymbolValue(
-    symbol: string,
-    startFromGlobal?: boolean
-  ): IValueInfo | null;
+  abstract getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null;
 
   /**
    * Gets the current loop counter value
@@ -237,10 +229,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  doEvalExpression (
-    context: IEvaluationContext,
-    expr: Expression
-  ): IExpressionValue {
+  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue {
     try {
       switch (expr.type) {
         case "Identifier":
@@ -271,12 +260,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
           return ExpressionValue.Error;
       }
     } catch (err) {
-      this.reportEvaluationError(
-        context,
-        "Z0606",
-        expr,
-        (err as Error).message
-      );
+      this.reportEvaluationError(context, "Z0606", expr, (err as Error).message);
       return ExpressionValue.Error;
     }
 
@@ -285,7 +269,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param context Evaluation context
      * @param expr Expression to evaluate
      */
-    function evalIdentifierValue (
+    function evalIdentifierValue(
       context: IEvaluationContext,
       expr: IdentifierNode
     ): IExpressionValue {
@@ -305,26 +289,15 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param context Evaluation context
      * @param expr Expression to evaluate
      */
-    function evalSymbolValue (
-      context: IEvaluationContext,
-      expr: Symbol
-    ): IExpressionValue {
-      var valueInfo = context.getSymbolValue(
-        expr.identifier.name,
-        expr.startsFromGlobal
-      );
+    function evalSymbolValue(context: IEvaluationContext, expr: Symbol): IExpressionValue {
+      var valueInfo = context.getSymbolValue(expr.identifier.name, expr.startsFromGlobal);
       if (valueInfo !== null) {
         if (valueInfo.usageInfo !== null) {
           valueInfo.usageInfo.isUsed = true;
         }
         return valueInfo.value;
       }
-      context.reportEvaluationError(
-        context,
-        "Z0605",
-        expr.identifier,
-        expr.identifier.name
-      );
+      context.reportEvaluationError(context, "Z0605", expr.identifier, expr.identifier.name);
       return ExpressionValue.NonEvaluated;
     }
 
@@ -334,7 +307,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Bynary expression
      * @returns The value of the evaluated expression
      */
-    function evalBinaryOperationValue (
+    function evalBinaryOperationValue(
       context: IEvaluationContext,
       expr: BinaryExpression
     ): ExpressionValue {
@@ -352,13 +325,9 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               switch (left.type) {
                 case ExpressionValueType.Bool:
                 case ExpressionValueType.Integer:
-                  return new ExpressionValue(
-                    left.asLong() < rightNum ? left.asLong() : rightNum
-                  );
+                  return new ExpressionValue(left.asLong() < rightNum ? left.asLong() : rightNum);
                 case ExpressionValueType.Real:
-                  return new ExpressionValue(
-                    left.asReal() < rightNum ? left.asReal() : rightNum
-                  );
+                  return new ExpressionValue(left.asReal() < rightNum ? left.asReal() : rightNum);
                 case ExpressionValueType.String:
                   throwStringError("left", expr.operator);
                   return ExpressionValue.Error;
@@ -368,13 +337,9 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               switch (left.type) {
                 case ExpressionValueType.Bool:
                 case ExpressionValueType.Integer:
-                  return new ExpressionValue(
-                    left.asLong() < rightReal ? left.asLong() : rightReal
-                  );
+                  return new ExpressionValue(left.asLong() < rightReal ? left.asLong() : rightReal);
                 case ExpressionValueType.Real:
-                  return new ExpressionValue(
-                    left.asReal() < rightReal ? left.asReal() : rightReal
-                  );
+                  return new ExpressionValue(left.asReal() < rightReal ? left.asReal() : rightReal);
                 case ExpressionValueType.String:
                   throwStringError("left", expr.operator);
                   return ExpressionValue.Error;
@@ -393,13 +358,9 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               switch (left.type) {
                 case ExpressionValueType.Bool:
                 case ExpressionValueType.Integer:
-                  return new ExpressionValue(
-                    left.asLong() > rightNum ? left.asLong() : rightNum
-                  );
+                  return new ExpressionValue(left.asLong() > rightNum ? left.asLong() : rightNum);
                 case ExpressionValueType.Real:
-                  return new ExpressionValue(
-                    left.asReal() > rightNum ? left.asReal() : rightNum
-                  );
+                  return new ExpressionValue(left.asReal() > rightNum ? left.asReal() : rightNum);
                 case ExpressionValueType.String:
                   throwStringError("left", expr.operator);
                   return ExpressionValue.Error;
@@ -410,13 +371,9 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               switch (left.type) {
                 case ExpressionValueType.Bool:
                 case ExpressionValueType.Integer:
-                  return new ExpressionValue(
-                    left.asLong() > rightReal ? left.asLong() : rightReal
-                  );
+                  return new ExpressionValue(left.asLong() > rightReal ? left.asLong() : rightReal);
                 case ExpressionValueType.Real:
-                  return new ExpressionValue(
-                    left.asReal() > rightReal ? left.asReal() : rightReal
-                  );
+                  return new ExpressionValue(left.asReal() > rightReal ? left.asReal() : rightReal);
                 case ExpressionValueType.String:
                   throwStringError("left", expr.operator);
                   return ExpressionValue.Error;
@@ -558,9 +515,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
 
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
-                return new ExpressionValue(
-                  `${left.asString()}${right.asString()}`
-                );
+                return new ExpressionValue(`${left.asString()}${right.asString()}`);
               } else {
                 throw new Error(ADD_STRING_ERROR);
               }
@@ -603,10 +558,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
 
           break;
         case "<<":
-          if (
-            left.type !== ExpressionValueType.Bool &&
-            left.type !== ExpressionValueType.Integer
-          ) {
+          if (left.type !== ExpressionValueType.Bool && left.type !== ExpressionValueType.Integer) {
             throwStringError("left", expr.operator);
             return ExpressionValue.Error;
           }
@@ -617,15 +569,10 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
             throwIntegralError("right", expr.operator);
             return ExpressionValue.Error;
           }
-          return new ExpressionValue(
-            left.asLong() << (right.asLong() & 0xffff)
-          );
+          return new ExpressionValue(left.asLong() << (right.asLong() & 0xffff));
 
         case ">>":
-          if (
-            left.type !== ExpressionValueType.Bool &&
-            left.type !== ExpressionValueType.Integer
-          ) {
+          if (left.type !== ExpressionValueType.Bool && left.type !== ExpressionValueType.Integer) {
             throwIntegralError("left", expr.operator);
             return ExpressionValue.Error;
           }
@@ -636,9 +583,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
             throwIntegralError("right", expr.operator);
             return ExpressionValue.Error;
           }
-          return new ExpressionValue(
-            left.asLong() >> (right.asLong() & 0xffff)
-          );
+          return new ExpressionValue(left.asLong() >> (right.asLong() & 0xffff));
 
         case "<":
           switch (left.type) {
@@ -809,9 +754,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
 
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
-                return new ExpressionValue(
-                  left.asString() === right.asString()
-                );
+                return new ExpressionValue(left.asString() === right.asString());
               }
               throw new Error(COMPARE_STRING_ERROR);
           }
@@ -847,8 +790,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
                 return new ExpressionValue(
-                  left.asString().toLowerCase() ===
-                    right.asString().toLowerCase()
+                  left.asString().toLowerCase() === right.asString().toLowerCase()
                 );
               }
               throw new Error(COMPARE_STRING_ERROR);
@@ -884,9 +826,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
 
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
-                return new ExpressionValue(
-                  left.asString() !== right.asString()
-                );
+                return new ExpressionValue(left.asString() !== right.asString());
               }
               throw new Error(COMPARE_STRING_ERROR);
           }
@@ -922,8 +862,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
                 return new ExpressionValue(
-                  left.asString().toLowerCase() !==
-                    right.asString().toLowerCase()
+                  left.asString().toLowerCase() !== right.asString().toLowerCase()
                 );
               }
               throw new Error(COMPARE_STRING_ERROR);
@@ -947,13 +886,9 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
 
             case ExpressionValueType.String:
               if (right.type === ExpressionValueType.String) {
-                return new ExpressionValue(
-                  `${left.asString()}\r\n${right.asString()}`
-                );
+                return new ExpressionValue(`${left.asString()}\r\n${right.asString()}`);
               }
-              throw new Error(
-                `The right side of ${expr.operator} must be a string`
-              );
+              throw new Error(`The right side of ${expr.operator} must be a string`);
 
             case ExpressionValueType.Real:
               throw new Error(
@@ -1014,7 +949,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Unary expression
      * @returns The value of the evaluated expression
      */
-    function evalUnaryOperationValue (
+    function evalUnaryOperationValue(
       context: IEvaluationContext,
       expr: UnaryExpression
     ): IExpressionValue {
@@ -1053,9 +988,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               return new ExpressionValue(operand.asLong() === 0);
             case ExpressionValueType.Real:
             case ExpressionValueType.String:
-              throw new Error(
-                "Unary logical not operation can be applied only on integral types"
-              );
+              throw new Error("Unary logical not operation can be applied only on integral types");
           }
           break;
 
@@ -1066,9 +999,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
               return new ExpressionValue(~operand.asLong());
             case ExpressionValueType.Real:
             case ExpressionValueType.String:
-              throw new Error(
-                "Unary bitwise not operation can be applied only on integral types"
-              );
+              throw new Error("Unary bitwise not operation can be applied only on integral types");
           }
           break;
       }
@@ -1081,7 +1012,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Unary expression
      * @returns The value of the evaluated expression
      */
-    function evalConditionalOperationValue (
+    function evalConditionalOperationValue(
       context: IEvaluationContext,
       expr: ConditionalExpression
     ): IExpressionValue {
@@ -1094,14 +1025,12 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         : context.doEvalExpression(context, expr.alternate);
     }
 
-    function throwStringError (side: string, operator: string): void {
+    function throwStringError(side: string, operator: string): void {
       throw new Error(`The ${side} operand of ${operator} cannot be a string.`);
     }
 
-    function throwIntegralError (side: string, operator: string): void {
-      throw new Error(
-        `The ${side} operand of ${operator} must be an integral type.`
-      );
+    function throwIntegralError(side: string, operator: string): void {
+      throw new Error(`The ${side} operand of ${operator} must be an integral type.`);
     }
   }
 
@@ -1129,7 +1058,7 @@ class SeededRandom {
    * Initializes the random generator with the specified seed value
    * @param seed Seed value
    */
-  constructor (seed: number) {
+  constructor(seed: number) {
     this._seed = seed % 2147483647;
     if (this._seed <= 0) {
       this._seed += 2147483646;
@@ -1139,14 +1068,14 @@ class SeededRandom {
   /**
    * Generates the next 32-bit integer random number
    */
-  next (): number {
+  next(): number {
     return (this._seed = (this._seed * 16807) % 2147483647);
   }
 
   /**
    * Generates the next random number between 0.0 and 1.0 (exclusive)
    */
-  nextFloat (): number {
+  nextFloat(): number {
     return (this.next() - 1) / 2147483646;
   }
 
@@ -1155,16 +1084,14 @@ class SeededRandom {
    * @param inclusiveFrom The inclusive start of the range
    * @param exclusiveTo The exclusive end of the range
    */
-  integer (inclusiveFrom: number, exclusiveTo: number): number {
-    return Math.floor(
-      inclusiveFrom + this.nextFloat() * (exclusiveTo - inclusiveFrom)
-    );
+  integer(inclusiveFrom: number, exclusiveTo: number): number {
+    return Math.floor(inclusiveFrom + this.nextFloat() * (exclusiveTo - inclusiveFrom));
   }
 }
 
 let randomGenerator = new SeededRandom(Date.now());
 
-export function setRandomSeed (seed: number): void {
+export function setRandomSeed(seed: number): void {
   randomGenerator = new SeededRandom(seed);
 }
 
@@ -1172,10 +1099,8 @@ export function setRandomSeed (seed: number): void {
  * Represents a function evaluator class
  */
 class FunctionEvaluator {
-  constructor (
-    public readonly evaluateFunc: (
-      args: IExpressionValue[]
-    ) => IExpressionValue,
+  constructor(
+    public readonly evaluateFunc: (args: IExpressionValue[]) => IExpressionValue,
     public readonly argTypes: ExpressionValueType[]
   ) {}
 }
@@ -1183,164 +1108,162 @@ class FunctionEvaluator {
 const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   abs: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.abs(args[0].asLong())),
+      (args) => new ExpressionValue(Math.abs(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.abs(args[0].asReal())),
+      (args) => new ExpressionValue(Math.abs(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   acos: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.acos(args[0].asReal())),
+      (args) => new ExpressionValue(Math.acos(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   asin: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.asin(args[0].asReal())),
+      (args) => new ExpressionValue(Math.asin(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   atan: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.atan(args[0].asReal())),
+      (args) => new ExpressionValue(Math.atan(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   atan2: [
     new FunctionEvaluator(
-      args =>
-        new ExpressionValue(Math.atan2(args[0].asReal(), args[1].asReal())),
+      (args) => new ExpressionValue(Math.atan2(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   ceiling: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.ceil(args[0].asReal())),
+      (args) => new ExpressionValue(Math.ceil(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   cos: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.cos(args[0].asReal())),
+      (args) => new ExpressionValue(Math.cos(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   cosh: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.cosh(args[0].asReal())),
+      (args) => new ExpressionValue(Math.cosh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   exp: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.exp(args[0].asReal())),
+      (args) => new ExpressionValue(Math.exp(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   floor: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.floor(args[0].asReal())),
+      (args) => new ExpressionValue(Math.floor(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   log: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.log(args[0].asReal())),
+      (args) => new ExpressionValue(Math.log(args[0].asReal())),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      args =>
+      (args) =>
         new ExpressionValue(
-          Math.log(args[0].asReal()) /
-            (args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))
+          Math.log(args[0].asReal()) / (args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))
         ),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   log10: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.log10(args[0].asReal())),
+      (args) => new ExpressionValue(Math.log10(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   max: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
+      (args) => new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
+      (args) => new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   min: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
+      (args) => new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
+      (args) => new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   pow: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
+      (args) => new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   round: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.round(args[0].asReal())),
+      (args) => new ExpressionValue(Math.round(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sign: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.sign(args[0].asLong())),
+      (args) => new ExpressionValue(Math.sign(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.sign(args[0].asReal())),
+      (args) => new ExpressionValue(Math.sign(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sin: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.sin(args[0].asReal())),
+      (args) => new ExpressionValue(Math.sin(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sinh: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.sinh(args[0].asReal())),
+      (args) => new ExpressionValue(Math.sinh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sqrt: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.sqrt(args[0].asReal())),
+      (args) => new ExpressionValue(Math.sqrt(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   tan: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.tan(args[0].asReal())),
+      (args) => new ExpressionValue(Math.tan(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   tanh: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.tanh(args[0].asReal())),
+      (args) => new ExpressionValue(Math.tanh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   truncate: [
     new FunctionEvaluator(
-      args => new ExpressionValue(Math.trunc(args[0].asReal())),
+      (args) => new ExpressionValue(Math.trunc(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
@@ -1348,50 +1271,44 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   nat: [new FunctionEvaluator(() => new ExpressionValue(Math.E), [])],
   low: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asLong() & 0xff),
+      (args) => new ExpressionValue(args[0].asLong() & 0xff),
       [ExpressionValueType.Integer]
     )
   ],
   high: [
     new FunctionEvaluator(
-      args => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
+      (args) => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
       [ExpressionValueType.Integer]
     )
   ],
   word: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asWord()),
+      (args) => new ExpressionValue(args[0].asWord()),
       [ExpressionValueType.Integer]
     )
   ],
   rnd: [
+    new FunctionEvaluator(() => new ExpressionValue(randomGenerator.integer(0, 65536)), []),
     new FunctionEvaluator(
-      () => new ExpressionValue(randomGenerator.integer(0, 65536)),
-      []
-    ),
-    new FunctionEvaluator(
-      args =>
-        new ExpressionValue(
-          randomGenerator.integer(args[0].asLong(), args[1].asLong())
-        ),
+      (args) => new ExpressionValue(randomGenerator.integer(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     )
   ],
   length: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().length),
+      (args) => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
     )
   ],
   len: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().length),
+      (args) => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
     )
   ],
   left: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(0, len));
@@ -1401,7 +1318,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   right: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(str.length - len, len));
@@ -1411,29 +1328,23 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   substr: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const str = args[0].asString();
         const start = Math.min(str.length, args[1].asLong());
         const len = Math.min(str.length - start, args[2].asLong());
         return new ExpressionValue(str.substr(start, len));
       },
-      [
-        ExpressionValueType.String,
-        ExpressionValueType.Integer,
-        ExpressionValueType.Integer
-      ]
+      [ExpressionValueType.String, ExpressionValueType.Integer, ExpressionValueType.Integer]
     )
   ],
   fill: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const str = args[0].asString();
         const count = args[1].asLong();
         const resultLen = str.length * count;
         if (resultLen > 0x4000) {
-          throw new Error(
-            "The result of the fill() function would be longer than #4000 bytes."
-          );
+          throw new Error("The result of the fill() function would be longer than #4000 bytes.");
         }
         var result = "";
         for (var i = 0; i < count; i++) {
@@ -1446,61 +1357,61 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   int: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asLong()),
+      (args) => new ExpressionValue(args[0].asLong()),
       [ExpressionValueType.Real]
     )
   ],
   frac: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asReal() - args[0].asLong()),
+      (args) => new ExpressionValue(args[0].asReal() - args[0].asLong()),
       [ExpressionValueType.Real]
     )
   ],
   lowercase: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().toLowerCase()),
+      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
     )
   ],
   lcase: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().toLowerCase()),
+      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
     )
   ],
   uppercase: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().toUpperCase()),
+      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
     )
   ],
   ucase: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString().toUpperCase()),
+      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
     )
   ],
   str: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString()),
+      (args) => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Bool]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString()),
+      (args) => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString()),
+      (args) => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asString()),
+      (args) => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.String]
     )
   ],
   scraddr: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1515,9 +1426,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
           );
         }
         var da = 0x4000 | (col >> 3) | (line << 5);
-        var addr =
-          ((da & 0xf81f) | ((da & 0x0700) >> 3) | ((da & 0x00e0) << 3)) &
-          0xffff;
+        var addr = ((da & 0xf81f) | ((da & 0x0700) >> 3) | ((da & 0x00e0) << 3)) & 0xffff;
         return new ExpressionValue(addr);
       },
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
@@ -1525,7 +1434,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   attraddr: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1546,31 +1455,31 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   ink: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asLong() & 0x07),
+      (args) => new ExpressionValue(args[0].asLong() & 0x07),
       [ExpressionValueType.Integer]
     )
   ],
   paper: [
     new FunctionEvaluator(
-      args => new ExpressionValue((args[0].asLong() & 0x07) << 3),
+      (args) => new ExpressionValue((args[0].asLong() & 0x07) << 3),
       [ExpressionValueType.Integer]
     )
   ],
   bright: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
+      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
       [ExpressionValueType.Integer]
     )
   ],
   flash: [
     new FunctionEvaluator(
-      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
+      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
       [ExpressionValueType.Integer]
     )
   ],
   attr: [
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
@@ -1585,20 +1494,16 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       ]
     ),
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
         return new ExpressionValue((bright | paper | ink) & 0xff);
       },
-      [
-        ExpressionValueType.Integer,
-        ExpressionValueType.Integer,
-        ExpressionValueType.Integer
-      ]
+      [ExpressionValueType.Integer, ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      args => {
+      (args) => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         return new ExpressionValue((paper | ink) & 0xff);
@@ -1614,7 +1519,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalFunctionInvocationValue (
+export function evalFunctionInvocationValue(
   context: IEvaluationContext,
   funcExpr: FunctionInvocation
 ): IExpressionValue {
@@ -1659,9 +1564,7 @@ export function evalFunctionInvocationValue (
           match = type === ExpressionValueType.Bool;
           break;
         case ExpressionValueType.Integer:
-          match =
-            type === ExpressionValueType.Bool ||
-            type === ExpressionValueType.Integer;
+          match = type === ExpressionValueType.Bool || type === ExpressionValueType.Integer;
           break;
         case ExpressionValueType.Real:
           match =
@@ -1713,17 +1616,14 @@ export function evalFunctionInvocationValue (
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalMacroTimeFunctionInvocationValue (
+export function evalMacroTimeFunctionInvocationValue(
   context: IEvaluationContext,
   funcExpr: MacroTimeFunctionInvocation
 ): IExpressionValue {
   switch (funcExpr.functionName.toLowerCase()) {
     case "def":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType !== OperandType.NoneArg
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType !== OperandType.NoneArg)
       );
     case "isreg8":
       return new ExpressionValue(
@@ -1736,9 +1636,7 @@ export function evalMacroTimeFunctionInvocationValue (
       );
     case "iscport":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand && funcExpr.operand.operandType === OperandType.CPort
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.CPort)
       );
     case "iscondition":
       return new ExpressionValue(
@@ -1750,17 +1648,11 @@ export function evalMacroTimeFunctionInvocationValue (
       );
     case "isexpr":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.Expression
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Expression)
       );
     case "isindexedaddr":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.IndexedIndirect
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.IndexedIndirect)
       );
     case "isreg16":
       return new ExpressionValue(
@@ -1773,96 +1665,54 @@ export function evalMacroTimeFunctionInvocationValue (
       );
     case "isreg16idx":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.Reg16Idx
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16Idx)
       );
     case "isreg16std":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16)
       );
     case "isreg8idx":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.Reg8Idx
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8Idx)
       );
     case "isreg8spec":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.Reg8Spec
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8Spec)
       );
     case "isreg8std":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8)
       );
     case "isregindirect":
       return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.RegIndirect
-        )
+        !!(funcExpr.operand && funcExpr.operand.operandType === OperandType.RegIndirect)
       );
     case "isrega":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "a")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "a"));
     case "isregb":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "b")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "b"));
     case "isregc":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "c")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "c"));
     case "isregd":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "d")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "d"));
     case "isrege":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "e")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "e"));
     case "isregh":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "h")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "h"));
     case "isregl":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "l")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "l"));
     case "isregi":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "i")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "i"));
     case "isregr":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "r")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "r"));
     case "isregbc":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "bc")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "bc"));
     case "isregde":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "de")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "de"));
     case "isreghl":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "hl")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "hl"));
     case "isregsp":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "sp")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "sp"));
     case "isregxh":
       return new ExpressionValue(
         !!(funcExpr.operand && funcExpr.operand?.register.indexOf("xh") >= 0)
@@ -1880,17 +1730,11 @@ export function evalMacroTimeFunctionInvocationValue (
         !!(funcExpr.operand && funcExpr.operand?.register.indexOf("yl") >= 0)
       );
     case "isregix":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "ix")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "ix"));
     case "isregiy":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "iy")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "iy"));
     case "isregaf":
-      return new ExpressionValue(
-        !!(funcExpr.operand && funcExpr.operand?.register === "af")
-      );
+      return new ExpressionValue(!!(funcExpr.operand && funcExpr.operand?.register === "af"));
     case "hreg": {
       let op: string | undefined;
       switch (funcExpr.operand.register) {

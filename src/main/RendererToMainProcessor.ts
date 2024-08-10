@@ -2,6 +2,18 @@ import path from "path";
 import fs from "fs";
 import _ from "lodash";
 
+import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
+import type {
+  MainCreateKliveProjectResponse,
+  MainShowOpenFolderDialogResponse,
+  MainShowOpenFileDialogResponse
+} from "@messaging/any-to-main";
+import type {
+  KliveCompilerOutput,
+  SimpleAssemblerOutput
+} from "./compiler-integration/compiler-registry";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+
 import { app, BrowserWindow, dialog, shell } from "electron";
 import {
   defaultResponse,
@@ -9,16 +21,10 @@ import {
   flagResponse,
   RequestMessage,
   ResponseMessage
-} from "../common/messaging/messages-core";
-import {
-  textContentsResponse,
-  binaryContentsResponse,
-  MainCreateKliveProjectResponse,
-  MainShowOpenFolderDialogResponse,
-  MainShowOpenFileDialogResponse
-} from "../common/messaging/any-to-main";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+} from "@messaging/messages-core";
+import { textContentsResponse, binaryContentsResponse } from "@messaging/any-to-main";
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import {
   createKliveProject,
   getKliveProjectFolder,
@@ -39,28 +45,15 @@ import {
   saveProjectSettingAction,
   saveUserSettingAction,
   setBuildRootAction
-} from "../common/state/actions";
-import {
-  getCompiler,
-  KliveCompilerOutput,
-  SimpleAssemblerOutput
-} from "./compiler-integration/compiler-registry";
-import {
-  getDirectoryContent,
-  getProjectDirectoryContentFilter
-} from "./directory-content";
+} from "@state/actions";
+import { getCompiler } from "./compiler-integration/compiler-registry";
+import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
-import { SectorChanges } from "../emu/abstractions/IFloppyDiskDrive";
-import {
-  MEDIA_DISK_A,
-  MEDIA_DISK_B,
-  PROJECT_TEMPLATES
-} from "../common/structs/project-const";
-import { readDiskData } from "../emu/machines/disk/disk-readers";
-import { createDiskFile } from "../common/utils/create-disk-file";
+import { MEDIA_DISK_A, MEDIA_DISK_B, PROJECT_TEMPLATES } from "@common/structs/project-const";
+import { readDiskData } from "@emu/machines/disk/disk-readers";
+import { createDiskFile } from "@common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
-import { ScriptStartInfo } from "@abstractions/IScriptManager";
 import { collectedBuildTasks } from "./build";
 
 /**
@@ -68,7 +61,7 @@ import { collectedBuildTasks } from "./build";
  * @param message Emulator message
  * @returns Message response
  */
-export async function processRendererToMainMessages (
+export async function processRendererToMainMessages(
   message: RequestMessage,
   window: BrowserWindow
 ): Promise<ResponseMessage> {
@@ -113,39 +106,28 @@ export async function processRendererToMainMessages (
 
     case "MainGetDirectoryContent":
       const filter = await getProjectDirectoryContentFilter();
-      const folderContent = await getDirectoryContent(
-        message.directory,
-        filter
-      );
+      const folderContent = await getDirectoryContent(message.directory, filter);
       return {
         type: "MainGetDirectoryContentResponse",
         contents: folderContent
       };
 
     case "MainGloballyExcludedProjectItems":
-      return textContentsResponse(
-        appSettings.excludedProjectItems?.join(path.delimiter)
-      );
+      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
 
     case "MainAddGloballyExcludedProjectItems": {
-      const excludedItems = message.files.map(p =>
-        p.trim().replace(path.sep, "/")
-      );
+      const excludedItems = message.files.map((p) => p.trim().replace(path.sep, "/"));
       appSettings.excludedProjectItems = (
         appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
       ).filter((v, i, a) => a.indexOf(v) === i);
       mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(
-        appSettings.excludedProjectItems.join(path.delimiter)
-      );
+      return textContentsResponse(appSettings.excludedProjectItems.join(path.delimiter));
     }
 
     case "MainSetGloballyExcludedProjectItems": {
       appSettings.excludedProjectItems = message.files;
       mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(
-        appSettings.excludedProjectItems?.join(path.delimiter)
-      );
+      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
     }
 
     case "MainOpenFolder":
@@ -322,16 +304,13 @@ export async function processRendererToMainMessages (
       } else {
         // --- Project --> User
         if (message.copy) {
-          appSettings.userSettings =
-            mainStore.getState()?.projectSettings ?? {};
+          appSettings.userSettings = mainStore.getState()?.projectSettings ?? {};
         } else {
           appSettings.userSettings = {
             ...(mainStore.getState()?.userSettings ?? {}),
             ...(mainStore.getState()?.userSettings ?? {})
           };
-          mainStore.dispatch(
-            saveUserSettingAction({ ...appSettings.userSettings })
-          );
+          mainStore.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
           saveAppSettings();
         }
       }
@@ -382,10 +361,7 @@ export async function processRendererToMainMessages (
       break;
 
     case "MainCheckZ88Card":
-      const cardResult = await checkZ88SlotFile(
-        message.path,
-        message.expectedSize
-      );
+      const cardResult = await checkZ88SlotFile(message.path, message.expectedSize);
       if (typeof cardResult === "string") {
         return {
           type: "MainCheckZ88CardResponse",
@@ -402,11 +378,7 @@ export async function processRendererToMainMessages (
       return saveDiskChanges(message.diskIndex, message.changes);
 
     case "MainCreateDiskFile":
-      const diskCreated = createDiskFile(
-        message.diskFolder,
-        message.filename,
-        message.diskType
-      );
+      const diskCreated = createDiskFile(message.diskFolder, message.filename, message.diskType);
       return {
         type: "MainCreateDiskFileResponse",
         path: diskCreated
@@ -445,9 +417,7 @@ export async function processRendererToMainMessages (
     }
 
     case "MainStopScript":
-      return flagResponse(
-        await mainScriptManager.stopScript(message.idOrFilename)
-      );
+      return flagResponse(await mainScriptManager.stopScript(message.idOrFilename));
 
     case "MainCloseScript":
       await mainScriptManager.closeScript(message.script);
@@ -455,7 +425,7 @@ export async function processRendererToMainMessages (
 
     case "MainRemoveCompletedScripts":
       mainScriptManager.removeCompletedScripts();
-      break;  
+      break;
 
     case "MainResolveModule":
       const resolvedModule = await mainScriptManager.resolveModule(
@@ -470,7 +440,7 @@ export async function processRendererToMainMessages (
     case "MainGetBuildFunctions":
       return {
         type: "MainGetBuildFunctionsResponse",
-        functions: collectedBuildTasks.map(t => t.id)
+        functions: collectedBuildTasks.map((t) => t.id)
       };
 
     case "MainCheckBuildRoot":
@@ -516,9 +486,9 @@ export async function processRendererToMainMessages (
     case "EmuGetNecUpd765State":
     case "EmuStartScript":
     case "EmuStopScript":
-    case "EmuGetNextRegDescriptors":  
+    case "EmuGetNextRegDescriptors":
     case "EmuGetNextRegState":
-    case "EmuGetNextMemoryMapping":  
+    case "EmuGetNextMemoryMapping":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();
@@ -529,13 +499,12 @@ export async function processRendererToMainMessages (
  * @param browserWindow Host browser window
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function displayOpenFolderDialog (
+async function displayOpenFolderDialog(
   browserWindow: BrowserWindow,
   title?: string,
   settingsId?: string
 ): Promise<string> {
-  const defaultPath =
-    appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
+  const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: title ?? "Open Folder",
     defaultPath,
@@ -561,14 +530,13 @@ async function displayOpenFolderDialog (
  * @param browserWindow Host browser window
  * @returns The data blocks read from the tape, if successful; otherwise, undefined.
  */
-async function displayOpenFileDialog (
+async function displayOpenFileDialog(
   browserWindow: BrowserWindow,
   title?: string,
   filters?: Electron.FileFilter[],
   settingsId?: string
 ): Promise<string> {
-  const defaultPath =
-    appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
+  const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: title ?? "Open File",
     defaultPath,
@@ -590,7 +558,7 @@ async function displayOpenFileDialog (
   return selectedFile;
 }
 
-function resolveMessagePath (inputPath: string, resolveIn?: string): string {
+function resolveMessagePath(inputPath: string, resolveIn?: string): string {
   if (path.isAbsolute(inputPath)) return inputPath;
 
   const segments = resolveIn?.split(":");
@@ -617,14 +585,9 @@ function resolveMessagePath (inputPath: string, resolveIn?: string): string {
 }
 
 // --- Save disk changes to their corresponding disk file
-function saveDiskChanges (
-  diskIndex: number,
-  changes: SectorChanges
-): ResponseMessage {
+function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMessage {
   // --- Get the disk file from the store
-  const diskFile =
-    mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]
-      ?.diskFile;
+  const diskFile = mainStore.getState().media?.[diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A]?.diskFile;
 
   // --- The disk file must exist
   if (!diskFile) {
@@ -641,11 +604,9 @@ function saveDiskChanges (
         const trackIndex = Math.floor(change / 100);
         const sectorIndex = change % 100;
         const track = diskInfo.tracks[trackIndex];
-        const sector = track.sectors.find(s => s.R === sectorIndex);
+        const sector = track.sectors.find((s) => s.R === sectorIndex);
         if (!sector) {
-          throw Error(
-            `Sector with index #${sectorIndex} cannot be found on track #${trackIndex}`
-          );
+          throw Error(`Sector with index #${sectorIndex} cannot be found on track #${trackIndex}`);
         }
         const data = changes.get(change);
         fs.writeSync(handle, data, 0, data.length, sector.sectorDataPosition);
@@ -661,21 +622,15 @@ function saveDiskChanges (
   return defaultResponse();
 }
 
-function getTemplateDirs (machineId: string): string[] {
+function getTemplateDirs(machineId: string): string[] {
   // --- Check if we have a template folder for the machine at all
-  const templateFolder = path.join(
-    resolvePublicFilePath(PROJECT_TEMPLATES),
-    machineId
-  );
-  if (
-    fs.existsSync(templateFolder) &&
-    !fs.statSync(templateFolder).isDirectory()
-  ) {
+  const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId);
+  if (fs.existsSync(templateFolder) && !fs.statSync(templateFolder).isDirectory()) {
     return [];
   }
 
   // --- Ok, read the subfolders of the machine template folder
   return fs
     .readdirSync(templateFolder)
-    .filter(f => fs.statSync(path.join(templateFolder, f)).isDirectory());
+    .filter((f) => fs.statSync(path.join(templateFolder, f)).isDirectory());
 }

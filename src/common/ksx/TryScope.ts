@@ -1,4 +1,4 @@
-import { TryStatement } from "./source-tree";
+import type { TryStatement } from "./source-tree";
 
 type ErrorProcessingPhase =
   | "try"

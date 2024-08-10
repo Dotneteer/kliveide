@@ -1,4 +1,5 @@
-import { IZ80NCpu } from "@emu/abstractions/IZ80NCpu";
+import type { IZ80NCpu } from "@emu/abstractions/IZ80NCpu";
+
 import {
   Z80Cpu,
   Z80Operation,

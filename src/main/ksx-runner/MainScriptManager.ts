@@ -1,5 +1,11 @@
 import path from "path";
 import fs from "fs";
+
+import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import type { KsxModule } from "@common/ksx/ksx-module";
+import type { AppState } from "@common/state/AppState";
+
 import { mainStore } from "../main-store";
 import {
   CancellationToken,
@@ -7,31 +13,28 @@ import {
   createEvalContext
 } from "../../common/ksx/EvaluationContext";
 import { setScriptsStatusAction } from "../../common/state/actions";
-import { ScriptExecutionState, ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { isScriptCompleted } from "../../common/utils/script-utils";
 import { getMainToIdeMessenger } from "../../common/messaging/MainToIdeMessenger";
-import {
-  KsxModule,
-  executeModule,
-  isModuleErrors,
-  parseKsxModule
-} from "../../common/ksx/ksx-module";
-import { IScriptManager, ScriptStartInfo } from "@abstractions/IScriptManager";
+import { executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 import { createScriptConsole } from "./ScriptConsole";
 import { concludeScript, sendScriptOutput } from "../../common/ksx/script-runner";
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
-import { AppState } from "@common/state/AppState";
 import { createEmulatorApi } from "./emulator";
 import { createNotifications } from "./notifications";
 
 const MAX_SCRIPT_HISTORY = 128;
 
+type ScriptExecutionState = ScriptRunInfo & {
+  evalContext?: EvaluationContext;
+  execTask?: Promise<void>;
+};
+
 /**
  * This class is responsible for managing the execution of scripts.
  */
-class MainScriptManager implements IScriptManager {
+class MainScriptManager {
   private scripts: ScriptExecutionState[] = [];
   private id = 0;
   private packages: Record<string, any> = {};
@@ -425,10 +428,10 @@ class MainScriptManager implements IScriptManager {
     return {
       delay: (ms: number) => new Promise((res) => setTimeout(res, ms)),
       Output: callContext.output,
-      "$notifications": createNotifications(callContext),
-      "$project": await createProjectStructure(),
-      "$command": (commandText: string) => executeIdeCommand(this.id, commandText),
-      "$emu": createEmulatorApi(callContext),
+      $notifications: createNotifications(callContext),
+      $project: await createProjectStructure(),
+      $command: (commandText: string) => executeIdeCommand(this.id, commandText),
+      $emu: createEmulatorApi(callContext),
       Z88dk: createZ88dk(callContext)
     };
   }

@@ -1,15 +1,12 @@
-import {
-  CompilerOptions,
-  CompilerOutput,
-  IZ80CompilerService
-} from "@abstractions/IZ80CompilerService";
+import type { CompilerOptions, CompilerOutput } from "@abstractions/CompilerInfo";
+
 import { Z80Assembler } from "./assembler";
 import { AssemblerOptions } from "./assembler-in-out";
 
 /**
  * This class implements the operations of the Z80 Compiler service
  */
-export class Z80CompilerService implements IZ80CompilerService {
+export class Z80CompilerService {
   /**
    * Compiles the Z80 Assembly code in the specified file into Z80
    * binary code.
@@ -17,10 +14,7 @@ export class Z80CompilerService implements IZ80CompilerService {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile (
-    filename: string,
-    options?: CompilerOptions
-  ): Promise<CompilerOutput> {
+  async compileFile(filename: string, options?: CompilerOptions): Promise<CompilerOutput> {
     const assembler = new Z80Assembler();
     return (await assembler.compileFile(
       filename,

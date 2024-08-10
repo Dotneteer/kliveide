@@ -1,8 +1,9 @@
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+
 import { incBreakpointsVersionAction } from "@state/actions";
-import { AppState } from "@state/AppState";
-import { Store } from "@state/redux-light";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 
 // --- Breakpoint flags

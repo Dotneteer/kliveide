@@ -4,7 +4,7 @@
 // identifier. Thus the messenger class can match the returned answers with the corresponding request.
 // ====================================================================================================================
 
-import { Channel, RequestMessage, ResponseMessage } from "./messages-core";
+import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 
 /**
  * Base class for messengers that provide renderer-to-main and * main-to-renderer communication

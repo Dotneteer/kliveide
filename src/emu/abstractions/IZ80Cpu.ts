@@ -1,4 +1,4 @@
-import { OpCodePrefix } from "./OpCodePrefix";
+import type { OpCodePrefix } from "./OpCodePrefix";
 
 /**
  * This interface represents the behavior and state of the Z80 CPU that is available from outside by other components.

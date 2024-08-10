@@ -1,7 +1,7 @@
 /**
  * Represents the playing phase of the current block
  */
-export enum PlayPhase {
+export const enum PlayPhase {
   /**
    * The player is passive
    */

@@ -1,5 +1,5 @@
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { IAudioDevice } from "./IAudioDevice";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { IAudioDevice } from "./IAudioDevice";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's beeper device.

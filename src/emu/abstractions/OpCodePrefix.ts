@@ -1,7 +1,7 @@
 /**
  * The Z80 CPU uses multi-byte operations. The values of this enum indicate the prefix of an executable opcode.
  */
-export enum OpCodePrefix {
+export const enum OpCodePrefix {
   /**
    * The opcode does not have a prefix (standard instruction)
    */

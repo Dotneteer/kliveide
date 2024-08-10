@@ -1,6 +1,6 @@
-import { DiskSurface } from "@emu/machines/disk/DiskSurface";
-import { DiskInformation } from "@emu/machines/disk/DiskInformation";
-import { IFloppyControllerDevice } from "./IFloppyControllerDevice";
+import type { DiskSurface } from "@emu/machines/disk/DiskSurface";
+import type { DiskInformation } from "@emu/machines/disk/DiskInformation";
+import type { IFloppyControllerDevice } from "./IFloppyControllerDevice";
 
 /**
  * This interface represents a floppy disk drive

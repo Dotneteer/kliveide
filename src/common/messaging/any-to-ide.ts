@@ -1,6 +1,6 @@
-import { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
-import { MessageBase } from "./messages-core";
-import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
+import type { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
+import type { MessageBase } from "./messages-core";
+import type { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
 // --- Ask the IDE to display an output in the specified pane
 export interface IdeDisplayOutputRequest extends MessageBase {

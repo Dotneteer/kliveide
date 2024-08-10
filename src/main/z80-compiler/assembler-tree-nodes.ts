@@ -1,4 +1,4 @@
-import { Token } from "./token-stream";
+import type { Token } from "./token-stream";
 
 /**
  * Aggregate type for all syntax nodes

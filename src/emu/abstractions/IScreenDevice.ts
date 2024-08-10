@@ -1,7 +1,7 @@
-import { IGenericDevice } from "./IGenericDevice";
-import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import { RenderingTact } from "./RenderingTact";
-import { ScreenConfiguration } from "./ScreenConfiguration";
+import type { IGenericDevice } from "./IGenericDevice";
+import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { RenderingTact } from "./RenderingTact";
+import type { ScreenConfiguration } from "./ScreenConfiguration";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's screen device.

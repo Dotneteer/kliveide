@@ -1,4 +1,4 @@
-import { PsgChipState } from "@emu/abstractions/PsgChipState";
+import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 /**
  * Represents a PSG chip

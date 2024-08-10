@@ -1,10 +1,11 @@
-import { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
-import { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import { ISpectrumKeyboardDevice } from "@emu/machines/zxSpectrum/ISpectrumKeyboardDevice";
-import { IScreenDevice } from "@emu/abstractions/IScreenDevice";
-import { ITapeDevice } from "@emu/abstractions/ITapeDevice";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { SysVar } from "@abstractions/SysVar";
+import type { SysVar } from "@abstractions/SysVar";
+
+import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import type { ISpectrumKeyboardDevice } from "@emu/machines/zxSpectrum/ISpectrumKeyboardDevice";
+import type { IScreenDevice } from "@emu/abstractions/IScreenDevice";
+import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from

@@ -1,4 +1,6 @@
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
+
 import {
   COMFlags,
   INTFlags,
@@ -7,7 +9,6 @@ import {
   TMKFlags,
   TSTAFlags
 } from "./IZ88BlinkDevice";
-import { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 
 /**
  * Represents the Blink device of Cambridge Z88
@@ -17,13 +18,12 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZ88Machine) {
-  }
+  constructor(public readonly machine: IZ88Machine) {}
 
   /**
    * Reset the device to its initial state.
    */
-  reset (): void {
+  reset(): void {
     // --- Reset memory
     this.setSR0(0);
     this.setSR1(0);
@@ -43,7 +43,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   /**
    * Resets the RTC counters
    */
-  resetRtc (): void {
+  resetRtc(): void {
     this.TIM0 = 0;
     this.TIM1 = 0;
     this.TIM2 = 0;
@@ -56,7 +56,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   /**
    * Dispose the resources held by the device
    */
-  dispose (): void {
+  dispose(): void {
     // --- Nothing to dispose
   }
 
@@ -139,7 +139,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Set the value of the SR0 register
    * @param bank Bank value to set
    */
-  setSR0 (bank: number): void {
+  setSR0(bank: number): void {
     // --- Store SR0 value
     this.SR0 = bank & 0xff;
 
@@ -160,7 +160,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Set the value of the SR1 register
    * @param bank value to set
    */
-  setSR1 (bank: number): void {
+  setSR1(bank: number): void {
     this.SR1 = bank;
 
     // --- Set up the memory page info for this slot
@@ -171,7 +171,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Set the value of the SR2 register
    * @param bank value to set
    */
-  setSR2 (bank: number): void {
+  setSR2(bank: number): void {
     this.SR2 = bank;
 
     // --- Set up the memory page info for this slot
@@ -182,7 +182,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Set the value of the SR3 register
    * @param bank value to set
    */
-  setSR3 (bank: number): void {
+  setSR3(bank: number): void {
     this.SR3 = bank;
 
     // --- Set up the memory page info for this slot
@@ -193,7 +193,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Sets the TACK register value
    * @param value value to set
    */
-  setTACK (value: number): void {
+  setTACK(value: number): void {
     if (value & TSTAFlags.TICK) {
       // --- Reset BM_TSTATICK
       this.TSTA &= 0xfe;
@@ -218,14 +218,14 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Sets the ACK register value
    * @param value value to set
    */
-  setACK (value: number): void {
+  setACK(value: number): void {
     this.setSTA(this.STA & ((value & 0xff) ^ 0xff));
   }
 
   /**
    * Increments the timer counters
    */
-  incrementRtc (): void {
+  incrementRtc(): void {
     // --- Sign no TICK event
     let tickEvent = 0;
 
@@ -330,7 +330,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Sets the TSTA register value
    * @param value value to set
    */
-  setSTA (value: number): void {
+  setSTA(value: number): void {
     this.STA = value;
     this.checkMaskableInterruptRequested();
   }
@@ -343,7 +343,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   /**
    * Signals that the battery is low
    */
-  raiseBatteryLow (): void {
+  raiseBatteryLow(): void {
     this.setSTA(this.STA | STAFlags.BTL);
   }
 
@@ -351,7 +351,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Sets the INT register value
    * @param value value to set
    */
-  setINT (value: number): void {
+  setINT(value: number): void {
     this.INT = value;
     this.checkMaskableInterruptRequested();
   }
@@ -360,7 +360,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Sets the COM register value
    * @param value value to set
    */
-  setCOM (value: number): void {
+  setCOM(value: number): void {
     // --- Set the register value
     this.COM = value & 0xff;
 
@@ -379,7 +379,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   }
 
   // --- Tests if the maskable interrupt has been requested
-  checkMaskableInterruptRequested (): void {
+  checkMaskableInterruptRequested(): void {
     // --- Is the BM_INTGINT flag set?
     if (this.INT & INTFlags.GINT) {
       if (this.INT & this.STA) {

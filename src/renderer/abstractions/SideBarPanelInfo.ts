@@ -1,4 +1,4 @@
-import { PanelRenderer } from "./PanelRenderer";
+import type { PanelRenderer } from "./PanelRenderer";
 
 /**
  * Describes a particular side bar panel

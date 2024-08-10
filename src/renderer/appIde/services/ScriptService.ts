@@ -1,10 +1,12 @@
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import type { ILiteEvent } from "@abstractions/ILiteEvent";
+
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
-import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
+import { LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();

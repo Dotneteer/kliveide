@@ -1,7 +1,8 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { RenderingTact } from "@emu/abstractions/RenderingTact";
-import { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { RenderingTact } from "@emu/abstractions/RenderingTact";
+import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {

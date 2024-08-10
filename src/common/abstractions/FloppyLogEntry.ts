@@ -8,7 +8,7 @@ export type FloppyLogEntry = {
 };
 
 // --- Operation type
-export enum PortOperationType {
+export const enum PortOperationType {
   ReadData = 0,
   ReadMsr = 1,
   WriteData = 2,

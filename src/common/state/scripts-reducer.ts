@@ -1,4 +1,4 @@
-import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { Action } from "./Action";
 
 /**

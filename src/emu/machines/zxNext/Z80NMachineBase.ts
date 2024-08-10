@@ -1,17 +1,18 @@
-import { IFileProvider } from "@renderer/core/IFileProvider";
-import { DebugStepMode } from "../../abstractions/DebugStepMode";
-import { ExecutionContext } from "../../abstractions/ExecutionContext";
-import { FrameTerminationMode } from "../../abstractions/FrameTerminationMode";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import { OpCodePrefix } from "../../abstractions/OpCodePrefix";
-import { TapeMode } from "../../abstractions/TapeMode";
-import { LiteEvent } from "../../utils/lite-event";
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { IFileProvider } from "@renderer/core/IFileProvider";
+import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "@common/machines/info-types";
+
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
+import { TapeMode } from "@emu/abstractions/TapeMode";
+import { LiteEvent } from "@emu/utils/lite-event";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
-import { MachineConfigSet } from "@common/machines/info-types";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
 
 /**

@@ -1,22 +1,27 @@
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
+import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
+import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import type { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
+import type { CardSlotState } from "./memory/CardSlotState";
+import type { AppState } from "@common/state/AppState";
+import type { Store } from "@common/state/redux-light";
+
 import { Z80MachineBase } from "../Z80MachineBase";
-import { IZ88BeeperDevice } from "./IZ88BeeperDevice";
-import { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
-import { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { Z88KeyCode } from "./Z88KeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { KeyMapping } from "@renderer/abstractions/KeyMapping";
 import { z88KeyMappings } from "./Z88KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import { CodeToInject } from "@abstractions/CodeToInject";
 import { Z88KeyboardDevice } from "./Z88KeyboardDevice";
 import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { INTFlags, IZ88BlinkDevice, STAFlags } from "./IZ88BlinkDevice";
 import { Z88BlinkDevice } from "./Z88BlinkDevice";
-import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   MC_Z88_KEYBOARD,
   MC_Z88_SLOT0,
@@ -29,10 +34,6 @@ import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
-import { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
-import { CardSlotState } from "./memory/CardSlotState";
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
 import { emuSetKeyboardLayoutAction } from "@common/state/actions";
 
 // --- Default ROM file

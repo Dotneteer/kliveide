@@ -1,39 +1,33 @@
-import { EvaluationContext } from "./EvaluationContext";
-import { BlockScope } from "./BlockScope";
-import { LogicalThread } from "./LogicalThread";
-import { LoopScope } from "./LoopScope";
-import { EmptyStatement, LoopStatement, TryStatement } from "./source-tree";
-import {
-  StatementQueueItem,
-  mapStatementsToQueueItems
-} from "./statement-queue";
-import { TryScope } from "./TryScope";
+import type { EvaluationContext } from "./EvaluationContext";
+import type { BlockScope } from "./BlockScope";
+import type { LogicalThread } from "./LogicalThread";
+import type { LoopScope } from "./LoopScope";
+import type { EmptyStatement, LoopStatement, TryStatement } from "./source-tree";
+import type { StatementQueueItem } from "./statement-queue";
+import type { TryScope } from "./TryScope";
 
-export function innermostLoopScope (thread: LogicalThread): LoopScope {
+import { mapStatementsToQueueItems } from "./statement-queue";
+
+export function innermostLoopScope(thread: LogicalThread): LoopScope {
   if (!thread.loops || thread.loops.length === 0) {
     throw new Error("Missing loop scope");
   }
   return thread.loops[thread.loops.length - 1];
 }
 
-export function innermostBlockScope (
-  thread: LogicalThread
-): BlockScope | undefined {
+export function innermostBlockScope(thread: LogicalThread): BlockScope | undefined {
   if (!thread.blocks || thread.blocks.length === 0) return undefined;
   return thread.blocks[thread.blocks.length - 1];
 }
 
-export function innermostTryScope (thread: LogicalThread): TryScope {
+export function innermostTryScope(thread: LogicalThread): TryScope {
   if (!thread.tryBlocks || thread.tryBlocks.length === 0) {
     throw new Error("Missing try scope");
   }
   return thread.tryBlocks[thread.tryBlocks.length - 1];
 }
 
-export function createLoopScope (
-  thread: LogicalThread,
-  continueOffset = 0
-): LoopScope {
+export function createLoopScope(thread: LogicalThread, continueOffset = 0): LoopScope {
   thread.loops ??= [];
   const breakDepth = thread.blocks?.length ?? 0;
   const tryDepth = thread.tryBlocks?.length ?? 0;
@@ -48,10 +42,7 @@ export function createLoopScope (
   return loopScope;
 }
 
-export function releaseLoopScope (
-  thread: LogicalThread,
-  skipContinuation = true
-): void {
+export function releaseLoopScope(thread: LogicalThread, skipContinuation = true): void {
   const loopScope = innermostLoopScope(thread);
   if (skipContinuation) {
     thread.loops?.pop();
@@ -64,17 +55,14 @@ export function releaseLoopScope (
 }
 
 // --- Create a list of body statements according to the specified loop statement and scope
-export function provideLoopBody (
+export function provideLoopBody(
   loopScope: LoopScope,
   loopStatement: LoopStatement,
   breakLabelValue: number | undefined
 ): StatementQueueItem[] {
   // --- Stay in the loop, add the body and the guard condition
   const guardStatement = { ...loopStatement, guard: true };
-  const toUnshift = mapStatementsToQueueItems([
-    loopStatement.body,
-    guardStatement
-  ]);
+  const toUnshift = mapStatementsToQueueItems([loopStatement.body, guardStatement]);
 
   // --- The next queue label is for "break"
   loopScope.breakLabel = breakLabelValue ?? -1;
@@ -84,10 +72,7 @@ export function provideLoopBody (
   return toUnshift;
 }
 
-export function createTryScope (
-  thread: LogicalThread,
-  tryStatement: TryStatement
-): TryScope {
+export function createTryScope(thread: LogicalThread, tryStatement: TryStatement): TryScope {
   thread.tryBlocks ??= [];
   const loopScope: TryScope = {
     statement: tryStatement,
@@ -98,10 +83,7 @@ export function createTryScope (
   return loopScope;
 }
 
-export function provideTryBody (
-  thread: LogicalThread,
-  tryScope: TryScope
-): StatementQueueItem[] {
+export function provideTryBody(thread: LogicalThread, tryScope: TryScope): StatementQueueItem[] {
   // --- Stay in the error handling block, add the body and the guard condition
   const guardStatement = { ...tryScope.statement, guard: true };
 
@@ -125,10 +107,7 @@ export function provideTryBody (
   return toUnshift;
 }
 
-export function provideCatchBody (
-  thread: LogicalThread,
-  tryScope: TryScope
-): StatementQueueItem[] {
+export function provideCatchBody(thread: LogicalThread, tryScope: TryScope): StatementQueueItem[] {
   // --- Stay in the error handling block, add the body and the guard condition
   const guardStatement = { ...tryScope.statement, guard: true };
 
@@ -152,7 +131,7 @@ export function provideCatchBody (
   return toUnshift;
 }
 
-export function provideFinallyBody (
+export function provideFinallyBody(
   thread: LogicalThread,
   tryScope: TryScope
 ): StatementQueueItem[] {
@@ -180,9 +159,7 @@ export function provideFinallyBody (
   return toUnshift;
 }
 
-export function provideFinallyErrorBody (
-  tryScope: TryScope
-): StatementQueueItem[] {
+export function provideFinallyErrorBody(tryScope: TryScope): StatementQueueItem[] {
   // --- Stay in the error handling block, add the body and the guard condition
   const guardStatement = { ...tryScope.statement, guard: true };
   const toUnshift = mapStatementsToQueueItems([guardStatement]);
@@ -190,9 +167,7 @@ export function provideFinallyErrorBody (
   return toUnshift;
 }
 
-export function ensureMainThread (
-  evalContext: EvaluationContext
-): LogicalThread {
+export function ensureMainThread(evalContext: EvaluationContext): LogicalThread {
   if (!evalContext.mainThread) {
     evalContext.mainThread = {
       childThreads: [],

@@ -1,8 +1,9 @@
-import { MachineConfigSet } from "@common/machines/info-types";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
-import { OutputColor } from "../renderer/appIde/ToolArea/abstractions";
-import { PANE_ID_EMU } from "../common/integration/constants";
+import type { MachineConfigSet } from "@common/machines/info-types";
+import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
+
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { PANE_ID_EMU } from "@common/integration/constants";
 
 export const registeredMachines = [
   {

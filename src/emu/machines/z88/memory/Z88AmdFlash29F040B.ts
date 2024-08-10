@@ -7,7 +7,8 @@
  * Suspend and Erase Resume commands are also not implemented.
  */
 
-import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+
 import { CardType } from "@emu/machines/z88/memory/CardType";
 import { Z88AmdFlashMemoryCard } from "./Z88AmdFlashMemoryCard";
 

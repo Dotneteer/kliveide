@@ -1,6 +1,6 @@
-import { Store } from "../state/redux-light";
-import { AppState } from "../state/AppState";
-import { LogicalThread } from "./LogicalThread";
+import type { Store } from "@common/state/redux-light";
+import type { AppState } from "@common/state/AppState";
+import type { LogicalThread } from "./LogicalThread";
 
 // This type represents the context in which binding expressions and statements should be evaluated
 export type EvaluationContext = {

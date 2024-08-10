@@ -1,6 +1,6 @@
-import { AppServices } from "./AppServices";
-import { ContextMenuInfo } from "./ContextMenuIfo";
-import { PanelRenderer } from "./PanelRenderer";
+import type { AppServices } from "./AppServices";
+import type { ContextMenuInfo } from "./ContextMenuIfo";
+import type { PanelRenderer } from "./PanelRenderer";
 
 export type PatternMatchType = "starts" | "contains" | "ends" | "full";
 

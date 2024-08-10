@@ -1,9 +1,9 @@
-import { IZ80Machine } from "./IZ80Machine";
-import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
-import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
-import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
-import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
+import type { IZ80Machine } from "./IZ80Machine";
+import type { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
+import type { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
+import type { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
+import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
+import type { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
 
 /**
  * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the emulator

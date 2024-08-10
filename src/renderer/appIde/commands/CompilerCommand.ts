@@ -1,3 +1,4 @@
+import type { BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
 import { MainCompileResponse, MainSaveFileResponse } from "@messaging/any-to-main";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
@@ -20,11 +21,7 @@ import {
 } from "../../../main/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CodeToInject } from "@abstractions/CodeToInject";
-import {
-  BinarySegment,
-  CompilerOutput,
-  SpectrumModelType
-} from "@abstractions/IZ80CompilerService";
+import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { BinaryReader } from "@utils/BinaryReader";
 import { TapReader } from "@emu/machines/tape/TapReader";

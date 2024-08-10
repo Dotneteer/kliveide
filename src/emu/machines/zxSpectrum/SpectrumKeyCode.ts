@@ -1,4 +1,4 @@
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 
 /**
  * This enumeration assigns integers from 0 to 39 to the enumerated values representing a particular ZX Spectrum key

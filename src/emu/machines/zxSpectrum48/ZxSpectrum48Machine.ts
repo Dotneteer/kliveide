@@ -1,4 +1,8 @@
-import { SysVar, SysVarType } from "@abstractions/SysVar";
+import type { SysVar } from "@abstractions/SysVar";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { MachineModel } from "@common/machines/info-types";
+
+import { SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
@@ -12,9 +16,7 @@ import {
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { MachineModel } from "@common/machines/info-types";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
 
 /**

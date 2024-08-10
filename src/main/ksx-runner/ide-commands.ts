@@ -1,5 +1,6 @@
-import { sendFromMainToIde } from "../../common/messaging/MainToIdeMessenger";
-import { IdeExecuteCommandResponse } from "../../common/messaging/any-to-ide";
+import type { IdeExecuteCommandResponse } from "@messaging/any-to-ide";
+
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 
 export async function executeIdeCommand (
   scriptId: number,  

@@ -14,7 +14,7 @@ import {
   MachineTypeEventHandler,
   MachineInstanceEventHandler
 } from "../abstractions/IMachineService";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";

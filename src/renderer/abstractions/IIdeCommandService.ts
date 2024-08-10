@@ -1,8 +1,8 @@
-import { IOutputBuffer } from "@appIde/ToolArea/abstractions";
-import { IdeCommandContext } from "./IdeCommandContext";
-import { IdeCommandInfo } from "./IdeCommandInfo";
-import { IdeCommandResult } from "./IdeCommandResult";
-import { ValidationMessage } from "./ValidationMessage";
+import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
+import type { IdeCommandContext } from "./IdeCommandContext";
+import type { IdeCommandInfo } from "./IdeCommandInfo";
+import type { IdeCommandResult } from "./IdeCommandResult";
+import type { ValidationMessage } from "./ValidationMessage";
 
 /**
  * This interface defines the functions managing the interactive commands within the IDE

@@ -1,5 +1,5 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
   enableTilemap: boolean;

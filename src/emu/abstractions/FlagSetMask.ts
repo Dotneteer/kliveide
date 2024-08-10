@@ -1,7 +1,7 @@
 /**
  * Represents integer constants that mask out particular flags of the Z80 CPU's F register.
  */
-export enum FlagsSetMask {
+export const enum FlagsSetMask {
   /**
    * Sign Flag
    */

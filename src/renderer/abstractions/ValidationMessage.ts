@@ -1,4 +1,4 @@
-import { ValidationMessageType } from "./ValidationMessageType";
+import type { ValidationMessageType } from "./ValidationMessageType";
 
 /**
  * Describes a trace message
