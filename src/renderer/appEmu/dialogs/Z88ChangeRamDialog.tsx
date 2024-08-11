@@ -8,6 +8,7 @@ import { useState } from "react";
 import { MC_Z88_INTRAM } from "@common/machines/constants";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { useIdeApi } from "@renderer/core/IdeApi";
 
 // --- These are the RAM sizes available for the Z88 Internal RAM
 const ramSizes = [
@@ -21,8 +22,9 @@ type Props = {
 };
 
 export const Z88ChangeRamDialog = ({ onClose }: Props) => {
-  const { store, messenger } = useRendererContext();
+  const { store } = useRendererContext();
   const { machineService } = useAppServices();
+  const ideApi = useIdeApi();
 
   // --- Get the current RAM size
   const emulatorState = store.getState()?.emulatorState;
@@ -39,7 +41,7 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
   }
 
   // --- Find the index of the current RAM size
-  const ramIndex = ramSizes.findIndex(rs => rs.value === ramSize.toString());
+  const ramIndex = ramSizes.findIndex((rs) => rs.value === ramSize.toString());
   const [selectedSize, setSelectedSize] = useState(
     ramSizes[ramIndex >= 0 ? ramIndex : ramSizes.length - 1].value
   );
@@ -82,11 +84,10 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
 
         // --- Change the configuration
         await machineService.setMachineType(machineId, modelId, newConfig);
-        await messenger.sendMessage({
-          type: "IdeDisplayOutput",
+        await ideApi.displayOutput({
           pane: PANE_ID_EMU,
           text: `Z88 internal RAM size changed to ${selectedSize}K`,
-          color: "bright-cyan",
+          foreground: "bright-cyan",
           writeLine: true
         });
 
@@ -97,14 +98,14 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
         onClose();
       }}
     >
-      <DialogRow label='Z88 internal RAM size:'>
+      <DialogRow label="Z88 internal RAM size:">
         <div className={styles.dropdownWrapper}>
           <Dropdown
-            placeholder='Select...'
+            placeholder="Select..."
             options={ramSizes}
             value={selectedSize}
             width={268}
-            onSelectionChanged={async option => {
+            onSelectionChanged={async (option) => {
               const emulatorState = store.getState()?.emulatorState;
               const newRamSize = getRamChipMask(option);
               const config = emulatorState?.config ?? {};
@@ -119,8 +120,7 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
         emulatorState.machineState !== MachineControllerState.None && (
           <DialogRow>
             <div className={styles.warning}>
-              Changing the RAM will stop the machine! Click Ok, when you are
-              ready to proceed.
+              Changing the RAM will stop the machine! Click Ok, when you are ready to proceed.
             </div>
           </DialogRow>
         )}

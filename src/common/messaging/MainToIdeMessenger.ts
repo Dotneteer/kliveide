@@ -1,3 +1,4 @@
+import { createIdeApi, IdeApi } from "./IdeApi";
 import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 
@@ -48,6 +49,7 @@ class MainToIdeMessenger extends MessengerBase {
  * The singleton messenger instance of the messenger
  */
 let mainToIdeMessenger: MainToIdeMessenger | undefined;
+let ideApiInstance: IdeApi | undefined;
 
 /**
  * Registers the messenger to be used with the main process.
@@ -55,6 +57,7 @@ let mainToIdeMessenger: MainToIdeMessenger | undefined;
  */
 export function registerMainToIdeMessenger(window: BrowserWindow) {
   mainToIdeMessenger = new MainToIdeMessenger(window);
+  ideApiInstance = createIdeApi(mainToIdeMessenger);
 }
 
 /**
@@ -73,4 +76,11 @@ export function sendFromMainToIde<TResp extends ResponseMessage>(
   message: RequestMessage
 ): Promise<TResp> | null {
   return mainToIdeMessenger ? mainToIdeMessenger.sendMessage(message) : null;
+}
+
+/**
+ * Gets the EmuApi instance
+ */
+export function getIdeApi(): IdeApi {
+  return ideApiInstance;
 }

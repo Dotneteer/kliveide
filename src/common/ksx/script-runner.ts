@@ -7,6 +7,7 @@ import { setScriptsStatusAction } from "@common/state/actions";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
+import { createIdeApi } from "@common/messaging/IdeApi";
 
 /**
  * Concludes a running script and handles the UI messages related to it
@@ -18,7 +19,7 @@ import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
  * @param outputFn Function to output messages
  * @param cleanupFn Function to clean up the script
  */
-export function concludeScript (
+export function concludeScript(
   store: Store<AppState>,
   execTask: Promise<void>,
   evalContext: EvaluationContext,
@@ -52,12 +53,9 @@ export function concludeScript (
       script.error = error.message;
       script.endTime = new Date();
       const time = script.endTime.getTime() - script.startTime.getTime();
-      outputFn?.(
-        `Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`,
-        {
-          color: "red"
-        }
-      );
+      outputFn?.(`Script ${script.scriptFileName} with ID ${script.id} failed in ${time}ms.`, {
+        color: "red"
+      });
       outputFn?.(error.toString?.() ?? "Unknown error", {
         color: "bright-red"
       });
@@ -75,18 +73,16 @@ export function concludeScript (
  * @param text Text to send
  * @param options Additional options
  */
-export async function sendScriptOutput (
+export async function sendScriptOutput(
   messenger: MessengerBase,
   text: string,
   options?: Record<string, any>
 ): Promise<void> {
-  const message: IdeDisplayOutputRequest = {
-    type: "IdeDisplayOutput",
+  createIdeApi(messenger).displayOutput({
     pane: PANE_ID_SCRIPTIMG,
     text,
-    color: "cyan",
+    foreground: "cyan",
     writeLine: true,
     ...options
-  };
-  await messenger.sendMessage(message);
+  });
 }

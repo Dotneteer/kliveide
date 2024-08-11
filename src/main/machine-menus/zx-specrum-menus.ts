@@ -6,7 +6,7 @@ import type { AppState } from "@state/AppState";
 
 import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import {
   setFastLoadAction,
   setVolatileDocStateAction,
@@ -148,10 +148,7 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
       type: "checkbox",
       checked: volatileDocs[BASIC_PANEL_ID],
       click: async () => {
-        await sendFromMainToIde({
-          type: "IdeShowBasic",
-          show: !volatileDocs[BASIC_PANEL_ID]
-        });
+        await getIdeApi().showBasic(!volatileDocs[BASIC_PANEL_ID]);
         mainStore.dispatch(
           setVolatileDocStateAction(BASIC_PANEL_ID, !volatileDocs[BASIC_PANEL_ID])
         );
@@ -256,7 +253,7 @@ async function setDiskFile(
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setDiskFile(index, filename, contents); 
+    await getEmuApi().setDiskFile(index, filename, contents);
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(

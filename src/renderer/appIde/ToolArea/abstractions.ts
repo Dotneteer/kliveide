@@ -1,4 +1,4 @@
-import { ILiteEvent } from "@emu/utils/lite-event";
+import { ILiteEvent } from "@abstractions/ILiteEvent";
 
 /**
  * Available output colors
@@ -24,13 +24,18 @@ export type OutputColor =
 export type OutputSpan = {
   text: string;
   background?: OutputColor;
-  foreGround?: OutputColor;
+  foreground?: OutputColor;
   isBold?: boolean;
   isItalic?: boolean;
   isUnderline?: boolean;
   isStrikeThru?: boolean;
   actionable?: boolean;
   data?: unknown;
+};
+
+export type OutputSpecification = OutputSpan & {
+  pane: string;
+  writeLine?: boolean;
 };
 
 /**

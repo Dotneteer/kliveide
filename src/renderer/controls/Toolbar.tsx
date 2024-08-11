@@ -19,6 +19,7 @@ import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useIdeApi } from "@renderer/core/IdeApi";
 
 type Props = {
   ide: boolean;
@@ -62,6 +63,7 @@ const ideStartOptions = [
 export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
+  const ideApi = useIdeApi();
   const machineId = useSelector((s) => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const state = useSelector((s) => s.emulatorState?.machineState);
@@ -177,14 +179,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           switch (restartTarget) {
             case "project": {
               if (kliveProjectLoaded) {
-                messenger.postMessage({
-                  type: "IdeExecuteCommand",
-                  commandText: "outp build"
-                });
-                response = await messenger.sendMessage({
-                  type: "IdeExecuteCommand",
-                  commandText: isDebugging ? "debug" : "run"
-                });
+                ideApi.executeCommand("outp build");
+                ideApi.executeCommand(isDebugging ? "debug" : "run");
                 break;
               }
             }

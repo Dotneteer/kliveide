@@ -2,7 +2,7 @@ import type { MachineConfigSet } from "@common/machines/info-types";
 import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
 export const registeredMachines = [
@@ -58,22 +58,21 @@ let loggedEmuOutputEvents = 0;
 /**
  * Log emulator events
  * @param text Log text
- * @param color Text color to use
+ * @param foreground Text color to use
  */
-export async function logEmuEvent(text: string, color?: OutputColor): Promise<void> {
+export async function logEmuEvent(text: string, foreground?: OutputColor): Promise<void> {
   loggedEmuOutputEvents++;
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
+  const ideApi = getIdeApi();
+  await ideApi.displayOutput({
     pane: PANE_ID_EMU,
     text: `[${loggedEmuOutputEvents}] `,
-    color: "yellow",
+    foreground: "yellow",
     writeLine: false
   });
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
+  await ideApi.displayOutput({
     pane: PANE_ID_EMU,
     text,
-    color,
+    foreground,
     writeLine: true
   });
 }

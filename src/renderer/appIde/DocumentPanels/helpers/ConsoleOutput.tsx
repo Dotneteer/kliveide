@@ -131,8 +131,8 @@ const OutputLine = ({ spans, lineNo, showLineNo }: OutputContentLineProps) => {
           : "transparent"
       })`,
       color: `var(${
-        s.foreGround !== undefined
-          ? `--console-ansi-${s.foreGround}`
+        s.foreground !== undefined
+          ? `--console-ansi-${s.foreground}`
           : "--console-default"
       })`,
       textDecoration: `${s.isUnderline ? "underline" : ""} ${

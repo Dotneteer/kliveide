@@ -1,21 +1,11 @@
-import type { BufferOperation, OutputColor } from "@appIde/ToolArea/abstractions";
+import type { BufferOperation, OutputSpecification } from "@appIde/ToolArea/abstractions";
 import type { MessageBase } from "./messages-core";
 import type { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
 // --- Ask the IDE to display an output in the specified pane
 export interface IdeDisplayOutputRequest extends MessageBase {
   type: "IdeDisplayOutput";
-  pane: string;
-  text: string;
-  color?: OutputColor;
-  backgroundColor?: OutputColor;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  strikeThru?: boolean;
-  data?: unknown;
-  actionable?: boolean;
-  writeLine?: boolean;
+  toDisplay: OutputSpecification;
 }
 
 // --- Ask the IDE to display a message in the scripts output
@@ -42,12 +32,6 @@ export interface IdeShowDisassemblyRequest extends MessageBase {
 export interface IdeShowBasicRequest extends MessageBase {
   type: "IdeShowBasic";
   show: boolean;
-}
-
-// --- Ask the IDE to show a particular dialog
-export interface IdeShowDialogRequest extends MessageBase {
-  type: "IdeShowDialog";
-  dialogId?: number;
 }
 
 // --- Ask the IDE to execute a command
@@ -80,4 +64,3 @@ export interface IdeGetProjectStructureResponse extends MessageBase {
   type: "IdeGetProjectStructureResponse";
   projectStructure: ProjectStructure;
 }
-

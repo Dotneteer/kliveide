@@ -1,13 +1,17 @@
-import type { IdeScriptOutputRequest } from "@messaging/any-to-ide";
+import { createIdeApi, IdeApi } from "@common/messaging/IdeApi";
 
 import { MessengerBase } from "@messaging/MessengerBase";
+import { BufferOperation } from "@renderer/appIde/ToolArea/abstractions";
 
 class ScriptConsole {
+  private readonly ideApi: IdeApi;
   // --- The store is used to dispatch actions
   constructor(
-    private readonly messenger: MessengerBase,
+    messenger: MessengerBase,
     private readonly id: number
-  ) {}
+  ) {
+    this.ideApi = createIdeApi(messenger);
+  }
 
   async assert(...args: any[]): Promise<void> {
     if (args.length === 0 || typeof args[0] !== "function") return;
@@ -75,111 +79,55 @@ class ScriptConsole {
   }
 
   async clear(): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "clear"
-    });
+    await this.sendScriptOutput(this.id, "clear");
   }
 
   async write(...args: any[]): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "write",
-      args: args ?? []
-    });
+    await this.sendScriptOutput(this.id, "write", args ?? []);
   }
 
   async writeLine(...args: any[]): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "writeLine",
-      args: args ?? []
-    });
+    await this.sendScriptOutput(this.id, "writeLine", args ?? []);
   }
 
   async resetStyle(): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "resetStyle"
-    });
+    await this.sendScriptOutput(this.id, "resetStyle");
   }
 
   async color(color: string): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "color",
-      args: [color]
-    });
+    await this.sendScriptOutput(this.id, "color", [color]);
   }
 
   async backgroundColor(color: string): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "backgroundColor",
-      args: [color]
-    });
+    await this.sendScriptOutput(this.id, "backgroundColor", [color]);
   }
 
   async bold(use: boolean): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "bold",
-      args: [use]
-    });
+    await this.sendScriptOutput(this.id, "bold", [use]);
   }
 
   async italic(use: boolean): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "italic",
-      args: [use]
-    });
+    await this.sendScriptOutput(this.id, "italic", [use]);
   }
 
   async underline(use: boolean): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "underline",
-      args: [use]
-    });
+    await this.sendScriptOutput(this.id, "underline", [use]);
   }
 
   async strikethru(use: boolean): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "strikethru",
-      args: [use]
-    });
+    await this.sendScriptOutput(this.id, "strikethru", [use]);
   }
 
   async pushStyle(): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "pushStyle"
-    });
+    await this.sendScriptOutput(this.id, "pushStyle");
   }
 
   async popStyle(): Promise<void> {
-    await this.sendScriptOutput({
-      type: "IdeScriptOutput",
-      id: this.id,
-      operation: "popStyle"
-    });
+    await this.sendScriptOutput(this.id, "popStyle");
   }
 
-  async sendScriptOutput(message: IdeScriptOutputRequest): Promise<void> {
-    await this.messenger.sendMessage(message);
+  async sendScriptOutput(id: number, operation: BufferOperation, args?: any[]): Promise<void> {
+    await this.ideApi.scriptOutput(id, operation, args);
   }
 }
 
