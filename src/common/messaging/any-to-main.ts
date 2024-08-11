@@ -20,10 +20,12 @@ export interface MainReadBinaryFileRequest extends MessageBase {
   resolveIn?: string;
 }
 
+export type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
+
 // --- Display an Electron message box
 export interface MainDisplayMessageBoxRequest extends MessageBase {
   type: "MainDisplayMessageBox";
-  messageType?: "none" | "info" | "error" | "question" | "warning";
+  messageType?: MessageBoxType;
   title?: string;
   message?: string;
 }
@@ -94,14 +96,12 @@ export interface MainRenameFileEntryRequest extends MessageBase {
 // --- Show the open folder dialog
 export interface MainShowOpenFolderDialogRequest extends MessageBase {
   type: "MainShowOpenFolderDialog";
-  title?: string;
   settingsId?: string;
 }
 
 // --- Show the Electron open file dialog
 export interface MainShowOpenFileDialogRequest extends MessageBase {
   type: "MainShowOpenFileDialog";
-  title?: string;
   filters?: { name: string; extensions: string[] }[];
   settingsId?: string;
 }
@@ -181,13 +181,6 @@ export interface MainShowItemInFolderRequest extends MessageBase {
 // --- Exit the application
 export interface MainExitAppRequest extends MessageBase {
   type: "MainExitApp";
-}
-
-// --- Check if a path exists
-export interface MainPathExistsRequest extends MessageBase {
-  type: "MainPathExists";
-  path: string;
-  isFolder?: boolean;
 }
 
 // --- Show the Klive IDE website

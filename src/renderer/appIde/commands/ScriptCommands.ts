@@ -198,11 +198,7 @@ async function checkScriptFile (
   const filePath = isAbsolutePath(filename)
     ? filename
     : `${projectFolder}/${filename}`
-  const response = await context.messenger.sendMessage({
-    type: "MainReadTextFile",
-    path: filePath,
-    resolveIn: "project"
-  });
+  const response = await context.mainApi.readTextFile(filePath, "project");
   if (response.type === "ErrorResponse") {
     return { error: response.message };
   }

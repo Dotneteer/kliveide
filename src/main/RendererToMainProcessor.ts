@@ -344,18 +344,6 @@ export async function processRendererToMainMessages(
       app.quit();
       break;
 
-    case "MainPathExists":
-      if (!fs.existsSync(message.path)) {
-        return flagResponse(false);
-      }
-      const stat = fs.lstatSync(message.path);
-      if (message.isFolder === false) {
-        return flagResponse(stat.isFile());
-      } else if (message.isFolder === true) {
-        return flagResponse(stat.isDirectory());
-      }
-      return flagResponse(true);
-
     case "MainShowWebsite":
       shell.openExternal(KLIVE_GITHUB_PAGES);
       break;

@@ -4,7 +4,6 @@ import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import {
   IdeCommandBase,
   validationError,
-  commandError,
   writeSuccessMessage,
   commandSuccess
 } from "../services/ide-commands";
@@ -17,9 +16,7 @@ export class OpenFolderCommand extends IdeCommandBase {
 
   private projectFolder: string;
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length !== 1) {
       return validationError("This command expects a path as its argument");
@@ -30,20 +27,9 @@ export class OpenFolderCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
-    const response = await context.messenger.sendMessage({
-      type: "MainOpenFolder",
-      folder: this.projectFolder
-    });
-    if (response.type === "ErrorResponse") {
-      return commandError(response.message);
-    }
-    writeSuccessMessage(
-      context.output,
-      `Project in folder ${this.projectFolder} opened.`
-    );
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    await context.mainApi.openFolder(this.projectFolder);
+    writeSuccessMessage(context.output, `Project in folder ${this.projectFolder} opened.`);
     return commandSuccess;
   }
 }

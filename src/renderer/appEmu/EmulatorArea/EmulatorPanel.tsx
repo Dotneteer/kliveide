@@ -2,32 +2,22 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
-import {
-  useRendererContext,
-  useSelector,
-  useStore
-} from "@renderer/core/RendererProvider";
+import { useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
-import {
-  AudioRenderer,
-  getBeeperContext,
-  releaseBeeperContext
-} from "./AudioRenderer";
+import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { MachineController } from "@emu/machines/MachineController";
-import {
-  FrameCompletedArgs,
-  IMachineController
-} from "../../abstractions/IMachineController";
+import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
+import { useMainApi } from "@renderer/core/MainApi";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -43,12 +33,12 @@ type Props = {
 export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Refresh when requested
   const [version, setVersion] = useState(1);
-  
+
   // --- Access state information
   const store = useStore();
 
   // --- Use application services
-  const { messenger } = useRendererContext();
+  const mainApi = useMainApi();
 
   // --- Element references
   const hostElement = useRef<HTMLDivElement>();
@@ -62,12 +52,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [canvasHeight, setCanvasHeight] = useState(0);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
-  const audioSampleRate = useSelector(s => s.emulatorState?.audioSampleRate);
-  const fastLoad = useSelector(s => s.emulatorState?.fastLoad);
-  const dialogToDisplay = useSelector(s => s.ideView?.dialogToDisplay);
+  const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
+  const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
+  const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
-  const keyMappings = useSelector(s => s.keyMappings);
+  const keyMappings = useSelector((s) => s.keyMappings);
   const defaultKeyMappings = useRef<KeyMapping>();
   const currentKeyMappings = useRef<KeyMapping>();
   const keyCodeSet = useRef<KeyCodeSet>();
@@ -139,10 +129,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
     configureScreen();
     calculateDimensions();
-  }, [
-    controller?.machine?.screenWidthInPixels,
-    controller?.machine?.screenHeightInPixels
-  ]);
+  }, [controller?.machine?.screenWidthInPixels, controller?.machine?.screenHeightInPixels]);
 
   // --- Respond to the FAST LOAD flag changes
   useEffect(() => {
@@ -158,7 +145,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         className={styles.display}
         style={{
           width: `${canvasWidth ?? 0}px`,
-          height: `${canvasHeight ?? 0}px`,
+          height: `${canvasHeight ?? 0}px`
         }}
         onClick={() => setShowOverlay(true)}
       >
@@ -183,27 +170,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   );
 
   // --- Handles machine controller changes
-  async function machineControllerChanged (
-    ctrl: MachineController
-  ): Promise<void> {
+  async function machineControllerChanged(ctrl: MachineController): Promise<void> {
     // --- Let's store a ref
     controllerRef.current = ctrl;
     if (!ctrl) return;
 
     // --- Initial overlay message
-    setOverlay(
-      "Not yet started. Press F5 to start or Ctrl+F5 to debug machine."
-    );
+    setOverlay("Not yet started. Press F5 to start or Ctrl+F5 to debug machine.");
 
     // --- Prepare audio
     if (audioSampleRate) {
       const samplesPerFrame =
-        (ctrl.machine.tactsInFrame * audioSampleRate) /
-        ctrl.machine.baseClockFrequency;
+        (ctrl.machine.tactsInFrame * audioSampleRate) / ctrl.machine.baseClockFrequency;
       await releaseBeeperContext();
-      beeperRenderer.current = new AudioRenderer(
-        await getBeeperContext(samplesPerFrame)
-      );
+      beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerFrame));
     }
 
     // --- Prepare key codes
@@ -212,7 +192,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     updateKeyMappings();
 
     // --- Obtain machine tools
-    const toolInfo = machineEmuToolRegistry.find(machine => machine.machineId === ctrl.machine.machineId);
+    const toolInfo = machineEmuToolRegistry.find(
+      (machine) => machine.machineId === ctrl.machine.machineId
+    );
     if (toolInfo) {
       machineTools.current = toolInfo.toolFactory(ctrl.machine);
     } else {
@@ -222,7 +204,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }
 
   // --- Handles machine state changes
-  async function machineStateChanged (stateInfo: {
+  async function machineStateChanged(stateInfo: {
     oldState: MachineControllerState;
     newState: MachineControllerState;
   }): Promise<void> {
@@ -262,9 +244,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }
 
   // --- Handles machine frame completion events
-  async function machineFrameCompleted (
-    args: FrameCompletedArgs
-  ): Promise<void> {
+  async function machineFrameCompleted(args: FrameCompletedArgs): Promise<void> {
     // --- Update the screen
     if (controller.machine.frames % controller.machine.uiFrameFrequency === 0) {
       displayScreenData();
@@ -277,7 +257,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       if (typeof sampleGetter === "function") {
         const samples = sampleGetter.call(controller.machine) as number[];
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
-        beeperRenderer.current.storeSamples(samples.map(s => s * soundLevel));
+        beeperRenderer.current.storeSamples(samples.map((s) => s * soundLevel));
         await beeperRenderer.current.play();
       }
     }
@@ -285,12 +265,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- There's a saved file, store it
     if (args.savedFileInfo) {
       (async () => {
-        const response = await messenger.sendMessage({
-          type: "MainSaveBinaryFile",
-          path: args.savedFileInfo.name,
-          data: args.savedFileInfo.contents,
-          resolveIn: "saveFolder"
-        });
+        const response = await mainApi.saveBinaryFile(
+          args.savedFileInfo.name,
+          args.savedFileInfo.contents,
+          "saveFolder"
+        );
         if (response.type === "ErrorResponse") {
           reportMessagingError(
             `File saved with the SAVE ZX Spectrum command failed: ${response.message}.`
@@ -310,25 +289,16 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     // --- Sends disk changes to the main process
-    async function saveDiskChanges (
-      diskIndex: number,
-      changes: SectorChanges
-    ): Promise<void> {
-      const response = await messenger.sendMessage({
-        type: "MainSaveDiskChanges",
-        diskIndex,
-        changes
-      });
+    async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
+      const response = await mainApi.saveDiskChanges(diskIndex, changes);
       if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `Saving disk changes failed: ${response.message}.`
-        );
+        reportMessagingError(`Saving disk changes failed: ${response.message}.`);
       }
     }
   }
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
-  function calculateDimensions (): void {
+  function calculateDimensions(): void {
     if (!hostElement?.current || !screenElement?.current) {
       return;
     }
@@ -353,16 +323,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }
 
   // --- Setup the screen buffers
-  function configureScreen (): void {
-    const dataLen =
-      (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
+  function configureScreen(): void {
+    const dataLen = (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
   }
 
   // --- Displays the screen
-  function displayScreenData (): void {
+  function displayScreenData(): void {
     const screenEl = screenElement.current;
     const shadowScreenEl = shadowScreenElement.current;
     if (!screenEl || !shadowScreenEl) {
@@ -397,18 +366,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(
-        shadowScreenEl,
-        0,
-        0,
-        screenEl.width,
-        screenEl.height
-      );
+      screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
     }
   }
 
   // --- Hanldles key events
-  function handleKey (
+  function handleKey(
     e: KeyboardEvent,
     mapping: KeyMapping,
     dialogToDisplay: number,
@@ -421,11 +384,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     )
       return;
     // --- Special key: both Shift released
-    if (
-      (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
-      e.shiftKey === false &&
-      !isDown
-    ) {
+    if ((e.code === "ShiftLeft" || e.code === "ShiftRight") && e.shiftKey === false && !isDown) {
       handleMappedKey("ShiftLeft", mapping, false);
       handleMappedKey("ShiftRight", mapping, false);
     } else {
@@ -439,11 +398,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }
 
   // --- Maps physical keys to ZX Spectrum keys
-  function handleMappedKey (
-    code: string,
-    keyMapping: KeyMapping,
-    isDown: boolean
-  ): void {
+  function handleMappedKey(code: string, keyMapping: KeyMapping, isDown: boolean): void {
     const mapping = keyMapping[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;

@@ -2,18 +2,17 @@ import { ResponseMessage } from "@common/messaging/messages-core";
 import { IdeProject } from "@common/state/AppState";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { getIsWindows } from "@renderer/os-utils";
+import { createMainApi } from "@common/messaging/MainApi";
 
 export type ExcludedItemInfo = {
   id: string;
   value: string;
 };
 
-export async function excludedItemsFromGlobalSettingsAsync(
+export async function getExcludedProjectItemsFromGlobalSettings(
   messenger: MessengerBase
 ): Promise<ExcludedItemInfo[]> {
-  const response = await messenger.sendMessage({
-    type: "MainGloballyExcludedProjectItems"
-  });
+  const response = await createMainApi(messenger).getGloballyExcludedProjectItems();
   return excludedItemsFromGlobalSettings(response);
 }
 

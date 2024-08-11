@@ -31,7 +31,6 @@ import { SpectrumTapeHeader } from "@emu/machines/tape/SpectrumTapeHeader";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
-import { reportMessagingError } from "@renderer/reportError";
 import {
   endCompileAction,
   incBreakpointsVersionAction,
@@ -215,15 +214,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
       if (errorNo > 0) {
         const message = "Code compilation failed, no program to export.";
-        const response = await context.messenger.sendMessage({
-          type: "MainDisplayMessageBox",
-          messageType: "error",
-          title: "Exporting code",
-          message
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-        }
+        await context.mainApi.displayMessageBox("error", "Exporting code", message);
         return commandError(message);
       }
     }
@@ -485,12 +476,11 @@ export class ExportCodeCommand extends IdeCommandBase {
 
       // --- Save the data to a file
       if (filename) {
-        const response = await context.messenger.sendMessage({
-          type: "MainSaveTextFile",
-          path: filename,
-          data: hexOut,
-          resolveIn: `home:${EXPORT_FILE_FOLDER}`
-        });
+        const response = await context.mainApi.saveTextFile(
+          filename,
+          hexOut,
+          `home:${EXPORT_FILE_FOLDER}`
+        );
         if (response.type === "ErrorResponse") {
           return commandError(response.message);
         }
@@ -922,12 +912,11 @@ export class ExportCodeCommand extends IdeCommandBase {
 
         // --- Save the data to a file
         if (exporter.filename) {
-          const response = await context.messenger.sendMessage({
-            type: "MainSaveBinaryFile",
-            path: exporter.filename,
-            data: writer.buffer,
-            resolveIn: `home:${EXPORT_FILE_FOLDER}`
-          });
+          const response = await context.mainApi.saveBinaryFile(
+            exporter.filename,
+            writer.buffer,
+            `home:${EXPORT_FILE_FOLDER}`
+          );
           if (response.type === "ErrorResponse") {
             return commandError(response.message);
           }
@@ -990,11 +979,10 @@ async function compileCode(
   let result: KliveCompilerOutput;
   let response: MainCompileResponse;
   try {
-    response = await context.messenger.sendMessage<MainCompileResponse>({
-      type: "MainCompileFile",
-      filename: fullPath,
+    response = await context.mainApi.compileFile(
+      fullPath,
       language
-    });
+    );
     if (response.type === "MainCompileFileResponse") {
       result = response.result;
     }
@@ -1058,15 +1046,7 @@ async function injectCode(
     }
     if (errorNo > 0) {
       const returnMessage = "Code compilation failed, no program to inject.";
-      const response = await context.messenger.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "error",
-        title: "Injecting code",
-        message: returnMessage
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-      }
+      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
       return commandError(returnMessage);
     }
   }
@@ -1078,31 +1058,23 @@ async function injectCode(
   let sumCodeLength = 0;
   result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
-    const response = await context.messenger.sendMessage({
-      type: "MainDisplayMessageBox",
-      messageType: "info",
-      title: "Injecting code",
-      message:
-        "The length of the compiled code is 0, " +
+    await context.mainApi.displayMessageBox(
+      "info",
+      "Injecting code",
+
+      "The length of the compiled code is 0, " +
         "so there is no code to inject into the virtual machine."
-    });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-    }
+    );
     return commandSuccessWith("Code length is 0, no code injected");
   }
 
   if (operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
-      const response = await context.messenger.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "warning",
-        title: "Injecting code",
-        message: "To inject the code into the virtual machine, please put it in paused state."
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-      }
+      await context.mainApi.displayMessageBox(
+        "warning",
+        "Injecting code",
+        "To inject the code into the virtual machine, please put it in paused state."
+      );
       return commandError("Machine must be in paused state.");
     }
   }
@@ -1135,15 +1107,7 @@ async function injectCode(
         .toString(16)
         .padStart(4, "0")
         .toUpperCase()}`;
-      const dlgResponse = await context.messenger.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "info",
-        title: "Injecting code",
-        message: returnMessage
-      });
-      if (dlgResponse.type === "ErrorResponse") {
-        reportMessagingError(`MainDisplayMessageBox call failed: ${dlgResponse.message}`);
-      }
+      await context.mainApi.displayMessageBox("info", "Injecting code", returnMessage);
       break;
 
     case "run": {

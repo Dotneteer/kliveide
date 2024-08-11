@@ -23,7 +23,6 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { reportMessagingError } from "@renderer/reportError";
 import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
 import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
@@ -35,6 +34,7 @@ import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { createMainApi } from "@common/messaging/MainApi";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -462,7 +462,7 @@ export async function processMainToEmuMessages(
       const machine = controller.machine as IZxNextMachine;
       return {
         type: "EmuGetNextMemoryMappingResponse",
-        ...(machine.memoryDevice.getMemoryMappings()),
+        ...machine.memoryDevice.getMemoryMappings()
       };
     }
   }
@@ -486,15 +486,11 @@ export async function processMainToEmuMessages(
       result = tapReader.readContent();
       if (result) {
         if (!message.suppressError) {
-          const response = await emuToMain.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "Tape file error",
-            message: `Error while processing tape file ${message.file} (${result})`
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(`Error displaying message dialog: ${response.message}`);
-          }
+          await createMainApi(emuToMain).displayMessageBox(
+            "error",
+            "Tape file error",
+            `Error while processing tape file ${message.file} (${result})`
+          );
         }
         return;
       } else {
@@ -517,15 +513,11 @@ export async function processMainToEmuMessages(
 
     // --- Done.
     if (message.confirm) {
-      const response = await emuToMain.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "info",
-        title: "Tape file set",
-        message: `Tape file ${message.file} successfully set.`
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(`Error displaying message dialog: ${response.message}`);
-      }
+      await createMainApi(emuToMain).displayMessageBox(
+        "info",
+        "Tape file set",
+        `Tape file ${message.file} successfully set.`
+      );
     }
   }
 
@@ -549,29 +541,21 @@ export async function processMainToEmuMessages(
 
       // --- Done.
       if (message.confirm) {
-        const response = await emuToMain.sendMessage({
-          type: "MainDisplayMessageBox",
-          messageType: "info",
-          title: message.contents ? "Disk inserted" : "Disk ejected",
-          message: message.contents
+        await createMainApi(emuToMain).displayMessageBox(
+          "info",
+          message.contents ? "Disk inserted" : "Disk ejected",
+          message.contents
             ? `Disk file ${message.file} successfully inserted into drive ${drive}.`
             : `Disk successfully ejected from drive ${drive}`
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`Error displaying message dialog: ${response.message}`);
-        }
+        );
       }
     } catch (err) {
       if (!message.suppressError) {
-        const response = await emuToMain.sendMessage({
-          type: "MainDisplayMessageBox",
-          messageType: "error",
-          title: "Disk file error",
-          message: `Error while processing disk file ${message.file} (${err})`
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`Error displaying message dialog: ${response.message}`);
-        }
+        await createMainApi(emuToMain).displayMessageBox(
+          "error",
+          "Disk file error",
+          `Error while processing disk file ${message.file} (${err})`
+        );
       }
       return;
     }

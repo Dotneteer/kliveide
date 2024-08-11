@@ -15,6 +15,7 @@ import { IdeCommandBase } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createMainApi } from "@common/messaging/MainApi";
 
 const MAX_HISTORY = 1024;
 
@@ -176,7 +177,8 @@ class IdeCommandService implements IIdeCommandService {
       service: this._appServices,
       messenger: this.messenger,
       messageSource: this.messageSource,
-      emuApi: createEmulatorApi(this.messenger)
+      emuApi: createEmulatorApi(this.messenger),
+      mainApi: createMainApi(this.messenger)
     };
     const commandResult = await commandInfo.execute(context);
     if (commandResult.success) {
@@ -311,7 +313,7 @@ class ExitCommand extends IdeCommandBase {
   readonly usage = "exit";
 
   async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    context.messenger.postMessage({ type: "MainExitApp" });
+    context.mainApi.exitApp();
     return { success: true, finalMessage: "Farewell!" };
   }
 }

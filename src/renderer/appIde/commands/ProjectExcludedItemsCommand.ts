@@ -12,7 +12,7 @@ import {
 import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import {
   ExcludedItemInfo,
-  excludedItemsFromGlobalSettingsAsync,
+  getExcludedProjectItemsFromGlobalSettings,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
 import {
@@ -48,7 +48,7 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase {
   async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     let result: Promise<ExcludedItemInfo[]>;
     if (this.globalMode) {
-      result = excludedItemsFromGlobalSettingsAsync(context.messenger);
+      result = getExcludedProjectItemsFromGlobalSettings(context.messenger);
     } else {
       const proj = context.store.getState().project;
       if (!proj?.isKliveProject) {
@@ -62,9 +62,7 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase {
       writeInfoMessage(context.output, "There are no excluded items.");
     } else {
       writeInfoMessage(context.output, "Excluded items:");
-      items.forEach((t) =>
-        writeInfoMessage(context.output, `"  "}${t.value}`)
-      );
+      items.forEach((t) => writeInfoMessage(context.output, `"  "}${t.value}`));
     }
     return commandSuccess;
   }
@@ -116,21 +114,17 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       if (this.deleteMode) {
         // Remove some entries from system-wide exclusion list
         if (this.paths.length > 0) {
-          const excludedItemsPromise = excludedItemsFromGlobalSettingsAsync(context.messenger).then(
-            (items) => items.map((t) => t.id)
-          );
+          const excludedItemsPromise = getExcludedProjectItemsFromGlobalSettings(
+            context.messenger
+          ).then((items) => items.map((t) => t.id));
           this.paths = this.paths.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
-          await context.messenger.sendMessage({
-            type: "MainSetGloballyExcludedProjectItems",
-            files: (await excludedItemsPromise)?.filter(
+          await context.mainApi.setGloballyExcludedProjectItems(
+            (await excludedItemsPromise)?.filter(
               (p) => !this.paths.some((t) => t.localeCompare(p) === 0)
             )
-          });
+          );
         } else {
-          await context.messenger.sendMessage({
-            type: "MainSetGloballyExcludedProjectItems",
-            files: []
-          });
+          await context.mainApi.setGloballyExcludedProjectItems([]);
         }
       } else {
         // Add new entries to system-wide exclusion list
@@ -145,12 +139,9 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
           filteredPaths.push(p);
         }
         needSaveProject = beforeExcluded(context, filteredPaths);
-        await context.messenger.sendMessage({
-          type: "MainAddGloballyExcludedProjectItems",
-          files: filteredPaths
-        });
+        await context.mainApi.addGlobalExcludedProjectItem(filteredPaths);
       }
-      await context.messenger.sendMessage({ type: "MainSaveSettings" });
+      await context.mainApi.saveSettings();
     } else {
       // Project-specific operation
       const proj = context.store.getState().project;

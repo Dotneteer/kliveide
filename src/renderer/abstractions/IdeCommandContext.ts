@@ -7,6 +7,7 @@ import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import type { MessageSource } from "@messaging/messages-core";
 import type { MachineInfo } from "@common/machines/info-types";
 import { EmuApi } from "@common/messaging/EmuApi";
+import { MainApi } from "@common/messaging/MainApi";
 
 /**
  * Describes the execution context of a command
@@ -56,4 +57,9 @@ export type IdeCommandContext = {
    * Emulator API
    */
   emuApi: EmuApi;
+
+  /**
+   * Main API
+   */
+  mainApi: MainApi;
 };

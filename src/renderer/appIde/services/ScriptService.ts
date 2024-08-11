@@ -8,6 +8,7 @@ import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createMainApi } from "@common/messaging/MainApi";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();
@@ -34,41 +35,29 @@ class ScriptService implements IScriptService {
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
   async runScript(scriptFilePath: string): Promise<number> {
-    const response = await this.messenger.sendMessage({
-      type: "MainStartScript",
-      filename: scriptFilePath
-    });
+    const response = await createMainApi(this.messenger).startScript(scriptFilePath);
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);
     }
-    if (response.type === "MainRunScriptResponse") {
-      if (response.hasParseError) {
-        throw new Error(
-          "The script contains parse errors. See the Script Output pane for details."
-        );
-      }
+    if (response.hasParseError) {
+      throw new Error("The script contains parse errors. See the Script Output pane for details.");
+    }
 
-      // --- Create a new output buffer for the script
-      if (response.id > 0) {
-        const buffer = new OutputPaneBuffer();
-        this._scriptOutputs.set(response.id, buffer);
-      }
+    // --- Create a new output buffer for the script
+    if (response.id > 0) {
+      const buffer = new OutputPaneBuffer();
+      this._scriptOutputs.set(response.id, buffer);
+    }
 
-      // --- Check the target
-      if (response.target !== "emu") {
-        // --- Script runs in the main process, nothing to do
-        return response.id;
-      }
-
-      // --- Script runs in the emulator, we need to forward the output
-      createEmulatorApi(this.messenger).startScript(
-        response.id,
-        scriptFilePath,
-        response.contents
-      );
+    // --- Check the target
+    if (response.target !== "emu") {
+      // --- Script runs in the main process, nothing to do
       return response.id;
     }
-    throw new Error("Unexpected response");
+
+    // --- Script runs in the emulator, we need to forward the output
+    createEmulatorApi(this.messenger).startScript(response.id, scriptFilePath, response.contents);
+    return response.id;
   }
 
   /**
@@ -85,14 +74,13 @@ class ScriptService implements IScriptService {
     filename: string,
     speciality: string
   ): Promise<number> {
-    // TODO: Implement this
-    const response = await this.messenger.sendMessage({
-      type: "MainStartScript",
+    console.log("Running script text", scriptText);
+    const response = await createMainApi(this.messenger).startScript(
       filename,
-      scriptText,
       scriptFunction,
+      scriptText,
       speciality
-    });
+    );
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);
     }
@@ -137,13 +125,9 @@ class ScriptService implements IScriptService {
     }
 
     // --- Send the stop script message
-    const response = await this.messenger.sendMessage({
-      type: "MainStopScript",
-      idOrFilename: script.id
-    });
-    if (response.type === "ErrorResponse") {
-      throw new Error(response.message);
-    }
+    const response = await createMainApi(this.messenger).stopScript(
+      script.id
+    );
     if (response.type === "FlagResponse") {
       return response.flag;
     }

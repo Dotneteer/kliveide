@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
   muteSoundAction,
   setFastLoadAction,
@@ -20,6 +20,7 @@ import { PANE_ID_BUILD } from "@common/integration/constants";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type Props = {
   ide: boolean;
@@ -64,6 +65,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
   const ideApi = useIdeApi();
+  const mainApi = useMainApi();
   const machineId = useSelector((s) => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const state = useSelector((s) => s.emulatorState?.machineState);
@@ -90,13 +92,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
     : startOptions[isDebugging ? 0 : 1];
 
   const { outputPaneService, ideCommandsService } = useAppServices();
-  const { messenger } = useRendererContext();
   const saveProject = async () => {
     await new Promise((r) => setTimeout(r, 100));
-    const response = await messenger.sendMessage({ type: "MainSaveProject" });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainSaveProject call failed: ${response.message}`);
-    }
+    await mainApi.saveProject();
   };
 
   const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;

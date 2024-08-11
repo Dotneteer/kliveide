@@ -1,13 +1,12 @@
 import styles from "./ExplorerPanel.module.scss";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { ITreeNode, ITreeView, TreeNode } from "@renderer/core/tree-node";
+import { TreeNode } from "@renderer/core/tree-node";
 import { MouseEvent, useEffect, useRef, useState } from "react";
 import {
   buildProjectTree,
   compareProjectNode,
   getFileTypeEntry,
-  getNodeDir,
-  ProjectNode
+  getNodeDir
 } from "../project/project-node";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { Icon } from "@controls/Icon";
@@ -31,14 +30,15 @@ import {
   incExploreViewVersionAction,
   setBuildRootAction
 } from "@state/actions";
-import { LANGUAGE_SETTINGS, PROJECT_FILE } from "@common/structs/project-const";
+import { PROJECT_FILE } from "@common/structs/project-const";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { EXCLUDED_PROJECT_ITEMS_DIALOG, NEW_PROJECT_DIALOG } from "@common/messaging/dialog-ids";
 import { saveProject } from "../utils/save-project";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
-import { createSettingsReader } from "@common/utils/SettingsReader";
+import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
+import { ProjectNode } from "@abstractions/ProjectNode";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -46,6 +46,7 @@ let lastExplorerPath = "";
 const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
+  const mainApi = useMainApi();
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
@@ -156,12 +157,7 @@ const ExplorerPanel = () => {
       <ContextMenuItem
         text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
         disabled={!selectedContextNode?.data.fullPath}
-        clicked={() =>
-          messenger.postMessage({
-            type: "MainShowItemInFolder",
-            itemPath: selectedContextNode.data.fullPath
-          })
-        }
+        clicked={() => mainApi.showItemInFolder(selectedContextNode.data.fullPath)}
       />
       <ContextMenuSeparator />
       <ContextMenuItem
@@ -231,24 +227,15 @@ const ExplorerPanel = () => {
         // --- Check if the item was a build root
         const oldProjectFolder = getNodeDir(selectedContextNode.data.projectPath);
         const wasBuildRoot = buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0;
-        const response = await messenger.sendMessage({
-          type: "MainRenameFileEntry",
-          oldName: selectedContextNode.data.fullPath,
-          newName: newFullName
-        });
+        const response = await mainApi.renameFileEntry(
+          selectedContextNode.data.fullPath,
+          newFullName
+        );
 
         // --- Check for successful operation
         if (response.type === "ErrorResponse") {
           // --- Display an error message
-          const dlgResponse = await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "Rename Error",
-            message: response.message
-          });
-          if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
-          }
+          await mainApi.displayMessageBox("error", "Rename Error", response.message);
         } else {
           // --- Succesfully renamed
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
@@ -256,7 +243,7 @@ const ExplorerPanel = () => {
           if (wasBuildRoot) {
             const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;
             dispatch(setBuildRootAction([newProjectPath], true));
-            await messenger.sendMessage({ type: "MainSaveProject" });
+            await mainApi.saveProject();
           }
 
           // --- Refresh the tree and notify other objects listening to a rename
@@ -282,23 +269,14 @@ const ExplorerPanel = () => {
       entry={selectedContextNode.data.fullPath}
       onDelete={async () => {
         // --- Delete the item
-        const response = await messenger.sendMessage({
-          type: "MainDeleteFileEntry",
-          isFolder: selectedContextNodeIsFolder,
-          name: selectedContextNode.data.fullPath
-        });
+        const response = await mainApi.deleteFileEntry(
+          selectedContextNodeIsFolder,
+          selectedContextNode.data.fullPath
+        );
 
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          const dlgResponse = await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "Delete Error",
-            message: response.message
-          });
-          if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
-          }
+          await mainApi.displayMessageBox("error", "Delete Error", response.message);
         } else {
           // --- Succesfully deleted
           selectedContextNode.parentNode.removeChild(selectedContextNode);
@@ -329,24 +307,14 @@ const ExplorerPanel = () => {
         selectedContextNode.isExpanded = true;
 
         // --- Add the item
-        const response = await messenger.sendMessage({
-          type: "MainAddNewFileEntry",
-          isFolder: newItemIsFolder,
-          folder: selectedContextNode.data.fullPath,
-          name: newName
-        });
-
+        const response = await mainApi.addNewFileEntry(
+          newName,
+          newItemIsFolder,
+          selectedContextNode.data.fullPath
+        );
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          const dlgResponse = await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "Add new item error",
-            message: response.message
-          });
-          if (dlgResponse.type === "ErrorResponse") {
-            reportMessagingError(`Error displaying message dialog: ${dlgResponse.message}`);
-          }
+          await mainApi.displayMessageBox("error", "Add new item error", response.message);
         } else {
           // --- Succesfully added
           const fileTypeEntry = getFileTypeEntry(newName, store);
@@ -487,22 +455,14 @@ const ExplorerPanel = () => {
     }
 
     // --- Read the folder tree
-    const response = await messenger.sendMessage({
-      type: "MainGetDirectoryContent",
-      directory: folderPath
-    });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainGetDirectoryContent call failed: ${response.message}`);
-    } else if (response.type !== "MainGetDirectoryContentResponse") {
-      reportUnexpectedMessageType(response.type);
-    } else {
-      // --- Build the folder tree
-      const projectTree = buildProjectTree(response.contents, store, lastExpanded);
-      setTree(projectTree);
-      setVisibleNodes(projectTree.getVisibleNodes());
-      projectService.setProjectTree(projectTree);
-      folderCache.set(folderPath, projectTree);
-    }
+    const response = await mainApi.getDirectoryContent(folderPath);
+
+    // --- Build the folder tree
+    const projectTree = buildProjectTree(response.contents, store, lastExpanded);
+    setTree(projectTree);
+    setVisibleNodes(projectTree.getVisibleNodes());
+    projectService.setProjectTree(projectTree);
+    folderCache.set(folderPath, projectTree);
   };
 
   // --- Set up the project service to handle project events
@@ -594,14 +554,7 @@ const ExplorerPanel = () => {
         disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
-        clicked={async () => {
-          const response = await messenger.sendMessage({
-            type: "MainOpenFolder"
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(`MainOpenFolder call failed: ${response.message}`);
-          }
-        }}
+        clicked={async () => await mainApi.openFolder()}
       />
       <div className={styles.noFolder}>or</div>
       <Button

@@ -25,21 +25,17 @@ export class SettingCommand extends IdeCommandBase {
   private projectOption?: boolean;
   private userOption?: boolean;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     delete this.key;
     delete this.value;
     delete this.projectOption;
     delete this.userOption;
   }
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length < 1) {
-      return validationError(
-        "This command expects at least one parameter, as the setting key"
-      );
+      return validationError("This command expects at least one parameter, as the setting key");
     }
     for (const arg of args) {
       switch (arg.text) {
@@ -64,9 +60,7 @@ export class SettingCommand extends IdeCommandBase {
                 break;
             }
           } else {
-            return validationError(
-              `This command contains an extra argument: ${arg.text}`
-            );
+            return validationError(`This command contains an extra argument: ${arg.text}`);
           }
           break;
       }
@@ -80,43 +74,22 @@ export class SettingCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const state = context.store.getState();
     const kliveProject = state.project?.isKliveProject;
     if (this.projectOption) {
       if (!kliveProject) {
         return {
           success: false,
-          finalMessage:
-            "The -p option can be used only with an open Klive project"
+          finalMessage: "The -p option can be used only with an open Klive project"
         };
       }
     }
 
     if (this.userOption || (!this.projectOption && !kliveProject)) {
-      const response = await context.messenger.sendMessage({
-        type: "MainApplyUserSettings",
-        key: this.key,
-        value: this.value
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
-      if (response.type !== "Ack") {
-        return commandError(`Invalid response type: '${response.type}'`);
-      }
+      await context.mainApi.applyUserSettings(this.key, this.value);
     } else {
-      const response = await context.messenger.sendMessage({
-        type: "MainApplyProjectSettings",
-        key: this.key,
-        value: this.value
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
-      if (response.type !== "Ack") {
-        return commandError(`Invalid response type: '${response.type}'`);
-      }
+      await context.mainApi.applyProjectSettings(this.key, this.value);
     }
     writeSuccessMessage(context.output, `Command successfully executed`);
     return commandSuccess;
@@ -133,15 +106,13 @@ export class ListSettingsCommand extends IdeCommandBase {
   private projectOption?: boolean;
   private userOption?: boolean;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     delete this.settingKey;
     delete this.projectOption;
     delete this.userOption;
   }
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length > 2) {
       return validationError("This command expects up to two argument");
@@ -158,9 +129,7 @@ export class ListSettingsCommand extends IdeCommandBase {
           if (this.settingKey === undefined) {
             this.settingKey = arg.text;
           } else {
-            return validationError(
-              `This command contains an extra argument: ${arg.text}`
-            );
+            return validationError(`This command contains an extra argument: ${arg.text}`);
           }
           break;
       }
@@ -171,7 +140,7 @@ export class ListSettingsCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const state = context.store.getState();
     const kliveProject = state.project?.isKliveProject;
     let settings: Record<string, any> = {};
@@ -199,7 +168,7 @@ export class ListSettingsCommand extends IdeCommandBase {
     let filteredSetting: Record<string, any>;
     if (this.settingKey) {
       filteredSetting = {};
-      Object.keys(settings).forEach(key => {
+      Object.keys(settings).forEach((key) => {
         if (key.startsWith(this.settingKey)) {
           filteredSetting[key] = settings[key];
         }
@@ -210,33 +179,17 @@ export class ListSettingsCommand extends IdeCommandBase {
 
     // --- Display the settings
     const lines = JSON.stringify(filteredSetting, null, 2).split("\n");
-    lines.forEach(l => writeMessage(context.output, l, "bright-cyan"));
+    lines.forEach((l) => writeMessage(context.output, l, "bright-cyan"));
     writeSuccessMessage(context.output, `Command successfully executed`);
     return commandSuccess;
 
-    async function readUserSettings () {
-      const response = await context.messenger.sendMessage({
-        type: "MainGetUserSettings"
-      });
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      }
-      if (response.type !== "MainGetSettingsResponse") {
-        throw new Error(`Invalid response type: '${response.type}'`);
-      }
+    async function readUserSettings() {
+      const response = await context.mainApi.getUserSettings();
       return response.settings;
     }
 
-    async function readProjectSettings () {
-      const response = await context.messenger.sendMessage({
-        type: "MainGetProjectSettings"
-      });
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      }
-      if (response.type !== "MainGetSettingsResponse") {
-        throw new Error(`Invalid response type: '${response.type}'`);
-      }
+    async function readProjectSettings() {
+      const response = await context.mainApi.getProjectSettings();
       return response.settings;
     }
   }
@@ -254,18 +207,15 @@ export class MoveSettingsCommand extends IdeCommandBase {
   private pushOption?: boolean;
   private copyOption?: boolean;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     delete this.pullOption;
     delete this.pushOption;
     delete this.copyOption;
   }
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
-    const isKliveProject =
-      context.store.getState()?.project?.isKliveProject ?? false;
+    const isKliveProject = context.store.getState()?.project?.isKliveProject ?? false;
     if (args.length > 2) {
       return validationError("This command expects up to 2 arguments");
     }
@@ -295,26 +245,14 @@ export class MoveSettingsCommand extends IdeCommandBase {
     }
 
     if (!isKliveProject) {
-      return validationError(
-        "You can use this command only with an open Klive project."
-      );
+      return validationError("You can use this command only with an open Klive project.");
     }
 
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = await context.messenger.sendMessage({
-      type: "MainMoveSettings",
-      pull: !!this.pullOption,
-      copy: !!this.copyOption
-    });
-    if (response.type === "ErrorResponse") {
-      throw new Error(response.message);
-    }
-    if (response.type !== "Ack") {
-      throw new Error(`Invalid response type: '${response.type}'`);
-    }
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    await context.mainApi.moveSettings(!!this.pullOption, !!this.copyOption);
     writeSuccessMessage(context.output, `Command successfully executed`);
     return commandSuccess;
   }
