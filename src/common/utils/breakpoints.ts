@@ -1,13 +1,13 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
-import { reportMessagingError } from "@renderer/reportError";
 
-export function getBreakpointKey (bp: BreakpointInfo): string {
+export function getBreakpointKey(bp: BreakpointInfo): string {
   // --- Collect memory/IO breakpoint suffix
   let suffix = "";
   if (bp.memoryRead) {
@@ -36,17 +36,13 @@ export function getBreakpointKey (bp: BreakpointInfo): string {
 }
 
 // --- Sends all resolved source code breakpoints to the emulator
-export async function refreshSourceCodeBreakpoints (
+export async function refreshSourceCodeBreakpoints(
   store: Store<AppState>,
   messenger: MessengerBase
 ): Promise<void> {
   const compilation = store.getState().compilation!;
   const resolvedBp: ResolvedBreakpoint[] = [];
-  if (
-    compilation.result &&
-    !compilation.failed &&
-    compilation.result.errors?.length === 0
-  ) {
+  if (compilation.result && !compilation.failed && compilation.result.errors?.length === 0) {
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }
@@ -55,12 +51,12 @@ export async function refreshSourceCodeBreakpoints (
     const bps = await getBreakpoints(messenger);
     for (const bp of bps) {
       if (!bp.resource) continue;
-      const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
+      const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
         fi.filename.endsWith(bp.resource!)
       );
       if (fileIndex >= 0) {
         const lineInfo = compilation.result.listFileItems.find(
-          li => li.fileIndex === fileIndex && li.lineNumber === bp.line
+          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
         );
         if (lineInfo) {
           resolvedBp.push({
@@ -72,13 +68,5 @@ export async function refreshSourceCodeBreakpoints (
       }
     }
   }
-  const response = await messenger.sendMessage({
-    type: "EmuResolveBreakpoints",
-    breakpoints: resolvedBp
-  });
-  if (response.type === "ErrorResponse") {
-    reportMessagingError(
-      `EmuResolveBreakpoint call failed: ${response.message}`
-    );
-  }
+  await createEmulatorApi(messenger).resolveBreakpoints(resolvedBp);
 }

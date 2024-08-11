@@ -10,6 +10,8 @@ import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/rep
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
+import { create } from "lodash";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
 
 const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -18,17 +20,9 @@ const NecUpd765Panel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshLogEntries = async () => {
     // --- Get breakpoint information
-    const logResponse = await messenger.sendMessage({
-      type: "EmuGetNecUpd765State"
-    });
-    if (logResponse.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetNecUpd765State call failed: ${logResponse.message}`);
-    } else if (logResponse.type !== "EmuGetNecUpd765StateResponse") {
-      reportUnexpectedMessageType(logResponse.type);
-    } else {
-      // --- Store the breakpoint info
-      setLog(logResponse.log);
-    }
+    const logResponse = await createEmulatorApi(messenger).getNecUpd765State();
+    // --- Store the breakpoint info
+    setLog(logResponse.log);
   };
 
   // --- Take care of refreshing the screen

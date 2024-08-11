@@ -455,11 +455,6 @@ export async function processRendererToMainMessages(
       }
       break;
 
-    case "EmuMachineCommand":
-      // --- A client wants to send a machine command (start, pause, stop, etc.)
-      // --- Send this message to the emulator
-      return await sendFromMainToEmu(message);
-
     case "IdeDisplayOutput":
     case "IdeExecuteCommand":
     case "IdeScriptOutput":
@@ -467,6 +462,7 @@ export async function processRendererToMainMessages(
       return await sendFromMainToIde(message);
 
     // --- Forward these messages to the emulator
+    case "EmuMachineCommand":
     case "EmuGetCpuState":
     case "EmuGetUlaState":
     case "EmuGetPsgState":

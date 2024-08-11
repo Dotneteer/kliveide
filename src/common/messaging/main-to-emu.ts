@@ -358,15 +358,3 @@ export interface EmuGetNextMemoryMappingResponse extends MessageBase {
   portLayer2: number;
   portTimex: number;
 }
-
-// --- Helper function to create a particular machine command
-export function createMachineCommand(
-  command: MachineCommand,
-  customCommand?: string
-): EmuMachineCommandRequest {
-  return {
-    type: "EmuMachineCommand",
-    command,
-    customCommand
-  };
-}

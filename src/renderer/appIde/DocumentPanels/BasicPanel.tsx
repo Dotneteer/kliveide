@@ -3,11 +3,7 @@ import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { VirtualizedListApi } from "@controls/VirtualizedList";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
-import {
-  useDispatch,
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -24,12 +20,9 @@ import {
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
 import { ZxSpectrumChars } from "./char-codes";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "@renderer/utils/classnames";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 type BasicViewState = {
   topIndex?: number;
@@ -41,24 +34,21 @@ type BasicViewState = {
 const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
-  const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
+
   const documentHubService = useDocumentHubService();
 
   // --- Read the view state of the document
   const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? 0);
 
   // --- Use these app state variables
-  const machineState = useSelector(s => s.emulatorState?.machineState);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [autoRefresh, setAutoRefresh] = useState(
-    viewState?.autoRefresh ?? true
-  );
+  const [autoRefresh, setAutoRefresh] = useState(viewState?.autoRefresh ?? true);
   const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
-  const [showSpectrumFont, setShowSpectrumFont] = useState(
-    viewState?.showSpectrumFont ?? true
-  );
+  const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -86,8 +76,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     let lastLineNo = -1;
 
     while (!corrupted && currentPos < progEnd) {
-      const lineNo =
-        (memory.current[currentPos] << 8) + memory.current[currentPos + 1];
+      const lineNo = (memory.current[currentPos] << 8) + memory.current[currentPos + 1];
       currentPos += 2;
       const lineLength = getWord(currentPos);
       currentPos += 2;
@@ -243,10 +232,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
             break;
           default:
             segment = nextSymbol.v;
-            if (
-              (nextSymbol.v === ":" || nextSymbol.v === ";") &&
-              !withinQuotes
-            ) {
+            if ((nextSymbol.v === ":" || nextSymbol.v === ";") && !withinQuotes) {
               segment += "\xa0";
             }
             break;
@@ -286,23 +272,14 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
-      const response = await messenger.sendMessage({
-        type: "EmuGetMemory"
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `EmuGetMemory request failed: ${response.message}`
-        );
-      } else if (response.type !== "EmuGetMemoryResponse") {
-        reportUnexpectedMessageType(response.type);
-      } else {
-        memory.current = response.memory;
-        showListing.current = response.osInitialized;
+      const response = await emuApi.getMemoryContents();
 
-        // --- Calculate tooltips for pointed addresses
-        if (toRefresh) {
-          createListing();
-        }
+      memory.current = response.memory;
+      showListing.current = response.osInitialized;
+
+      // --- Calculate tooltips for pointed addresses
+      if (toRefresh) {
+        createListing();
       }
     } finally {
       refreshInProgress.current = false;
@@ -365,57 +342,46 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     <div className={styles.basicPanel}>
       <div className={styles.header}>
         <SmallIconButton
-          iconName='refresh'
+          iconName="refresh"
           title={"Refresh now"}
           clicked={async () => {
             refreshBasicView();
-            dispatch(
-              setIdeStatusMessageAction("BASIC listing refreshed", true)
-            );
+            dispatch(setIdeStatusMessageAction("BASIC listing refreshed", true));
           }}
         />
         <ToolbarSeparator small={true} />
         <SmallIconButton
-          iconName='copy'
+          iconName="copy"
           title={"Copy to clipboard"}
           clicked={async () => {
-            navigator.clipboard.writeText(
-              programBuffer.current.getBufferText()
-            );
-            dispatch(
-              setIdeStatusMessageAction(
-                "BASIC listing copied to the clipboard",
-                true
-              )
-            );
+            navigator.clipboard.writeText(programBuffer.current.getBufferText());
+            dispatch(setIdeStatusMessageAction("BASIC listing copied to the clipboard", true));
           }}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          label='Auto Refresh:'
-          title='Refresh the BASIC listing periodically'
+          label="Auto Refresh:"
+          title="Refresh the BASIC listing periodically"
           clicked={setAutoRefresh}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showCodes}
-          label='Show Non-Printable:'
-          title='Display the non-printable codes'
+          label="Show Non-Printable:"
+          title="Display the non-printable codes"
           clicked={setShowCodes}
         />
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={showSpectrumFont}
-          label='Use ZX Spectrum font:'
-          title='Use ZX Spectrum font to display the list'
+          label="Use ZX Spectrum font:"
+          title="Use ZX Spectrum font to display the list"
           clicked={setShowSpectrumFont}
         />
       </div>
       {!showListing.current && (
-        <div className={styles.center}>
-          Machine OS has not been initialized yet
-        </div>
+        <div className={styles.center}>Machine OS has not been initialized yet</div>
       )}
       {showListing.current && basicLines && !basicLines.length && (
         <div className={styles.center}>BASIC program area is empty</div>
@@ -431,11 +397,14 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
               storeTopAddress();
             }}
-            vlApiLoaded={api => (vlApi.current = api)}
-            itemRenderer={idx => {
+            vlApiLoaded={(api) => (vlApi.current = api)}
+            itemRenderer={(idx) => {
               return (
                 <div className={styles.item}>
-                  <BasicLineDisplay spans={basicLines[idx].spans} showSpectrumFont={showSpectrumFont} />
+                  <BasicLineDisplay
+                    spans={basicLines[idx].spans}
+                    showSpectrumFont={showSpectrumFont}
+                  />
                 </div>
               );
             }}
@@ -460,8 +429,8 @@ export const BasicLineDisplay = ({ spans, showSpectrumFont }: LineProps) => {
       inkColor !== undefined
         ? `--console-ansi-${inkColor}`
         : s.inverse
-        ? "--console-ansi-black"
-        : "--console-default";
+          ? "--console-ansi-black"
+          : "--console-default";
     const paperColor = s.inverse ? s.ink : s.paper;
     const paper =
       paperColor !== undefined
@@ -469,17 +438,17 @@ export const BasicLineDisplay = ({ spans, showSpectrumFont }: LineProps) => {
           ? `--console-ansi-bright-${paperColor}`
           : `--console-ansi-${paperColor}`
         : s.inverse
-        ? s.bright
-          ? "--console-ansi-bright-white"
-          : "--console-ansi-white"
-        : "transparent";
+          ? s.bright
+            ? "--console-ansi-bright-white"
+            : "--console-ansi-white"
+          : "transparent";
 
     const style: CSSProperties = {
       backgroundColor: `var(${paper})`,
       color: `var(${ink})`,
       textDecoration: `${s.flash ? "underline" : ""}`,
       paddingTop: showSpectrumFont ? 2 : undefined,
-      paddingBottom: showSpectrumFont ? 2 : undefined,
+      paddingBottom: showSpectrumFont ? 2 : undefined
     };
     return (
       <span key={runningIndex++} style={style}>
@@ -509,7 +478,7 @@ const colorCodes: SpectrumColor[] = [
   "white"
 ];
 
-function getColorCode (code: number): SpectrumColor {
+function getColorCode(code: number): SpectrumColor {
   return colorCodes[code & 0x07];
 }
 

@@ -2,8 +2,7 @@ import fs from "fs";
 
 import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { MachineMenuRenderer } from "@common/machines/info-types";
-import { sendFromMainToEmu } from "@common/messaging/MainToEmuMessenger";
-import { createMachineCommand } from "@common/messaging/main-to-emu";
+import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "@common/state/actions";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
@@ -111,7 +110,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       label: "Soft reset",
       accelerator: "F8",
       click: async () => {
-        await sendFromMainToEmu(createMachineCommand("reset"));
+        await getEmuApi().issueMachineCommand("reset");
       }
     },
     {
@@ -119,7 +118,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       label: "Hard reset",
       accelerator: "F9",
       click: async () => {
-        await sendFromMainToEmu(createMachineCommand("restart"));
+        await getEmuApi().issueMachineCommand("restart");
       }
     },
     { type: "separator" },
@@ -129,7 +128,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       accelerator: "F6",
       enabled: execState === MachineControllerState.Running,
       click: async () => {
-        await sendFromMainToEmu(createMachineCommand("custom", "press_shifts"));
+        await getEmuApi().issueMachineCommand("custom", "press_shifts");
       }
     },
     {
@@ -137,7 +136,7 @@ export const z88ResetRenderer: MachineMenuRenderer = () => {
       label: "Raise battery low signal",
       enabled: execState === MachineControllerState.Running,
       click: async () => {
-        await sendFromMainToEmu(createMachineCommand("custom", "battery_low"));
+        await getEmuApi().issueMachineCommand("custom", "battery_low");
       }
     }
   ];

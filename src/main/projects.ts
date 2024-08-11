@@ -38,8 +38,7 @@ import {
   PROJECT_MERGE_FILE,
   BUILD_FILE
 } from "@common/structs/project-const";
-import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
-import { EmuListBreakpointsResponse } from "@messaging/main-to-emu";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { setMachineType } from "./registeredMachines";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import { getModelConfig } from "@common/machines/machine-registry";
@@ -57,7 +56,7 @@ type ProjectCreationResult = {
  * @param projectName Name of the project subfolder
  * @param projectFolder Project home directory
  */
-export async function createKliveProject (
+export async function createKliveProject(
   machineId: string,
   modelId: string | undefined,
   templateId: string,
@@ -66,11 +65,7 @@ export async function createKliveProject (
 ): Promise<ProjectCreationResult> {
   const projPath = getKliveProjectFolder(projectFolder);
   const fullProjectFolder = path.join(projPath, projectName);
-  const templateFolder = path.join(
-    resolvePublicFilePath(PROJECT_TEMPLATES),
-    machineId,
-    templateId
-  );
+  const templateFolder = path.join(resolvePublicFilePath(PROJECT_TEMPLATES), machineId, templateId);
 
   try {
     // --- Check if the folder exists
@@ -123,7 +118,7 @@ export async function createKliveProject (
  * Opens a folder
  * @param browserWindow Host browser window
  */
-export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
+export async function openFolder(browserWindow: BrowserWindow): Promise<void> {
   const lastFile = mainStore.getState()?.media?.[MEDIA_TAPE];
   const defaultPath =
     appSettings?.folders?.[LAST_PROJECT_FOLDER] ||
@@ -148,9 +143,7 @@ export async function openFolder (browserWindow: BrowserWindow): Promise<void> {
  * @param projectFolder Folder to open
  * @returns null, if the operation is successful; otherwise, the error message
  */
-export async function openFolderByPath (
-  projectFolder: string
-): Promise<string | null> {
+export async function openFolderByPath(projectFolder: string): Promise<string | null> {
   // --- Check if project files exists
   projectFolder = getKliveProjectFolder(projectFolder);
   if (!fs.existsSync(projectFolder)) {
@@ -166,57 +159,34 @@ export async function openFolderByPath (
   if (fs.existsSync(projectFile)) {
     const projectContents = fs.readFileSync(projectFile, "utf8");
     try {
-      const projectStruct = JSON.parse(
-        projectContents
-      ) as KliveProjectStructure;
-      isValidProject = !!(
-        projectStruct.kliveVersion && projectStruct.machineType
-      );
+      const projectStruct = JSON.parse(projectContents) as KliveProjectStructure;
+      isValidProject = !!(projectStruct.kliveVersion && projectStruct.machineType);
 
       // --- Apply the machine type saved in the project
-      await setMachineType(
-        projectStruct.machineType,
-        projectStruct.modelId,
-        projectStruct.config
-      );
+      await setMachineType(projectStruct.machineType, projectStruct.modelId, projectStruct.config);
 
       // --- Apply settings if the project is valid
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
-      disp(
-        setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems)
-      );
+      disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
       disp(showEmuToolbarAction(projectStruct.viewOptions.showEmuToolbar));
       disp(showEmuStatusBarAction(projectStruct.viewOptions.showEmuStatusbar));
       disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
       disp(showIdeStatusBarAction(projectStruct.viewOptions.showIdeStatusbar));
       disp(showKeyboardAction(projectStruct.viewOptions.showKeyboard));
       disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
-      disp(
-        primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight)
-      );
+      disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
       disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
       disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
       disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
-      disp(
-        setBuildRootAction(
-          projectStruct.builder?.roots,
-          !!projectStruct.builder?.roots
-        )
-      );
+      disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
 
       // --- Restore breakpoints
-      await sendFromMainToEmu({
-        type: "EmuEraseAllBreakpoints"
-      });
-
+      await getEmuApi().eraseAllBreakpoints();
       if (projectStruct.debugger?.breakpoints) {
         for (const bp of projectStruct.debugger.breakpoints) {
-          await sendFromMainToEmu({
-            type: "EmuSetBreakpoint",
-            breakpoint: bp
-          });
+          await getEmuApi().setBreakpoint(bp);
         }
       }
 
@@ -246,20 +216,11 @@ export async function openFolderByPath (
 }
 
 /**
- * Deletes the specified file entry
- * @param name File entry to delete
- * @returns null, if the operation is successful; otherwise, the error message
- */
-export function deleteFileEntry (name: string): string | null {
-  return null;
-}
-
-/**
  * Copies a file synchronously
  * @param source Source file
  * @param target Target file
  */
-export function copyFileSync (source: string, target: string) {
+export function copyFileSync(source: string, target: string) {
   var targetFile = target;
   if (fs.existsSync(target)) {
     if (fs.lstatSync(target).isDirectory()) {
@@ -274,11 +235,7 @@ export function copyFileSync (source: string, target: string) {
  * @param source Source folder
  * @param target Target folder
  */
-export function copyFolderSync (
-  source: string,
-  target: string,
-  copyRoot = true
-) {
+export function copyFolderSync(source: string, target: string, copyRoot = true) {
   var files = [];
 
   // --- Check if folder needs to be created or integrated
@@ -310,10 +267,8 @@ export function copyFolderSync (
  * @param toResolve Path to resolve
  * @returns Resolved path
  */
-export function resolveHomeFilePath (toResolve: string): string {
-  return path.isAbsolute(toResolve)
-    ? toResolve
-    : path.join(app.getPath("home"), toResolve);
+export function resolveHomeFilePath(toResolve: string): string {
+  return path.isAbsolute(toResolve) ? toResolve : path.join(app.getPath("home"), toResolve);
 }
 
 /**
@@ -321,18 +276,15 @@ export function resolveHomeFilePath (toResolve: string): string {
  * @param toResolve Path to resolve
  * @returns Resolved path
  */
-export function resolveSavedFilePath (toResolve: string): string {
+export function resolveSavedFilePath(toResolve: string): string {
   const project = mainStore.getState().project;
   const isKliveProject = project?.isKliveProject ?? false;
   const projectFolder = project?.folderPath ?? "";
   const finalPath = path.isAbsolute(toResolve)
     ? toResolve
     : isKliveProject
-    ? path.join(projectFolder, "SavedFiles", toResolve)
-    : path.join(
-        path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"),
-        toResolve
-      );
+      ? path.join(projectFolder, "SavedFiles", toResolve)
+      : path.join(path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"), toResolve);
   return finalPath;
 }
 
@@ -341,14 +293,12 @@ export function resolveSavedFilePath (toResolve: string): string {
  * @param toResolve Path to resolve
  * @returns Resolved path
  */
-export function resolvePublicFilePath (toResolve: string): string {
-  return path.isAbsolute(toResolve)
-    ? toResolve
-    : path.join(process.env.PUBLIC, toResolve);
+export function resolvePublicFilePath(toResolve: string): string {
+  return path.isAbsolute(toResolve) ? toResolve : path.join(process.env.PUBLIC, toResolve);
 }
 
 // --- Gets the klive folder for the specified project folder
-export function getKliveProjectFolder (projectFolder: string): string {
+export function getKliveProjectFolder(projectFolder: string): string {
   return projectFolder
     ? path.isAbsolute(projectFolder)
       ? projectFolder
@@ -357,12 +307,9 @@ export function getKliveProjectFolder (projectFolder: string): string {
 }
 
 // --- Get the current klive project structure to save
-export async function getKliveProjectStructure (): Promise<KliveProjectStructure> {
+export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
   const state = mainStore.getState();
-  const bpResponse = (await sendFromMainToEmu({
-    type: "EmuListBreakpoints"
-  })) as EmuListBreakpointsResponse;
-
+  const bpResponse = await getEmuApi().listBreakpoints();
   return {
     kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,
@@ -405,7 +352,7 @@ export async function getKliveProjectStructure (): Promise<KliveProjectStructure
 }
 
 // --- Saves the current Klive project
-export async function saveKliveProject (): Promise<void> {
+export async function saveKliveProject(): Promise<void> {
   const projectState = mainStore.getState().project;
   if (!projectState.folderPath) return;
 
@@ -423,17 +370,17 @@ let recentProjects: string[] = [];
 const MAX_RECENT_PROJECTS = 10;
 
 // --- Retrieve the recent projects
-export function getRecentProjects (): string[] {
+export function getRecentProjects(): string[] {
   return recentProjects;
 }
 
 // --- Set the recent projects (after loading the settings)
-export function setRecentProjects (projects: string[]): void {
+export function setRecentProjects(projects: string[]): void {
   recentProjects = projects;
 }
 
 // --- Add a recent project
-export function addRecentProject (projectFolder: string): void {
+export function addRecentProject(projectFolder: string): void {
   if (recentProjects.includes(projectFolder)) {
     recentProjects = recentProjects.filter((p) => p !== projectFolder);
   }

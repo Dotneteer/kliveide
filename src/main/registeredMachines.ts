@@ -1,7 +1,7 @@
 import type { MachineConfigSet } from "@common/machines/info-types";
 import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 
-import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
@@ -40,19 +40,15 @@ export const registeredMachines = [
  * @param modelId ID of the machine model
  * @param config Optional machine configuration
  */
-export async function setMachineType (machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void> {
-  await sendFromMainToEmu({
-    type: "EmuSetMachineType",
-    machineId,
-    modelId,
-    config
-  });
-  const mt = registeredMachines.find(mt => mt.id === machineId);
+export async function setMachineType(
+  machineId: string,
+  modelId?: string,
+  config?: MachineConfigSet
+): Promise<void> {
+  await getEmuApi().setMachineType(machineId, modelId, config);
+  const mt = registeredMachines.find((mt) => mt.id === machineId);
   if (mt) {
-    await logEmuEvent(
-      `Machine type set to ${mt.displayName} (${mt.id})`,
-      "bright-cyan"
-    );
+    await logEmuEvent(`Machine type set to ${mt.displayName} (${mt.id})`, "bright-cyan");
   }
 }
 
@@ -64,10 +60,7 @@ let loggedEmuOutputEvents = 0;
  * @param text Log text
  * @param color Text color to use
  */
-export async function logEmuEvent (
-  text: string,
-  color?: OutputColor
-): Promise<void> {
+export async function logEmuEvent(text: string, color?: OutputColor): Promise<void> {
   loggedEmuOutputEvents++;
   await sendFromMainToIde({
     type: "IdeDisplayOutput",

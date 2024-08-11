@@ -1113,13 +1113,7 @@ async function injectCode(
 
   switch (operationType) {
     case "inject":
-      const response = await context.messenger.sendMessage({
-        type: "EmuInjectCode",
-        codeToInject
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(`EmuInjectCode call failed: ${response.message}`);
-      }
+      await context.emuApi.injectCodeCommand(codeToInject);
       returnMessage = `Successfully injected ${sumCodeLength} bytes in ${
         codeToInject.segments.length
       } segment${
@@ -1131,27 +1125,13 @@ async function injectCode(
       break;
 
     case "run": {
-      const response = await context.messenger.sendMessage({
-        type: "EmuRunCode",
-        codeToInject,
-        debug: false
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
+      await context.emuApi.runCodeCommand(codeToInject, false);
       returnMessage = `Code injected and started.`;
       break;
     }
 
     case "debug": {
-      const response = await context.messenger.sendMessage({
-        type: "EmuRunCode",
-        codeToInject,
-        debug: true
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
+      await context.emuApi.runCodeCommand(codeToInject, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

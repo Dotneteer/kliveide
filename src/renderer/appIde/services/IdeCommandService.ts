@@ -14,6 +14,7 @@ import { parseCommand } from "./command-parser";
 import { IdeCommandBase } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
 
 const MAX_HISTORY = 1024;
 
@@ -174,7 +175,8 @@ class IdeCommandService implements IIdeCommandService {
       output: buffer,
       service: this._appServices,
       messenger: this.messenger,
-      messageSource: this.messageSource
+      messageSource: this.messageSource,
+      emuApi: createEmulatorApi(this.messenger)
     };
     const commandResult = await commandInfo.execute(context);
     if (commandResult.success) {

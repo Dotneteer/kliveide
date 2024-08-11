@@ -1,27 +1,22 @@
 import { Flag, Label, Separator } from "@controls/Labels";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { EmuGetUlaStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 48;
 
 const UlaPanel = () => {
-  const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
   const [ulaState, setUlaState] = useState<EmuGetUlaStateResponse>(null);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
 
-  useStateRefresh(250, async () => {
-    setUlaState(
-      (await messenger.sendMessage({
-        type: "EmuGetUlaState"
-      })) as EmuGetUlaStateResponse
-    );
-  });
+  useStateRefresh(250, async () => setUlaState(await emuApi.getUlaState()));
 
   return (
     <div className={styles.ulaPanel}>

@@ -1,16 +1,15 @@
 import { Label, Value } from "@controls/Labels";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa2 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemMappingPanel.module.scss";
-import {} from "@controls/Tooltip";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const VAR_WIDTH = 108;
 
 const MemMappingPanel = () => {
-  const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
   const [allRamBanks, setAllRamBanks] = useState<number[]>();
   const [selectedRom, setSelectedRom] = useState<number>(0);
   const [selectedRamBank, setSelectedRamBank] = useState<number>(0);
@@ -25,25 +24,16 @@ const MemMappingPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshMemoryMappingState = async () => {
     // --- Get breakpoint information
-    const response = await messenger.sendMessage({
-      type: "EmuGetNextMemoryMapping"
-    });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetNextMemoryMapping call failed: ${response.message}`);
-    } else if (response.type !== "EmuGetNextMemoryMappingResponse") {
-      reportUnexpectedMessageType(response.type);
-    } else {
-      console.log(response);
-      setAllRamBanks(response.allRamsBanks);
-      setSelectedRom(response.selectedRom);
-      setSelectedRamBank(response.selectedBank);
-      setPort7ffd(response.port7ffd);
-      setPort1ffd(response.port1ffd);
-      setPortDffd(response.portDffd);
-      setPortEff7(response.portEff7);
-      setPortLayer2(response.portLayer2);
-      setPortTimex(response.portTimex);
-    }
+    const response = await emuApi.getNextMemoryMapping();
+    setAllRamBanks(response.allRamsBanks);
+    setSelectedRom(response.selectedRom);
+    setSelectedRamBank(response.selectedBank);
+    setPort7ffd(response.port7ffd);
+    setPort1ffd(response.port1ffd);
+    setPortDffd(response.portDffd);
+    setPortEff7(response.portEff7);
+    setPortLayer2(response.portLayer2);
+    setPortTimex(response.portTimex);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list

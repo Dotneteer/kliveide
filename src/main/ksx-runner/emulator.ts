@@ -2,7 +2,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { ScriptCallContext } from "./MainScriptManager";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { sendFromMainToEmu } from "@common/messaging/MainToEmuMessenger";
+import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 
 export interface EmulatorApi {
   readonly executionState: MachineControllerState;
@@ -27,45 +27,53 @@ export function createEmulatorApi(context: ScriptCallContext): EmulatorApi {
       return context.state?.emulatorState?.machineState ?? MachineControllerState.None;
     },
     start: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "start" });
+      await getEmuApi().issueMachineCommand("start");
     },
     pause: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "pause" });
+      await getEmuApi().issueMachineCommand("pause");
     },
     stop: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "stop" });
+      await getEmuApi().issueMachineCommand("stop");
     },
     reset: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "reset" });
+      await getEmuApi().issueMachineCommand("reset");
     },
     restart: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "restart" });
+      await getEmuApi().issueMachineCommand("restart");
     },
     debug: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "debug" });
+      await getEmuApi().issueMachineCommand("debug");
     },
     stepInto: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "stepInto" });
+      await getEmuApi().issueMachineCommand("stepInto");
     },
     stepOver: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "stepOver" });
+      await getEmuApi().issueMachineCommand("stepOver");
     },
     stepOut: async () => {
-      await sendFromMainToEmu({ type: "EmuMachineCommand", command: "stepOut" });
+      await getEmuApi().issueMachineCommand("stepOut");
     },
     async injectCode(code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> {
-      await sendFromMainToEmu({ type: "EmuInjectCode", codeToInject: createCodeToInject(code, org, partition) });
+      await getEmuApi().injectCodeCommand(createCodeToInject(code, org, partition));
     },
     runCode: async (code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> => {
-      await sendFromMainToEmu({ type: "EmuRunCode", codeToInject: createCodeToInject(code, org, partition), debug: false });
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), false);
     },
-    debugCode: async (code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> => {
-      await sendFromMainToEmu({ type: "EmuRunCode", codeToInject: createCodeToInject(code, org, partition), debug: true });
+    debugCode: async (
+      code: Uint8Array,
+      org: number = 0x8000,
+      partition?: number
+    ): Promise<void> => {
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), true);
     }
   };
 }
 
-function createCodeToInject(code: Uint8Array, org: number = 0x8000, partition?: number): CodeToInject {
+function createCodeToInject(
+  code: Uint8Array,
+  org: number = 0x8000,
+  partition?: number
+): CodeToInject {
   return {
     model: "sp48",
     entryAddress: org,

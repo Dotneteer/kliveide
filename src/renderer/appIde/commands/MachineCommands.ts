@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { createMachineCommand, MachineCommand } from "@messaging/main-to-emu";
+import { MachineCommand } from "@messaging/main-to-emu";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
@@ -23,12 +23,7 @@ export class StartMachineCommand extends CommandWithNoArgBase {
       machineState === MachineControllerState.Paused ||
       machineState === MachineControllerState.Stopped
     ) {
-      const response = await context.messenger.sendMessage(
-        createMachineCommand("start")
-      );
-      if (response.type === "ErrorResponse") {
-        return commandError(`Starting machine failed: ${response.message}`);
-      }
+      await context.emuApi.issueMachineCommand("start");
       writeSuccessMessage(context.output, "Machine started");
       return commandSuccess;
     }
@@ -47,22 +42,8 @@ export class PauseMachineCommand extends CommandWithNoArgBase {
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (machineState === MachineControllerState.Running) {
-      const cpuState = await context.messenger.sendMessage({
-        type: "EmuGetCpuState"
-      });
-      if (cpuState.type === "ErrorResponse") {
-        return commandError(`EmuGetCpuState call failed: ${cpuState.message}`);
-      }
-      if (cpuState.type !== "EmuGetCpuStateResponse") {
-        return commandError(`Unexpected response type: ${cpuState.type}`);
-      }
-
-      const response = await context.messenger.sendMessage(
-        createMachineCommand("pause")
-      );
-      if (response.type === "ErrorResponse") {
-        return commandError(`Pausing machine failed: ${response.message}`);
-      }
+      const cpuState = await context.emuApi.getCpuState();
+      await context.emuApi.issueMachineCommand("pause");
       writeSuccessMessage(
         context.output,
         `Machine paused at PC=$${toHexa4(cpuState.pc)}`
@@ -85,22 +66,8 @@ export class StopMachineCommand extends CommandWithNoArgBase {
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      const cpuState = await context.messenger.sendMessage({
-        type: "EmuGetCpuState"
-      });
-      if (cpuState.type === "ErrorResponse") {
-        return commandError(`EmuGetCpuState call failed: ${cpuState.message}`);
-      }
-      if (cpuState.type !== "EmuGetCpuStateResponse") {
-        return commandError(`Unexpected response type: ${cpuState.type}`);
-      }
-
-      const response = await context.messenger.sendMessage(
-        createMachineCommand("stop")
-      );
-      if (response.type === "ErrorResponse") {
-        return commandError(`Stopping machine failed: ${response.message}`);
-      }
+      const cpuState = await context.emuApi.getCpuState();
+      await context.emuApi.issueMachineCommand("stop");
       writeSuccessMessage(
         context.output,
         `Machine stopped at PC=$${toHexa4(cpuState.pc)}`
@@ -123,12 +90,7 @@ export class RestartMachineCommand extends CommandWithNoArgBase {
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      const response = await context.messenger.sendMessage(
-        createMachineCommand("restart")
-      );
-      if (response.type === "ErrorResponse") {
-        return commandError(`Restarting machine failed: ${response.message}`);
-      }
+      await context.emuApi.issueMachineCommand("restart");
       writeSuccessMessage(context.output, "Machine restarted");
       return commandSuccess;
     }
@@ -149,13 +111,8 @@ export class StartDebugMachineCommand extends CommandWithNoArgBase {
       machineState === MachineControllerState.Paused ||
       machineState === MachineControllerState.Stopped
     ) {
-      const response = await context.messenger.sendMessage(
-        createMachineCommand("debug")
-      );
+      await context.emuApi.issueMachineCommand("debug");
       writeSuccessMessage(context.output, "Machine started in debug mode");
-      if (response.type === "ErrorResponse") {
-        return commandError(`Starting machine failed: ${response.message}`);
-      }
       return commandSuccess;
     }
     return commandError(
@@ -204,22 +161,8 @@ async function stepCommand (
 ): Promise<IdeCommandResult> {
   const machineState = context.store.getState()?.emulatorState?.machineState;
   if (machineState === MachineControllerState.Paused) {
-    const cpuState = await context.messenger.sendMessage({
-      type: "EmuGetCpuState"
-    });
-    if (cpuState.type === "ErrorResponse") {
-      return commandError(`EmuGetCpuState call failed: ${cpuState.message}`);
-    }
-    if (cpuState.type !== "EmuGetCpuStateResponse") {
-      return commandError(`Unexpected response type: ${cpuState.type}`);
-    }
-
-    const response = await context.messenger.sendMessage(
-      createMachineCommand(cmd)
-    );
-    if (response.type === "ErrorResponse") {
-      return commandError(`Starting machine failed: ${response.message}`);
-    }
+    const cpuState = await context.emuApi.getCpuState();
+    await context.emuApi.issueMachineCommand(cmd);
     writeSuccessMessage(
       context.output,
       `${cmdName} at PC=$${toHexa4(cpuState.pc)}`

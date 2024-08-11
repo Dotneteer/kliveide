@@ -6,6 +6,7 @@ import type { Token } from "@appIde/services/command-parser";
 import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import type { MessageSource } from "@messaging/messages-core";
 import type { MachineInfo } from "@common/machines/info-types";
+import { EmuApi } from "@common/messaging/EmuApi";
 
 /**
  * Describes the execution context of a command
@@ -50,4 +51,9 @@ export type IdeCommandContext = {
    * Redux message source Id
    */
   messageSource: MessageSource;
+
+  /**
+   * Emulator API
+   */
+  emuApi: EmuApi;
 };

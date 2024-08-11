@@ -6,19 +6,11 @@ import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer"
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { setIdeStatusMessageAction } from "@common/state/actions";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import {
-  useDispatch,
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { MF_BANK, MF_ROM, MF_ULA } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
@@ -29,6 +21,7 @@ import { useStateRefresh } from "@renderer/appIde/useStateRefresh";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -55,12 +48,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
-  const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
 
   // --- Get the machine information
-  const machineState = useSelector(s => s.emulatorState?.machineState);
-  const machineId = useSelector(s => s.emulatorState.machineId);
-  const machineInfo = machineRegistry.find(mi => mi.machineId === machineId);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const machineId = useSelector((s) => s.emulatorState.machineId);
+  const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const romPages = machineInfo?.features?.[MF_ROM] ?? 0;
   const hasUla = machineInfo?.features?.[MF_ULA] ?? false;
   const showRoms = romPages > 0;
@@ -72,47 +65,31 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Create a list of number range
   const range = (start: number, end: number) => {
-    return [...Array(end - start + 1).keys()].map(i => i + start);
+    return [...Array(end - start + 1).keys()].map((i) => i + start);
   };
 
   // --- Read the view state of the document
   const viewState = useRef(
-    (documentHubService.getDocumentViewState(
-      document.id
-    ) as BankedMemoryPanelViewState) ?? {}
+    (documentHubService.getDocumentViewState(document.id) as BankedMemoryPanelViewState) ?? {}
   );
 
   // --- View state variables
-  const [topIndex, setTopIndex] = useState<number>(
-    viewState.current?.topIndex ?? 0
-  );
-  const [autoRefresh, setAutoRefresh] = useState(
-    viewState.current?.autoRefresh ?? true
-  );
-  const [viewMode, setViewMode] = useState<MemoryViewMode>(
-    viewState.current?.viewMode ?? "full"
-  );
+  const [topIndex, setTopIndex] = useState<number>(viewState.current?.topIndex ?? 0);
+  const [autoRefresh, setAutoRefresh] = useState(viewState.current?.autoRefresh ?? true);
+  const [viewMode, setViewMode] = useState<MemoryViewMode>(viewState.current?.viewMode ?? "full");
   const [prevViewMode, setPrevViewMode] = useState<MemoryViewMode>(
     viewState.current?.prevViewMode ?? "ram"
   );
-  const [romPage, setRomPage] = useState<number>(
-    viewState.current?.romPage ?? 0
-  );
-  const [ramBank, setRamBank] = useState<number>(
-    viewState.current?.ramBank ?? 0
-  );
-  const [bankLabel, setBankLabel] = useState(
-    viewState.current?.bankLabel ?? true
-  );
+  const [romPage, setRomPage] = useState<number>(viewState.current?.romPage ?? 0);
+  const [ramBank, setRamBank] = useState<number>(viewState.current?.ramBank ?? 0);
+  const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
 
   // --- ULA-related state
   const [currentRomPage, setCurrentRomPage] = useState<number>(0);
   const [currentRamBank, setCurrentRamBank] = useState<number>(0);
 
   // --- Display options
-  const [twoColumns, setTwoColumns] = useState(
-    viewState.current?.twoColumns ?? true
-  );
+  const [twoColumns, setTwoColumns] = useState(viewState.current?.twoColumns ?? true);
   const [charDump, setCharDump] = useState(viewState.current?.charDump ?? true);
 
   // --- State of the memory view
@@ -175,68 +152,48 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       }
 
       // --- Get memory information
-      const response = await messenger.sendMessage({
-        type: "EmuGetMemory",
-        partition
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(
-          `EmuGetMemory request failed: ${response.message}`
-        );
-      } else if (response.type !== "EmuGetMemoryResponse") {
-        reportUnexpectedMessageType(response.type);
-      } else {
-        memory.current = response.memory;
-        partitionLabels.current = response.partitionLabels;
+      const response = await emuApi.getMemoryContents(partition);
 
-        // --- Calculate tooltips for pointed addresses
-        pointedRegs.current = {};
-        if (
-          cachedRefreshState.current.viewMode !== "ram" &&
-          (cachedRefreshState.current.autoRefresh ||
-            machineState === MachineControllerState.Paused ||
-            machineState === MachineControllerState.Stopped)
-        ) {
-          extendPointedAddress("AF", response.af);
-          extendPointedAddress("BC", response.bc);
-          extendPointedAddress("DE", response.de);
-          extendPointedAddress("HL", response.hl);
-          extendPointedAddress("AF'", response.af_);
-          extendPointedAddress("BC'", response.bc_);
-          extendPointedAddress("DE'", response.de_);
-          extendPointedAddress("HL'", response.hl_);
-          extendPointedAddress("PC", response.pc);
-          extendPointedAddress("SP", response.sp);
-          extendPointedAddress("IX", response.ix);
-          extendPointedAddress("IY", response.iy);
-          extendPointedAddress("IR", response.ir);
-          extendPointedAddress("WZ", response.sp);
-        }
-        createDumpSections(memory.current.length, twoColumns);
+      memory.current = response.memory;
+      partitionLabels.current = response.partitionLabels;
 
-        // --- Obtain ULA information
-        if (hasUla) {
-          const ulaResponse = await messenger.sendMessage({
-            type: "EmuGetUlaState"
-          });
-          if (ulaResponse.type === "ErrorResponse") {
-            reportMessagingError(
-              `EmuGetUlaState request failed: ${ulaResponse.message}`
-            );
-          } else if (ulaResponse.type !== "EmuGetUlaStateResponse") {
-            reportUnexpectedMessageType(ulaResponse.type);
-          } else {
-            setCurrentRomPage(ulaResponse.romP);
-            setCurrentRamBank(ulaResponse.ramB);
-          }
-        }
+      // --- Calculate tooltips for pointed addresses
+      pointedRegs.current = {};
+      if (
+        cachedRefreshState.current.viewMode !== "ram" &&
+        (cachedRefreshState.current.autoRefresh ||
+          machineState === MachineControllerState.Paused ||
+          machineState === MachineControllerState.Stopped)
+      ) {
+        extendPointedAddress("AF", response.af);
+        extendPointedAddress("BC", response.bc);
+        extendPointedAddress("DE", response.de);
+        extendPointedAddress("HL", response.hl);
+        extendPointedAddress("AF'", response.af_);
+        extendPointedAddress("BC'", response.bc_);
+        extendPointedAddress("DE'", response.de_);
+        extendPointedAddress("HL'", response.hl_);
+        extendPointedAddress("PC", response.pc);
+        extendPointedAddress("SP", response.sp);
+        extendPointedAddress("IX", response.ix);
+        extendPointedAddress("IY", response.iy);
+        extendPointedAddress("IR", response.ir);
+        extendPointedAddress("WZ", response.sp);
+      }
+      createDumpSections(memory.current.length, twoColumns);
+
+      // --- Obtain ULA information
+      if (hasUla) {
+        const ulaResponse = await emuApi.getUlaState();
+        setCurrentRomPage(ulaResponse.romP);
+        setCurrentRamBank(ulaResponse.ramB);
       }
     } finally {
       refreshInProgress.current = false;
       setScrollVersion(scrollVersion + 1);
     }
 
-    function extendPointedAddress (regName: string, regValue: number): void {
+    function extendPointedAddress(regName: string, regValue: number): void {
       if (pointedRegs.current[regValue]) {
         pointedRegs.current[regValue] += ", " + regName;
       } else {
@@ -293,8 +250,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Change the length of the current dump section according to the view mode
   useEffect(
-    () =>
-      createDumpSections(viewMode === "full" ? 0x1_0000 : 0x4000, twoColumns),
+    () => createDumpSections(viewMode === "full" ? 0x1_0000 : 0x4000, twoColumns),
     [viewMode]
   );
 
@@ -312,9 +268,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       <>
         <LabeledSwitch
           value={twoColumns}
-          label='Two Columns:'
-          title='Use two-column layout?'
-          clicked={v => {
+          label="Two Columns:"
+          title="Use two-column layout?"
+          clicked={(v) => {
             setTwoColumns(v);
             createDumpSections(memory.current.length, v);
             if (v) {
@@ -328,8 +284,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={charDump}
-          label='Char Dump:'
-          title='Show characters dump?'
+          label="Char Dump:"
+          title="Show characters dump?"
           clicked={setCharDump}
         />
         {allowViews && (
@@ -337,8 +293,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             <ToolbarSeparator small={true} />
             <LabeledSwitch
               value={bankLabel}
-              label='Bank Label:'
-              title='Display bank label information?'
+              label="Bank Label:"
+              title="Display bank label information?"
               clicked={setBankLabel}
             />
           </>
@@ -351,15 +307,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     <div className={styles.panel}>
       <div ref={headerRef} className={styles.header} tabIndex={-1}>
         <LabelSeparator width={4} />
-        <LabeledText
-          label='Display:'
-          value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`}
-        />
+        <LabeledText label="Display:" value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`} />
         <ToolbarSeparator small={true} />
         <AddressInput
-          label='Go To:'
+          label="Go To:"
           clearOnEnter={true}
-          onAddressSent={async address => {
+          onAddressSent={async (address) => {
             setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
             setScrollVersion(scrollVersion + 1);
           }}
@@ -367,7 +320,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <LabelSeparator width={8} />
         <ToolbarSeparator small={true} />
         <SmallIconButton
-          iconName='refresh'
+          iconName="refresh"
           title={"Refresh now"}
           clicked={async () => {
             refreshMemoryView();
@@ -377,8 +330,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          label='Auto Refresh:'
-          title='Refresh the memory view periodically'
+          label="Auto Refresh:"
+          title="Refresh the memory view periodically"
           clicked={setAutoRefresh}
         />
         {allowViews && (
@@ -386,9 +339,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             <ToolbarSeparator small={true} />
             <LabeledSwitch
               value={viewMode === "full"}
-              label='64K View'
-              title='Show the full 64K memory'
-              clicked={v => {
+              label="64K View"
+              title="Show the full 64K memory"
+              clicked={(v) => {
                 setViewMode(v ? "full" : prevViewMode);
                 setPrevViewMode(v ? viewMode : "full");
               }}
@@ -397,11 +350,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
               <>
                 <ToolbarSeparator small={true} />
                 <AddressInput
-                  label='Bank:'
+                  label="Bank:"
                   eightBit={true}
                   clearOnEnter={false}
                   initialValue={ramBank}
-                  onAddressSent={async bank => {
+                  onAddressSent={async (bank) => {
                     setViewMode("ram");
                     setPrevViewMode(viewMode);
                     setRamBank(bank);
@@ -422,12 +375,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
               <>
                 <ToolbarSeparator small={true} />
                 <LabeledGroup
-                  label='ROM: '
-                  title='Select the ROM to display'
+                  label="ROM: "
+                  title="Select the ROM to display"
                   values={range(0, romPages - 1)}
                   marked={currentRomPage}
                   selected={viewMode === "rom" ? romPage : -1}
-                  clicked={v => {
+                  clicked={(v) => {
                     setViewMode("rom");
                     setPrevViewMode(viewMode);
                     setRomPage(v);
@@ -435,12 +388,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 />
                 <ToolbarSeparator small={true} />
                 <LabeledGroup
-                  label='RAM Bank: '
-                  title='Select the RAM Bank to display'
+                  label="RAM Bank: "
+                  title="Select the RAM Bank to display"
                   values={range(0, ramBanks - 1)}
                   marked={currentRamBank}
                   selected={viewMode === "ram" ? ramBank : -1}
-                  clicked={v => {
+                  clicked={(v) => {
                     setViewMode("ram");
                     setPrevViewMode(viewMode), setRamBank(v);
                   }}
@@ -471,8 +424,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             if (!vlApi.current || cachedItems.current.length === 0) return;
             setTopIndex(vlApi.current.getRange().startIndex);
           }}
-          vlApiLoaded={api => (vlApi.current = api)}
-          itemRenderer={idx => {
+          vlApiLoaded={(api) => (vlApi.current = api)}
+          itemRenderer={(idx) => {
             return (
               <div
                 className={classnames(styles.item, {
@@ -495,9 +448,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 {twoColumns && (
                   <DumpSection
                     showPartitions={showBanks && bankLabel}
-                    partitionLabel={
-                      partitionLabels.current?.[memoryItems[idx] >> 13]
-                    }
+                    partitionLabel={partitionLabels.current?.[memoryItems[idx] >> 13]}
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}
@@ -514,9 +465,5 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 };
 
 export const createMemoryPanel = ({ document, contents }: DocumentProps) => (
-  <BankedMemoryPanel
-    document={document}
-    contents={contents}
-    apiLoaded={() => {}}
-  />
+  <BankedMemoryPanel document={document} contents={contents} apiLoaded={() => {}} />
 );
