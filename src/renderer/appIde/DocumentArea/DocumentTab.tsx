@@ -5,8 +5,14 @@ import { TooltipFactory } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
 import classnames from "@renderer/utils/classnames";
-import { ContextMenu, ContextMenuItem, ContextMenuSeparator, useContextMenuState } from "@renderer/controls/ContextMenu";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@renderer/controls/ContextMenu";
 import { useRendererContext } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
 
 export enum CloseMode {
   All,
@@ -52,6 +58,7 @@ export const DocumentTab = ({
 }: Props) => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
+  const mainApi = useMainApi();
 
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
@@ -69,19 +76,16 @@ export const DocumentTab = ({
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
-    <ContextMenu
-      state={contextMenuState}
-      onClickAway={contextMenuApi.conceal}
-    >
+    <ContextMenu state={contextMenuState} onClickAway={contextMenuApi.conceal}>
       <ContextMenuItem
-        text='Close'
+        text="Close"
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.This);
         }}
       />
       <ContextMenuItem
-        text='Close Others'
+        text="Close Others"
         disabled={tabsCount < 2}
         clicked={() => {
           contextMenuApi.conceal();
@@ -89,7 +93,7 @@ export const DocumentTab = ({
         }}
       />
       <ContextMenuItem
-        text='Close All'
+        text="Close All"
         clicked={() => {
           contextMenuApi.conceal();
           tabCloseClicked?.(CloseMode.All);
@@ -97,13 +101,10 @@ export const DocumentTab = ({
       />
       <ContextMenuSeparator />
       <ContextMenuItem
-        text={`Reveal in ${isWindows ? "File Explorer": "Finder"}`}
+        text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
         clicked={() => {
           contextMenuApi.conceal();
-          messenger.postMessage({
-            type:"MainShowItemInFolder",
-            itemPath:path
-          });
+          mainApi.showItemInFolder(path);
         }}
       />
     </ContextMenu>
@@ -118,8 +119,12 @@ export const DocumentTab = ({
       })}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
-      onClick={e => { if (e.button === 0) tabClicked?.(); }}
-      onAuxClick={e => { if (e.button === 1) tabCloseClicked?.(CloseMode.This); }}
+      onClick={(e) => {
+        if (e.button === 0) tabClicked?.();
+      }}
+      onAuxClick={(e) => {
+        if (e.button === 1) tabCloseClicked?.(CloseMode.This);
+      }}
       onDoubleClick={() => tabDoubleClicked?.()}
       onContextMenu={contextMenuApi.show}
     >
@@ -133,12 +138,7 @@ export const DocumentTab = ({
       >
         <bdi>{name}</bdi>
         {path && (
-          <TooltipFactory
-            refElement={nameRef.current}
-            placement='right'
-            offsetX={-28}
-            offsetY={28}
-          >
+          <TooltipFactory refElement={nameRef.current} placement="right" offsetX={-28} offsetY={28}>
             {path}
           </TooltipFactory>
         )}
@@ -146,14 +146,14 @@ export const DocumentTab = ({
       {isReadOnly && (
         <div className={styles.readOnlyIcon} ref={readOnlyRef}>
           <Icon
-            iconName='shield'
+            iconName="shield"
             width={16}
             height={16}
             fill={"--color-readonly-icon-" + (isActive ? "active" : "inactive")}
           />
           <TooltipFactory
             refElement={readOnlyRef.current}
-            placement='right'
+            placement="right"
             offsetX={-16}
             offsetY={28}
           >
@@ -165,7 +165,7 @@ export const DocumentTab = ({
       {contextMenu}
 
       <TabButton
-        iconName={hasChanges ? 'circle-filled' : 'close'}
+        iconName={hasChanges ? "circle-filled" : "close"}
         hide={!pointed && !isActive}
         fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
         clicked={() => tabCloseClicked?.(CloseMode.This)}

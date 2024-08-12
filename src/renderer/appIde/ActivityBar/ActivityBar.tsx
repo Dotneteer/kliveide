@@ -1,9 +1,9 @@
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { selectActivityAction, showSideBarAction } from "@state/actions";
 import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";
-import { reportMessagingError } from "@renderer/reportError";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type Props = {
   activities: Activity[];
@@ -11,23 +11,20 @@ type Props = {
 };
 
 export const ActivityBar = ({ order, activities }: Props) => {
-  const { messenger } = useRendererContext();
+  const mainApi = useMainApi();
   const dispatch = useDispatch();
-  const activeActitity = useSelector(s => s.ideView?.activity);
-  const sideBarVisible = useSelector(s => s.ideViewOptions?.showSidebar);
+  const activeActitity = useSelector((s) => s.ideView?.activity);
+  const sideBarVisible = useSelector((s) => s.ideViewOptions?.showSidebar);
 
   const saveProject = async () => {
-    await new Promise(r => setTimeout(r, 100));
-    const response = await messenger.sendMessage({ type: "MainSaveProject" });
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`Error saving main project: ${response.message}`);
-    }
+    await new Promise((r) => setTimeout(r, 100));
+    await mainApi.saveProject();
   };
 
   return (
     <div className={styles.activityBar} style={{ order }}>
       {[
-        ...activities.map(act => (
+        ...activities.map((act) => (
           <ActivityButton
             key={act.id}
             activity={act}

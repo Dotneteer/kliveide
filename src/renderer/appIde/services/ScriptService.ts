@@ -7,12 +7,14 @@ import { Store } from "@common/state/redux-light";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createMainApi } from "@common/messaging/MainApi";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();
   private _contentsChanged = new LiteEvent<number>();
 
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase
   ) {}
@@ -21,9 +23,9 @@ class ScriptService implements IScriptService {
    * Gets the ID of the latest script with the specified file path.
    * @param scriptFilePath Script file path
    */
-  getLatestScriptId (scriptFilePath: string): number {
+  getLatestScriptId(scriptFilePath: string): number {
     const scripts = this.store.getState().scripts.slice().reverse();
-    const script = scripts.find(s => s.scriptFileName === scriptFilePath);
+    const script = scripts.find((s) => s.scriptFileName === scriptFilePath);
     return script ? script.id : -1;
   }
 
@@ -32,44 +34,30 @@ class ScriptService implements IScriptService {
    * @param scriptFilePath Script file path
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
-  async runScript (scriptFilePath: string): Promise<number> {
-    const response = await this.messenger.sendMessage({
-      type: "MainStartScript",
-      filename: scriptFilePath
-    });
+  async runScript(scriptFilePath: string): Promise<number> {
+    const response = await createMainApi(this.messenger).startScript(scriptFilePath);
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);
     }
-    if (response.type === "MainRunScriptResponse") {
-      if (response.hasParseError) {
-        throw new Error("The script contains parse errors. See the Script Output pane for details.");
-      }
+    if (response.hasParseError) {
+      throw new Error("The script contains parse errors. See the Script Output pane for details.");
+    }
 
-      // --- Create a new output buffer for the script
-      if (response.id > 0) {
-        const buffer = new OutputPaneBuffer();
-        this._scriptOutputs.set(response.id, buffer);
-      }
+    // --- Create a new output buffer for the script
+    if (response.id > 0) {
+      const buffer = new OutputPaneBuffer();
+      this._scriptOutputs.set(response.id, buffer);
+    }
 
-      // --- Check the target
-      if (response.target !== "emu") {
-        // --- Script runs in the main process, nothing to do
-        return response.id;
-      }
-
-      // --- Script runs in the emulator, we need to forward the output
-      const emuResponse = await this.messenger.sendMessage({
-        type: "EmuStartScript",
-        id: response.id,
-        scriptFile: scriptFilePath,
-        contents: response.contents
-      });
-      if (emuResponse.type === "ErrorResponse") {
-        throw new Error(emuResponse.message);
-      }
+    // --- Check the target
+    if (response.target !== "emu") {
+      // --- Script runs in the main process, nothing to do
       return response.id;
     }
-    throw new Error("Unexpected response");
+
+    // --- Script runs in the emulator, we need to forward the output
+    createEmulatorApi(this.messenger).startScript(response.id, scriptFilePath, response.contents);
+    return response.id;
   }
 
   /**
@@ -80,20 +68,19 @@ class ScriptService implements IScriptService {
    * @param speciality The speciality of the script
    * @returns The script ID of the started script.
    */
-  async runScriptText (
+  async runScriptText(
     scriptText: string,
     scriptFunction: string,
     filename: string,
     speciality: string
   ): Promise<number> {
-    // TODO: Implement this
-    const response = await this.messenger.sendMessage({
-      type: "MainStartScript",
+    console.log("Running script text", scriptText);
+    const response = await createMainApi(this.messenger).startScript(
       filename,
-      scriptText,
       scriptFunction,
+      scriptText,
       speciality
-    });
+    );
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);
     }
@@ -115,15 +102,15 @@ class ScriptService implements IScriptService {
    * @param idOrFileName ID of the script to stop
    * @returns True, if the script is stopped; otherwise, false
    */
-  async cancelScript (idOrFileName: number | string): Promise<boolean> {
+  async cancelScript(idOrFileName: number | string): Promise<boolean> {
     // --- Obtain the script status information
     let script: ScriptRunInfo;
     const scripts = this.store.getState().scripts;
     if (typeof idOrFileName === "number") {
-      script = scripts.find(s => s.id === idOrFileName);
+      script = scripts.find((s) => s.id === idOrFileName);
     } else {
       const reversed = scripts.slice().reverse();
-      script = reversed.find(s => s.scriptFileName === idOrFileName);
+      script = reversed.find((s) => s.scriptFileName === idOrFileName);
     }
 
     // --- If the script is not found or already stopped, we're done.
@@ -134,23 +121,13 @@ class ScriptService implements IScriptService {
     // --- Is it an emulator script?
     if (script.runsInEmu) {
       // --- Script runs in the emulator, we need to forward the output
-      const emuResponse = await this.messenger.sendMessage({
-        type: "EmuStopScript",
-        id: script.id
-      });
-      if (emuResponse.type === "ErrorResponse") {
-        throw new Error(emuResponse.message);
-      }
+      await createEmulatorApi(this.messenger).stopScript(script.id);
     }
 
     // --- Send the stop script message
-    const response = await this.messenger.sendMessage({
-      type: "MainStopScript",
-      idOrFilename: script.id
-    });
-    if (response.type === "ErrorResponse") {
-      throw new Error(response.message);
-    }
+    const response = await createMainApi(this.messenger).stopScript(
+      script.id
+    );
     if (response.type === "FlagResponse") {
       return response.flag;
     }
@@ -161,14 +138,14 @@ class ScriptService implements IScriptService {
    * Gets the output of the specified script
    * @param scriptId Script ID
    */
-  getScriptOutputBuffer (scriptId: number): OutputPaneBuffer | undefined {
+  getScriptOutputBuffer(scriptId: number): OutputPaneBuffer | undefined {
     return this._scriptOutputs.get(scriptId);
   }
 
   /**
    * Raised when the contents of the output buffer have changed
    */
-  contentsChanged (): ILiteEvent<number> {
+  contentsChanged(): ILiteEvent<number> {
     return this._contentsChanged;
   }
 }

@@ -22,7 +22,7 @@ export class NewProjectCommand extends IdeCommandBase {
   private templateId: string;
   private projectFolder: string;
 
-  prepareCommand (): void {
+  prepareCommand(): void {
     delete this.machineId;
     delete this.modelId;
     delete this.templateId;
@@ -30,9 +30,7 @@ export class NewProjectCommand extends IdeCommandBase {
     delete this.projectFolder;
   }
 
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
+  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
     const args = context.argTokens;
     if (args.length !== 2 && args.length !== 3) {
       return validationError("This command must use 2 to 4 arguments");
@@ -41,19 +39,15 @@ export class NewProjectCommand extends IdeCommandBase {
     // --- Extract machine ID
     const [machineId, modelId] = args[0].text.split(":");
     const machineTypes = getAllMachineModels();
-    if (!machineTypes.find(mt => mt.machineId === machineId)) {
+    if (!machineTypes.find((mt) => mt.machineId === machineId)) {
       return validationError(`Cannot find machine type '${machineId}'`);
     }
     this.machineId = machineId;
     if (
       modelId &&
-      !machineTypes.find(
-        mt => mt.machineId === machineId && mt.modelId === modelId
-      )
+      !machineTypes.find((mt) => mt.machineId === machineId && mt.modelId === modelId)
     ) {
-      return validationError(
-        `Cannot find model type '${modelId}' for machine '${machineId}`
-      );
+      return validationError(`Cannot find model type '${modelId}' for machine '${machineId}`);
     }
     this.modelId = modelId;
 
@@ -68,28 +62,18 @@ export class NewProjectCommand extends IdeCommandBase {
     return [];
   }
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = await context.messenger.sendMessage({
-      type: "MainCreateKliveProject",
-      machineId: this.machineId,
-      modelId: this.modelId,
-      templateId: this.templateId ?? "default",
-      projectName: this.projectName,
-      projectFolder: this.projectFolder
-    });
-    if (response.type === "ErrorResponse") {
-      return commandError(response.message);
-    }
-    if (response.type !== "MainCreateKliveProjectResponse") {
-      return commandError(`Unexpected response type: ${response.type}`);
-    }
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const response = await context.mainApi.createKliveProject(
+      this.machineId,
+      this.projectName,
+      this.projectFolder,
+      this.modelId,
+      this.templateId ?? "default"
+    );
     if (response.errorMessage) {
       return commandError(response.errorMessage);
     }
-    writeSuccessMessage(
-      context.output,
-      `Klive project successfully created in ${response.path}`
-    );
+    writeSuccessMessage(context.output, `Klive project successfully created in ${response.path}`);
     return commandSuccess;
   }
 }

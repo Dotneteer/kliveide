@@ -31,7 +31,6 @@ import { SpectrumTapeHeader } from "@emu/machines/tape/SpectrumTapeHeader";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
-import { reportMessagingError } from "@renderer/reportError";
 import {
   endCompileAction,
   incBreakpointsVersionAction,
@@ -222,15 +221,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
       if (errorNo > 0) {
         const message = "Code compilation failed, no program to export.";
-        const response = await context.messenger.sendMessage({
-          type: "MainDisplayMessageBox",
-          messageType: "error",
-          title: "Exporting code",
-          message
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-        }
+        await context.mainApi.displayMessageBox("error", "Exporting code", message);
         return commandError(message);
       }
     }
@@ -492,12 +483,11 @@ export class ExportCodeCommand extends IdeCommandBase {
 
       // --- Save the data to a file
       if (filename) {
-        const response = await context.messenger.sendMessage({
-          type: "MainSaveTextFile",
-          path: filename,
-          data: hexOut,
-          resolveIn: `home:${EXPORT_FILE_FOLDER}`
-        });
+        const response = await context.mainApi.saveTextFile(
+          filename,
+          hexOut,
+          `home:${EXPORT_FILE_FOLDER}`
+        );
         if (response.type === "ErrorResponse") {
           return commandError(response.message);
         }
@@ -929,12 +919,11 @@ export class ExportCodeCommand extends IdeCommandBase {
 
         // --- Save the data to a file
         if (exporter.filename) {
-          const response = await context.messenger.sendMessage({
-            type: "MainSaveBinaryFile",
-            path: exporter.filename,
-            data: writer.buffer,
-            resolveIn: `home:${EXPORT_FILE_FOLDER}`
-          });
+          const response = await context.mainApi.saveBinaryFile(
+            exporter.filename,
+            writer.buffer,
+            `home:${EXPORT_FILE_FOLDER}`
+          );
           if (response.type === "ErrorResponse") {
             return commandError(response.message);
           }
@@ -997,11 +986,7 @@ async function compileCode(
   let result: KliveCompilerOutput;
   let response: MainCompileResponse;
   try {
-    response = await context.messenger.sendMessage<MainCompileResponse>({
-      type: "MainCompileFile",
-      filename: fullPath,
-      language
-    });
+    response = await context.mainApi.compileFile(fullPath, language);
     if (response.type === "MainCompileFileResponse") {
       result = response.result;
     }
@@ -1065,15 +1050,7 @@ async function injectCode(
     }
     if (errorNo > 0) {
       const returnMessage = "Code compilation failed, no program to inject.";
-      const response = await context.messenger.sendMessage({
-        type: "MainDisplayMessageBox",
-        messageType: "error",
-        title: "Injecting code",
-        message: returnMessage
-      });
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(`MainDisplayMessageBox call failed: ${response.message}`);
-      }
+      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
       return commandError(returnMessage);
     }
   }
@@ -1113,13 +1090,7 @@ async function injectCode(
 
   switch (operationType) {
     case "inject":
-      const response = await context.messenger.sendMessage({
-        type: "EmuInjectCode",
-        codeToInject
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(`EmuInjectCode call failed: ${response.message}`);
-      }
+      await context.emuApi.injectCodeCommand(codeToInject);
       returnMessage = `Successfully injected ${sumCodeLength} bytes in ${
         codeToInject.segments.length
       } segment${
@@ -1131,27 +1102,13 @@ async function injectCode(
       break;
 
     case "run": {
-      const response = await context.messenger.sendMessage({
-        type: "EmuRunCode",
-        codeToInject,
-        debug: false
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
+      await context.emuApi.runCodeCommand(codeToInject, false);
       returnMessage = `Code injected and started.`;
       break;
     }
 
     case "debug": {
-      const response = await context.messenger.sendMessage({
-        type: "EmuRunCode",
-        codeToInject,
-        debug: true
-      });
-      if (response.type === "ErrorResponse") {
-        return commandError(response.message);
-      }
+      await context.emuApi.runCodeCommand(codeToInject, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

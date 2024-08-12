@@ -1,4 +1,7 @@
-import type { FrameCompletedArgs, IMachineController } from "@renderer/abstractions/IMachineController";
+import type {
+  FrameCompletedArgs,
+  IMachineController
+} from "@renderer/abstractions/IMachineController";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
@@ -25,6 +28,7 @@ import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { createIdeApi } from "@common/messaging/IdeApi";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -554,22 +558,21 @@ export class MachineController implements IMachineController {
   /**
    * Send output to the IDE
    * @param text Text to send
-   * @param color Text color to use
+   * @param foreground Text color to use
    */
-  async sendOutput(text: string, color: OutputColor): Promise<void> {
+  async sendOutput(text: string, foreground: OutputColor): Promise<void> {
     this._loggedEventNo++;
-    await this.messenger.sendMessage({
-      type: "IdeDisplayOutput",
+    const ideApi = createIdeApi(this.messenger);
+    await ideApi.displayOutput({
       pane: PANE_ID_EMU,
       text: `[${this._loggedEventNo}] `,
-      color: "magenta",
+      foreground: "magenta",
       writeLine: false
     });
-    await this.messenger.sendMessage({
-      type: "IdeDisplayOutput",
+    await ideApi.displayOutput({
       pane: PANE_ID_EMU,
       text,
-      color,
+      foreground,
       writeLine: true
     });
   }

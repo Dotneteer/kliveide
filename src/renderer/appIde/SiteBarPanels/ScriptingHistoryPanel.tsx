@@ -11,10 +11,12 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
 import { Text } from "@renderer/controls/generic/Text";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const ScriptingHistoryPanel = () => {
   const { ideCommandsService, projectService } = useAppServices();
   const { messenger } = useRendererContext();
+  const mainApi = useMainApi();
   const scriptsInState = useSelector((state) => state.scripts);
   const [scripts, setScripts] = useState<ScriptRunInfo[]>([]);
   const [selectedScript, setSelectedScript] = useState<ScriptRunInfo>();
@@ -57,7 +59,7 @@ const ScriptingHistoryPanel = () => {
                 removed.forEach(async (scr) => {
                   await hub.closeDocument(scriptDocumentId(scr.id));
                 });
-                await messenger.sendMessage({ type: "MainRemoveCompletedScripts"});
+                await mainApi.removeCompletedScripts();
               }}
             />
             <TabButton

@@ -3,16 +3,12 @@ import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
 import { Dropdown } from "@controls/Dropdown";
-import { useRendererContext } from "@renderer/core/RendererProvider";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { PANE_ID_BUILD } from "@common/integration/constants";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -77,9 +73,8 @@ type Props = {
 };
 
 export const ExportCodeDialog = ({ onClose }: Props) => {
-  const { messenger } = useRendererContext();
-  const { outputPaneService, ideCommandsService, validationService } =
-    useAppServices();
+  const mainApi = useMainApi();
+  const { outputPaneService, ideCommandsService, validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
   const [exportFolder, setExportFolder] = useState("");
@@ -102,27 +97,24 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
     setFolderIsValid(fValid);
     const nValid = validationService.isValidFilename(exportName);
     setExportIsValid(nValid);
-    const addressValid =
-      startAddress.trim() === "" || VALID_INTEGER.test(startAddress);
+    const addressValid = startAddress.trim() === "" || VALID_INTEGER.test(startAddress);
     setStartAddressIsValid(addressValid);
     const scrValid = validationService.isValidPath(screenFilename);
     setScreenFileIsValid(scrValid);
-    modalApi.current.enablePrimaryButton(
-      fValid && nValid && addressValid && scrValid
-    );
+    modalApi.current.enablePrimaryButton(fValid && nValid && addressValid && scrValid);
   }, [exportFolder, exportName, startAddress, screenFilename]);
 
   return (
     <Modal
-      title='Export Code'
+      title="Export Code"
       isOpen={true}
       fullScreen={false}
       width={500}
       translateY={-100}
-      onApiLoaded={api => (modalApi.current = api)}
-      primaryLabel='Export'
+      onApiLoaded={(api) => (modalApi.current = api)}
+      primaryLabel="Export"
       primaryEnabled={true}
-      initialFocus='none'
+      initialFocus="none"
       onPrimaryClicked={async () => {
         // --- Dialog can be closed
         let filename = exportName;
@@ -130,9 +122,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         if (!exportExt || exportExt === ".") {
           filename += `.${formatId}`;
         }
-        const fullFilename = exportFolder
-          ? `${exportFolder}/${filename}`
-          : filename;
+        const fullFilename = exportFolder ? `${exportFolder}/${filename}` : filename;
         const name = programName ? programName : getNodeName(exportName);
         const command = `expc ${fullFilename} -n ${name} -f ${formatId}${
           startBlock ? " -as" : ""
@@ -140,38 +130,21 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           borderId !== "none" ? ` -b ${borderId}` : ""
         }${singleBlock ? " -sb" : ""}${
           startAddress ? ` -addr ${startAddress}` : ""
-        }${addClear ? " -c" : ""}${
-          screenFilename ? ` -scr "${screenFilename}"` : ""
-        }`;
+        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename}"` : ""}`;
         const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-        const result = await ideCommandsService.executeCommand(
-          command,
-          buildPane
-        );
+        const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
-          const response = await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "info",
-            title: "Exporting code",
-            message: result.finalMessage ?? "Code successfully exported."
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `MainDisplayMessagBox call failed: ${response.message}`
-            );
-          }
+          await mainApi.displayMessageBox(
+            "info",
+            "Exporting code",
+            result.finalMessage ?? "Code successfully exported."
+          );
         } else {
-          const response = await messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            messageType: "error",
-            title: "Exporting code",
-            message: result.finalMessage ?? "Code export failed."
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `MainDisplayMessagBox call failed: ${response.message}`
-            );
-          }
+          await mainApi.displayMessageBox(
+            "error",
+            "Exporting code",
+            result.finalMessage ?? "Code export failed."
+          );
         }
         return !result.success;
       }}
@@ -179,112 +152,88 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         onClose();
       }}
     >
-      <DialogRow label='Export format:'>
+      <DialogRow label="Export format:">
         <div className={styles.dropdownWrapper}>
           <Dropdown
-            placeholder='Select...'
+            placeholder="Select..."
             options={formatIds}
             value={"tzx"}
-            onSelectionChanged={option => setFormatId(option)}
+            onSelectionChanged={(option) => setFormatId(option)}
           />
         </div>
       </DialogRow>
-      <DialogRow label='Export folder:'>
+      <DialogRow label="Export folder:">
         <TextInput
           value={exportFolder}
           isValid={folderIsValid}
-          buttonIcon='folder'
-          buttonTitle='Select the root project folder'
+          buttonIcon="folder"
+          buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await messenger.sendMessage({
-              type: "MainShowOpenFolderDialog",
-              settingsId: EXPORT_CODE_FOLDER_ID
-            });
-            if (response.type === "ErrorResponse") {
-              reportMessagingError(
-                `MainShowOpenFolderDialog call failed: ${response.message}`
-              );
-              return null;
-            } else if (response.type !== "MainShowOpenFolderDialogResponse") {
-              reportUnexpectedMessageType(response.type);
-              return null;
-            } else {
-              if (response.folder) {
-                setExportFolder(response.folder);
-              }
-              return response.folder;
+            const response = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
+            if (response.folder) {
+              setExportFolder(response.folder);
             }
+            return response.folder;
           }}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setExportFolder(val);
             return false;
           }}
         />
       </DialogRow>
-      <DialogRow label='Export file name: *'>
+      <DialogRow label="Export file name: *">
         <TextInput
           value={exportName}
           isValid={exportIsValid}
           focusOnInit={true}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setExportName(val);
             return false;
           }}
         />
       </DialogRow>
-      <DialogRow label='Program name:'>
+      <DialogRow label="Program name:">
         <TextInput
           value={programName}
           width={100}
           maxLength={10}
           isValid={true}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setProgramName(val);
             return false;
           }}
         />
       </DialogRow>
-      <DialogRow label='Startup border:'>
+      <DialogRow label="Startup border:">
         <div className={styles.dropdownWrapper}>
           <Dropdown
-            placeholder='Select...'
+            placeholder="Select..."
             options={borderIds}
             value={"none"}
-            onSelectionChanged={option => setBorderId(option)}
+            onSelectionChanged={(option) => setBorderId(option)}
           />
         </div>
       </DialogRow>
-      <DialogRow label='Screen file:'>
+      <DialogRow label="Screen file:">
         <TextInput
           value={screenFilename}
           isValid={screenFileIsValid}
-          buttonIcon='file-code'
-          buttonTitle='Select the screen file'
+          buttonIcon="file-code"
+          buttonTitle="Select the screen file"
           buttonClicked={async () => {
-            const response = await messenger.sendMessage({
-              type: "MainShowOpenFileDialog",
-              filters: [
+            const response = await mainApi.showOpenFileDialog(
+              [
                 { name: "Tape files", extensions: ["tap", "tzx"] },
                 { name: "All Files", extensions: ["*"] }
               ],
-              settingsId: EXPORT_CODE_FOLDER_ID
-            });
-            if (response.type === "ErrorResponse") {
-              reportMessagingError(
-                `MainShowOpenFolderDialog call failed: ${response.message}`
-              );
-              return null;
-            } else if (response.type !== "MainShowOpenFileDialogResponse") {
-              reportUnexpectedMessageType(response.type);
-              return null;
-            } else {
-              if (response.file) {
-                setScreenFilename(response.file);
-              }
-              return response.file;
+              EXPORT_CODE_FOLDER_ID
+            );
+            if (response.file) {
+              setScreenFilename(response.file);
             }
+            return response.file;
           }}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setScreenFilename(val);
             return false;
           }}
@@ -294,38 +243,38 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         <Checkbox
           initialValue={startBlock}
           right={true}
-          label='Create startup block'
-          onChange={v => setStartBlock(v)}
+          label="Create startup block"
+          onChange={(v) => setStartBlock(v)}
         />
         <Checkbox
           initialValue={addClear}
           right={true}
-          label='Add CLEAR'
-          onChange={v => setAddClear(v)}
+          label="Add CLEAR"
+          onChange={(v) => setAddClear(v)}
           enabled={startBlock}
         />
         <Checkbox
           initialValue={addPause}
           right={true}
-          label='Add PAUSE 0'
-          onChange={v => setAddPause(v)}
+          label="Add PAUSE 0"
+          onChange={(v) => setAddPause(v)}
           enabled={startBlock}
         />
         <Checkbox
           initialValue={singleBlock}
           right={true}
-          label='Use a single code block'
-          onChange={v => setSingleBlock(v)}
+          label="Use a single code block"
+          onChange={(v) => setSingleBlock(v)}
           enabled={startBlock}
         />
       </DialogRow>
-      <DialogRow label='Code start address:'>
+      <DialogRow label="Code start address:">
         <TextInput
           value={startAddress.toString()}
           maxLength={5}
           width={60}
           isValid={startAddressIsValid}
-          valueChanged={val => {
+          valueChanged={(val) => {
             setStartAddress(val);
             return false;
           }}

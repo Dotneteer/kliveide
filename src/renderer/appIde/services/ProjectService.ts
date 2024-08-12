@@ -1,14 +1,7 @@
-import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
-import { LiteEvent, ILiteEvent } from "@emu/utils/lite-event";
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import {
-  ProjectNode,
-  compareProjectNode,
-  getFileTypeEntry,
-  getNodeFile
-} from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeFile } from "../project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -21,6 +14,11 @@ import {
 } from "@common/state/actions";
 import { documentPanelRegistry } from "@renderer/registry";
 import { DelayedJobs } from "@common/utils/DelayedJobs";
+import { ILiteEvent } from "@abstractions/ILiteEvent";
+import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
+import { ProjectNode } from "@abstractions/ProjectNode";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { createMainApi } from "@common/messaging/MainApi";
 
 const JOB_KIND_SAVE_FILE = 21;
 
@@ -50,7 +48,7 @@ class ProjectService implements IProjectService {
 
   private _delayedJobs = new DelayedJobs();
 
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase
   ) {
@@ -69,69 +67,68 @@ class ProjectService implements IProjectService {
     });
   }
 
-  setProjectTree (tree: ITreeView<ProjectNode>): void {
+  setProjectTree(tree: ITreeView<ProjectNode>): void {
     this._tree = tree;
   }
 
-  getProjectTree (): ITreeView<ProjectNode> | undefined {
+  getProjectTree(): ITreeView<ProjectNode> | undefined {
     return this._tree;
   }
 
-  get projectOpened (): ILiteEvent<void> {
+  get projectOpened(): ILiteEvent<void> {
     return this._projectOpened;
   }
 
-  get projectClosed (): ILiteEvent<void> {
+  get projectClosed(): ILiteEvent<void> {
     return this._projectClosed;
   }
 
-  signItemAdded (node: ITreeNode<ProjectNode>): void {
+  signItemAdded(node: ITreeNode<ProjectNode>): void {
     this._itemAdded.fire(node);
   }
 
-  signItemRenamed (oldName: string, node: ITreeNode<ProjectNode>): void {
+  signItemRenamed(oldName: string, node: ITreeNode<ProjectNode>): void {
     this._itemRenamed.fire({ oldName, node });
   }
 
-  signItemDeleted (node: ITreeNode<ProjectNode>): void {
+  signItemDeleted(node: ITreeNode<ProjectNode>): void {
     this._itemDeleted.fire(node);
   }
 
-  signFileSaved (file: string, contents: string | Uint8Array): void {
+  signFileSaved(file: string, contents: string | Uint8Array): void {
     this._fileSaved.fire({ file, contents });
   }
 
-  get itemAdded (): ILiteEvent<ITreeNode<ProjectNode>> {
+  get itemAdded(): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemAdded;
   }
 
-  get itemRenamed (): ILiteEvent<{
+  get itemRenamed(): ILiteEvent<{
     oldName: string;
     node: ITreeNode<ProjectNode>;
   }> {
     return this._itemRenamed;
   }
 
-  get itemDeleted (): ILiteEvent<ITreeNode<ProjectNode>> {
+  get itemDeleted(): ILiteEvent<ITreeNode<ProjectNode>> {
     return this._itemDeleted;
   }
 
-  get fileSaved (): ILiteEvent<{
+  get fileSaved(): ILiteEvent<{
     file: string;
     contents: string | Uint8Array;
   }> {
     return this._fileSaved;
   }
 
-  getNodeForFile (file: string): ITreeNode<ProjectNode> {
+  getNodeForFile(file: string): ITreeNode<ProjectNode> {
     return this._tree ? findFileNode(this._tree.rootNode, file) : undefined;
 
-    function findFileNode (
+    function findFileNode(
       node: ITreeNode<ProjectNode>,
       name: string
     ): ITreeNode<ProjectNode> | undefined {
-      if (node.data.fullPath === file || node.data.projectPath === file)
-        return node;
+      if (node.data.fullPath === file || node.data.projectPath === file) return node;
       if (node.childCount > 0) {
         for (const child of node.children) {
           const found = findFileNode(child, name);
@@ -142,7 +139,7 @@ class ProjectService implements IProjectService {
     }
   }
 
-  getBreakpointAddressInfo (addr: string | number): BreakpointInfo | undefined {
+  getBreakpointAddressInfo(addr: string | number): BreakpointInfo | undefined {
     if (typeof addr === "number") {
       return {
         address: addr & 0xffff
@@ -177,7 +174,7 @@ class ProjectService implements IProjectService {
   /**
    * Gets the available document service instances
    */
-  getDocumentHubServiceInstances (): IDocumentHubService[] {
+  getDocumentHubServiceInstances(): IDocumentHubService[] {
     return this._docHubServices.slice(0);
   }
 
@@ -185,7 +182,7 @@ class ProjectService implements IProjectService {
    * Instantiates a new document service and registers it with the hub. The new document service
    * will be the active one.
    */
-  createDocumentHubService (): IDocumentHubService {
+  createDocumentHubService(): IDocumentHubService {
     const newDocHubService = createDocumentHubService(
       this.getNextDocumentHubId(),
       this.store,
@@ -201,7 +198,7 @@ class ProjectService implements IProjectService {
    * Gets the active document service. Many project document related events are executed with the
    * active document service.
    */
-  getActiveDocumentHubService (): IDocumentHubService | undefined {
+  getActiveDocumentHubService(): IDocumentHubService | undefined {
     return this._activeDocHub;
   }
 
@@ -209,15 +206,13 @@ class ProjectService implements IProjectService {
    * Sets the specified document service as the active one.
    * @param instance The document service instance to activate
    */
-  setActiveDocumentHubService (instance: IDocumentHubService): void {
+  setActiveDocumentHubService(instance: IDocumentHubService): void {
     if (this._activeDocHub === instance) return;
     if (this._docHubServices.indexOf(instance) < 0) {
       throw new Error("Cannot find document service instance");
     }
     this._activeDocHub = instance;
-    this._docHubActivations = this._docHubActivations.filter(
-      d => d !== instance
-    );
+    this._docHubActivations = this._docHubActivations.filter((d) => d !== instance);
     this._docHubActivations.push(instance);
     this.signDocServiceVersionChanged(instance.hubId);
   }
@@ -226,7 +221,7 @@ class ProjectService implements IProjectService {
    * Closes (and removes) the specified document service instance
    * @param instance
    */
-  closeDocumentHubService (instance: IDocumentHubService): void {
+  closeDocumentHubService(instance: IDocumentHubService): void {
     if (this._docHubServices.indexOf(instance) < 0) {
       throw new Error("Cannot find document service instance");
     }
@@ -237,10 +232,8 @@ class ProjectService implements IProjectService {
     // --- Remove the document hub service gracefully
     delete this._docHubIdSlots[instance.hubId];
     instance.dispose();
-    this._docHubServices = this._docHubServices.filter(d => d !== instance);
-    this._docHubActivations = this._docHubActivations.filter(
-      d => d !== instance
-    );
+    this._docHubServices = this._docHubServices.filter((d) => d !== instance);
+    this._docHubActivations = this._docHubActivations.filter((d) => d !== instance);
     if (this._docHubActivations.length === 0) {
       this._activeDocHub = null;
       this.signDocServiceVersionChanged(instance.hubId);
@@ -254,35 +247,22 @@ class ProjectService implements IProjectService {
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
    */
-  async readFileContent (
-    file: string,
-    isBinary?: boolean
-  ): Promise<string | Uint8Array> {
+  async readFileContent(file: string, isBinary?: boolean): Promise<string | Uint8Array> {
     const fileTypeEntry = getFileTypeEntry(file, this.store);
     let contents: string | Uint8Array;
     if (isBinary ?? fileTypeEntry?.isBinary) {
       // --- Read a binary file file
-      const response = await this.messenger.sendMessage({
-        type: "MainReadBinaryFile",
-        path: file
-      });
+      const response = await createMainApi(this.messenger).readBinaryFile(file);
       if (response.type === "ErrorResponse") {
         throw new Error(response.message);
-      } else if (response.type !== "BinaryContents") {
-        throw new Error(`Unexpected response type: ${response.type}`);
       } else {
         contents = response.contents;
       }
     } else {
       // --- Read a text file
-      const response = await this.messenger.sendMessage({
-        type: "MainReadTextFile",
-        path: file
-      });
+      const response = await createMainApi(this.messenger).readTextFile(file);
       if (response.type === "ErrorResponse") {
         throw new Error(response.message);
-      } else if (response.type !== "TextContents") {
-        throw new Error(`Unexpected response type: ${response.type}`);
       } else {
         contents = response.contents;
       }
@@ -298,10 +278,7 @@ class ProjectService implements IProjectService {
    * @param file File to read
    * @param isBinary Read it as a binary file? (Use the default according to the file's type)
    */
-  async getFileContent (
-    file: string,
-    isBinary?: boolean
-  ): Promise<string | Uint8Array> {
+  async getFileContent(file: string, isBinary?: boolean): Promise<string | Uint8Array> {
     const contents = this._fileCache.get(file);
     return contents ?? (await this.readFileContent(file, isBinary));
   }
@@ -311,15 +288,12 @@ class ProjectService implements IProjectService {
    * @param file File name
    * @param contents File contents to save
    */
-  saveFileContent (file: string, contents: string | Uint8Array): Promise<void> {
+  saveFileContent(file: string, contents: string | Uint8Array): Promise<void> {
     this._delayedJobs.cancel(file);
     return this.saveFileContentInner(file, contents);
   }
 
-  saveFileContentAsYouType (
-    file: string,
-    contents: string | Uint8Array
-  ): Promise<void> {
+  saveFileContentAsYouType(file: string, contents: string | Uint8Array): Promise<void> {
     const TYPING_DELAY = 1000;
     return this._delayedJobs.schedule(
       TYPING_DELAY,
@@ -329,25 +303,14 @@ class ProjectService implements IProjectService {
     );
   }
 
-  private async saveFileContentInner (
-    file: string,
-    contents: string | Uint8Array
-  ): Promise<void> {
+  private async saveFileContentInner(file: string, contents: string | Uint8Array): Promise<void> {
     if (typeof contents === "string") {
-      const response = await this.messenger.sendMessage({
-        type: "MainSaveTextFile",
-        path: file,
-        data: contents
-      });
+      const response = await createMainApi(this.messenger).saveTextFile(file, contents);
       if (response.type === "ErrorResponse") {
         throw new Error(response.message);
       }
     } else {
-      const response = await this.messenger.sendMessage({
-        type: "MainSaveBinaryFile",
-        path: file,
-        data: contents
-      });
+      const response = await createMainApi(this.messenger).saveBinaryFile(file, contents);
       if (response.type === "ErrorResponse") {
         throw new Error(response.message);
       }
@@ -358,7 +321,7 @@ class ProjectService implements IProjectService {
     this.signFileSaved(file, contents);
   }
 
-  performAllDelayedSavesNow (): Promise<void> {
+  performAllDelayedSavesNow(): Promise<void> {
     return this._delayedJobs.instantlyRunAllOf(JOB_KIND_SAVE_FILE);
   }
 
@@ -366,7 +329,7 @@ class ProjectService implements IProjectService {
    * Removes the specified file from the cache
    * @param file File to remove from the cache
    */
-  forgetFile (file: string): void {
+  forgetFile(file: string): void {
     this._fileCache.delete(file);
   }
 
@@ -374,7 +337,7 @@ class ProjectService implements IProjectService {
    * Tests if the document with the specified ID is open
    * @param id Document ID
    */
-  isDocumentOpen (id: string): boolean {
+  isDocumentOpen(id: string): boolean {
     return this._projectItemCache.has(id);
   }
 
@@ -382,9 +345,7 @@ class ProjectService implements IProjectService {
    * Gets the document for the specified project node
    * @param node Project node to get
    */
-  async getDocumentForProjectNode (
-    node: ProjectNode
-  ): Promise<ProjectDocumentState> {
+  async getDocumentForProjectNode(node: ProjectNode): Promise<ProjectDocumentState> {
     // --- Check the document cache
     const documentState = this._projectItemCache.get(node.fullPath);
     if (documentState) return documentState;
@@ -393,7 +354,7 @@ class ProjectService implements IProjectService {
     const contents = await this.getFileContent(node.fullPath, node.isBinary);
 
     // --- Get renderer information to extract icon properties
-    const docRenderer = documentPanelRegistry.find(dp => dp.id === node.editor);
+    const docRenderer = documentPanelRegistry.find((dp) => dp.id === node.editor);
 
     // --- Create the document's initial state
     const projectDoc: ProjectDocumentState = {
@@ -419,9 +380,7 @@ class ProjectService implements IProjectService {
    * Gets a volatile document according to the specified info
    * @param docInfo
    */
-  async getVolatileDocument (
-    docInfo: VolatileDocumentInfo
-  ): Promise<ProjectDocumentState> {
+  async getVolatileDocument(docInfo: VolatileDocumentInfo): Promise<ProjectDocumentState> {
     // --- Check the document cache
     const documentState = this._projectItemCache.get(docInfo.id);
     if (documentState) return documentState;
@@ -446,7 +405,7 @@ class ProjectService implements IProjectService {
    * @param id Document ID
    * @param hub Hub opening the document
    */
-  openInDocumentHub (id: string, hub: IDocumentHubService): void {
+  openInDocumentHub(id: string, hub: IDocumentHubService): void {
     const doc = this.getDocumentById(id);
     if (!doc) return;
     doc.usedIn ??= [];
@@ -459,7 +418,7 @@ class ProjectService implements IProjectService {
    * @param id Document ID
    * @param hub Hub opening the document
    */
-  closeInDocumentHub (id: string, hub: IDocumentHubService): void {
+  closeInDocumentHub(id: string, hub: IDocumentHubService): void {
     const doc = this.getDocumentById(id);
     if (!doc?.usedIn) return;
     const docIndex = doc.usedIn.indexOf(hub);
@@ -476,7 +435,7 @@ class ProjectService implements IProjectService {
    * Gets the project document by its ID
    * @param id Project document id
    */
-  getDocumentById (id: string): ProjectDocumentState | undefined {
+  getDocumentById(id: string): ProjectDocumentState | undefined {
     return this._projectItemCache.get(id);
   }
 
@@ -484,7 +443,7 @@ class ProjectService implements IProjectService {
    * Sets the specified document permanent
    * @param id The ID of the document to set permanent
    */
-  setPermanent (id: string): void {
+  setPermanent(id: string): void {
     const doc = this.getDocumentById(id);
     if (!doc) {
       throw new Error(`Cannot find document ${id}`);
@@ -499,7 +458,7 @@ class ProjectService implements IProjectService {
    * @param oldId Old document ID
    * @param newId New document ID
    */
-  renameDocument (oldId: string, newId: string): void {
+  renameDocument(oldId: string, newId: string): void {
     const renamedNode = this.getNodeForFile(oldId);
     if (!renamedNode) {
       throw new Error(`Cannot find file node for ${oldId}`);
@@ -511,9 +470,7 @@ class ProjectService implements IProjectService {
     // --- Change the properties of the renamed node
     renamedNode.data.fullPath = newId;
     renamedNode.data.name = getNodeFile(newId);
-    renamedNode.parentNode.sortChildren((a, b) =>
-      compareProjectNode(a.data, b.data)
-    );
+    renamedNode.parentNode.sortChildren((a, b) => compareProjectNode(a.data, b.data));
 
     // --- Re-index the file cache
     const oldContent = this._fileCache.get(oldId);
@@ -539,28 +496,23 @@ class ProjectService implements IProjectService {
   /**
    * Gets the next available document hub ID
    */
-  private getNextDocumentHubId (): number {
+  private getNextDocumentHubId(): number {
     let nextId = 1;
-    while (
-      nextId < this._docHubIdSlots.length &&
-      !this._docHubIdSlots[nextId]
-    ) {
+    while (nextId < this._docHubIdSlots.length && !this._docHubIdSlots[nextId]) {
       nextId++;
     }
     this._docHubIdSlots[nextId] = true;
     return nextId;
   }
 
-  private signProjectViewstateVersionChanged (): void {
+  private signProjectViewstateVersionChanged(): void {
     this.store.dispatch(incProjectViewStateVersionAction(), "ide");
   }
 
-  private signDocServiceVersionChanged (hubId: number): void {
+  private signDocServiceVersionChanged(hubId: number): void {
     this.store.dispatch(incDocHubServiceVersionAction(hubId), "ide");
   }
 }
 
-export const createProjectService = (
-  store: Store<AppState>,
-  messenger: MessengerBase
-) => new ProjectService(store, messenger);
+export const createProjectService = (store: Store<AppState>, messenger: MessengerBase) =>
+  new ProjectService(store, messenger);

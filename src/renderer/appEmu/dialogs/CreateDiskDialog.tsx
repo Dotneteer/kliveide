@@ -4,8 +4,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
-import { useRendererContext } from "@renderer/core/RendererProvider";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { useMainApi } from "@renderer/core/MainApi";
+import { reportMessagingError } from "@renderer/reportError";
 import { useEffect, useRef, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
@@ -23,7 +23,7 @@ type Props = {
 
 export const CreateDiskDialog = ({ onClose }: Props) => {
   const modalApi = useRef<ModalApi>(null);
-  const { messenger } = useRendererContext();
+  const mainApi = useMainApi();
   const { validationService } = useAppServices();
 
   const [diskType, setDiskType] = useState<string>("ss");
@@ -54,28 +54,17 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
         const name = result ? result[0] : filename;
         const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
-        const response = await messenger.sendMessage({
-          type: "MainCreateDiskFile",
-          diskFolder: folder,
-          filename: name,
-          diskType
-        });
+        const response = await mainApi.createDiskFile(folder, name, diskType);
         if (response.type === "ErrorResponse") {
           reportMessagingError(`MainCreateDiskFile call failed: ${response.message}`);
-        } else if (response.type !== "MainCreateDiskFileResponse") {
-          reportUnexpectedMessageType(response.type);
         } else {
           if (response.errorMessage) {
             // --- Display the error
-            const dlgResponse = await messenger.sendMessage({
-              type: "MainDisplayMessageBox",
-              messageType: "error",
-              title: "Create Disk File Error",
-              message: response.errorMessage
-            });
-            if (dlgResponse.type === "ErrorResponse") {
-              reportMessagingError(`MainDisplayMessaBox call failed: ${dlgResponse.message}`);
-            }
+            await mainApi.displayMessageBox(
+              "error",
+              "Create Disk File Error",
+              response.errorMessage
+            );
 
             // --- Keep the dialog open
             return true;
@@ -109,21 +98,11 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await messenger.sendMessage({
-              type: "MainShowOpenFolderDialog",
-              settingsId: NEW_DISK_FOLDER_ID
-            });
-            if (response.type === "ErrorResponse") {
-              reportMessagingError(`MainShowOpenFolderDialog call failed: ${response.message}`);
-            } else if (response.type !== "MainShowOpenFolderDialogResponse") {
-              reportUnexpectedMessageType(response.type);
-            } else {
-              if (response.folder) {
-                setDiskFileFolder(response.folder);
-              }
-              return response.folder;
+            const response = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
+            if (response.folder) {
+              setDiskFileFolder(response.folder);
             }
-            return null;
+            return response.folder;
           }}
           valueChanged={(val) => {
             setDiskFileFolder(val);

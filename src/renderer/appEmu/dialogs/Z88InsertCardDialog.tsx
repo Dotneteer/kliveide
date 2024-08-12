@@ -2,17 +2,8 @@ import styles from "./Z88InsertCardDialog.module.scss";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { Modal } from "@renderer/controls/Modal";
-import {
-  CardTypeData,
-  applyCardStateChange,
-  cardTypes
-} from "../machines/Z88ToolArea";
+import { CardTypeData, applyCardStateChange, cardTypes } from "../machines/Z88ToolArea";
 import { useState } from "react";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import classnames from "@renderer/utils/classnames";
 import { IconButton } from "@renderer/controls/IconButton";
@@ -20,6 +11,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MC_Z88_SLOT0 } from "@common/machines/constants";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import { MainApi } from "@common/messaging/MainApi";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
@@ -29,7 +22,8 @@ type Props = {
 };
 
 export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
-  const { store, messenger } = useRendererContext();
+  const { store } = useRendererContext();
+  const mainApi = useMainApi();
   const { machineService } = useAppServices();
   const machine = machineService.getMachineController().machine as IZ88Machine;
   const [cardType, setCardType] = useState<CardTypeData>();
@@ -38,19 +32,18 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const [_rom0Changed, setRom0Changed] = useState(false);
 
   // --- Get the allowed card sizes (Slot 0 allows only a subset)
-  let allowedCardTypes = cardTypes.filter(ct => (ct.allowInSlot0 || slot > 0) && !ct.noUi);
-  const cardOptions = allowedCardTypes.map(ct => ({
+  let allowedCardTypes = cardTypes.filter((ct) => (ct.allowInSlot0 || slot > 0) && !ct.noUi);
+  const cardOptions = allowedCardTypes.map((ct) => ({
     value: ct.value,
     label: ct.label.replace("*", " ")
   }));
 
   // --- Select the card file from a file dialog
   const selectCardFile = async () => {
-    const slot0AcceptedSizes = acceptedSizes.filter(s =>
-      [128, 256, 512].includes(s)
-    );
+    const slot0AcceptedSizes = acceptedSizes.filter((s) => [128, 256, 512].includes(s));
     const cardFileInfo = await getCardFile(
-      messenger, slot,
+      mainApi,
+      slot,
       slot ? acceptedSizes : slot0AcceptedSizes
     );
     if (!cardFileInfo) {
@@ -63,9 +56,9 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
     }
     if (!cardType?.fallback) return;
     const lengthKb = Math.floor(contents.length / 1024);
-    const selectedType = cardType.fallback?.find(f => f.size === lengthKb);
+    const selectedType = cardType.fallback?.find((f) => f.size === lengthKb);
     if (selectedType) {
-      const newType = cardTypes.find(ct => ct.value === selectedType.type);
+      const newType = cardTypes.find((ct) => ct.value === selectedType.type);
       setCardType(newType);
     }
   };
@@ -89,12 +82,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
           if (cardType.getFile && !file) {
             slotState.pristine = true;
           }
-          await applyCardStateChange(
-            store,
-            controller,
-            `slot${slot}` as any,
-            slotState
-          );
+          await applyCardStateChange(store, controller, `slot${slot}` as any, slotState);
         } else {
           // --- Slot 0: update the Internal ROM configuration, require a restart
           const emulatorState = store.getState().emulatorState;
@@ -114,33 +102,33 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
         onClose();
       }}
     >
-      <DialogRow label='Card type:'>
+      <DialogRow label="Card type:">
         <div className={styles.dropdownWrapper}>
           <Dropdown
-            placeholder='Select...'
+            placeholder="Select..."
             options={cardOptions}
             value={cardType?.value}
             width={406}
-            onSelectionChanged={async option => {
-              const cardType = cardTypes.find(ct => ct.value === option);
+            onSelectionChanged={async (option) => {
+              const cardType = cardTypes.find((ct) => ct.value === option);
               setRom0Changed(true);
               setCardType(cardType);
               if (cardType) {
-                setAcceptedSizes(cardType.fallback?.map(f => f.size) || []);
+                setAcceptedSizes(cardType.fallback?.map((f) => f.size) || []);
               }
             }}
           />
         </div>
       </DialogRow>
       {cardType?.getFile && (
-        <DialogRow label='Select the card file:'>
+        <DialogRow label="Select the card file:">
           <div className={styles.filenameRow}>
             <div className={styles.fileButton} onClick={selectCardFile}>
               <IconButton
-                iconName='file-code'
+                iconName="file-code"
                 buttonWidth={20}
                 buttonHeight={20}
-                title='Select card file'
+                title="Select card file"
               />
             </div>
             <div
@@ -156,10 +144,10 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
             </div>
             {file && (
               <IconButton
-                iconName='close'
+                iconName="close"
                 buttonWidth={20}
                 buttonHeight={20}
-                title='Use pristine card'
+                title="Use pristine card"
                 clicked={() => setFile(undefined)}
               />
             )}
@@ -175,75 +163,46 @@ type GetCardFileMessage = {
   contents: Uint8Array;
 };
 
-async function getCardFile (
-  messenger: MessengerBase,
+async function getCardFile(
+  mainApi: MainApi,
   slot: number,
   acceptedSizes: number[]
 ): Promise<GetCardFileMessage | undefined> {
-
-  const filterName = (slot == 0 ? "ROM files" : "EPROM files");
-  const filterExtensions = (slot == 0 ? ["bin","rom"] : ["epr"]);
-  const response = await messenger.sendMessage({
-    type: "MainShowOpenFileDialog",
-    filters: [
+  const filterName = slot == 0 ? "ROM files" : "EPROM files";
+  const filterExtensions = slot == 0 ? ["bin", "rom"] : ["epr"];
+  const response = await mainApi.showOpenFileDialog(
+    [
       { name: filterName, extensions: filterExtensions },
       { name: "All Files", extensions: ["*"] }
     ],
-    settingsId: Z88_CARDS_FOLDER_ID
-  });
-  if (response.type === "ErrorResponse") {
-    reportMessagingError(
-      `MainShowOpenFolderDialog call failed: ${response.message}`
-    );
-    return null;
-  } else if (response.type !== "MainShowOpenFileDialogResponse") {
-    reportUnexpectedMessageType(response.type);
-    return null;
-  } else {
-    // --- No card is selected
-    if (!response.file) return null;
+    Z88_CARDS_FOLDER_ID
+  );
 
-    // --- Check the selected file
-    const checkResponse = await messenger.sendMessage({
-      type: "MainCheckZ88Card",
-      path: response.file
-    });
-    if (checkResponse.type === "ErrorResponse") {
-      reportMessagingError(
-        `MainShowOpenFolderDialog call failed: ${checkResponse.message}`
+  // --- No card is selected
+  if (!response.file) return null;
+
+  // --- Check the selected file
+  const checkResponse = await mainApi.checkZ88Card(response.file);
+
+  // --- Result of test
+  if (checkResponse.content) {
+    // --- Check for available size
+    const fileSize = checkResponse.content.length;
+    const isAllowed = acceptedSizes.some((s) => s * 1024 === fileSize);
+    if (!isAllowed) {
+      mainApi.displayMessageBox(
+        "error",
+        "Invalid Z88 Card",
+        `The size of the selected card is ${fileSize} bytes (${Math.floor(
+          fileSize / 1024
+        )} KBytes), which is not allowed in this slot.`
       );
       return null;
-    } else if (checkResponse.type !== "MainCheckZ88CardResponse") {
-      reportUnexpectedMessageType(checkResponse.type);
-      return null;
-    } else {
-      // --- Result of test
-      if (checkResponse.content) {
-        // --- Check for available size
-        const fileSize = checkResponse.content.length;
-        const isAllowed = acceptedSizes.some(s => s * 1024 === fileSize);
-        if (!isAllowed) {
-          messenger.sendMessage({
-            type: "MainDisplayMessageBox",
-            title: "Invalid Z88 Card",
-            messageType: "error",
-            message: `The size of the selected card is ${fileSize} bytes (${Math.floor(
-              fileSize / 1024
-            )} KBytes), which is not allowed in this slot.`
-          });
-          return null;
-        }
-        return { filename: response.file, contents: checkResponse.content };
-      } else if (checkResponse.message) {
-        messenger.sendMessage({
-          type: "MainDisplayMessageBox",
-          title: "Invalid Z88 Card",
-          messageType: "error",
-          message: checkResponse.message
-        });
-        return null;
-      }
-      return { filename: response.file, contents: checkResponse.content };
     }
+    return { filename: response.file, contents: checkResponse.content };
+  } else if (checkResponse.message) {
+    mainApi.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
+    return null;
   }
+  return { filename: response.file, contents: checkResponse.content };
 }

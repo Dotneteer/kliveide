@@ -3,34 +3,22 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import {
-  reportMessagingError,
-  reportUnexpectedMessageType
-} from "@renderer/reportError";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import {
-  addBreakpoint,
-  getBreakpoints,
-  removeBreakpoint
-} from "../utils/breakpoint-utils";
+import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import {
-  incBreakpointsVersionAction,
-  incEditorVersionAction,
-} from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 let monacoInitialized = false;
 
@@ -40,35 +28,29 @@ type MarkdownString = monacoEditor.IMarkdownString;
 
 // --- We need to invoke this function while initializing the app. This is required to
 // --- render the Monaco editor with the supported language syntax highlighting.
-export async function initializeMonaco (appPath: string) {
+export async function initializeMonaco(appPath: string) {
   loader.config({
     paths: {
       vs: `${appPath}/node_modules/monaco-editor/min/vs`
     }
   });
   const monaco = await loader.init();
-  customLanguagesRegistry.forEach(entry => ensureLanguage(monaco, entry.id));
+  customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
   monacoInitialized = true;
 
-  function ensureLanguage (monaco: typeof monacoEditor, language: string) {
+  function ensureLanguage(monaco: typeof monacoEditor, language: string) {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
       // --- Do we support that custom language?
-      const languageInfo = customLanguagesRegistry.find(l => l.id === language);
+      const languageInfo = customLanguagesRegistry.find((l) => l.id === language);
       if (languageInfo) {
         // --- Yes, register the new language
         monaco.languages.register({ id: languageInfo.id });
 
         // --- Register a tokens provider for the language
-        monaco.languages.setMonarchTokensProvider(
-          languageInfo.id,
-          languageInfo.languageDef
-        );
+        monaco.languages.setMonarchTokensProvider(languageInfo.id, languageInfo.languageDef);
 
         // --- Set the editing configuration for the language
-        monaco.languages.setLanguageConfiguration(
-          languageInfo.id,
-          languageInfo.options
-        );
+        monaco.languages.setLanguageConfiguration(languageInfo.id, languageInfo.options);
 
         // --- Define light theme for the language
         if (languageInfo.lightTheme) {
@@ -122,24 +104,21 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const [monacoTheme, setMonacoTheme] = useState("");
 
   // --- Respond to editor font size change requests
-  const editorFontSize = useSelector(
-    s => s.ideViewOptions?.editorFontSize ?? 12
-  );
+  const editorFontSize = useSelector((s) => s.ideViewOptions?.editorFontSize ?? 12);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
   const { projectService } = useAppServices();
+  const emuApi = useEmuApi();
 
   // --- Recognize if something changed in the current document hub
   const hubVersion = useDocumentHubServiceVersion();
 
   // --- Use these state variables to manage breakpoinst and their changes
-  const breakpointsVersion = useSelector(
-    s => s.emulatorState.breakpointsVersion
-  );
+  const breakpointsVersion = useSelector((s) => s.emulatorState.breakpointsVersion);
   const breakpoints = useRef<BreakpointInfo[]>([]);
-  const compilation = useSelector(s => s.compilation);
-  const execState = useSelector(s => s.emulatorState?.machineState);
+  const compilation = useSelector((s) => s.compilation);
+  const execState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- Store Monaco editor decorations to display breakpoint information
   const oldDecorations = useRef<string[]>([]);
@@ -150,9 +129,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const resourceName = document.node?.projectPath;
 
   // --- The language to use with Monaco editor for syntax highlighting
-  const languageInfo = customLanguagesRegistry.find(
-    l => l.id === document.language
-  );
+  const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
 
   // --- Recognize document actiovation to restore the previous document state
   const [activationVersion, setActivationVersion] = useState(0);
@@ -175,9 +152,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Respond to theme changes
   useEffect(() => {
     // --- Set the Monaco editor theme according to the document language
-    const languageInfo = customLanguagesRegistry.find(
-      l => l.id === document.language
-    );
+    const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
 
     // --- Default theme name according to the Klive theme's tone
     let themeName = theme.tone === "light" ? "vs" : "vs-dark";
@@ -205,10 +180,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   }, [breakpointsVersion, compilation, execState]);
 
   // --- Initializes the editor when mounted
-  const onMount = (
-    ed: monacoEditor.editor.IStandaloneCodeEditor,
-    _: typeof monacoEditor
-  ): void => {
+  const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
     // --- Restore the view state to display the editor is it has been left
     editor.current = ed;
     ed.setValue(value);
@@ -231,7 +203,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         document.contents = editor.current.getModel()?.getValue();
 
         // --- Now, save it back to the file
-        await projectService.saveFileContent(document.id, document.contents)
+        await projectService.saveFileContent(document.id, document.contents);
         document.savedVersionCount = document.editVersionCount;
         store.dispatch(incEditorVersionAction());
       },
@@ -251,7 +223,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     // --- Dispose event handlers when the editor is about to dispose
     editor.current.onDidDispose(() => {
-      disposables.forEach(d => d.dispose());
+      disposables.forEach((d) => d.dispose());
     });
 
     // --- Show breakpoinst and other decorations when initially displaying the editor
@@ -263,10 +235,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   };
 
   // --- Handle document changes
-  const onValueChanged = async (
-    _: string,
-    e: monacoEditor.editor.IModelContentChangedEvent
-  ) => {
+  const onValueChanged = async (_: string, e: monacoEditor.editor.IModelContentChangedEvent) => {
     // --- Now, make this document permanent
     projectService.setPermanent(document.id);
 
@@ -276,63 +245,39 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (e.changes.length > 0) {
         // --- Get the text that has been deleted
         const change = e.changes[0];
-        const deletedText = editor.current
-          .getModel()
-          .getValueInRange(change.range);
-        const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || [])
-          .length;
+        const deletedText = editor.current.getModel().getValueInRange(change.range);
+        const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || []).length;
 
         // --- Have we deleted one or more EOLs?
         if (deletedLines > 0) {
           // --- Yes, scroll up breakpoints
-          const response = await messenger.sendMessage({
-            type: "EmuScrollBreakpoints",
-            addr: {
+          await createEmulatorApi(messenger).scrollBreakpoints(
+            {
               resource: resourceName,
-              line: change.range.startLineNumber + deletedLines
+              line: change.range.startLineNumber
             },
-            shift: -deletedLines
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `EmuScrollBreakpoints call failed: ${response.message}`
-            );
-          }
+            -deletedLines
+          );
         }
 
         // --- Have we inserted one or more EOLs?
-        const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || [])
-          .length;
+        const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
         if (insertedLines > 0) {
           // --- Yes, scroll down breakpoints.
-          const response = await messenger.sendMessage({
-            type: "EmuScrollBreakpoints",
-            addr: {
+          await createEmulatorApi(messenger).scrollBreakpoints(
+            {
               resource: resourceName,
-              line:
-                change.range.startLineNumber +
-                (change.range.startColumn === 1 ? 0 : 1)
+              line: change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1)
             },
-            shift: insertedLines
-          });
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(
-              `EmuScrollBreakpoints call failed: ${response.message}`
-            );
-          }
+            insertedLines
+          );
         }
 
         // --- If changed, normalize breakpoints
-        const response = await messenger.sendMessage({
-          type: "EmuNormalizeBreakpoints",
-          resource: resourceName,
-          lineCount: editor.current.getModel()?.getLineCount() ?? -1
-        });
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `EmuNormalizeBreakpoints call failed: ${response.message}`
-          );
-        }
+        await createEmulatorApi(messenger).normalizeBreakpoints(
+          resourceName,
+          editor.current.getModel()?.getLineCount() ?? -1
+        );
       }
     }
 
@@ -342,17 +287,15 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     store.dispatch(incEditorVersionAction());
 
     // --- Now, save it back to the file
-    await projectService
-      .saveFileContentAsYouType(document.id, document.contents)
-      .then(
-        () => {
-          document.savedVersionCount = document.editVersionCount;
-          store.dispatch(incEditorVersionAction());
-        },
-        reason => {
-          if (reason !== "canceled") reportError(reason);
-        }
-      );
+    await projectService.saveFileContentAsYouType(document.id, document.contents).then(
+      () => {
+        document.savedVersionCount = document.editVersionCount;
+        store.dispatch(incEditorVersionAction());
+      },
+      (reason) => {
+        if (reason !== "canceled") reportError(reason);
+      }
+    );
   };
 
   // --- render the editor when monaco has been initialized
@@ -365,7 +308,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
             readOnly: document.isReadOnly,
             glyphMargin: languageInfo?.supportsBreakpoints
           }}
-          loading=''
+          loading=""
           width={width}
           height={height}
           key={document.id}
@@ -386,7 +329,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param breakpoints Current breakpoints
    * @param compilation Current compilations
    */
-  async function refreshBreakpoints (): Promise<void> {
+  async function refreshBreakpoints(): Promise<void> {
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
@@ -399,7 +342,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     const editorLines = editor.current?.getModel()?.getLineCount() ?? null;
 
     // --- Iterate through all breakpoins
-    bps.forEach(async bp => {
+    bps.forEach(async (bp) => {
       let unreachable = true;
       if (
         compilationResult?.errors?.length === 0 &&
@@ -407,7 +350,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       ) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const sep = getIsWindows() ? "\\" : "/";
-        const fileIndex = compilationResult.sourceFileList.findIndex(fi =>
+        const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
           fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
         );
         if (fileIndex >= 0) {
@@ -415,7 +358,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           if (bp.resource) {
             // --- This is a source code breakpoint
             const bpInfo = compilationResult.listFileItems.find(
-              li => li.fileIndex === fileIndex && li.lineNumber === bp.line
+              (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
             );
 
             // --- Check if the breakpoint is reachable (a single label, for example, is not)
@@ -425,9 +368,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
             const bpInfo = compilationResult.sourceMap[bp.address];
             if (bpInfo) {
               if (bpInfo.fileIndex === fileIndex) {
-                decorations.push(
-                  createBinaryBreakpointDecoration(bpInfo.line, bp.disabled)
-                );
+                decorations.push(createBinaryBreakpointDecoration(bpInfo.line, bp.disabled));
               }
             }
           }
@@ -442,7 +383,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
             decoration = createUnreachableBreakpointDecoration(bp.line);
           } else {
             // --- Check if there is a binary breakpoint
-            const binBp = bps.find(b => b.address === bp.resolvedAddress);
+            const binBp = bps.find((b) => b.address === bp.resolvedAddress);
             decoration = binBp
               ? createMixedBreakpointDecoration(bp.line, bp.disabled)
               : createCodeBreakpointDecoration(bp.line, bp.disabled);
@@ -455,32 +396,24 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       }
     });
 
-    oldDecorations.current = editor.current.deltaDecorations(
-      oldDecorations.current,
-      decorations
-    );
+    oldDecorations.current = editor.current.deltaDecorations(oldDecorations.current, decorations);
   }
 
   /**
    * Handles the editor's mousemove event
    * @param e
    */
-  function handleEditorMouseMove (
-    e: monacoEditor.editor.IEditorMouseEvent
-  ): void {
+  function handleEditorMouseMove(e: monacoEditor.editor.IEditorMouseEvent): void {
     if (e.target?.type === 2) {
       // --- Mouse is over the margin, display the breakpoint placeholder
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        bp => bp.resource === resourceName && bp.line === lineNo
+        (bp) => bp.resource === resourceName && bp.line === lineNo
       );
-      const message = `Click to ${
-        existingBp ? "remove the existing" : "add a new"
-      } breakpoint`;
-      oldHoverDecorations.current = editor.current.deltaDecorations(
-        oldHoverDecorations.current,
-        [createHoverBreakpointDecoration(lineNo, message)]
-      );
+      const message = `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`;
+      oldHoverDecorations.current = editor.current.deltaDecorations(oldHoverDecorations.current, [
+        createHoverBreakpointDecoration(lineNo, message)
+      ]);
     } else {
       // --- Mouse is out of margin, remove the breakpoint placeholder
       editor.current.deltaDecorations(oldHoverDecorations.current, []);
@@ -491,9 +424,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Handles the editor's mouseleave event
    * @param e
    */
-  function handleEditorMouseLeave (
-    _e: monacoEditor.editor.IEditorMouseEvent
-  ): void {
+  function handleEditorMouseLeave(_e: monacoEditor.editor.IEditorMouseEvent): void {
     editor.current.deltaDecorations(oldHoverDecorations.current, []);
   }
 
@@ -501,14 +432,12 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Handles the editor's mouseleave event
    * @param e
    */
-  function handleEditorMouseDown (
-    e: monacoEditor.editor.IEditorMouseEvent
-  ): void {
+  function handleEditorMouseDown(e: monacoEditor.editor.IEditorMouseEvent): void {
     if (e.event.leftButton && e.target?.type === 2) {
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        bp => bp.resource === document.node?.projectPath && bp.line === lineNo
+        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo
       );
       (async () => {
         if (existingBp) {
@@ -530,7 +459,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   /**
    * Gets the resource name of this document
    */
-  function getResourceName (): string {
+  function getResourceName(): string {
     const projPath = store.getState().project.folderPath;
     return document.id.substring(projPath.length);
   }
@@ -539,7 +468,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Refreshes the current breakpoint
    * @returns
    */
-  async function refreshCurrentBreakpoint (): Promise<void> {
+  async function refreshCurrentBreakpoint(): Promise<void> {
     if (!editor.current) {
       return;
     }
@@ -563,27 +492,18 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
 
     // --- Get the current PC value
-    const cpuStateResponse = await messenger.sendMessage({
-      type: "EmuGetCpuState"
-    });
-    let pc = -1;
-    if (cpuStateResponse.type === "ErrorResponse") {
-      reportError(`EmuGetCpuState call failed: ${cpuStateResponse.message}`);
-    } else if (cpuStateResponse.type !== "EmuGetCpuStateResponse") {
-      reportUnexpectedMessageType(cpuStateResponse.type);
-    } else {
-      pc = cpuStateResponse.pc;
-    }
+    const cpuStateResponse = await emuApi.getCpuState();
+    const pc = cpuStateResponse.pc;
 
     // --- Does this file contains the default breakpoint?
     const sep = getIsWindows() ? "\\" : "/";
-    const fileIndex = compilation.result.sourceFileList.findIndex(fi =>
+    const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
       fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
     );
-if (fileIndex >= 0) {
+    if (fileIndex >= 0) {
       // --- We have address information for this source code file
       const lineInfo = compilation.result.listFileItems.find(
-        li => li.fileIndex === fileIndex && li.address === pc
+        (li) => li.fileIndex === fileIndex && li.address === pc
       );
 
       // --- Get source map information
@@ -614,17 +534,12 @@ if (fileIndex >= 0) {
  * Creates a code breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createCodeBreakpointDecoration (
-  lineNo: number,
-  disabled: boolean
-): Decoration {
+function createCodeBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: disabled
-        ? styles.disabledBreakpointMargin
-        : styles.codeBreakpointMargin
+      glyphMarginClassName: disabled ? styles.disabledBreakpointMargin : styles.codeBreakpointMargin
     }
   };
 }
@@ -633,10 +548,7 @@ function createCodeBreakpointDecoration (
  * Creates a binary breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createBinaryBreakpointDecoration (
-  lineNo: number,
-  disabled: boolean
-): Decoration {
+function createBinaryBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
@@ -652,10 +564,7 @@ function createBinaryBreakpointDecoration (
  * Creates a mixed breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createMixedBreakpointDecoration (
-  lineNo: number,
-  disabled: boolean
-): Decoration {
+function createMixedBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
@@ -671,10 +580,7 @@ function createMixedBreakpointDecoration (
  * Creates a breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createHoverBreakpointDecoration (
-  lineNo: number,
-  message?: string
-): Decoration {
+function createHoverBreakpointDecoration(lineNo: number, message?: string): Decoration {
   const hoverMessage: MarkdownString = message ? { value: message } : null;
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
@@ -691,7 +597,7 @@ function createHoverBreakpointDecoration (
  * @param lineNo Line to apply the decoration to
  * @returns
  */
-function createUnreachableBreakpointDecoration (lineNo: number): Decoration {
+function createUnreachableBreakpointDecoration(lineNo: number): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
@@ -706,19 +612,14 @@ function createUnreachableBreakpointDecoration (lineNo: number): Decoration {
  * @param lineNo Line to apply the decoration to
  * @returns
  */
-function createCurrentBreakpointDecoration (
+function createCurrentBreakpointDecoration(
   fullLine: boolean,
   lineNo: number,
   startColumn?: number,
   endColumn?: number
 ): Decoration {
   return {
-    range: new monacoEditor.Range(
-      lineNo,
-      startColumn ?? 1,
-      lineNo,
-      (endColumn ?? 1) + 1
-    ),
+    range: new monacoEditor.Range(lineNo, startColumn ?? 1, lineNo, (endColumn ?? 1) + 1),
     options: {
       isWholeLine: fullLine,
       className: styles.activeBreakpointLine,

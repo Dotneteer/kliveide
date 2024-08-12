@@ -1,7 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 
 import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
@@ -9,7 +9,7 @@ import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory } from "@controls/Tooltip";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
@@ -22,61 +22,47 @@ type SysVarData = {
 };
 
 const SysVarsPanel = () => {
-  const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
     // --- Get breakpoint information
-    const sysVarsResponse = await messenger.sendMessage({
-      type: "EmuGetSysVars"
-    });
-    if (sysVarsResponse.type === "ErrorResponse") {
-      reportMessagingError(`EmuGetSysVars call failed: ${sysVarsResponse.message}`);
-    } else if (sysVarsResponse.type !== "EmuGetSysVarsResponse") {
-      reportUnexpectedMessageType(sysVarsResponse.type);
-    } else {
-      const memResponse = await messenger.sendMessage({
-        type: "EmuGetMemory"
-      });
-      if (memResponse.type === "ErrorResponse") {
-        reportMessagingError(`EmuGetMemoty call failed: ${memResponse.message}`);
-      } else if (memResponse.type !== "EmuGetMemoryResponse") {
-        reportUnexpectedMessageType(memResponse.type);
-      } else {
-        const memory = memResponse.memory;
-        const vars = sysVarsResponse.sysVars.map((sv) => {
-          const addr = sv.address;
-          let value: number;
-          let valueList: Uint8Array;
-          let length = 1;
-          switch (sv.type) {
-            case SysVarType.Byte:
-            case SysVarType.Flags:
-              value = memory[addr];
-              break;
-            case SysVarType.Word:
-              value = memory[addr] + (memory[addr + 1] << 8);
-              length = 2;
-              break;
-            case SysVarType.Array:
-              valueList = new Uint8Array(sv.length ?? 0);
-              length = valueList.length;
-              for (let i = 0; i < (sv.length ?? 0); i++) {
-                valueList[i] = memory[addr + i];
-              }
+    const sysVarsResponse = await emuApi.getSysVars();
+
+    const memResponse = await emuApi.getMemoryContents();
+
+    const memory = memResponse.memory;
+    const vars = sysVarsResponse.sysVars.map((sv) => {
+      const addr = sv.address;
+      let value: number;
+      let valueList: Uint8Array;
+      let length = 1;
+      switch (sv.type) {
+        case SysVarType.Byte:
+        case SysVarType.Flags:
+          value = memory[addr];
+          break;
+        case SysVarType.Word:
+          value = memory[addr] + (memory[addr + 1] << 8);
+          length = 2;
+          break;
+        case SysVarType.Array:
+          valueList = new Uint8Array(sv.length ?? 0);
+          length = valueList.length;
+          for (let i = 0; i < (sv.length ?? 0); i++) {
+            valueList[i] = memory[addr + i];
           }
-          return {
-            sysVar: sv,
-            value,
-            valueList,
-            length
-          } as SysVarData;
-        });
-        setSysVars(vars);
       }
-    }
+      return {
+        sysVar: sv,
+        value,
+        valueList,
+        length
+      } as SysVarData;
+    });
+    setSysVars(vars);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list

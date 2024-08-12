@@ -124,7 +124,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
 
     const newSpan: OutputSpan = {
       text: message.replaceAll(" ", "\xa0"),
-      foreGround: this._color,
+      foreground: this._color,
       background: this._bgColor,
       isBold: this._isBold,
       isItalic: this._isItalic,

@@ -54,17 +54,13 @@ export class CreateDiskFileCommand extends IdeCommandBase {
   }
 
   async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const response = await context.messenger.sendMessage({
-      type: "MainCreateDiskFile",
-      diskType: this.diskType,
-      diskFolder: this.diskFolder,
-      filename: this.diskName
-    });
+    const response = await context.mainApi.createDiskFile(
+      this.diskType,
+      this.diskFolder,
+      this.diskName
+    );
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
-    }
-    if (response.type !== "MainCreateDiskFileResponse") {
-        return commandError(`Unexpected response: ${response.type}`);
     }
     writeSuccessMessage(
       context.output,

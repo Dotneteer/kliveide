@@ -1,8 +1,8 @@
 import type { MachineConfigSet } from "@common/machines/info-types";
 import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 
-import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
 export const registeredMachines = [
@@ -40,19 +40,15 @@ export const registeredMachines = [
  * @param modelId ID of the machine model
  * @param config Optional machine configuration
  */
-export async function setMachineType (machineId: string, modelId?: string, config?: MachineConfigSet): Promise<void> {
-  await sendFromMainToEmu({
-    type: "EmuSetMachineType",
-    machineId,
-    modelId,
-    config
-  });
-  const mt = registeredMachines.find(mt => mt.id === machineId);
+export async function setMachineType(
+  machineId: string,
+  modelId?: string,
+  config?: MachineConfigSet
+): Promise<void> {
+  await getEmuApi().setMachineType(machineId, modelId, config);
+  const mt = registeredMachines.find((mt) => mt.id === machineId);
   if (mt) {
-    await logEmuEvent(
-      `Machine type set to ${mt.displayName} (${mt.id})`,
-      "bright-cyan"
-    );
+    await logEmuEvent(`Machine type set to ${mt.displayName} (${mt.id})`, "bright-cyan");
   }
 }
 
@@ -62,25 +58,21 @@ let loggedEmuOutputEvents = 0;
 /**
  * Log emulator events
  * @param text Log text
- * @param color Text color to use
+ * @param foreground Text color to use
  */
-export async function logEmuEvent (
-  text: string,
-  color?: OutputColor
-): Promise<void> {
+export async function logEmuEvent(text: string, foreground?: OutputColor): Promise<void> {
   loggedEmuOutputEvents++;
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
+  const ideApi = getIdeApi();
+  await ideApi.displayOutput({
     pane: PANE_ID_EMU,
     text: `[${loggedEmuOutputEvents}] `,
-    color: "yellow",
+    foreground: "yellow",
     writeLine: false
   });
-  await sendFromMainToIde({
-    type: "IdeDisplayOutput",
+  await ideApi.displayOutput({
     pane: PANE_ID_EMU,
     text,
-    color,
+    foreground,
     writeLine: true
   });
 }

@@ -17,13 +17,13 @@ import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
 import { getCachedAppServices } from "../CachedServices";
-import { ITreeNode, ITreeView } from "@renderer/core/tree-node";
-import { ProjectNode } from "./project/project-node";
 import {
   ProjectStructure,
   ProjectTreeNode
 } from "@main/ksx-runner/ProjectStructure";
 import { CompositeOutputBuffer } from "./ToolArea/CompositeOutputBuffer";
+import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
+import { ProjectNode } from "@abstractions/ProjectNode";
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -49,20 +49,21 @@ export async function processMainToIdeMessages (
 
     case "IdeDisplayOutput":
       // --- Display the output message
-      const buffer = outputPaneService.getOutputPaneBuffer(message.pane);
+      const toDisplay = message.toDisplay;
+      const buffer = outputPaneService.getOutputPaneBuffer(toDisplay.pane);
       if (!buffer) break;
       buffer.resetStyle();
-      if (message.color !== undefined) buffer.color(message.color);
-      if (message.backgroundColor !== undefined)
-        buffer.backgroundColor(message.color);
-      buffer.bold(message.bold ?? false);
-      buffer.italic(message.italic ?? false);
-      buffer.underline(message.underline ?? false);
-      buffer.strikethru(message.strikeThru ?? false);
-      if (message.writeLine) {
-        buffer.writeLine(message.text, message.data, message.actionable);
+      if (toDisplay.foreground !== undefined) buffer.color(toDisplay.foreground);
+      if (toDisplay.background !== undefined)
+        buffer.backgroundColor(toDisplay.background);
+      buffer.bold(toDisplay.isBold ?? false);
+      buffer.italic(toDisplay.isItalic ?? false);
+      buffer.underline(toDisplay.isUnderline ?? false);
+      buffer.strikethru(toDisplay.isStrikeThru ?? false);
+      if (toDisplay.writeLine) {
+        buffer.writeLine(toDisplay.text, toDisplay.data, toDisplay.actionable);
       } else {
-        buffer.write(message.text, message.data, message.actionable);
+        buffer.write(toDisplay.text, toDisplay.data, toDisplay.actionable);
       }
       break;
 

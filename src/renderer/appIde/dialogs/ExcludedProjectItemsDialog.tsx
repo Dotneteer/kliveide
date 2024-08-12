@@ -11,7 +11,7 @@ import { setExcludedProjectItemsAction } from "@common/state/actions";
 import { saveProject } from "../utils/save-project";
 import {
   ExcludedItemInfo,
-  excludedItemsFromGlobalSettingsAsync,
+  getExcludedProjectItemsFromGlobalSettings,
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
 import { getNodeFile } from "../project/project-node";
@@ -25,7 +25,7 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
 
   const [ globalExcludes, setGlobalExcludes ] = useState([]);
   useEffect(() => {
-    excludedItemsFromGlobalSettingsAsync(messenger)
+    getExcludedProjectItemsFromGlobalSettings(messenger)
       .then(setGlobalExcludes);
   },[ /* once */ ]);
 

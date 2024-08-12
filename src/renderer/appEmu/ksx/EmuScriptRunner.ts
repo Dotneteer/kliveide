@@ -8,12 +8,9 @@ import {
   EvaluationContext,
   createEvalContext
 } from "@common/ksx/EvaluationContext";
-import {
-  executeModule,
-  isModuleErrors,
-  parseKsxModule
-} from "@common/ksx/ksx-module";
+import { executeModule, isModuleErrors, parseKsxModule } from "@common/ksx/ksx-module";
 import { sendScriptOutput } from "@common/ksx/script-runner";
+import { createMainApi } from "@common/messaging/MainApi";
 
 type ScriptExecInfo = {
   evalContext: EvaluationContext;
@@ -27,14 +24,13 @@ export class EmuScriptRunner {
   private runningScripts = new Map<number, ScriptExecInfo>();
   private packages: Record<string, any> = {};
 
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     private readonly messenger: MessengerBase,
-    private readonly outputFn: (
-      text: string,
-      options?: Record<string, any>
-    ) => Promise<void> = (text, options) =>
-      sendScriptOutput(this.messenger, text, options)
+    private readonly outputFn: (text: string, options?: Record<string, any>) => Promise<void> = (
+      text,
+      options
+    ) => sendScriptOutput(this.messenger, text, options)
   ) {}
 
   /**
@@ -42,14 +38,10 @@ export class EmuScriptRunner {
    * @param scriptFileName The name of the script file to run.
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
-  async runScript (
-    scriptId: number,
-    scriptFile: string,
-    scriptContents: string
-  ): Promise<boolean> {
+  async runScript(scriptId: number, scriptFile: string, scriptContents: string): Promise<boolean> {
     // --- Check if the script is already running
     const scripts = this.store.getState().scripts;
-    let script = scripts.find(s => s.id === scriptId);
+    let script = scripts.find((s) => s.id === scriptId);
     if (!script) {
       // --- The script is already running, nothing to do
       this.outputFn?.(`Script ${scriptFile} process has not been created.`, {
@@ -75,14 +67,14 @@ export class EmuScriptRunner {
     const module = await parseKsxModule(
       scriptFile,
       scriptContents,
-      moduleName => this.resolveModule(scriptFile, moduleName),
-      packageName => this.packages[packageName]
+      (moduleName) => this.resolveModule(scriptFile, moduleName),
+      (packageName) => this.packages[packageName]
     );
     if (isModuleErrors(module)) {
       // --- The script has errors, display them
-      Object.keys(module).forEach(moduleName => {
+      Object.keys(module).forEach((moduleName) => {
         const errors = module[moduleName];
-        errors.forEach(error => {
+        errors.forEach((error) => {
           this.outputFn?.(
             `${error.code}: ${error.text} (${moduleName}:${error.line}:${error.column})`,
             {
@@ -141,20 +133,14 @@ export class EmuScriptRunner {
         });
       } finally {
         const scripts = this.store.getState().scripts.slice();
-        let scriptIdx = scripts.findIndex(s => s.id === script.id);
+        let scriptIdx = scripts.findIndex((s) => s.id === script.id);
         if (scriptIdx >= 0) {
           scripts[scriptIdx] = script;
         }
         this.store.dispatch(setScriptsStatusAction(scripts), "emu");
 
         // --- Notify the main script manager
-        const response = await this.messenger.sendMessage({
-          type: "MainCloseScript",
-          script
-        });
-        if (response.type === "ErrorResponse") {
-          throw new Error(response.message);
-        }
+        await createMainApi(this.messenger).closeScript(script);
       }
     })();
     return true;
@@ -164,10 +150,10 @@ export class EmuScriptRunner {
    * Stops the execution of a running script.
    * @param scriptFileName The name of the script file to stop.
    */
-  async stopScript (scriptId: number): Promise<boolean> {
+  async stopScript(scriptId: number): Promise<boolean> {
     // --- Check if the script is already running
     const scripts = this.store.getState().scripts;
-    const script = scripts.find(s => s.id === scriptId);
+    const script = scripts.find((s) => s.id === scriptId);
     if (!script) {
       // --- The script is not running or has been completed, nothing to do
       this.outputFn?.(`Script ${script.scriptFileName} is not running.`, {
@@ -185,19 +171,11 @@ export class EmuScriptRunner {
   }
 
   // --- Resolves the script contents from the module's name
-  private async resolveModule (
-    scriptFile: string,
-    moduleName: string
-  ): Promise<string | null> {
-    const response = await this.messenger.sendMessage({
-      type: "MainResolveModule",
-      mainFile: scriptFile,
-      moduleName: moduleName
-    });
+  private async resolveModule(scriptFile: string, moduleName: string): Promise<string | null> {
+    const response = await createMainApi(this.messenger).resolveModule(scriptFile, moduleName);
     if (response.type === "MainResolveModuleResponse") {
       return response.contents;
     }
     return null;
   }
 }
-

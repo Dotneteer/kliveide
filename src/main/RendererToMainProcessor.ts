@@ -344,18 +344,6 @@ export async function processRendererToMainMessages(
       app.quit();
       break;
 
-    case "MainPathExists":
-      if (!fs.existsSync(message.path)) {
-        return flagResponse(false);
-      }
-      const stat = fs.lstatSync(message.path);
-      if (message.isFolder === false) {
-        return flagResponse(stat.isFile());
-      } else if (message.isFolder === true) {
-        return flagResponse(stat.isDirectory());
-      }
-      return flagResponse(true);
-
     case "MainShowWebsite":
       shell.openExternal(KLIVE_GITHUB_PAGES);
       break;
@@ -455,11 +443,6 @@ export async function processRendererToMainMessages(
       }
       break;
 
-    case "EmuMachineCommand":
-      // --- A client wants to send a machine command (start, pause, stop, etc.)
-      // --- Send this message to the emulator
-      return await sendFromMainToEmu(message);
-
     case "IdeDisplayOutput":
     case "IdeExecuteCommand":
     case "IdeScriptOutput":
@@ -467,6 +450,7 @@ export async function processRendererToMainMessages(
       return await sendFromMainToIde(message);
 
     // --- Forward these messages to the emulator
+    case "EmuMachineCommand":
     case "EmuGetCpuState":
     case "EmuGetUlaState":
     case "EmuGetPsgState":

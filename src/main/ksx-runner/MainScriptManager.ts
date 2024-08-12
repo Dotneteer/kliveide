@@ -21,8 +21,8 @@ import { concludeScript, sendScriptOutput } from "../../common/ksx/script-runner
 import { createProjectStructure } from "./ProjectStructure";
 import { executeIdeCommand } from "./ide-commands";
 import { createZ88dk } from "../../script-packages/z88dk/Z88DK";
-import { createEmulatorApi } from "./emulator";
 import { createNotifications } from "./notifications";
+import { createEmulatorApi } from "./emulator";
 
 const MAX_SCRIPT_HISTORY = 128;
 
