@@ -172,11 +172,7 @@ export class EmuScriptRunner {
 
   // --- Resolves the script contents from the module's name
   private async resolveModule(scriptFile: string, moduleName: string): Promise<string | null> {
-    const response = await this.messenger.sendMessage({
-      type: "MainResolveModule",
-      mainFile: scriptFile,
-      moduleName: moduleName
-    });
+    const response = await createMainApi(this.messenger).resolveModule(scriptFile, moduleName);
     if (response.type === "MainResolveModuleResponse") {
       return response.contents;
     }

@@ -13,9 +13,11 @@ import {
   MainCompileResponse,
   MainCreateDiskFileResponse,
   MainCreateKliveProjectResponse,
+  MainGetBuildFunctionsResponse,
   MainGetDirectoryContentResponse,
   MainGetSettingsResponse,
   MainGetTemplateDirsResponse,
+  MainResolveModuleResponse,
   MainRunScriptResponse,
   MainSaveFileResponse,
   MainShowOpenFileDialogResponse,
@@ -107,6 +109,10 @@ export interface MainApi {
   ): Promise<MainRunScriptResponse | ErrorResponse>;
   stopScript(idOrFilename: number | string): Promise<FlagResponse>;
   closeScript(script: ScriptRunInfo): Promise<void>;
+  removeCompletedScripts(): Promise<void>;
+  resolveModule(mainFile: string, moduleName: string): Promise<MainResolveModuleResponse>;
+  getBuildFunctions(): Promise<MainGetBuildFunctionsResponse | ErrorResponse>;
+  checkBuildRoot(filename: string): Promise<void>;
 }
 
 class MainApiImpl implements MainApi {
@@ -624,6 +630,51 @@ class MainApiImpl implements MainApi {
     await this.sendMessage({
       type: "MainCloseScript",
       script
+    });
+  }
+
+  /**
+   * Removes completed scripts
+   */
+  async removeCompletedScripts(): Promise<void> {
+    await this.sendMessage({
+      type: "MainRemoveCompletedScripts"
+    });
+  }
+
+  /**
+   * Resolves a module
+   * @param mainFile Main file
+   * @param moduleName Name of the module
+   */
+  async resolveModule(mainFile: string, moduleName: string): Promise<MainResolveModuleResponse> {
+    return (await this.sendMessage(
+      {
+        type: "MainResolveModule",
+        mainFile,
+        moduleName
+      },
+      "MainResolveModuleResponse"
+    )) as MainResolveModuleResponse;
+  }
+
+  /**
+   * Gets the build functions
+   */
+  async getBuildFunctions(): Promise<MainGetBuildFunctionsResponse | ErrorResponse> {
+    return await this.sendMessageWithNoErrorCheck<MainGetBuildFunctionsResponse>({
+      type: "MainGetBuildFunctions"
+    });
+  }
+
+  /**
+   * Checks the build root
+   * @param filename Name of the file
+   */
+  async checkBuildRoot(filename: string): Promise<void> {
+    await this.sendMessage({
+      type: "MainCheckBuildRoot",
+      filename
     });
   }
 

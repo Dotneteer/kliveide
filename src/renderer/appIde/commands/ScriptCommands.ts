@@ -143,14 +143,9 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
     }
 
     // --- Check if build function exists
-    const buildFunctionsResponse = await context.messenger.sendMessage({
-      type: "MainGetBuildFunctions"
-    });
+    const buildFunctionsResponse = await context.mainApi.getBuildFunctions();
     if (buildFunctionsResponse.type === "ErrorResponse") {
       return commandError(buildFunctionsResponse.message);
-    }
-    if (buildFunctionsResponse.type !== "MainGetBuildFunctionsResponse") {
-      return commandError("Unexpected response received.");
     }
     if (!buildFunctionsResponse.functions.includes(this.arg)) {
       return commandError(

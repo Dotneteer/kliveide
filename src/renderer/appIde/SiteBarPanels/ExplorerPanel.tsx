@@ -284,10 +284,7 @@ const ExplorerPanel = () => {
           projectService.signItemDeleted(selectedContextNode);
 
           // --- Check if build root should be deleted
-          await messenger.sendMessage({
-            type: "MainCheckBuildRoot",
-            filename: selectedContextNode.data.projectPath
-          });
+          await mainApi.checkBuildRoot(selectedContextNode.data.projectPath);
         }
       }}
       onClose={() => {
