@@ -67,7 +67,6 @@ import { ToolArea } from "./ToolArea/ToolArea";
 import {
   CompileCommand,
   DebugCodeCommand,
-  ExportCodeCommand,
   InjectCodeCommand,
   RunCodeCommand
 } from "./commands/CompilerCommand";
@@ -107,7 +106,7 @@ import {
   setCachedStore
 } from "../CachedServices";
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
-import { KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
+import { ExportCodeCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 

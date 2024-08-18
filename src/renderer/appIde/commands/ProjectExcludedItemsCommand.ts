@@ -2,6 +2,7 @@ import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import {
   IdeCommandBase,
+  IdeCommandBaseNew,
   commandError,
   commandSuccess,
   validationError,
@@ -25,29 +26,19 @@ import { pathStartsWith } from "@common/utils/path-utils";
 import { getIsWindows } from "@renderer/os-utils";
 import { isAbsolutePath } from "../project/project-node";
 
-export class ProjectListExcludedItemsCommand extends IdeCommandBase {
+type ListExcludedItemArgs = {
+  "--global"?: boolean;
+}
+
+export class ProjectListExcludedItemsCommand extends IdeCommandBaseNew<ListExcludedItemArgs> {
   readonly id = "project:excluded-items";
   readonly description = "Lists the paths of items currently excluded from the project.";
   readonly usage = "project:excluded-items [--global]";
   readonly aliases = ["project:list-excluded", "proj:excluded-items", "proj:list-excluded", "p:lx"];
 
-  globalMode = false;
-
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length > 1) {
-      return validationError("This command expects one argument at most.");
-    }
-    this.globalMode = args.length === 1 && context.argTokens.some((t) => t.text === "--global");
-    if (args.length === 1 && !this.globalMode) {
-      return validationError(`Unexpected arguments! Usage: ${this.usage}`);
-    }
-    return [];
-  }
-
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: ListExcludedItemArgs): Promise<IdeCommandResult> {
     let result: Promise<ExcludedItemInfo[]>;
-    if (this.globalMode) {
+    if (args["--global"]) {
       result = getExcludedProjectItemsFromGlobalSettings(context.messenger);
     } else {
       const proj = context.store.getState().project;

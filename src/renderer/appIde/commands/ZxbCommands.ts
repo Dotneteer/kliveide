@@ -1,14 +1,8 @@
-import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import {
-  IdeCommandBase,
-  validationError,
-  getNumericTokenValue,
-  commandSuccessWith,
-  toHexa4
-} from "../services/ide-commands";
-import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { TokenType } from "../services/command-parser";
+import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+
+import { commandSuccessWith, toHexa4, IdeCommandBaseNew } from "@renderer/appIde/services/ide-commands";
 import {
   ZXBC_ALL,
   ZXBC_EXECUTABLE_PATH,
@@ -16,7 +10,13 @@ import {
   ZXBC_PYTHON_PATH
 } from "@main/zxb-integration/zxb-config";
 
-export class ResetZxbCommand extends IdeCommandBase {
+type ZxbCommandArgs = {
+  zxbPath: string;
+  pythonPath?: string;
+  codeOrigin?: number;
+};
+
+export class ResetZxbCommand extends IdeCommandBaseNew<ZxbCommandArgs> {
   readonly id = "zxb-reset";
   readonly description =
     "Resets ZXB settings with the provided executable path and machine code origin";
@@ -24,77 +24,32 @@ export class ResetZxbCommand extends IdeCommandBase {
     "zxb-reset <Full ZXBC executable path> [<python3 path>] [<start of machine code>]";
   readonly aliases = ["zxbr"];
 
-  private exePath?: string;
-  private pythonPath?: string;
-  private codeOrigin?: number;
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "zxbPath" }],
+    optional: [{ name: "pythonPath" }, { name: "codeOrigin", type: "number" }]
+  };
 
-  prepareCommand (): void {
-    delete this.exePath;
-    delete this.pythonPath;
-    delete this.codeOrigin;
-  }
-
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length > 3) {
-      return validationError("This command expects up to three parameters");
-    }
-
-    for (let i = 0; i < args.length; i++) {
-      switch (args[i].type) {
-        case TokenType.BinaryLiteral:
-        case TokenType.DecimalLiteral:
-        case TokenType.HexadecimalLiteral:
-          if (this.codeOrigin !== undefined) {
-            return validationError("Code origin already specified");
-          }
-          const tokenValue = getNumericTokenValue(args[i]);
-          if (tokenValue.messages) {
-            return validationError("Invalid address");
-          }
-          this.codeOrigin = tokenValue.value & 0xffff;
-          this.codeOrigin = getNumericTokenValue(args[i]).value & 0xffff;
-          break;
-        default:
-          if (this.exePath === undefined) {
-            this.exePath = args[i].text;
-          } else if (this.pythonPath === undefined) { 
-            this.pythonPath = args[i].text;
-          } else {
-            return validationError("Code origin must be a number");
-          }
-          break;
-      }
-    }
-
-    return [];
-  }
-
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    if (this.exePath) {
+  async execute(context: IdeCommandContext, args: ZxbCommandArgs): Promise<IdeCommandResult> {
+    if (args.zxbPath) {
       await context.service.ideCommandsService.executeCommand(
-        `set ${ZXBC_EXECUTABLE_PATH} "${this.exePath}"`
+        `set ${ZXBC_EXECUTABLE_PATH} "${args.zxbPath}"`
       );
-      let cmdMessage = `ZX BASIC path set to ${this.exePath}`;
-      if (this.pythonPath) {
+      let cmdMessage = `ZX BASIC path set to ${args.zxbPath}`;
+      if (args.pythonPath) {
         await context.service.ideCommandsService.executeCommand(
-          `set ${ZXBC_PYTHON_PATH} "${this.pythonPath}"`
+          `set ${ZXBC_PYTHON_PATH} "${args.pythonPath}"`
         );
-        cmdMessage += `, python path to $${this.pythonPath}`;
+        cmdMessage += `, python path to $${args.pythonPath}`;
       }
-      if (this.codeOrigin) {
+      if (args.codeOrigin) {
         await context.service.ideCommandsService.executeCommand(
-          `set ${ZXBC_MACHINE_CODE_ORIGIN} "${this.codeOrigin}"`
+          `set ${ZXBC_MACHINE_CODE_ORIGIN} "${args.codeOrigin}"`
         );
-        cmdMessage += `, code origin to $${toHexa4(this.codeOrigin)}`;
+        cmdMessage += `, code origin to $${toHexa4(args.codeOrigin)}`;
       }
       return commandSuccessWith(cmdMessage);
     } else {
-      await context.service.ideCommandsService.executeCommand(
-        `set ${ZXBC_ALL}`
-      );
+      await context.service.ideCommandsService.executeCommand(`set ${ZXBC_ALL}`);
       return commandSuccessWith("ZXBC settings removed");
     }
   }
