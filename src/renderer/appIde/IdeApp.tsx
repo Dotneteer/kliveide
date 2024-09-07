@@ -207,7 +207,7 @@ const IdeApp = () => {
           primaryLocation={primaryBarsPos}
           primaryPanel={<SiteBar />}
           primaryVisible={showSideBar}
-          initialPrimarySize='250px'
+          initialPrimarySize='25%'
           minSize={60}
           secondaryPanel={
             <SplitPanel

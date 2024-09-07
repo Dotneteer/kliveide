@@ -28,7 +28,7 @@ type SelectOutputArgs = {
 export class SelectOutputPaneCommand extends IdeCommandBaseNew<SelectOutputArgs> {
   readonly id = "outp";
   readonly description = "Selects the specified output panel and navigates there";
-  readonly usage = "outp panelId";
+  readonly usage = "outp <paneId>";
   readonly argumentInfo?: CommandArgumentInfo = {
     mandatory: [{ name: "paneId" }]
   };

@@ -57,7 +57,7 @@ export const DocumentTab = ({
   tabCloseClicked
 }: Props) => {
   // --- Services used in this component
-  const { store, messenger } = useRendererContext();
+  const { store } = useRendererContext();
   const mainApi = useMainApi();
 
   const ref = useRef<HTMLDivElement>(null);

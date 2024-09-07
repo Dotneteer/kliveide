@@ -7,10 +7,10 @@ import { useRendererContext } from "./RendererProvider";
 
 export function useMainApi(): MainApi {
   const api = useRef<MainApi>(null);
+  const { messenger } = useRendererContext();
   if (api.current) {
     return api.current;
   }
-  const { messenger } = useRendererContext();
   api.current = createMainApi(messenger);
   return api.current;
 }

@@ -37,6 +37,11 @@ export type IdeCommandInfo = {
   readonly argumentInfo?: CommandArgumentInfo;
 
   /**
+   * Indicates that this project requires an open Klive project
+   */
+  readonly requiresProject?: boolean;
+
+  /**
    * Optional function to validate the parsed command arguments
    * @param args Parsed command arguments
    * @returns Validation result

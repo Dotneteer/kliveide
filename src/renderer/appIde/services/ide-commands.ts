@@ -163,6 +163,11 @@ export abstract class IdeCommandBaseNew<T = any> implements IdeCommandInfo {
   readonly argumentInfo?: CommandArgumentInfo = {};
 
   /**
+   * Indicates that this project requires an open Klive project
+   */
+  readonly requiresProject?: boolean = false;
+
+  /**
    * Execute the command
    * @param _context Command execution context
    * @param _args Object with command arguments

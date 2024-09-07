@@ -1,32 +1,39 @@
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { CommandWithSingleStringBase } from "./CommandWithSimpleStringBase";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { commandError, commandSuccessWith } from "../services/ide-commands";
+import { commandError, commandSuccessWith, IdeCommandBaseNew } from "../services/ide-commands";
 import { SCRIPT_OUTPUT_VIEWER } from "@common/state/common-ids";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { scriptDocumentId } from "@common/utils/script-utils";
 import { isAbsolutePath } from "../project/project-node";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
-export class RunScriptCommand extends CommandWithSingleStringBase {
+type RunScriptCommandArgs = {
+  filePath: string;
+};
+
+export class RunScriptCommand extends IdeCommandBaseNew<RunScriptCommandArgs> {
   readonly id = "script-run";
   readonly description = "Runs the specified script";
   readonly usage = "script-run <script file path>";
   readonly aliases = ["sr"];
 
-  protected extraArgCount = 0;
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "filePath" }]
+  };
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  readonly requiresProject = true;
+
+  async execute(context: IdeCommandContext, args: RunScriptCommandArgs): Promise<IdeCommandResult> {
     // --- Check if the script file exists
-    const checkResult = await checkScriptFile(this.arg, context);
+    const checkResult = await checkScriptFile(args.filePath, context);
     if (checkResult.error) {
       return commandError(checkResult.error);
     }
     try {
-      const id = await context.service.scriptService.runScript(
-        checkResult.file!
-      );
+      const id = await context.service.scriptService.runScript(checkResult.file!);
       return commandSuccessWith(
-        `Script ${this.arg} (with ID ${Math.abs(id)}) ${
+        `Script ${args.filePath} (with ID ${Math.abs(id)}) ${
           id < 0 ? "is already running" : "has been started"
         }.`
       );
@@ -36,20 +43,28 @@ export class RunScriptCommand extends CommandWithSingleStringBase {
   }
 }
 
-export class CancelScriptCommand extends CommandWithSingleStringBase {
+type CancelScriptCommandArgs = {
+  fileId: string;
+};
+
+export class CancelScriptCommand extends IdeCommandBaseNew<CancelScriptCommandArgs> {
   readonly id = "script-cancel";
   readonly description = "Cancels the specified running script";
   readonly usage = "script-cancel <script file path | script ID>";
   readonly aliases = ["sc"];
 
-  protected extraArgCount = 0;
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "fileId" }]
+  };
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  readonly requiresProject = true;
+
+  async execute(context: IdeCommandContext, args: CancelScriptCommandArgs): Promise<IdeCommandResult> {
     // --- Check if the script file exists
-    const scriptId = parseInt(this.arg, 10);
-    let arg: number | string = this.arg;
+    const scriptId = parseInt(args.fileId, 10);
+    let arg: number | string = args.fileId;
     if (isNaN(scriptId)) {
-      const checkResult = await checkScriptFile(this.arg, context);
+      const checkResult = await checkScriptFile(args.fileId, context);
       if (checkResult.error) {
         return commandError(checkResult.error);
       }
@@ -59,9 +74,7 @@ export class CancelScriptCommand extends CommandWithSingleStringBase {
     try {
       const stopped = await context.service.scriptService.cancelScript(arg);
       return commandSuccessWith(
-        stopped
-          ? `Script ${arg} has been stopped.`
-          : `Script ${arg} did not run.`
+        stopped ? `Script ${arg} has been stopped.` : `Script ${arg} did not run.`
       );
     } catch (err) {
       return commandError(err.message);
@@ -77,7 +90,7 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
 
   protected extraArgCount = 0;
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check if the script file exists
     const scriptId = parseInt(this.arg, 10);
     if (isNaN(scriptId)) {
@@ -85,10 +98,9 @@ export class DisplayScriptOutputCommand extends CommandWithSingleStringBase {
     }
 
     // --- Get the script output
-    const documentHubService =
-      context.service.projectService.getActiveDocumentHubService();
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
     const scripts = context.store.getState().scripts;
-    const thisScript = scripts.find(s => s.id === scriptId);
+    const thisScript = scripts.find((s) => s.id === scriptId);
     if (!thisScript) {
       return commandError(`Script with ID ${scriptId} not found`);
     }
@@ -124,7 +136,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
 
   protected extraArgCount = 0;
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
     // --- Check for function name syntax
     if (!this.arg.match(/^[$A-Z_][0-9A-Z_$]*$/i)) {
       return commandError(`Invalid function name syntax: '${this.arg}'`);
@@ -132,9 +144,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
 
     // --- Check if the project is open
     if (!context.store.getState().project?.folderPath) {
-      return commandError(
-        "Open a project first. Only then you can run scripts."
-      );
+      return commandError("Open a project first. Only then you can run scripts.");
     }
 
     // --- Check if this project has a build file
@@ -148,9 +158,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
       return commandError(buildFunctionsResponse.message);
     }
     if (!buildFunctionsResponse.functions.includes(this.arg)) {
-      return commandError(
-        `Function '${this.arg}' not found in the build file.`
-      );
+      return commandError(`Function '${this.arg}' not found in the build file.`);
     }
 
     // --- Get the current project's build file name
@@ -180,7 +188,7 @@ export class RunBuildScriptCommand extends CommandWithSingleStringBase {
   }
 }
 
-async function checkScriptFile (
+async function checkScriptFile(
   filename: string,
   context: IdeCommandContext
 ): Promise<{ file?: string; error?: string }> {
@@ -190,10 +198,8 @@ async function checkScriptFile (
   }
 
   // --- Check if the script file exists
-  const filePath = isAbsolutePath(filename)
-    ? filename
-    : `${projectFolder}/${filename}`
-  const response = await context.mainApi.readTextFile(filePath, "project");
+  const filePath = isAbsolutePath(filename) ? filename : `${projectFolder}/${filename}`;
+  const response = await context.mainApi.readTextFile(filePath, null, "project");
   if (response.type === "ErrorResponse") {
     return { error: response.message };
   }

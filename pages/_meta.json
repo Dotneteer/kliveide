@@ -4,5 +4,6 @@
     "working-with-ide": "Working with the IDE",
     "howto": "How To",
     "z80-assembly": "Klive Z80 Assembler",
-    "scripting": "Scripting"
+    "scripting": "Scripting",
+    "command-reference": "Command Reference"
 }

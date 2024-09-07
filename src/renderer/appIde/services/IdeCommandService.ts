@@ -208,6 +208,14 @@ class IdeCommandService implements IIdeCommandService {
           success: false
         };
       } else {
+        // --- Check if this command requires an open Klive project
+        if (commandInfo.requiresProject && !context.store.getState().project?.isKliveProject) {
+          buffer.color("bright-red");
+          buffer.writeLine("This command requires an open Klive project.");
+          buffer.resetStyle();
+          return { success: false };
+        }
+        
         // --- Arguments, ok; execute the command
         commandResult = await commandInfo.execute(context, args);
       }

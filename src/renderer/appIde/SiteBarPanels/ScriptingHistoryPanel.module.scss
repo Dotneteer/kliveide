@@ -35,12 +35,27 @@
   }
 }
 
+.itemId {
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
+  width: 40px;
+  color: var(--console-ansi-bright-magenta);
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: start;
+}
+
 .itemText {
   white-space: nowrap;
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
-  width: 240px;
+  width: 400px;
   color: var(--color-doc-activeText);
   padding-left: 8px;
   padding-right: 8px;
@@ -48,11 +63,19 @@
 }
 
 .itemTime {
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
   color: var(--console-ansi-bright-blue);
   padding-left: 8px;
   padding-right: 8px;
   text-align: start;
-  width: 80px;
+  width: 60px;
+  text-align: end;
 }
 
 .header {

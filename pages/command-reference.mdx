@@ -1,0 +1,122 @@
+# Command Reference
+
+## `hide-disassembly`
+
+Use this command to hide the machine code disassembly view.
+
+```
+hide-disassembly
+```
+
+## `hide-memory`
+
+Use this command to hide the memory contents view.
+
+```
+hide-memory
+```
+
+## `outp`
+
+You can select a particular output pane with this command.
+
+```
+outp <paneId>
+```
+
+The `paneId` argument can be one of the available output panes (`emu`, `build`, or `script`).
+
+## `script-cancel`
+
+This command runs the script file specified in the argument.
+
+```
+script-cancel <script-file-path-or-script-id>
+```
+
+Available aliases: `sc`
+
+You can provide a script file name or a script ID as an argument. When you start a script, the ID of the running script is displayed. You can also get a particular script's ID from the Script History panel.
+
+When you specify a file name, use the full name (including the `.ksx` file extension) relative to the project's root folder. For example, if your script is in the `scripts` folder and named `myScript.ksx`, use the `scripts/myScript.ksx` parameter.
+
+## `script-run`
+
+This command runs the script file specified in the argument.
+
+```
+script-run <script-file-path>
+```
+
+Available aliases: `sr`
+
+Provide the full file name (including the `.ksx` file extension) relative to the project's root folder. For example, if your script is in the `scripts` folder and named `myScript.ksx`, use the `scripts/myScript.ksx` parameter.
+
+## `set`
+
+You can use this comment to set or delete a particular Klive setting.
+
+
+```
+set [-p] [-u] <key> [<value>] 
+```
+
+Use the `-p` option to set a project setting or `-u` for a user setting. `<key>` is the setting key, `<value>` is the new setting value. The specified key is removed if you omit `<value>`.
+
+> **Note**: Project settings are saved in the currently open project file, while user settings are saved in the `Klive/live.settings` file under your user folder.
+
+If you do not specify the context (with `-p` or `-u`), the IDE will save a project setting, provided a project is open; otherwise, it saves a user-level setting.
+
+## `setl`
+
+This command lists the specified settings.
+
+```
+setl [-p] [-u] [<setting>] 
+```
+
+Use the `-p` option to list project settings or `-u` for user settings. By default, all settings in the specified bucket are listed. Additionally, you can specify a setting prefix in `<setting>`. In this case, only matching settings are listed.
+
+> **Note**: Project settings are saved in the currently open project file, while user settings are saved in the `Klive/live.settings` file under your user folder.
+
+If you do not specify the context (with `-p` or `-u`), the IDE will list project settings, provided a project is open; otherwise, it lists user-level settings.
+
+## `setm`
+
+This command lists the specified settings.
+
+```
+setl [-pull] [-push] [-c] 
+```
+
+This command moves settings from the user setting file to the current project file (`-pull`) or vice versa (`push`). The additional `-c` option copies the settings instead of moving them.
+
+> **Note**: You can use either `-pull` or `push`. This command works only when a Klive project is open in the IDE. 
+
+## `show-disassembly`
+
+Use this command to display the machine code disassembly view.
+
+```
+show-disassembly
+```
+
+## `show-memory`
+
+Use this command to display the memory contents view.
+
+```
+show-memory
+```
+
+## `zxb-reset`
+
+Use this command to set ZXBASIC integration.
+
+```
+zxb-reset <Full ZXBC executable path> [<python3 path>] [<start of machine code>]
+```
+
+Available aliases: `zxbr`
+
+Provide the full executable path of the ZXBC compiler. Optionally, you can provide the path to the Python3 executable and the start of the machine code. See the [ZXBASIC integration](/working-with-ide/zxb) article for more information.
