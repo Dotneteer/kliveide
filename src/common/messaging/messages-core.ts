@@ -48,7 +48,6 @@ import type {
   MainShowItemInFolderRequest,
   MainApplyUserSettingsRequest,
   MainApplyProjectSettingsRequest,
-  MainPathExistsRequest,
   MainGetUserSettingsRequest,
   MainGetProjectSettingsRequest,
   MainGetSettingsResponse,
@@ -116,7 +115,6 @@ import type {
 import {
   IdeDisplayOutputRequest,
   IdeShowBasicRequest,
-  IdeShowDialogRequest,
   IdeExecuteCommandRequest,
   IdeExecuteCommandResponse,
   IdeSaveAllBeforeQuitRequest,
@@ -242,7 +240,6 @@ export type RequestMessage =
   | MainCompileFileRequest
   | MainExitAppRequest
   | MainShowItemInFolderRequest
-  | MainPathExistsRequest
   | MainShowWebsiteRequest
   | MainCheckZ88CardRequest
   | MainSaveDiskChangesRequest
@@ -259,7 +256,6 @@ export type RequestMessage =
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
   | IdeShowBasicRequest
-  | IdeShowDialogRequest
   | IdeExecuteCommandRequest
   | IdeSaveAllBeforeQuitRequest
   | IdeScriptOutputRequest

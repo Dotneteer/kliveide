@@ -458,6 +458,34 @@ describe("Command argument parsing", () => {
 
     expect(result).toEqual({ "-a": "'var1'", "-b": "optB" });
   });
+
+  it("Rest arguments work #1", () => {
+    const result = parseArguments("dummy a b c", {
+      allowRest: true
+    });
+
+    expect(result).toEqual({ rest: ["a", "b", "c"] });
+  });
+
+  it("Rest arguments work #2", () => {
+    const result = parseArguments("dummy a b c", {
+      mandatory: [ { name: "arg0" } ],
+      allowRest: true
+    });
+
+    expect(result).toEqual({ arg0: "a", rest: ["b", "c"] });
+  });
+
+  it("Rest arguments work #3", () => {
+    const result = parseArguments("dummy a b c", {
+      mandatory: [ { name: "arg0" } ],
+      optional: [ { name: "arg1" } ],
+      allowRest: true
+    });
+
+    expect(result).toEqual({ arg0: "a", arg1: "b", rest: ["c"] });
+  });
+
 });
 
 function parseArguments(

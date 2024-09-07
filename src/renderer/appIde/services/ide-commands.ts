@@ -135,7 +135,6 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
   }
 }
 
-
 export abstract class IdeCommandBaseNew<T = any> implements IdeCommandInfo {
   /**
    * The unique identifier of the command
@@ -475,22 +474,27 @@ export function extractArguments(
         break;
       default:
         // --- This is a positional argument. Check if the command still has this argument.
-        if (tooManyArgs || argIdx >= mandatoryLength + optionalLength) {
+        if (tooManyArgs || (argIdx >= mandatoryLength + optionalLength && !argInfo.allowRest)) {
           // --- Too many arguments
           tooManyArgs = true;
           break;
         }
 
         // --- Ok, process the argument
-        const argName =
-          argIdx < mandatoryLength
-            ? argInfo.mandatory[argIdx].name
-            : argInfo.optional[argIdx - mandatoryLength].name;
-        const argDesc =
-          argIdx < mandatoryLength
-            ? argInfo.mandatory[argIdx]
-            : argInfo.optional[argIdx - mandatoryLength];
-        result[argName] = getValue(token, argDesc);
+        if (argIdx >= mandatoryLength + optionalLength) {
+          result.rest ??= [];
+          (result.rest as any[]).push(token.text);
+        } else {
+          const argName =
+            argIdx < mandatoryLength
+              ? argInfo.mandatory[argIdx].name
+              : argInfo.optional[argIdx - mandatoryLength].name;
+          const argDesc =
+            argIdx < mandatoryLength
+              ? argInfo.mandatory[argIdx]
+              : argInfo.optional[argIdx - mandatoryLength];
+          result[argName] = getValue(token, argDesc);
+        }
         argIdx++;
     }
 
@@ -532,7 +536,9 @@ export function extractArguments(
           } else if (argDesc.maxValue === undefined) {
             errors.push(`Argument value of '${argDesc.name}' must be at least ${argDesc.minValue}`);
           } else {
-            errors.push(`Argument value of '${argDesc.name}' must be between ${argDesc.minValue} and ${argDesc.maxValue}`);
+            errors.push(
+              `Argument value of '${argDesc.name}' must be between ${argDesc.minValue} and ${argDesc.maxValue}`
+            );
           }
           return null;
         } else {

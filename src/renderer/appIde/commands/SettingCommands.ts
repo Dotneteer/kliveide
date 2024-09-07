@@ -1,4 +1,5 @@
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import {
@@ -24,6 +25,11 @@ export class SettingCommand extends IdeCommandBaseNew<SettingsArgs> {
     "Options: '-u': user setting; '-p': project setting";
   readonly usage = "set [-p] [-u] <key> [<value>]";
   readonly aliases = [];
+  readonly argumentInfo: CommandArgumentInfo = {
+    commandOptions: ["-p", "-u"],
+    mandatory: [{ name: "key" }],
+    optional: [{ name: "value" }]
+  };
 
   async execute(context: IdeCommandContext, args: SettingsArgs): Promise<IdeCommandResult> {
     const state = context.store.getState();
@@ -58,6 +64,11 @@ export class ListSettingsCommand extends IdeCommandBaseNew<ListSettingsArgs> {
   readonly description = "Lists the values of the specified settings";
   readonly usage = "setl [-u] [-p] [<setting>]";
   readonly aliases = [];
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    commandOptions: ["-u", "-p"],
+    optional: [{ name: "setting" }]
+  };
 
   async execute(context: IdeCommandContext, args: ListSettingsArgs): Promise<IdeCommandResult> {
     const state = context.store.getState();
@@ -127,20 +138,18 @@ export class MoveSettingsCommand extends IdeCommandBaseNew<MoveSettingsArgs> {
     "Options: '-pull': user --> project; '-push': project --> user; '-c': copy (not merge)";
   readonly usage = "setm [-pull] [-push] [-c]";
   readonly aliases = [];
+  readonly argumentInfo: CommandArgumentInfo = {
+    commandOptions: ["-pull", "-push", "-c"]
+  };
+  readonly requiresProject = true;
 
-  validateCommandArgs(context: IdeCommandContext): ValidationMessage[] {
-    const args = context.argTokens;
-    const isKliveProject = context.store.getState()?.project?.isKliveProject ?? false;
+  validateCommandArgs(_: IdeCommandContext, args: any): ValidationMessage[] {
     if (!args["-pull"] && !args["-push"]) {
       return [validationError("You must use one of '-pull' or '-push'")];
     }
 
     if (args["-pull"] && args["-push"]) {
       return [validationError("Use only one of '-pull' or '-push'")];
-    }
-
-    if (!isKliveProject) {
-      return [validationError("You can use this command only with an open Klive project.")];
     }
 
     return [];

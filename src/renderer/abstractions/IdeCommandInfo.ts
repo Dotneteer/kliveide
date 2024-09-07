@@ -75,6 +75,7 @@ export type CommandArgumentInfo = {
   optional?: CommandArg[];
   commandOptions?: string[];
   namedOptions?: CommandArg[];
+  allowRest?: boolean;
 };
 
-export type CommandArgumentValue = Record<string, string | number | boolean>;
+export type CommandArgumentValue = Record<string, string | number | boolean | any[]>;

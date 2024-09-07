@@ -1,22 +1,23 @@
+import type { MachineCommand } from "@messaging/main-to-emu";
+import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MachineCommand } from "@messaging/main-to-emu";
-import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   writeSuccessMessage,
   commandSuccess,
   commandError,
-  toHexa4
+  toHexa4,
+  IdeCommandBaseNew
 } from "../services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 
-export class StartMachineCommand extends CommandWithNoArgBase {
+export class StartMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-start";
   readonly description = "Starts the emulated machine";
   readonly usage = "em-start";
   readonly aliases = [":s"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.None ||
@@ -33,13 +34,13 @@ export class StartMachineCommand extends CommandWithNoArgBase {
   }
 }
 
-export class PauseMachineCommand extends CommandWithNoArgBase {
+export class PauseMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-pause";
   readonly description = "Pauses the started machine";
   readonly usage = "em-pause";
   readonly aliases = [":p"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (machineState === MachineControllerState.Running) {
       const cpuState = await context.emuApi.getCpuState();
@@ -54,13 +55,13 @@ export class PauseMachineCommand extends CommandWithNoArgBase {
   }
 }
 
-export class StopMachineCommand extends CommandWithNoArgBase {
+export class StopMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-stop";
   readonly description = "Stops the started machine";
   readonly usage = "em-stop";
   readonly aliases = [":h"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.Running ||
@@ -78,13 +79,13 @@ export class StopMachineCommand extends CommandWithNoArgBase {
   }
 }
 
-export class RestartMachineCommand extends CommandWithNoArgBase {
+export class RestartMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-restart";
   readonly description = "Restarts the started machine";
   readonly usage = "em-restart";
   readonly aliases = [":r"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.Running ||
@@ -98,13 +99,13 @@ export class RestartMachineCommand extends CommandWithNoArgBase {
   }
 }
 
-export class StartDebugMachineCommand extends CommandWithNoArgBase {
+export class StartDebugMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-debug";
   readonly description = "Starts the emulated machine in debug mode";
   readonly usage = "em-debug";
   readonly aliases = [":d"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (
       machineState === MachineControllerState.None ||
@@ -121,35 +122,35 @@ export class StartDebugMachineCommand extends CommandWithNoArgBase {
   }
 }
 
-export class StepIntoMachineCommand extends CommandWithNoArgBase {
+export class StepIntoMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-sti";
   readonly description = "Step-into the next machine instruction";
   readonly usage = "em-sti";
   readonly aliases = [":"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     return stepCommand(context, "stepInto", "Step into");
   }
 }
 
-export class StepOverMachineCommand extends CommandWithNoArgBase {
+export class StepOverMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-sto";
   readonly description = "Step-over the next machine instruction";
   readonly usage = "em-sto";
   readonly aliases = ["."];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     return stepCommand(context, "stepOver", "Step over");
   }
 }
 
-export class StepOutMachineCommand extends CommandWithNoArgBase {
+export class StepOutMachineCommand extends IdeCommandBaseNew {
   readonly id = "em-out";
   readonly description = "Step-out from the current machine subroutine";
   readonly usage = "em-out";
   readonly aliases = [":o"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     return stepCommand(context, "stepOut", "Step out");
   }
 }

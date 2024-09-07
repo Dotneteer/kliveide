@@ -53,6 +53,7 @@ export class ShowMemoryCommand extends IdeCommandBaseNew {
   readonly id = "show-memory";
   readonly description = "Displays the machine memory panel";
   readonly usage = "show-memory";
+  readonly aliases = ["shmem"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -80,6 +81,7 @@ export class HideMemoryCommand extends IdeCommandBaseNew {
   readonly id = "hide-memory";
   readonly description = "Hides the machine memory panel";
   readonly usage = "hide-memory";
+  readonly aliases = ["hmem"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -93,6 +95,8 @@ export class ShowDisassemblyCommand extends IdeCommandBaseNew {
   readonly id = "show-disass";
   readonly description = "Displays the Z80 disassembly panel";
   readonly usage = "show-disass";
+  readonly aliases = ["shdis"];
+
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -120,6 +124,7 @@ export class HideDisassemblyCommand extends IdeCommandBaseNew {
   readonly id = "hide-disass";
   readonly description = "Hides the Z80 disassembly panel";
   readonly usage = "hide-disass";
+  readonly aliases = ["hdis"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();

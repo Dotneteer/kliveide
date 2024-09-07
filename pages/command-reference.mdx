@@ -1,5 +1,89 @@
 # Command Reference
 
+## `em-debug`
+
+This command starts the current machine in debug mode.
+
+```
+em-debug
+```
+
+Available aliases: `:d`
+
+## `em-out`
+
+This command executes all instructions until it exits the current subroutine and pauses at the instruction following the subroutine call. It expects the machine to be paused when this command is issued.
+
+```
+em-out
+```
+
+Available aliases: `:o`
+
+> **Note**: If the function returns unconventionally (for example, popping the return address and jumping to it, etc.), this command may not stop the machine.
+
+## `em-pause`
+
+This command pauses (suspends) the current machine.
+
+```
+em-pause
+```
+
+Available aliases: `:p`
+
+## `em-restart`
+
+This command restarts (stops, and then starts) the current machine.
+
+```
+em-restart
+```
+
+Available aliases: `:r`
+
+## `em-start`
+
+This command starts the current machine.
+
+```
+em-start
+```
+
+Available aliases: `:s`
+
+## `em-sti`
+
+This command executes the next Z80 instruction from the current PC (Program Counter) and pauses the machine again. It expects the machine to be paused when this command is issued.
+
+```
+em-sti
+```
+
+Available aliases: `:`
+
+## `em-sto`
+
+This command executes the next Z80 instruction from the current PC (Program Counter). If that instruction is a function call or a block instruction, it executes the entire subroutine or block operation before pausing again. It expects the machine to be paused when this command is issued.
+
+```
+em-sto
+```
+
+Available aliases: `.`
+
+> **Note**: If the function call does not return to the instruction following the current instruction at the PC address, the machine won't pause again (unless it reaches a breakpoint).
+
+## `em-stop`
+
+This command stops the current machine.
+
+```
+em-stop
+```
+
+Available aliases: `:h`
+
 ## `hide-disassembly`
 
 Use this command to hide the machine code disassembly view.
@@ -8,6 +92,8 @@ Use this command to hide the machine code disassembly view.
 hide-disassembly
 ```
 
+Available aliases: `hdis`
+
 ## `hide-memory`
 
 Use this command to hide the memory contents view.
@@ -15,6 +101,45 @@ Use this command to hide the memory contents view.
 ```
 hide-memory
 ```
+
+Available aliases: `hmem`
+
+## `newp`
+
+This project creates a new Klive project and optionally opens it.
+
+```
+newp <machine-id> <project-name> [<template>] [-p <project-folder>] [-o]
+```
+
+The `machine-id`  argument specifies the ID of the machine and an optional model. When you specify the machine and model type, use a colon to separate the machine ID from the model ID. For example, use `sp48` for the basic ZX Spectrum 48K model and `sp48:ntsc` to use the NTSC version of ZX Spectrum 48K. See the [Machine Types](./machine-types) article for these IDs.
+
+The `project-name` argument defines the project's name. Unless the optional `project-folder` parameter is specified, the new project is created in the `KliveProjects` folder within your user folder.
+
+Klive may support multiple project templates for a particular machine type (it provides a default template for each). If you want a specific template, specify its name in the `template` argument. See the [Project Templates](./project-templates) article for more information about available templates.
+
+By default, the IDE creates a new project but does not open it. However, if you add the `-o` option, the new project will be immediately opened.
+
+## `num`
+
+This command displays its argument number in decimal, hexadecimal, and binary formats.
+
+```
+num <number>
+```
+
+The input argument can be in decimal, hexadecimal, or binary format.
+
+## `open`
+
+Use this command to open a folder.
+```
+open [<folder-path>]
+```
+
+Available aliases: `op`
+
+If the `folder-path` argument is omitted, the IDE opens the show folder dialog to select a project folder. Otherwise, the IDE opens the project you specified. If the folder path is relative, the IDE loads the folder within your user directory's `KliveProjects` folder.
 
 ## `outp`
 
@@ -25,6 +150,38 @@ outp <paneId>
 ```
 
 The `paneId` argument can be one of the available output panes (`emu`, `build`, or `script`).
+
+## `project:excluded-items`
+
+This command lists the definitions of excluded project items. You can use the `-global` option to list the items that are excluded globally.
+
+```
+project:excluded-items [-global]
+```
+
+Available aliases: `project:list-excluded`, `proj:excluded-items`, `proj:list-excluded`, `p:lx`
+
+## `project:exclude-item`
+
+This command adds or deletes excluded project items. You can use the `-global` option to list the items that are excluded globally. The `-d` option signs that the defined option should be deleted from the exclusion list. You can specify multiple items to add or delete.
+
+```
+project:exclude-item [--global] [-d] <item-path-1> ... <item-path-n>
+```
+
+Available aliases: `project:exclude`, `proj:exclude-item`, `proj:exclude`, `p:x`
+
+## `run-build-function`
+
+This command starts the build command function (see the `build.ksx` file) named in the command argument.
+
+```
+run-build-function <function-name>
+```
+
+Available aliases: `rbf`
+
+The `build.ksx` file contains several commands, such as `buildCode`, `injectCode`, `runCode`, `debugCode`, and `exportCode`. Some projects may have additional custom commands.
 
 ## `script-cancel`
 
@@ -39,6 +196,18 @@ Available aliases: `sc`
 You can provide a script file name or a script ID as an argument. When you start a script, the ID of the running script is displayed. You can also get a particular script's ID from the Script History panel.
 
 When you specify a file name, use the full name (including the `.ksx` file extension) relative to the project's root folder. For example, if your script is in the `scripts` folder and named `myScript.ksx`, use the `scripts/myScript.ksx` parameter.
+
+## `script-output`
+
+This command navigates to the output document of the specified script.
+
+```
+script-output <script-id>
+```
+
+Available aliases: `so`
+
+You must provide a script ID as an argument. When you start a script, the ID of the running script is displayed. You can also get a particular script's ID from the Script History panel.
 
 ## `script-run`
 
@@ -101,6 +270,8 @@ Use this command to display the machine code disassembly view.
 show-disassembly
 ```
 
+Available aliases: `shdis`
+
 ## `show-memory`
 
 Use this command to display the memory contents view.
@@ -108,6 +279,8 @@ Use this command to display the memory contents view.
 ```
 show-memory
 ```
+
+Available aliases: `shmem`
 
 ## `zxb-reset`
 
