@@ -84,7 +84,7 @@ const SysVarsPanel = () => {
         <VirtualizedListView
           items={sysVars}
           approxSize={20}
-          fixItemHeight={true}
+          fixItemHeight={false}
           itemRenderer={(idx) => {
             const item = sysVars[idx];
             const sysVar = item.sysVar;
