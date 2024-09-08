@@ -36,6 +36,7 @@ import {
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -114,6 +115,21 @@ export class ExportCodeCommand extends IdeCommandBaseNew<ExportCommandArgs> {
   readonly description = "Export the code of the current project";
   readonly usage =
     "expc filename [-n name] [-f format] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "filename" }],
+    commandOptions: ["-as", "-p", "-c", "-b", "-sb", "-addr", "-scr"],
+    namedOptions: [
+      { name: "-n" },
+      { name: "-f" },
+      { name: "-as" },
+      { name: "-b", type: "number", minValue: 0, maxValue: 7 },
+      { name: "-addr", type: "number", minValue: 16384, maxValue: 65535 },
+      { name: "-scr" }
+    ]
+  };
+
+  readonly requiresProject = true;
 
   async execute(context: IdeCommandContext, args: ExportCommandArgs): Promise<IdeCommandResult> {
     // --- Compile before export

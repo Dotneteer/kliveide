@@ -25,7 +25,7 @@ export class CompileCommand extends IdeCommandBaseNew {
   readonly description = "Compiles the current project";
   readonly usage = "compile";
   readonly aliases = ["co"];
-  readonly noInteractiveUsage = true;
+  readonly requiresProject = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
@@ -40,6 +40,7 @@ export class InjectCodeCommand extends IdeCommandBaseNew {
   readonly description = "Injects the current projec code into the machine";
   readonly usage = "inject";
   readonly aliases = ["inj"];
+  readonly requiresProject = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "inject");
@@ -51,6 +52,7 @@ export class RunCodeCommand extends IdeCommandBaseNew {
   readonly description = "Runs the current project's code in the virtual machine";
   readonly usage = "run";
   readonly aliases = ["r"];
+  readonly requiresProject = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "run");

@@ -1,5 +1,80 @@
 # Command Reference
 
+## `close`
+
+Use this command to close the folder currently opened in the IDE.
+
+```
+close
+```
+
+## `clh`
+
+Use this command to clear the interactive command prompt history.
+
+```
+clh
+```
+
+## `cls`
+
+Use this command to clear the interactive command output.
+
+```
+cls
+```
+
+## `compile`
+
+This command compiles the code, provided a Klive project is loaded, and a build root file is selected.
+
+```
+compile
+```
+
+Available aliases: `co`
+
+## `crd`
+
+This command creates an empty disk file (DSK format) you can use with ZX Spectrum +3 models (and compatible).
+
+```
+crd <disk-type> <disk-name> [<disk-folder>]
+```
+
+These are the arguments of the command:
+- `disk-type`: One of these supported formats:
+  - `ss`: Single-sided CPC
+  - `ds`: Double-sided CPC
+  - `sse`: Single-sided Extended CPC
+  - `dse`: Double-sided Extended CPC
+- `disk-name`: The name of the disk file (`.dsk` extension as added automatically)
+- `disk-folder`: An optional folder in which the new disk file is created. The folder must exist.
+
+## `debug`
+
+This command compiles the code. If the compilation is successful, it injects the code into the current virtual machine and starts it in debug mode. This command requires that a Klive project be loaded. 
+
+```
+debug
+```
+
+Available aliases: `rd`
+
+> **Note**: The command will start (or restart) the virtual machine.
+
+## `dis`
+
+This command disassembles the specified memory section and displays the disassembly result in a new document pane.
+
+```
+dis <start> <end> [-c] [-lc]
+```
+
+It requires a `start` and an `end` (inclusive) address. The `-c` option turns on the concise mode (disassembled bytes are omitted from the output). By default, labels do not end with colons; however, you can turn on this mode with the `-lc` option.
+
+> **Note**: This command does not support bank operations (yet). It can disassemble only the currently paged 64K memory.
+
 ## `em-debug`
 
 This command starts the current machine in debug mode.
@@ -84,6 +159,34 @@ em-stop
 
 Available aliases: `:h`
 
+## `expc`
+
+This command compiles the code and exports it according to the specified options.
+
+```
+expc filename [-n name] [-f format] [-as] [-p] [-c] [-b border]
+  [-sb] [-addr address] [-scr screenfile]
+```
+
+These are the input arguments and options:
+- `filename`: The name of the exported file
+- `-n: The name of the program in the exported file. This name will be displayed during the LOAD operation.
+- `-f`: The file format to use:
+  - `hex`: Intel HEX format
+  - `tzx`: TZX file format
+  - `tap`: TAP file format
+- `-as`: Autostart the exported code after loading it
+- `-p`: Add a PAUSE statement into the loader (before starting the loaded code)
+- `-c`: Add a clear statement to keep the end of the BASIC code before the start address of the exported code
+- `-b`: Specifies the border color to set when the loader program starts
+- `-sb`: The compiled code may contain multiple segments. If this option is used, the exporter merges all code segments into one (filling up the padding code with zeros). Otherwise, each code segment goes into a separate CODE file.
+- `-addr`: Specifies the start address of the exported code. The exported extracts this information from the compilation result if not specified. However, you can change the inferred address with this option.
+- `-scr`: You can specify a screen file (TAP or TZX format) to load after the autoloader.
+
+> **Note #1**: If the compilation fails, no code will be exported.
+
+> **Note #2**: If you compile code for a ZX Spectrum 128 (or upper) model with multiple bank support, the exporter creates a loader that loads the banks in the compilation (and puts them into the appropriate memory bank) before starting the app.
+
 ## `hide-disassembly`
 
 Use this command to hide the machine code disassembly view.
@@ -103,6 +206,28 @@ hide-memory
 ```
 
 Available aliases: `hmem`
+
+## `inject`
+
+This command compiles the code, and if the compilation is successful, it injects the code into the current virtual machine. This command requires that a Klive project be loaded and the virtual machine be paused.
+
+```
+inject
+```
+
+Available aliases: `inj`
+
+## `nav`
+
+This command navigates to the specified project file (to an optional position). If the file is not open yet, the IDE opens it.
+
+```
+nav projeFile [line] [column]
+```
+
+The `filename` argument is a project file name. When you specify the name, use the full name (including the file extension) relative to the project's root folder. For example, if your file is in the `code` folder and named `program.zxb`, use the `code/program.zxb` parameter.
+
+You can specify an optional `line` and `column` argument to jump to the specified location within the file.
 
 ## `newp`
 
@@ -170,6 +295,18 @@ project:exclude-item [--global] [-d] <item-path-1> ... <item-path-n>
 ```
 
 Available aliases: `project:exclude`, `proj:exclude-item`, `proj:exclude`, `p:x`
+
+## `run`
+
+This command compiles the code. If the compilation is successful, it injects the code into the current virtual machine and starts it. This command requires that a Klive project be loaded. 
+
+```
+run
+```
+
+Available aliases: `r`
+
+> **Note**: The command will start (or restart) the virtual machine.
 
 ## `run-build-function`
 
