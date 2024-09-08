@@ -11,7 +11,7 @@ import { ValidationMessageType } from "../../abstractions/ValidationMessageType"
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand } from "./command-parser";
-import { extractArguments, IdeCommandBaseNew, NoCommandArgs } from "./ide-commands";
+import { extractArguments, IdeCommandBase, NoCommandArgs } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
@@ -282,7 +282,7 @@ type HelpArgs = {
 /**
  * Display interactive commands help
  */
-class HelpCommand extends IdeCommandBaseNew<HelpArgs> {
+class HelpCommand extends IdeCommandBase<HelpArgs> {
   readonly id = "help";
   readonly description = "Displays help information about commands";
   readonly usage = "help [<command>]";
@@ -346,7 +346,7 @@ class HelpCommand extends IdeCommandBaseNew<HelpArgs> {
 /**
  * Exits the IDE
  */
-class ExitCommand extends IdeCommandBaseNew<NoCommandArgs> {
+class ExitCommand extends IdeCommandBase<NoCommandArgs> {
   readonly id = "exit";
   readonly description = "Exits Klive IDE.";
   readonly usage = "exit";

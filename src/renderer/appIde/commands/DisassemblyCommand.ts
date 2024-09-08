@@ -5,7 +5,7 @@ import {
   toHexa4,
   writeSuccessMessage,
   commandSuccess,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
@@ -21,7 +21,7 @@ type DisassemblyCommandArgs = {
   "-lc": boolean;
 };
 
-export class DisassemblyCommand extends IdeCommandBaseNew<DisassemblyCommandArgs> {
+export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
   readonly id = "dis";
   readonly description =
     "Disassembles the specified memory section. " +

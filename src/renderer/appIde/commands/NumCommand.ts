@@ -1,13 +1,13 @@
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { writeSuccessMessage, commandSuccess, IdeCommandBaseNew } from "../services/ide-commands";
+import { writeSuccessMessage, commandSuccess, IdeCommandBase } from "../services/ide-commands";
 
 type NumCommandArgs = {
   num: number;
 };
 
-export class NumCommand extends IdeCommandBaseNew<NumCommandArgs> {
+export class NumCommand extends IdeCommandBase<NumCommandArgs> {
   protected minValue = -(2 ** 32);
   protected maxValue = 2 ** 32;
   readonly id = "num";

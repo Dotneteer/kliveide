@@ -1,7 +1,7 @@
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
-  IdeCommandBaseNew,
+  IdeCommandBase,
   commandError,
   commandSuccess,
   writeSuccessMessage
@@ -15,7 +15,7 @@ type NavigateToDocumentCommandArgs = {
   columnNo?: number;
 };
 
-export class NavigateToDocumentCommand extends IdeCommandBaseNew<NavigateToDocumentCommandArgs> {
+export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocumentCommandArgs> {
   readonly id = "nav";
   readonly description = "Navigates to the specified document";
   readonly usage = "nav projeFile [line] [column]";

@@ -5,11 +5,11 @@ import {
   commandError,
   writeSuccessMessage,
   commandSuccess,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "../services/ide-commands";
 import { saveAllBeforeQuit } from "../MainToIdeProcessor";
 
-export class CloseFolderCommand extends IdeCommandBaseNew {
+export class CloseFolderCommand extends IdeCommandBase {
   readonly id = "close";
   readonly description = "Closes the open IDE folder";
   readonly usage = "close";

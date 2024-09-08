@@ -11,13 +11,13 @@ import {
   writeSuccessMessage,
   validationError,
   commandError,
-  IdeCommandBaseNew,
+  IdeCommandBase,
   getNumericTokenValue
 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 
-export class EraseAllBreakpointsCommand extends IdeCommandBaseNew {
+export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
   readonly description = "Erase all breakpoints";
   readonly usage = "bp-ea";
@@ -37,7 +37,7 @@ export class EraseAllBreakpointsCommand extends IdeCommandBaseNew {
   }
 }
 
-export class ListBreakpointsCommand extends IdeCommandBaseNew {
+export class ListBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-list";
   readonly description = "Lists all breakpoints";
   readonly usage = "bp-list";
@@ -79,7 +79,7 @@ type BreakpointWithAddressArgs = {
   "-d"?: boolean;
 };
 
-abstract class BreakpointWithAddressCommand extends IdeCommandBaseNew<BreakpointWithAddressArgs> {
+abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
   argumentInfo: CommandArgumentInfo = {
     mandatory: [
       {

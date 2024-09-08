@@ -7,7 +7,7 @@ import {
   commandError,
   writeSuccessMessage,
   commandSuccess,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "../services/ide-commands";
 
 const availableDiskTypes = ["ss", "ds", "sse", "dse"];
@@ -18,7 +18,7 @@ type CreateDiskFileCommandArgs = {
   diskFolder?: string;
 };
 
-export class CreateDiskFileCommand extends IdeCommandBaseNew<CreateDiskFileCommandArgs> {
+export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandArgs> {
   readonly id = "crd";
   readonly description = "Creates a new disk file.";
   readonly usage = "crd <disk type> <disk name> [<disk folder>]";

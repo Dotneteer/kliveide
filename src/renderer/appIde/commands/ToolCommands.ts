@@ -2,7 +2,7 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 import {
-  IdeCommandBaseNew,
+  IdeCommandBase,
   commandError,
   commandSuccess,
   writeSuccessMessage
@@ -25,7 +25,7 @@ type SelectOutputArgs = {
   paneId: string;
 };
 
-export class SelectOutputPaneCommand extends IdeCommandBaseNew<SelectOutputArgs> {
+export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
   readonly id = "outp";
   readonly description = "Selects the specified output panel and navigates there";
   readonly usage = "outp <paneId>";
@@ -49,7 +49,7 @@ export class SelectOutputPaneCommand extends IdeCommandBaseNew<SelectOutputArgs>
   }
 }
 
-export class ShowMemoryCommand extends IdeCommandBaseNew {
+export class ShowMemoryCommand extends IdeCommandBase {
   readonly id = "show-memory";
   readonly description = "Displays the machine memory panel";
   readonly usage = "show-memory";
@@ -77,7 +77,7 @@ export class ShowMemoryCommand extends IdeCommandBaseNew {
   }
 }
 
-export class HideMemoryCommand extends IdeCommandBaseNew {
+export class HideMemoryCommand extends IdeCommandBase {
   readonly id = "hide-memory";
   readonly description = "Hides the machine memory panel";
   readonly usage = "hide-memory";
@@ -91,7 +91,7 @@ export class HideMemoryCommand extends IdeCommandBaseNew {
   }
 }
 
-export class ShowDisassemblyCommand extends IdeCommandBaseNew {
+export class ShowDisassemblyCommand extends IdeCommandBase {
   readonly id = "show-disass";
   readonly description = "Displays the Z80 disassembly panel";
   readonly usage = "show-disass";
@@ -120,7 +120,7 @@ export class ShowDisassemblyCommand extends IdeCommandBaseNew {
   }
 }
 
-export class HideDisassemblyCommand extends IdeCommandBaseNew {
+export class HideDisassemblyCommand extends IdeCommandBase {
   readonly id = "hide-disass";
   readonly description = "Hides the Z80 disassembly panel";
   readonly usage = "hide-disass";

@@ -5,7 +5,7 @@ import {
 } from "@common/messaging/dialog-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { commandSuccess, commandError, IdeCommandBaseNew } from "../services/ide-commands";
+import { commandSuccess, commandError, IdeCommandBase } from "../services/ide-commands";
 import { displayDialogAction } from "@common/state/actions";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
@@ -13,7 +13,7 @@ type DialogCommandArgs = {
   dialogId: string;
 };
 
-export class DisplayDialogCommand extends IdeCommandBaseNew<DialogCommandArgs> {
+export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
   readonly id = "display-dialog";
   readonly description = "Displays the spceified dialog";
   readonly usage = "display-dialog <dialogId>";

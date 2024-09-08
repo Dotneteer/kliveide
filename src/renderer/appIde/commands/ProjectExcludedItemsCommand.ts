@@ -1,7 +1,7 @@
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import {
-  IdeCommandBaseNew,
+  IdeCommandBase,
   commandError,
   commandSuccess,
   writeInfoMessage,
@@ -28,7 +28,7 @@ type ListExcludedItemArgs = {
   "-global"?: boolean;
 };
 
-export class ProjectListExcludedItemsCommand extends IdeCommandBaseNew<ListExcludedItemArgs> {
+export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcludedItemArgs> {
   readonly id = "project:excluded-items";
   readonly description = "Lists the paths of items currently excluded from the project.";
   readonly usage = "project:excluded-items [-global]";
@@ -64,7 +64,7 @@ type ExcludeItemArgs = {
   rest: string[];
 };
 
-export class ProjectExcludeItemsCommand extends IdeCommandBaseNew<ExcludeItemArgs> {
+export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> {
   readonly id = "project:exclude-item";
   readonly description = "Exclude/restore an item to project or globally.";
   readonly usage = "project:exclude-item [--global] [-d] <item-path>...";

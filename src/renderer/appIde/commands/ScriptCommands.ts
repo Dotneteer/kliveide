@@ -1,6 +1,6 @@
 import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { commandError, commandSuccessWith, IdeCommandBaseNew } from "../services/ide-commands";
+import { commandError, commandSuccessWith, IdeCommandBase } from "../services/ide-commands";
 import { SCRIPT_OUTPUT_VIEWER } from "@common/state/common-ids";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { scriptDocumentId } from "@common/utils/script-utils";
@@ -11,7 +11,7 @@ type RunScriptCommandArgs = {
   filePath: string;
 };
 
-export class RunScriptCommand extends IdeCommandBaseNew<RunScriptCommandArgs> {
+export class RunScriptCommand extends IdeCommandBase<RunScriptCommandArgs> {
   readonly id = "script-run";
   readonly description = "Runs the specified script";
   readonly usage = "script-run <script file path>";
@@ -46,7 +46,7 @@ type CancelScriptCommandArgs = {
   fileId: string;
 };
 
-export class CancelScriptCommand extends IdeCommandBaseNew<CancelScriptCommandArgs> {
+export class CancelScriptCommand extends IdeCommandBase<CancelScriptCommandArgs> {
   readonly id = "script-cancel";
   readonly description = "Cancels the specified running script";
   readonly usage = "script-cancel <script file path | script ID>";
@@ -86,7 +86,7 @@ type DisplayScriptOutputCommandArgs = {
 };
 
 
-export class DisplayScriptOutputCommand extends IdeCommandBaseNew<DisplayScriptOutputCommandArgs> {
+export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutputCommandArgs> {
   readonly id = "script-output";
   readonly description = "Displays the output of the specified script";
   readonly usage = "script-output <script ID>";
@@ -135,7 +135,7 @@ type RunBuildScriptCommandArgs = {
   functionName: string;
 };
 
-export class RunBuildScriptCommand extends IdeCommandBaseNew<RunBuildScriptCommandArgs> {
+export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandArgs> {
   readonly id = "run-build-function";
   readonly description = "Runs the specified build script function";
   readonly usage = "run-build-function <function name>";

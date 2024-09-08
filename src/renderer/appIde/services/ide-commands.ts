@@ -11,7 +11,7 @@ import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageT
 import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import { Token, TokenType, parseCommand } from "./command-parser";
 
-export abstract class IdeCommandBaseNew<T = any> implements IdeCommandInfo {
+export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   /**
    * The unique identifier of the command
    */

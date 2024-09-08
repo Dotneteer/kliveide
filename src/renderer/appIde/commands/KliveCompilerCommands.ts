@@ -11,7 +11,7 @@ import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
-  IdeCommandBaseNew,
+  IdeCommandBase,
   commandError,
   commandSuccess,
   commandSuccessWith,
@@ -42,7 +42,7 @@ const EXPORT_FILE_FOLDER = "KliveExports";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 
-export class KliveCompileCommand extends IdeCommandBaseNew {
+export class KliveCompileCommand extends IdeCommandBase {
   readonly id = "klive.compile";
   readonly description = "Compiles the current project with the Klive Z80 Compiler";
   readonly usage = "klive.compile";
@@ -57,7 +57,7 @@ export class KliveCompileCommand extends IdeCommandBaseNew {
   }
 }
 
-export class KliveInjectCodeCommand extends IdeCommandBaseNew {
+export class KliveInjectCodeCommand extends IdeCommandBase {
   readonly id = "klive.inject";
   readonly description =
     "Injects the current project code into the machine (using the Klive Z80 Compiler)";
@@ -70,7 +70,7 @@ export class KliveInjectCodeCommand extends IdeCommandBaseNew {
   }
 }
 
-export class KliveRunCodeCommand extends IdeCommandBaseNew {
+export class KliveRunCodeCommand extends IdeCommandBase {
   readonly id = "klive.run";
   readonly description =
     "Runs the current project's code in the virtual machine (using the Klive Z80 Compiler)";
@@ -84,7 +84,7 @@ export class KliveRunCodeCommand extends IdeCommandBaseNew {
   }
 }
 
-export class KliveDebugCodeCommand extends IdeCommandBaseNew {
+export class KliveDebugCodeCommand extends IdeCommandBase {
   readonly id = "klive.debug";
   readonly description =
     "Runs the current project's code in the virtual machine with debugging (using the Klive Z80 Compiler)";
@@ -110,7 +110,7 @@ type ExportCommandArgs = {
   "-scr"?: string;
 };
 
-export class ExportCodeCommand extends IdeCommandBaseNew<ExportCommandArgs> {
+export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   readonly id = "expc";
   readonly description = "Export the code of the current project";
   readonly usage =

@@ -6,7 +6,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
-import { IdeCommandBaseNew, commandError, commandSuccessWith } from "../services/ide-commands";
+import { IdeCommandBase, commandError, commandSuccessWith } from "../services/ide-commands";
 import { isInjectableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import {
@@ -20,7 +20,7 @@ import { outputNavigateAction } from "@common/utils/output-utils";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 
-export class CompileCommand extends IdeCommandBaseNew {
+export class CompileCommand extends IdeCommandBase {
   readonly id = "compile";
   readonly description = "Compiles the current project";
   readonly usage = "compile";
@@ -35,7 +35,7 @@ export class CompileCommand extends IdeCommandBaseNew {
   }
 }
 
-export class InjectCodeCommand extends IdeCommandBaseNew {
+export class InjectCodeCommand extends IdeCommandBase {
   readonly id = "inject";
   readonly description = "Injects the current projec code into the machine";
   readonly usage = "inject";
@@ -47,7 +47,7 @@ export class InjectCodeCommand extends IdeCommandBaseNew {
   }
 }
 
-export class RunCodeCommand extends IdeCommandBaseNew {
+export class RunCodeCommand extends IdeCommandBase {
   readonly id = "run";
   readonly description = "Runs the current project's code in the virtual machine";
   readonly usage = "run";
@@ -59,7 +59,7 @@ export class RunCodeCommand extends IdeCommandBaseNew {
   }
 }
 
-export class DebugCodeCommand extends IdeCommandBaseNew {
+export class DebugCodeCommand extends IdeCommandBase {
   readonly id = "debug";
   readonly description = "Runs the current project's code in the virtual machine with debugging";
   readonly usage = "debug";

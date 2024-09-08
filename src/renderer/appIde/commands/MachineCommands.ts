@@ -8,10 +8,10 @@ import {
   commandSuccess,
   commandError,
   toHexa4,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "../services/ide-commands";
 
-export class StartMachineCommand extends IdeCommandBaseNew {
+export class StartMachineCommand extends IdeCommandBase {
   readonly id = "em-start";
   readonly description = "Starts the emulated machine";
   readonly usage = "em-start";
@@ -34,7 +34,7 @@ export class StartMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class PauseMachineCommand extends IdeCommandBaseNew {
+export class PauseMachineCommand extends IdeCommandBase {
   readonly id = "em-pause";
   readonly description = "Pauses the started machine";
   readonly usage = "em-pause";
@@ -55,7 +55,7 @@ export class PauseMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class StopMachineCommand extends IdeCommandBaseNew {
+export class StopMachineCommand extends IdeCommandBase {
   readonly id = "em-stop";
   readonly description = "Stops the started machine";
   readonly usage = "em-stop";
@@ -79,7 +79,7 @@ export class StopMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class RestartMachineCommand extends IdeCommandBaseNew {
+export class RestartMachineCommand extends IdeCommandBase {
   readonly id = "em-restart";
   readonly description = "Restarts the started machine";
   readonly usage = "em-restart";
@@ -99,7 +99,7 @@ export class RestartMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class StartDebugMachineCommand extends IdeCommandBaseNew {
+export class StartDebugMachineCommand extends IdeCommandBase {
   readonly id = "em-debug";
   readonly description = "Starts the emulated machine in debug mode";
   readonly usage = "em-debug";
@@ -122,7 +122,7 @@ export class StartDebugMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class StepIntoMachineCommand extends IdeCommandBaseNew {
+export class StepIntoMachineCommand extends IdeCommandBase {
   readonly id = "em-sti";
   readonly description = "Step-into the next machine instruction";
   readonly usage = "em-sti";
@@ -133,7 +133,7 @@ export class StepIntoMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class StepOverMachineCommand extends IdeCommandBaseNew {
+export class StepOverMachineCommand extends IdeCommandBase {
   readonly id = "em-sto";
   readonly description = "Step-over the next machine instruction";
   readonly usage = "em-sto";
@@ -144,7 +144,7 @@ export class StepOverMachineCommand extends IdeCommandBaseNew {
   }
 }
 
-export class StepOutMachineCommand extends IdeCommandBaseNew {
+export class StepOutMachineCommand extends IdeCommandBase {
   readonly id = "em-out";
   readonly description = "Step-out from the current machine subroutine";
   readonly usage = "em-out";

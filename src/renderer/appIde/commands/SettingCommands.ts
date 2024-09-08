@@ -8,7 +8,7 @@ import {
   validationError,
   commandError,
   writeMessage,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "@renderer/appIde/services/ide-commands";
 
 type SettingsArgs = {
@@ -18,7 +18,7 @@ type SettingsArgs = {
   value?: string;
 };
 
-export class SettingCommand extends IdeCommandBaseNew<SettingsArgs> {
+export class SettingCommand extends IdeCommandBase<SettingsArgs> {
   readonly id = "set";
   readonly description =
     "Specifies the value of a particular Klive setting" +
@@ -59,7 +59,7 @@ type ListSettingsArgs = {
   setting?: string;
 };
 
-export class ListSettingsCommand extends IdeCommandBaseNew<ListSettingsArgs> {
+export class ListSettingsCommand extends IdeCommandBase<ListSettingsArgs> {
   readonly id = "setl";
   readonly description = "Lists the values of the specified settings";
   readonly usage = "setl [-u] [-p] [<setting>]";
@@ -131,7 +131,7 @@ type MoveSettingsArgs = {
   "-c"?: boolean;
 };
 
-export class MoveSettingsCommand extends IdeCommandBaseNew<MoveSettingsArgs> {
+export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
   readonly id = "setm";
   readonly description =
     "Moves user/project settings. " +

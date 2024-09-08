@@ -2,7 +2,7 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
-import { commandSuccessWith, toHexa4, IdeCommandBaseNew } from "@renderer/appIde/services/ide-commands";
+import { commandSuccessWith, toHexa4, IdeCommandBase } from "@renderer/appIde/services/ide-commands";
 import {
   ZXBC_ALL,
   ZXBC_EXECUTABLE_PATH,
@@ -16,7 +16,7 @@ type ZxbCommandArgs = {
   codeOrigin?: number;
 };
 
-export class ResetZxbCommand extends IdeCommandBaseNew<ZxbCommandArgs> {
+export class ResetZxbCommand extends IdeCommandBase<ZxbCommandArgs> {
   readonly id = "zxb-reset";
   readonly description =
     "Resets ZXB settings with the provided executable path and machine code origin";

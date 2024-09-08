@@ -4,7 +4,7 @@ import {
   commandError,
   writeSuccessMessage,
   commandSuccess,
-  IdeCommandBaseNew
+  IdeCommandBase
 } from "../services/ide-commands";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
@@ -16,7 +16,7 @@ type NewProjectCommandArgs = {
   "-o"?: boolean;
 };
 
-export class NewProjectCommand extends IdeCommandBaseNew<NewProjectCommandArgs> {
+export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
   readonly id = "newp";
   readonly description = "Creates a new Klive project.";
   readonly usage = "newp <machine ID> <project name> [<template>] [<project folder>]";

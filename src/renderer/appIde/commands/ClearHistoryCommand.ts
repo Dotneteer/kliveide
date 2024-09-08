@@ -1,8 +1,8 @@
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { writeSuccessMessage, commandSuccess, IdeCommandBaseNew } from "../services/ide-commands";
+import { writeSuccessMessage, commandSuccess, IdeCommandBase } from "../services/ide-commands";
 
-export class ClearHistoryCommand extends IdeCommandBaseNew {
+export class ClearHistoryCommand extends IdeCommandBase {
   readonly id = "clh";
   readonly description = "Clears the command prompt history";
   readonly usage = "clh";

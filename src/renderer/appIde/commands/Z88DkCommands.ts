@@ -1,14 +1,14 @@
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { commandSuccessWith, IdeCommandBaseNew } from "../services/ide-commands";
+import { commandSuccessWith, IdeCommandBase } from "../services/ide-commands";
 import { Z88DK_ALL, Z88DK_INSTALL_FOLDER } from "@main/z88dk-integration/z88dk-config";
 
 type ResetZ88DkCommandArgs = {
   z88dkPath: string;
 };
 
-export class ResetZ88DkCommand extends IdeCommandBaseNew<ResetZ88DkCommandArgs> {
+export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
   readonly id = "z88dk-reset";
   readonly description = "Resets Z88DK settings with the provided installation folder";
   readonly usage = "z88dk-reset <Full ZXBC executable path>";
