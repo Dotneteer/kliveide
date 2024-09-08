@@ -14,7 +14,6 @@ import {
   IdeCommandBaseNew,
   getNumericTokenValue
 } from "@renderer/appIde/services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 
@@ -38,7 +37,7 @@ export class EraseAllBreakpointsCommand extends IdeCommandBaseNew {
   }
 }
 
-export class ListBreakpointsCommand extends CommandWithNoArgBase {
+export class ListBreakpointsCommand extends IdeCommandBaseNew {
   readonly id = "bp-list";
   readonly description = "Lists all breakpoints";
   readonly usage = "bp-list";
