@@ -307,8 +307,8 @@ export async function processRendererToMainMessages(
           appSettings.userSettings = mainStore.getState()?.projectSettings ?? {};
         } else {
           appSettings.userSettings = {
-            ...(mainStore.getState()?.userSettings ?? {}),
-            ...(mainStore.getState()?.userSettings ?? {})
+            ...(appSettings.userSettings ?? {}),
+            ...(mainStore.getState()?.projectSettings ?? {})
           };
           mainStore.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
           saveAppSettings();

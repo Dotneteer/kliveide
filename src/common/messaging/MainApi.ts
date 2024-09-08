@@ -41,7 +41,7 @@ export interface MainApi {
   readBinaryFile(path: string, resolveIn?: string): Promise<BinaryContentsResponse | ErrorResponse>;
   displayMessageBox(messageType?: MessageBoxType, title?: string, message?: string): Promise<void>;
   getDirectoryContent(directory: string): Promise<MainGetDirectoryContentResponse>;
-  openFolder(folder?: string): Promise<void>;
+  openFolder(folder?: string): Promise<DefaultResponse | ErrorResponse>;
   createKliveProject(
     machineId: string,
     projectName: string,
@@ -190,8 +190,8 @@ class MainApiImpl implements MainApi {
    * Opens a folder in the file explorer
    * @param folder Folder path
    */
-  async openFolder(folder?: string): Promise<void> {
-    await this.sendMessage({
+  async openFolder(folder?: string): Promise<DefaultResponse | ErrorResponse> {
+    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
       type: "MainOpenFolder",
       folder
     });
@@ -208,7 +208,7 @@ class MainApiImpl implements MainApi {
   async createKliveProject(
     machineId: string,
     projectName: string,
-    folder?: string,
+    projectFolder?: string,
     modelId?: string,
     templateId?: string
   ): Promise<MainCreateKliveProjectResponse> {
@@ -217,7 +217,7 @@ class MainApiImpl implements MainApi {
         type: "MainCreateKliveProject",
         machineId,
         projectName,
-        folder,
+        projectFolder,
         modelId,
         templateId
       },
@@ -244,7 +244,7 @@ class MainApiImpl implements MainApi {
   async addGlobalExcludedProjectItem(files: string[]): Promise<TextContentsResponse> {
     return (await this.sendMessage(
       {
-        type: "MainAddGloballyExcludedProjectItem",
+        type: "MainAddGloballyExcludedProjectItems",
         files
       },
       "TextContents"
@@ -410,7 +410,7 @@ class MainApiImpl implements MainApi {
   async getUserSettings(): Promise<MainGetSettingsResponse> {
     return (await this.sendMessage(
       {
-        type: "MainGetSettings"
+        type: "MainGetUserSettings"
       },
       "MainGetSettingsResponse"
     )) as MainGetSettingsResponse;

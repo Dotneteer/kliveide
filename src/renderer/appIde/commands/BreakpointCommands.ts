@@ -1,7 +1,9 @@
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
-import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
-import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
+import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
+import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+
+import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
 import {
   writeMessage,
   commandSuccess,
@@ -10,18 +12,18 @@ import {
   validationError,
   commandError,
   IdeCommandBase,
-  getPartitionedValue
-} from "../services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
+  getNumericTokenValue
+} from "@renderer/appIde/services/ide-commands";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 
-export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
+export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
   readonly description = "Erase all breakpoints";
   readonly usage = "bp-ea";
   readonly aliases = ["eab"];
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const bps = await context.emuApi.listBreakpoints();
     await context.emuApi.eraseAllBreakpoints();
     const bpCount = bps.breakpoints.length;
@@ -35,13 +37,13 @@ export class EraseAllBreakpointsCommand extends CommandWithNoArgBase {
   }
 }
 
-export class ListBreakpointsCommand extends CommandWithNoArgBase {
+export class ListBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-list";
   readonly description = "Lists all breakpoints";
   readonly usage = "bp-list";
   readonly aliases = ["bpl"];
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const bps = await context.emuApi.listBreakpoints();
     if (bps.breakpoints.length) {
       let ordered = bps.breakpoints;
@@ -68,67 +70,95 @@ export class ListBreakpointsCommand extends CommandWithNoArgBase {
   }
 }
 
-abstract class BreakpointWithAddressCommand extends IdeCommandBase {
-  protected address?: number;
-  protected partition?: number;
-  protected resource?: string;
-  protected line?: number;
+type BreakpointWithAddressArgs = {
+  addrSpec?: string;
+  address?: number;
+  partition?: number;
+  resource?: string;
+  line?: number;
+  "-d"?: boolean;
+};
 
-  prepareCommand(): void {
-    this.address = this.resource = this.line = undefined;
-  }
+abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
+  argumentInfo: CommandArgumentInfo = {
+    mandatory: [
+      {
+        name: "addrSpec"
+      }
+    ]
+  };
 
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    if (context.argTokens.length < 1) {
-      return validationError("This command expects at least one argument");
-    }
-
-    const token = context.argTokens[0];
-    const addrArg = token.text.trim();
+  validateCommandArgs(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): ValidationMessage[] {
+    const addrArg = args.addrSpec?.trim() ?? "";
+    let messages: ValidationMessage[] = [];
     if (addrArg.startsWith("[")) {
       const addrInfo = context.service.projectService.getBreakpointAddressInfo(addrArg);
       if (!addrInfo) {
-        return validationError(`Invalid breakpoint address ${addrArg}`);
+        return [validationError(`Invalid breakpoint address ${addrArg}`)];
       }
 
-      this.resource = addrInfo.resource;
-      this.line = addrInfo.line;
+      args.resource = addrInfo.resource;
+      args.line = addrInfo.line;
     } else {
-      // --- Address resource
-      const { value, partition, partitionType, messages } = getPartitionedValue(token);
-      if (value === null) {
-        return messages;
-      }
-      if (value < 0 || value > 0x1_0000) {
-        return validationError(`Argument value must be between ${0} and ${0x1_0000}`);
-      }
+      // --- Parse the addSpec argument to find out its type
+      const argToken = parseCommand(args.addrSpec)[0];
 
-      // --- Test partition validity
-      this.address = value;
-      this.partition = partitionType === "R" ? -(partition + 1) : partition;
-      if (partition !== undefined) {
-        // --- TODO: Fix this!
-        const roms = context.machineInfo?.features?.[MF_ROM] ?? 0;
-        const banks = context.machineInfo?.features?.[MF_BANK] ?? 0;
-        console.log(context.machineInfo, roms, banks);
-        if ((roms === 0 && this.partition < 0) || (banks === 0 && this.partition >= 0)) {
-          return validationError(
-            `The current machine (${context.machineInfo.machineId}) does not support memory pages`
-          );
+      const plainText = argToken.text.replace("'", "").replace("_", "");
+      try {
+        switch (argToken.type) {
+          case TokenType.DecimalLiteral:
+            args.address = parseInt(plainText, 10);
+            break;
+          case TokenType.BinaryLiteral:
+            args.address = parseInt(plainText.substring(1), 2);
+            break;
+          case TokenType.HexadecimalLiteral:
+            args.address = parseInt(plainText.substring(1), 16);
+            break;
+          default:
+            const segments = addrArg.toLowerCase().split(":");
+            if (segments.length === 2 && segments[0].length <= 2) {
+              // --- Extract partition information
+              const partStr = segments[0].toUpperCase();
+              let partNoIdx = 0;
+              if (partStr.startsWith("R")) {
+                partNoIdx = 1;
+              }
+              const partV = partStr[partNoIdx];
+              if (!partV || partV < "0" || partV > "9") {
+                messages = [{ type: ValidationMessageType.Error, message: "Invalid partition" }];
+                break;
+              }
+
+              args.partition = partV.charCodeAt(0) - "0".charCodeAt(0);
+
+              // --- Extract address
+              const tokens = parseCommand(segments[1]);
+              if (tokens.length !== 1) {
+                messages = [{ type: ValidationMessageType.Error, message: "Invalid address" }];
+                break;
+              }
+              const valueInfo = getNumericTokenValue(tokens[0]);
+              if (valueInfo.messages) {
+                messages = [{ type: ValidationMessageType.Error, message: "Invalid address" }];
+                break;
+              }
+
+              // --- Return with the info
+              args.address = valueInfo.value;
+            }
+            break;
         }
-        if (
-          (this.partition < 0 && this.partition < -roms) ||
-          (this.partition >= 0 && this.partition > banks)
-        ) {
-          return validationError(
-            `Invalid partition (${
-              partitionType === "R" ? "R" : ""
-            }${partition}) for the current machine (${context.machineInfo.machineId})`
-          );
-        }
+      } catch {
+        messages = [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }];
       }
     }
-    return [];
+
+    // --- Done.
+    return messages;
   }
 }
 
@@ -138,19 +168,22 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly usage = "bp-set <address>";
   readonly aliases = ["bp"];
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<IdeCommandResult> {
     const response = await context.emuApi.setBreakpoint({
-      address: this.address,
-      resource: this.resource,
-      partition: this.partition,
-      line: this.line,
+      address: args.address,
+      resource: args.resource,
+      partition: args.partition,
+      line: args.line,
       exec: true
     });
     let addrKey = getBreakpointKey({
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line
+      address: args.address,
+      partition: args.partition,
+      resource: args.resource,
+      line: args.line
     });
     writeSuccessMessage(
       context.output,
@@ -166,19 +199,22 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   readonly usage = "bp-del <address>";
   readonly aliases = ["bd"];
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<IdeCommandResult> {
     const response = await context.emuApi.removeBreakpoint({
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line,
+      address: args.address,
+      partition: args.partition,
+      resource: args.resource,
+      line: args.line,
       exec: true
     });
     let addrKey = getBreakpointKey({
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line
+      address: args.address,
+      partition: args.partition,
+      resource: args.resource,
+      line: args.line
     });
     if (response.flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
@@ -195,52 +231,44 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   readonly usage = "bp-en <address> [-d]";
   readonly aliases = ["be"];
 
-  enable: boolean;
-
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const result = await super.validateArgs(context);
-    if (!Array.isArray(result) || result.length > 0) return result;
-
-    this.enable = true;
-    const args = context.argTokens;
-    if (args.length > 2) {
-      return validationError("This command expects up to 2 arguments");
-    } else if (args.length === 2) {
-      // --- The second argument can be only "-d"
-      if (args[1].text !== "-d") {
-        return validationError(`Invalid argument value: ${args[1].text}`);
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [
+      {
+        name: "addrSpec"
       }
-      this.enable = false;
-    }
-    return [];
-  }
+    ],
+    commandOptions: ["-d"]
+  };
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<IdeCommandResult> {
     const response = await context.emuApi.enableBreakpoint(
       {
-        address: this.address,
-        partition: this.partition,
-        resource: this.resource,
-        line: this.line,
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line,
         exec: true
       },
-      this.enable
+      !args["-d"]
     );
     let addrKey = getBreakpointKey({
-      address: this.address,
-      partition: this.partition,
-      resource: this.resource,
-      line: this.line
+      address: args.address,
+      partition: args.partition,
+      resource: args.resource,
+      line: args.line
     });
     if (response.flag) {
       writeSuccessMessage(
         context.output,
-        `Breakpoint at address ${addrKey} ${this.enable ? "enabled" : "disabled"}`
+        `Breakpoint at address ${addrKey} ${args["-d"] ? "disabled" : "enabled"}`
       );
     } else {
       return commandError(
         `Breakpoint at address $${toHexa4(
-          this.address
+          args.address
         )} does not exist, so it cannot be enabled or disabled`
       );
     }

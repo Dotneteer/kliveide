@@ -1,16 +1,17 @@
-import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandInfo } from "../../abstractions/IdeCommandInfo";
-import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
-import { IOutputBuffer, OutputColor } from "../ToolArea/abstractions";
+import { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import {
+  CommandArg,
+  CommandArgumentInfo,
+  CommandArgumentValue,
+  IdeCommandInfo
+} from "@renderer/abstractions/IdeCommandInfo";
+import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
+import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
+import { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import { Token, TokenType, parseCommand } from "./command-parser";
 
-/**
- * IdeCommandService is responsible for keeping a registry of
- * commands that can be executed in the Interactive window pane.
- */
-export abstract class IdeCommandBase implements IdeCommandInfo {
+export abstract class IdeCommandBase<T = any> implements IdeCommandInfo {
   /**
    * The unique identifier of the command
    */
@@ -32,67 +33,26 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
   readonly aliases?: string[] = [];
 
   /**
-   * Override this method to reset command parameters
+   * The information to parse the command arguments
    */
-  prepareCommand(): void {}
+  readonly argumentInfo?: CommandArgumentInfo = {};
 
   /**
-   * Executes the command within the specified context
+   * Indicates that this project requires an open Klive project
    */
-  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    // --- Validate the arguments and display potential issues
-    this.prepareCommand();
-    const received = await this.validateArgs(context);
-    const validationMessages = Array.isArray(received) ? received : [received];
-    const hasError = validationMessages.some(
-      m => m.type === ValidationMessageType.Error
-    );
-    if (hasError) {
-      validationMessages.push(...this.usageMessage());
-    }
-    context.service.ideCommandsService.displayTraceMessages(
-      validationMessages,
-      context
-    );
-    if (hasError) {
-      // --- Sign validation error
-      return {
-        success: false
-      };
-    }
-
-    // --- Now, it's time to execute the command
-    try {
-      return await this.doExecute(context);
-    } catch (err) {
-      console.log(err);
-      return {
-        success: false,
-        finalMessage: `Error caught: ${err.toString()}`
-      };
-    }
-  }
+  readonly requiresProject?: boolean = false;
 
   /**
-   * Executes the command after argument validation
-   * @param context Command execution context
+   * Execute the command
+   * @param _context Command execution context
+   * @param _args Object with command arguments
+   * @returns Command execution result
    */
-  async doExecute(_context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(_context: IdeCommandContext, _args?: T): Promise<IdeCommandResult> {
     return {
       success: true,
       finalMessage: "This command has been executed successfully."
     };
-  }
-
-  /**
-   * Validates the input arguments
-   * @param _args Arguments to validate
-   * @returns A list of issues
-   */
-  async validateArgs(
-    _context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
-    return [];
   }
 
   /**
@@ -112,7 +72,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
         type: ValidationMessageType.Info,
         message: `Usage: ${messages[0]}`
       });
-      messages.slice(1).forEach(m =>
+      messages.slice(1).forEach((m) =>
         renderedMessages.push(<ValidationMessage>{
           type: ValidationMessageType.Info,
           message: m
@@ -124,7 +84,7 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
         type: ValidationMessageType.Info,
         message: `${
           this.aliases.length === 1 ? "Alias" : "Aliases"
-        }: ${this.aliases.map(a => getAlias(a)).join(", ")}`
+        }: ${this.aliases.map((a) => getAlias(a)).join(", ")}`
       });
     }
     return renderedMessages;
@@ -134,6 +94,8 @@ export abstract class IdeCommandBase implements IdeCommandInfo {
     }
   }
 }
+
+export type NoCommandArgs = {};
 
 /**
  * Represents successful command execution
@@ -259,9 +221,7 @@ export function getNumericTokenValue(token: Token): {
     return null;
   } catch {
     return {
-      messages: [
-        { type: ValidationMessageType.Error, message: "Invalid numeric value" }
-      ]
+      messages: [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }]
     };
   }
 }
@@ -319,9 +279,7 @@ export function getPartitionedValue(token: Token): {
     };
   } catch {
     return {
-      messages: [
-        { type: ValidationMessageType.Error, message: "Invalid numeric value" }
-      ]
+      messages: [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }]
     };
   }
 }
@@ -340,12 +298,131 @@ export function getAddressValue(
   if (!value) return { messages };
   if (value < 0 || value > 65535) {
     return {
-      messages: [
-        validationError(
-          `Invalid 16-bit address value ${name ? ` (${name})` : ""}`
-        )
-      ]
+      messages: [validationError(`Invalid 16-bit address value ${name ? ` (${name})` : ""}`)]
     };
   }
   return { value };
+}
+
+export function extractArguments(
+  tokens: Token[],
+  argInfo: CommandArgumentInfo
+): CommandArgumentValue | string[] {
+  const result: CommandArgumentValue = {};
+  const errors: string[] = [];
+
+  // --- Traverse through tokens to extract arguments
+  let tokenIdx = 0;
+  let argIdx = 0;
+  let tooManyArgs = false;
+  const optionsUsed = new Set<string>();
+  const mandatoryLength = argInfo.mandatory?.length ?? 0;
+  const optionalLength = argInfo.optional?.length ?? 0;
+  while (tokenIdx < tokens.length) {
+    const token = tokens[tokenIdx];
+    switch (token.type) {
+      case TokenType.Option:
+        const optionName = token.text;
+        if (argInfo?.commandOptions?.includes(optionName)) {
+          // --- This is a command option
+          if (optionsUsed.has(optionName)) {
+            errors.push(`Option '${optionName}' is already used`);
+            break;
+          }
+          result[optionName] = true;
+          optionsUsed.add(optionName);
+          break;
+        }
+
+        // --- Check if this is a named option
+        const namedOption = argInfo?.namedOptions?.find((o) => o.name === optionName);
+        if (namedOption) {
+          // --- Found the named options. The next token should be the value.
+          tokenIdx++;
+          if (tokenIdx >= tokens.length) {
+            errors.push(`Missing value for named option '${optionName}'`);
+            break;
+          }
+          result[optionName] = getValue(tokens[tokenIdx], namedOption);
+        } else {
+          errors.push(`Unknown named option: '${optionName}'`);
+        }
+        break;
+      default:
+        // --- This is a positional argument. Check if the command still has this argument.
+        if (tooManyArgs || (argIdx >= mandatoryLength + optionalLength && !argInfo.allowRest)) {
+          // --- Too many arguments
+          tooManyArgs = true;
+          break;
+        }
+
+        // --- Ok, process the argument
+        if (argIdx >= mandatoryLength + optionalLength) {
+          result.rest ??= [];
+          (result.rest as any[]).push(token.text);
+        } else {
+          const argName =
+            argIdx < mandatoryLength
+              ? argInfo.mandatory[argIdx].name
+              : argInfo.optional[argIdx - mandatoryLength].name;
+          const argDesc =
+            argIdx < mandatoryLength
+              ? argInfo.mandatory[argIdx]
+              : argInfo.optional[argIdx - mandatoryLength];
+          result[argName] = getValue(token, argDesc);
+        }
+        argIdx++;
+    }
+
+    // --- Next token
+    tokenIdx++;
+  }
+
+  // --- Check for argument count
+  if (argIdx < mandatoryLength) {
+    errors.push(`Missing mandatory argument`);
+  } else if (tooManyArgs) {
+    errors.push(`Too many arguments`);
+  }
+
+  // --- Done.
+  return errors.length > 0 ? errors : result;
+
+  function getValue(token: Token, argDesc: CommandArg): string | number | null {
+    if ((argDesc.type ?? "string") === "string") {
+      return token.text;
+    }
+    switch (token.type) {
+      case TokenType.DecimalLiteral:
+      case TokenType.BinaryLiteral:
+      case TokenType.HexadecimalLiteral:
+        // --- Extract the numeric value
+        const { value, messages } = getNumericTokenValue(token);
+        if (messages && messages.length > 0) {
+          errors.push(`Numeric value expected for argument '${argDesc.name}'`);
+        }
+
+        // --- Check the value range
+        if (
+          (argDesc.minValue !== undefined && value < argDesc.minValue) ||
+          (argDesc.maxValue !== undefined && value > argDesc.maxValue)
+        ) {
+          if (argDesc.minValue === undefined) {
+            errors.push(`Argument value of '${argDesc.name}' must be up to ${argDesc.maxValue}`);
+          } else if (argDesc.maxValue === undefined) {
+            errors.push(`Argument value of '${argDesc.name}' must be at least ${argDesc.minValue}`);
+          } else {
+            errors.push(
+              `Argument value of '${argDesc.name}' must be between ${argDesc.minValue} and ${argDesc.maxValue}`
+            );
+          }
+          return null;
+        } else {
+          return value;
+        }
+      default:
+        errors.push(`Numeric value expected for argument '${argDesc.name}'`);
+        return null;
+    }
+  }
 }

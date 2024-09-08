@@ -1,16 +1,13 @@
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { commandSuccess } from "../services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
+import { commandSuccess, IdeCommandBase } from "../services/ide-commands";
 
-export class ClearScreenCommand extends CommandWithNoArgBase {
+export class ClearScreenCommand extends IdeCommandBase {
   readonly id = "cls";
   readonly description = "Clears the interactive command output";
   readonly usage = "cls";
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     context.output.clear();
     return commandSuccess;
   }

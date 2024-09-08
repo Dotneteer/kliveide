@@ -96,12 +96,14 @@ export interface MainRenameFileEntryRequest extends MessageBase {
 // --- Show the open folder dialog
 export interface MainShowOpenFolderDialogRequest extends MessageBase {
   type: "MainShowOpenFolderDialog";
+  title?: string;
   settingsId?: string;
 }
 
 // --- Show the Electron open file dialog
 export interface MainShowOpenFileDialogRequest extends MessageBase {
   type: "MainShowOpenFileDialog";
+  title?: string;
   filters?: { name: string; extensions: string[] }[];
   settingsId?: string;
 }

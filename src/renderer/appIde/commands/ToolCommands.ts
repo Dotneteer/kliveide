@@ -1,78 +1,62 @@
-import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
+import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+
 import {
   IdeCommandBase,
   commandError,
   commandSuccess,
-  validationError,
   writeSuccessMessage
-} from "../services/ide-commands";
-import { ValidationMessage } from "../../abstractions/ValidationMessage";
+} from "@renderer/appIde/services/ide-commands";
 import { outputPaneRegistry } from "@renderer/registry";
 import {
   activateOutputPaneAction,
   activateToolAction,
   setVolatileDocStateAction
 } from "@state/actions";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import {
   MEMORY_EDITOR,
   MEMORY_PANEL_ID,
   DISASSEMBLY_PANEL_ID,
   DISASSEMBLY_EDITOR
 } from "@common/state/common-ids";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
-export class SelectOutputPaneCommand extends IdeCommandBase {
+type SelectOutputArgs = {
+  paneId: string;
+};
+
+export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
   readonly id = "outp";
-  readonly description =
-    "Selects the specified output panel and navigates there";
-  readonly usage = "outp panelId";
+  readonly description = "Selects the specified output panel and navigates there";
+  readonly usage = "outp <paneId>";
+  readonly argumentInfo?: CommandArgumentInfo = {
+    mandatory: [{ name: "paneId" }]
+  };
 
-  private paneId: string | undefined;
-
-  /**
-   * Validates the input arguments
-   * @param _args Arguments to validate
-   * @returns A list of issues
-   */
-  async validateArgs (
-    context: IdeCommandContext
-  ): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length !== 1) {
-      return validationError("This command expects 1 argument");
-    }
-    this.paneId = args[0].text;
-    return [];
-  }
-
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: SelectOutputArgs): Promise<IdeCommandResult> {
     // --- Check if the specified panel exists
-    if (!outputPaneRegistry.find(p => p.id === this.paneId)) {
-      return commandError(`Unknown output pane '${this.paneId}'`);
+    if (!outputPaneRegistry.find((p) => p.id === args.paneId)) {
+      return commandError(`Unknown output pane '${args.paneId}'`);
     }
 
     // --- Select the panel
-    context.store.dispatch(activateOutputPaneAction(this.paneId));
+    context.store.dispatch(activateOutputPaneAction(args.paneId));
     context.store.dispatch(activateToolAction("output"));
 
     // --- Done.
-    writeSuccessMessage(
-      context.output,
-      `Output panel ${this.paneId} is displayed.`
-    );
+    writeSuccessMessage(context.output, `Output panel ${args.paneId} is displayed.`);
     return commandSuccess;
   }
 }
 
-export class ShowMemoryCommand extends CommandWithNoArgBase {
+export class ShowMemoryCommand extends IdeCommandBase {
   readonly id = "show-memory";
   readonly description = "Displays the machine memory panel";
   readonly usage = "show-memory";
+  readonly aliases = ["shmem"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const documentHubService =
-      context.service.projectService.getActiveDocumentHubService();
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(MEMORY_PANEL_ID)) {
       documentHubService.setActiveDocument(MEMORY_PANEL_ID);
     } else {
@@ -87,40 +71,35 @@ export class ShowMemoryCommand extends CommandWithNoArgBase {
         undefined,
         false
       );
-      context.store.dispatch(
-        setVolatileDocStateAction(MEMORY_PANEL_ID, true),
-        "ide"
-      );
+      context.store.dispatch(setVolatileDocStateAction(MEMORY_PANEL_ID, true), "ide");
     }
     return commandSuccess;
   }
 }
 
-export class HideMemoryCommand extends CommandWithNoArgBase {
+export class HideMemoryCommand extends IdeCommandBase {
   readonly id = "hide-memory";
   readonly description = "Hides the machine memory panel";
   readonly usage = "hide-memory";
+  readonly aliases = ["hmem"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const documentHubService =
-      context.service.projectService.getActiveDocumentHubService();
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.closeDocument(MEMORY_PANEL_ID);
-    context.store.dispatch(
-      setVolatileDocStateAction(MEMORY_PANEL_ID, false),
-      "ide"
-    );
+    context.store.dispatch(setVolatileDocStateAction(MEMORY_PANEL_ID, false), "ide");
     return commandSuccess;
   }
 }
 
-export class ShowDisassemblyCommand extends CommandWithNoArgBase {
+export class ShowDisassemblyCommand extends IdeCommandBase {
   readonly id = "show-disass";
   readonly description = "Displays the Z80 disassembly panel";
   readonly usage = "show-disass";
+  readonly aliases = ["shdis"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const documentHubService =
-      context.service.projectService.getActiveDocumentHubService();
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
       documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
     } else {
@@ -135,29 +114,22 @@ export class ShowDisassemblyCommand extends CommandWithNoArgBase {
         undefined,
         false
       );
-      context.store.dispatch(
-        setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, true),
-        "ide"
-      );
+      context.store.dispatch(setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, true), "ide");
     }
     return commandSuccess;
   }
 }
 
-export class HideDisassemblyCommand extends CommandWithNoArgBase {
+export class HideDisassemblyCommand extends IdeCommandBase {
   readonly id = "hide-disass";
   readonly description = "Hides the Z80 disassembly panel";
   readonly usage = "hide-disass";
+  readonly aliases = ["hdis"];
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    const documentHubService =
-      context.service.projectService.getActiveDocumentHubService();
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
-    context.store.dispatch(
-      setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, false),
-      "ide"
-    );
+    context.store.dispatch(setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, false), "ide");
     return commandSuccess;
   }
 }
-

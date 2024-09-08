@@ -1,34 +1,35 @@
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { commandSuccessWith } from "../services/ide-commands";
-import { CommandWithSingleStringBase } from "./CommandWithSimpleStringBase";
-import {
-  Z88DK_ALL,
-  Z88DK_INSTALL_FOLDER
-} from "@main/z88dk-integration/z88dk-config";
+import { commandSuccessWith, IdeCommandBase } from "../services/ide-commands";
+import { Z88DK_ALL, Z88DK_INSTALL_FOLDER } from "@main/z88dk-integration/z88dk-config";
 
-export class ResetZ88DkCommand extends CommandWithSingleStringBase {
+type ResetZ88DkCommandArgs = {
+  z88dkPath: string;
+};
+
+export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
   readonly id = "z88dk-reset";
-  readonly description =
-    "Resets Z88DK settings with the provided installation folder";
+  readonly description = "Resets Z88DK settings with the provided installation folder";
   readonly usage = "z88dk-reset <Full ZXBC executable path>";
   readonly aliases = ["z88dkr"];
 
-  prepareCommand (): void {
-    delete this.arg;
-  }
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "z88dkPath" }]
+  };
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    if (this.arg) {
+  async execute(
+    context: IdeCommandContext,
+    args: ResetZ88DkCommandArgs
+  ): Promise<IdeCommandResult> {
+    if (args.z88dkPath) {
       await context.service.ideCommandsService.executeCommand(
-        `set ${Z88DK_INSTALL_FOLDER} "${this.arg}"`
+        `set ${Z88DK_INSTALL_FOLDER} "${args.z88dkPath}"`
       );
-      let cmdMessage = `Z88DK install folder set to ${this.arg}`;
+      let cmdMessage = `Z88DK install folder set to ${args.z88dkPath}`;
       return commandSuccessWith(cmdMessage);
     } else {
-      await context.service.ideCommandsService.executeCommand(
-        `set ${Z88DK_ALL}`
-      );
+      await context.service.ideCommandsService.executeCommand(`set ${Z88DK_ALL}`);
       return commandSuccessWith("Z88DK settings removed");
     }
   }

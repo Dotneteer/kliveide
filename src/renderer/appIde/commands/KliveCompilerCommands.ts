@@ -1,32 +1,29 @@
 import type { BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
-import { MainCompileResponse, MainSaveFileResponse } from "@messaging/any-to-main";
-import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { getFileTypeEntry, getNodeName as getNodeFileName } from "../project/project-node";
+import type { MainCompileResponse, MainSaveFileResponse } from "@messaging/any-to-main";
+import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
+import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import type {
+  InjectableOutput,
+  KliveCompilerOutput
+} from "@main/compiler-integration/compiler-registry";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+
+import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
   IdeCommandBase,
   commandError,
   commandSuccess,
   commandSuccessWith,
-  getNumericTokenValue,
   toHexa2,
-  toHexa4,
-  validationError
-} from "../services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
-import {
-  InjectableOutput,
-  KliveCompilerOutput,
-  isInjectableCompilerOutput
-} from "../../../main/compiler-integration/compiler-registry";
+  toHexa4
+} from "@renderer/appIde/services/ide-commands";
+import { isInjectableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { CodeToInject } from "@abstractions/CodeToInject";
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
-import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { BinaryReader } from "@utils/BinaryReader";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
-import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { SpectrumTapeHeader } from "@emu/machines/tape/SpectrumTapeHeader";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { TzxHeader } from "@emu/machines/tape/TzxHeader";
@@ -39,19 +36,20 @@ import {
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 
-export class KliveCompileCommand extends CommandWithNoArgBase {
+export class KliveCompileCommand extends IdeCommandBase {
   readonly id = "klive.compile";
   readonly description = "Compiles the current project with the Klive Z80 Compiler";
   readonly usage = "klive.compile";
   readonly aliases = ["kl.co"];
   readonly noInteractiveUsage = true;
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
     return compileResult.message
       ? commandError(compileResult.message)
@@ -59,7 +57,7 @@ export class KliveCompileCommand extends CommandWithNoArgBase {
   }
 }
 
-export class KliveInjectCodeCommand extends CommandWithNoArgBase {
+export class KliveInjectCodeCommand extends IdeCommandBase {
   readonly id = "klive.inject";
   readonly description =
     "Injects the current project code into the machine (using the Klive Z80 Compiler)";
@@ -67,12 +65,12 @@ export class KliveInjectCodeCommand extends CommandWithNoArgBase {
   readonly aliases = ["kl.inj"];
   readonly noInteractiveUsage = true;
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "inject");
   }
 }
 
-export class KliveRunCodeCommand extends CommandWithNoArgBase {
+export class KliveRunCodeCommand extends IdeCommandBase {
   readonly id = "klive.run";
   readonly description =
     "Runs the current project's code in the virtual machine (using the Klive Z80 Compiler)";
@@ -80,13 +78,13 @@ export class KliveRunCodeCommand extends CommandWithNoArgBase {
   readonly aliases = ["kl.r"];
   readonly noInteractiveUsage = true;
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const result = await injectCode(context, "run");
     return result;
   }
 }
 
-export class KliveDebugCodeCommand extends CommandWithNoArgBase {
+export class KliveDebugCodeCommand extends IdeCommandBase {
   readonly id = "klive.debug";
   readonly description =
     "Runs the current project's code in the virtual machine with debugging (using the Klive Z80 Compiler)";
@@ -94,124 +92,46 @@ export class KliveDebugCodeCommand extends CommandWithNoArgBase {
   readonly aliases = ["kl.rd"];
   readonly noInteractiveUsage = true;
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     return await injectCode(context, "debug");
   }
 }
 
-export class ExportCodeCommand extends IdeCommandBase {
+type ExportCommandArgs = {
+  filename: string;
+  "-n"?: string;
+  "-f"?: string;
+  "-as"?: boolean;
+  "-p"?: boolean;
+  "-c"?: boolean;
+  "-b"?: number;
+  "-sb"?: boolean;
+  "-addr"?: number;
+  "-scr"?: string;
+};
+
+export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
   readonly id = "expc";
   readonly description = "Export the code of the current project";
   readonly usage =
     "expc filename [-n name] [-f format] [-as] [-p] [-c] [-b border] [-sb] [-addr address] [-scr screenfile]";
 
-  private filename?: string;
-  private name?: string;
-  private format = "tzx";
-  private autoStart = false;
-  private pause = false;
-  private applyClear = false;
-  private border?: number;
-  private singleBlock = false;
-  private address?: number;
-  private screenFile?: string;
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "filename" }],
+    commandOptions: ["-as", "-p", "-c", "-b", "-sb", "-addr", "-scr"],
+    namedOptions: [
+      { name: "-n" },
+      { name: "-f" },
+      { name: "-as" },
+      { name: "-b", type: "number", minValue: 0, maxValue: 7 },
+      { name: "-addr", type: "number", minValue: 16384, maxValue: 65535 },
+      { name: "-scr" }
+    ]
+  };
 
-  prepareCommand(): void {
-    this.format = "tzx";
-    this.autoStart = false;
-    this.pause = false;
-    this.applyClear = false;
-    this.singleBlock = false;
-    this.filename = this.name = undefined;
-    this.border = this.address = this.screenFile = undefined;
-  }
+  readonly requiresProject = true;
 
-  /**
-   * Validates the input arguments
-   * @param _args Arguments to validate
-   * @returns A list of issues
-   */
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length < 1) {
-      return validationError("This command expects at least 2 arguments");
-    }
-    this.filename = args[0].text;
-    this.name = getNodeFileName(this.filename);
-    // --- Obtain additional arguments
-    let argPos = 1;
-    while (argPos < args.length) {
-      switch (args[argPos].text) {
-        case "-n":
-          argPos++;
-          if (args[argPos] === undefined) {
-            return validationError("Missing value for '-n'");
-          }
-          this.name = args[argPos].text;
-          break;
-        case "-f":
-          argPos++;
-          if (args[argPos] === undefined) {
-            return validationError("Missing value for '-f'");
-          }
-          this.format = args[argPos].text;
-          if (this.format !== "tzx" && this.format !== "tap" && this.format !== "hex") {
-            return validationError("Format should be one 'tzx', 'tap', or 'hex'");
-          }
-          break;
-        case "-p":
-          this.pause = true;
-          break;
-        case "-as":
-          this.autoStart = true;
-          break;
-        case "-c":
-          this.applyClear = true;
-          break;
-        case "-b": {
-          argPos++;
-          if (args[argPos] === undefined) {
-            return validationError("Missing value for '-b'");
-          }
-          const { value } = getNumericTokenValue(args[argPos]);
-          if (value === null) {
-            return validationError("Numeric value expected for '-b'");
-          }
-          this.border = value & 0x07;
-          break;
-        }
-        case "-sb":
-          this.singleBlock = true;
-          break;
-        case "-addr": {
-          argPos++;
-          if (args[argPos] === undefined) {
-            return validationError("Missing value for '-addr'");
-          }
-          const { value } = getNumericTokenValue(args[argPos]);
-          if (value === null) {
-            return validationError("Numeric value expected for '-addr'");
-          }
-          this.address = value & 0xffff;
-          break;
-        }
-        case "-scr": {
-          argPos++;
-          if (args[argPos] === undefined) {
-            return validationError("Missing value for '-scr'");
-          }
-          this.screenFile = args[argPos].text;
-          break;
-        }
-        default:
-          return validationError(`Unexpected argument: '${args[argPos].text}'`);
-      }
-      argPos++;
-    }
-    return [];
-  }
-
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: ExportCommandArgs): Promise<IdeCommandResult> {
     // --- Compile before export
     const { message, result } = await compileCode(context);
     const errorNo = result?.errors?.length ?? 0;
@@ -230,36 +150,37 @@ export class ExportCodeCommand extends IdeCommandBase {
       return commandError("Compiled code is not injectable.");
     }
 
-    return this.exportCompiledCode(context, result);
+    return this.exportCompiledCode(context, result, args);
   }
 
   async exportCompiledCode(
     context: IdeCommandContext,
-    output: KliveCompilerOutput
+    output: KliveCompilerOutput,
+    args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
-    const exporter = this;
-    if (this.format == "hex") {
-      return await saveIntelHexFile(context, this.filename, output);
+    if (args["-f"] == "hex") {
+      return await saveIntelHexFile(context, args.filename, output);
     }
 
     // --- Check for screen file error
     let scrContent: Uint8Array;
-    if (this.screenFile) {
+    const screenFile = args["-scr"];
+    if (screenFile) {
       // --- Check the validity of the screen file
       const scrContent = (await context.service.projectService.readFileContent(
-        this.screenFile,
+        screenFile,
         true
       )) as Uint8Array;
-      context.service.projectService.forgetFile(this.screenFile);
+      context.service.projectService.forgetFile(screenFile);
       if (!isScreenFile(scrContent)) {
-        return commandError(`File '${this.screenFile}' is not a valid screen file`);
+        return commandError(`File '${screenFile}' is not a valid screen file`);
       }
     }
 
     // --- Step #6: Create code segments
     const codeBlocks = createTapeBlocks(output as InjectableOutput);
     let screenBlocks: Uint8Array[] | undefined;
-    if (this.screenFile) {
+    if (screenFile) {
       const blocks = readTapeData(scrContent);
       if (blocks) {
         screenBlocks = [blocks[0].data, blocks[1].data];
@@ -268,14 +189,15 @@ export class ExportCodeCommand extends IdeCommandBase {
 
     // --- Step #7: Create Auto Start header block, if required
     const blocksToSave: Uint8Array[] = [];
-    if (!this.address) {
-      this.address =
+    let address = args["-addr"];
+    if (address === undefined) {
+      address =
         (output as CompilerOutput).exportEntryAddress ??
         (output as CompilerOutput).entryAddress ??
         (output as CompilerOutput).segments[0].startAddress;
     }
 
-    if (this.autoStart) {
+    if (args["-as"]) {
       const autoStartBlocks = createAutoStartBlock(output as CompilerOutput);
       blocksToSave.push(...autoStartBlocks);
     }
@@ -349,7 +271,7 @@ export class ExportCodeCommand extends IdeCommandBase {
         return null;
       }
 
-      if (exporter.singleBlock) {
+      if (args["-sb"]) {
         // --- Merge all blocks together
         const startAddr = Math.min(...output.segments.map((s) => s.startAddress));
         const endAddr = Math.max(
@@ -373,7 +295,7 @@ export class ExportCodeCommand extends IdeCommandBase {
         // --- Create the single header
         var singleHeader = new SpectrumTapeHeader();
         singleHeader.type = 3; // --- Code block
-        singleHeader.name = exporter.name;
+        singleHeader.name = args["-n"];
         singleHeader.dataLength = mergedSegment.length - 2;
         singleHeader.parameter1 = startAddr;
         singleHeader.parameter2 = 0x8000;
@@ -402,7 +324,7 @@ export class ExportCodeCommand extends IdeCommandBase {
           // --- Create the single header
           const header = new SpectrumTapeHeader();
           (header.type = 3), // --- Code block
-            (header.name = `${segmentIdx}_${exporter.name}`),
+            (header.name = `${segmentIdx}_${args["-n"]}`),
             (header.dataLength = (codeSegment.length - 2) & 0xffff),
             (header.parameter1 = startAddr),
             (header.parameter2 = 0x8000);
@@ -515,7 +437,7 @@ export class ExportCodeCommand extends IdeCommandBase {
 
     // --- Creates blocks with autostart functionality
     function createAutoStartBlock(output: CompilerOutput): Uint8Array[] {
-      const clearAddr = exporter.applyClear
+      const clearAddr = args["-c"]
         ? Math.min(...(output as InjectableOutput).segments.map((s) => s.startAddress))
         : null;
       return output.modelType == SpectrumModelType.Spectrum48 ||
@@ -540,14 +462,14 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
 
       // --- Add optional border color
-      if (exporter.border != null) {
+      if (args["-b"] != null) {
         codeLine.push(BORDER_TKN);
-        writeNumber(codeLine, exporter.border);
+        writeNumber(codeLine, args["-b"] & 0x07);
         codeLine.push(COLON);
       }
 
       // --- Add optional screen loader, LET o = PEEK 23739 : LOAD "" SCREEN$ : POKE 23739,111
-      if (exporter.screenFile) {
+      if (args["-scr"]) {
         codeLine.push(LET_TKN);
         writeString(codeLine, "o=");
         codeLine.push(PEEK_TKN);
@@ -566,7 +488,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
 
       // --- Add 'LOAD "" CODE' for each block
-      if (exporter.singleBlock) {
+      if (args["-sb"]) {
         codeLine.push(LOAD_TKN);
         codeLine.push(DQUOTE);
         codeLine.push(DQUOTE);
@@ -583,14 +505,14 @@ export class ExportCodeCommand extends IdeCommandBase {
       }
 
       // --- Add 'PAUSE 0'
-      if (exporter.pause) {
+      if (args["-p"]) {
         codeLine.push(PAUSE_TKN);
         writeNumber(codeLine, 0);
         codeLine.push(COLON);
       }
 
       // --- Some SCREEN$ related poking
-      if (exporter.screenFile) {
+      if (args["-scr"]) {
         codeLine.push(POKE_TKN);
         writeNumber(codeLine, 23739);
         writeString(codeLine, ",o:");
@@ -599,7 +521,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       // --- Add 'RANDOMIZE USR address'
       codeLine.push(RAND_TKN);
       codeLine.push(USR_TKN);
-      writeNumber(codeLine, exporter.address);
+      writeNumber(codeLine, args["-addr"]);
 
       // --- Complete the line
       codeLine.push(NEW_LINE);
@@ -622,7 +544,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       const header = new SpectrumTapeHeader();
       // --- Program block
       header.type = 0;
-      header.name = exporter.name;
+      header.name = args["-n"];
       header.dataLength = (dataBlock.length - 2) & 0xffff;
       // --- Auto-start at Line 10
       header.parameter1 = 10;
@@ -692,14 +614,14 @@ export class ExportCodeCommand extends IdeCommandBase {
 
       // --- Create code for BORDER/SCREEN and loading normal code blocks (line 30)
       codeLine = [];
-      if (exporter.border !== undefined) {
+      if (args["-b"] !== undefined) {
         codeLine.push(BORDER_TKN);
-        writeNumber(codeLine, exporter.border & 0xff);
+        writeNumber(codeLine, args["-b"] & 0xff);
         codeLine.push(COLON);
       }
 
       // --- Add optional screen loader, LET o = PEEK 23739:LOAD "" SCREEN$ : POKE 23739,111
-      if (exporter.screenFile) {
+      if (args["-scr"]) {
         codeLine.push(LET_TKN);
         writeString(codeLine, "o=");
         codeLine.push(PEEK_TKN);
@@ -766,12 +688,12 @@ export class ExportCodeCommand extends IdeCommandBase {
       codeLine = [];
 
       // --- PAUSE and START
-      if (exporter.pause) {
+      if (args["-p"]) {
         codeLine.push(PAUSE_TKN);
         writeNumber(codeLine, 0);
         codeLine.push(COLON);
       }
-      if (exporter.screenFile) {
+      if (args["-scr"]) {
         codeLine.push(POKE_TKN);
         writeNumber(codeLine, 23739);
         writeString(codeLine, ",o:");
@@ -780,7 +702,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       // --- Add 'RANDOMIZE USR address: STOP'
       codeLine.push(RAND_TKN);
       codeLine.push(USR_TKN);
-      writeNumber(codeLine, exporter.address);
+      writeNumber(codeLine, args["-addr"]);
       codeLine.push(COLON);
       codeLine.push(STOP_TKN);
       codeLine.push(NEW_LINE);
@@ -826,7 +748,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       const header = new SpectrumTapeHeader();
       // --- Program block
       header.type = 0;
-      header.name = exporter.name;
+      header.name = args["-n"];
       header.dataLength = (dataBlock.length - 2) & 0xffff;
       // --- Auto-start at Line 10
       header.parameter1 = 10;
@@ -901,7 +823,7 @@ export class ExportCodeCommand extends IdeCommandBase {
       const writer = new BinaryWriter();
       try {
         // --- Save data blocks
-        if (exporter.format === "tzx") {
+        if (args["-f"] === "tzx") {
           const header = new TzxHeader();
           header.writeTo(writer);
           for (const block of blocksToSave) {
@@ -918,9 +840,9 @@ export class ExportCodeCommand extends IdeCommandBase {
         }
 
         // --- Save the data to a file
-        if (exporter.filename) {
+        if (args.filename) {
           const response = await context.mainApi.saveBinaryFile(
-            exporter.filename,
+            args.filename,
             writer.buffer,
             `home:${EXPORT_FILE_FOLDER}`
           );

@@ -6,11 +6,11 @@ import { createEmulatorApi } from "@messaging/EmuApi";
 import { useRendererContext } from "./RendererProvider";
 
 export function useEmuApi(): EmuApi {
+  const { messenger } = useRendererContext();
   const api = useRef<EmuApi>(null);
   if (api.current) {
     return api.current;
   }
-  const { messenger } = useRendererContext();
   api.current = createEmulatorApi(messenger);
   return api.current;
 }

@@ -4,12 +4,10 @@ import {
   IdeCommandBase,
   commandError,
   commandSuccess,
-  validationError,
   writeInfoMessage,
   writeMessage,
   writeSuccessMessage
 } from "@renderer/appIde/services/ide-commands";
-import { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import {
   ExcludedItemInfo,
   getExcludedProjectItemsFromGlobalSettings,
@@ -24,37 +22,28 @@ import { saveProject } from "../utils/save-project";
 import { pathStartsWith } from "@common/utils/path-utils";
 import { getIsWindows } from "@renderer/os-utils";
 import { isAbsolutePath } from "../project/project-node";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
-export class ProjectListExcludedItemsCommand extends IdeCommandBase {
+type ListExcludedItemArgs = {
+  "-global"?: boolean;
+};
+
+export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcludedItemArgs> {
   readonly id = "project:excluded-items";
   readonly description = "Lists the paths of items currently excluded from the project.";
-  readonly usage = "project:excluded-items [--global]";
+  readonly usage = "project:excluded-items [-global]";
   readonly aliases = ["project:list-excluded", "proj:excluded-items", "proj:list-excluded", "p:lx"];
 
-  globalMode = false;
+  readonly argumentInfo: CommandArgumentInfo = {
+    commandOptions: ["-global"]
+  };
 
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length > 1) {
-      return validationError("This command expects one argument at most.");
-    }
-    this.globalMode = args.length === 1 && context.argTokens.some((t) => t.text === "--global");
-    if (args.length === 1 && !this.globalMode) {
-      return validationError(`Unexpected arguments! Usage: ${this.usage}`);
-    }
-    return [];
-  }
-
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: ListExcludedItemArgs): Promise<IdeCommandResult> {
     let result: Promise<ExcludedItemInfo[]>;
-    if (this.globalMode) {
+    if (args["-global"]) {
       result = getExcludedProjectItemsFromGlobalSettings(context.messenger);
     } else {
       const proj = context.store.getState().project;
-      if (!proj?.isKliveProject) {
-        return commandError("Please, open the project first!");
-      }
-
       result = Promise.resolve(excludedItemsFromProject(proj));
     }
     const items = await result;
@@ -62,66 +51,43 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase {
       writeInfoMessage(context.output, "There are no excluded items.");
     } else {
       writeInfoMessage(context.output, "Excluded items:");
-      items.forEach((t) => writeInfoMessage(context.output, `"  "}${t.value}`));
+      items.forEach((t) => writeInfoMessage(context.output, `${t.value}`));
     }
     return commandSuccess;
   }
 }
 
-export class ProjectExcludeItemsCommand extends IdeCommandBase {
+type ExcludeItemArgs = {
+  "-global"?: boolean;
+  "-d"?: boolean;
+  itemPath: string;
+  rest: string[];
+};
+
+export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> {
   readonly id = "project:exclude-item";
   readonly description = "Exclude/restore an item to project or globally.";
   readonly usage = "project:exclude-item [--global] [-d] <item-path>...";
   readonly aliases = ["project:exclude", "proj:exclude-item", "proj:exclude", "p:x"];
 
-  globalMode: boolean;
-  deleteMode: boolean;
-  paths: string[];
+  readonly argumentInfo: CommandArgumentInfo = {
+    allowRest: true,
+    commandOptions: ["-global", "-d"]
+  };
 
-  prepareCommand(): void {
-    this.globalMode = false;
-    this.deleteMode = false;
-    this.paths = [];
-  }
-
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const args = context.argTokens;
-    if (args.length <= 0) {
-      return validationError("This command expects at least one argument.");
-    }
-    for (const tok of args) {
-      switch (tok.text) {
-        case "--global":
-          this.globalMode = true;
-          break;
-        case "-d":
-          this.deleteMode = true;
-          break;
-        default:
-          this.paths.push(tok.text);
-      }
-    }
-    if (!this.deleteMode && this.paths.length <= 0) {
-      return validationError("Specify at least one item path to work with.");
-    }
-    return [];
-  }
-
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: ExcludeItemArgs): Promise<IdeCommandResult> {
     let needSaveProject = false;
-    if (this.globalMode) {
+    if (args["-global"]) {
       // System-wide operation
-      if (this.deleteMode) {
+      if (args["-d"]) {
         // Remove some entries from system-wide exclusion list
-        if (this.paths.length > 0) {
-          const excludedItemsPromise = getExcludedProjectItemsFromGlobalSettings(
-            context.messenger
-          ).then((items) => items.map((t) => t.id));
-          this.paths = this.paths.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
+        if (args.rest.length > 0) {
+          const excludedItems = await getExcludedProjectItemsFromGlobalSettings(context.messenger);
+          args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
           await context.mainApi.setGloballyExcludedProjectItems(
-            (await excludedItemsPromise)?.filter(
-              (p) => !this.paths.some((t) => t.localeCompare(p) === 0)
-            )
+            excludedItems
+              .map((item) => item.value)
+              ?.filter((p) => !args.rest.some((t) => t.localeCompare(p) === 0))
           );
         } else {
           await context.mainApi.setGloballyExcludedProjectItems([]);
@@ -129,8 +95,8 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       } else {
         // Add new entries to system-wide exclusion list
         const filteredPaths: string[] = [];
-        for (let p of this.paths) {
-          if (!p || p.length <= 0) continue;
+        for (const p of args.rest) {
+          if (!p?.length) continue;
           if (!context.service.validationService.isValidPath(p)) {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;
@@ -139,6 +105,7 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
           filteredPaths.push(p);
         }
         needSaveProject = beforeExcluded(context, filteredPaths);
+        console.log("filteredPaths", filteredPaths);
         await context.mainApi.addGlobalExcludedProjectItem(filteredPaths);
       }
       await context.mainApi.saveSettings();
@@ -150,12 +117,12 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       }
 
       const disp = (a: any) => context.store.dispatch(a, context.messageSource);
-      if (this.deleteMode) {
+      if (args["-d"]) {
         // Remove some entries from project-specific exclusion list
-        if (this.paths.length > 0) {
-          this.paths = this.paths.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
+        if (args.rest.length > 0) {
+          args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
           const filteredPaths = proj.excludedItems?.filter(
-            (p) => !this.paths.some((t) => t.localeCompare(p) === 0)
+            (p) => !args.rest.some((t) => t.localeCompare(p) === 0)
           );
           disp(setExcludedProjectItemsAction(filteredPaths));
         } else {
@@ -164,8 +131,8 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase {
       } else {
         // Add new entries to project-specific exclusion list
         const filteredPaths: string[] = [];
-        for (let p of this.paths) {
-          if (!p || p.length <= 0) continue;
+        for (let p of args.rest) {
+          if (!p?.length) continue;
           if (!context.service.validationService.isValidPath(p)) {
             writeMessage(context.output, `${p} is not a valid path`, "red");
             continue;

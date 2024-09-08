@@ -105,12 +105,14 @@ class ScriptService implements IScriptService {
   async cancelScript(idOrFileName: number | string): Promise<boolean> {
     // --- Obtain the script status information
     let script: ScriptRunInfo;
-    const scripts = this.store.getState().scripts;
+    const state = this.store.getState();
+    const projectFolder = state.project?.folderPath;
+    const scripts = state.scripts;
     if (typeof idOrFileName === "number") {
       script = scripts.find((s) => s.id === idOrFileName);
     } else {
       const reversed = scripts.slice().reverse();
-      script = reversed.find((s) => s.scriptFileName === idOrFileName);
+      script = reversed.find((s) => s.scriptFileName === `${projectFolder}/${idOrFileName}`);
     }
 
     // --- If the script is not found or already stopped, we're done.

@@ -4,14 +4,14 @@ import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IIdeCommandService } from "../../abstractions/IIdeCommandService";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
-import { IdeCommandInfo } from "../../abstractions/IdeCommandInfo";
+import { CommandArgumentInfo, IdeCommandInfo } from "../../abstractions/IdeCommandInfo";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import { ValidationMessage } from "../../abstractions/ValidationMessage";
 import { ValidationMessageType } from "../../abstractions/ValidationMessageType";
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand } from "./command-parser";
-import { IdeCommandBase } from "./ide-commands";
+import { extractArguments, IdeCommandBase, NoCommandArgs } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
@@ -180,7 +180,49 @@ class IdeCommandService implements IIdeCommandService {
       emuApi: createEmulatorApi(this.messenger),
       mainApi: createMainApi(this.messenger)
     };
-    const commandResult = await commandInfo.execute(context);
+
+    // --- Check if the command is a new style command or not
+    let commandResult: IdeCommandResult;
+    if (commandInfo.argumentInfo) {
+      // --- New style commands: validate the arguments
+      let validationMessages: ValidationMessage[];
+
+      const args = extractArguments(context.argTokens, commandInfo.argumentInfo);
+      if (Array.isArray(args)) {
+        validationMessages = args.map((a) => ({
+          type: ValidationMessageType.Error,
+          message: a
+        }));
+      } else if (commandInfo.validateCommandArgs) {
+        // --- Argument parsing successful, carry out additional validation
+        validationMessages = commandInfo.validateCommandArgs(context, args)
+      }
+
+      // --- Argument validation successful?
+      if (validationMessages && validationMessages.length > 0) {
+        // --- There are argument issues
+        validationMessages.push(...commandInfo.usageMessage());
+        context.service.ideCommandsService.displayTraceMessages(validationMessages, context);
+        // --- Sign validation error
+        return {
+          success: false
+        };
+      } else {
+        // --- Check if this command requires an open Klive project
+        if (commandInfo.requiresProject && !context.store.getState().project?.isKliveProject) {
+          buffer.color("bright-red");
+          buffer.writeLine("This command requires an open Klive project.");
+          buffer.resetStyle();
+          return { success: false };
+        }
+        
+        // --- Arguments, ok; execute the command
+        commandResult = await commandInfo.execute(context, args);
+      }
+    } else {
+      // --- Old type commands
+      commandResult = await commandInfo.execute(context);
+    }
     if (commandResult.success) {
       if (commandResult.finalMessage) {
         buffer.color("bright-green");
@@ -233,45 +275,39 @@ class IdeCommandService implements IIdeCommandService {
   }
 }
 
-class HelpCommand extends IdeCommandBase {
-  private _arg: string | null = null;
+type HelpArgs = {
+  filter?: string;
+};
 
+/**
+ * Display interactive commands help
+ */
+class HelpCommand extends IdeCommandBase<HelpArgs> {
   readonly id = "help";
   readonly description = "Displays help information about commands";
   readonly usage = "help [<command>]";
   readonly aliases = ["?", "-?", "-h"];
-
-  /**
-   * Validates the input arguments
-   * @param args Arguments to validate
-   * @returns A list of issues
-   */
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    // --- Check argument number
-    const args = context.argTokens;
-    if (args.length > 1) {
-      return {
-        type: ValidationMessageType.Error,
-        message: "Invalid number of arguments."
-      };
-    }
-    this._arg = args.length ? args[0].text : null;
-    return [];
-  }
+  readonly argumentInfo: CommandArgumentInfo = {
+    optional: [
+      {
+        name: "filter"
+      }
+    ]
+  };
 
   /**
    * Executes the command within the specified context
    */
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: HelpArgs): Promise<IdeCommandResult> {
     let count = 0;
     const cmdSrv = context.service.ideCommandsService;
-    const selectedCommands: IdeCommandInfo[] = this._arg
+    const selectedCommands: IdeCommandInfo[] = args.filter
       ? cmdSrv
           .getRegisteredCommands()
           .filter(
             (cmd) =>
-              cmd.id.toLowerCase().includes(this._arg.toLowerCase()) ||
-              cmd.aliases.some((a) => a.toLowerCase().includes(this._arg.toLowerCase()))
+              cmd.id.toLowerCase().includes(args.filter.toLowerCase()) ||
+              cmd.aliases.some((a) => a.toLowerCase().includes(args.filter.toLowerCase()))
           )
       : cmdSrv.getRegisteredCommands();
     const out = context.output;
@@ -307,12 +343,15 @@ class HelpCommand extends IdeCommandBase {
   }
 }
 
-class ExitCommand extends IdeCommandBase {
+/**
+ * Exits the IDE
+ */
+class ExitCommand extends IdeCommandBase<NoCommandArgs> {
   readonly id = "exit";
-  readonly description = "Exits Klvie IDE.";
+  readonly description = "Exits Klive IDE.";
   readonly usage = "exit";
 
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     context.mainApi.exitApp();
     return { success: true, finalMessage: "Farewell!" };
   }

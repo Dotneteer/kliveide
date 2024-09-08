@@ -4,19 +4,17 @@ import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
 import {
   commandError,
   writeSuccessMessage,
-  commandSuccess
+  commandSuccess,
+  IdeCommandBase
 } from "../services/ide-commands";
-import { CommandWithNoArgBase } from "./CommandWithNoArgsBase";
 import { saveAllBeforeQuit } from "../MainToIdeProcessor";
 
-export class CloseFolderCommand extends CommandWithNoArgBase {
+export class CloseFolderCommand extends IdeCommandBase {
   readonly id = "close";
   readonly description = "Closes the open IDE folder";
   readonly usage = "close";
 
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const projectPath = context.store.getState()?.project?.folderPath;
     if (!projectPath) {
       return commandError("No folder is open in the IDE.");

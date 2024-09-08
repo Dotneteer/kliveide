@@ -1,49 +1,49 @@
 import { COMMAND_RESULT_EDITOR } from "@state/common-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { toHexa4, writeSuccessMessage, commandSuccess } from "../services/ide-commands";
+import {
+  toHexa4,
+  writeSuccessMessage,
+  commandSuccess,
+  IdeCommandBase
+} from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
-import { CommandWithAddressRangeBase } from "./CommandWithAddressRange";
-import { ValidationMessage } from "../../abstractions/ValidationMessage";
-import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
 let disassemblyIndex = 1;
 
-export class DisassemblyCommand extends CommandWithAddressRangeBase {
+type DisassemblyCommandArgs = {
+  startAddress: number;
+  endAddress: number;
+  "-c": boolean;
+  "-lc": boolean;
+};
+
+export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
   readonly id = "dis";
   readonly description =
     "Disassembles the specified memory section. " +
-    "Options: '-c': concise output; '-lc': terminate labels with colon";
+    "Options: '-c': concise output; '-lc': terminate labels with semicolon";
   readonly usage = "dis <start> <end> [-c] [-lc]";
   readonly aliases = [];
 
-  protected extraArgCount: number;
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [
+      { name: "startAddress", type: "number" },
+      { name: "endAddress", type: "number" }
+    ],
+    commandOptions: ["-c", "-lc"]
+  };
 
-  conciseMode = false;
-  useColons = false;
-
-  async validateArgs(context: IdeCommandContext): Promise<ValidationMessage | ValidationMessage[]> {
-    const result = await super.validateArgs(context);
-    if (Array.isArray(result)) {
-      if (result.some((r) => r.type === ValidationMessageType.Error)) {
-        return result;
-      }
-    } else {
-      if (result.type === ValidationMessageType.Error) {
-        return result;
-      }
-    }
-    this.conciseMode = context.argTokens.some((t) => t.text === "-c");
-    this.useColons = context.argTokens.some((t) => t.text === "-lc");
-    return [];
-  }
-
-  async doExecute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    const fromH = toHexa4(this.startAddress);
-    const toH = toHexa4(this.endAddress);
-    const buffer = await this.getDisassembly(context);
+  async execute(
+    context: IdeCommandContext,
+    args: DisassemblyCommandArgs
+  ): Promise<IdeCommandResult> {
+    const fromH = toHexa4(args.startAddress);
+    const toH = toHexa4(args.endAddress);
+    const buffer = await this.getDisassembly(context, args);
     const title = `Result of running '${context.commandtext.trim()}'`;
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     await documentHubService.openDocument(
@@ -68,7 +68,10 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
     return commandSuccess;
   }
 
-  async getDisassembly(context: IdeCommandContext): Promise<OutputPaneBuffer> {
+  async getDisassembly(
+    context: IdeCommandContext,
+    args: DisassemblyCommandArgs
+  ): Promise<OutputPaneBuffer> {
     // --- Get the memory
     const getMemoryResponse = await context.emuApi.getMemoryContents();
 
@@ -80,29 +83,26 @@ export class DisassemblyCommand extends CommandWithAddressRangeBase {
 
     // --- Use the memory segments according to the "ram" and "screen" flags
     memSections.push(
-      new MemorySection(this.startAddress, this.endAddress, MemorySectionType.Disassemble)
+      new MemorySection(args.startAddress, args.endAddress, MemorySectionType.Disassemble)
     );
 
     // --- Disassemble the specified memory segments
     const disassembler = new Z80Disassembler(memSections, memory, partitions, {
       allowExtendedSet: true
     });
-    const disassItems = (await disassembler.disassemble(this.startAddress, this.endAddress))
+    const disassItems = (await disassembler.disassemble(args.startAddress, args.endAddress))
       .outputItems;
 
     const buffer = new OutputPaneBuffer(0x1_0000);
     disassItems.forEach((item) => {
       buffer.resetStyle();
-      if (!this.conciseMode) {
+      if (!args["-c"]) {
         buffer.write(`${toHexa4(item.address)} `);
         buffer.write(item.opCodes.padEnd(13, " "));
       }
       buffer.color("green");
       buffer.write(
-        (item.hasLabel ? `L${toHexa4(item.address)}${this.useColons ? ":" : ""}` : "").padEnd(
-          12,
-          " "
-        )
+        (item.hasLabel ? `L${toHexa4(item.address)}${args["-lc"] ? ":" : ""}` : "").padEnd(12, " ")
       );
       buffer.color("bright-cyan");
       buffer.writeLine(item.instruction);

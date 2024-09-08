@@ -1,30 +1,27 @@
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import {
-  writeSuccessMessage,
-  commandSuccess
-} from "../services/ide-commands";
-import { CommandWithSingleIntegerBase } from "./CommandWithSingleIntegerBase";
+import { writeSuccessMessage, commandSuccess, IdeCommandBase } from "../services/ide-commands";
 
-export class NumCommand extends CommandWithSingleIntegerBase {
+type NumCommandArgs = {
+  num: number;
+};
+
+export class NumCommand extends IdeCommandBase<NumCommandArgs> {
   protected minValue = -(2 ** 32);
   protected maxValue = 2 ** 32;
   readonly id = "num";
-  readonly description =
-    "Converts the specified number to binary, decimal, and hexadecimal";
+  readonly description = "Converts the specified number to binary, decimal, and hexadecimal";
   readonly usage = "num <number>";
   readonly aliases = [];
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "num", type: "number" }]
+  };
 
-  protected extraArgCount = 0;
-
-  async doExecute (
-    context: IdeCommandContext
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: NumCommandArgs): Promise<IdeCommandResult> {
     writeSuccessMessage(
       context.output,
-      `Number: ${this.arg}, $${this.arg
-        .toString(16)
-        .toUpperCase()}, %${this.arg.toString(2)}`
+      `Number: ${args.num}, $${args.num.toString(16).toUpperCase()}, %${args.num.toString(2)}`
     );
     return commandSuccess;
   }

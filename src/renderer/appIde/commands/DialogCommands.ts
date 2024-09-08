@@ -5,25 +5,31 @@ import {
 } from "@common/messaging/dialog-ids";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import {
-  commandSuccess,
-  commandError
-} from "../services/ide-commands";
-import { CommandWithSingleStringBase } from "./CommandWithSimpleStringBase";
+import { commandSuccess, commandError, IdeCommandBase } from "../services/ide-commands";
 import { displayDialogAction } from "@common/state/actions";
+import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
-export class DisplayDialogCommand extends CommandWithSingleStringBase {
+type DialogCommandArgs = {
+  dialogId: string;
+};
+
+export class DisplayDialogCommand extends IdeCommandBase<DialogCommandArgs> {
   readonly id = "display-dialog";
   readonly description = "Displays the spceified dialog";
   readonly usage = "display-dialog <dialogId>";
   readonly aliases = [];
+  readonly noInteractiveUsage = true;
 
-  async doExecute (context: IdeCommandContext): Promise<IdeCommandResult> {
-    if (this.arg in publicDialogIds) {
-      context.store.dispatch(displayDialogAction(publicDialogIds[this.arg]));
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "dialogId" }]
+  };
+
+  async execute(context: IdeCommandContext, args: DialogCommandArgs): Promise<IdeCommandResult> {
+    if (args.dialogId in publicDialogIds) {
+      context.store.dispatch(displayDialogAction(publicDialogIds[args.dialogId]));
       return commandSuccess;
     }
-    return commandError(`Unknown dialog ID: ${this.arg}`);
+    return commandError(`Unknown dialog ID: ${args.dialogId}`);
   }
 }
 
