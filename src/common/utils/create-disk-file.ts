@@ -19,6 +19,9 @@ export function createDiskFile (
   if (!fileExt) {
     filename += ".dsk";
   }
+  if (!fs.existsSync(foldername)) {
+    fs.mkdirSync(foldername, { recursive: true });
+  }
   const fileWithPath = foldername ? `${foldername}/${filename}` : filename;
   const fullPath = resolveHomeFilePath(fileWithPath);
   fs.writeFileSync(fullPath, writer.buffer);
