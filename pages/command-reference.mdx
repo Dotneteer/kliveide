@@ -106,7 +106,7 @@ Available aliases: `co`
 This command creates an empty disk file (DSK format) you can use with ZX Spectrum +3 models (and compatible).
 
 ```
-crd <disk-type> <disk-name> [<disk-folder>]
+crd <disk-type> <disk-name> [<disk-folder>] [-p]
 ```
 
 These are the arguments of the command:
@@ -117,6 +117,7 @@ These are the arguments of the command:
   - `dse`: Double-sided Extended CPC
 - `disk-name`: The name of the disk file (`.dsk` extension as added automatically)
 - `disk-folder`: An optional folder in which the new disk file is created. The folder must exist.
+- `-p`: Creates the disk file within the currently opened project folder (under `disks`).
 
 ## `debug`
 

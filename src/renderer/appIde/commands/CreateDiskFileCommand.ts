@@ -9,6 +9,7 @@ import {
   commandSuccess,
   IdeCommandBase
 } from "../services/ide-commands";
+import { DISK_FOLDER } from "@common/structs/project-const";
 
 const availableDiskTypes = ["ss", "ds", "sse", "dse"];
 
@@ -16,16 +17,18 @@ type CreateDiskFileCommandArgs = {
   diskType: string;
   diskName: string;
   diskFolder?: string;
+  "-p"?: boolean;
 };
 
 export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandArgs> {
   readonly id = "crd";
   readonly description = "Creates a new disk file.";
-  readonly usage = "crd <disk type> <disk name> [<disk folder>]";
+  readonly usage = "crd <disk type> <disk name> [<disk folder>] [-p]";
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "diskType" }, { name: "diskName" }],
-    optional: [{ name: "diskFolder" }]
+    optional: [{ name: "diskFolder" }],
+    commandOptions: ["-p"]
   };
 
   validateCommandArgs(_: IdeCommandContext, args: any): ValidationMessage[] {
@@ -45,11 +48,17 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
     context: IdeCommandContext,
     args: CreateDiskFileCommandArgs
   ): Promise<IdeCommandResult> {
-    const response = await context.mainApi.createDiskFile(
-      args.diskFolder,
-      args.diskName,
-      args.diskType,
-    );
+    let folder = args.diskFolder;
+    if (args["-p"]) {
+      // --- Create a disk file in the project folder
+      const projectFolder = context.store.getState()?.project?.folderPath;
+      if (projectFolder) {
+        folder = folder
+          ? `${projectFolder}/${DISK_FOLDER}/${folder}`
+          : `${projectFolder}/${DISK_FOLDER}`;
+      }
+    }
+    const response = await context.mainApi.createDiskFile(folder, args.diskName, args.diskType);
     if (response.type === "ErrorResponse") {
       return commandError(response.message);
     }
