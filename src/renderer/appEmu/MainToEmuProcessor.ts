@@ -465,6 +465,26 @@ export async function processMainToEmuMessages(
         ...machine.memoryDevice.getMemoryMappings()
       };
     }
+
+    case "EmuParsePartitionLabel": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const partition = controller.machine.parsePartitionLabel(message.label);
+      return {
+        type: "ValueResponse",
+        value: partition
+      };
+    }
+
+    case "EmuGetPartitionLabels": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const labels = controller.machine.getPartitionLabels();
+      return {
+        type: "ValueResponse",
+        value: labels
+      };
+    }
   }
   return defaultResponse();
 

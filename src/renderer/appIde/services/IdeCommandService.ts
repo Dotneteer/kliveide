@@ -195,7 +195,7 @@ class IdeCommandService implements IIdeCommandService {
         }));
       } else if (commandInfo.validateCommandArgs) {
         // --- Argument parsing successful, carry out additional validation
-        validationMessages = commandInfo.validateCommandArgs(context, args)
+        validationMessages = await commandInfo.validateCommandArgs(context, args)
       }
 
       // --- Argument validation successful?

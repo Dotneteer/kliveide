@@ -31,7 +31,7 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
     commandOptions: ["-p"]
   };
 
-  validateCommandArgs(_: IdeCommandContext, args: any): ValidationMessage[] {
+  async validateCommandArgs(_: IdeCommandContext, args: any): Promise<ValidationMessage[]> {
     if (!availableDiskTypes.find((dt) => dt === args.diskType)) {
       return [
         validationError(

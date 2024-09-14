@@ -190,6 +190,16 @@ export interface EmuGetNextMemoryMappingRequest extends MessageBase {
   type: "EmuGetNextMemoryMapping";
 }
 
+// --- Gets the Next memory mapping data
+export interface EmuParsePartitionLabelRequest extends MessageBase {
+  type: "EmuParsePartitionLabel";
+  label: string;
+}
+
+export interface EmuGetPartitionLabelsRequest extends MessageBase {
+  type: "EmuGetPartitionLabels";
+}
+
 // --- The response with the CPU state information
 export interface EmuGetCpuStateResponse extends MessageBase {
   type: "EmuGetCpuStateResponse";

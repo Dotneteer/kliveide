@@ -7,12 +7,7 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
-import {
-  AUDIO_SAMPLE_RATE,
-  REWIND_REQUESTED,
-  TAPE_MODE,
-  TAPE_SAVER
-} from "../machine-props";
+import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
@@ -35,7 +30,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor (public readonly modelInfo?: MachineModel) {
+  constructor(public readonly modelInfo?: MachineModel) {
     super();
 
     // --- Set up machine attributes
@@ -62,10 +57,9 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Sets up the machine (async)
    */
-  async setup (): Promise<void> {
+  async setup(): Promise<void> {
     // --- Get the ROM file
     const romContents = await this.loadRomFromResource(this.romId);
-    
 
     // --- Initialize the machine's ROM (roms/sp48.rom)
     this.uploadRomBytes(romContents);
@@ -74,7 +68,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Dispose the resources held by the machine
    */
-  dispose (): void {
+  dispose(): void {
     this.keyboardDevice?.dispose();
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
@@ -90,7 +84,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  hardReset (): void {
+  hardReset(): void {
     super.hardReset();
     for (let i = 0x4000; i < this._memory.length; i++) this._memory[i] = 0;
     if (this._is16KModel) {
@@ -102,7 +96,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * This method emulates resetting a machine with a hardware reset button.
    */
-  reset (): void {
+  reset(): void {
     // --- Reset the CPU
     super.reset();
 
@@ -119,10 +113,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
 
     // --- Set default property values
     this.setMachineProperty(TAPE_MODE, TapeMode.Passive);
-    this.setMachineProperty(
-      TAPE_SAVER,
-      new TapeSaver(this.tapeDevice as TapeDevice)
-    );
+    this.setMachineProperty(TAPE_SAVER, new TapeSaver(this.tapeDevice as TapeDevice));
     this.setMachineProperty(REWIND_REQUESTED);
 
     // --- Prepare for running a new machine loop
@@ -139,7 +130,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param offset Offset from the beginning of the screen memory
    * @returns The byte at the specified screen memory location
    */
-  readScreenMemory (offset: number): number {
+  readScreenMemory(offset: number): number {
     return this._memory[0x4000 + (offset & 0x3fff)];
   }
 
@@ -147,7 +138,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */
-  get64KFlatMemory (): Uint8Array {
+  get64KFlatMemory(): Uint8Array {
     return this._memory;
   }
 
@@ -155,38 +146,52 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
    * @param _index Partition index
    */
-  get16KPartition (_index: number): Uint8Array {
-    throw new Error(
-      "This operation is not supported in the ZX Spectrum 48K model"
-    );
+  get16KPartition(_index: number): Uint8Array {
+    throw new Error("This operation is not supported in the ZX Spectrum 48K model");
   }
 
   /**
    * Gets the current partition values for all 16K/8K partitions
    */
-  getCurrentPartitions (): number[] {
+  getCurrentPartitions(): number[] {
     return [];
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
-  getCurrentPartitionLabels (): string[] {
+  getCurrentPartitionLabels(): string[] {
     return [];
+  }
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param _label Label to parse
+   */
+  parsePartitionLabel(_label: string): number | undefined {
+    return undefined;
+  }
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string> {
+    return {};
   }
 
   /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples (): number[] {
+  getAudioSamples(): number[] {
     return this.beeperDevice.getAudioSamples();
   }
 
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
-  get tactsInDisplayLine (): number {
+  get tactsInDisplayLine(): number {
     return this.screenDevice.screenWidth;
   }
 
@@ -195,7 +200,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @returns The byte read from the memory
    */
-  doReadMemory (address: number): number {
+  doReadMemory(address: number): number {
     return this._memory[address];
   }
 
@@ -204,7 +209,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param address 16-bit memory address
    * @param value Byte to write into the memory
    */
-  doWriteMemory (address: number, value: number): void {
+  doWriteMemory(address: number, value: number): void {
     const slot = address >>> 14;
     if ((this._is16KModel && slot === 1) || (!this._is16KModel && slot !== 0)) {
       this._memory[address] = value;
@@ -219,7 +224,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (address: number): number {
+  doReadPort(address: number): number {
     return (address & 0x0001) == 0
       ? this.readPort0Xfe(address)
       : this.floatingBusDevice.readFloatingBus();
@@ -233,7 +238,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortRead (address: number): void {
+  delayPortRead(address: number): void {
     this.delayContendedIo(address);
   }
 
@@ -245,7 +250,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (address: number, value: number): void {
+  doWritePort(address: number, value: number): void {
     if ((address & 0x0001) === 0) {
       this.writePort0xFE(value);
     }
@@ -255,28 +260,28 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * This function implements the I/O port write delay of the CPU.
    * @param address Port address
    */
-  delayPortWrite (address: number): void {
+  delayPortWrite(address: number): void {
     this.delayContendedIo(address);
   }
 
   /**
    * Width of the screen in native machine screen pixels
    */
-  get screenWidthInPixels (): number {
+  get screenWidthInPixels(): number {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
-  get screenHeightInPixels (): number {
+  get screenHeightInPixels(): number {
     return this.screenDevice.screenLines;
   }
 
   /**
    * Gets the buffer that stores the rendered pixels
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
@@ -284,7 +289,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Uploades the specified ROM information to the ZX Spectrum 48 ROM memory
    * @param data ROM contents
    */
-  uploadRomBytes (data: Uint8Array): void {
+  uploadRomBytes(data: Uint8Array): void {
     for (let i = 0; i < data.length; i++) {
       this._memory[i] = data[i];
     }
@@ -294,16 +299,14 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(model: string): CodeInjectionFlow {
     if (model === "sp48") {
       return [
         {
           type: "ReachExecPoint",
           rom: 0,
           execPoint: SP48_MAIN_ENTRY,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(
-            SP48_MAIN_ENTRY
-          )})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SP48_MAIN_ENTRY)})`
         },
         {
           type: "Inject"
@@ -314,15 +317,13 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
         }
       ];
     }
-    throw new Error(
-      `Code for machine model '${model}' cannot run on this virtual machine.`
-    );
+    throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
   }
 
   /**
    * Gets the structure describing system variables
    */
-  get sysVars (): SysVar[] {
+  get sysVars(): SysVar[] {
     return zxSpectrum48SysVars;
   }
 }
@@ -507,11 +508,7 @@ export const zxSpectrum48SysVars: SysVar[] = [
     address: 0x5c41,
     name: "MODE",
     type: SysVarType.Byte,
-    description:
-      "Specifies K, L, C, E or G cursor\n" +
-      "0: C, K or L\n" +
-      "1: E\n" +
-      "2: G"
+    description: "Specifies K, L, C, E or G cursor\n" + "0: C, K or L\n" + "1: E\n" + "2: G"
   },
   {
     address: 0x5c42,

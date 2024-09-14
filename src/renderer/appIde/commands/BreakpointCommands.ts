@@ -16,6 +16,8 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { createEmulatorApi } from "@common/messaging/EmuApi";
 
 export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
@@ -88,10 +90,10 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     ]
   };
 
-  validateCommandArgs(
+  async validateCommandArgs(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
-  ): ValidationMessage[] {
+  ): Promise<ValidationMessage[]> {
     const addrArg = args.addrSpec?.trim() ?? "";
     let messages: ValidationMessage[] = [];
     if (addrArg.startsWith("[")) {
@@ -105,7 +107,6 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     } else {
       // --- Parse the addSpec argument to find out its type
       const argToken = parseCommand(args.addrSpec)[0];
-
       const plainText = argToken.text.replace("'", "").replace("_", "");
       try {
         switch (argToken.type) {
@@ -121,19 +122,25 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
           default:
             const segments = addrArg.toLowerCase().split(":");
             if (segments.length === 2 && segments[0].length <= 2) {
-              // --- Extract partition information
-              const partStr = segments[0].toUpperCase();
-              let partNoIdx = 0;
-              if (partStr.startsWith("R")) {
-                partNoIdx = 1;
+              // --- Check for partition support
+              const { machine } = context.service.machineService.getMachineInfo();
+              const roms = machine.features?.[MF_ROM] ?? 0;
+              const banks = machine.features?.[MF_BANK] ?? 0;
+              if (!roms && !banks) {
+                messages = [{ type: ValidationMessageType.Error, message: "This model does not support partitions" }];
+                break;
               }
-              const partV = partStr[partNoIdx];
-              if (!partV || partV < "0" || partV > "9") {
+
+              // --- Extract partition information
+              const partition = await createEmulatorApi(context.messenger).parsePartitionLabel(segments[0]);
+              console.log("Partition: ", partition);
+              if (partition.value === undefined) {
                 messages = [{ type: ValidationMessageType.Error, message: "Invalid partition" }];
                 break;
               }
 
-              args.partition = partV.charCodeAt(0) - "0".charCodeAt(0);
+              args.partition = partition.value;
+              console.log("Partition: ", partition);
 
               // --- Extract address
               const tokens = parseCommand(segments[1]);
@@ -149,10 +156,13 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
 
               // --- Return with the info
               args.address = valueInfo.value;
+            } else {
+              messages = [{ type: ValidationMessageType.Error, message: "Invalid address" }];
             }
             break;
         }
-      } catch {
+      } catch (err) {
+        console.error(err);
         messages = [{ type: ValidationMessageType.Error, message: "Invalid numeric value" }];
       }
     }

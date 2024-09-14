@@ -41,6 +41,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   constructor(readonly config: MachineConfigSet = {}) {
     super();
   }
+  softResetOnFirstStart?: boolean;
 
   /**
    * The dynamic machine configuration (can be set after the machine is created)
@@ -365,6 +366,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param label Label to parse
    */
   abstract parsePartitionLabel(label: string): number | undefined;
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  abstract getPartitionLabels(): Record<number, string>;
 
   /**
    * Executes the specified custom command

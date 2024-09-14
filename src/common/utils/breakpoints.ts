@@ -7,7 +7,10 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 
-export function getBreakpointKey(bp: BreakpointInfo): string {
+export function getBreakpointKey(
+  bp: BreakpointInfo,
+  partitionMap?: Record<number, string>
+): string {
   // --- Collect memory/IO breakpoint suffix
   let suffix = "";
   if (bp.memoryRead) {
@@ -24,10 +27,8 @@ export function getBreakpointKey(bp: BreakpointInfo): string {
     if (bp.partition === undefined) {
       return `$${bp.address.toString(16).padStart(4, "0")}${suffix}`;
     }
-    return bp.partition < 0
-      ? `R${(-(bp.partition + 1)).toString(16)}:$${bp.address
-          .toString(16)
-          .padStart(4, "0")}${suffix}`
+    return partitionMap
+      ? `${partitionMap[bp.partition] ?? "?"}:$${bp.address.toString(16)}${suffix}`
       : `${bp.partition.toString(16)}:$${bp.address.toString(16)}${suffix}`;
   } else if (bp.resource && bp.line !== undefined) {
     return `[${bp.resource}]:${bp.line}`;

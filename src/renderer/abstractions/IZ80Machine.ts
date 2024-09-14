@@ -180,12 +180,17 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   getPartition(address: number): number | undefined;
 
-  
   /**
    * Parses a partition label to get the partition number
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined;
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string>;
 
   /**
    * Executes the specified custom command

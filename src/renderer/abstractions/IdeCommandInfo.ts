@@ -46,7 +46,7 @@ export type IdeCommandInfo = {
    * @param args Parsed command arguments
    * @returns Validation result
    */
-  validateCommandArgs?: (context: IdeCommandContext, args: any) => ValidationMessage[];
+  validateCommandArgs?: (context: IdeCommandContext, args: any) => Promise<ValidationMessage[]>;
 
   /**
    * Executes the command within the specified context

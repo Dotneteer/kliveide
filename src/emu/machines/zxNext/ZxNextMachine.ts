@@ -247,7 +247,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    switch (label) {
+    switch (label.toUpperCase()) {
       case "UN":
         return undefined;
       case "R0":
@@ -273,8 +273,35 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           }
           return -8 - parseInt(label.substring(1));
         }
-        return label.match(/^\d+$/) ? parseInt(label) : undefined;
+        if (label.match(/^\d+$/)) {
+          const partValue = parseInt(label);
+          return partValue >= 0 && partValue < 224 ? partValue : undefined;
+        }
+        return undefined;
     }
+  }
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string> {
+    const result: Record<number, string> = {
+      [-1]: "R0",
+      [-2]: "R1",
+      [-3]: "R2",
+      [-4]: "R3",
+      [-5]: "A0",
+      [-6]: "A1",
+      [-7]: "DM"
+    };
+    for (let i = 0; i < 16; i++) {
+      result[-8 - i] = `D${i}`;
+    }
+    for (let i = 0; i < 224; i++) {
+      result[i] = i.toString();
+    }
+    return result;
   }
 
   /**

@@ -377,9 +377,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Parses a partition label to get the partition number
    * @param _label Label to parse
    */
-  parsePartitionLabel(_label: string): number | undefined {
-    return undefined;
-  }
+  abstract parsePartitionLabel(_label: string): number | undefined;
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  abstract getPartitionLabels(): Record<number, string>;
 
   /**
    * Executes the specified custom command
