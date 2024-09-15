@@ -689,7 +689,9 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
     if ((opCode & 0xc7) == 0xc4) return 3;
 
     // --- Check for RST instructions
-    if ((opCode & 0xc7) == 0xc7) return 1;
+    if ((opCode & 0xc7) == 0xc7) {
+      return opCode === 0xdf || opCode === 0xef ? 3 : 1;
+    };
 
     // --- Check for HALT instruction
     if (opCode == 0x76) return 1;

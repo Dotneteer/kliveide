@@ -1,0 +1,2 @@
+; A sentinel filename used by generics to identify that the ram is not initialized.
+; Some vhdl file open statements require the file to exist even if unused.

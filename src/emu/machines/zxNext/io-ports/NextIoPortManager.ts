@@ -502,9 +502,9 @@ export class NextIoPortManager {
 
   readPort(port: number): number {
     if (!excluded.includes(port)) {
-      console.log(
-        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
-      );
+      // console.log(
+      //   `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+      // );
     }
     const descriptor = this.portMap.get(port);
     if (!descriptor?.readerFns) return 0xff;
