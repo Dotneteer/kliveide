@@ -485,6 +485,16 @@ export async function processMainToEmuMessages(
         value: labels
       };
     }
+
+    case "EmuGetCallStack": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      const callStack = controller.machine.getCallStack();
+      return {
+        type: "EmuGetCallStackResponse",
+        callStack
+      };
+    }
   }
   return defaultResponse();
 

@@ -2,6 +2,7 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
+import { DivMmc } from "./storage/DivMmcDevice";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -577,7 +578,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       portDffd: this.portDffdValue,
       portEff7: 0x00,
       portLayer2: 0x00,
-      portTimex: 0x00
+      portTimex: 0x00,
+      divMmc: this.machine.divMmcDevice.port0xe3Value
     };
   }
 

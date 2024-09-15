@@ -4,6 +4,7 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   EmuGetBlinkStateResponse,
+  EmuGetCallStackResponse,
   EmuGetCpuStateResponse,
   EmuGetMemoryResponse,
   EmuGetNecUpd765Response,
@@ -68,6 +69,7 @@ export interface EmuApi {
   getNextMemoryMapping(): Promise<EmuGetNextMemoryMappingResponse>;
   parsePartitionLabel(label: string): Promise<ValueResponse>;
   getPartitionLabels(): Promise<ValueResponse>;
+  getCallStack(): Promise<EmuGetCallStackResponse>;
 }
 
 class EmuApiImpl implements EmuApi {
@@ -379,6 +381,14 @@ class EmuApiImpl implements EmuApi {
   async getPartitionLabels(): Promise<ValueResponse> {
     const response = await this.sendMessage({ type: "EmuGetPartitionLabels" }, "ValueResponse");
     return response as ValueResponse;
+  }
+
+  /**
+   * Gets the call stack
+   */
+  async getCallStack(): Promise<EmuGetCallStackResponse> {
+    const response = await this.sendMessage({ type: "EmuGetCallStack" }, "EmuGetCallStackResponse");
+    return response as EmuGetCallStackResponse;
   }
 
   private async sendMessage(

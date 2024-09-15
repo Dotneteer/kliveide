@@ -25,6 +25,8 @@ export const darkTheme: ThemeProperties = {
   "--color-text-hilite": "#00a0ff",
   "--bgcolor-input": "#282828",
   "--color-input": "#ffffff",
+  "--bgcolor-item-hover": "#383838",
+
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#505050",

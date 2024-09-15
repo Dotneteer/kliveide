@@ -9,6 +9,7 @@ import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IMachineEventHandler } from "./IMachineEventHandler";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import type { MachineConfigSet } from "@common/machines/info-types";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
@@ -191,6 +192,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * @param partition Partition index
    */
   getPartitionLabels(): Record<number, string>;
+
+  /**
+   * Gets the current call stack information
+   */
+  getCallStack(frames?: number): CallStackInfo;
 
   /**
    * Executes the specified custom command

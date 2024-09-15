@@ -32,6 +32,7 @@ import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -302,6 +303,23 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       result[i] = i.toString();
     }
     return result;
+  }
+
+  /**
+   * Gets the current call stack information
+   */
+  getCallStack(frames = 16): CallStackInfo {
+    const stack: number[] = [];
+    let addr = this.sp;
+    for (let i = 0; i < frames; i++) {
+      const low = this.doReadMemory(addr++);
+      const high = this.doReadMemory(addr++);
+      stack.push(((high << 8) | low) & 0xffff);
+    }
+    return {
+      sp: this.sp,
+      frames: stack
+    };
   }
 
   /**

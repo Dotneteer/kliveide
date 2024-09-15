@@ -112,7 +112,9 @@ import type {
   EmuGetNextMemoryMappingRequest,
   EmuGetNextMemoryMappingResponse,
   EmuParsePartitionLabelRequest,
-  EmuGetPartitionLabelsRequest
+  EmuGetPartitionLabelsRequest,
+  EmuGetCallStackRequest,
+  EmuGetCallStackResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -226,6 +228,7 @@ export type RequestMessage =
   | EmuGetNextMemoryMappingRequest
   | EmuParsePartitionLabelRequest
   | EmuGetPartitionLabelsRequest
+  | EmuGetCallStackRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -308,6 +311,7 @@ export type ResponseMessage =
   | EmuGetNextRegDescriptorsResponse
   | EmuGetNextRegStateResponse
   | EmuGetNextMemoryMappingResponse
+  | EmuGetCallStackResponse
   | IdeExecuteCommandResponse
   | IdeGetProjectStructureResponse;
 

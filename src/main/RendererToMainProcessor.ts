@@ -475,6 +475,7 @@ export async function processRendererToMainMessages(
     case "EmuGetNextMemoryMapping":
     case "EmuParsePartitionLabel":
     case "EmuGetPartitionLabels":  
+    case "EmuGetCallStack":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();

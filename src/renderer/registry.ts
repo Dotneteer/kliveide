@@ -89,6 +89,7 @@ import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
 import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
+import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -140,6 +141,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     renderer: cpuPanelRenderer,
     expandedOnInit: true
+  },
+  {
+    id: "callStackPanel",
+    title: "Call Stack",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    noScrollViewer: false,
+    renderer: callStackPanelRenderer,
   },
   {
     id: "nextMemoryMappingPanel",

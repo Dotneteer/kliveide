@@ -19,6 +19,7 @@ const MemMappingPanel = () => {
   const [portEff7, setPortEff7] = useState<number>(0);
   const [portLayer2, setPortLayer2] = useState<number>(0);
   const [portTimex, setPortTimex] = useState<number>(0);
+  const [divMmc, setDivMmc] = useState<number>(0);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
@@ -34,6 +35,7 @@ const MemMappingPanel = () => {
     setPortEff7(response.portEff7);
     setPortLayer2(response.portLayer2);
     setPortTimex(response.portTimex);
+    setDivMmc(response.divMmc);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -86,6 +88,10 @@ const MemMappingPanel = () => {
       <div className={styles.item}>
         <Label text="Port Timex:" width={VAR_WIDTH} />
         <Value text={toHexa2(portTimex)} />
+      </div>
+      <div className={styles.item}>
+        <Label text="DivMMC:" width={VAR_WIDTH} />
+        <Value text={toHexa2(divMmc)} />
       </div>
     </div>
   );

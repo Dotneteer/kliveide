@@ -5,6 +5,7 @@ import type { MessageBase } from "./messages-core";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 // --- Set the emulator's machine type to use
 export interface EmuSetMachineTypeRequest extends MessageBase {
@@ -200,6 +201,10 @@ export interface EmuGetPartitionLabelsRequest extends MessageBase {
   type: "EmuGetPartitionLabels";
 }
 
+export interface EmuGetCallStackRequest extends MessageBase {
+  type: "EmuGetCallStack";
+}
+
 // --- The response with the CPU state information
 export interface EmuGetCpuStateResponse extends MessageBase {
   type: "EmuGetCpuStateResponse";
@@ -367,4 +372,10 @@ export interface EmuGetNextMemoryMappingResponse extends MessageBase {
   portEff7: number;
   portLayer2: number;
   portTimex: number;
+  divMmc: number;
+}
+
+export interface EmuGetCallStackResponse extends MessageBase {
+  type: "EmuGetCallStackResponse";
+  callStack: CallStackInfo;
 }
