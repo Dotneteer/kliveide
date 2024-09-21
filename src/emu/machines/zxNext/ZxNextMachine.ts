@@ -360,7 +360,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   readScreenMemory(offset: number): number {
     // TODO: Implement this
-    return 0xff;
+    return this.memoryDevice.readMemory(0x4000 + offset);
   }
 
   /**

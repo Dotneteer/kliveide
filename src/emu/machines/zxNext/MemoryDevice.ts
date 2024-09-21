@@ -1,7 +1,7 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { toHexa2, toHexa4, toHexa6 } from "@renderer/appIde/services/ide-commands";
+import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -285,9 +285,14 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.mmuRegs[6] = this.selectedBankMsb * 8 + newBank16k * 2;
     this.mmuRegs[7] = this.mmuRegs[6] + 1;
     this.useShadowScreen = !!((value >> 3) & 0x01);
+    this.machine.screenDevice.ulaScreenStartOffset = this.getUlaScreenOffset(this.useShadowScreen);
     this.selectedRomLsb = (value >> 4) & 0x01;
     this.pagingEnabled = !(value & 0x20);
     this.updateMemoryConfig();
+  }
+
+  getUlaScreenOffset(shadowScreen: boolean): number {
+    return OFFS_NEXT_RAM + (shadowScreen ? 0x07 : 0x05) * 0x4000;
   }
 
   get portDffdValue(): number {

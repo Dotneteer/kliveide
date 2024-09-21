@@ -78,7 +78,35 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_0000_0001,
       value: 0b0000_0000_0000_0000,
       readerFns: (p) => readUlaPort(p),
-      writerFns: (p, v) => writeUlaPort(p, v)
+      writerFns: (_, v) => {
+        // --- Extract the border color
+        machine.screenDevice.borderColor = v & 0x07;
+
+        // // --- Store the last EAR bit
+        // var bit4 = value & 0x10;
+        // this.beeperDevice.setEarBit(bit4 !== 0);
+
+        // // --- Set the last value of bit3
+        // this._portBit3LastValue = (value & 0x08) !== 0;
+
+        // // --- Instruct the tape device process the MIC bit
+        // this.tapeDevice.processMicBit(this._portBit3LastValue);
+
+        // // --- Manage bit 4 value
+        // if (this._portBit4LastValue) {
+        //   // --- Bit 4 was 1, is it now 0?
+        //   if (!bit4) {
+        //     this._portBit4ChangedFrom1Tacts = this.tacts;
+        //     this._portBit4LastValue = false;
+        //   }
+        // } else {
+        //   // --- Bit 4 was 0, is it now 1?
+        //   if (bit4) {
+        //     this._portBit4ChangedFrom0Tacts = this.tacts;
+        //     this._portBit4LastValue = true;
+        //   }
+        // }
+      }
     });
     r({
       description: "Timex video, floating bus",
@@ -501,13 +529,21 @@ export class NextIoPortManager {
   }
 
   readPort(port: number): number {
-    if (!excluded.includes(port)) {
-      // console.log(
-      //   `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
-      // );
+    let useLogger = false;
+    if (!excluded.some((e) => (port & e.mask) === e.port)) {
+      console.log(
+        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+      );
+      useLogger = true;
     }
     const descriptor = this.portMap.get(port);
-    if (!descriptor?.readerFns) return 0xff;
+    if (!descriptor?.readerFns) {
+      return 0xff;
+    }
+
+    if (useLogger) {
+      console.log(`  ${descriptor.description}`);
+    }
 
     if (Array.isArray(descriptor.readerFns)) {
       // --- Multiple reader functions
@@ -527,7 +563,7 @@ export class NextIoPortManager {
   }
 
   writePort(port: number, value: number): void {
-    if (!excluded.includes(port)) {
+    if (!excluded.some((e) => (port & e.mask) === e.port)) {
       console.log(
         `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
       );
@@ -587,4 +623,12 @@ export class NextIoPortManager {
   }
 }
 
-const excluded = [0x243b, 0x253b, 0x7ffd, 0x1ffd, 0xdffd];
+const excluded = [
+  { port: 0x0000, mask: 0x0001 },
+  { port: 0x243b, mask: 0xffff },
+  { port: 0x253b, mask: 0xffff },
+  { port: 0x7ffd, mask: 0xffff },
+  { port: 0x1ffd, mask: 0xffff },
+  { port: 0xdffd, mask: 0xffff },
+  { port: 0x00e3, mask: 0x00ff }
+];
