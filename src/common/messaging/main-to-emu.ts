@@ -6,6 +6,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 
 // --- Set the emulator's machine type to use
 export interface EmuSetMachineTypeRequest extends MessageBase {
@@ -373,6 +374,7 @@ export interface EmuGetNextMemoryMappingResponse extends MessageBase {
   portLayer2: number;
   portTimex: number;
   divMmc: number;
+  pageInfo: MemoryPageInfo[];
 }
 
 export interface EmuGetCallStackResponse extends MessageBase {

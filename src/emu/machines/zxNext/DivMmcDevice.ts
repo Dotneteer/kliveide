@@ -278,7 +278,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Page out, if requested
     if (this._pageOutRequested && this.disableAutomapOn1ff8) {
-      console.log("Page out before opcode fetch");
       this.pageOut();
       this._pageOutRequested = false;
     }

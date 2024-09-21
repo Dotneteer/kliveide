@@ -1,0 +1,54 @@
+01fd ok
+021f ok
+07:DB43 --> out($e3),$82 ok
+020f --> over IM 1 ok
+0284
+0259 ok
+0287 ok
+
+R1:39ae ok
+R0:2620 ok
+R0:2773 ok
+R1:39b3 ok
+
+R1:39d8 ok
+
+R1:39db --> writing L2 port (0) ok
+R1:3a31 ok
+
+02ba ok
+0308 ok
+5b4d: AF is different (but is flag 5 because of LDIR, no problem)
+r3:0d6b
+r3:0db9 ok
+r3:0dc1 ok
+r3:0dc6 ok --> call 0e44 uses DivMMC through INT ($38)
+r3:0de2 ok
+r3:0df0 ok
+r3:0df3 ok
+r3:0adc ok
+r3:0d6e ok
+r3:0d75 ok
+r3:0d7e ok
+
+r3:0dd9 (3 times ok, then HALT)
+
+Stop at r3:0dd9 3 time, then go on
+r3:0dac ok
+r3:0afb ok
+0314 ok
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

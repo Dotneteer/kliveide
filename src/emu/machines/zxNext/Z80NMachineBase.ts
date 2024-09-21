@@ -14,6 +14,7 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -374,6 +375,11 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   abstract getPartitionLabels(): Record<number, string>;
 
   /**
+   * Gets the current call stack information
+   */
+  abstract getCallStack(frames): CallStackInfo;
+  
+  /**
    * Executes the specified custom command
    * @param _command Command to execute
    */
@@ -691,7 +697,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
     // --- Check for RST instructions
     if ((opCode & 0xc7) == 0xc7) {
       return opCode === 0xdf || opCode === 0xef ? 3 : 1;
-    };
+    }
 
     // --- Check for HALT instruction
     if (opCode == 0x76) return 1;
