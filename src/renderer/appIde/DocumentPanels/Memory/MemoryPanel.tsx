@@ -22,7 +22,7 @@ import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import Switch from "react-switch";
+//import Switch from "react-switch";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -285,9 +285,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }}
         />
         <ToolbarSeparator small={true} />
-        <label>Display Options:
+        {/* <label>Display Options:
           <Switch onChange={(v) => {setChState(v)}} checked={chState} height={14} width={28} onColor="#000080" onHandleColor="#ff0000"/>
-        </label>
+        </label> */}
         <LabeledSwitch
           value={charDump}
           label="Char Dump:"
