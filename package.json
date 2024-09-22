@@ -83,7 +83,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
     "electron-updater": "^6.3.0",
-    "next": "^14.2.4",
+    "next": "^14.2.12",
     "nextra": "^2.13.4",
     "nextra-theme-docs": "^2.13.4",
     "vite-plugin-copy": "^0.1.6"
