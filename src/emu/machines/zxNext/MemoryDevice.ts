@@ -562,8 +562,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       }
 
       // --- Normal mode page setup
-      this.setRomSlotByMmu(0);
-      this.setRomSlotByMmu(1);
+      if (!this.machine.divMmcDevice?.conmem) {
+        // --- Make sure, CONMEM is not active
+        this.setRomSlotByMmu(0);
+        this.setRomSlotByMmu(1);
+      }
 
       this.setRamSlotByMmu(2);
       this.setRamSlotByMmu(3);

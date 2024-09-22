@@ -2380,19 +2380,19 @@ describe("Next - DivMmcDevice", async function () {
     expect(readBack).toBe(0x00);
   });
 
-  // it("DivMMC has priority over ROM select", async () => {
-  //   // --- Act
-  //   const m = await createTestNextMachine();
-  //   const d = m.divMmcDevice;
-  //   const memory = m.memoryDevice;
-  //   const nrDevice = m.nextRegDevice;
+  it("DivMMC has priority over ROM select", async () => {
+    // --- Act
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memory = m.memoryDevice;
+    const nrDevice = m.nextRegDevice;
 
-  //   d.port0xe3Value = 0x80;
-  //   nrDevice.directSetRegValue(0x8e, 0x00);
+    d.port0xe3Value = 0x80;
+    nrDevice.directSetRegValue(0x8e, 0x00);
 
-  //   // --- Assert
-  //   expect(romSlotSignatureMatches(memory, 0, divMmcRomSignature)).toBe(true);
-  // });
+    // --- Assert
+    expect(romSlotSignatureMatches(memory, 0, divMmcRomSignature)).toBe(true);
+  });
 });
 
 function romSlotSignatureMatches(m: MemoryDevice, page: number, signature: number[]): boolean {
