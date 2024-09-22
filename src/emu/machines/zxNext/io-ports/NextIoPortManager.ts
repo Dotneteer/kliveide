@@ -1,6 +1,6 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
+import { readUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
@@ -630,5 +630,5 @@ const excluded = [
   { port: 0x7ffd, mask: 0xffff },
   { port: 0x1ffd, mask: 0xffff },
   { port: 0xdffd, mask: 0xffff },
-  { port: 0x00e3, mask: 0x00ff }
+  //{ port: 0x00e3, mask: 0x00ff }
 ];

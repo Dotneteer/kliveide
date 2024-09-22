@@ -7,9 +7,9 @@ import {
   OFFS_NEXT_ROM
 } from "@emu/machines/zxNext/MemoryDevice";
 
-const nextRom0Signature0 = [0xf3, 0xc3, 0x25, 0x01, 0x45, 0x30, 0x06, 0x42]; // 0x0000
-const nextRom0Signature1 = [0x28, 0x46, 0x20, 0x16, 0x17, 0x72, 0x38, 0x01]; // 0x2000
-const divMmcRomSignature = [0xf3, 0xc3, 0xc7, 0x00, 0x46, 0x33, 0x06, 0x42]; // 0x0000
+const nextRom0Signature0 = [0xf3, 0xc3, 0xef, 0x00, 0x45, 0x44, 0x09, 0x02]; // 0x0000
+const nextRom0Signature1 = [0xdd, 0xcb, 0x27, 0x46, 0x28, 0x03, 0x7a, 0x53]; // 0x2000
+const divMmcRomSignature = [0xf3, 0xc3, 0x6a, 0x00, 0x44, 0x56, 0x09, 0x02]; // 0x0000
 
 describe("Next - DivMmcDevice", async function () {
   it("After cold start", async () => {
@@ -596,7 +596,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xfe);
+    expect(m.opCode).toBe(0xdf);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -701,7 +701,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xfe);
+    expect(m.opCode).toBe(0xdf);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -804,7 +804,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xc3);
+    expect(m.opCode).toBe(0x00);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -909,7 +909,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xc3);
+    expect(m.opCode).toBe(0x00);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1012,7 +1012,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0x33);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1117,7 +1117,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0x33);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1428,7 +1428,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0xd9);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1533,7 +1533,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0xd9);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1791,7 +1791,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0xeb);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1813,7 +1813,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(0xeb);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1838,7 +1838,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x96);
+    expect(m.opCode).toBe(0xbf);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1860,7 +1860,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x51);
+    expect(m.opCode).toBe(0x2a);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1882,7 +1882,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x51);
+    expect(m.opCode).toBe(0x2a);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1929,7 +1929,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x3e);
+    expect(m.opCode).toBe(0x52);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1951,7 +1951,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x3e);
+    expect(m.opCode).toBe(0x52);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1998,7 +1998,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xeb);
+    expect(m.opCode).toBe(0x70);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2020,7 +2020,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xeb);
+    expect(m.opCode).toBe(0x70);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2067,7 +2067,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(0x68);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2089,7 +2089,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(0x68);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2210,7 +2210,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x23);
+    expect(m.opCode).toBe(0x3c);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2236,7 +2236,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(0xf1);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2263,7 +2263,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xcb);
+    expect(m.opCode).toBe(0x20);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2289,7 +2289,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(0xc9);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2379,6 +2379,20 @@ describe("Next - DivMmcDevice", async function () {
     const readBack = memDevice.readMemory(0x2000);
     expect(readBack).toBe(0x00);
   });
+
+  // it("DivMMC has priority over ROM select", async () => {
+  //   // --- Act
+  //   const m = await createTestNextMachine();
+  //   const d = m.divMmcDevice;
+  //   const memory = m.memoryDevice;
+  //   const nrDevice = m.nextRegDevice;
+
+  //   d.port0xe3Value = 0x80;
+  //   nrDevice.directSetRegValue(0x8e, 0x00);
+
+  //   // --- Assert
+  //   expect(romSlotSignatureMatches(memory, 0, divMmcRomSignature)).toBe(true);
+  // });
 });
 
 function romSlotSignatureMatches(m: MemoryDevice, page: number, signature: number[]): boolean {

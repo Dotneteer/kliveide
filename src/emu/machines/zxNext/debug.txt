@@ -1,48 +1,19 @@
-MMC dependencies
+0251 ok
+025a ok
+0271 ok  
+02a7 ok
+02f5 ok
+02fd ok (after EI)
+0301 ok
+0303 ok
 
-Port 0xE7 write:
+DIVMMC/REG $8E experiment
 
-if (value is 0xF6) invoke mmc_cs(0xFE); otherwise, no write
+Before:
+0000: f3 c3 6a 00 44 56 08 02
+2000: 1d f7 0a 7b 00 01 00 02
 
-Port 0xEB write:
+After:
+0000: f3 c3 6a 00 44 56 08 02
+2000: 1d f7 0a 7b 00 01 00 02
 
-invoke mmc_write(value);
-
-Port 0xE7 read:
-
-return 0xFF;
-
-Port 0xEB read:
-
-return mmc_read();
-
-
-Dependencies:
-
-mmc_cs: (mmc.c)
-    - mmc_r1 = 1
-    - mmc_last_command = 0
-    - mmc_index_command = 0
-    - mmc_read_index = -1
-    - mmc_write_index = -1
-    - mmc_csd_index = -1
-    - mmc_cid_index = -1
-    - mmc_ocr_index = -1
-    - mmc_card_selected = 0
-
-mmc_write: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_retorna_dir_32bit(z80_byte a,z80_byte b,z80_byte c,z80_byte d)
-        - none
-    - mmc_write_byte_memory(unsigned int address,z80_byte value)
-        - mmc_disable()
-            -
-        - mmc_set_visualmem_write(unsigned int address)
-            - none
-
-mmc_read: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_read_byte_memory(unsigned int address)
-    
