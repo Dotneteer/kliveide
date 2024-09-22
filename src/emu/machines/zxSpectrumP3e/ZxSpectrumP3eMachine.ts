@@ -272,6 +272,27 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string> {
+    return {
+      [-1]: "R0",
+      [-2]: "R1",
+      [-3]: "R2",
+      [-4]: "R3",
+      0: "0",
+      1: "1",
+      2: "2",
+      3: "3",
+      4: "4",
+      5: "5",
+      6: "6",
+      7: "7"
+    };
+  }
+
+  /**
    * Get the 64K of addressable memory of the ZX Spectrum computer
    * @returns Bytes of the flat memory
    */

@@ -289,7 +289,7 @@ export abstract class ZxSpectrumBase
    * @param value Data byte to write
    */
   protected writePort0xFE (value: number): void {
-    // --- Extract bthe border color
+    // --- Extract the border color
     this.screenDevice.borderColor = value & 0x07;
 
     // --- Store the last EAR bit

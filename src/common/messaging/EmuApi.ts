@@ -4,6 +4,7 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   EmuGetBlinkStateResponse,
+  EmuGetCallStackResponse,
   EmuGetCpuStateResponse,
   EmuGetMemoryResponse,
   EmuGetNecUpd765Response,
@@ -20,7 +21,8 @@ import {
   FlagResponse,
   MessageBase,
   RequestMessage,
-  ResponseMessage
+  ResponseMessage,
+  ValueResponse
 } from "@messaging/messages-core";
 
 /**
@@ -65,6 +67,9 @@ export interface EmuApi {
   getNextRegDescriptors(): Promise<EmuGetNextRegDescriptorsResponse>;
   getNextRegState(): Promise<EmuGetNextRegStateResponse>;
   getNextMemoryMapping(): Promise<EmuGetNextMemoryMappingResponse>;
+  parsePartitionLabel(label: string): Promise<ValueResponse>;
+  getPartitionLabels(): Promise<ValueResponse>;
+  getCallStack(): Promise<EmuGetCallStackResponse>;
 }
 
 class EmuApiImpl implements EmuApi {
@@ -356,6 +361,34 @@ class EmuApiImpl implements EmuApi {
       "EmuGetNextMemoryMappingResponse"
     );
     return response as EmuGetNextMemoryMappingResponse;
+  }
+
+  /**
+   * Parses the specified partition label
+   * @param label Partition label
+   */
+  async parsePartitionLabel(label: string): Promise<ValueResponse> {
+    const response = await this.sendMessage(
+      { type: "EmuParsePartitionLabel", label },
+      "ValueResponse"
+    );
+    return response as ValueResponse;
+  }
+
+  /**
+   * Gets the partition labels
+   */
+  async getPartitionLabels(): Promise<ValueResponse> {
+    const response = await this.sendMessage({ type: "EmuGetPartitionLabels" }, "ValueResponse");
+    return response as ValueResponse;
+  }
+
+  /**
+   * Gets the call stack
+   */
+  async getCallStack(): Promise<EmuGetCallStackResponse> {
+    const response = await this.sendMessage({ type: "EmuGetCallStack" }, "EmuGetCallStackResponse");
+    return response as EmuGetCallStackResponse;
   }
 
   private async sendMessage(

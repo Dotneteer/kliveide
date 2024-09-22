@@ -25,6 +25,7 @@ export type ThemeProperties = {
   "--color-text-hilite"?: string;
   "--bgcolor-input"?: string;
   "--color-input"?: string;
+  "--bgcolor-item-hover"?: string,
 
   // --- Drowpdown
   "--bg-color-dropdown-input"?: string;

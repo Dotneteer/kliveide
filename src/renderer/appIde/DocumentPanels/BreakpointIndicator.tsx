@@ -7,7 +7,7 @@ import { useAppServices } from "../services/AppServicesProvider";
 
 type Props = {
   address: number | string;
-  partition?: number;
+  partition?: string;
   hasBreakpoint: boolean;
   disabled: boolean;
   current: boolean;
@@ -28,7 +28,7 @@ export const BreakpointIndicator = ({
   const addrLabel =
     typeof address === "number"
       ? partition !== undefined
-        ? `${partition < 0 ? `R${-(partition + 1)}` : partition}:$${toHexa4(
+        ? `${partition}:$${toHexa4(
             address
           )}`
         : `$${toHexa4(address)}`

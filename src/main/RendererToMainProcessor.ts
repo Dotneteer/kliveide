@@ -473,6 +473,9 @@ export async function processRendererToMainMessages(
     case "EmuGetNextRegDescriptors":
     case "EmuGetNextRegState":
     case "EmuGetNextMemoryMapping":
+    case "EmuParsePartitionLabel":
+    case "EmuGetPartitionLabels":  
+    case "EmuGetCallStack":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();

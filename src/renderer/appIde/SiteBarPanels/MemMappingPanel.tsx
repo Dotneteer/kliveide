@@ -1,10 +1,11 @@
 import { Label, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
-import { toHexa2 } from "../services/ide-commands";
+import { toHexa2, toHexa6 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemMappingPanel.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 
 const VAR_WIDTH = 108;
 
@@ -19,6 +20,8 @@ const MemMappingPanel = () => {
   const [portEff7, setPortEff7] = useState<number>(0);
   const [portLayer2, setPortLayer2] = useState<number>(0);
   const [portTimex, setPortTimex] = useState<number>(0);
+  const [divMmc, setDivMmc] = useState<number>(0);
+  const [pageInfo, setPageInfo] = useState<MemoryPageInfo[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
@@ -34,6 +37,8 @@ const MemMappingPanel = () => {
     setPortEff7(response.portEff7);
     setPortLayer2(response.portLayer2);
     setPortTimex(response.portTimex);
+    setDivMmc(response.divMmc);
+    setPageInfo(response.pageInfo);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -87,6 +92,74 @@ const MemMappingPanel = () => {
         <Label text="Port Timex:" width={VAR_WIDTH} />
         <Value text={toHexa2(portTimex)} />
       </div>
+      <div className={styles.item}>
+        <Label text="DivMMC:" width={VAR_WIDTH} />
+        <Value text={toHexa2(divMmc)} />
+      </div>
+      {pageInfo[0] && (
+        <div className={styles.item}>
+          <Label text="Page 0:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[0].bank8k)} ${toHexa2(pageInfo[0].bank16k)} ${toHexa6(pageInfo[0].readOffset)} ${toHexa6(pageInfo[0].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[1] && (
+        <div className={styles.item}>
+          <Label text="Page 1:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[1].bank8k)} ${toHexa2(pageInfo[1].bank16k)} ${toHexa6(pageInfo[1].readOffset)} ${toHexa6(pageInfo[1].writeOffset ?? 0xff )}`}
+          />
+        </div>
+      )}
+      {pageInfo[2] && (
+        <div className={styles.item}>
+          <Label text="Page 2:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[2].bank8k)} ${toHexa2(pageInfo[2].bank16k)} ${toHexa6(pageInfo[2].readOffset)} ${toHexa6(pageInfo[2].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[3] && (
+        <div className={styles.item}>
+          <Label text="Page 3:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[3].bank8k)} ${toHexa2(pageInfo[3].bank16k)} ${toHexa6(pageInfo[3].readOffset)} ${toHexa6(pageInfo[3].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[4] && (
+        <div className={styles.item}>
+          <Label text="Page 4:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[4].bank8k)} ${toHexa2(pageInfo[4].bank16k)} ${toHexa6(pageInfo[4].readOffset)} ${toHexa6(pageInfo[4].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[5] && (
+        <div className={styles.item}>
+          <Label text="Page 5:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[5].bank8k)} ${toHexa2(pageInfo[5].bank16k)} ${toHexa6(pageInfo[5].readOffset)} ${toHexa6(pageInfo[5].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[6] && (
+        <div className={styles.item}>
+          <Label text="Page 6:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[6].bank8k)} ${toHexa2(pageInfo[6].bank16k)} ${toHexa6(pageInfo[6].readOffset)} ${toHexa6(pageInfo[6].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
+      {pageInfo[7] && (
+        <div className={styles.item}>
+          <Label text="Page 7:" width={VAR_WIDTH} />
+          <Value
+            text={`${toHexa2(pageInfo[7].bank8k)} ${toHexa2(pageInfo[7].bank16k)} ${toHexa6(pageInfo[7].readOffset)}  ${toHexa6(pageInfo[7].writeOffset ?? 0xff)}`}
+          />
+        </div>
+      )}
     </div>
   );
 };

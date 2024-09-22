@@ -143,7 +143,7 @@ export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
   };
   readonly requiresProject = true;
 
-  validateCommandArgs(_: IdeCommandContext, args: any): ValidationMessage[] {
+  async validateCommandArgs(_: IdeCommandContext, args: any): Promise<ValidationMessage[]> {
     if (!args["-pull"] && !args["-push"]) {
       return [validationError("You must use one of '-pull' or '-push'")];
     }

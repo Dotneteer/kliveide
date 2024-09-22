@@ -110,7 +110,11 @@ import type {
   EmuGetNextRegStateResponse,
   EmuGetNextRegStateRequest,
   EmuGetNextMemoryMappingRequest,
-  EmuGetNextMemoryMappingResponse
+  EmuGetNextMemoryMappingResponse,
+  EmuParsePartitionLabelRequest,
+  EmuGetPartitionLabelsRequest,
+  EmuGetCallStackRequest,
+  EmuGetCallStackResponse
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -183,6 +187,14 @@ export interface FlagResponse extends MessageBase {
 }
 
 /**
+ * Send back single values
+ */
+export interface ValueResponse extends MessageBase {
+  type: "ValueResponse";
+  value: any;
+}
+
+/**
  * All request messages
  */
 export type RequestMessage =
@@ -214,6 +226,9 @@ export type RequestMessage =
   | EmuGetNextRegDescriptorsRequest
   | EmuGetNextRegStateRequest
   | EmuGetNextMemoryMappingRequest
+  | EmuParsePartitionLabelRequest
+  | EmuGetPartitionLabelsRequest
+  | EmuGetCallStackRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
@@ -269,6 +284,7 @@ export type ResponseMessage =
   | DefaultResponse
   | ErrorResponse
   | FlagResponse
+  | ValueResponse
   | TextContentsResponse
   | BinaryContentsResponse
   | MainGetDirectoryContentResponse
@@ -295,6 +311,7 @@ export type ResponseMessage =
   | EmuGetNextRegDescriptorsResponse
   | EmuGetNextRegStateResponse
   | EmuGetNextMemoryMappingResponse
+  | EmuGetCallStackResponse
   | IdeExecuteCommandResponse
   | IdeGetProjectStructureResponse;
 

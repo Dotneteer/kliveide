@@ -265,7 +265,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         if (pc >= 0x3d00 && pc <= 0x3dff && this.automapOn3dxx && rom3PagedIn) {
           this._pageInRequested = true;
           this._pageInDelayed = false;
-        } else if (pc >= 0x1ff8 && pc <= 0x1fff && !this.disableAutomapOn1ff8) {
+        } else if (pc >= 0x1ff8 && pc <= 0x1fff) {
           this._pageOutRequested = true;
         }
     }
@@ -274,6 +274,12 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._pageInRequested && !this._pageInDelayed) {
       this.pageIn();
       this._pageInRequested = false;
+    }
+
+    // --- Page out, if requested
+    if (this._pageOutRequested && this.disableAutomapOn1ff8) {
+      this.pageOut();
+      this._pageOutRequested = false;
     }
   }
 
@@ -308,7 +314,13 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Page 1
     const offset = OFFS_DIVMMC_RAM + this.bank * 0x2000;
-    memoryDevice.setPageInfo(1, offset, this._mapram && this.bank === 3 ? null : offset, 0xff, 0xff);
+    memoryDevice.setPageInfo(
+      1,
+      offset,
+      this._mapram && this.bank === 3 ? null : offset,
+      0xff,
+      0xff
+    );
   }
 
   // --- Pages out ROM/RAM from the lower 16K

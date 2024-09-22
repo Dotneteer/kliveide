@@ -1,0 +1,29 @@
+@import "@styles/core.scss";
+
+.callStackPanel {
+  @include fill-parent-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  user-select: none;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+
+  .center {
+    @include fill-parent-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--color-secondary-label);
+  }
+}
+
+.item {
+  display: flex;
+  flex-direction: row;
+  padding: 2px 8px;
+  align-items: center;
+
+  &:hover {
+    background-color: var(--bgcolor-item-hover);
+  }
+}

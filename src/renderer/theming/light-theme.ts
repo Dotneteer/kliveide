@@ -25,6 +25,7 @@ export const lightTheme: ThemeProperties = {
   "--color-text-hilite": "#00a0ff",
   "--bgcolor-input": "#d8d8d8",
   "--color-input": "#414141",
+  "--bgcolor-item-hover": "#b8b8b8",
 
   // --- Drowpdown
   "--bg-color-dropdown-input": "#c0c0c0",

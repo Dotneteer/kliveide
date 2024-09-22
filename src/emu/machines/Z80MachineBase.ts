@@ -14,6 +14,7 @@ import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -38,7 +39,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Initialize the machine using the specified configuration
    * @param config Machine configuration
    */
-  constructor (readonly config: MachineConfigSet = {}) {
+  constructor(readonly config: MachineConfigSet = {}) {
     super();
   }
 
@@ -69,14 +70,14 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * Configures the machine after setting it up
    */
-  async configure (): Promise<void> {
+  async configure(): Promise<void> {
     // --- Override in derived classes
   }
 
   /**
    * Dispose the resources held by the machine
    */
-  dispose (): void {
+  dispose(): void {
     this.machinePropertyChanged?.release();
   }
 
@@ -85,7 +86,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param key Machine property key
    * @returns Value of the property, if found; otherwise, undefined
    */
-  getMachineProperty (key: string): any {
+  getMachineProperty(key: string): any {
     return this._machineProps.get(key);
   }
 
@@ -102,7 +103,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param key Machine property key
    * @param value Machine property value
    */
-  setMachineProperty (key: string, value?: any): void {
+  setMachineProperty(key: string, value?: any): void {
     if (value === undefined) {
       if (!this._machineProps.get(key)) return;
       this._machineProps.delete(key);
@@ -128,7 +129,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * This method emulates resetting a machine with a hardware reset button.
    */
-  reset (): void {
+  reset(): void {
     super.reset();
     this._frameCompleted = true;
     this._frameOverflow = 0;
@@ -141,14 +142,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param page Optional ROM page for multi-rom machines
    * @returns The byte array that represents the ROM contents
    */
-  protected async loadRomFromResource (
-    romName: string,
-    page = -1
-  ): Promise<Uint8Array> {
+  protected async loadRomFromResource(romName: string, page = -1): Promise<Uint8Array> {
     // --- Obtain the IFileProvider instance
-    const fileProvider = this.getMachineProperty(
-      FILE_PROVIDER
-    ) as IFileProvider;
+    const fileProvider = this.getMachineProperty(FILE_PROVIDER) as IFileProvider;
     if (!fileProvider) {
       throw new Error("Could not obtain file provider instance");
     }
@@ -162,11 +158,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Load the specified ROM from a file
    * @returns The byte array that represents the ROM contents
    */
-  protected async loadRomFromFile (filename: string): Promise<Uint8Array> {
+  protected async loadRomFromFile(filename: string): Promise<Uint8Array> {
     // --- Obtain the IFileProvider instance
-    const fileProvider = this.getMachineProperty(
-      FILE_PROVIDER
-    ) as IFileProvider;
+    const fileProvider = this.getMachineProperty(FILE_PROVIDER) as IFileProvider;
     if (!fileProvider) {
       throw new Error("Could not obtain file provider instance");
     }
@@ -177,9 +171,8 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop
    */
-  executeMachineFrame (): FrameTerminationMode {
-    return this.executionContext.frameTerminationMode ==
-      FrameTerminationMode.Normal
+  executeMachineFrame(): FrameTerminationMode {
+    return this.executionContext.frameTerminationMode == FrameTerminationMode.Normal
       ? this.executeMachineLoopWithNoDebug()
       : this.executeMachineLoopWithDebug();
   }
@@ -192,7 +185,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * Clean up machine resources on stop
    */
-  onStop (): void {
+  onStop(): void {
     this.setMachineProperty(TAPE_MODE, TapeMode.Passive);
     this.setMachineProperty(REWIND_REQUESTED);
   }
@@ -215,7 +208,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /*
    * Gets the offset of the pixel buffer in the memory
    */
-  getBufferStartOffset (): number {
+  getBufferStartOffset(): number {
     return 0;
   }
 
@@ -311,7 +304,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param eventFn Event function with event data passed
    * @param data Data to pass to the event function
    */
-  queueEvent (eventTact: number, eventFn: (data: any) => void, data: any): void {
+  queueEvent(eventTact: number, eventFn: (data: any) => void, data: any): void {
     const newEvent = {
       eventTact,
       eventFn,
@@ -321,10 +314,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       this._queuedEvents = [newEvent];
     } else {
       let idx = 0;
-      while (
-        idx < this._queuedEvents.length &&
-        this._queuedEvents[idx].eventTact <= eventTact
-      ) {
+      while (idx < this._queuedEvents.length && this._queuedEvents[idx].eventTact <= eventTact) {
         idx++;
       }
       if (idx >= this._queuedEvents.length) {
@@ -339,16 +329,16 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Removes the specified event handler from the event queue
    * @param eventFn Event function to remove
    */
-  removeEvent (eventFn: (data: any) => void): void {
+  removeEvent(eventFn: (data: any) => void): void {
     if (!this._queuedEvents) return;
-    const idx = this._queuedEvents.findIndex(item => item.eventFn === eventFn);
+    const idx = this._queuedEvents.findIndex((item) => item.eventFn === eventFn);
     if (idx < 0) return;
 
     // --- Event found, remove it
     this._queuedEvents.splice(idx, 1);
   }
 
-  consumeEvents (): void {
+  consumeEvents(): void {
     if (!this._queuedEvents) return;
     const currentTact = this.tacts;
     while (
@@ -369,7 +359,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Gets the partition in which the specified address is paged in
    * @param _address Address to get the partition for
    */
-  getPartition (_address: number): number | undefined {
+  getPartition(_address: number): number | undefined {
     return undefined;
   }
 
@@ -377,15 +367,36 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Parses a partition label to get the partition number
    * @param _label Label to parse
    */
-  parsePartitionLabel(_label: string): number | undefined {
-    return undefined;
+  abstract parsePartitionLabel(_label: string): number | undefined;
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  abstract getPartitionLabels(): Record<number, string>;
+
+  /**
+   * Gets the current call stack information
+   */
+  getCallStack(frames = 16): CallStackInfo {
+    const stack: number[] = [];
+    let addr = this.sp;
+    for (let i = 0; i < frames; i++) {
+      const low = this.doReadMemory(addr++);
+      const high = this.doReadMemory(addr++);
+      stack.push(((high << 8) | low) & 0xffff);
+    }
+    return {
+      sp: this.sp,
+      frames: stack
+    };
   }
 
   /**
    * Executes the specified custom command
    * @param _command Command to execute
    */
-  async executeCustomCommand (_command: string): Promise<void> {
+  async executeCustomCommand(_command: string): Promise<void> {
     // --- Override in derived classes
   }
 
@@ -393,7 +404,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop.
    */
-  private executeMachineLoopWithNoDebug (): FrameTerminationMode {
+  private executeMachineLoopWithNoDebug(): FrameTerminationMode {
     // --- Sign that the loop execution is in progress
     this.executionContext.lastTerminationReason = undefined;
 
@@ -406,10 +417,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
         // --- Update the CPU's clock multiplier, if the machine's has changed.
         let clockMultiplierChanged = false;
-        if (
-          this.allowCpuClockChange() &&
-          this.clockMultiplier !== this.targetClockMultiplier
-        ) {
+        if (this.allowCpuClockChange() && this.clockMultiplier !== this.targetClockMultiplier) {
           // --- Use the current clock multiplier
           this.clockMultiplier = this.targetClockMultiplier;
           this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
@@ -421,8 +429,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact =
-          currentFrameStart + this.tactsInFrame * this.clockMultiplier;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
 
         // --- Emulate a keystroke, if any has been queued at all
         this.emulateKeystroke();
@@ -471,15 +478,14 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
 
     // --- Done
-    return (this.executionContext.lastTerminationReason =
-      FrameTerminationMode.Normal);
+    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
   }
 
   /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop.
    */
-  private executeMachineLoopWithDebug (): FrameTerminationMode {
+  private executeMachineLoopWithDebug(): FrameTerminationMode {
     // --- Sign that the loop execution is in progress
     const z80Machine = this;
     this.executionContext.lastTerminationReason = undefined;
@@ -489,8 +495,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     if (this.pc != this.executionContext.debugSupport?.lastStartupBreakpoint) {
       // --- Check startup breakpoint
       if (checkBreakpoints()) {
-        return (this.executionContext.lastTerminationReason =
-          FrameTerminationMode.DebugEvent);
+        return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
       }
       if (this.executionContext.lastTerminationReason !== undefined) {
         // --- The code execution has stopped at the startup breakpoint.
@@ -516,10 +521,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
         // --- Update the CPU's clock multiplier, if the machine's has changed.
         var clockMultiplierChanged = false;
-        if (
-          this.allowCpuClockChange() &&
-          this.clockMultiplier != this.targetClockMultiplier
-        ) {
+        if (this.allowCpuClockChange() && this.clockMultiplier != this.targetClockMultiplier) {
           // --- Use the current clock multiplier
           this.clockMultiplier = this.targetClockMultiplier;
           this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
@@ -531,8 +533,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact =
-          currentFrameStart + this.tactsInFrame * this.clockMultiplier;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
       }
 
       // --- Set the interrupt signal, if required so
@@ -564,8 +565,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
 
       // --- Test if the execution reached a breakpoint
       if (checkBreakpoints()) {
-        return (this.executionContext.lastTerminationReason =
-          FrameTerminationMode.DebugEvent);
+        return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
       }
       if (this.executionContext.lastTerminationReason !== undefined) {
         // --- The code execution has stopped at the startup breakpoint.
@@ -583,12 +583,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
 
     // --- Done
-    return (this.executionContext.lastTerminationReason =
-      FrameTerminationMode.Normal);
+    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
 
     // --- This method tests if any breakpoint is reached during the execution of the machine frame
     // --- to suspend the loop.
-    function checkBreakpoints (): boolean {
+    function checkBreakpoints(): boolean {
       // --- The machine must support debugging
       const debugSupport = z80Machine.executionContext.debugSupport;
       if (!debugSupport) return false;
@@ -629,8 +628,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
             var length = z80Machine.getCallInstructionLength();
             if (length > 0) {
               // --- Its a CALL-like instruction, create an imminent breakpoint
-              debugSupport.imminentBreakpoint =
-                (z80Machine.pc + length) & 0xffff;
+              debugSupport.imminentBreakpoint = (z80Machine.pc + length) & 0xffff;
               imminentJustCreated = true;
             }
 
@@ -638,8 +636,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
             // --- breakpoint or we've just created one
             if (
               instructionsExecuted > 0 &&
-              (debugSupport.imminentBreakpoint === undefined ||
-                imminentJustCreated)
+              (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
             ) {
               return true;
             }
@@ -659,10 +656,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    *
    * By default, this method checks if the PC equals the execution context's TerminationPoint value.
    */
-  protected testTerminationPoint (): boolean {
+  protected testTerminationPoint(): boolean {
     return (
-      this.executionContext.frameTerminationMode ===
-        FrameTerminationMode.UntilExecutionPoint &&
+      this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint &&
       this.pc === this.executionContext.terminationPoint
     );
   }
@@ -671,7 +667,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * The machine's execution loop calls this method to check if it can change the clock multiplier.
    * @returns True, if the clock multiplier can be changed; otherwise, false.
    */
-  protected allowCpuClockChange (): boolean {
+  protected allowCpuClockChange(): boolean {
     return true;
   }
 
@@ -680,7 +676,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  protected onInitNewFrame (_clockMultiplierChanged: boolean): void {
+  protected onInitNewFrame(_clockMultiplierChanged: boolean): void {
     // --- Override this method in derived classes.
   }
 
@@ -692,7 +688,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * The machine frame loop invokes this method after executing a CPU instruction.
    */
-  protected afterInstructionExecuted (): void {
+  protected afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
 }

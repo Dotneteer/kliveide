@@ -17,6 +17,8 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
   const [bps, setBps] = useState<BreakpointInfo[]>([]);
+  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
   const disassLines = useRef<string[]>();
@@ -76,6 +78,14 @@ const BreakpointsPanel = () => {
     })();
   }, [machineState, bpsVersion]);
 
+  // --- Obtain available partition labels for the current machine type
+  useEffect(() => {
+    (async function () {
+      const labels = await emuApi.getPartitionLabels();
+      setPartitionLabels(labels.value);
+    })();
+  }, [machineId]);
+
   // --- Take care of refreshing the screen
   useStateRefresh(500, async () => {
     await refreshBreakpoints();
@@ -91,7 +101,7 @@ const BreakpointsPanel = () => {
           fixItemHeight={true}
           itemRenderer={(idx) => {
             const bp = bps[idx];
-            let addrKey = getBreakpointKey(bp);
+            const addrKey = getBreakpointKey(bp, partitionLabels);
             const addr = bp.address;
             const disabled = bp.disabled ?? false;
             const isCurrent =
@@ -102,7 +112,9 @@ const BreakpointsPanel = () => {
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
-                  partition={bp?.partition}
+                  partition={
+                    bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
+                  }
                   address={addr ?? addrKey}
                   current={isCurrent}
                   hasBreakpoint={true}

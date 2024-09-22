@@ -32,6 +32,7 @@ import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -247,7 +248,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    switch (label) {
+    switch (label.toUpperCase()) {
       case "UN":
         return undefined;
       case "R0":
@@ -273,8 +274,52 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           }
           return -8 - parseInt(label.substring(1));
         }
-        return label.match(/^\d+$/) ? parseInt(label) : undefined;
+        if (label.match(/^\d+$/)) {
+          const partValue = parseInt(label);
+          return partValue >= 0 && partValue < 224 ? partValue : undefined;
+        }
+        return undefined;
     }
+  }
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string> {
+    const result: Record<number, string> = {
+      [-1]: "R0",
+      [-2]: "R1",
+      [-3]: "R2",
+      [-4]: "R3",
+      [-5]: "A0",
+      [-6]: "A1",
+      [-7]: "DM"
+    };
+    for (let i = 0; i < 16; i++) {
+      result[-8 - i] = `D${i}`;
+    }
+    for (let i = 0; i < 224; i++) {
+      result[i] = i.toString();
+    }
+    return result;
+  }
+
+  /**
+   * Gets the current call stack information
+   */
+  getCallStack(frames = 16): CallStackInfo {
+    const stack: number[] = [];
+    let addr = this.sp;
+    for (let i = 0; i < frames; i++) {
+      const low = this.doReadMemory(addr++);
+      const high = this.doReadMemory(addr++);
+      stack.push(((high << 8) | low) & 0xffff);
+    }
+    return {
+      sp: this.sp,
+      frames: stack
+    };
   }
 
   /**
@@ -315,7 +360,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   readScreenMemory(offset: number): number {
     // TODO: Implement this
-    return 0xff;
+    return this.memoryDevice.readMemory(0x4000 + offset);
   }
 
   /**
@@ -473,6 +518,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
+    
   }
 
   /**

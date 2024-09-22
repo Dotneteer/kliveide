@@ -54,6 +54,9 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     // --- Create helper tables for screen rendering
     this.initializeInkAndPaperTables();
     this.initializeRenderingTactTable();
+
+    // --- Set the screen start offset
+    this.ulaScreenStartOffset = this.machine.memoryDevice.getUlaScreenOffset(false);
   }
 
   dispose(): void {}
@@ -249,6 +252,11 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    * Get the number of visible screen lines.
    */
   screenLines: number;
+
+  /**
+   *
+   */
+  ulaScreenStartOffset = 0;
 
   /**
    * Render the pixel pair belonging to the specified frame tact.
@@ -587,6 +595,10 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
         : this.s_SpectrumColors[this._paperColorFlashOff[attr]];
   }
 
+  private readScreenMemory(offset: number): number {
+    return this.machine.memoryDevice.readMemory(this.ulaScreenStartOffset + offset);
+  }
+
   /**
    * Render a border pixel.
    * @param rt Rendering tact information
@@ -605,7 +617,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     const addr = rt.pixelBufferIndex;
     this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
     this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
-    this._pixelByte1 = this.machine.readScreenMemory(rt.pixelAddress);
+    this._pixelByte1 = this.readScreenMemory(rt.pixelAddress);
   }
 
   /**
@@ -616,7 +628,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     const addr = rt.pixelBufferIndex;
     this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
     this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
-    this._attrByte1 = this.machine.readScreenMemory(rt.attributeAddress);
+    this._attrByte1 = this.readScreenMemory(rt.attributeAddress);
   }
 
   /**
@@ -639,7 +651,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
     this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
     this._pixelByte1 = this._pixelByte1 << 2;
-    this._pixelByte2 = this.machine.readScreenMemory(rt.pixelAddress);
+    this._pixelByte2 = this.readScreenMemory(rt.pixelAddress);
   }
 
   /**
@@ -651,7 +663,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
     this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
     this._pixelByte1 = this._pixelByte1 << 2;
-    this._attrByte2 = this.machine.readScreenMemory(rt.attributeAddress);
+    this._attrByte2 = this.readScreenMemory(rt.attributeAddress);
   }
 
   /**
@@ -674,7 +686,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
     this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
-    this._pixelByte1 = this.machine.readScreenMemory(rt.pixelAddress);
+    this._pixelByte1 = this.readScreenMemory(rt.pixelAddress);
   }
 
   /**
@@ -686,6 +698,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
     this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
-    this._attrByte1 = this.machine.readScreenMemory(rt.attributeAddress);
+    this._attrByte1 = this.readScreenMemory(rt.attributeAddress);
   }
 }

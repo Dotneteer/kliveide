@@ -120,7 +120,7 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_TAPE_SUPPORT]: false,
       [MF_ULA]: true,
-      [MF_ROM]: 4,
+      [MF_ROM]: 7,
       [MF_BANK]: 224
     },
     mediaIds: [MEDIA_TAPE],

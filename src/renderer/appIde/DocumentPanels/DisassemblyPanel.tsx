@@ -71,6 +71,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineId = useSelector((s) => s.emulatorState.machineId);
+  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const romPages = machineInfo?.features?.[MF_ROM] ?? 0;
   const showRoms = romPages > 0;
@@ -299,6 +300,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     })();
   }, [machineState]);
 
+  // --- Obtain available partition labels for the current machine type
+  useEffect(() => {
+    (async function () {
+      const labels = await emuApi.getPartitionLabels();
+      setPartitionLabels(labels.value);
+    })();
+  }, [machineId]);
+
   // --- Refresh when the follow PC option changes
   useEffect(() => {
     refreshDisassembly();
@@ -517,7 +526,11 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               >
                 <LabelSeparator width={4} />
                 <BreakpointIndicator
-                  partition={breakpoint?.partition}
+                  partition={
+                    breakpoint?.partition !== undefined
+                      ? partitionLabels[breakpoint.partition] ?? "?"
+                      : undefined
+                  }
                   address={breakpoint?.resource ? getBreakpointKey(breakpoint) : address}
                   hasBreakpoint={!!breakpoint}
                   current={execPoint}
