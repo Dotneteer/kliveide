@@ -3966,14 +3966,14 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0xb9)).toBe(0xaa);
-    expect(div.rstTraps[7].onlyWithRom3).toBe(true);
-    expect(div.rstTraps[6].onlyWithRom3).toBe(false);
-    expect(div.rstTraps[5].onlyWithRom3).toBe(true);
-    expect(div.rstTraps[4].onlyWithRom3).toBe(false);
-    expect(div.rstTraps[3].onlyWithRom3).toBe(true);
-    expect(div.rstTraps[2].onlyWithRom3).toBe(false);
-    expect(div.rstTraps[1].onlyWithRom3).toBe(true);
-    expect(div.rstTraps[0].onlyWithRom3).toBe(false);
+    expect(div.rstTraps[7].onlyWithRom3).toBe(false);
+    expect(div.rstTraps[6].onlyWithRom3).toBe(true);
+    expect(div.rstTraps[5].onlyWithRom3).toBe(false);
+    expect(div.rstTraps[4].onlyWithRom3).toBe(true);
+    expect(div.rstTraps[3].onlyWithRom3).toBe(false);
+    expect(div.rstTraps[2].onlyWithRom3).toBe(true);
+    expect(div.rstTraps[1].onlyWithRom3).toBe(false);
+    expect(div.rstTraps[0].onlyWithRom3).toBe(true);
   });
 
   it("Reg $ba write", async () => {

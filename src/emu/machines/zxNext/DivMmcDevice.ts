@@ -114,26 +114,26 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextRegB9Value(): number {
     return (
-      (this.rstTraps[0].onlyWithRom3 ? 0x01 : 0x00) |
-      (this.rstTraps[1].onlyWithRom3 ? 0x02 : 0x00) |
-      (this.rstTraps[2].onlyWithRom3 ? 0x04 : 0x00) |
-      (this.rstTraps[3].onlyWithRom3 ? 0x08 : 0x00) |
-      (this.rstTraps[4].onlyWithRom3 ? 0x10 : 0x00) |
-      (this.rstTraps[5].onlyWithRom3 ? 0x20 : 0x00) |
-      (this.rstTraps[6].onlyWithRom3 ? 0x40 : 0x00) |
-      (this.rstTraps[7].onlyWithRom3 ? 0x80 : 0x00)
+      (this.rstTraps[0].onlyWithRom3 ? 0x00 : 0x01) |
+      (this.rstTraps[1].onlyWithRom3 ? 0x00 : 0x02) |
+      (this.rstTraps[2].onlyWithRom3 ? 0x00 : 0x04) |
+      (this.rstTraps[3].onlyWithRom3 ? 0x00 : 0x08) |
+      (this.rstTraps[4].onlyWithRom3 ? 0x00 : 0x10) |
+      (this.rstTraps[5].onlyWithRom3 ? 0x00 : 0x20) |
+      (this.rstTraps[6].onlyWithRom3 ? 0x00 : 0x40) |
+      (this.rstTraps[7].onlyWithRom3 ? 0x00 : 0x80)
     );
   }
 
   set nextRegB9Value(value: number) {
-    this.rstTraps[0].onlyWithRom3 = (value & 0x01) !== 0;
-    this.rstTraps[1].onlyWithRom3 = (value & 0x02) !== 0;
-    this.rstTraps[2].onlyWithRom3 = (value & 0x04) !== 0;
-    this.rstTraps[3].onlyWithRom3 = (value & 0x08) !== 0;
-    this.rstTraps[4].onlyWithRom3 = (value & 0x10) !== 0;
-    this.rstTraps[5].onlyWithRom3 = (value & 0x20) !== 0;
-    this.rstTraps[6].onlyWithRom3 = (value & 0x40) !== 0;
-    this.rstTraps[7].onlyWithRom3 = (value & 0x80) !== 0;
+    this.rstTraps[0].onlyWithRom3 = !(value & 0x01);
+    this.rstTraps[1].onlyWithRom3 = !(value & 0x02);
+    this.rstTraps[2].onlyWithRom3 = !(value & 0x04);
+    this.rstTraps[3].onlyWithRom3 = !(value & 0x08);
+    this.rstTraps[4].onlyWithRom3 = !(value & 0x10);
+    this.rstTraps[5].onlyWithRom3 = !(value & 0x20);
+    this.rstTraps[6].onlyWithRom3 = !(value & 0x40);
+    this.rstTraps[7].onlyWithRom3 = !(value & 0x80);
   }
 
   get nextRegBAValue(): number {

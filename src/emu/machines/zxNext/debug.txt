@@ -1,19 +1,28 @@
-0251 ok
-025a ok
-0271 ok  
+0130 ok
+016a ok
+018e ok
+01a0 ok
+01b5 ok
+01b1 ok
+01c2 ok
+0196 ok
+
+01d4 ok
+
+01e0 ok
+01ed ok
+
+0253 ok
+
+0271 ok
+
 02a7 ok
+
 02f5 ok
-02fd ok (after EI)
-0301 ok
-0303 ok
+02f8 ok
+02fd (after EI) ok
+0300 ok
+RST 08 pages in DivmMC, but CSpect does not!!! Fixed :-)
 
-DIVMMC/REG $8E experiment
-
-Before:
-0000: f3 c3 6a 00 44 56 08 02
-2000: 1d f7 0a 7b 00 01 00 02
-
-After:
-0000: f3 c3 6a 00 44 56 08 02
-2000: 1d f7 0a 7b 00 01 00 02
+0302 ok
 
