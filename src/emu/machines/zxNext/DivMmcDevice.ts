@@ -102,14 +102,14 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextRegB8Value(value: number) {
-    this.rstTraps[0].enabled = (value & 0x01) !== 0;
-    this.rstTraps[1].enabled = (value & 0x02) !== 0;
-    this.rstTraps[2].enabled = (value & 0x04) !== 0;
-    this.rstTraps[3].enabled = (value & 0x08) !== 0;
-    this.rstTraps[4].enabled = (value & 0x10) !== 0;
-    this.rstTraps[5].enabled = (value & 0x20) !== 0;
-    this.rstTraps[6].enabled = (value & 0x40) !== 0;
-    this.rstTraps[7].enabled = (value & 0x80) !== 0;
+    this.rstTraps[0].enabled = !!(value & 0x01);
+    this.rstTraps[1].enabled = !!(value & 0x02);
+    this.rstTraps[2].enabled = !!(value & 0x04);
+    this.rstTraps[3].enabled = !!(value & 0x08);
+    this.rstTraps[4].enabled = !!(value & 0x10);
+    this.rstTraps[5].enabled = !!(value & 0x20);
+    this.rstTraps[6].enabled = !!(value & 0x40);
+    this.rstTraps[7].enabled = !!(value & 0x80);
   }
 
   get nextRegB9Value(): number {
@@ -309,7 +309,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       memoryDevice.setPageInfo(0, OFFS_DIVMMC_ROM, null, 0xff, 0xff);
     } else {
       const offset = OFFS_DIVMMC_RAM + 3 * 0x2000;
-      memoryDevice.setPageInfo(0, offset, offset, 0xff, 0xff);
+      memoryDevice.setPageInfo(0, offset, this._mapram ? null : offset, 0xff, 0xff);
     }
 
     // --- Page 1

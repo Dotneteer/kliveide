@@ -10,6 +10,20 @@ import {
 const nextRom0Signature0 = [0xf3, 0xc3, 0xef, 0x00, 0x45, 0x44, 0x08, 0x02]; // 0x0000
 const nextRom0Signature1 = [0xdd, 0xcb, 0x27, 0x46, 0x28, 0x03, 0x7a, 0x53]; // 0x2000
 const divMmcRomSignature = [0xf3, 0xc3, 0x6a, 0x00, 0x44, 0x56, 0x08, 0x02]; // 0x0000
+const divMmcRstSignature = [0xf3, 0xc3, 0xdf, 0x00, 0x33, 0xe3, 0xd9, 0xc3]; // RST bytes in DivMMC ROM
+const nextRom0_04c6 = 0x70;
+const nextRom3_04c6 = 0x21;
+const nextRom0_04d7 = 0x2a;
+const nextRom3_04d7 = 0x47;
+const nextRom0_0562 = 0x52;
+const nextRom3_0562 = 0xdb;
+const nextRom0_056a = 0xeb;
+const nextRom3_056a = 0xbf;
+const nextRom0_1ff8 = 0x3c;
+const nextRom0_3d00 = 0x65;
+const divMmcRam3_3d00 = 0x00;
+const nextRom0_3df0 = 0x8A;
+const divMmcRam3_3df0 = 0x00;
 
 describe("Next - DivMmcDevice", async function () {
   it("After cold start", async () => {
@@ -79,34 +93,34 @@ describe("Next - DivMmcDevice", async function () {
     });
   }
 
-  // for (let i = 0; i < 0x10; i++) {
-  //   it(`CONMEM=1 (no MAPRAM) pages in DivMMC ROM Bank ${i}`, async () => {
-  //     // --- Arrange
-  //     const m = await createTestNextMachine();
-  //     const divmmc = m.divMmcDevice;
-  //     const memory = m.memoryDevice;
+  for (let i = 0; i < 0x10; i++) {
+    it(`CONMEM=1 (no MAPRAM) pages in DivMMC ROM Bank ${i}`, async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const divmmc = m.divMmcDevice;
+      const memory = m.memoryDevice;
 
-  //     // --- Act
-  //     let differs = 0;
-  //     divmmc.enableAutomap = true;
-  //     for (let i = 0; i < 0x10; i++) {
-  //       divmmc.port0xe3Value = 0x80 + i;
-  //       if (!romSlotSignatureMatches(memory, 0, divMmcRomSignature)) {
-  //         differs++;
-  //       }
-  //       const pageInfo = memory.getPageInfo(1);
-  //       if (
-  //         pageInfo.readOffset !== OFFS_DIVMMC_RAM + i * 0x2000 ||
-  //         pageInfo.writeOffset !== OFFS_DIVMMC_RAM + i * 0x2000
-  //       ) {
-  //         differs++;
-  //       }
-  //     }
+      // --- Act
+      let differs = 0;
+      divmmc.enableAutomap = true;
+      for (let i = 0; i < 0x10; i++) {
+        divmmc.port0xe3Value = 0x80 + i;
+        if (!romSlotSignatureMatches(memory, 0, divMmcRomSignature)) {
+          differs++;
+        }
+        const pageInfo = memory.getPageInfo(1);
+        if (
+          pageInfo.readOffset !== OFFS_DIVMMC_RAM + i * 0x2000 ||
+          pageInfo.writeOffset !== OFFS_DIVMMC_RAM + i * 0x2000
+        ) {
+          differs++;
+        }
+      }
 
-  //     // --- Assert
-  //     expect(differs).toBe(0x10);
-  //   });
-  // }
+      // --- Assert
+      expect(differs).toBe(0x00);
+    });
+  }
 
   it("RST $00 automaps (disabled, no delay)", async () => {
     // --- Arrange
@@ -117,6 +131,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = false;
     d.rstTraps[0].instantMapping = true;
+    d.rstTraps[0].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
 
@@ -142,6 +157,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = false;
     d.rstTraps[0].instantMapping = false;
+    d.rstTraps[0].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
 
@@ -166,8 +182,8 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = true;
-    d.rstTraps[0].onlyWithRom3 = false;
     d.rstTraps[0].instantMapping = true;
+    d.rstTraps[0].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
 
@@ -179,7 +195,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf3);
+    expect(m.opCode).toBe(divMmcRstSignature[0]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -192,8 +208,8 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
     d.rstTraps[0].enabled = true;
-    d.rstTraps[0].onlyWithRom3 = false;
     d.rstTraps[0].instantMapping = false;
+    d.rstTraps[0].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
 
@@ -220,6 +236,8 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[0].enabled = true;
     d.rstTraps[0].instantMapping = true;
     d.rstTraps[0].onlyWithRom3 = true;
+    memDevice.port1ffdValue = 0x00; // ROM 0
+    memDevice.port7ffdValue = 0x00;
     memDevice.directWrite(OFFS_NEXT_ROM, 0xf1);
     m.pc = 0x0000;
 
@@ -272,7 +290,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[0].enabled = true;
     d.rstTraps[0].instantMapping = true;
     d.rstTraps[0].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000, 0xf1);
     m.pc = 0x0000;
@@ -285,7 +303,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf3);
+    expect(m.opCode).toBe(divMmcRstSignature[0]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -327,6 +345,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[1].enabled = false;
     d.rstTraps[1].instantMapping = true;
+    d.rstTraps[1].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x08, 0xf1);
     m.pc = 0x0008;
 
@@ -352,6 +371,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[1].enabled = false;
     d.rstTraps[1].instantMapping = false;
+    d.rstTraps[1].onlyWithRom3 = false
     memDevice.directWrite(OFFS_NEXT_ROM + 0x08, 0xf1);
     m.pc = 0x0008;
 
@@ -377,6 +397,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[1].enabled = true;
     d.rstTraps[1].instantMapping = true;
+    d.rstTraps[1].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x08, 0xf1);
     m.pc = 0x0008;
 
@@ -388,8 +409,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[1]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -402,6 +423,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[1].enabled = true;
     d.rstTraps[1].instantMapping = false;
+    d.rstTraps[1].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x08, 0xf1);
     m.pc = 0x0008;
 
@@ -414,7 +436,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -480,7 +502,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[1].enabled = true;
     d.rstTraps[1].instantMapping = true;
     d.rstTraps[1].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x08, 0xf1);
     m.pc = 0x0008;
@@ -493,7 +515,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xc3);
+    expect(m.opCode).toBe(divMmcRstSignature[1]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -535,6 +557,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[2].enabled = false;
     d.rstTraps[2].instantMapping = true;
+    d.rstTraps[2].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x10, 0xf1);
     m.pc = 0x0010;
 
@@ -560,6 +583,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[2].enabled = false;
     d.rstTraps[2].instantMapping = false;
+    d.rstTraps[2].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x10, 0xf1);
     m.pc = 0x0010;
 
@@ -585,6 +609,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[2].enabled = true;
     d.rstTraps[2].instantMapping = true;
+    d.rstTraps[2].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x10, 0xf1);
     m.pc = 0x0010;
 
@@ -596,8 +621,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[2]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -610,6 +635,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[2].enabled = true;
     d.rstTraps[2].instantMapping = false;
+    d.rstTraps[2].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x10, 0xf1);
     m.pc = 0x0010;
 
@@ -622,7 +648,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -661,6 +687,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[2].enabled = true;
     d.rstTraps[2].instantMapping = false;
+    d.rstTraps[2].onlyWithRom3 = true;
     d.rstTraps[2].onlyWithRom3 = true;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x10, 0xf1);
     m.pc = 0x0010;
@@ -701,7 +728,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xdf);
+    expect(m.opCode).toBe(divMmcRstSignature[2]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -743,6 +770,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[3].enabled = false;
     d.rstTraps[3].instantMapping = true;
+    d.rstTraps[3].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x18, 0xf1);
     m.pc = 0x0018;
 
@@ -768,6 +796,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[3].enabled = false;
     d.rstTraps[3].instantMapping = false;
+    d.rstTraps[3].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x18, 0xf1);
     m.pc = 0x0018;
 
@@ -793,6 +822,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[3].enabled = true;
     d.rstTraps[3].instantMapping = true;
+    d.rstTraps[3].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x18, 0xf1);
     m.pc = 0x0018;
 
@@ -804,8 +834,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[3]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -818,6 +848,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[3].enabled = true;
     d.rstTraps[3].instantMapping = false;
+    d.rstTraps[3].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x18, 0xf1);
     m.pc = 0x0018;
 
@@ -830,7 +861,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -896,7 +927,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[3].enabled = true;
     d.rstTraps[3].instantMapping = true;
     d.rstTraps[3].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x18, 0xf1);
     m.pc = 0x0018;
@@ -909,7 +940,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(divMmcRstSignature[3]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -951,6 +982,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[4].enabled = false;
     d.rstTraps[4].instantMapping = true;
+    d.rstTraps[4].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
     m.pc = 0x0020;
 
@@ -976,6 +1008,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[4].enabled = false;
     d.rstTraps[4].instantMapping = false;
+    d.rstTraps[4].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
     m.pc = 0x0020;
 
@@ -1001,6 +1034,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = true;
+    d.rstTraps[4].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
     m.pc = 0x0020;
 
@@ -1012,8 +1046,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[4]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1026,6 +1060,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = false;
+    d.rstTraps[4].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
     m.pc = 0x0020;
 
@@ -1038,7 +1073,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1104,7 +1139,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = true;
     d.rstTraps[4].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x20, 0xf1);
     m.pc = 0x0020;
@@ -1117,7 +1152,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x33);
+    expect(m.opCode).toBe(divMmcRstSignature[4]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1159,6 +1194,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[5].enabled = false;
     d.rstTraps[5].instantMapping = true;
+    d.rstTraps[5].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x28, 0xf1);
     m.pc = 0x0028;
 
@@ -1184,6 +1220,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[5].enabled = false;
     d.rstTraps[5].instantMapping = false;
+    d.rstTraps[5].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x28, 0xf1);
     m.pc = 0x0028;
 
@@ -1209,6 +1246,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[5].enabled = true;
     d.rstTraps[5].instantMapping = true;
+    d.rstTraps[5].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x28, 0xf1);
     m.pc = 0x0028;
 
@@ -1220,8 +1258,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[5]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1234,6 +1272,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[5].enabled = true;
     d.rstTraps[5].instantMapping = false;
+    d.rstTraps[5].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x28, 0xf1);
     m.pc = 0x0028;
 
@@ -1246,7 +1285,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1312,7 +1351,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[5].enabled = true;
     d.rstTraps[5].instantMapping = true;
     d.rstTraps[5].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x28, 0xf1);
     m.pc = 0x0028;
@@ -1325,7 +1364,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xe3);
+    expect(m.opCode).toBe(divMmcRstSignature[5]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1367,6 +1406,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[6].enabled = false;
     d.rstTraps[6].instantMapping = true;
+    d.rstTraps[6].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x30, 0xf1);
     m.pc = 0x0030;
 
@@ -1392,6 +1432,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[6].enabled = false;
     d.rstTraps[6].instantMapping = false;
+    d.rstTraps[6].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x30, 0xf1);
     m.pc = 0x0030;
 
@@ -1417,6 +1458,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[6].enabled = true;
     d.rstTraps[6].instantMapping = true;
+    d.rstTraps[6].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x30, 0xf1);
     m.pc = 0x0030;
 
@@ -1428,8 +1470,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[6]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1442,6 +1484,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[6].enabled = true;
     d.rstTraps[6].instantMapping = false;
+    d.rstTraps[6].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x30, 0xf1);
     m.pc = 0x0030;
 
@@ -1454,7 +1497,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1520,7 +1563,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[6].enabled = true;
     d.rstTraps[6].instantMapping = true;
     d.rstTraps[6].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x30, 0xf1);
     m.pc = 0x0030;
@@ -1533,7 +1576,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xd9);
+    expect(m.opCode).toBe(divMmcRstSignature[6]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1548,7 +1591,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[6].enabled = true;
     d.rstTraps[6].instantMapping = false;
     d.rstTraps[6].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x30, 0xf1);
     m.pc = 0x0030;
@@ -1575,6 +1618,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[7].enabled = false;
     d.rstTraps[7].instantMapping = true;
+    d.rstTraps[7].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x38, 0xf1);
     m.pc = 0x0038;
 
@@ -1600,6 +1644,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[7].enabled = false;
     d.rstTraps[7].instantMapping = false;
+    d.rstTraps[7].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x38, 0xf1);
     m.pc = 0x0038;
 
@@ -1625,6 +1670,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[7].enabled = true;
     d.rstTraps[7].instantMapping = true;
+    d.rstTraps[7].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x38, 0xf1);
     m.pc = 0x0038;
 
@@ -1636,8 +1682,8 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(divMmcRstSignature[7]);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1650,6 +1696,7 @@ describe("Next - DivMmcDevice", async function () {
     d.port0xe3Value = 0x00;
     d.rstTraps[7].enabled = true;
     d.rstTraps[7].instantMapping = false;
+    d.rstTraps[7].onlyWithRom3 = false;
     memDevice.directWrite(OFFS_NEXT_ROM + 0x38, 0xf1);
     m.pc = 0x0038;
 
@@ -1662,7 +1709,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
     expect(m.opCode).toBe(0xf1);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -1728,7 +1775,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[7].enabled = true;
     d.rstTraps[7].instantMapping = true;
     d.rstTraps[7].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x38, 0xf1);
     m.pc = 0x0038;
@@ -1741,7 +1788,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xc3);
+    expect(m.opCode).toBe(divMmcRstSignature[7]);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1756,7 +1803,7 @@ describe("Next - DivMmcDevice", async function () {
     d.rstTraps[7].enabled = true;
     d.rstTraps[7].instantMapping = false;
     d.rstTraps[7].onlyWithRom3 = true;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     memDevice.directWrite(OFFS_NEXT_ROM + 3 * 0x4000 + 0x38, 0xf1);
     m.pc = 0x0038;
@@ -1791,7 +1838,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xeb);
+    expect(m.opCode).toBe(nextRom0_056a);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1813,7 +1860,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xeb);
+    expect(m.opCode).toBe(nextRom0_056a);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1826,7 +1873,7 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.automapOn056a = true;
     d.port0xe3Value = 0x00;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     m.pc = 0x056a;
 
@@ -1838,7 +1885,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xbf);
+    expect(m.opCode).toBe(nextRom3_056a);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1860,7 +1907,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x2a);
+    expect(m.opCode).toBe(nextRom0_04d7);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1882,7 +1929,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x2a);
+    expect(m.opCode).toBe(nextRom0_04d7);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1895,7 +1942,7 @@ describe("Next - DivMmcDevice", async function () {
     d.enableAutomap = true;
     d.automapOn04d7 = true;
     d.port0xe3Value = 0x00;
-    memDevice.port1ffdValue = 0x04;
+    memDevice.port1ffdValue = 0x04; // ROM 3
     memDevice.port7ffdValue = 0x10;
     m.pc = 0x04d7;
 
@@ -1907,7 +1954,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x47);
+    expect(m.opCode).toBe(nextRom3_04d7);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1929,7 +1976,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x52);
+    expect(m.opCode).toBe(nextRom0_0562);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1951,7 +1998,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x52);
+    expect(m.opCode).toBe(nextRom0_0562);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1976,7 +2023,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0xdb);
+    expect(m.opCode).toBe(nextRom3_0562);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -1998,7 +2045,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x70);
+    expect(m.opCode).toBe(nextRom0_04c6);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2020,7 +2067,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x70);
+    expect(m.opCode).toBe(nextRom0_04c6);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2045,7 +2092,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x21);
+    expect(m.opCode).toBe(nextRom3_04c6);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2060,15 +2107,15 @@ describe("Next - DivMmcDevice", async function () {
     m.pc = 0x3d00;
 
     // --- Act
-    const pageBefore = m.memoryDevice.getPageInfo(0);
+    const pageBefore = m.memoryDevice.getPageInfo(1);
     m.executeCpuCycle();
-    const pageAfter = m.memoryDevice.getPageInfo(0);
+    const pageAfter = m.memoryDevice.getPageInfo(1);
 
     // --- Assert
-    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 0x2000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x65);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(nextRom0_3d00);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM + 0x2000);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -2082,15 +2129,15 @@ describe("Next - DivMmcDevice", async function () {
     m.pc = 0x3d00;
 
     // --- Act
-    const pageBefore = m.memoryDevice.getPageInfo(0);
+    const pageBefore = m.memoryDevice.getPageInfo(1);
     m.executeCpuCycle();
-    const pageAfter = m.memoryDevice.getPageInfo(0);
+    const pageAfter = m.memoryDevice.getPageInfo(1);
 
     // --- Assert
-    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 0x2000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x65);
-    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
+    expect(m.opCode).toBe(nextRom0_3d00);
+    expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM + 0x2000);
     expect(pageAfter.writeOffset).toBe(null);
   });
 
@@ -2107,16 +2154,16 @@ describe("Next - DivMmcDevice", async function () {
     m.pc = 0x3d00;
 
     // --- Act
-    const pageBefore = m.memoryDevice.getPageInfo(0);
+    const pageBefore = m.memoryDevice.getPageInfo(1);
     m.executeCpuCycle();
-    const pageAfter = m.memoryDevice.getPageInfo(0);
+    const pageAfter = m.memoryDevice.getPageInfo(1);
 
     // --- Assert
-    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
+    expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000 + 0x2000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
-    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
-    expect(pageAfter.writeOffset).toBe(null);
+    expect(m.opCode).toBe(divMmcRam3_3d00);
+    expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_RAM);
+    expect(pageAfter.writeOffset).toBe(OFFS_DIVMMC_RAM);
   });
 
   it("$3df0 does not automaps with ROM (disabled)", async () => {
@@ -2136,7 +2183,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x8a);
+    expect(m.opCode).toBe(nextRom0_3df0);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2158,7 +2205,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x8a);
+    expect(m.opCode).toBe(nextRom0_3df0);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2183,7 +2230,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x00);
+    expect(m.opCode).toBe(divMmcRam3_3df0);
     expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2210,7 +2257,7 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageBefore.writeOffset).toBe(null);
-    expect(m.opCode).toBe(0x3c);
+    expect(m.opCode).toBe(nextRom0_1ff8);
     expect(pageAfter.readOffset).toBe(OFFS_NEXT_ROM);
     expect(pageAfter.writeOffset).toBe(null);
   });
@@ -2322,63 +2369,64 @@ describe("Next - DivMmcDevice", async function () {
     });
   }
 
-  // for (let i = 0; i < 16; i++) {
-  //   if (i === 3) {
-  //     continue;
-  //   }
-  //   it(`MAPRAM=1 allows writing all RAM bank except RAM 3 (${i})`, async () => {
-  //     // --- Arrange
-  //     const m = await createTestNextMachine();
-  //     const d = m.divMmcDevice;
-  //     const memDevice = m.memoryDevice;
-  //     d.enableAutomap = true;
-  //     d.port0xe3Value = 0x00;
-  //     d.rstTraps[4].enabled = true;
-  //     d.rstTraps[4].instantMapping = true;
-  //     memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
-  //     m.pc = 0x0020;
-  //     d.port0xe3Value = 0x40 + i;
-  //     m.executeCpuCycle();
+  for (let i = 0; i < 16; i++) {
+    it(`MAPRAM=1 allows writing all RAM bank except RAM 3 (${i})`, async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.divMmcDevice;
+      const memDevice = m.memoryDevice;
+      d.enableAutomap = true;
+      d.port0xe3Value = 0x00;
+      d.rstTraps[4].enabled = true;
+      d.rstTraps[4].instantMapping = true;
+      d.rstTraps[4].onlyWithRom3 = false;
+      memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
+      m.pc = 0x0020;
+      d.port0xe3Value = 0x40 + i;
+      m.executeCpuCycle();
 
-  //     // --- Act
-  //     const page0 = memDevice.getPageInfo(0);
-  //     const page1 = memDevice.getPageInfo(1);
-  //     memDevice.writeMemory(0x2000, 0x55);
+      // --- Act
+      const page0 = memDevice.getPageInfo(0);
+      const page1 = memDevice.getPageInfo(1);
+      memDevice.writeMemory(0x2000, 0x55);
 
-  //     // --- Assert
-  //     expect(page0.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x2000);
-  //     expect(page1.readOffset).toBe(OFFS_DIVMMC_RAM + i * 0x2000);
-  //     const readBack = memDevice.readMemory(0x2000);
-  //     expect(readBack).toBe(0x55);
-  //   });
-  // }
+      // --- Assert
+      expect(page0.readOffset).toBe(OFFS_DIVMMC_RAM + 3 * 0x2000);
+      expect(page0.writeOffset).toBe(null);
+      expect(page1.readOffset).toBe(OFFS_DIVMMC_RAM + i * 0x2000);
+      expect(page1.writeOffset).toBe(i === 3 ? null : OFFS_DIVMMC_RAM + i * 0x2000);
+      const readBack = memDevice.readMemory(0x2000);
+      expect(readBack).toBe(i === 3 ? 0x00 : 0x55);
+    });
+  }
 
-  // it(`MAPRAM=1 prohibits writing RAM bank 3`, async () => {
-  //   // --- Arrange
-  //   const m = await createTestNextMachine();
-  //   const d = m.divMmcDevice;
-  //   const memDevice = m.memoryDevice;
-  //   d.enableAutomap = true;
-  //   d.port0xe3Value = 0x00;
-  //   d.rstTraps[4].enabled = true;
-  //   d.rstTraps[4].instantMapping = true;
-  //   memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
-  //   m.pc = 0x0020;
-  //   d.port0xe3Value = 0x40 + 0x03;
-  //   m.executeCpuCycle();
+  it(`MAPRAM=1 prohibits writing RAM bank 3`, async () => {
+    // --- Arrange
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    const memDevice = m.memoryDevice;
+    d.enableAutomap = true;
+    d.port0xe3Value = 0x00;
+    d.rstTraps[4].enabled = true;
+    d.rstTraps[4].instantMapping = true;
+    d.rstTraps[4].onlyWithRom3 = false;
+    memDevice.directWrite(OFFS_NEXT_ROM + 0x20, 0xf1);
+    m.pc = 0x0020;
+    d.port0xe3Value = 0x40 + 0x03;
+    m.executeCpuCycle();
 
-  //   // --- Act
-  //   const page0 = memDevice.getPageInfo(0);
-  //   const page1 = memDevice.getPageInfo(1);
-  //   memDevice.writeMemory(0x2000, 0x55);
+    // --- Act
+    const page0 = memDevice.getPageInfo(0);
+    const page1 = memDevice.getPageInfo(1);
+    memDevice.writeMemory(0x2000, 0x55);
 
-  //   // --- Assert
-  //   expect(page0.readOffset).toBe(OFFS_DIVMMC_RAM + 3 * 0x2000);
-  //   expect(page1.readOffset).toBe(OFFS_DIVMMC_RAM + 3 * 0x2000);
-  //   expect(page1.writeOffset).toBe(null);
-  //   const readBack = memDevice.readMemory(0x2000);
-  //   expect(readBack).toBe(0x00);
-  // });
+    // --- Assert
+    expect(page0.readOffset).toBe(OFFS_DIVMMC_RAM + 3 * 0x2000);
+    expect(page1.readOffset).toBe(OFFS_DIVMMC_RAM + 3 * 0x2000);
+    expect(page1.writeOffset).toBe(null);
+    const readBack = memDevice.readMemory(0x2000);
+    expect(readBack).toBe(0x00);
+  });
 
   it("DivMMC has priority over ROM select", async () => {
     // --- Act
