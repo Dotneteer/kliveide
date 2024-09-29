@@ -2441,6 +2441,32 @@ describe("Next - DivMmcDevice", async function () {
     // --- Assert
     expect(romSlotSignatureMatches(memory, 0, divMmcRomSignature)).toBe(true);
   });
+
+  // it("$3d00 automaps, the 00 --> $e3 works", async () => {
+  //   // --- Arrange
+  //   const m = await createTestNextMachine();
+  //   const d = m.divMmcDevice;
+  //   const memDevice = m.memoryDevice;
+  //   d.enableAutomap = true;
+  //   d.automapOn3dxx = true;
+  //   d.port0xe3Value = 0x00;
+  //   memDevice.port1ffdValue = 0x04;
+  //   memDevice.port7ffdValue = 0x10;
+  //   m.pc = 0x3d00;
+
+  //   // --- Act
+  //   const pageBefore = m.memoryDevice.getPageInfo(1);
+  //   m.executeCpuCycle();
+  //   d.port0xe3Value = 0x01;
+  //   const pageAfter = m.memoryDevice.getPageInfo(0);
+
+  //   // --- Assert
+  //   expect(pageBefore.readOffset).toBe(OFFS_NEXT_ROM + 3 * 0x4000 + 0x2000);
+  //   expect(pageBefore.writeOffset).toBe(null);
+  //   expect(m.opCode).toBe(divMmcRam3_3d00);
+  //   expect(pageAfter.readOffset).toBe(OFFS_DIVMMC_ROM);
+  //   expect(pageAfter.writeOffset).toBe(null);
+  // });
 });
 
 function romSlotSignatureMatches(m: MemoryDevice, page: number, signature: number[]): boolean {

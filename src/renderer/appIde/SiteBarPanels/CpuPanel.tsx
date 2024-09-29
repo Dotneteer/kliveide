@@ -170,20 +170,6 @@ const CpuPanel = () => {
         />
       </div>
       <div className={styles.cols}>
-        <Label text="PC" width={LAB_WIDTH} />
-        <Value
-          text={toHexa4(cpuState?.pc)}
-          tooltip={toTitle(cpuState?.pc, "PC")}
-          width={R16_WIDTH}
-        />
-        <Label text="SP" width={LAB_WIDTH} />
-        <Value
-          text={toHexa4(cpuState?.sp)}
-          tooltip={toTitle(cpuState?.sp, "SP")}
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
         <Label text="IX" width={LAB_WIDTH} />
         <Value
           text={toHexa4(cpuState?.ix)}
@@ -194,6 +180,20 @@ const CpuPanel = () => {
         <Value
           text={toHexa4(cpuState?.iy)}
           tooltip={toTitle(cpuState?.iy, "IY", "YH", "YL")}
+          width={R16_WIDTH}
+        />
+      </div>
+      <div className={styles.cols}>
+        <Label text="PC" width={LAB_WIDTH} />
+        <Value
+          text={toHexa4(cpuState?.pc)}
+          tooltip={toTitle(cpuState?.pc, "PC")}
+          width={R16_WIDTH}
+        />
+        <Label text="SP" width={LAB_WIDTH} />
+        <Value
+          text={toHexa4(cpuState?.sp)}
+          tooltip={toTitle(cpuState?.sp, "SP")}
           width={R16_WIDTH}
         />
       </div>

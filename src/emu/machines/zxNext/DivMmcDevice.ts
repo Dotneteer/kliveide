@@ -1,6 +1,6 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
+import { MemoryPageInfo, OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _conmem: boolean;
@@ -70,6 +70,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set port0xe3Value(value: number) {
+    const prevConmem = this._conmem;
     this._conmem = (value & 0x80) !== 0;
     const mapramBit = (value & 0x40) !== 0;
     if (!this._mapram) {
@@ -84,7 +85,10 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       // --- Instant mapping when CONMEM is active
       this.pageIn();
     } else {
-      this.pageOut();
+      // --- Page in the appropriate DivMMC RAM bank
+      if (prevConmem) {
+        this.pageOut();
+      }
     }
   }
 
@@ -279,7 +283,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     // --- Page out, if requested
     if (this._pageOutRequested && this.disableAutomapOn1ff8) {
       this.pageOut();
-      this._pageOutRequested = false;
     }
   }
 
@@ -295,7 +298,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     if (this._pageOutRequested) {
       this.pageOut();
-      this._pageOutRequested = false;
     }
   }
 
@@ -327,6 +329,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private pageOut(): void {
     this._pagedIn = false;
     this.machine.memoryDevice.updateMemoryConfig();
+    this._pageOutRequested = false;
   }
 }
 

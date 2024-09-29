@@ -1,28 +1,60 @@
-0130 ok
-016a ok
-018e ok
-01a0 ok
-01b5 ok
-01b1 ok
-01c2 ok
-0196 ok
-
-01d4 ok
-
-01e0 ok
-01ed ok
-
-0253 ok
-
-0271 ok
-
-02a7 ok
-
-02f5 ok
-02f8 ok
 02fd (after EI) ok
 0300 ok
-RST 08 pages in DivmMC, but CSpect does not!!! Fixed :-)
 
 0302 ok
+0306 ok
+0309 ok
+0316 ok
+032a ok
+032d ok
+0336 ok --> does not reach 0339
+  0fdd ok
+  0ffd ok
+  0ffe --
+    r2:3f18 ok
+    r2:3f30 ok
+    r2:3cfc ok
+    r2:3d00 ok --> DivMMC pages in. When executing an out ($e3),01, Page 0 changes to ROM 3, though it must be DivMMC.
+      
+
+
+01cb ok
+ed27 ok $81 --> $e3, $80 --> $e3, $00 --> $e3 sequence works properly
+01ed ok
+01f0 ok
+021d ok
+0220 ok
+025a ok
+0271 ok
+0277 ok
+02a7 ok
+02f5 ok
+02fd ok --> does not reach $0300
+  r3:0d6b ok
+  r3:0db9 ok
+  r3:0dc1 ok
+  r3:0dc6 ok --> does not reach $0dc9
+  r3:0e5c ok --> LDIR will have an INT
+
+
+
+01cb ok
+R3:ed27 --> Check the first $e3 writes
+01f0 ok
+021d ok
+0247 ok
+025a ok
+0271 ok
+0277 ok
+02a7 ok
+02f8 ok
+02fd ok --> does not reach $0300
+
+
+
+
+
+
+
+
 
