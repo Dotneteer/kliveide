@@ -25,33 +25,70 @@ use ieee.numeric_std.all;
 
 entity divmmc is
    port (
+      -- The current clock signal. The rising edge is used to detect reset and opcode fetches.
       i_CLK                : in std_logic;
+
+      -- The reset signal.
       i_reset              : in std_logic;
       
+      -- The top 3 bits of the address bus. When 000, the CPU is accessing the $0000-$1fff range. 
+      -- When it is 001, the CPU is accessing the $2000-$3fff range. All other values are ignored.
       i_cpu_a_15_13        : in std_logic_vector(2 downto 0);
+
+      -- The CPU memory request and M1 signals. These are used to detect opcode fetches.
       i_cpu_mreq_n         : in std_logic;
       i_cpu_m1_n           : in std_logic;
       
+      -- The enable signal. Bit 7 of NextReg $84, indicates if the DIVMMC is enabled.
       i_en                 : in std_logic;
+
+      -- Indicates that automap should be reset. 
+      -- Active when DIVMMC is not enabled (Bit 7 of NextReg $84 is 0) or 
+      -- DIVMMC automap is not enabled (Bit 4 of Nexterg $0a is 0).
       i_automap_reset      : in std_logic;
+
+      -- The automap active signal. This is used to enable the automap logic.
       i_automap_active     : in std_logic;
+
+      -- The automap ROM3 active signal. This is used to enable the automap ROM3 logic.
       i_automap_rom3_active: in std_logic;
+
+      -- Indicates if a RETN instruction has been seen (while Multiface is not active).
       i_retn_seen          : in std_logic;
       
+      -- Signs that the NMI button has been pressed (and NMI is in idle state).
       i_divmmc_button      : in std_logic;
+
+      -- The DIVMMC register value. This is an 8-bit register that is used to control the DIVMMC.
       i_divmmc_reg         : in std_logic_vector(7 downto 0);
 
+      -- A valid RST entry point reached with instant paging.
       i_automap_instant_on      : in std_logic;
+
+      -- A valid RST entry point reached with delayed paging.
       i_automap_delayed_on      : in std_logic;
+
+      -- Signs that page out reached ($1ff8-$1fff) is not enabled.
       i_automap_delayed_off     : in std_logic;
+
+      -- Signs that ROM3 automap is enabled in instant mode.
       i_automap_rom3_instant_on : in std_logic;
+
+      -- Signs that ROM3 automap is enabled in delayed mode.
       i_automap_rom3_delayed_on : in std_logic;
       i_automap_nmi_instant_on  : in std_logic;
       i_automap_nmi_delayed_on  : in std_logic;
       
+      -- Signs that DIVMMC ROM is active
       o_divmmc_rom_en      : out std_logic;
+
+      -- Signs that DIVMMC RAM is active
       o_divmmc_ram_en      : out std_logic;
+
+      -- Signs that DIVMMC RAM is read only
       o_divmmc_rdonly      : out std_logic;
+
+      -- The DIVMMC RAM bank. This is a 4-bit value that is used to select the RAM bank.
       o_divmmc_ram_bank    : out std_logic_vector(3 downto 0);
       
       o_disable_nmi        : out std_logic;

@@ -1,6 +1,6 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { MemoryPageInfo, OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
+import { OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _conmem: boolean;
