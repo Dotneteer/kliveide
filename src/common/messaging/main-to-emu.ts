@@ -374,6 +374,7 @@ export interface EmuGetNextMemoryMappingResponse extends MessageBase {
   portLayer2: number;
   portTimex: number;
   divMmc: number;
+  divMmcIn: boolean;
   pageInfo: MemoryPageInfo[];
 }
 

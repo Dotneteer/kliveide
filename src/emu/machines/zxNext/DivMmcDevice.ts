@@ -1,16 +1,17 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { OFFS_DIVMMC_RAM, OFFS_DIVMMC_ROM } from "./MemoryDevice";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
+  private _enabled: boolean;
   private _conmem: boolean;
   private _mapram: boolean;
   private _bank: number;
-  private _pagedIn: boolean;
-  private _pageInRequested: boolean;
-  private _pageInDelayed: boolean;
-  private _pageOutRequested: boolean;
-  private _canWritePage1: boolean;
+  private _portLastE3Value: number;
+  private _enableAutomap: boolean;
+  private _requestAutomapOn: boolean;
+  private _requestAutomapOff: boolean;
+  private _autoMapActive: boolean;
 
   readonly rstTraps: TrapInfo[] = [];
   automapOn3dxx: boolean;
@@ -21,7 +22,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   automapOn04c6: boolean;
   automapOn0066: boolean;
   automapOn0066Delayed: boolean;
-  enableAutomap: boolean;
   multifaceType: number;
   enableDivMmcNmiByDriveButton: boolean;
   enableMultifaceNmiByM1Button: boolean;
@@ -35,12 +35,15 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
+    this._enabled = true;
+    this._portLastE3Value = 0x00;
     this._conmem = false;
     this._mapram = false;
     this._bank = 0;
-    this._pagedIn = false;
-    this._pageInRequested = false;
-    this._pageOutRequested = false;
+    this._autoMapActive = false;
+    this._enableAutomap = false;
+    this._requestAutomapOn = false;
+    this._requestAutomapOff = false;
     for (let i = 0; i < 8; i++) {
       this.rstTraps[i].enabled = false;
       this.rstTraps[i].onlyWithRom3 = false;
@@ -52,6 +55,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   dispose(): void {}
+
+  // Is the DivMMC device enabled?
+  get enabled(): boolean {
+    return this._enabled;
+  }
 
   get conmem(): boolean {
     return this._conmem;
@@ -65,11 +73,33 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     return this._bank;
   }
 
+  get autoMapActive(): boolean {
+    return this._autoMapActive;
+  }
+
+  get enableAutomap(): boolean {
+    return this._enableAutomap;
+  }
+
+  set enableAutomap(value: boolean) {
+    if (this._enableAutomap === value) return;
+    this._enableAutomap = value;
+    if (!value) {
+      // --- Automap is disabled
+      this._autoMapActive = false;
+    }
+  }
+
   get port0xe3Value(): number {
-    return (this._conmem ? 0x80 : 0x00) | (this._mapram ? 0x40 : 0x00) | (this._bank & 0x0f);
+    return this.enabled
+      ? (this._conmem ? 0x80 : 0x00) | (this._mapram ? 0x40 : 0x00) | (this._bank & 0x0f)
+      : 0xff;
   }
 
   set port0xe3Value(value: number) {
+    if (!this._enabled) return;
+    
+    this._portLastE3Value = value;
     this._conmem = (value & 0x80) !== 0;
     const mapramBit = (value & 0x40) !== 0;
     if (!this._mapram) {
@@ -79,12 +109,20 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       this._mapram = false;
     }
     this._bank = value & 0x0f;
-    this._canWritePage1 = !this._mapram || this._bank !== 0x03;
-    if (this._conmem) {
-      // --- Instant mapping when CONMEM is active
-      this.pageIn();
+
+    // TODO: Update DivMMC state
+  }
+
+  set nextReg83Value(value: number) {
+    const oldEnabled = this._enabled;
+    this._enabled = !!(value & 0x01);
+    if (oldEnabled === this._enabled) return;
+    if (this._enabled) {
+      // --- DivMMC is enabled again
+      this.port0xe3Value = this._portLastE3Value;
     } else {
-      this.pageOut();
+      // --- DivMMC is disabled
+      this._autoMapActive = false;
     }
   }
 
@@ -102,38 +140,38 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextRegB8Value(value: number) {
-    this.rstTraps[0].enabled = (value & 0x01) !== 0;
-    this.rstTraps[1].enabled = (value & 0x02) !== 0;
-    this.rstTraps[2].enabled = (value & 0x04) !== 0;
-    this.rstTraps[3].enabled = (value & 0x08) !== 0;
-    this.rstTraps[4].enabled = (value & 0x10) !== 0;
-    this.rstTraps[5].enabled = (value & 0x20) !== 0;
-    this.rstTraps[6].enabled = (value & 0x40) !== 0;
-    this.rstTraps[7].enabled = (value & 0x80) !== 0;
+    this.rstTraps[0].enabled = !!(value & 0x01);
+    this.rstTraps[1].enabled = !!(value & 0x02);
+    this.rstTraps[2].enabled = !!(value & 0x04);
+    this.rstTraps[3].enabled = !!(value & 0x08);
+    this.rstTraps[4].enabled = !!(value & 0x10);
+    this.rstTraps[5].enabled = !!(value & 0x20);
+    this.rstTraps[6].enabled = !!(value & 0x40);
+    this.rstTraps[7].enabled = !!(value & 0x80);
   }
 
   get nextRegB9Value(): number {
     return (
-      (this.rstTraps[0].onlyWithRom3 ? 0x01 : 0x00) |
-      (this.rstTraps[1].onlyWithRom3 ? 0x02 : 0x00) |
-      (this.rstTraps[2].onlyWithRom3 ? 0x04 : 0x00) |
-      (this.rstTraps[3].onlyWithRom3 ? 0x08 : 0x00) |
-      (this.rstTraps[4].onlyWithRom3 ? 0x10 : 0x00) |
-      (this.rstTraps[5].onlyWithRom3 ? 0x20 : 0x00) |
-      (this.rstTraps[6].onlyWithRom3 ? 0x40 : 0x00) |
-      (this.rstTraps[7].onlyWithRom3 ? 0x80 : 0x00)
+      (this.rstTraps[0].onlyWithRom3 ? 0x00 : 0x01) |
+      (this.rstTraps[1].onlyWithRom3 ? 0x00 : 0x02) |
+      (this.rstTraps[2].onlyWithRom3 ? 0x00 : 0x04) |
+      (this.rstTraps[3].onlyWithRom3 ? 0x00 : 0x08) |
+      (this.rstTraps[4].onlyWithRom3 ? 0x00 : 0x10) |
+      (this.rstTraps[5].onlyWithRom3 ? 0x00 : 0x20) |
+      (this.rstTraps[6].onlyWithRom3 ? 0x00 : 0x40) |
+      (this.rstTraps[7].onlyWithRom3 ? 0x00 : 0x80)
     );
   }
 
   set nextRegB9Value(value: number) {
-    this.rstTraps[0].onlyWithRom3 = (value & 0x01) !== 0;
-    this.rstTraps[1].onlyWithRom3 = (value & 0x02) !== 0;
-    this.rstTraps[2].onlyWithRom3 = (value & 0x04) !== 0;
-    this.rstTraps[3].onlyWithRom3 = (value & 0x08) !== 0;
-    this.rstTraps[4].onlyWithRom3 = (value & 0x10) !== 0;
-    this.rstTraps[5].onlyWithRom3 = (value & 0x20) !== 0;
-    this.rstTraps[6].onlyWithRom3 = (value & 0x40) !== 0;
-    this.rstTraps[7].onlyWithRom3 = (value & 0x80) !== 0;
+    this.rstTraps[0].onlyWithRom3 = !(value & 0x01);
+    this.rstTraps[1].onlyWithRom3 = !(value & 0x02);
+    this.rstTraps[2].onlyWithRom3 = !(value & 0x04);
+    this.rstTraps[3].onlyWithRom3 = !(value & 0x08);
+    this.rstTraps[4].onlyWithRom3 = !(value & 0x10);
+    this.rstTraps[5].onlyWithRom3 = !(value & 0x20);
+    this.rstTraps[6].onlyWithRom3 = !(value & 0x40);
+    this.rstTraps[7].onlyWithRom3 = !(value & 0x80);
   }
 
   get nextRegBAValue(): number {
@@ -188,22 +226,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     return this.rstTraps[index].enabled;
   }
 
-  get pagedIn(): boolean {
-    return this._pagedIn;
-  }
-
-  get canWritePage1(): boolean {
-    return this._canWritePage1;
-  }
-
-  get pageInRequested(): boolean {
-    return this._pageInRequested;
-  }
-
-  get pageOutRequested(): boolean {
-    return this._pageOutRequested;
-  }
-
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
     if (!this.enableAutomap) {
@@ -230,8 +252,12 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       case 0x0038:
         const rstIdx = this.machine.pc >> 3;
         if (this.rstTraps[rstIdx].enabled && (!this.rstTraps[rstIdx].onlyWithRom3 || rom3PagedIn)) {
-          this._pageInRequested = true;
-          this._pageInDelayed = !this.rstTraps[rstIdx].instantMapping;
+          if (this.rstTraps[rstIdx].instantMapping) {
+            this._autoMapActive = true;
+            this._requestAutomapOn = false;
+          } else {
+            this._requestAutomapOn = true;
+          }
         }
         break;
       case 0x0066:
@@ -239,94 +265,52 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         break;
       case 0x04c6:
         if (this.automapOn04c6 && rom3PagedIn) {
-          this._pageInRequested = true;
-          this._pageInDelayed = true;
+          this._requestAutomapOn = true;
         }
         break;
       case 0x0562:
         if (this.automapOn0562 && rom3PagedIn) {
-          this._pageInRequested = true;
-          this._pageInDelayed = true;
+          this._requestAutomapOn = true;
         }
         break;
       case 0x04d7:
         if (this.automapOn04d7 && rom3PagedIn) {
-          this._pageInRequested = true;
-          this._pageInDelayed = true;
+          this._requestAutomapOn = true;
         }
         break;
       case 0x056a:
         if (this.automapOn056a && rom3PagedIn) {
-          this._pageInRequested = true;
-          this._pageInDelayed = true;
+          this._requestAutomapOn = true;
         }
         break;
       default:
         if (pc >= 0x3d00 && pc <= 0x3dff && this.automapOn3dxx && rom3PagedIn) {
-          this._pageInRequested = true;
-          this._pageInDelayed = false;
+          this._autoMapActive = true;
         } else if (pc >= 0x1ff8 && pc <= 0x1fff) {
-          this._pageOutRequested = true;
+          if (this.disableAutomapOn1ff8) {
+            this._requestAutomapOff = true;
+          } else {
+            this._autoMapActive = false;
+          }
         }
     }
 
-    // --- Page in, if reqested
-    if (this._pageInRequested && !this._pageInDelayed) {
-      this.pageIn();
-      this._pageInRequested = false;
-    }
-
-    // --- Page out, if requested
-    if (this._pageOutRequested && this.disableAutomapOn1ff8) {
-      this.pageOut();
-      this._pageOutRequested = false;
-    }
+    // TODO: Page in/out logic
   }
 
   // --- Pages in and out ROM/RAM into the lower 16K, if requested so
   afterOpcodeFetch(): void {
-    // --- Check for delayed page in
-    if (this._pageInRequested && this._pageInDelayed && !this._pageOutRequested) {
-      this.pageIn();
-      this._pageInRequested = false;
-      this._pageInDelayed = false;
-      return;
+    // --- Delayed page in
+    if (this._requestAutomapOn) {
+      this._autoMapActive = true;
+      this._requestAutomapOn = false;
     }
 
-    if (this._pageOutRequested) {
-      this.pageOut();
-      this._pageOutRequested = false;
+    // --- Delayed page out
+    if (this._requestAutomapOff) {
+      this._autoMapActive = false;
+      this._requestAutomapOff = false;
     }
-  }
-
-  // --- Pages in ROM/RAM into the lower 16K
-  private pageIn(): void {
-    this._pagedIn = true;
-    const memoryDevice = this.machine.memoryDevice;
-
-    // --- Page 0
-    if (this._conmem || !this._mapram) {
-      memoryDevice.setPageInfo(0, OFFS_DIVMMC_ROM, null, 0xff, 0xff);
-    } else {
-      const offset = OFFS_DIVMMC_RAM + 3 * 0x2000;
-      memoryDevice.setPageInfo(0, offset, offset, 0xff, 0xff);
-    }
-
-    // --- Page 1
-    const offset = OFFS_DIVMMC_RAM + this.bank * 0x2000;
-    memoryDevice.setPageInfo(
-      1,
-      offset,
-      this._mapram && this.bank === 3 ? null : offset,
-      0xff,
-      0xff
-    );
-  }
-
-  // --- Pages out ROM/RAM from the lower 16K
-  private pageOut(): void {
-    this._pagedIn = false;
-    this.machine.memoryDevice.updateMemoryConfig();
   }
 }
 

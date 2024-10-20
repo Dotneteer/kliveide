@@ -1685,7 +1685,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables (#2)",
-      writeFn: () => {},
+      writeFn: (v) => (machine.divMmcDevice.nextReg83Value = v & 0xff),
       slices: [
         {
           mask: 0x80,

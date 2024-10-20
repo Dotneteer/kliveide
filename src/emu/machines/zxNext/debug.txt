@@ -1,48 +1,12 @@
-MMC dependencies
+After DivMMC fix:
 
-Port 0xE7 write:
-
-if (value is 0xF6) invoke mmc_cs(0xFE); otherwise, no write
-
-Port 0xEB write:
-
-invoke mmc_write(value);
-
-Port 0xE7 read:
-
-return 0xFF;
-
-Port 0xEB read:
-
-return mmc_read();
+0339 ok
+034c ok --> Does not reach 034f
+  
+Reason: MMC handling is not implemented
+r2:18cc --> Set breakpoint
 
 
-Dependencies:
 
-mmc_cs: (mmc.c)
-    - mmc_r1 = 1
-    - mmc_last_command = 0
-    - mmc_index_command = 0
-    - mmc_read_index = -1
-    - mmc_write_index = -1
-    - mmc_csd_index = -1
-    - mmc_cid_index = -1
-    - mmc_ocr_index = -1
-    - mmc_card_selected = 0
 
-mmc_write: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_retorna_dir_32bit(z80_byte a,z80_byte b,z80_byte c,z80_byte d)
-        - none
-    - mmc_write_byte_memory(unsigned int address,z80_byte value)
-        - mmc_disable()
-            -
-        - mmc_set_visualmem_write(unsigned int address)
-            - none
 
-mmc_read: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_read_byte_memory(unsigned int address)
-    

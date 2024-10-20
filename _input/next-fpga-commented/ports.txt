@@ -1,0 +1,593 @@
+The following ports are in use on the ZX Spectrum Next
+
+TBBlue / ZX Spectrum Next Peripheral Ports
+
++-+-++-------------------+---------+--------------------------------+
+| | ||AAAA AAAA AAAA AAAA|         |                                |
+| | ||1111 1100 0000 0000|         |                                |
+|R|W||5432 1098 7654 3210|Port(hex)|Description                     |
++-+-++-------------------+---------+--------------------------------+
+|*|*||XXXX XXXX XXXX XXX0| 0xfe    |ULA                             |
+|*|*||XXXX XXXX 1111 1111| 0xff    |Timex video, floating bus       |
+| |*||0XXX XXXX XXXX XX01| 0x7ffd  |ZX Spectrum 128 memory          |
+| |*||01XX XXXX XXXX XX01| 0x7ffd  |ZX Spectrum 128 memory +3 only  |
+| |*||1101 XXXX XXXX XX01| 0xdffd  |ZX Spectrum 128 memory          | (precedence over AY)
+| |*||0001 XXXX XXXX XX01| 0x1ffd  |ZX Spectrum +3 memory           |
+|*| ||0010 XXXX XXXX XX01| 0x2ffd  |ZX Spectrum +3 FDC status       | \ optionally enabled
+|*|*||0011 XXXX XXXX XX01| 0x3ffd  |ZX Spectrum +3 FDC control      | / as i/o traps
+| |*||1110 XXXX 1111 0111| 0xeff7  |Pentagon 1024K memory           |
+|*| ||0000 XXXX XXXX XX01|         |ZX Spectrum +3 floating bus     |
+|*|*||0010 0100 0011 1011| 0x243b  |NextREG Register Select         |
+|*|*||0010 0101 0011 1011| 0x253b  |NextREG Data                    |
+|*|*||0001 0000 0011 1011| 0x103b  |i2c SCL                         |
+|*|*||0001 0001 0011 1011| 0x113b  |i2c SDA                         |  
+|*|*||0001 0010 0011 1011| 0x123b  |Layer 2                         |  
+|*|*||0001 0011 0011 1011| 0x133b  |UART Tx                         |
+|*|*||0001 0100 0011 1011| 0x143b  |UART Rx                         |
+|*|*||0001 0101 0011 1011| 0x153b  |UART Select                     |
+|*|*||0001 0110 0011 1011| 0x163b  |UART Frame                      |
+|*|*||0001 1XXX 0011 1011| 0x183b  |CTC 8 channels 0x183b - 0x1f3b**|
+| |*||1011 1111 0011 1011| 0xbf3b  |ULA+ Register                   |
+|*|*||1111 1111 0011 1011| 0xff3b  |ULA+ Data                       |
+|*|*||XXXX XXXX 0000 1011| 0x0b    |z80DMA                          | \ accessing port
+|*|*||XXXX XXXX 0110 1011| 0x6b    |zxnDMA                          | / selects DMA mode
+|*|*||11XX XXXX XXXX X101| 0xfffd  |AY reg                          |
+|*|*||10XX XXXX XXXX X101| 0xbffd  |AY dat (readable on +3 only)    |
+|*| ||10XX XXXX XXXX 0101| 0xbff5  |AY inf (inside BFFD decoding)   |
+| |*||XXXX XXXX 0001 1111| 0x1f    |DAC A                           |
+| |*||XXXX XXXX 1111 0001| 0xf1    |DAC A                           | (precedence over XXFD)
+| |*||XXXX XXXX 0011 1111| 0x3f    |DAC A                           |
+| |*||XXXX XXXX 0000 1111| 0x0f    |DAC B                           |
+| |*||XXXX XXXX 1111 0011| 0xf3    |DAC B                           |
+| |*||XXXX XXXX 1101 1111| 0xdf    |DAC A,D                         |
+| |*||XXXX XXXX 1111 1011| 0xfb    |DAC A,D                         |
+| |*||XXXX XXXX 1011 0011| 0xb3    |DAC B,C                         |
+| |*||XXXX XXXX 0100 1111| 0x4f    |DAC C                           |
+| |*||XXXX XXXX 1111 1001| 0xf9    |DAC C                           | (precedence over XXFD)
+| |*||XXXX XXXX 0101 1111| 0x5f    |DAC D                           |
+| |*||XXXX XXXX 1110 0111| 0xe7    |SPI CS (sd card, flash, rpi)    |
+|*|*||XXXX XXXX 1110 1011| 0xeb    |SPI DATA                        |
+|*|*||XXXX XXXX 1110 0011| 0xe3    |divMMC Control                  |
+|*| ||XXXX 1011 1101 1111| 0xfbdf  |Kempston mouse x                |
+|*| ||XXXX 1111 1101 1111| 0xffdf  |Kempston mouse y                |
+|*| ||XXXX 1010 1101 1111| 0xfadf  |Kempston mouse wheel, buttons   |
+|*| ||XXXX XXXX 0001 1111| 0x1f    |Kempston joy 1                  |
+|*| ||XXXX XXXX 1101 1111| 0xdf    |Kempston joy 1 alias            | (disabled if mouse enabled)
+|*| ||XXXX XXXX 0011 0111| 0x37    |Kempston joy 2                  |
+|*|*||XXXX XXXX 0001 1111| 0x1f    |Multiface 1 disable             |
+|*|*||XXXX XXXX 1001 1111| 0x9f    |Multiface 1 enable              |
+|*|*||XXXX XXXX 0001 1111| 0x1f    |Multiface 128 v87.12 disable    |
+|*|*||XXXX XXXX 1001 1111| 0x9f    |Multiface 128 v87.12 enable     |
+|*|*||XXXX XXXX 0011 1111| 0x3f    |Multiface 128 v87.2 disable     |
+|*|*||XXXX XXXX 1011 1111| 0xbf    |Multiface 128 v87.2 enable      |
+|*|*||XXXX XXXX 1011 1111| 0xbf    |Multiface +3 disable            |
+|*|*||XXXX XXXX 0011 1111| 0x3f    |Multiface +3 enable             |
+|*|*||0011 0000 0011 1011| 0x303b  |Sprite slot, flags              |
+| |*||XXXX XXXX 0101 0111| 0x57    |Sprite attributes               |
+| |*||XXXX XXXX 0101 1011| 0x5b    |Sprite pattern                  |
++-+-++-------------------+---------+--------------------------------+
+
+** The CTC has been temporarily reduced to four channels from eight.
+
+Most devices and their associated i/o ports can be selectively deactivated by the internal port decode registers in
+nextreg 0x85 through 0x82.  These optional deactivations can resolve incompatibility found in legacy software.
+
+================
+== ULA / SCLD ==
+================
+
+0xFE Spectrum ULA
+(R)
+* The top eight bits of the port address are active low signals that select one or more key rows for reading.
+bit 6 = EAR in from the tape audio jack
+bits 4:0 = key column result from keyboard, active low
+(W) (soft reset = 0)
+bit 4 = EAR out connected to internal speaker
+bit 3 = MIC out saving via audio jack
+bits 2:0 = border colour
+* nextreg 0x08 bit 0 can be set to select issue 2 keyboard which will affect reads of bit 6
+
+0xFF Timex SCLD extension of the ULA
+(R/W) only readable if nextreg 0x08 bit 2 = 1 (soft reset = 0)
+bit 7 = timex horizontal mmu bank select (not implemented)
+bit 6 = 1 to disable the ULA frame interrupt
+bits 5:3 sets the screen colour in hi-res mode
+  the ink colour is given and the paper is the contrasting colour
+  000 = bright black on white
+  001 = bright blue on yellow
+  010 = bright red on cyan
+  011 = bright magenta on green
+  100 = bright green on magenta
+  101 = bright cyan on red
+  110 = bright yellow on blue
+  111 = bright white on black
+bits 2:0 selects ula screen mode
+  000 = screen 0, standard spectrum screen at 0x4000, 256x192 pix 32x24 attr
+  001 = screen 1, standard spectrum screen at 0x6000, 256x192 pix 32x24 attr
+  010 = hi-colour, 256x192 pix at 0x4000, 32x192 attr at 0x6000
+  110 = hi-res, 512x192 pix monochrome, even columns at 0x4000, odd columns at 0x6000
+
+============================
+== STANDARD 128K SPECTRUM ==
+============================
+
+** NOTE: The following describes banking in the default standard spectrum mode.  The zx next supports other banking modes
+found in Russian spectrums (Pentagon 512 and Pentagon 1024) that are selected via nextreg 0x8f.  See notes on this at the
+end of this document.
+
+A write to any of the ports 0x7FFD, 0xDFFD, 0x1FFD, 0xEFF7 sets mmu0=0xff and mmu1=0xff to reveal the selected rom in the
+bottom 16K.  mmu6 and mmu7 are set to reflect the selected 16K memory bank.
+
+0x7FFD Spectrum 128K paging
+(W) (soft reset = 0)
+Bits 7:6 = Extra two bits for 16K RAM bank if in Pentagon 512K / 1024K mapping mode (nextreg 0x8f)
+bit 5 = 1 disables this port and freezes the current memory page selection
+bit 4 = rom select, 0 = 128k editor, 1 = 48k basic
+bit 3 = screen bank location, 0 = bank 5, 1 = bank 7
+bits 2:0 = 16K RAM bank to place at 0xc000
+* nextreg 0x08 bit 7 can be set to reset bit 5 and unlock this port.
+* The rom selection in bit 4 is combined as the low bit with bit 2 of port 0x1FFD to select one of four roms.
+* If the screen is located in bank 7, the ula fetches a standard spectrum display ignoring modes selected in port 0xFF.
+* The 16K RAM bank selected in bits 2:0 are combined as the lowest bits with the bank selected in port 0xDFFD to form a 7-bit bank number.
+
+0xDFFD Spectrum Next bank extension
+(W)
+bits 3:0 = most significant bits of the 16K RAM bank selected in port 0x7FFD (soft reset = 0)
+* Port 0xDFFD bits 3:0 are combined as the highest bits with the bank selected in port 0x7FFD to form a 7-bit bank number.
+
+0x1FFD Spectrum +3 paging
+(W) (soft reset = 0)
+bit 4 = printer strobe (not implemented)
+bit 3 = disk motor, 0 = off, 1 = on (not implemented)
+bit 2 = in normal mode, paired with port 0x7FFD bit 4 as the high bit of the rom selection:
+  00 = ROM0 = 128K editor and menu system
+  01 = ROM1 = 128K syntax checker
+  10 = ROM2 = +3DOS
+  11 = ROM3 = 48K BASIC
+bit 1 = in normal mode, ignored
+bit 0 = paging mode, 0 = normal, 1 = special
+* Special mode, aka allram mode, fills the 64K with four RAM banks according to bits 2:1
+  Address Range       00       01       10       11
+  0xC000 - 0xFFFF   Bank 3   Bank 7   Bank 3   Bank 3
+  0x8000 - 0xBFFF   Bank 2   Bank 6   Bank 6   Bank 6
+  0x4000 - 0x7FFF   Bank 1   Bank 5   Bank 5   Bank 7
+  0x0000 - 0x3FFF   Bank 0   Bank 4   Bank 5   Bank 4
+  The mmus are changed accordingly. Exiting special paging mode causes mmu0,mmu1,mmu6,mmu7 to be set as normal by ports 0x7FFD and 0x1FFD
+  and the central two 16K banks, mmu2 - mmu5, are restored to 16K banks 5 and 2.
+
+0x2FFD Spectrum +3 FDC Status
+0x3FFD Spectrum +3 FDC Control
+These i/o ports can be optionally enabled as i/o traps.  See nextreg 0xd8.
+
+0xEFF7 Pentagon 1024 paging
+(W) (soft reset = 0)
+bit 3 = 1 to overlay the bottom 16K with ram from 16k bank 0
+bit 2 = 0 to enable Pentagon 1024 mapping and disable bit 5 port 0x7ffd locking, 1 to select standard zx128 mapping **
+** Applies only when pentagon 1024 mapping mode is enabled via nextreg 0x8f.
+
+=============
+== NEXTREG ==
+=============
+
+0x243B NEXTREG register select
+(R/W)
+Selects a register.
+
+0x253B NEXTREG data
+(R/W)
+Reads or writes data to the selected register.
+
+=============
+== LAYER 2 ==
+=============
+
+0x123B Layer 2 control
+(R/W) If bit 4 = 0:
+  (soft reset = 0)
+  bits 7:6 = layer 2 memory map type
+    00 = first 16K of layer 2 in the bottom 16K
+    01 = second 16K of layer 2 in the bottom 16K
+    10 = third 16K of layer 2 in the bottom 16K
+    11 = first 48K of layer 2 in the bottom 48K
+  bit 5 = Reserved, must be 0
+  bit 4 = 0
+  bit 3 = 0 to map active layer 2 (nextreg 0x12), 1 to map shadow layer 2 (nextreg 0x13)
+  bit 2 = 1 to enable mapping for memory reads
+  bit 1 = 1 to enable layer 2 display
+  bit 0 = 1 to enable mapping for memory writes
+(W) If bit 4 = 1:
+  (soft reset = 0)
+  bits 7:5 = Reserved, must be 0
+  bit 4 = 1
+  bit 3 = Reserved, must be 0
+  bits 2:0 = 16K bank offset applied to layer 2 memory mapping
+
+Memory pointed at by nextreg 0x12 or nextreg 0x13 can be mapped into the lower 16K or 48K if layer 2 memory mapping is
+enabled in bit 2 and/or bit 0.  This mechanism is separate from MMU and will overlay the paging state set by MMU but only
+if the memory access type matches the enable condition (read-only, write-only). The particular 16K bank(s) mapped in begin
+at the pointed bank plus an optional offset written when bit 4 = 1.  For out of range banks, writes do not have an effect
+and reads return unspecified data.
+
+===========
+== AUDIO ==
+===========
+
+There are three AY chips in the zx next whose selection is made through port 0xFFFD.  The currently active AY chip continues
+to use port 0xFFFD for register select and port 0xBFFD for data.  All AY chips generate stereo sound unless placed in mono
+mode per nextreg 0x08 and nextreg 0x09.  The Next adds port 0xBFF5 to read information about the currently selected AY chip
+and its currently selected register.
+
+0xFFFD AY control and AY register select
+(R)
+Returns the value stored in the selected register on the active AY chip
+(W)
+If bits 7:5 = 0, selects an AY register in the currently active AY chip
+Otherwise if multiple AY chips is enabled (nextreg 0x08 bit 1 = 1):
+  bit 7 = 1
+  bit 6 = left channel enable
+  bit 5 = right channel enable
+  bit 4 = 1
+  bit 3 = 1
+  bit 2 = 1
+  bits 1:0 = active AY chip
+    11 = AY 0 made active (default)
+    10 = AY 1 made active
+    01 = AY 2 made active
+    00 = reserved
+
+0xBFFD AY data
+(R) readable if video timing is +3 / zx next only
+Returns the value stored in the selected register on the active AY chip
+(W)
+Writes data to the selected register on the active AY chip
+
+0xBFF5 AY info
+(R)
+  bits 7:6 = active AY chip
+    11 = AY 0 is active
+    10 = AY 1 is active
+    01 = AY 2 is active
+  bit 5 = Reserved
+  bits 4:0 = currently selected AY register
+
+
+There are four 8-bit dac channels denoted A,B,C,D. A,B are directed to the left audio channel and C,D are directed to the
+right audio channel.  These i/o ports originate in various spectrum peripherals and are mapped to the four DACs.  The DACs
+must be enabled by setting nextreg 0x08 bit 3.
+
+NAME             1    2    3    4    5    6    7
+
+DAC Channel A        0xFB 0xDF 0x1F 0xF1      0x3F
+DAC Channel B   0xB3           0x0F 0xF3 0x0F
+DAC Channel C   0xB3           0x4F 0xF9 0x4F
+DAC Channel D        0xFB 0xDF 0x5F 0xFB      0x5F
+
+1 = gs covox
+2 = pentagon, atm
+3 = specdrum
+4 = soundrive 1
+5 = soundrive 2
+6 = covox
+7 = profi covox
+
+All ports are write only.
+
+=========
+== DMA ==
+=========
+
+See https://www.specnext.com/the-zxndma/
+
+The zxn dma implements a subset of the Zilog Z80DMA architecture while adding a burst mode primarily used to play digital
+music.  Accessing the DMA through a particular port selects the DMA mode.
+
+0x0B Z80 DMA control
+(R/W)
+
+0x6B ZXN DMA control
+(R/W)
+
+=========
+== CTC ==
+=========
+
+** The CTC has been temporarily reduced to four channels from eight.
+
+Eight independent CTC channels are available on ports 0x183B through 0x1F3B.  These perform counter / timer functions that
+can be used to generate timer interrupts or to generate interrupts on behalf of physical signals.
+
+The CTC is a standard Zilog part.  Its datasheet can be found at http://www.zilog.com/docs/z80/ps0181.pdf .  The Zilog
+documentation is ambiguous around how soft resets are treated so the following clarifies some points in the Next's
+implementation.
+
+-- 1. Hard reset requires a control word to be written with D2 = 1
+--    (time constant follows) otherwise the channel effectively
+--    ignores the control word and will remain in the hard reset state.
+--
+-- 2. Soft reset is generated when the control word's D1 = 1.  if
+--    D2 = 0, the channel will enter the hard reset state.  If D2 = 1
+--    the channel expects a time constant to be written next and after
+--    that the counter/timer will run as expected.
+--
+-- 3. Changing the trigger edge selection in bit 4 counts as a clock edge.
+--    A timer waiting for a clock edge to start will start and in counter
+--    mode, the count will be decremented.
+--
+-- 4. ZC/TO is asserted for one clock cycle and not for the entire
+--    duration that the count is at zero.
+
+To soft reset a particular channel that is in an unknown state, a soft reset control word should be written twice
+with D2 = 0 (no time constant follows).
+
+At the moment, the ZC/TO output of each channel is fed into the CLK/TRG input of the succeeding channel so that 
+time and count periods can be cascaded.  Channel 3's ZC/TO output is divided by two and drives the joystick's
+clock in io mode.
+
+============
+== SERIAL ==
+============
+
+A simple bit-banged i2c interface is implemented that is connected to the RTC, optionally to the PI GPIO (see nextreg 0xa0)
+and an internal connector.  The next must be i2c master.
+
+0x103B I2C SCL
+(R/W)
+bit 0 = state of i2c clock line
+
+0x113B I2C SDA
+(R/W)
+bit 0 = state of i2c data line
+
+
+Five devices are connected to the spi interface.  The next must be spi master.
+
+0xE7 SPI CS
+(R/W)
+bit 7 = 0 to select the fpga flash (unavailable - internal use only)
+bit 3 = 0 to select pi spi 1 on the gpio pins
+bit 2 = 0 to select pi spi 0 on the gpio pins
+bit 1 = 0 to select sd card 1
+bit 0 = 0 to select sd card 0
+* Only one of these bits must be 0, if not the result will be no device selected.
+* pi gpio must be configured for spi, see nextreg 0xa0
+
+0xEB SPI DATA
+(R/W)
+Read or write data to the selected spi device.
+
+
+There are two independent fully featured uarts in the next that share the same i/o ports.
+One is connected to the esp wifi chip and the other is connected to the pi on the gpio pins.
+These share the same i/o ports so the appropriate one must be selected first before
+interacting with it.  Both uarts have a 512 byte Rx buffer and a 64 byte Tx buffer.
+
+0x153B UART Select
+(R/W)
+bit 6 = 0 to select the esp uart, 1 to select the pi uart ** (soft reset = 0)
+bit 4 = 1 if the bits 2:0 are being written
+bits 2:0 = most significant bits of the 17-bit prescalar setting baud rate (hard reset = 0)
+* pi gpio must be configured for uart, see nextreg 0xa0
+** either uart can be redirected to the joystick ports, see nextreg 0x0b
+
+0x163B UART Frame
+(R/W) (hard reset = 0x18)
+bit 7 = 1 to immediately reset the Tx and Rx modules to idle and empty fifos
+bit 6 = 1 to assert break on Tx (Tx = 0) when Tx reaches idle
+bit 5 = 1 to enable hardware flow control *
+bits 4:3 = number of bits in a frame
+  11 = 8 bits
+  10 = 7 bits
+  01 = 6 bits
+  00 = 5 bits
+bit 2 = 1 to enable parity check
+bit 1 = 0 for even parity, 1 for odd parity
+bit 0 = 0 for one stop bit, 1 for two stop bits
+* The esp only honours flow control on an issue 4 board
+* In joystick i/o mode only cts is available
+
+0x133B UART Tx
+(R)
+bit 7 = 1 if the Rx is in a break condition      ; external device has held Tx=0 for at least 20 bit periods
+bit 6 = 1 if the Rx experienced a framing error  ; (clears on read, includes parity and stop bit errors)
+bit 5 = 1 if the next Rx byte was received after an error condition was detected (framing, overflow)
+bit 4 = 1 if the Tx buffer is empty
+bit 3 = 1 if the Rx buffer is near full (3/4)
+bit 2 = 1 if the Rx buffer overflowed            ; (clears on read)
+bit 1 = 1 if the Tx buffer is full
+bit 0 = 1 if the Rx buffer contains bytes
+(W)
+Send a byte to the connected device.
+
+0x143B UART Rx
+(R)
+Read a byte from the receive buffer.  If the buffer is empty, 0 is returned.
+(W) (hard reset = 0)
+Writes the lower 14-bits of the uart's prescalar value that determines baud rate
+If bit 7 = 1
+  bits 6:0 = upper 7-bits of the 14-bit prescalar value
+If bit 7 = 0
+  bits 6:0 = lower 7-bits of the 14-bit prescalar value
+
+The uart's baud rate is determined by the prescaler according to this formula:
+prescaler = Fsys / baudrate ; Fsys = system clock from nextreg 0x11
+
+Eg: If the system is hdmi, nextreg 0x11 indicates that Fsys = 27000000.  The prescalar for a baud rate of 115200 is
+27000000 / 115200 = 234.
+
+==========
+== ULA+ ==
+==========
+
+The 64-entry ULA+ palette is stored in indices 192 through 255 of the zx next ula palette.  Because there are two ula
+palettes, there are also two ULA+ palettes.
+
+See https://zxdesign.itch.io/ulaplus
+
+0xBF3B ULA+ Register
+(W)
+bits 7:6 Select register group
+  00 = palette group
+  01 = mode group
+bits 5:0 Writes data
+  if bits 7:6 = 00, selects an index 0-63 in the ula+ palette
+  if bits 7:6 = 01, ignored (changing timex video mode is incompatible with existing ULA+ software)
+
+0xFF3B ULA+ Data
+(R)
+if palette group is selected, the palette value stored at the current ula+ palette index is returned
+if the mode group is selected, bit 0 = 1 to indicate ULA+ is enabled
+(W)
+if the palette group is selected, a palette value is written to the current ula+ palette index
+if the mode group is selected, bit 0 = 1 to enable ULA+, 0 to disable ULA+
+
+For ULA+ i/o ports, all colours are read and written in 8-bit format GGGRRRBB.  The 9th blue bit is automatically generated
+as the logical OR of the two other blue bits.
+
+=============
+== SPRITES ==
+=============
+
+See https://www.specnext.com/sprites/
+
+0x303B Sprite slot select
+(R)
+bit 1 = 1 if the maximum number of sprites was exceeded in a line
+bit 0 = 1 if any two displayed sprites collided on screen
+* Reading this register clears all flags.
+(W) Selects current sprite AND current pattern
+bits 6:0 = sets current sprite 0-127
+bits 5:0,7 = sets current pattern index
+* The current sprite and pattern index are separate quantities internally.
+* The pattern index is 6-bit in bits 5:0 and selects pattern 0-63 in the pattern ram. Each pattern is 256 bytes long.
+Bit 7 can be used to offset 128 bytes halfway through the pattern; this accommodate 4-bit sprites whose patterns are
+128 bytes in size.
+
+0x57 Sprite attributes
+(W)
+Writes the current sprite's attributes. Each sprite has either 4 or 5 attributes and after all are written, the current
+sprite pointer is advanced to the next sprite. The pointer wraps from 127 to 0.
+
+0x5B Sprite pattern
+(W)
+Writes a byte to the current pattern address and advances the current address by one. The pattern address is changed by
+writing the pattern index in port 0x303B. A pattern index indicates the start of a 256-byte range of data used to define
+an 8-bit sprite pattern or a 128-byte range of data use to define a 4-bit sprite pattern.
+
+===============
+== Multiface ==
+===============
+
+See multiface documentation.  Ports used depend on selected type in nextreg 0x0A bits 7:6.
+The zx next uses +3 type by default.
+
+============
+== DIVMMC ==
+============
+
+0xE3 Divmmc control
+(R/W)
+bit 7 = conmem = 1 to map in divmmc, 0K-8K will contain the esxdos rom, 8K-16K will contain the selected divmmc bank
+bit 6 = mapram = 1 to replace the esxdos rom with divmmc bank 3
+bits 3:0 = bank = selected divmmc ram bank for 8K-16K region
+* conmen can be used to manually control divmmc mapping.
+* divmmc automatically maps itself in when instruction fetches hit specific addresses in the rom. When this happens, the
+  esxdos rom (or divmmc bank 3 if mapram is set) appears in 0K-8K and the selected divmmc bank appears as ram in 8K-16K.
+* bit 6 can only be set, once set only a power cycle can reset it on the original divmmc.
+  nextreg 0x09 bit 3 can be set to reset this bit.
+
+The divmmc has been enhanced in the zx next to add more entry points and make them programmable.
+See nextreg 0xB8 - 0xBB.
+
+===================
+== INPUT DEVICES ==
+===================
+
+A PS/2 mouse can be connected that is presented to the system as a Kempston mouse.
+
+0xFBDF Kempston mouse X
+(R)
+Returns the current x position of the mouse 0-255. The value wraps from 255 to 0 on a right movement and from 0 to 255 on
+a left movement.
+
+0xFFDF Kempston mouse Y
+(R)
+Returns the current y position of the mouse 0-255. The value decrements and wraps from 0 to 255 on a downward movement and
+increments and wraps from 255 to 0 on an upward movement.
+
+0xFADF Kempston mouse buttons
+(R)
+bits 7:4 = mouse wheel position 0-15, wraps
+bit 2 = 1 for middle button press
+bit 1 = 1 for left button press
+bit 0 = 1 for right button press
+
+Mouse sensitivity and button reversal can be adjusted via nextreg 0x0A.
+
+
+Kempston joystick and MD Pads share the same ports, MD pads simply define more bits in a read. Sinclair sticks are also
+attached to i/o ports but they appear as keypresses 1-5 and 6-0.
+
+0x1F 0xDF Kempston joy 1 / MD Pad 1
+(R)
+bit 7 = 0 [md = start]
+bit 6 = 0 [md = a]
+bit 5 = fire 2 (poorly supported in legacy software) [md = c] = pin 9
+bit 4 = fire 1 [md = b] = pin 6
+bit 3 = up = pin 1
+bit 2 = down = pin 2
+bit 1 = left = pin 3
+bit 0 = right = pin 4
+
+0x37 Kempston joy 2 / MD Pad 2
+(R)
+bit 7 = 0 [md = start]
+bit 6 = 0 [md = a]
+bit 5 = fire 2 (poorly supported in legacy software) [md = c] = pin 9
+bit 4 = fire 1 [md = b] = pin 6
+bit 3 = up = pin 1
+bit 2 = down = pin 2
+bit 1 = left = pin 3
+bit 0 = right = pin 4
+
+The XYZ buttons on md pads can be read through nextreg 0xB2.
+The joysticks can also be placed in i/o mode see nextreg 0x0B.
+
+All twelve md pad buttons can be assigned to the keyboard see nextreg 0x05.  When using an md pad in more limited joystick
+modes (Cursor, Sinclair, Kempston), the excess buttons on the pad will generate keypresses if so programmed.
+
+==========================
+== MEMORY MAPPING MODES ==
+==========================
+
+The current memory mapping is maintained by the hardware in eight mmus with each mmu, numbered mmu0 - mmu7, holding an
+8k page number currently mapped into corresponding eight 8k slots of the z80's 64k memory space.  The individual mmus can
+be programmed via nextreg 0x50 - 0x57.
+
+The traditional banking mechanism used in various spectrum models is via ports 0x7ffd, 0xdffd, 0x1ffd and 0xeff7 with writes
+to these ports making changes to one or more mmus in the hardware.  The 128k spectrums used port 0x7ffd, the +3 used 0x7ffd
+and 0x1ffd and the Next extends that with port 0xdffd to increase the range of 16k banks that can be paged into the top 16k.
+This should be familiar to anyone with knowledge of the original spectrum models.  Russian spectrum models extended the
+banking in various ways to support up to 1MB of memory.  The Next also supports some of these banking methods which modify
+the behaviour of ports 0x7ffd and 0xdffd.  The current memory mapping mode is held in nextreg 0x8f and can be one of standard
+spectrum, pentagon 512K or pentagon 1024K.  The Next normally operates in standard spectrum mode.
+
+In standard spectrum mode, ports 0x7ffd and 0x1ffd operate as on the +3 and as described above. Port 0xdffd adds four bits
+to extend the three bit bank number in bits 2:0 of port 0x7ffd so that the full range of the zx next's memory can be paged
+into the top 16k.  Also in this mode, bit 3 of port 0xeff7 can be set to place 16k bank 0 into the bottom 16k, overlaying
+the ROM.  Writes to ports 0x7ffd, 0xdffd, 0x1ffd, 0xeff7 will cause the bottom 16k and the top 16k to remap; if all-ram mode
+is selected, the entire 64k remaps.
+
+In pentagon 512 mode, port 0x7ffd is extended so that bits 7:6 augment the bank number in bits 2:0 to form a 5-bit bank
+number for the top 16k.  On the Next, port 0x1ffd continues to function (all-ram mode and rom selection) and bit 3 of port
+0xeff7 can be set to map 16k bank 0 on top of rom in the bottom 16k. Writes to ports 0x7ffd, 0xdffd, 0x1ffd, 0xeff7 will cause
+the bottom 16k and the top 16k to remap; if all-ram mode is selected, the entire 64k remaps.
+
+In pentagon 1024 mode, port 0xeff7 bit 2 = 0 enables pentagon 1024 mapping and port 0xeff7 bit 2 = 1 selects standard
+spectrum mapping as described above.  With pentagon 1024 mode active, port 0x7ffd is unlocked and bit 5 (the lock bit) is
+repurposed as another bank bit.  The bank number paged into the top 16k is taken as port 0x7ffd bits {5,7,6,2,1,0} to reach
+1MB in 16k banks.  On the Next, port 0x1ffd continues to function (all-ram mode and rom selection) and bit 3 of port 0xeff7
+can be set to map 16k bank 0 on top of rom in the bottom 16k.  Writes to ports 0x7ffd, 0xdffd, 0x1ffd, 0xeff7 will cause
+the bottom 16k and the top 16k to remap; if all-ram mode is selected, the entire 64k remaps.
+
+For 100% compatibility with the original banking methods listed above, extra ports like 0x1ffd can be disabled using the
+internal port decodes (nextreg 0x82-0x85).

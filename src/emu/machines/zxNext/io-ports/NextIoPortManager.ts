@@ -1,6 +1,6 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { readUlaPort, writeUlaPort } from "./UlaPortHandler";
+import { readUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
@@ -532,7 +532,7 @@ export class NextIoPortManager {
     let useLogger = false;
     if (!excluded.some((e) => (port & e.mask) === e.port)) {
       console.log(
-        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedRomMsb})`
       );
       useLogger = true;
     }
@@ -565,7 +565,7 @@ export class NextIoPortManager {
   writePort(port: number, value: number): void {
     if (!excluded.some((e) => (port & e.mask) === e.port)) {
       console.log(
-        `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedBankMsb})`
+        `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedRomMsb})`
       );
     }
     const descriptor = this.portMap.get(port);
