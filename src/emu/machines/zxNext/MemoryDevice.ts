@@ -9,6 +9,7 @@ export const OFFS_MULTIFACE_MEM = 0x01_4000;
 export const OFFS_ALT_ROM_0 = 0x01_8000;
 export const OFFS_ALT_ROM_1 = 0x01_c000;
 export const OFFS_DIVMMC_RAM = 0x02_0000;
+export const OFFS_DIVMMC_RAM_BANK_3 = 0x02_0000 + 3 * 0x2000;
 export const OFFS_NEXT_RAM = 0x04_0000;
 export const OFFS_ERR_PAGE = 2048 * 1024;
 
@@ -175,20 +176,61 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   readMemory(address: number): number {
     address &= 0xffff;
-    const layer2Device = this.machine.layer2Device;
-    const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
+    const page = address >>> 13;
+    const slot = page >>> 1;
+    const offset = address & 0x1fff;
 
-    if (layer2Device.enableMappingForReads && address < layer2Size) {
-      // --- Read from layer2 memory
-      const offset = this.getLayer2MemoryOffset();
-      return this.memory[offset + address];
+    // --- Use MMU by default (unless overridden with a higher priority memory decoding)
+    let readOffset = this.pageInfo[page].readOffset;
+    if (slot === 0x00) {
+      // --- 0x0000-0x3fff: area
+      // --- #0: bootrom (ignored)
+
+      // --- #1: Multiface
+      let multifaceEnabled = false;
+      if (multifaceEnabled) {
+        // TODO: Read from Multiface memory
+        return 0x00;
+      }
+
+      // --- #2: DivMMC
+      const divMmcDevice = this.machine.divMmcDevice;
+      if (divMmcDevice.conmem) {
+        readOffset = page ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000 : OFFS_DIVMMC_ROM;
+      } else if (divMmcDevice.autoMapActive) {
+        readOffset = divMmcDevice.mapram
+          ? page
+            ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
+            : OFFS_DIVMMC_RAM_BANK_3
+          : page
+            ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
+            : OFFS_DIVMMC_ROM;
+      } else {
+        // --- #3: Layer 2 mapping
+        const layer2Mapping = false;
+        if (layer2Mapping) {
+          // TODO: Read from layer2 memory
+          return 0x00;
+        }
+
+        // --- #4: MMU
+        // --- #5: Config (ignored)
+        // --- #6: ROMCS expansion bus (ignored)
+        // --- #7: ROM
+      }
+    } else if (slot < 3) {
+      // --- 0x4000-0xbfff: area
+      // --- #1: layer 2 mapping
+      const layer2Mapping = false;
+      if (layer2Mapping) {
+        // TODO: Read from layer2 memory
+        return 0x00;
+      }
+      // --- #2: mmu
     }
 
-    // --- Read the memory according to bank information
-    const slotInfo = this.pageInfo[address >>> 13];
-    const addr = slotInfo.readOffset + (address & 0x1fff);
-    const memValue = this.memory[addr];
-    return memValue;
+    // --- Return the memory content
+    return this.memory[readOffset + offset];
   }
 
   /**
@@ -197,42 +239,66 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param data Data to write
    */
   writeMemory(address: number, data: number): void {
+    if (address === 0x2007) {
+      console.log(`Write to 0x2007: ${data} from ${this.machine.pc}`);
+    }
     address &= 0xffff;
-    const divMmcDevice = this.machine.divMmcDevice;
+    const page = address >>> 13;
+    const slot = page >>> 1;
+    const offset = address & 0x1fff;
 
-    // --- Check DivMMC device
-    if (divMmcDevice.pagedIn) {
-      if (address < 0x2000 || !divMmcDevice.canWritePage1) {
-        // --- Do not allow to write into the DivMMC ROM or write-protected page 1
+    // --- Use MMU by default (unless overridden with a higher priority memory decoding)
+    let writeOffset = this.pageInfo[page].writeOffset;
+    if (slot === 0x00) {
+      // --- 0x0000-0x3fff: area
+      // --- #0: bootrom (ignored)
+
+      // --- #1: Multiface
+      let multifaceEnabled = false;
+      if (multifaceEnabled) {
+        // TODO: Write to Multiface memory
         return;
       }
+
+      // --- #2: DivMMC
+      const divMmcDevice = this.machine.divMmcDevice;
+      if (divMmcDevice.conmem) {
+        // --- Page 0 is read-only
+        if (!page) return;
+        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000;
+      } else if (divMmcDevice.autoMapActive) {
+        // --- Page 0 is read-only, MAPRAM disables write
+        if (!page || (divMmcDevice.mapram && divMmcDevice.bank === 3)) return;
+        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
+      } else {
+        // --- #3: Layer 2 mapping
+        const layer2Mapping = false;
+        if (layer2Mapping) {
+          // TODO: Write to layer2 memory
+          return;
+        }
+
+        // --- #4: MMU
+        // --- #5: Config (ignored)
+        // --- #6: ROMCS expansion bus (ignored)
+        // --- #7: ROM
+      }
+    } else if (slot < 3) {
+      // --- 0x4000-0xbfff: area
+      // --- #1: layer 2 mapping
+      const layer2Mapping = false;
+      if (layer2Mapping) {
+        // TODO: Write to layer2 memory
+        return;
+      }
+      // --- #2: mmu
     }
 
-    // --- Check if alternate ROM is being written
-    if (address < 0x4000 && this.enableAltRom && this.altRomVisibleOnlyForWrites) {
-      // --- Write to the alternative ROM area
-      this.memory[this.getAltRomOffset() + address] = data;
-    }
-
-    // --- Check Layer 2
-    const layer2Device = this.machine.layer2Device;
-    const layer2Size = layer2Device.bank === 0x03 ? 0xc000 : 0x4000;
-    if (layer2Device.enableMappingForWrites && layer2Size === 0xc000 && address < layer2Size) {
-      const offset = this.getLayer2MemoryOffset();
-      this.memory[offset + address] = data;
+    // --- Write the memory content
+    if (writeOffset === null || writeOffset === OFFS_ERR_PAGE) {
       return;
     }
-
-    // --- Write the memory according to bank information
-    const slotInfo = this.pageInfo[address >>> 13];
-    if (slotInfo.writeOffset === OFFS_ERR_PAGE) {
-      // --- Do not write to the invalid page
-      return;
-    }
-
-    if (slotInfo.writeOffset !== null) {
-      this.memory[slotInfo.writeOffset + (address & 0x1fff)] = data;
-    }
+    this.memory[writeOffset + offset] = data;
   }
 
   /**
@@ -412,11 +478,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   get64KFlatMemory(): Uint8Array {
     const flat64 = new Uint8Array(0x1_0000);
-    for (let i = 0; i < 8; i++) {
-      const pageOffs = this.pageInfo[i].readOffset;
-      for (let j = 0; j < 0x2000; j++) {
-        flat64[i * 0x2000 + j] = this.memory[pageOffs + j];
-      }
+    for (let i = 0; i < 0x1_0000; i++) {
+      flat64[i] = this.readMemory(i);
     }
     return flat64;
   }
@@ -578,6 +641,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   getMemoryMappings() {
+    const divMmc = this.machine.divMmcDevice;
     return {
       allRamBanks: this.getAllRamMappings(),
       selectedRom: this.selectedRomMsb + this.selectedRomLsb,
@@ -588,7 +652,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       portEff7: 0x00,
       portLayer2: 0x00,
       portTimex: 0x00,
-      divMmc: this.machine.divMmcDevice.port0xe3Value,
+      divMmc: divMmc.port0xe3Value,
+      divMmcIn: divMmc.conmem || divMmc.autoMapActive,
       pageInfo: this.pageInfo
     };
   }

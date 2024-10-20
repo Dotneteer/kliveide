@@ -1,4 +1,4 @@
-import { Label, Value } from "@controls/Labels";
+import { Flag, Label, LabelSeparator, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa2, toHexa6 } from "../services/ide-commands";
@@ -21,6 +21,7 @@ const MemMappingPanel = () => {
   const [portLayer2, setPortLayer2] = useState<number>(0);
   const [portTimex, setPortTimex] = useState<number>(0);
   const [divMmc, setDivMmc] = useState<number>(0);
+  const [divMmcIn, setDivMmcIn] = useState<boolean>(false);
   const [pageInfo, setPageInfo] = useState<MemoryPageInfo[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
@@ -38,6 +39,7 @@ const MemMappingPanel = () => {
     setPortLayer2(response.portLayer2);
     setPortTimex(response.portTimex);
     setDivMmc(response.divMmc);
+    setDivMmcIn(response.divMmcIn);
     setPageInfo(response.pageInfo);
   };
 
@@ -95,6 +97,8 @@ const MemMappingPanel = () => {
       <div className={styles.item}>
         <Label text="DivMMC:" width={VAR_WIDTH} />
         <Value text={toHexa2(divMmc)} />
+        <LabelSeparator width={8} />
+        <Flag value={divMmcIn} />
       </div>
       {pageInfo[0] && (
         <div className={styles.item}>

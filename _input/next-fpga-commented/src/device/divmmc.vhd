@@ -43,8 +43,8 @@ entity divmmc is
       i_en                 : in std_logic;
 
       -- Indicates that automap should be reset. 
-      -- Active when DIVMMC is not enabled (Bit 7 of NextReg $84 is 0) or 
-      -- DIVMMC automap is not enabled (Bit 4 of Nexterg $0a is 0).
+      -- Active when DIVMMC is not enabled (Bit 0 of NextReg $83 is 0) or 
+      -- DIVMMC automap is not enabled (Bit 4 of NextReg $0a is 0).
       i_automap_reset      : in std_logic;
 
       -- The automap active signal. This is used to enable the automap logic.

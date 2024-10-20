@@ -1644,68 +1644,87 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xbf3b, 0xff3b ULA+"
+          description: "Port 0x37 kempston 2 / md2"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Port 0x0b Z80 DMA"
+          description: "Port 0x1f kempston / md1"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "port 0xeff7 Pentagon 1024 memory"
+          description: "Port 0x6b zxn dma"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b Z80 CTC"
+          description: "+3 floating bus"
         },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x1ffd"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xdffd"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x7ffd"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xff"
+        }
       ]
     });
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables (#2)",
-      writeFn: () => {},
+      writeFn: (v) => (machine.divMmcDevice.nextReg83Value = v & 0xff),
       slices: [
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xfffd, 0xbffd (AY)"
+          description: "Port 0x123b layer2"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Port 0x0f, 0x1f, 0x4f, 0x5f DAC soundrive mode 1"
+          description: "Port 0x57, 0x5b, 0x303b sprites"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "Port 0xf1, 0xf3, 0xf9, 0xfb DAC soundrive mode 2"
+          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0x3f, 0x5f DAC stereo profi covox"
+          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Port 0x0f, 0x4f DAC stereo covox"
+          description: "Port 0xe7, 0xeb spi"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0xfb DAC mono Pentagon/atm (sd mode 2 off)"
+          description: "Port 0x103b, 0x113b i2c"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0xb3 DAC mono gs covox"
+          description: "Multiface (two variable ports)"
         },
         {
           mask: 0x01,
-          description: "Port 0xdf DAC mono specdrum, Port 0x1f kempston alias"
+          description: "Port 0xe3 DivMMC control"
         }
       ]
     });
@@ -1717,41 +1736,41 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xe3 DivMMC control"
+          description: "Port 0xdf dac mono specdrum, port 0x1f kempston alias"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Multiface (two variable ports)"
+          description: "Port 0xb3 dac mono gs covox"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "Port 0x103b, 0x113b i2c"
+          description: "Port 0xfb dac mono pentagon/atm (sd mode 2 off)"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0xe7, 0xeb spi"
+          description: "Port 0x0f, 0x4f dac stereo covox"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
+          description: "Port 0x3f, 0x5f dac stereo profi covox"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
+          description: "Port 0xf1, 0xf3, 0xf9, 0xfb dac soundrive mode 2"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0x57, 0x5b, 0x303b sprites"
+          description: "Port 0x0f, 0x1f, 0x4f, 0x5f dac soundrive mode 1"
         },
         {
           mask: 0x01,
-          description: "Port 0x123b layer2"
+          description: "Port 0xfffd, 0xbffd ay"
         }
       ]
     });
@@ -1764,41 +1783,26 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xff"
-        },
-        {
-          mask: 0x40,
-          shift: 6,
-          description: "Port 0x7ffd"
-        },
-        {
-          mask: 0x20,
-          shift: 5,
-          description: "Port 0xdffd"
-        },
-        {
-          mask: 0x10,
-          shift: 4,
-          description: "Port 0x1ffd"
+          description: "Register reset mode (soft or hard reset selection)"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "+3 floating bus"
+          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b z80 ctc"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0x6b zxn dma"
+          description: "Port 0xeff7 Pentagon 1024 memory"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0x1f kempston / md1"
+          description: "Port 0x0b Z80 DMA"
         },
         {
           mask: 0x01,
-          description: "Port 0x37 kempston 2 / md2"
+          description: "Port 0xbf3b, 0xff3b ULA+"
         }
       ]
     });
@@ -1810,23 +1814,42 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xbf3b, 0xff3b ULA+"
+          description: "Port 0x37 kempston 2 / md2"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Port 0x0b Z80 DMA"
+          description: "Port 0x1f kempston / md1"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "port 0xeff7 Pentagon 1024 memory"
+          description: "Port 0x6b zxn dma"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b Z80 CTC"
+          description: "+3 floating bus"
         },
+        {
+          mask: 0x08,
+          shift: 3,
+          description: "Port 0x1ffd"
+        },
+        {
+          mask: 0x04,
+          shift: 2,
+          description: "Port 0xdffd"
+        },
+        {
+          mask: 0x02,
+          shift: 1,
+          description: "Port 0x7ffd"
+        },
+        {
+          mask: 0x01,
+          description: "Port 0xff"
+        }
       ]
     });
     r({
@@ -1837,41 +1860,41 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xfffd, 0xbffd (AY)"
+          description: "Port 0x123b layer2"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Port 0x0f, 0x1f, 0x4f, 0x5f DAC soundrive mode 1"
+          description: "Port 0x57, 0x5b, 0x303b sprites"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "Port 0xf1, 0xf3, 0xf9, 0xfb DAC soundrive mode 2"
+          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0x3f, 0x5f DAC stereo profi covox"
+          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Port 0x0f, 0x4f DAC stereo covox"
+          description: "Port 0xe7, 0xeb spi"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0xfb DAC mono Pentagon/atm (sd mode 2 off)"
+          description: "Port 0x103b, 0x113b i2c"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0xb3 DAC mono gs covox"
+          description: "Multiface (two variable ports)"
         },
         {
           mask: 0x01,
-          description: "Port 0xdf DAC mono specdrum, Port 0x1f kempston alias"
+          description: "Port 0xe3 DivMMC control"
         }
       ]
     });
@@ -1883,41 +1906,41 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xe3 DivMMC control"
+          description: "Port 0xdf dac mono specdrum, port 0x1f kempston alias"
         },
         {
           mask: 0x40,
           shift: 6,
-          description: "Multiface (two variable ports)"
+          description: "Port 0xb3 dac mono gs covox"
         },
         {
           mask: 0x20,
           shift: 5,
-          description: "Port 0x103b, 0x113b i2c"
+          description: "Port 0xfb dac mono pentagon/atm (sd mode 2 off)"
         },
         {
           mask: 0x10,
           shift: 4,
-          description: "Port 0xe7, 0xeb spi"
+          description: "Port 0x0f, 0x4f dac stereo covox"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Port 0x133b, 0x143b, 0x153b, 0x163b uart"
+          description: "Port 0x3f, 0x5f dac stereo profi covox"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0xfadf, 0xfbdf, 0xffdf mouse (also disables kempston alias on port df)"
+          description: "Port 0xf1, 0xf3, 0xf9, 0xfb dac soundrive mode 2"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0x57, 0x5b, 0x303b sprites"
+          description: "Port 0x0f, 0x1f, 0x4f, 0x5f dac soundrive mode 1"
         },
         {
           mask: 0x01,
-          description: "Port 0x123b layer2"
+          description: "Port 0xfffd, 0xbffd ay"
         }
       ]
     });
@@ -1930,41 +1953,26 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         {
           mask: 0x80,
           shift: 7,
-          description: "Port 0xff"
-        },
-        {
-          mask: 0x40,
-          shift: 6,
-          description: "Port 0x7ffd"
-        },
-        {
-          mask: 0x20,
-          shift: 5,
-          description: "Port 0xdffd"
-        },
-        {
-          mask: 0x10,
-          shift: 4,
-          description: "Port 0x1ffd"
+          description: "Register reset mode (soft or hard reset selection)"
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "+3 floating bus"
+          description: "Port 0x183b, 0x193b, 0x1a3b, 0x1b3b, 0x1c3b, 0x1d3b, 0x1e3b, 0x1f3b z80 ctc"
         },
         {
           mask: 0x04,
           shift: 2,
-          description: "Port 0x6b zxn dma"
+          description: "Port 0xeff7 Pentagon 1024 memory"
         },
         {
           mask: 0x02,
           shift: 1,
-          description: "Port 0x1f kempston / md1"
+          description: "Port 0x0b Z80 DMA"
         },
         {
           mask: 0x01,
-          description: "Port 0x37 kempston 2 / md2"
+          description: "Port 0xbf3b, 0xff3b ULA+"
         }
       ]
     });
