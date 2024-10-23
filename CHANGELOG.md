@@ -1,5 +1,9 @@
 # Klive IDE Changelog
 
+## 0.32.2
+
+Updated to Electron Shell v33.0.2
+
 ## 0.32.1
 
 ### Features
