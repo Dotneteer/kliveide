@@ -27,7 +27,7 @@ class ValidationService implements IValidationService {
       // Forward slash is discriminated either as we'd like to avoid dealing
       // with special case when constructing a full path, given the filename.
       this._fileNameRegExp = /^[^/:\x00][^/:\x00]{0,254}$/;
-      this._pathRegExp = /^[^:\x00]+$/;
+      this._pathRegExp = /^[a-zA-Z]:(\\|\/)([^<>:"/\\|?*\n]+(\\|\/)?)*$/;
 
       return;
     }
