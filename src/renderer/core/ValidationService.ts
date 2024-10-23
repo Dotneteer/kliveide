@@ -15,14 +15,42 @@ class ValidationService implements IValidationService {
   private _maxSegmentLength: number;
   private _separator: RegExp | string;
 
-  constructor(isWindows?: boolean) {
-    if (isWindows === undefined) {
-      isWindows = getIsWindows();
+  constructor(private isWindows?: boolean) {
+  }
+  
+  isValidFilename(value: string, allowEmpty = false): boolean {
+    this.setup();
+    value = value.trim();
+    if (!value) return allowEmpty;
+    return (
+      (this._fileNameRegExp?.test(value) ?? true) &&
+      !this._reservedFsNames?.some((r) => r.test(value))
+    );
+  }
+
+  isValidPath(value: string, allowEmpty = true): boolean {
+    this.setup();
+    value = value.trim();
+    if (!value) return allowEmpty;
+    if (this._pathRegExp?.test(value)) {
+      const segments = value.split(this._separator);
+      return (
+        !segments.some((s) => s.length > this._maxSegmentLength) &&
+        (!this._reservedFsNames ||
+          !segments.some((s) => this._reservedFsNames?.some((r) => r.test(s))))
+      );
+    }
+    return !this._pathRegExp;
+  }
+
+  private setup(): void {
+    if (this.isWindows === undefined) {
+      this.isWindows = getIsWindows();
     }
     this._maxSegmentLength = 255;
-    this._separator = isWindows ? "\\" : "/";
+    this._separator = this.isWindows ? "\\" : "/";
 
-    if (!isWindows) {
+    if (!this.isWindows) {
       // HFS+ allows any Unicode characters but some limitations are
       // imposed by OS itself (e.g.: colon is a paths separator).
       // Leading dot is unwanted as there's no strong reason to create hidden
@@ -62,29 +90,6 @@ class ValidationService implements IValidationService {
     ].map((s) => new RegExp(`^${s}\$`, "i"));
     this._separator = /[\\/]/;
     return;
-  }
-
-  isValidFilename(value: string, allowEmpty = false): boolean {
-    value = value.trim();
-    if (!value) return allowEmpty;
-    return (
-      (this._fileNameRegExp?.test(value) ?? true) &&
-      !this._reservedFsNames?.some((r) => r.test(value))
-    );
-  }
-
-  isValidPath(value: string, allowEmpty = true): boolean {
-    value = value.trim();
-    if (!value) return allowEmpty;
-    if (this._pathRegExp?.test(value)) {
-      const segments = value.split(this._separator);
-      return (
-        !segments.some((s) => s.length > this._maxSegmentLength) &&
-        (!this._reservedFsNames ||
-          !segments.some((s) => this._reservedFsNames?.some((r) => r.test(s))))
-      );
-    }
-    return !this._pathRegExp;
   }
 }
 
