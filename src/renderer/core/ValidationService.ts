@@ -15,11 +15,14 @@ class ValidationService implements IValidationService {
   private _maxSegmentLength: number;
   private _separator: RegExp | string;
 
-  constructor() {
+  constructor(isWindows?: boolean) {
+    if (isWindows === undefined) {
+      isWindows = getIsWindows();
+    }
     this._maxSegmentLength = 255;
-    this._separator = getIsWindows() ? "\\" : "/";
+    this._separator = isWindows ? "\\" : "/";
 
-    if (!getIsWindows()) {
+    if (!isWindows) {
       // HFS+ allows any Unicode characters but some limitations are
       // imposed by OS itself (e.g.: colon is a paths separator).
       // Leading dot is unwanted as there's no strong reason to create hidden
@@ -85,4 +88,4 @@ class ValidationService implements IValidationService {
   }
 }
 
-export const createValidationService = () => new ValidationService();
+export const createValidationService = (isWindows: boolean) => new ValidationService(isWindows);
