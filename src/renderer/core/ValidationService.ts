@@ -27,13 +27,13 @@ class ValidationService implements IValidationService {
       // Forward slash is discriminated either as we'd like to avoid dealing
       // with special case when constructing a full path, given the filename.
       this._fileNameRegExp = /^[^/:\x00][^/:\x00]{0,254}$/;
-      this._pathRegExp = /^[a-zA-Z]:(\\|\/)([^<>:"/\\|?*\n]+(\\|\/)?)*$/;
+      this._pathRegExp = /^(\/[^\/\0]+(\/[^\/\0]+)*)?\/?$/;
 
       return;
     }
     // https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths
     this._fileNameRegExp = /^[^\\/:*?\"<>|]{1,255}$/;
-    this._pathRegExp = /^(?:[A-Za-z]\:)?[^:*?\"<>|\r\n\t\v]+$/;
+    this._pathRegExp = /^[a-zA-Z]:(\\|\/)([^<>:"/\\|?*\n]+(\\|\/)?)*$/;
     this._reservedFsNames = [
       "com1",
       "com2",
