@@ -1,5 +1,15 @@
 # Klive IDE Changelog
 
+## 0.32.3
+
+### Fixes
+
+- The Create new Klive Project dialog correctly handles the project folder path on Windows.
+
+## 0.32.2
+
+Updated to Electron Shell v33.0.2
+
 ## 0.32.1
 
 ### Features
