@@ -93,4 +93,4 @@ class ValidationService implements IValidationService {
   }
 }
 
-export const createValidationService = (isWindows: boolean) => new ValidationService(isWindows);
+export const createValidationService = (isWindows?: boolean) => new ValidationService(isWindows);
