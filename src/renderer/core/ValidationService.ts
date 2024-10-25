@@ -15,11 +15,42 @@ class ValidationService implements IValidationService {
   private _maxSegmentLength: number;
   private _separator: RegExp | string;
 
-  constructor() {
-    this._maxSegmentLength = 255;
-    this._separator = getIsWindows() ? "\\" : "/";
+  constructor(private isWindows?: boolean) {
+  }
+  
+  isValidFilename(value: string, allowEmpty = false): boolean {
+    this.setup();
+    value = value.trim();
+    if (!value) return allowEmpty;
+    return (
+      (this._fileNameRegExp?.test(value) ?? true) &&
+      !this._reservedFsNames?.some((r) => r.test(value))
+    );
+  }
 
-    if (!getIsWindows()) {
+  isValidPath(value: string, allowEmpty = true): boolean {
+    this.setup();
+    value = value.trim();
+    if (!value) return allowEmpty;
+    if (this._pathRegExp?.test(value)) {
+      const segments = value.split(this._separator);
+      return (
+        !segments.some((s) => s.length > this._maxSegmentLength) &&
+        (!this._reservedFsNames ||
+          !segments.some((s) => this._reservedFsNames?.some((r) => r.test(s))))
+      );
+    }
+    return !this._pathRegExp;
+  }
+
+  private setup(): void {
+    if (this.isWindows === undefined) {
+      this.isWindows = getIsWindows();
+    }
+    this._maxSegmentLength = 255;
+    this._separator = this.isWindows ? "\\" : "/";
+
+    if (!this.isWindows) {
       // HFS+ allows any Unicode characters but some limitations are
       // imposed by OS itself (e.g.: colon is a paths separator).
       // Leading dot is unwanted as there's no strong reason to create hidden
@@ -27,13 +58,13 @@ class ValidationService implements IValidationService {
       // Forward slash is discriminated either as we'd like to avoid dealing
       // with special case when constructing a full path, given the filename.
       this._fileNameRegExp = /^[^/:\x00][^/:\x00]{0,254}$/;
-      this._pathRegExp = /^[^:\x00]+$/;
+      this._pathRegExp = /^(\/[^\/\0]+(\/[^\/\0]+)*)?\/?$/;
 
       return;
     }
     // https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#traditional-dos-paths
     this._fileNameRegExp = /^[^\\/:*?\"<>|]{1,255}$/;
-    this._pathRegExp = /^(?:[A-Za-z]\:)?[^:*?\"<>|\r\n\t\v]+$/;
+    this._pathRegExp = /^[a-zA-Z]:(\\|\/)([^<>:"/\\|?*\n]+(\\|\/)?)*$/;
     this._reservedFsNames = [
       "com1",
       "com2",
@@ -60,29 +91,6 @@ class ValidationService implements IValidationService {
     this._separator = /[\\/]/;
     return;
   }
-
-  isValidFilename(value: string, allowEmpty = false): boolean {
-    value = value.trim();
-    if (!value) return allowEmpty;
-    return (
-      (this._fileNameRegExp?.test(value) ?? true) &&
-      !this._reservedFsNames?.some((r) => r.test(value))
-    );
-  }
-
-  isValidPath(value: string, allowEmpty = true): boolean {
-    value = value.trim();
-    if (!value) return allowEmpty;
-    if (this._pathRegExp?.test(value)) {
-      const segments = value.split(this._separator);
-      return (
-        !segments.some((s) => s.length > this._maxSegmentLength) &&
-        (!this._reservedFsNames ||
-          !segments.some((s) => this._reservedFsNames?.some((r) => r.test(s))))
-      );
-    }
-    return !this._pathRegExp;
-  }
 }
 
-export const createValidationService = () => new ValidationService();
+export const createValidationService = (isWindows?: boolean) => new ValidationService(isWindows);

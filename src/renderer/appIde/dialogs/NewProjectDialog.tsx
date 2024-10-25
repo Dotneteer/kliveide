@@ -62,6 +62,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
     const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
+    console.log("Validation", fValid, nValid)
   }, [projectFolder, projectName]);
 
   return (
