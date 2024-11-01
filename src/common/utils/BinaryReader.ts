@@ -117,6 +117,19 @@ export class BinaryReader {
   }
 
   /**
+   * Reads a string from the stream with the specified length
+   * @param length String length
+   * @returns 
+   */
+  readString(length: number): string {
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += String.fromCharCode(this.readByte());
+    }
+    return result;
+  }
+
+  /**
    * Tests if end of file is reached
    */
   private _testEof (): void {
