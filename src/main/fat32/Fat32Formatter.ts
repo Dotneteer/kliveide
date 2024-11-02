@@ -76,7 +76,7 @@ export class Fat32Formatter {
     this.file.writeSector(0, writer.buffer);
 
     const bs: Fat32BootSector = {
-      BS_JmpBoot: 0xeb5890,
+      BS_JmpBoot: 0x9058eb,
       BS_OEMName: "KLIVEIDE",
       BPB_BytsPerSec: 512,
       BPB_SecPerClus: sectorsPerCluster,
@@ -157,12 +157,17 @@ export class Fat32Formatter {
     this.file.writeSector(relativeSectors + 2, writer.buffer);
     this.file.writeSector(relativeSectors + 8, writer.buffer);
 
+    // --- Calculate the number of free clusters
+    const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
+    const totalDataClusters = Math.floor(dataSectors / sectorsPerCluster);
+    const freeClusters = totalDataClusters - 2;
+
     // --- Create the FS Information Sector
     const fsInfo: Fat32FSInfo = {
       FSI_LeadSig: FSINFO_LEAD_SIGNATURE,
       FSI_Reserved1: new Uint8Array(480),
       FSI_StrucSig: FSINFO_STRUCT_SIGNATURE,
-      FSI_Free_Count: 0xffffffff,
+      FSI_Free_Count: freeClusters,
       FSI_Nxt_Free: 0xffffffff,
       FSI_Reserved2: new Uint8Array(12),
       FSI_TrailSig: FSINFO_TRAIL_SIGNATURE

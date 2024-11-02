@@ -2,8 +2,12 @@ import {
   Fat32DirEntry,
   FS_ATTRIB_DIRECTORY,
   FAT_ATTRIB_LABEL,
-  FAT_ATTRIB_LONG_NAME
+  FAT_ATTRIB_LONG_NAME,
+  BYTES_PER_SECTOR,
+  Fat32BootSector,
+  Fat32FSInfo
 } from "@abstractions/Fat32Types";
+import { BinaryReader } from "@common/utils/BinaryReader";
 
 // Reserved characters for exFAT names and FAT LFN.
 export function lfnReservedChar(c: string): boolean {
@@ -49,6 +53,60 @@ export function isFatLongName(dir: Fat32DirEntry): boolean {
 
 export function isFatSubdir(dir: Fat32DirEntry): boolean {
   return (dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL)) === FS_ATTRIB_DIRECTORY;
+}
+
+export function toBootSector(sector: Uint8Array): Fat32BootSector {
+  if (sector.length !== BYTES_PER_SECTOR) {
+    throw new Error("Invalid boot sector size");
+  }
+  const reader = new BinaryReader(sector);
+  return {
+    BS_JmpBoot: reader.readByte() + (reader.readByte() << 8) + (reader.readByte() << 16),
+    BS_OEMName: reader.readString(8),
+    BPB_BytsPerSec: reader.readUint16(),
+    BPB_SecPerClus: reader.readByte(),
+    BPB_ResvdSecCnt: reader.readUint16(),
+    BPB_NumFATs: reader.readByte(),
+    BPB_RootEntCnt: reader.readUint16(),
+    BPB_TotSec16: reader.readUint16(),
+    BPB_Media: reader.readByte(),
+    BPB_FATSz16: reader.readUint16(),
+    BPB_SecPerTrk: reader.readUint16(),
+    BPB_NumHeads: reader.readUint16(),
+    BPB_HiddSec: reader.readUint32(),
+    BPB_TotSec32: reader.readUint32(),
+    BPB_FATSz32: reader.readUint32(),
+    BPB_ExtFlags: reader.readUint16(),
+    BPB_FSVer: reader.readUint16(),
+    BPB_RootClus: reader.readUint32(),
+    BPB_FSInfo: reader.readUint16(),
+    BPB_BkBootSec: reader.readUint16(),
+    BPB_Reserved: Uint8Array.from(reader.readBytes(12)),
+    BS_DrvNum: reader.readByte(),
+    BS_Reserved1: reader.readByte(),
+    BS_BootSig: reader.readByte(),
+    BS_VolID: reader.readUint32(),
+    BS_VolLab: reader.readString(11),
+    BS_FileSysType: reader.readString(8),
+    BootCode: Uint8Array.from(reader.readBytes(420)),
+    BootSectorSignature: reader.readUint16()
+  };
+}
+
+export function toFsInfoSector(sector: Uint8Array): Fat32FSInfo {
+  if (sector.length !== BYTES_PER_SECTOR) {
+    throw new Error("Invalid boot sector size");
+  }
+  const reader = new BinaryReader(sector);
+  return {
+    FSI_LeadSig: reader.readUint32(),
+    FSI_Reserved1: Uint8Array.from(reader.readBytes(480)),
+    FSI_StrucSig: reader.readUint32(),
+    FSI_Free_Count: reader.readUint32(),
+    FSI_Nxt_Free: reader.readUint32(),
+    FSI_Reserved2: Uint8Array.from(reader.readBytes(12)),
+    FSI_TrailSig: reader.readUint32()
+  };
 }
 
 type UppercaseMapEntry = [key: number, off: number, count: number];
