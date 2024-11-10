@@ -5,7 +5,12 @@ import {
   FAT_ATTRIB_LONG_NAME,
   BYTES_PER_SECTOR,
   Fat32BootSector,
-  Fat32FSInfo
+  Fat32FSInfo,
+  FS_DIR_SIZE,
+  Fat32LongFileName,
+  O_ACCMODE,
+  O_RDWR,
+  O_WRONLY
 } from "@abstractions/Fat32Types";
 import { BinaryReader } from "@common/utils/BinaryReader";
 
@@ -53,6 +58,11 @@ export function isFatLongName(dir: Fat32DirEntry): boolean {
 
 export function isFatSubdir(dir: Fat32DirEntry): boolean {
   return (dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL)) === FS_ATTRIB_DIRECTORY;
+}
+
+export function isWriteMode(oflag: number) {
+  oflag &= O_ACCMODE;
+  return oflag === O_WRONLY || oflag === O_RDWR;
 }
 
 export function toBootSector(sector: Uint8Array): Fat32BootSector {
@@ -106,6 +116,49 @@ export function toFsInfoSector(sector: Uint8Array): Fat32FSInfo {
     FSI_Nxt_Free: reader.readUint32(),
     FSI_Reserved2: Uint8Array.from(reader.readBytes(12)),
     FSI_TrailSig: reader.readUint32()
+  };
+}
+
+export function toFatDirEntry(sector: Uint8Array, offset: number): Fat32DirEntry {
+  const reader = new BinaryReader(sector);
+  reader.seek(offset * FS_DIR_SIZE);
+  return {
+    DIR_Name: reader.readString(11),
+    DIR_Attr: reader.readByte(),
+    DIR_NTRes: reader.readByte(),
+    DIR_CrtTimeTenth: reader.readByte(),
+    DIR_CrtTime: reader.readUint16(),
+    DIR_CrtDate: reader.readUint16(),
+    DIR_LstAccDate: reader.readUint16(),
+    DIR_FstClusHI: reader.readUint16(),
+    DIR_WrtTime: reader.readUint16(),
+    DIR_WrtDate: reader.readUint16(),
+    DIR_FstClusLO: reader.readUint16(),
+    DIR_FileSize: reader.readUint32()
+  };
+}
+
+export function toFatLongName(dir: Fat32DirEntry): Fat32LongFileName {
+  const name1: number[] = [];
+  for (let i = 0; i < 10; i += 2) {
+    name1.push(dir.DIR_Name.charCodeAt(i) + (dir.DIR_Name.charCodeAt(i + 1) << 8));
+  }
+  return {
+    LDIR_Ord: dir.DIR_Name.charCodeAt(0),
+    LDIR_Name1: name1,
+    LDIR_Attr: dir.DIR_Attr,
+    LDIR_Type: dir.DIR_NTRes,
+    LDIR_Chksum: dir.DIR_CrtTimeTenth,
+    LDIR_Name2: [
+      dir.DIR_CrtTime,
+      dir.DIR_CrtDate,
+      dir.DIR_LstAccDate,
+      dir.DIR_FstClusHI,
+      dir.DIR_WrtTime,
+      dir.DIR_WrtDate
+    ],
+    LDIR_FstClusLO: dir.DIR_FstClusLO,
+    LDIR_Name3: [dir.DIR_FileSize & 0xffff, dir.DIR_FileSize >> 16]
   };
 }
 
@@ -246,7 +299,10 @@ const upperCaseLookup: UppercaseLookupEntry[] = [
   [0x2c76, 0x2c75]
 ];
 
-function searchUppercaseEntry(table: (UppercaseLookupEntry | UppercaseMapEntry)[], key: number): number {
+function searchUppercaseEntry(
+  table: (UppercaseLookupEntry | UppercaseMapEntry)[],
+  key: number
+): number {
   let left = 0;
   let right = table.length;
   while (right - left > 1) {
@@ -263,20 +319,43 @@ function searchUppercaseEntry(table: (UppercaseLookupEntry | UppercaseMapEntry)[
 export function toUppercaseLetter(chr: number): number {
   // Optimize for simple ASCII.
   if (chr < 127) {
-    return chr - ('a'.charCodeAt(0) <= chr && chr <= 'z'.charCodeAt(0) ? 'a'.charCodeAt(0) - 'A'.charCodeAt(0) : 0);
+    return (
+      chr -
+      ("a".charCodeAt(0) <= chr && chr <= "z".charCodeAt(0)
+        ? "a".charCodeAt(0) - "A".charCodeAt(0)
+        : 0)
+    );
   }
   let i = searchUppercaseEntry(upperCaseMap, chr);
   const first = upperCaseMap[i][0];
-  if (first <= chr && (chr - first) < upperCaseMap[i][2]) {
+  if (first <= chr && chr - first < upperCaseMap[i][2]) {
     let off = upperCaseMap[i][1];
     if (off === 1) {
       return chr - ((chr - first) & 1);
     }
-    return chr + (off ? off : -0x1C60);
+    return chr + (off ? off : -0x1c60);
   }
   i = searchUppercaseEntry(upperCaseLookup, chr);
   if (upperCaseLookup[i][0] === chr) {
     return upperCaseLookup[i][1];
   }
   return chr;
+}
+
+export function dateToNumber(date: Date): number {
+  return (
+    ((date.getFullYear() - 1980) << 9) +
+    (date.getMonth() + 1) * 32 +
+    date.getDate()
+  );
+}
+
+export function timeToNumber(date: Date): number {
+  return (
+    (date.getHours() << 11) + (date.getMinutes() << 5) + (date.getSeconds() >> 1)
+  );
+}
+
+export function timeMsToNumber(date: Date): number {
+  return date.getMilliseconds() / 100
 }

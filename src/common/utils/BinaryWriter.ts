@@ -54,6 +54,13 @@ export class BinaryWriter {
     }
   }
 
+  writeString(value: string, length?: number, fallback = 0): void {
+    if (length === undefined) length = value.length;
+    for (let i = 0; i < length; i++) {
+      this.writeByte(value.charCodeAt(i) ?? fallback);
+    }
+  }
+
   /**
    * Writes an u16 value to the stream
    * @param value Value to write

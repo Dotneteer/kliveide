@@ -11,6 +11,7 @@ import { CimFile } from "./CimFileManager";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import { toBootSector, toFsInfoSector } from "./fat-utils";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { CACHE_STATUS_MIRROR_FAT, FsCache } from "./FsCache";
 
 export class FatPartition {
   // --- Cluster size in sectors
@@ -46,7 +47,11 @@ export class FatPartition {
   // --- Start of the volume.
   private _volumeStart = 0;
 
-  constructor(private readonly cimFile: CimFile) {}
+  private _cache: FsCache;
+
+  constructor(public readonly cimFile: CimFile) {
+    this._cache = new FsCache(cimFile);
+  }
 
   // --- The shift count required to multiply by bytesPerCluster
   get bytesPerClusterShift() {
@@ -114,6 +119,11 @@ export class FatPartition {
     return this._sectorsPerCluster * this.clusterCount;
   }
 
+  // --- The current data cache
+  get dataCache() {
+    return this._cache.cacheBuffer;
+  }
+
   /** Initialize a FAT partition.
    * @param part The partition to be used. Legal values for \a part are 1-4 to use the 
    * corresponding partition on a device formatted with a MBR, Master Boot Record, 
@@ -125,6 +135,7 @@ export class FatPartition {
     let totalSectors: number;
     this._volumeStart = volStart;
     this._allocSearchStart = 1;
+    this._cache.init();
     
     // --- if part == 0 assume super floppy with FAT boot sector in sector zero
     // --- if part > 0 assume mbr volume with partition table
@@ -194,6 +205,38 @@ export class FatPartition {
     // --- Done
     return true;
   };
+
+  /** 
+   * Clear the cache and returns a pointer to the cache. Not for normal apps.
+   * @return The cache buffer or null if an error occurs.
+   */
+  cacheClear() { return this._cache.clear(); }
+
+  cacheSafeRead(sector: number, count?: number): Uint8Array | null {
+    return this._cache.cacheSafeRead(sector, count);
+  }
+
+  cacheSafeWrite(sector: number, src: Uint8Array, count?: number) {
+    return this._cache.cacheSafeWrite(sector, src, count);
+  }
+
+  fatCachePrepare(sector: number, options: number): Uint8Array | null {
+    options |= CACHE_STATUS_MIRROR_FAT;
+    return this.dataCachePrepare(sector, options);
+  }
+  
+  cacheSync() { return this._cache.sync() && this.syncDevice(); }
+
+  dataCachePrepare(sector: number, options: number): Uint8Array | null {
+    return this._cache.prepare(sector, options);
+  }
+
+  cacheSyncData() { return this._cache.sync(); }
+
+  get cacheSectorNumber() { return this._cache.sector; }
+
+  cacheDirty() { this._cache.dirty(); }
+
 
   readMasterBootRecord(): Fat32MasterBootRecord {
     return this.cimFile.readMbr();
