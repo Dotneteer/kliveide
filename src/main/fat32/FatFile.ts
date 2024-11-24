@@ -1,8 +1,6 @@
 import {
   BYTES_PER_SECTOR,
   BYTES_PER_SECTOR_SHIFT,
-  Fat32DirEntry,
-  Fat32LongFileName,
   FAT_ATTRIB_LONG_NAME,
   FAT_CASE_LC_BASE,
   FAT_CASE_LC_EXT,
@@ -21,7 +19,6 @@ import {
   FS_ATTRIB_SYSTEM,
   FS_ATTRIB_USER_SETTABLE,
   FS_DIR_SIZE,
-  isFat32LongName,
   O_ACCMODE,
   O_APPEND,
   O_AT_END,
@@ -51,6 +48,9 @@ import { CimFile } from "./CimFileManager";
 import { CACHE_FOR_READ, CACHE_FOR_WRITE, CACHE_RESERVE_FOR_WRITE } from "./FsCache";
 import { calcShortNameCheckSum, convertLongToShortName } from "./file-names";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
+import { FatDirEntry } from "./FatDirEntry";
+import { FatLongFileName } from "./FatLongFileName";
+import { l } from "nextra/dist/types-c8e621b7";
 
 // --- This file has not been opened
 const FILE_ATTR_CLOSED = 0;
@@ -251,7 +251,7 @@ export class FatFile {
    * Return a file's directory entry.
    * @return Entry for success or null for failure.
    */
-  dirEntry(): Fat32DirEntry | null {
+  dirEntry(): FatDirEntry | null {
     throw new Error("Method not implemented.");
   }
 
@@ -787,7 +787,6 @@ export class FatFile {
           } else {
             // --- Get next cluster from FAT
             const fg = this._vol.fatGet(this._curCluster);
-            this._curCluster = fg.next;
             if (fg.status < 0) {
               // --- Error reading FAT.
               return null;
@@ -798,6 +797,7 @@ export class FatFile {
               }
               return null;
             }
+            this._curCluster = fg.next;
           }
         }
         sector = this._vol.clusterStartSector(this._curCluster) + sectorOfCluster;
@@ -849,7 +849,7 @@ export class FatFile {
    * @param skipReadOk If true, skip read if the current position is valid.
    * Assumes file is correctly positioned.
    */
-  readDirCache(skipReadOk = false): Fat32DirEntry | null {
+  readDirCache(skipReadOk = false): FatDirEntry | null {
     const i = (this._curPosition >> 5) & 0x0f;
 
     if (i == 0 || !skipReadOk) {
@@ -876,7 +876,7 @@ export class FatFile {
    * readDir() called before a directory has been opened, this is not
    * a directory file or an I/O error occurred.
    */
-  readDir(): Fat32DirEntry | null {
+  readDir(): FatDirEntry | null {
     throw new Error("Method not implemented.");
   }
 
@@ -1022,11 +1022,11 @@ export class FatFile {
     }
     while (nNew--) {
       const fg = this._vol.fatGet(this._curCluster);
-      this._curCluster = fg.next;
       if (fg.status <= 0) {
         this._curCluster = tmp;
         return false;
       }
+      this._curCluster = fg.next;
     }
 
     // --- Done.
@@ -1147,75 +1147,44 @@ export class FatFile {
     throw new Error("Method not implemented.");
   }
 
-  cacheDirEntry(action: number): Fat32DirEntry | null {
+  cacheDirEntry(action: number): FatDirEntry | null {
     let pc = this._vol.dataCachePrepare(this._dirSector, action);
     return pc ? toFatDirEntry(pc, this._dirIndex & 0x0f) : null;
   }
 
-  cacheDir(index: number): Fat32DirEntry | null {
+  cacheDir(index: number): FatDirEntry | null {
     return this.seekSet(32 * index) ? this.readDirCache() : null;
   }
 
-  setCacheDir(entry: Fat32DirEntry | Fat32LongFileName, index: number): void {
-    const writer = new BinaryWriter();
-    if (isFat32LongName(entry)) {
-      writer.writeByte(entry.LDIR_Ord);
-      writer.writeUint16(entry.LDIR_Name1[0]);
-      writer.writeUint16(entry.LDIR_Name1[1]);
-      writer.writeUint16(entry.LDIR_Name1[2]);
-      writer.writeUint16(entry.LDIR_Name1[3]);
-      writer.writeUint16(entry.LDIR_Name1[4]);
-      writer.writeByte(entry.LDIR_Attr);
-      writer.writeByte(entry.LDIR_Type);
-      writer.writeByte(entry.LDIR_Chksum);
-      writer.writeUint16(entry.LDIR_Name2[0]);
-      writer.writeUint16(entry.LDIR_Name2[1]);
-      writer.writeUint16(entry.LDIR_Name2[2]);
-      writer.writeUint16(entry.LDIR_Name2[3]);
-      writer.writeUint16(entry.LDIR_Name2[4]);
-      writer.writeUint16(entry.LDIR_Name2[5]);
-      writer.writeUint16(entry.LDIR_FstClusLO);
-      writer.writeUint16(entry.LDIR_Name3[0]);
-      writer.writeUint16(entry.LDIR_Name3[1]);
-    } else {
-      writer.writeString(entry.DIR_Name, 11);
-      writer.writeByte(entry.DIR_Attr);
-      writer.writeByte(entry.DIR_NTRes);
-      writer.writeByte(entry.DIR_CrtTimeTenth);
-      writer.writeUint16(entry.DIR_CrtTime);
-      writer.writeUint16(entry.DIR_CrtDate);
-      writer.writeUint16(entry.DIR_LstAccDate);
-      writer.writeUint16(entry.DIR_FstClusHI);
-      writer.writeUint16(entry.DIR_WrtTime);
-      writer.writeUint16(entry.DIR_WrtDate);
-      writer.writeUint16(entry.DIR_FstClusLO);
-      writer.writeUint32(entry.DIR_FileSize);
-    }
-    this._vol.dataCache.set(writer.buffer, 32 * index);
+  setCacheDir(entry: FatDirEntry | FatLongFileName, index: number): void {
+    this._vol.dataCache.set(entry.buffer, 32 * index);
   }
 
-  getLfnChar(ldir: Fat32LongFileName, i: number): number {
+  getLfnChar(ldir: FatLongFileName, i: number): number {
     if (i < 5) {
-      return (ldir.LDIR_Name1[2 * i] + (ldir.LDIR_Name1[2 * i + 1] << 8)) & 0xffff;
+      return ldir.LDIR_Name1[i] & 0xffff;
     } else if (i < 11) {
-      return (ldir.LDIR_Name2[2 * (i - 5)] + (ldir.LDIR_Name2[2 * (i - 5) + 1] << 8)) & 0xffff;
+      return ldir.LDIR_Name2[i - 5] & 0xffff;
     } else if (i < 13) {
-      return (ldir.LDIR_Name3[2 * (i - 11)] + (ldir.LDIR_Name3[2 * (i - 11) + 1] << 8)) & 0xffff;
+      return ldir.LDIR_Name3[i - 11] & 0xffff;
     } else {
       throw new Error("Invalid long name character index");
     }
   }
 
-  putLfnChar(ldir: Fat32LongFileName, i: number, c: number) {
+  putLfnChar(ldir: FatLongFileName, i: number, c: number) {
     if (i < 5) {
-      ldir.LDIR_Name1[2 * i] = c & 0xff;
-      ldir.LDIR_Name1[2 * i + 1] = (c >> 8) & 0xff;
+      const tmp = ldir.LDIR_Name1;
+      tmp[i] = c;
+      ldir.LDIR_Name1 = tmp;
     } else if (i < 11) {
-      ldir.LDIR_Name2[2 * (i - 5)] = c & 0xff;
-      ldir.LDIR_Name2[2 * (i - 5) + 1] = (c >> 8) & 0xff;
+      const tmp = ldir.LDIR_Name2;
+      tmp[i - 5] = c;
+      ldir.LDIR_Name2 = tmp;
     } else if (i < 13) {
-      ldir.LDIR_Name3[2 * (i - 11)] = c & 0xff;
-      ldir.LDIR_Name3[2 * (i - 11) + 1] = (c >> 8) & 0xff;
+      const tmp = ldir.LDIR_Name3;
+      tmp[i - 11] = c;
+      ldir.LDIR_Name3 = tmp;
     }
   }
 
@@ -1357,9 +1326,9 @@ export class FatFile {
     return null;
   }
 
-  createLFN(index: number, fname: FsName, lfnOrd: number): Fat32LongFileName | null {
+  createLFN(index: number, fname: FsName, lfnOrd: number): FatLongFileName | null {
     const dir = this.clone();
-    let ldir: Fat32LongFileName;
+    let ldir: FatLongFileName;
     const checksum = calcShortNameCheckSum(fname.sfn11);
 
     let nameIndex = 0;
@@ -1385,7 +1354,6 @@ export class FatFile {
         }
         this.putLfnChar(ldir, i, cp);
       }
-      dir.setCacheDir(ldir, index - order);
     }
     return ldir;
   }
@@ -1424,7 +1392,7 @@ export class FatFile {
     // --- Move back to the 0 seek position
     dirFile.rewind();
 
-    let dir: Fat32DirEntry;
+    let dir: FatDirEntry;
     while (true) {
       curIndex = Math.floor(dirFile._curPosition / FS_DIR_SIZE);
       dir = dirFile.readDirCache();
@@ -1456,7 +1424,7 @@ export class FatFile {
 
       // --- Skip empty slot or '.' or '..'
       let checksum = 0;
-      let ldir: Fat32LongFileName;
+      let ldir: FatLongFileName;
       if (firstNameByte == FAT_NAME_DELETED || firstNameByte === ".".charCodeAt(0)) {
         lfnOrd = 0;
       } else if (isFatLongName(dir)) {
@@ -1568,7 +1536,6 @@ export class FatFile {
       dir.DIR_WrtDate = dateToNumber(now);
       dir.DIR_FstClusLO = 0;
       dir.DIR_FileSize = 0;
-      fatFile.setCacheDir(dir, curIndex);
 
       // --- Force write of entry to device.
       vol.cacheDirty();
@@ -1621,10 +1588,9 @@ export class FatFile {
 
     // --- Change directory entry attribute
     dir.DIR_Attr = FS_ATTRIB_DIRECTORY;
-    this.setCacheDir(dir, 0);
 
     // --- Make entry for '.'
-    let dot = { ...dir };
+    let dot = dir.clone();
     dot.DIR_Name = ".".padEnd(11, " ");
 
     // --- Cache sector for '.'  and '..'
@@ -1633,13 +1599,17 @@ export class FatFile {
     if (!pc) {
       return false;
     }
-    this.setCacheDir(dot, 0);
+
+    // --- Copy '.' dir to sector
+    pc.set(dot.buffer.slice(0, FS_DIR_SIZE), 0);
+
+    // --- Make entry for '..'
     dot.DIR_Name = "..".padEnd(11, " ");
     dot.DIR_FstClusLO = parent._firstCluster & 0xffff;
     dot.DIR_FstClusHI = parent._firstCluster >> 16;
 
     // --- Copy '..' to sector
-    this.setCacheDir(dot, 1);
+    pc.set(dot.buffer.slice(0, FS_DIR_SIZE), FS_DIR_SIZE);
 
     // --- Write first sector
     return this._vol.cacheSync();

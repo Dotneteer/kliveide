@@ -1,16 +1,18 @@
 import {
   BYTES_PER_SECTOR,
   EXTENDED_BOOT_SIGNATURE,
-  Fat32BootSector,
-  Fat32FSInfo,
   FS_DIR_SIZE,
   FSINFO_LEAD_SIGNATURE,
   FSINFO_STRUCT_SIGNATURE,
   FSINFO_TRAIL_SIGNATURE,
+  JUMP_CODE,
   SIGNATURE
 } from "@abstractions/Fat32Types";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { CimFile } from "@main/fat32/CimFileManager";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
+import { FatPartitionEntry } from "./FatPartitionEntry";
+import { FatBootSector } from "./FatBootSector";
+import { FatFsInfo } from "./FatFsInfo";
 
 export class Fat32Formatter {
   constructor(public readonly file: CimFile) {}
@@ -18,9 +20,6 @@ export class Fat32Formatter {
   makeFat32(volumeName = "NO NAME"): void {
     // --- Use the specified file
     const cimInfo = this.file.cimInfo;
-
-    // --- Use this writer for sectors
-    const writer = new BinaryWriter();
 
     // --- Calculate some initial values
     const sectorCount = Math.floor((cimInfo.maxSize * 1024 * 1024) / BYTES_PER_SECTOR);
@@ -61,101 +60,64 @@ export class Fat32Formatter {
     const endChs = this.lbaToMbrChs(relativeSectors + totalSectors - 1);
 
     // --- Write the MBR information
-    writer.reset();
-    writer.writeBytes(new Uint8Array(446));
-    writer.writeByte(0x00); // --- Boot indicator (partition 0)
-    writer.writeBytes(new Uint8Array(Buffer.from(beginChs))); // --- Begin CHS (partition 0)
-    writer.writeByte(partType); // --- Partition type (FAT32)
-    writer.writeBytes(new Uint8Array(Buffer.from(endChs))); // --- End CHS (partition 0)
-    writer.writeUint32(relativeSectors); // --- Relative sectors (partition 0)
-    writer.writeUint32(totalSectors); // --- Total sectors (partition 0)
-    writer.writeBytes(new Uint8Array(16)); // --- Partition 1
-    writer.writeBytes(new Uint8Array(16)); // --- Partition 2
-    writer.writeBytes(new Uint8Array(16)); // --- Partition 3
-    writer.writeUint16(SIGNATURE); // --- Boot sector signature
-    this.file.writeSector(0, writer.buffer);
+    const mbr = new FatMasterBootRecord(new Uint8Array(512));
+    const part1 = new FatPartitionEntry(new Uint8Array(16));
+    part1.bootIndicator = 0x00;
+    part1.beginChs = beginChs;
+    part1.partType = partType;
+    part1.endChs = endChs;
+    part1.relativeSectors = relativeSectors;
+    part1.totalSectors = totalSectors;
+    mbr.partition1 = part1;
+    mbr.bootSignature = SIGNATURE;
+    this.file.writeSector(0, mbr.buffer);
 
-    const bs: Fat32BootSector = {
-      BS_JmpBoot: 0x9058eb,
-      BS_OEMName: "KLIVEIDE",
-      BPB_BytsPerSec: 512,
-      BPB_SecPerClus: sectorsPerCluster,
-      BPB_ResvdSecCnt: FS_DIR_SIZE,
-      BPB_NumFATs: 2,
-      BPB_RootEntCnt: 0,
-      BPB_TotSec16: 0,
-      BPB_Media: 0xf8,
-      BPB_FATSz16: 0,
-      BPB_SecPerTrk: 63,
-      BPB_NumHeads: 255,
-      BPB_HiddSec: 0,
-      BPB_TotSec32: sectorCount,
-      BPB_FATSz32: fat32Size,
-      BPB_ExtFlags: 0,
-      BPB_FSVer: 0,
-      BPB_RootClus: 2,
-      BPB_FSInfo: 1,
-      BPB_BkBootSec: 6,
-      BPB_Reserved: new Uint8Array(12),
-      BS_DrvNum: 0x80,
-      BS_Reserved1: 0,
-      BS_BootSig: EXTENDED_BOOT_SIGNATURE,
-      BS_VolID: new Date().valueOf() & 0xffffffff,
-      BS_VolLab: volumeName.substring(0, 110).padEnd(11, " "),
-      BS_FileSysType: "FAT32   ",
-      BootCode: new Uint8Array(420),
-      BootSectorSignature: 0xaa55
-    };
+    // --- Write the boot sector
+    const bs = new FatBootSector(new Uint8Array(BYTES_PER_SECTOR));
+    bs.BS_JmpBoot = JUMP_CODE;
+    bs.BS_OEMName = "KLIVEIDE";
+    bs.BPB_BytsPerSec = BYTES_PER_SECTOR;
+    bs.BPB_SecPerClus = sectorsPerCluster;
+    bs.BPB_ResvdSecCnt = FS_DIR_SIZE;
+    bs.BPB_NumFATs = 2;
+    bs.BPB_RootEntCnt = 0;
+    bs.BPB_TotSec16 = 0;
+    bs.BPB_Media = 0xf8;
+    bs.BPB_FATSz16 = 0;
+    bs.BPB_SecPerTrk = 63;
+    bs.BPB_NumHeads = 255;
+    bs.BPB_HiddSec = 0;
+    bs.BPB_TotSec32 = sectorCount;
+    bs.BPB_FATSz32 = fat32Size;
+    bs.BPB_ExtFlags = 0;
+    bs.BPB_FSVer = 0;
+    bs.BPB_RootClus = 2;
+    bs.BPB_FSInfo = 1;
+    bs.BPB_BkBootSec = 6;
+    bs.BPB_Reserved = new Uint8Array(12);
+    bs.BS_DrvNum = 0x80;
+    bs.BS_Reserved1 = 0;
+    bs.BS_BootSig = EXTENDED_BOOT_SIGNATURE;
+    bs.BS_VolID = new Date().valueOf() & 0xffffffff;
+    bs.BS_VolLab = volumeName.substring(0, 11).padEnd(11, " ");
+    bs.BS_FileSysType = "FAT32".substring(0,8).padEnd(8, " ");
+    bs.BootCode = new Uint8Array(420);
+    bs.BootSectorSignature = SIGNATURE;
 
     // --- Calculate a few attributes
     if (!this.checkValidFat32Size(bs)) {
       throw new Error("The FAT32 size is too small.");
     }
 
-    // --- Create the boot sector
-    writer.reset();
-    writer.writeByte(bs.BS_JmpBoot >>> 16);
-    writer.writeByte(bs.BS_JmpBoot >>> 8);
-    writer.writeByte(bs.BS_JmpBoot);
-    writer.writeBytes(new Uint8Array(Buffer.from(bs.BS_OEMName.padEnd(8, " "))));
-    writer.writeUint16(bs.BPB_BytsPerSec);
-    writer.writeByte(bs.BPB_SecPerClus);
-    writer.writeUint16(bs.BPB_ResvdSecCnt);
-    writer.writeByte(bs.BPB_NumFATs);
-    writer.writeUint16(bs.BPB_RootEntCnt);
-    writer.writeUint16(bs.BPB_TotSec16);
-    writer.writeByte(bs.BPB_Media);
-    writer.writeUint16(bs.BPB_FATSz16);
-    writer.writeUint16(bs.BPB_SecPerTrk);
-    writer.writeUint16(bs.BPB_NumHeads);
-    writer.writeUint32(bs.BPB_HiddSec);
-    writer.writeUint32(bs.BPB_TotSec32);
-    writer.writeUint32(bs.BPB_FATSz32);
-    writer.writeUint16(bs.BPB_ExtFlags);
-    writer.writeUint16(bs.BPB_FSVer);
-    writer.writeUint32(bs.BPB_RootClus);
-    writer.writeUint16(bs.BPB_FSInfo);
-    writer.writeUint16(bs.BPB_BkBootSec);
-    writer.writeBytes(bs.BPB_Reserved);
-    writer.writeByte(bs.BS_DrvNum);
-    writer.writeByte(bs.BS_Reserved1);
-    writer.writeByte(bs.BS_BootSig);
-    writer.writeUint32(bs.BS_VolID);
-    writer.writeBytes(new Uint8Array(Buffer.from(bs.BS_VolLab.padEnd(11, " "))));
-    writer.writeBytes(new Uint8Array(Buffer.from(bs.BS_FileSysType.padEnd(8, " "))));
-    writer.writeBytes(bs.BootCode);
-    writer.writeUint16(bs.BootSectorSignature);
-
-    // --- Write the boot sector (and its backup)
-    this.file.writeSector(relativeSectors, writer.buffer);
-    this.file.writeSector(relativeSectors + 6, writer.buffer);
+    this.file.writeSector(relativeSectors, bs.buffer);
+    this.file.writeSector(relativeSectors + 6, bs.buffer);
 
     // --- Write extra boot area and backup
-    writer.reset();
-    writer.writeBytes(new Uint8Array(508));
-    writer.writeUint32(FSINFO_TRAIL_SIGNATURE);
-    this.file.writeSector(relativeSectors + 2, writer.buffer);
-    this.file.writeSector(relativeSectors + 8, writer.buffer);
+    const extraBoot = new Uint8Array(BYTES_PER_SECTOR);
+    const extraDv = new DataView(extraBoot.buffer);
+    extraDv.setUint32(508, FSINFO_TRAIL_SIGNATURE);
+    this.file.writeSector(relativeSectors + 2, extraBoot);
+    this.file.writeSector(relativeSectors + 8, extraBoot);
 
     // --- Calculate the number of free clusters
     const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
@@ -163,28 +125,18 @@ export class Fat32Formatter {
     const freeClusters = totalDataClusters - 2;
 
     // --- Create the FS Information Sector
-    const fsInfo: Fat32FSInfo = {
-      FSI_LeadSig: FSINFO_LEAD_SIGNATURE,
-      FSI_Reserved1: new Uint8Array(480),
-      FSI_StrucSig: FSINFO_STRUCT_SIGNATURE,
-      FSI_Free_Count: freeClusters,
-      FSI_Nxt_Free: 0xffffffff,
-      FSI_Reserved2: new Uint8Array(12),
-      FSI_TrailSig: FSINFO_TRAIL_SIGNATURE
-    };
-
-    writer.reset();
-    writer.writeUint32(fsInfo.FSI_LeadSig);
-    writer.writeBytes(fsInfo.FSI_Reserved1);
-    writer.writeUint32(fsInfo.FSI_StrucSig);
-    writer.writeUint32(fsInfo.FSI_Free_Count);
-    writer.writeUint32(fsInfo.FSI_Nxt_Free);
-    writer.writeBytes(fsInfo.FSI_Reserved2);
-    writer.writeUint32(fsInfo.FSI_TrailSig);
+    const fsInfo = new FatFsInfo(new Uint8Array(BYTES_PER_SECTOR));
+    fsInfo.FSI_LeadSig = FSINFO_LEAD_SIGNATURE;
+    fsInfo.FSI_Reserved1 = new Uint8Array(480);
+    fsInfo.FSI_StrucSig = FSINFO_STRUCT_SIGNATURE;
+    fsInfo.FSI_Free_Count = freeClusters;
+    fsInfo.FSI_Nxt_Free = 0xffffffff;
+    fsInfo.FSI_Reserved2 = new Uint8Array(12);
+    fsInfo.FSI_TrailSig = FSINFO_TRAIL_SIGNATURE;
 
     // --- Write the FS Information Sector
-    this.file.writeSector(relativeSectors + 1, writer.buffer);
-    this.file.writeSector(relativeSectors + 7, writer.buffer);
+    this.file.writeSector(relativeSectors + 1, fsInfo.buffer);
+    this.file.writeSector(relativeSectors + 7, fsInfo.buffer);
 
     // --- Initialize the FAT
     const fatSector = new Uint8Array(BYTES_PER_SECTOR);
@@ -196,7 +148,7 @@ export class Fat32Formatter {
     this.file.writeSector(fatStart + fatSize, fatSector);
   }
 
-  private checkValidFat32Size(bs: Fat32BootSector): boolean {
+  private checkValidFat32Size(bs: FatBootSector): boolean {
     const dataSec = bs.BPB_TotSec32 - (bs.BPB_ResvdSecCnt + bs.BPB_NumFATs * bs.BPB_FATSz32);
     const countOfClusters = Math.floor(dataSec / bs.BPB_SecPerClus);
     return countOfClusters >= 65525;
@@ -234,6 +186,6 @@ export class Fat32Formatter {
       h = 254;
       s = 63;
     }
-    return [h, ((c >> 2) & 0xc0) | s, c];
+    return [h & 0xff, (((c >> 2) & 0xc0) | s) & 0xff, c & 0xff];
   }
 }

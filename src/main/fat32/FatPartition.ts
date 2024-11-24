@@ -1,17 +1,16 @@
 import {
   BYTES_PER_SECTOR,
   BYTES_PER_SECTOR_SHIFT,
-  Fat32BootSector,
-  Fat32FSInfo,
-  Fat32MasterBootRecord,
   FS_DIR_SIZE,
   SECTOR_MASK
 } from "@abstractions/Fat32Types";
 import { CimFile } from "./CimFileManager";
-import { BinaryReader } from "@common/utils/BinaryReader";
-import { toBootSector, toFsInfoSector } from "./fat-utils";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
-import { CACHE_STATUS_MIRROR_FAT, FsCache } from "./FsCache";
+import { CACHE_FOR_READ, CACHE_FOR_WRITE, CACHE_STATUS_MIRROR_FAT, FsCache } from "./FsCache";
+import { FatPartitionEntry } from "./FatPartitionEntry";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
+import { FatBootSector } from "./FatBootSector";
+import { FatFsInfo } from "./FatFsInfo";
+import { toBootRecord, toMasterBootRecord } from "./fat-utils";
 
 export class FatPartition {
   // --- Cluster size in sectors
@@ -133,7 +132,6 @@ export class FatPartition {
    */
   init(part = 1, volStart = 0): boolean {
     let totalSectors: number;
-    this._volumeStart = volStart;
     this._allocSearchStart = 1;
     this._cache.init();
     
@@ -143,16 +141,31 @@ export class FatPartition {
       if (part > 4) {
         return false;
       }
-      const mbr = this.cimFile.readMbr();
-      const mp = mbr.partitions[part - 1];
+      const mbr = toMasterBootRecord(this.dataCachePrepare(0, CACHE_FOR_READ));
+      let mp: FatPartitionEntry;
+      switch (part) {
+        case 1:
+          mp = mbr.partition1;
+          break;
+        case 2:
+          mp = mbr.partition2;
+          break;
+        case 3:
+          mp = mbr.partition3;
+          break;
+        default:
+          mp = mbr.partition4;
+          break;
+      }
       if (mp.partType === 0 || (mp.bootIndicator !== 0 && mp.bootIndicator !== 0x80)) {
         return false;
       }
-      this._volumeStart = mp.relativeSectors;
+      volStart = mp.relativeSectors;
     }
 
     // --- Read the boot sector
-    const pbs = this.readBootSector();
+    this._volumeStart = volStart;
+    const pbs = toBootRecord(this.dataCachePrepare(volStart, CACHE_FOR_READ));
     if (pbs.BPB_NumFATs !== 2 || (pbs.BPB_BytsPerSec) !== BYTES_PER_SECTOR) {
       return false;
     }
@@ -182,7 +195,7 @@ export class FatPartition {
         Math.floor((FS_DIR_SIZE * this._rootDirEntryCount + BYTES_PER_SECTOR - 1) /
          BYTES_PER_SECTOR);
   
-    // --- Total sectors for FAT16 or FAT32
+    // --- Total sectors for FAT32
     totalSectors = pbs.BPB_TotSec32;
 
     // --- Total data sectors
@@ -192,15 +205,13 @@ export class FatPartition {
     countOfClusters >>= this._sectorsPerClusterShift;
     this._lastCluster = countOfClusters + 1;
   
-    // --- Indicate unknown number of free clusters.
-    this.setFreeClusterCount(-1);
-    
     // --- FAT type is determined by cluster count
     if (countOfClusters < 65525) {
       throw new Error("Cluster count is too low for FAT32");
     } else {
       this._rootDirStart = pbs.BPB_RootClus;
     }
+    this._cache.setMirrorOffset(this._sectorsPerFat);
 
     // --- Done
     return true;
@@ -238,16 +249,16 @@ export class FatPartition {
   cacheDirty() { this._cache.dirty(); }
 
 
-  readMasterBootRecord(): Fat32MasterBootRecord {
+  readMasterBootRecord(): FatMasterBootRecord {
     return this.cimFile.readMbr();
   }
   
-  readBootSector(): Fat32BootSector {
-    return toBootSector(this.cimFile.readSector(this._volumeStart));
+  readBootSector(): FatBootSector {
+    return new FatBootSector(this.cimFile.readSector(this._volumeStart));
   }
 
-  readFSInfoSector(): Fat32FSInfo {
-    return toFsInfoSector(this.cimFile.readSector(this._volumeStart + 1));
+  readFsInfoSector(): FatFsInfo {
+    return new FatFsInfo(this.cimFile.readSector(this._volumeStart + 1));
   }
 
   // --- Synchronizes the block device with the volume
@@ -256,14 +267,8 @@ export class FatPartition {
     return true;
   }
 
-  setFreeClusterCount(value: number): void {
-    const fsInfo = this.readFSInfoSector();
-    fsInfo.FSI_Free_Count = value;
-    this.writeFsInfoSector(fsInfo);
-  }
-
   updateFreeClusterCount(change: number) {
-    const fsInfo = this.readFSInfoSector();
+    const fsInfo = this.readFsInfoSector();
     fsInfo.FSI_Free_Count += change;
     this.writeFsInfoSector(fsInfo);
   }
@@ -409,9 +414,14 @@ export class FatPartition {
     }
   
     const sector = this._fatStartSector + (cluster >> (BYTES_PER_SECTOR_SHIFT - 2));
-    const reader = new BinaryReader(this.cimFile.readSector(sector));
-    reader.seek((cluster << 2) & SECTOR_MASK);
-    const next = reader.readUint32();
+    const pc = this.fatCachePrepare(sector, CACHE_FOR_READ);
+    if (!pc) {
+      return { next: 0, status: -1 };
+    }
+    const offset = (cluster << 2) & SECTOR_MASK;
+    const dv = new DataView(pc.buffer);
+    const next = dv.getUint32(offset, true);
+
     if (this.isEOC(next)) {
       return { next, status: 0 };
     }
@@ -419,21 +429,19 @@ export class FatPartition {
   }
 
   fatPut(cluster: number, value: number): boolean {
-    //uint8_t* pc;
-  
     // --- Error if reserved cluster of beyond FAT
     if (cluster < 2 || cluster > this._lastCluster) {
       return false;
     }
   
-    let sector = this._fatStartSector + (cluster >> (BYTES_PER_SECTOR_SHIFT - 2));
-    const content = this.cimFile.readSector(sector);
-    const writer = new BinaryWriter();
-    const offset = (cluster << 2) & SECTOR_MASK;
-    writer.writeBytes(content.subarray(0, offset));
-    writer.writeUint32(value);
-    writer.writeBytes(content.subarray(offset + 4));
-    this.cimFile.writeSector(sector, writer.buffer);
+    const sector = this._fatStartSector + (cluster >> (BYTES_PER_SECTOR_SHIFT - 2));
+    const pc = this.fatCachePrepare(sector, CACHE_FOR_WRITE);
+    if (!pc) {
+      return false;
+    }
+    const  offset = (cluster << 2) & SECTOR_MASK;
+    const dv = new DataView(pc.buffer);
+    dv.setUint32(offset, value, true);
     return true;
   }
 
@@ -468,16 +476,8 @@ export class FatPartition {
     return cluster > this._lastCluster;
   }
 
-  private writeFsInfoSector(fsInfo: Fat32FSInfo) {
-    const writer = new BinaryWriter();
-    writer.writeUint32(fsInfo.FSI_LeadSig);
-    writer.writeBytes(fsInfo.FSI_Reserved1);
-    writer.writeUint32(fsInfo.FSI_StrucSig);
-    writer.writeUint32(fsInfo.FSI_Free_Count);
-    writer.writeUint32(fsInfo.FSI_Nxt_Free);
-    writer.writeBytes(fsInfo.FSI_Reserved2);
-    writer.writeUint32(fsInfo.FSI_TrailSig);
-    this.cimFile.writeSector(this._volumeStart + 1, writer.buffer);
-    this.cimFile.writeSector(this._volumeStart + 7, writer.buffer);
+  private writeFsInfoSector(fsInfo: FatFsInfo) {
+    this.cimFile.writeSector(this._volumeStart + 1, fsInfo.buffer);
+    this.cimFile.writeSector(this._volumeStart + 7, fsInfo.buffer);
   }
 }

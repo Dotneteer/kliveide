@@ -2,7 +2,8 @@ import fs from "fs";
 import { CimInfo } from "@abstractions/CimInfo";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { Fat32MasterBootRecord } from "@abstractions/Fat32Types";
+import { BYTES_PER_SECTOR } from "@abstractions/Fat32Types";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
 
 export const CIM_VERSION_MAJOR = 1;
 export const CIM_VERSION_MINOR = 0;
@@ -216,23 +217,10 @@ export class CimFile {
     return buffer;
   }
 
-  readMbr(): Fat32MasterBootRecord {
+  readMbr(): FatMasterBootRecord {
     const reader = new BinaryReader(this.readSector(0));
-    const bootCode = Uint8Array.from(reader.readBytes(446));
-    const parts = [];
-    for (let i = 0; i < 4; i++) {
-      const part = {
-        bootIndicator: reader.readByte(),
-        beginChs: [reader.readByte(), reader.readByte(), reader.readByte()],
-        partType: reader.readByte(),
-        endChs: [reader.readByte(), reader.readByte(), reader.readByte()],
-        relativeSectors: reader.readUint32(),
-        totalSectors: reader.readUint32()
-      };
-      parts.push(part);
-    }
-    const signature = reader.readUint16();
-    return { bootCode, partitions: parts, signature };
+    const mbr = reader.readBytes(BYTES_PER_SECTOR);
+    return new FatMasterBootRecord(Uint8Array.from(mbr));
   }
 
   private checkSectorIndex(sectorIndex: number): void {

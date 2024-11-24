@@ -1,18 +1,16 @@
 import {
-  Fat32DirEntry,
   FS_ATTRIB_DIRECTORY,
   FAT_ATTRIB_LABEL,
   FAT_ATTRIB_LONG_NAME,
-  BYTES_PER_SECTOR,
-  Fat32BootSector,
-  Fat32FSInfo,
   FS_DIR_SIZE,
-  Fat32LongFileName,
   O_ACCMODE,
   O_RDWR,
   O_WRONLY
 } from "@abstractions/Fat32Types";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { FatDirEntry } from "./FatDirEntry";
+import { FatLongFileName } from "./FatLongFileName";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
+import { FatBootSector } from "./FatBootSector";
 
 // Reserved characters for exFAT names and FAT LFN.
 export function lfnReservedChar(c: string): boolean {
@@ -44,19 +42,19 @@ export function sfnReservedChar(c: string): boolean {
   return !(0x20 < code && code < 0x7f);
 }
 
-export function isFatFile(dir: Fat32DirEntry): boolean {
+export function isFatFile(dir: FatDirEntry): boolean {
   return !(dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL));
 }
 
-export function isFatFileOrSubdir(dir: Fat32DirEntry): boolean {
+export function isFatFileOrSubdir(dir: FatDirEntry): boolean {
   return !(dir.DIR_Attr & FAT_ATTRIB_LABEL);
 }
 
-export function isFatLongName(dir: Fat32DirEntry): boolean {
+export function isFatLongName(dir: FatDirEntry): boolean {
   return dir.DIR_Attr === FAT_ATTRIB_LONG_NAME;
 }
 
-export function isFatSubdir(dir: Fat32DirEntry): boolean {
+export function isFatSubdir(dir: FatDirEntry): boolean {
   return (dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL)) === FS_ATTRIB_DIRECTORY;
 }
 
@@ -65,102 +63,22 @@ export function isWriteMode(oflag: number) {
   return oflag === O_WRONLY || oflag === O_RDWR;
 }
 
-export function toBootSector(sector: Uint8Array): Fat32BootSector {
-  if (sector.length !== BYTES_PER_SECTOR) {
-    throw new Error("Invalid boot sector size");
-  }
-  const reader = new BinaryReader(sector);
-  return {
-    BS_JmpBoot: reader.readByte() + (reader.readByte() << 8) + (reader.readByte() << 16),
-    BS_OEMName: reader.readString(8),
-    BPB_BytsPerSec: reader.readUint16(),
-    BPB_SecPerClus: reader.readByte(),
-    BPB_ResvdSecCnt: reader.readUint16(),
-    BPB_NumFATs: reader.readByte(),
-    BPB_RootEntCnt: reader.readUint16(),
-    BPB_TotSec16: reader.readUint16(),
-    BPB_Media: reader.readByte(),
-    BPB_FATSz16: reader.readUint16(),
-    BPB_SecPerTrk: reader.readUint16(),
-    BPB_NumHeads: reader.readUint16(),
-    BPB_HiddSec: reader.readUint32(),
-    BPB_TotSec32: reader.readUint32(),
-    BPB_FATSz32: reader.readUint32(),
-    BPB_ExtFlags: reader.readUint16(),
-    BPB_FSVer: reader.readUint16(),
-    BPB_RootClus: reader.readUint32(),
-    BPB_FSInfo: reader.readUint16(),
-    BPB_BkBootSec: reader.readUint16(),
-    BPB_Reserved: Uint8Array.from(reader.readBytes(12)),
-    BS_DrvNum: reader.readByte(),
-    BS_Reserved1: reader.readByte(),
-    BS_BootSig: reader.readByte(),
-    BS_VolID: reader.readUint32(),
-    BS_VolLab: reader.readString(11),
-    BS_FileSysType: reader.readString(8),
-    BootCode: Uint8Array.from(reader.readBytes(420)),
-    BootSectorSignature: reader.readUint16()
-  };
+export function toFatDirEntry(sector: Uint8Array, offset: number): FatDirEntry {
+  return new FatDirEntry(sector, offset * FS_DIR_SIZE);
 }
 
-export function toFsInfoSector(sector: Uint8Array): Fat32FSInfo {
-  if (sector.length !== BYTES_PER_SECTOR) {
-    throw new Error("Invalid boot sector size");
-  }
-  const reader = new BinaryReader(sector);
-  return {
-    FSI_LeadSig: reader.readUint32(),
-    FSI_Reserved1: Uint8Array.from(reader.readBytes(480)),
-    FSI_StrucSig: reader.readUint32(),
-    FSI_Free_Count: reader.readUint32(),
-    FSI_Nxt_Free: reader.readUint32(),
-    FSI_Reserved2: Uint8Array.from(reader.readBytes(12)),
-    FSI_TrailSig: reader.readUint32()
-  };
+export function toFatLongName(dir: FatDirEntry): FatLongFileName {
+  return new FatLongFileName(dir.buffer, dir.offset);
 }
 
-export function toFatDirEntry(sector: Uint8Array, offset: number): Fat32DirEntry {
-  const reader = new BinaryReader(sector);
-  reader.seek(offset * FS_DIR_SIZE);
-  return {
-    DIR_Name: reader.readString(11),
-    DIR_Attr: reader.readByte(),
-    DIR_NTRes: reader.readByte(),
-    DIR_CrtTimeTenth: reader.readByte(),
-    DIR_CrtTime: reader.readUint16(),
-    DIR_CrtDate: reader.readUint16(),
-    DIR_LstAccDate: reader.readUint16(),
-    DIR_FstClusHI: reader.readUint16(),
-    DIR_WrtTime: reader.readUint16(),
-    DIR_WrtDate: reader.readUint16(),
-    DIR_FstClusLO: reader.readUint16(),
-    DIR_FileSize: reader.readUint32()
-  };
+export function toMasterBootRecord(sector: Uint8Array): FatMasterBootRecord {
+  return new FatMasterBootRecord(sector);
 }
 
-export function toFatLongName(dir: Fat32DirEntry): Fat32LongFileName {
-  const name1: number[] = [];
-  for (let i = 0; i < 10; i += 2) {
-    name1.push(dir.DIR_Name.charCodeAt(i) + (dir.DIR_Name.charCodeAt(i + 1) << 8));
-  }
-  return {
-    LDIR_Ord: dir.DIR_Name.charCodeAt(0),
-    LDIR_Name1: name1,
-    LDIR_Attr: dir.DIR_Attr,
-    LDIR_Type: dir.DIR_NTRes,
-    LDIR_Chksum: dir.DIR_CrtTimeTenth,
-    LDIR_Name2: [
-      dir.DIR_CrtTime,
-      dir.DIR_CrtDate,
-      dir.DIR_LstAccDate,
-      dir.DIR_FstClusHI,
-      dir.DIR_WrtTime,
-      dir.DIR_WrtDate
-    ],
-    LDIR_FstClusLO: dir.DIR_FstClusLO,
-    LDIR_Name3: [dir.DIR_FileSize & 0xffff, dir.DIR_FileSize >> 16]
-  };
+export function toBootRecord(sector: Uint8Array): FatBootSector {
+  return new FatBootSector(sector);
 }
+
 
 type UppercaseMapEntry = [key: number, off: number, count: number];
 type UppercaseLookupEntry = [key: number, value: number];

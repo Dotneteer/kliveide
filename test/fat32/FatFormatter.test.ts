@@ -3,7 +3,7 @@ import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import { CimFileManager } from "@main/fat32/CimFileManager";
-import { EXTENDED_BOOT_SIGNATURE, FSINFO_LEAD_SIGNATURE, FSINFO_STRUCT_SIGNATURE } from "@abstractions/Fat32Types";
+import { EXTENDED_BOOT_SIGNATURE, FSINFO_LEAD_SIGNATURE, FSINFO_STRUCT_SIGNATURE, FSINFO_TRAIL_SIGNATURE, JUMP_CODE } from "@abstractions/Fat32Types";
 import { Fat32Formatter } from "@main/fat32/Fat32Formatter";
 import { FatPartition } from "@main/fat32/FatPartition";
 
@@ -31,12 +31,11 @@ describe("FatFormatter", () => {
       const mbr = fatPart.readMasterBootRecord();
       expect(mbr.bootCode).toBeInstanceOf(Uint8Array);
       expect(mbr.bootCode.length).toBe(446);
-      expect(mbr.partitions.length).toBe(4);
-      expect(mbr.partitions[0].bootIndicator).toBe(0x00);
-      expect(mbr.signature).toBe(0xaa55);
+      expect(mbr.partition1.bootIndicator).toBe(0x00);
+      expect(mbr.bootSignature).toBe(0xaa55);
 
       const bs = fatPart.readBootSector();
-      expect(bs.BS_JmpBoot).toBe(0xeb5890);
+      expect(bs.BS_JmpBoot).toBe(JUMP_CODE);
       expect(bs.BS_OEMName).toBe("KLIVEIDE");
       expect(bs.BPB_BytsPerSec).toBe(512);
       expect(bs.BPB_SecPerClus).toBe(
@@ -72,7 +71,7 @@ describe("FatFormatter", () => {
       expect(bs.BootCode.length).toBe(420);
       expect(bs.BootSectorSignature).toBe(0xaa55);
 
-      const fs = fatPart.readFSInfoSector();
+      const fs = fatPart.readFsInfoSector();
       
       const dataSectors = bs.BPB_TotSec32 - (bs.BPB_ResvdSecCnt + 2 * bs.BPB_FATSz32);
       const totalDataClusters = Math.floor(dataSectors / bs.BPB_SecPerClus);
@@ -83,10 +82,10 @@ describe("FatFormatter", () => {
       expect(fs.FSI_Reserved1.length).toBe(480);
       expect(fs.FSI_StrucSig).toBe(FSINFO_STRUCT_SIGNATURE);
       expect(fs.FSI_Free_Count).toBe(freeClusters);
-      expect(fs.FSI_Nxt_Free).toBe(-1);
+      expect(fs.FSI_Nxt_Free).toBe(0xffffffff);
       expect(fs.FSI_Reserved2).toBeInstanceOf(Uint8Array);
       expect(fs.FSI_Reserved2.length).toBe(12);
-      expect(fs.FSI_TrailSig).toBe(0xaa550000 - 0x1_0000_0000);
+      expect(fs.FSI_TrailSig).toBe(FSINFO_TRAIL_SIGNATURE);
     });
 
   });

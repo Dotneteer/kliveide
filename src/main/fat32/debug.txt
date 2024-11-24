@@ -1,0 +1,8 @@
+Sector 10272: "testdir" entry
+Sector 8193: FS Info with free count update
+Sector 8199: FS Info backup
+Sector 8224: End of chain marker
+Sector 9248: End of chain marker
+Sector 10272: File sync
+Sector 10272: "." and ".." Info
+
