@@ -1,4 +1,5 @@
 export const BYTES_PER_SECTOR = 512;
+export const BYTES_PER_SECTOR_SHIFT = 9;
 export const SIGNATURE = 0xaa55;
 
 // --- Size of FAT directory structures
@@ -14,17 +15,28 @@ export const FSINFO_STRUCT_SIGNATURE = 0x61417272;
 export const FSINFO_TRAIL_SIGNATURE = 0xaa550000;
 
 // --- Attributes common to FAT and exFAT
-export const FS_ATTRIB_READ_ONLY = 0x01;
-export const FS_ATTRIB_HIDDEN = 0x02;
-export const FS_ATTRIB_SYSTEM = 0x04;
-export const FS_ATTRIB_DIRECTORY = 0x10;
+export const FS_ATTR_READ_ONLY = 0x01;
+export const FS_ATTR_HIDDEN = 0x02;
+export const FS_ATTR_SYSTEM = 0x04;
+export const FS_ATTR_FILE = 0x08;
+export const FS_ATTR_DIRECTORY = 0x10;
 
-export const FS_ATTRIB_ARCHIVE = 0x20;
+export const FS_ATTR_ARCHIVE = 0x20;
+export const FS_ATTR_ROOT32 = 0x80;
+
 // --- Attributes that users can change
 export const FS_ATTRIB_USER_SETTABLE =
-  FS_ATTRIB_READ_ONLY | FS_ATTRIB_HIDDEN | FS_ATTRIB_SYSTEM | FS_ATTRIB_ARCHIVE;
+  FS_ATTR_READ_ONLY | FS_ATTR_HIDDEN | FS_ATTR_SYSTEM | FS_ATTR_ARCHIVE;
 // --- Attributes to copy when a file is opened.
-export const FS_ATTRIB_COPY = FS_ATTRIB_USER_SETTABLE | FS_ATTRIB_DIRECTORY;
+export const FS_ATTRIB_COPY = FS_ATTRIB_USER_SETTABLE | FS_ATTR_DIRECTORY;
+
+// File flags
+export const FILE_FLAG_READ = 0x01;
+export const FILE_FLAG_WRITE = 0x02;
+export const FILE_FLAG_APPEND = 0x08;
+export const FILE_FLAG_PREALLOCATE = 0x20;
+export const FILE_FLAG_CONTIGUOUS = 0x40;
+export const FILE_FLAG_DIR_DIRTY = 0x80;
 
 // --- Number of FAT tables
 export const FAT_TABLE_COUNT = 2;
@@ -53,7 +65,6 @@ export const FNAME_FLAG_MIXED_CASE = 0x02;
 
 export const FNAME_FLAG_NEED_LFN = FNAME_FLAG_LOST_CHARS | FNAME_FLAG_MIXED_CASE;
 
-export const BYTES_PER_SECTOR_SHIFT = 9;
 export const SECTOR_MASK = BYTES_PER_SECTOR - 1;
 
 // --- Open for reading only

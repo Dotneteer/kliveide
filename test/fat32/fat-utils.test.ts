@@ -1,14 +1,4 @@
 import { describe, it, expect, assert } from "vitest";
-import * as path from "path";
-import * as os from "os";
-import * as fs from "fs";
-import {
-  CIM_HEADER,
-  CIM_VERSION_MAJOR,
-  CIM_VERSION_MINOR,
-  CimFileManager,
-  MAX_CLUSTERS
-} from "@main/fat32/CimFileManager";
 import { toUppercaseLetter } from "@main/fat32/fat-utils";
 
 const TEST_DIR = "testFat32";

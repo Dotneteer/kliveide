@@ -1,13 +1,9 @@
 import {
-  Fat32DirEntry,
-  Fat32LongFileName,
-  FAT_ATTRIB_LONG_NAME,
   FAT_CASE_LC_BASE,
   FAT_CASE_LC_EXT,
   FNAME_FLAG_LOST_CHARS,
   FNAME_FLAG_MIXED_CASE,
-  FS_ATTRIB_ARCHIVE
-} from "@abstractions/Fat32Types";
+} from "@main/fat32/Fat32Types";
 
 export function convertLongToShortName(
   fname: string,
@@ -113,75 +109,6 @@ export function convertLongToShortName(
   return { name: sfn.join(""), seqPos, flags };
 }
 
-export function getLongFileFatEntries(
-  fname: string,
-  conflict = 0
-): (Fat32LongFileName | Fat32DirEntry)[] {
-  fname = fname.trim();
-  const sfn = convertLongToShortName(fname, conflict);
-
-  // --- Create the short file name entry
-  const shortParts = sfn.name.split(".");
-  const shortName = shortParts[0].padEnd(8, " ") + shortParts[1].padEnd(3, " ");
-  const sfnEntry: Fat32DirEntry = {
-    DIR_Name: shortName,
-    DIR_Attr: FS_ATTRIB_ARCHIVE,
-    DIR_NTRes: 0,
-    DIR_CrtTimeTenth: 0,
-    DIR_CrtTime: 0,
-    DIR_CrtDate: 0,
-    DIR_LstAccDate: 0,
-    DIR_FstClusHI: 0,
-    DIR_WrtTime: 0,
-    DIR_WrtDate: 0,
-    DIR_FstClusLO: 0,
-    DIR_FileSize: 0
-  };
-  const checksum = calcShortNameCheckSum(shortName);
-
-  // --- Create the long file name entries
-  const lfnEntries: Fat32LongFileName[] = [];
-  let entryIdx = 0;
-  for (let i = 0; i < fname.length; i += 13) {
-    const name1 = convertTo16BitArray(fname.substring(i, i + 5).padEnd(5, " "));
-    const name2 = convertTo16BitArray(fname.substring(i + 5, i + 11).padEnd(6, " "));
-    const name3 = convertTo16BitArray(fname.substring(i + 11, i + 13).padEnd(2, " "));
-    const remaining = fname.length - i;
-    if (remaining < 5) {
-      name1[remaining] = 0x0000;
-      for (let j = remaining + 1; j < 5; j++) name1[j] = 0xffff;
-      for (let j = 0; j < 6; j++) name2[j] = 0xffff;
-      name3[0] = name3[1] = 0xffff;
-    } else if (remaining < 11) {
-      name2[remaining - 5] = 0x0000
-      for (let j = remaining + 1; j < 11; j++) name2[j - 5] = 0xffff;
-      name3[0] = name3[1] = 0xffff;
-    } else if (remaining === 11) {
-      name3[0] = 0x0000;
-      name3[1] = 0xffff;
-    }
-    else if (remaining === 12) {
-      name3[1] = 0x0000;
-    }
-    const lfnEntry: Fat32LongFileName = {
-      LDIR_Ord: ++entryIdx,
-      LDIR_Name1: name1,
-      LDIR_Attr: FAT_ATTRIB_LONG_NAME,
-      LDIR_Type: 0,
-      LDIR_Chksum: checksum,
-      LDIR_Name2: name2,
-      LDIR_FstClusLO: 0,
-      LDIR_Name3: name3
-    };
-    lfnEntries.unshift(lfnEntry);
-  }
-
-  // --- Set the last LFN entry's order flag
-  lfnEntries[0].LDIR_Ord |= 0x40;
-
-  return [...lfnEntries, sfnEntry];
-}
-
 export function calcShortNameCheckSum(shortName: string): number {
   if (shortName.length !== 11) {
     throw new Error("Invalid short name");
@@ -191,22 +118,6 @@ export function calcShortNameCheckSum(shortName: string): number {
     sum = ((sum & 1 ? 0x80 : 0) + (sum >>> 1) + shortName[i].charCodeAt(0)) & 0xff;
   }
   return sum;
-}
-
-function isLfnReservedChar(ch: string): boolean {
-  const c = ch.charCodeAt(0);
-  return (
-    c < 0x20 ||
-    ch === '"' ||
-    ch === "*" ||
-    ch === "/" ||
-    ch === ":" ||
-    ch === "<" ||
-    ch === ">" ||
-    ch === "?" ||
-    ch === "\\" ||
-    ch == "|"
-  );
 }
 
 function isSfnReservedChar(ch: string) {
@@ -230,12 +141,4 @@ function isLower(c: string) {
 function isUpper(c: string) {
   c = c.charAt(0);
   return "A" <= c && c <= "Z";
-}
-
-function convertTo16BitArray(name: string): number[] {
-  const array: number[] = [];
-  for (let i = 0; i < name.length; i++) {
-    array.push(name.charCodeAt(i));
-  }
-  return array;
 }

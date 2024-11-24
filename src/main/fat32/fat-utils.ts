@@ -1,12 +1,12 @@
 import {
-  FS_ATTRIB_DIRECTORY,
+  FS_ATTR_DIRECTORY,
   FAT_ATTRIB_LABEL,
   FAT_ATTRIB_LONG_NAME,
   FS_DIR_SIZE,
   O_ACCMODE,
   O_RDWR,
   O_WRONLY
-} from "@abstractions/Fat32Types";
+} from "@main/fat32/Fat32Types";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
 import { FatMasterBootRecord } from "./FatMasterBootRecord";
@@ -43,7 +43,7 @@ export function sfnReservedChar(c: string): boolean {
 }
 
 export function isFatFile(dir: FatDirEntry): boolean {
-  return !(dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL));
+  return !(dir.DIR_Attr & (FS_ATTR_DIRECTORY | FAT_ATTRIB_LABEL));
 }
 
 export function isFatFileOrSubdir(dir: FatDirEntry): boolean {
@@ -55,7 +55,7 @@ export function isFatLongName(dir: FatDirEntry): boolean {
 }
 
 export function isFatSubdir(dir: FatDirEntry): boolean {
-  return (dir.DIR_Attr & (FS_ATTRIB_DIRECTORY | FAT_ATTRIB_LABEL)) === FS_ATTRIB_DIRECTORY;
+  return (dir.DIR_Attr & (FS_ATTR_DIRECTORY | FAT_ATTRIB_LABEL)) === FS_ATTR_DIRECTORY;
 }
 
 export function isWriteMode(oflag: number) {
