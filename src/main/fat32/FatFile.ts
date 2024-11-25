@@ -34,6 +34,7 @@ export const ERROR_SEEK_PAST_EOF = "Seek past end of file.";
 export const ERROR_SEEK_PAST_EOC = "Seek past end of cluster.";
 export const ERROR_NO_READ = "The file is not open for reading.";
 export const ERROR_NO_WRITE = "The file is not open for writing.";
+export const ERROR_LFN_CANNOT_CREATE = "Long filename entry cannot be created.";
 
 export class FatFile {
   private _attributes: number;
@@ -82,9 +83,15 @@ export class FatFile {
   }
 
   clone(): FatFile {
-    return new FatFile(this.volume, this._attributes, this._flags);
+    const clone = new FatFile(this.volume);
+    clone._attributes = this._attributes;
+    clone._flags = this._flags;
+    clone._currentCluster = this._currentCluster;
+    clone._currentPosition = this._currentPosition;
+    clone._fileSize = this._fileSize;
+    clone._firstCluster = this._firstCluster;
+    return clone;
   }
-
 
   isOpen(): boolean {
     return !!this._attributes;
@@ -263,7 +270,7 @@ export class FatFile {
       if (!(flags & O_CREAT) || !isWriteMode(flags)) {
         throw new Error(ERROR_NO_WRITE);
       }
-      
+
       // ---- Keep found entries or start at current index if no free entries found.
       if (freeFound == 0) {
         freeIndex = curIndex;
@@ -278,12 +285,12 @@ export class FatFile {
       // --- Loop handles the case of huge filename and cluster size one.
       let freeTotal = freeFound;
       while (freeTotal < freeEntriesNeed) {
-      //     if (!dirFile->addDirCluster()) {
-      //       DBG_FAIL_MACRO;
-      //       goto fail;
-      //     }
-      //     // 16-bit freeTotal needed for large cluster size.
-      //     freeTotal += vol->dirEntriesPerCluster();
+        //     if (!dirFile->addDirCluster()) {
+        //       DBG_FAIL_MACRO;
+        //       goto fail;
+        //     }
+        //     // 16-bit freeTotal needed for large cluster size.
+        //     freeTotal += vol->dirEntriesPerCluster();
       }
       if (filenameFound) {
         // if (!dirFile->makeUniqueSfn(fname)) {
@@ -292,10 +299,11 @@ export class FatFile {
       }
       let lfnOrd = freeEntriesNeed - 1;
       curIndex = freeIndex + lfnOrd;
-      
-      //   if (!dirFile->createLFN(curIndex, fname, lfnOrd)) {
-      //     goto fail;
-      //   }
+
+      const lfnEntry = parent.createLFN(curIndex, fsName, lfnOrd);
+      if (!lfnEntry) {
+        throw new Error(ERROR_LFN_CANNOT_CREATE);
+      }
       //   dir = dirFile->cacheDir(curIndex);
       //   if (!dir) {
       //     DBG_FAIL_MACRO;
@@ -528,17 +536,22 @@ export class FatFile {
   }
 
   createLFN(index: number, fname: FsName, lfnOrd: number): FatLongFileName | null {
-    const dir = this.clone();
-    let ldir: FatLongFileName;
+    let ldir: FatLongFileName | null = null;
     const checksum = calcShortNameCheckSum(fname.sfn11);
 
     let nameIndex = 0;
     for (let order = 1; order <= lfnOrd; order++) {
-      ldir = toFatLongName(dir.cacheDir(index - order));
+      // --- Position to the long name entry
+      this.seekSet((index - order) * FS_DIR_SIZE);
+      const dirEntryBuffer = this.readDirectoryEntry();
+      if (!dirEntryBuffer) {
+        return null;
+      }
+
+      ldir = toFatLongName(dirEntryBuffer);
       if (!ldir) {
         return null;
       }
-      dir._vol.cacheDirty();
       ldir.LDIR_Ord = order == lfnOrd ? FAT_ORDER_LAST_LONG_ENTRY | order : order;
       ldir.LDIR_Attr = FAT_ATTRIB_LONG_NAME;
       ldir.LDIR_Type = 0;
@@ -587,29 +600,29 @@ export class FatFile {
     }
   }
 
-  cmpName(index: number, fname: FsName, lfnOrd: number): boolean {
-    const dir = this.clone();
-    let nameIndex = 0;
-    for (let order = 1; order <= lfnOrd; order++) {
-      const ldir = toFatLongName(dir.cacheDir(index - order));
-      if (!ldir) {
-        return false;
-      }
-      for (let i = 0; i < 13; i++) {
-        const u = this.getLfnChar(ldir, i);
-        if (nameIndex >= fname.name.length) {
-          return u === 0;
-        }
-        if (
-          u > 0x7f ||
-          String.fromCharCode(u).toUpperCase() !== fname.name.charAt(nameIndex++).toUpperCase()
-        ) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
+  // cmpName(index: number, fname: FsName, lfnOrd: number): boolean {
+  //   const dir = this.clone();
+  //   let nameIndex = 0;
+  //   for (let order = 1; order <= lfnOrd; order++) {
+  //     const ldir = toFatLongName(dir.cacheDir(index - order));
+  //     if (!ldir) {
+  //       return false;
+  //     }
+  //     for (let i = 0; i < 13; i++) {
+  //       const u = this.getLfnChar(ldir, i);
+  //       if (nameIndex >= fname.name.length) {
+  //         return u === 0;
+  //       }
+  //       if (
+  //         u > 0x7f ||
+  //         String.fromCharCode(u).toUpperCase() !== fname.name.charAt(nameIndex++).toUpperCase()
+  //       ) {
+  //         return false;
+  //       }
+  //     }
+  //   }
+  //   return true;
+  // }
 
   /**
    * Set the current position to the beginning of the file entry
