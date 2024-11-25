@@ -81,6 +81,11 @@ export class FatFile {
     this._firstCluster = 0;
   }
 
+  clone(): FatFile {
+    return new FatFile(this.volume, this._attributes, this._flags);
+  }
+
+
   isOpen(): boolean {
     return !!this._attributes;
   }
@@ -554,7 +559,57 @@ export class FatFile {
     return ldir;
   }
 
-  
+  getLfnChar(ldir: FatLongFileName, i: number): number {
+    if (i < 5) {
+      return ldir.LDIR_Name1[i] & 0xffff;
+    } else if (i < 11) {
+      return ldir.LDIR_Name2[i - 5] & 0xffff;
+    } else if (i < 13) {
+      return ldir.LDIR_Name3[i - 11] & 0xffff;
+    } else {
+      throw new Error("Invalid long name character index");
+    }
+  }
+
+  putLfnChar(ldir: FatLongFileName, i: number, c: number) {
+    if (i < 5) {
+      const tmp = ldir.LDIR_Name1;
+      tmp[i] = c;
+      ldir.LDIR_Name1 = tmp;
+    } else if (i < 11) {
+      const tmp = ldir.LDIR_Name2;
+      tmp[i - 5] = c;
+      ldir.LDIR_Name2 = tmp;
+    } else if (i < 13) {
+      const tmp = ldir.LDIR_Name3;
+      tmp[i - 11] = c;
+      ldir.LDIR_Name3 = tmp;
+    }
+  }
+
+  cmpName(index: number, fname: FsName, lfnOrd: number): boolean {
+    const dir = this.clone();
+    let nameIndex = 0;
+    for (let order = 1; order <= lfnOrd; order++) {
+      const ldir = toFatLongName(dir.cacheDir(index - order));
+      if (!ldir) {
+        return false;
+      }
+      for (let i = 0; i < 13; i++) {
+        const u = this.getLfnChar(ldir, i);
+        if (nameIndex >= fname.name.length) {
+          return u === 0;
+        }
+        if (
+          u > 0x7f ||
+          String.fromCharCode(u).toUpperCase() !== fname.name.charAt(nameIndex++).toUpperCase()
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
   /**
    * Set the current position to the beginning of the file entry
