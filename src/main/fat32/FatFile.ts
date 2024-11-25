@@ -1,3 +1,4 @@
+import { isWriteMode } from "./fat-utils";
 import {
   FS_ATTR_ROOT32,
   FS_ATTR_DIRECTORY,
@@ -11,7 +12,10 @@ import {
   FS_DIR_SIZE,
   FILE_FLAG_READ,
   SECTOR_MASK,
-  BYTES_PER_SECTOR
+  BYTES_PER_SECTOR,
+  BYTES_PER_SECTOR_SHIFT,
+  FAT_NAME_DELETED,
+  FAT_NAME_FREE
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
@@ -25,6 +29,7 @@ export const ERROR_NOT_A_FILE = "The entry is not a file.";
 export const ERROR_SEEK_PAST_EOF = "Seek past end of file.";
 export const ERROR_SEEK_PAST_EOC = "Seek past end of cluster.";
 export const ERROR_NO_READ = "The file is not open for reading.";
+export const ERROR_NO_WRITE = "The file is not open for writing.";
 
 export class FatFile {
   private _attributes: number;
@@ -147,6 +152,8 @@ export class FatFile {
    * @param flags File open
    */
   open(parent: FatFile, name: string, flags: number): void {
+    let filenameFound = false;
+
     if (!parent.isDirectory()) {
       throw new Error(ERROR_NOT_A_DIRECTORY);
     }
@@ -158,74 +165,80 @@ export class FatFile {
     parent.rewind();
     const fsName = new FsName(name);
 
-    // Number of directory entries needed.
+    // --- Number of directory entries needed.
     const nameEntryCount = Math.floor((name.length + 12) / 13);
-    const freeEntryNeed = fsName.flags & FNAME_FLAG_NEED_LFN ? 1 + nameEntryCount : 1;
+    const freeEntriesNeed = fsName.flags & FNAME_FLAG_NEED_LFN ? 1 + nameEntryCount : 1;
+
+    // --- Find the number of free entries needed to create this directory entry
+    let freeFound = 0;
+    let freeIndex = 0;
+    let curIndex = 0;
     while (true) {
-      const curIndex = Math.floor(parent._currentPosition / FS_DIR_SIZE);
-      //   dir = dirFile->readDirCache();
-      //   if (!dir) {
-      //     if (dirFile->getError()) {
-      //       DBG_FAIL_MACRO;
-      //       goto fail;
-      //     }
-      //     // At EOF
-      //     goto create;
-      //   }
-      //   if (dir->name[0] == FAT_NAME_DELETED || dir->name[0] == FAT_NAME_FREE) {
-      //     if (freeFound == 0) {
-      //       freeIndex = curIndex;
-      //     }
-      //     if (freeFound < freeNeed) {
-      //       freeFound++;
-      //     }
-      //     if (dir->name[0] == FAT_NAME_FREE) {
-      //       goto create;
-      //     }
-      //   } else {
-      //     if (freeFound < freeNeed) {
-      //       freeFound = 0;
-      //     }
-      //   }
-      //   // skip empty slot or '.' or '..'
-      //   if (dir->name[0] == FAT_NAME_DELETED || dir->name[0] == '.') {
-      //     lfnOrd = 0;
-      //   } else if (isFatLongName(dir)) {
-      //     ldir = reinterpret_cast<DirLfn_t*>(dir);
-      //     if (!lfnOrd) {
-      //       order = ldir->order & 0X1F;
-      //       if (order != nameOrd ||
-      //           (ldir->order & FAT_ORDER_LAST_LONG_ENTRY) == 0) {
-      //         continue;
-      //       }
-      //       lfnOrd = nameOrd;
-      //       checksum = ldir->checksum;
-      //     } else if (ldir->order != --order || checksum != ldir->checksum) {
-      //       lfnOrd = 0;
+      curIndex = Math.floor(parent._currentPosition / FS_DIR_SIZE);
+      const dirEntry = parent.readDirectoryEntry();
+      if (!dirEntry) {
+        create();
+        return;
+      }
+
+      const firstByte = dirEntry.DIR_Name.charCodeAt(0);
+      if (firstByte === FAT_NAME_DELETED || firstByte === FAT_NAME_FREE) {
+        // --- This FAT entry is free (or can be reused)
+        if (freeFound === 0) {
+          freeIndex = curIndex;
+        }
+        if (freeFound < freeEntriesNeed) {
+          freeFound++;
+        }
+        if (firstByte == FAT_NAME_FREE) {
+          create();
+          return;
+        }
+      } else {
+        if (freeFound < freeEntriesNeed) {
+          freeFound = 0;
+        }
+      }
+
+      // // skip empty slot or '.' or '..'
+      // if (dir->name[0] == FAT_NAME_DELETED || dir->name[0] == '.') {
+      //   lfnOrd = 0;
+      // } else if (isFatLongName(dir)) {
+      //   ldir = reinterpret_cast<DirLfn_t*>(dir);
+      //   if (!lfnOrd) {
+      //     order = ldir->order & 0X1F;
+      //     if (order != nameOrd ||
+      //         (ldir->order & FAT_ORDER_LAST_LONG_ENTRY) == 0) {
       //       continue;
       //     }
-      //     if (order == 1) {
-      //       if (!dirFile->cmpName(curIndex + 1, fname, lfnOrd)) {
-      //         lfnOrd = 0;
-      //       }
-      //     }
-      //   } else if (isFatFileOrSubdir(dir)) {
-      //     if (lfnOrd) {
-      //       if (1 == order && lfnChecksum(dir->name) == checksum) {
-      //         goto found;
-      //       }
-      //       DBG_FAIL_MACRO;
-      //       goto fail;
-      //     }
-      //     if (!memcmp(dir->name, fname->sfn, sizeof(fname->sfn))) {
-      //       if (!(fname->flags & FNAME_FLAG_LOST_CHARS)) {
-      //         goto found;
-      //       }
-      //       fnameFound = true;
-      //     }
-      //   } else {
+      //     lfnOrd = nameOrd;
+      //     checksum = ldir->checksum;
+      //   } else if (ldir->order != --order || checksum != ldir->checksum) {
       //     lfnOrd = 0;
+      //     continue;
       //   }
+      //   if (order == 1) {
+      //     if (!dirFile->cmpName(curIndex + 1, fname, lfnOrd)) {
+      //       lfnOrd = 0;
+      //     }
+      //   }
+      // } else if (isFatFileOrSubdir(dir)) {
+      //   if (lfnOrd) {
+      //     if (1 == order && lfnChecksum(dir->name) == checksum) {
+      //       goto found;
+      //     }
+      //     DBG_FAIL_MACRO;
+      //     goto fail;
+      //   }
+      //   if (!memcmp(dir->name, fname->sfn, sizeof(fname->sfn))) {
+      //     if (!(fname->flags & FNAME_FLAG_LOST_CHARS)) {
+      //       goto found;
+      //     }
+      //     fnameFound = true;
+      //   }
+      // } else {
+      //   lfnOrd = 0;
+      // }
     }
 
     // found:
@@ -236,87 +249,85 @@ export class FatFile {
     //   }
     //   goto open;
 
-    // create:
-    //   // don't create unless O_CREAT and write mode
-    //   if (!(oflag & O_CREAT) || !isWriteMode(oflag)) {
-    //     DBG_WARN_MACRO;
-    //     goto fail;
-    //   }
-    //   // Keep found entries or start at current index if no free entries found.
-    //   if (freeFound == 0) {
-    //     freeIndex = curIndex;
-    //   }
-    //   while (freeFound < freeNeed) {
-    //     dir = dirFile->readDirCache();
-    //     if (!dir) {
-    //       if (dirFile->getError()) {
-    //         DBG_FAIL_MACRO;
-    //         goto fail;
-    //       }
-    //       // EOF if no error.
-    //       break;
-    //     }
-    //     freeFound++;
-    //   }
-    //   // Loop handles the case of huge filename and cluster size one.
-    //   freeTotal = freeFound;
-    //   while (freeTotal < freeNeed) {
-    //     // Will fail if FAT16 root.
-    //     if (!dirFile->addDirCluster()) {
-    //       DBG_FAIL_MACRO;
-    //       goto fail;
-    //     }
-    //     // 16-bit freeTotal needed for large cluster size.
-    //     freeTotal += vol->dirEntriesPerCluster();
-    //   }
-    //   if (fnameFound) {
-    //     if (!dirFile->makeUniqueSfn(fname)) {
-    //       goto fail;
-    //     }
-    //   }
-    //   lfnOrd = freeNeed - 1;
-    //   curIndex = freeIndex + lfnOrd;
-    //   if (!dirFile->createLFN(curIndex, fname, lfnOrd)) {
-    //     goto fail;
-    //   }
-    //   dir = dirFile->cacheDir(curIndex);
-    //   if (!dir) {
-    //     DBG_FAIL_MACRO;
-    //     goto fail;
-    //   }
-    //   // initialize as empty file
-    //   memset(dir, 0, sizeof(DirFat_t));
-    //   memcpy(dir->name, fname->sfn, 11);
+    function create(): void {
+      // --- Don't create unless O_CREAT and write mode
+      if (!(flags & O_CREAT) || !isWriteMode(flags)) {
+        throw new Error(ERROR_NO_WRITE);
+      }
+      
+      // ---- Keep found entries or start at current index if no free entries found.
+      if (freeFound == 0) {
+        freeIndex = curIndex;
+      }
+      while (freeFound < freeEntriesNeed) {
+        const dirEntry = parent.readDirectoryEntry();
+        if (!dirEntry) {
+          break;
+        }
+        freeFound++;
+      }
+      // --- Loop handles the case of huge filename and cluster size one.
+      let freeTotal = freeFound;
+      while (freeTotal < freeEntriesNeed) {
+      //     if (!dirFile->addDirCluster()) {
+      //       DBG_FAIL_MACRO;
+      //       goto fail;
+      //     }
+      //     // 16-bit freeTotal needed for large cluster size.
+      //     freeTotal += vol->dirEntriesPerCluster();
+      }
+      if (filenameFound) {
+        // if (!dirFile->makeUniqueSfn(fname)) {
+        //   goto fail;
+        // }
+      }
+      let lfnOrd = freeEntriesNeed - 1;
+      curIndex = freeIndex + lfnOrd;
+      
+      //   if (!dirFile->createLFN(curIndex, fname, lfnOrd)) {
+      //     goto fail;
+      //   }
+      //   dir = dirFile->cacheDir(curIndex);
+      //   if (!dir) {
+      //     DBG_FAIL_MACRO;
+      //     goto fail;
+      //   }
+      //   // initialize as empty file
+      //   memset(dir, 0, sizeof(DirFat_t));
+      //   memcpy(dir->name, fname->sfn, 11);
 
-    //   // Set base-name and extension lower case bits.
-    //   dir->caseFlags = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fname->flags;
+      //   // Set base-name and extension lower case bits.
+      //   dir->caseFlags = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fname->flags;
 
-    //   // Set timestamps.
-    //   if (FsDateTime::callback) {
-    //     // call user date/time function
-    //     FsDateTime::callback(&date, &time, &ms10);
-    //     setLe16(dir->createDate, date);
-    //     setLe16(dir->createTime, time);
-    //     dir->createTimeMs = ms10;
-    //   } else {
-    //     setLe16(dir->createDate, FS_DEFAULT_DATE);
-    //     setLe16(dir->modifyDate, FS_DEFAULT_DATE);
-    //     setLe16(dir->accessDate, FS_DEFAULT_DATE);
-    //     if (FS_DEFAULT_TIME) {
-    //       setLe16(dir->createTime, FS_DEFAULT_TIME);
-    //       setLe16(dir->modifyTime, FS_DEFAULT_TIME);
-    //     }
-    //   }
-    //   // Force write of entry to device.
-    //   vol->cacheDirty();
+      //   // Set timestamps.
+      //   if (FsDateTime::callback) {
+      //     // call user date/time function
+      //     FsDateTime::callback(&date, &time, &ms10);
+      //     setLe16(dir->createDate, date);
+      //     setLe16(dir->createTime, time);
+      //     dir->createTimeMs = ms10;
+      //   } else {
+      //     setLe16(dir->createDate, FS_DEFAULT_DATE);
+      //     setLe16(dir->modifyDate, FS_DEFAULT_DATE);
+      //     setLe16(dir->accessDate, FS_DEFAULT_DATE);
+      //     if (FS_DEFAULT_TIME) {
+      //       setLe16(dir->createTime, FS_DEFAULT_TIME);
+      //       setLe16(dir->modifyTime, FS_DEFAULT_TIME);
+      //     }
+      //   }
+      //   // Force write of entry to device.
+      //   vol->cacheDirty();
+      open();
+    }
 
-    // open:
-    //   // open entry in cache.
-    //   if (!openCachedEntry(dirFile, curIndex, oflag, lfnOrd)) {
-    //     DBG_FAIL_MACRO;
-    //     goto fail;
-    //   }
-    //   return true;
+    function open(): void {
+      //   // open entry in cache.
+      //   if (!openCachedEntry(dirFile, curIndex, oflag, lfnOrd)) {
+      //     DBG_FAIL_MACRO;
+      //     goto fail;
+      //   }
+      //   return true;
+    }
   }
 
   /**
@@ -412,22 +423,39 @@ export class FatFile {
         numBytes = tmp;
       }
     }
-    const toRead = numBytes;
 
+    // --- Data bytes left to read
+    let toRead = numBytes;
+
+    // --- Read data from the file
+    let buffer = new Uint8Array(0);
+
+    // --- Read all data is chunks
     while (toRead) {
+      // --- As we iteratively read the file, we are at a particular cluster within the file.
+      // --- In one iteration, we read data from the current cluster.
+
+      // --- Calculate the offset within the current sector from the current position
       const offset = this._currentPosition & SECTOR_MASK;
+
+      // --- Calculate the sector within its cluster from the current position
       const sectorOfCluster = this.volume.sectorOfCluster(this._currentPosition);
+
+      // --- Determine the current cluster
       if (offset === 0 && sectorOfCluster === 0) {
-        // --- Start of new cluster
+        // --- We are at the beginning of the cluster
         if (this._currentPosition === 0) {
-          // --- Use first cluster in file
+          // --- We are at the beginning of the file
           this._currentCluster = this.isRoot()
             ? this.volume.rootDirectoryStartCluster
             : this._firstCluster;
         } else if (this.isFile() && this.isContiguous()) {
+          // --- We are at the beginning of a cluster in a contiguous file,
+          // --- so we can calculate the next cluster
           this._currentCluster++;
         } else {
-          // --- Get next cluster from FAT
+          // --- We are at the beginning of a cluster in a non-contiguous file or in a directory
+          // --- We need to follow the cluster chain
           const fatValue = this.volume.getFatEntry(this._currentCluster);
           if (fatValue >= this.volume.countOfClusters) {
             if (this.isDirectory()) {
@@ -437,49 +465,98 @@ export class FatFile {
           }
           this._currentCluster = fatValue;
         }
-        const sector = this.volume.clusterStartSector(this._currentCluster) + sectorOfCluster;
       }
 
-      if (offset !== 0 || toRead < BYTES_PER_SECTOR || sector === m_vol->cacheSectorNumber()) {
-      //   // amount to be read from current sector
-      //   n = m_vol->bytesPerSector() - offset;
-      //   if (n > toRead) {
-      //     n = toRead;
-      //   }
-      //   // read sector to cache and copy data to caller
-      //   pc = m_vol->dataCachePrepare(sector, FsCache::CACHE_FOR_READ);
-      //   if (!pc) {
-      //     DBG_FAIL_MACRO;
-      //     goto fail;
-      //   }
-      //   uint8_t* src = pc + offset;
-      //   memcpy(dst, src, n);
-      // } else if (toRead >= 2 * m_vol->bytesPerSector()) {
-      //   uint32_t ns = toRead >> m_vol->bytesPerSectorShift();
-      //   if (!isRootFixed()) {
-      //     uint32_t mb = m_vol->sectorsPerCluster() - sectorOfCluster;
-      //     if (mb < ns) {
-      //       ns = mb;
-      //     }
-      //   }
-      //   n = ns << m_vol->bytesPerSectorShift();
-      //   if (!m_vol->cacheSafeRead(sector, dst, ns)) {
-      //     DBG_FAIL_MACRO;
-      //     goto fail;
-      //   }
-      // } else {
-      //   // read single sector
-      //   n = m_vol->bytesPerSector();
-      //   if (!m_vol->cacheSafeRead(sector, dst)) {
-      //     DBG_FAIL_MACRO;
-      //     goto fail;
-      //   }
-      // }
-      // dst += n;
-      // m_curPosition += n;
-      // toRead -= n;
+      // --- At this point we have the current cluster set up, let's calculate the sector to read
+      const sector = this.volume.clusterStartSector(this._currentCluster) + sectorOfCluster;
+
+      // --- We are going to read n bytes from the current cluster
+      let n: number;
+      if (offset !== 0 || toRead < BYTES_PER_SECTOR) {
+        // --- Amount to be read from current sector is less than a full sector
+        n = BYTES_PER_SECTOR - offset;
+        if (n > toRead) {
+          n = toRead;
+        }
+        // --- Read sector and copy the data
+        const sectorContent = this.volume.file.readSector(sector);
+        const oldBuffer = buffer;
+        buffer = new Uint8Array(oldBuffer.length + n);
+        buffer.set(oldBuffer);
+        buffer.set(sectorContent.subarray(offset, offset + n), oldBuffer.length);
+      } else if (toRead >= 2 * BYTES_PER_SECTOR) {
+        // --- Read more than two sectors, but not more that remains in the cluster
+        let numSectorsToRead = toRead >> BYTES_PER_SECTOR_SHIFT;
+        const remainingSectors = this.volume.bootSector.BPB_SecPerClus - sectorOfCluster;
+        if (remainingSectors < numSectorsToRead) {
+          numSectorsToRead = remainingSectors;
+        }
+        n = numSectorsToRead << BYTES_PER_SECTOR_SHIFT;
+        const oldBuffer = buffer;
+        buffer = new Uint8Array(oldBuffer.length + n);
+        buffer.set(oldBuffer);
+        for (let i = 0; i < numSectorsToRead; i++) {
+          const sectorContent = this.volume.file.readSector(sector + i);
+          buffer.set(sectorContent, oldBuffer.length + i * BYTES_PER_SECTOR);
+        }
+      } else {
+        // --- Read a single sector
+        n = BYTES_PER_SECTOR;
+        const sectorContent = this.volume.file.readSector(sector);
+        const oldBuffer = buffer;
+        buffer = new Uint8Array(oldBuffer.length + n);
+        buffer.set(oldBuffer);
+        buffer.set(sectorContent.subarray(offset, offset + n), oldBuffer.length);
+      }
+
+      // --- Update the position and the remaining bytes
+      this._currentPosition += n;
+      toRead -= n;
     }
+
+    // --- Done.
+    return buffer;
   }
+
+  createLFN(index: number, fsName: FsName, lfnOrd: number) {
+    // FatFile dir = *this;
+    FatFile dir;
+    dir.copy(this);
+    DirLfn_t* ldir;
+    uint8_t checksum = lfnChecksum(fname->sfn);
+    uint8_t fc = 0;
+    fname->reset();
+  
+    for (uint8_t order = 1; order <= lfnOrd; order++) {
+      ldir = reinterpret_cast<DirLfn_t*>(dir.cacheDir(index - order));
+      if (!ldir) {
+        DBG_FAIL_MACRO;
+        goto fail;
+      }
+      dir.m_vol->cacheDirty();
+      ldir->order = order == lfnOrd ? FAT_ORDER_LAST_LONG_ENTRY | order : order;
+      ldir->attributes = FAT_ATTRIB_LONG_NAME;
+      ldir->mustBeZero1 = 0;
+      ldir->checksum = checksum;
+      setLe16(ldir->mustBeZero2, 0);
+      for (uint8_t i = 0; i < 13; i++) {
+        uint16_t cp;
+        if (fname->atEnd()) {
+          cp = fc++ ? 0XFFFF : 0;
+        } else {
+          cp = fname->get16();
+          // Verify caller checked for valid UTF-8.
+          DBG_HALT_IF(cp == 0XFFFF);
+        }
+        putLfnChar(ldir, i, cp);
+      }
+    }
+    return true;
+  
+  fail:
+    return false;
+  }
+  
 
   /**
    * Set the current position to the beginning of the file entry
@@ -488,25 +565,11 @@ export class FatFile {
     this.seekSet(0);
   }
 
-  private readDirectoryEntry(skipReadOk = false): FatDirEntry | null {
-    throw new Error("Not implemented");
-    //     const index = (this._currentPosition >> 5) & 0x0f;
-    //     if (!index || !skipReadOk) {
-    //       int8_t n = read(&n, 1);
-    //       if (n != 1) {
-    //         if (n != 0) {
-    //           DBG_FAIL_MACRO;
-    //         }
-    //         goto fail;
-    //       }
-    //       m_curPosition += FS_DIR_SIZE - 1;
-    //     } else {
-    //       m_curPosition += FS_DIR_SIZE;
-    //     }
-    //     // return pointer to entry
-    //     return reinterpret_cast<DirFat_t*>(m_vol->cacheAddress()) + i;
-    //   fail:
-    //     return nullptr;
-    //   }
+  private readDirectoryEntry(): FatDirEntry | null {
+    const buffer = this.readFileData(FS_DIR_SIZE);
+    if (!buffer || buffer.length < FS_DIR_SIZE) {
+      return null;
+    }
+    return new FatDirEntry(buffer);
   }
 }

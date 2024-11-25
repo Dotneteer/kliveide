@@ -2,7 +2,7 @@ export class FatDirEntry {
   private _view: DataView;
   constructor(
     public readonly buffer: Uint8Array,
-    public readonly offset: number
+    public readonly offset = 0
   ) {
     this._view = new DataView(buffer.buffer);
   }
