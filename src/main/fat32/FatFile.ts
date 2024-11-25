@@ -1,4 +1,4 @@
-import { isWriteMode } from "./fat-utils";
+import { isWriteMode, toFatLongName } from "./fat-utils";
 import {
   FS_ATTR_ROOT32,
   FS_ATTR_DIRECTORY,
@@ -15,10 +15,14 @@ import {
   BYTES_PER_SECTOR,
   BYTES_PER_SECTOR_SHIFT,
   FAT_NAME_DELETED,
-  FAT_NAME_FREE
+  FAT_NAME_FREE,
+  FAT_ORDER_LAST_LONG_ENTRY,
+  FAT_ATTRIB_LONG_NAME
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
+import { FatLongFileName } from "./FatLongFileName";
+import { calcShortNameCheckSum } from "./file-names";
 import { FsName } from "./FsName";
 
 export const ERROR_ALREADY_OPEN = "The file is already open.";
@@ -518,44 +522,38 @@ export class FatFile {
     return buffer;
   }
 
-  createLFN(index: number, fsName: FsName, lfnOrd: number) {
-    // FatFile dir = *this;
-    FatFile dir;
-    dir.copy(this);
-    DirLfn_t* ldir;
-    uint8_t checksum = lfnChecksum(fname->sfn);
-    uint8_t fc = 0;
-    fname->reset();
-  
-    for (uint8_t order = 1; order <= lfnOrd; order++) {
-      ldir = reinterpret_cast<DirLfn_t*>(dir.cacheDir(index - order));
+  createLFN(index: number, fname: FsName, lfnOrd: number): FatLongFileName | null {
+    const dir = this.clone();
+    let ldir: FatLongFileName;
+    const checksum = calcShortNameCheckSum(fname.sfn11);
+
+    let nameIndex = 0;
+    for (let order = 1; order <= lfnOrd; order++) {
+      ldir = toFatLongName(dir.cacheDir(index - order));
       if (!ldir) {
-        DBG_FAIL_MACRO;
-        goto fail;
+        return null;
       }
-      dir.m_vol->cacheDirty();
-      ldir->order = order == lfnOrd ? FAT_ORDER_LAST_LONG_ENTRY | order : order;
-      ldir->attributes = FAT_ATTRIB_LONG_NAME;
-      ldir->mustBeZero1 = 0;
-      ldir->checksum = checksum;
-      setLe16(ldir->mustBeZero2, 0);
-      for (uint8_t i = 0; i < 13; i++) {
-        uint16_t cp;
-        if (fname->atEnd()) {
-          cp = fc++ ? 0XFFFF : 0;
+      dir._vol.cacheDirty();
+      ldir.LDIR_Ord = order == lfnOrd ? FAT_ORDER_LAST_LONG_ENTRY | order : order;
+      ldir.LDIR_Attr = FAT_ATTRIB_LONG_NAME;
+      ldir.LDIR_Type = 0;
+      ldir.LDIR_Chksum = checksum;
+      ldir.LDIR_FstClusLO = 0;
+
+      let fc = 0;
+      for (let i = 0; i < 13; i++) {
+        let cp: number;
+        if (nameIndex >= fname.name.length) {
+          cp = fc++ ? 0xffff : 0;
         } else {
-          cp = fname->get16();
-          // Verify caller checked for valid UTF-8.
-          DBG_HALT_IF(cp == 0XFFFF);
+          cp = fname.name.charCodeAt(nameIndex++);
         }
-        putLfnChar(ldir, i, cp);
+        this.putLfnChar(ldir, i, cp);
       }
     }
-    return true;
-  
-  fail:
-    return false;
+    return ldir;
   }
+
   
 
   /**
