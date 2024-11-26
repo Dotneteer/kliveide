@@ -1,4 +1,4 @@
-import { isWriteMode, toFatLongName } from "./fat-utils";
+import { dateToNumber, isWriteMode, lfnReservedChar, timeMsToNumber, timeToNumber, toFatLongName } from "./fat-utils";
 import {
   FS_ATTR_ROOT32,
   FS_ATTR_DIRECTORY,
@@ -17,13 +17,17 @@ import {
   FAT_NAME_DELETED,
   FAT_NAME_FREE,
   FAT_ORDER_LAST_LONG_ENTRY,
-  FAT_ATTRIB_LONG_NAME
+  FAT_ATTRIB_LONG_NAME,
+  O_RDONLY,
+  FS_ATTR_SUBDIR,
+  FAT_CASE_LC_BASE,
+  FAT_CASE_LC_EXT
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
 import { calcShortNameCheckSum } from "./file-names";
-import { FsName } from "./FsName";
+import { FsName, FsPath } from "./FsName";
 
 export const ERROR_ALREADY_OPEN = "The file is already open.";
 export const ERROR_NOT_A_DIRECTORY = "The parent is not a directory.";
@@ -43,6 +47,7 @@ export class FatFile {
   private _currentPosition = 0;
   private _fileSize = 0;
   private _firstCluster = 0;
+  private _error = "";
 
   get attributes(): number {
     return this._attributes;
@@ -68,6 +73,10 @@ export class FatFile {
     return this._firstCluster;
   }
 
+  get error(): string { 
+    return this._error;
+  }
+
   constructor(
     public readonly volume: Fat32Volume,
     attrs = 0,
@@ -80,6 +89,7 @@ export class FatFile {
     this._currentPosition = 0;
     this._fileSize = 0;
     this._firstCluster = 0;
+    this._error = "";
   }
 
   clone(): FatFile {
@@ -90,6 +100,7 @@ export class FatFile {
     clone._currentPosition = this._currentPosition;
     clone._fileSize = this._fileSize;
     clone._firstCluster = this._firstCluster;
+    clone._error = this._error;
     return clone;
   }
 
@@ -124,65 +135,69 @@ export class FatFile {
   /**
    * Creates a directory
    * @param parent Parent directory
-   * @param name Name of the directory
+   * @param path Name of the directory
    * @param createMissingParents True, if missing parent directories should be created
    * @returns The created directory
    */
-  mkdir(parent: FatFile, name: string, createMissingParents = true): void {
+  mkdir(parent: FatFile, path: string, createMissingParents = true): boolean {
     if (this.isOpen()) {
-      throw new Error(ERROR_ALREADY_OPEN);
+      this._error = ERROR_ALREADY_OPEN;
+      return false;
     }
     if (!parent.isDirectory()) {
-      throw new Error(ERROR_NOT_A_DIRECTORY);
+      this._error = ERROR_NOT_A_DIRECTORY;
+      return false;
     }
 
-    // --- Check if the name starts with a slash
-    if (name.charAt(0) === "/") {
-      // --- Remove the leading slash
-      while (name.charAt(0) === "/") {
-        name = name.substring(1);
+    let nameIndex = 0;
+    if (path.charAt(0) === "/") {
+      while (path.charAt(nameIndex) === "/") {
+        nameIndex++;
       }
-
-      // --- Start from the root directory
       parent = this.volume.openRootDirectory();
-    }
-
-    // --- Split the path into segments
-    const segments = name.split("/");
-    for (let i = 0; i < segments.length - 2; i++) {
-      if (!segments[i]) {
-        continue;
+      if (!parent) {
+        this._error = ERROR_PARENT_NOT_FOUND;
+        return false;
       }
-
-      // TODO: Open the directory segments in the path
     }
 
-    // --- Create the last directory segment
-    this.doMkdir(parent, segments[segments.length - 1]);
+    const fsPath = this.parsePathToLfn(path);
+    for (let i = 0; i < fsPath.segments.length - 1; i++) {
+      if (!this.doOpen(parent, fsPath.segments[i], O_RDONLY)) {
+        if (!createMissingParents || !this.mkdir(parent, fsPath.segments[i].name)) {
+          return false;
+        }
+      }
+      parent = this.clone();
+      close();
+    }
+    return this.doMkdir(parent, fsPath.segments[fsPath.segments.length - 1]);
   }
 
   /**
    * Opens a file or directory
    * @param parent Parent directory
-   * @param name Name of the file or directory
+   * @param fsName Name of the file or directory
    * @param flags File open
    */
-  open(parent: FatFile, name: string, flags: number): void {
+  doOpen(parent: FatFile, fsName: FsName, flags: number): boolean {
+    const fatFile = this;
     let filenameFound = false;
 
     if (!parent.isDirectory()) {
-      throw new Error(ERROR_NOT_A_DIRECTORY);
+      this._error = ERROR_NOT_A_DIRECTORY;
+      return false;
     }
     if (this.isOpen()) {
-      throw new Error(ERROR_ALREADY_OPEN);
+      this._error = ERROR_ALREADY_OPEN;
+      return false;
     }
 
     // --- Position to the beginning of the directory
     parent.rewind();
-    const fsName = new FsName(name);
 
     // --- Number of directory entries needed.
-    const nameEntryCount = Math.floor((name.length + 12) / 13);
+    const nameEntryCount = Math.floor((fsName.name.length + 12) / 13);
     const freeEntriesNeed = fsName.flags & FNAME_FLAG_NEED_LFN ? 1 + nameEntryCount : 1;
 
     // --- Find the number of free entries needed to create this directory entry
@@ -193,8 +208,7 @@ export class FatFile {
       curIndex = Math.floor(parent._currentPosition / FS_DIR_SIZE);
       const dirEntry = parent.readDirectoryEntry();
       if (!dirEntry) {
-        create();
-        return;
+        return create();
       }
 
       const firstByte = dirEntry.DIR_Name.charCodeAt(0);
@@ -207,8 +221,7 @@ export class FatFile {
           freeFound++;
         }
         if (firstByte == FAT_NAME_FREE) {
-          create();
-          return;
+          return create();
         }
       } else {
         if (freeFound < freeEntriesNeed) {
@@ -265,10 +278,11 @@ export class FatFile {
     //   }
     //   goto open;
 
-    function create(): void {
+    function create(): boolean {
       // --- Don't create unless O_CREAT and write mode
       if (!(flags & O_CREAT) || !isWriteMode(flags)) {
-        throw new Error(ERROR_NO_WRITE);
+        fatFile._error = ERROR_NO_WRITE;
+        return false;
       }
 
       // ---- Keep found entries or start at current index if no free entries found.
@@ -300,15 +314,34 @@ export class FatFile {
       let lfnOrd = freeEntriesNeed - 1;
       curIndex = freeIndex + lfnOrd;
 
-      const lfnEntry = parent.createLFN(curIndex, fsName, lfnOrd);
-      if (!lfnEntry) {
-        throw new Error(ERROR_LFN_CANNOT_CREATE);
+      parent.createLFN(curIndex, fsName, lfnOrd);
+      parent.seekSet(curIndex * FS_DIR_SIZE);
+      const dir = parent.readDirectoryEntry();
+      if (!dir) {
+        return null;
       }
-      //   dir = dirFile->cacheDir(curIndex);
-      //   if (!dir) {
-      //     DBG_FAIL_MACRO;
-      //     goto fail;
-      //   }
+      // --- initialize as empty file
+      dir.DIR_Name = fsName.sfn11;
+      dir.DIR_Attr = 0;
+
+      // --- Set base-name and extension lower case bits.
+      const now = new Date();
+      dir.DIR_NTRes = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fsName.flags;
+      dir.DIR_CrtTimeTenth = timeMsToNumber(now);
+      dir.DIR_CrtTime = timeToNumber(now);
+      dir.DIR_CrtDate = dateToNumber(now);
+      dir.DIR_LstAccDate = dateToNumber(now);
+      dir.DIR_FstClusHI = 0;
+      dir.DIR_WrtTime = timeToNumber(now);
+      dir.DIR_WrtDate = dateToNumber(now);
+      dir.DIR_FstClusLO = 0;
+      dir.DIR_FileSize = 0;
+
+      // --- Force write of entry to device.
+      //vol.cacheDirty();
+
+
+
       //   // initialize as empty file
       //   memset(dir, 0, sizeof(DirFat_t));
       //   memcpy(dir->name, fname->sfn, 11);
@@ -334,16 +367,16 @@ export class FatFile {
       //   }
       //   // Force write of entry to device.
       //   vol->cacheDirty();
-      open();
+      return open();
     }
 
-    function open(): void {
+    function open(): boolean {
       //   // open entry in cache.
       //   if (!openCachedEntry(dirFile, curIndex, oflag, lfnOrd)) {
       //     DBG_FAIL_MACRO;
       //     goto fail;
       //   }
-      //   return true;
+      return true;
     }
   }
 
@@ -412,15 +445,70 @@ export class FatFile {
   /**
    * Creates a directory
    * @param parent Parent directory
-   * @param name Name of the directory as FsName
+   * @param fname Name of the directory as FsName
    * @returns The created directory
    */
-  doMkdir(parent: FatFile, name: string): void {
+  doMkdir(parent: FatFile, fname: FsName): boolean {
     if (!parent.isDirectory()) {
-      throw new Error(ERROR_NOT_A_DIRECTORY);
+      this._error = ERROR_NOT_A_DIRECTORY;
+      return false;
     }
 
-    this.open(parent, name, O_CREAT | O_EXCL | O_RDWR);
+    // --- Create a normal file
+    if (!this.doOpen(parent, fname, O_CREAT | O_EXCL | O_RDWR)) {
+      return false;
+    }
+
+    // --- Convert file to directory
+    this._flags = FILE_FLAG_READ;
+    this._attributes = FS_ATTR_SUBDIR;
+
+    // --- Allocate and zero first cluster
+    // if (!this.addDirCluster()) {
+    //   return false;
+    // }
+
+    // this._firstCluster = this._currentCluster;
+
+    // // --- Set to start of dir
+    // this.rewind();
+
+    // // --- force entry to device
+    // // TODO
+
+    // // --- Cache entry - should already be in cache due to sync() call
+    // let dir = this.cacheDirEntry(CACHE_FOR_WRITE);
+    // if (!dir) {
+    //   return false;
+    // }
+
+    // // --- Change directory entry attribute
+    // dir.DIR_Attr = FS_ATTR_DIRECTORY;
+
+    // // --- Make entry for '.'
+    // let dot = dir.clone();
+    // dot.DIR_Name = ".".padEnd(11, " ");
+
+    // // --- Cache sector for '.'  and '..'
+    // let sector = this.volume.clusterStartSector(this._firstCluster);
+    // let pc = this._vol.dataCachePrepare(sector, CACHE_FOR_WRITE);
+    // if (!pc) {
+    //   return false;
+    // }
+
+    // // --- Copy '.' dir to sector
+    // pc.set(dot.buffer.slice(0, FS_DIR_SIZE), 0);
+
+    // // --- Make entry for '..'
+    // dot.DIR_Name = "..".padEnd(11, " ");
+    // dot.DIR_FstClusLO = parent._firstCluster & 0xffff;
+    // dot.DIR_FstClusHI = parent._firstCluster >> 16;
+
+    // // --- Copy '..' to sector
+    // pc.set(dot.buffer.slice(0, FS_DIR_SIZE), FS_DIR_SIZE);
+
+    // --- Write first sector
+    return true;
   }
 
   /**
@@ -637,5 +725,33 @@ export class FatFile {
       return null;
     }
     return new FatDirEntry(buffer);
+  }
+
+  parsePathToLfn(path: string): FsPath {
+    const result: FsPath = { segments: [] };
+    const parts = path.split("/");
+    parts.forEach((part) => {
+      // --- Check for emptyness
+      part = part.trim();
+      if (!part) {
+        throw new Error("Path segment cannot be empty");
+      }
+
+      // --- Check for reserved characters
+      for (let i = 0; i < part.length; i++) {
+        if (lfnReservedChar(part[i])) {
+          throw new Error("Path segment contains reserved characters");
+        }
+      }
+
+      // --- Trim trailing dot
+      part = part.replace(/\.$/, "");
+
+      // --- Add the segment
+      result.segments.push(new FsName(part));
+    });
+
+    // --- Done
+    return result;
   }
 }
