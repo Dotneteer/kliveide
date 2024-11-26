@@ -67,7 +67,7 @@ describe("FatVolume", () => {
     vol.init();
 
     // --- Act
-    vol.mkdir("testdir");
+    vol.mkdir("testDir");
 
     // --- Assert
 });

@@ -1,4 +1,11 @@
-import { dateToNumber, isWriteMode, lfnReservedChar, timeMsToNumber, timeToNumber, toFatLongName } from "./fat-utils";
+import {
+  dateToNumber,
+  isWriteMode,
+  lfnReservedChar,
+  timeMsToNumber,
+  timeToNumber,
+  toFatLongName
+} from "./fat-utils";
 import {
   FS_ATTR_ROOT32,
   FS_ATTR_DIRECTORY,
@@ -21,7 +28,9 @@ import {
   O_RDONLY,
   FS_ATTR_SUBDIR,
   FAT_CASE_LC_BASE,
-  FAT_CASE_LC_EXT
+  FAT_CASE_LC_EXT,
+  FILE_FLAG_WRITE,
+  FILE_FLAG_APPEND
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
@@ -39,6 +48,7 @@ export const ERROR_SEEK_PAST_EOC = "Seek past end of cluster.";
 export const ERROR_NO_READ = "The file is not open for reading.";
 export const ERROR_NO_WRITE = "The file is not open for writing.";
 export const ERROR_LFN_CANNOT_CREATE = "Long filename entry cannot be created.";
+export const ERROR_MAX_FILE_SIZE = "File size exceeds maximum.";
 
 export class FatFile {
   private _attributes: number;
@@ -73,7 +83,7 @@ export class FatFile {
     return this._firstCluster;
   }
 
-  get error(): string { 
+  get error(): string {
     return this._error;
   }
 
@@ -126,6 +136,10 @@ export class FatFile {
 
   isReadable(): boolean {
     return !!(this._flags & FILE_FLAG_READ);
+  }
+
+  isWritable(): boolean {
+    return !!(this._flags & FILE_FLAG_WRITE);
   }
 
   close(): void {
@@ -337,10 +351,8 @@ export class FatFile {
       dir.DIR_FstClusLO = 0;
       dir.DIR_FileSize = 0;
 
-      // --- Force write of entry to device.
-      //vol.cacheDirty();
-
-
+      // --- Write back the parent directory entry
+      parent.writeLastDirectoryEntry(dir);
 
       //   // initialize as empty file
       //   memset(dir, 0, sizeof(DirFat_t));
@@ -578,7 +590,7 @@ export class FatFile {
       // --- We are going to read n bytes from the current cluster
       let n: number;
       if (offset !== 0 || toRead < BYTES_PER_SECTOR) {
-        // --- Amount to be read from current sector is less than a full sector
+        // --- Amount to be read from the current sector is less than a full sector
         n = BYTES_PER_SECTOR - offset;
         if (n > toRead) {
           n = toRead;
@@ -590,7 +602,7 @@ export class FatFile {
         buffer.set(oldBuffer);
         buffer.set(sectorContent.subarray(offset, offset + n), oldBuffer.length);
       } else if (toRead >= 2 * BYTES_PER_SECTOR) {
-        // --- Read more than two sectors, but not more that remains in the cluster
+        // --- Read more than two sectors, but not more than remains in the cluster
         let numSectorsToRead = toRead >> BYTES_PER_SECTOR_SHIFT;
         const remainingSectors = this.volume.bootSector.BPB_SecPerClus - sectorOfCluster;
         if (remainingSectors < numSectorsToRead) {
@@ -621,6 +633,124 @@ export class FatFile {
 
     // --- Done.
     return buffer;
+  }
+
+  writeFileData(src: Uint8Array, forceWrite = false): void {
+    // uint8_t* pc;
+    // uint8_t cacheOption;
+    // // number of bytes left to write  -  must be before goto statements
+    // size_t nToWrite = nbyte;
+    // size_t n;
+    // --- Error if not a normal file or is read-only
+    if (!forceWrite && !this.isWritable()) {
+      throw new Error(ERROR_NO_WRITE);
+    }
+
+    // --- Seek to end of file if append flag
+    if (this._flags & FILE_FLAG_APPEND) {
+      this.seekSet(this._fileSize);
+    }
+
+    // --- Don't exceed max fileSize.
+    let toWrite = src.length;
+    if (toWrite > 0xffffffff - this._currentPosition) {
+      throw new Error(ERROR_MAX_FILE_SIZE);
+    }
+
+    // --- Write data to the file in chunks
+    while (toWrite) {
+      // --- As we iteratively write the file, we are at a particular cluster within the file.
+      // --- In one iteration, we write data to the current cluster.
+
+      // --- Calculate the offset within the current sector from the current position
+      const offset = this._currentPosition & SECTOR_MASK;
+
+      // --- Calculate the sector within its cluster from the current position
+      const sectorOfCluster = this.volume.sectorOfCluster(this._currentPosition);
+
+      // --- Determine the current cluster
+      if (sectorOfCluster === 0 && offset === 0) {
+        // --- We are at the beginning of the file
+        if (this._currentCluster !== 0) {
+          // --- This file already has a cluster
+          if (this.isContiguous() && this._fileSize > this._currentPosition) {
+            // --- We are in a contiguous file and the current position is within
+            // --- the file size, so move to the next cluster
+            this._currentCluster++;
+          } else {
+            // --- We are in a non-contiguous file or in a directory,
+            // --- so we need to follow the cluster chain
+            const fatValue = this.volume.getFatEntry(this._currentCluster);
+            if (fatValue >= this.volume.countOfClusters) {
+              // --- We are at the end of the cluster chain
+              this.addCluster();
+            }
+            this._currentCluster = fatValue;
+          }
+        } else {
+          // --- This file has no cluster yet
+          if (this._firstCluster === 0) {
+            // --- Allocate first cluster of file
+            this.addCluster();
+            this._firstCluster = this._currentCluster;
+          } else {
+            // --- Follow chain from first cluster
+            this._currentCluster = this._firstCluster;
+          }
+        }
+      }
+
+      // --- At this point we have the current cluster set up, let's calculate the sector to write
+      const sector = this.volume.clusterStartSector(this._currentCluster) + sectorOfCluster;
+
+      // --- We are going to write n bytes to the current cluster
+      let n: number;
+
+      if (offset != 0 || toWrite < BYTES_PER_SECTOR) {
+        // --- Amount to be write to the current sector is less than a full sector
+        n = BYTES_PER_SECTOR - offset;
+        if (n > toWrite) {
+          n = toWrite;
+        }
+
+        // --- Read sector, copy the data, write it out
+        const sectorContent = this.volume.file.readSector(sector);
+        sectorContent.set(src.subarray(0, n), offset);
+        this.volume.file.writeSector(sector, sectorContent);
+        src = src.subarray(n);
+      } else if (toWrite >= 2 * BYTES_PER_SECTOR) {
+        // --- Write more than two sectors, but not more than remains in the cluster
+        let numSectorsToWrite = toWrite >> BYTES_PER_SECTOR_SHIFT;
+        const remainingSectors = this.volume.bootSector.BPB_SecPerClus - sectorOfCluster;
+        if (remainingSectors < numSectorsToWrite) {
+          numSectorsToWrite = remainingSectors;
+        }
+
+        // --- Write the sectors
+        for (let i = 0; i < numSectorsToWrite; i++) {
+          const sectorContent = src.subarray(0, BYTES_PER_SECTOR);
+          this.volume.file.writeSector(sector + i, sectorContent);
+          src = src.subarray(BYTES_PER_SECTOR);
+        }
+      } else {
+        // --- Write a single sector
+        n = BYTES_PER_SECTOR;
+        const sectorContent = src.subarray(0, BYTES_PER_SECTOR);
+        this.volume.file.writeSector(sector, sectorContent);
+        src = src.subarray(BYTES_PER_SECTOR);
+      }
+
+      // --- Update the position and the remaining bytes
+      this._currentPosition += n;
+      toWrite -= n;
+    }
+
+    // --- Update fileSize if needed
+    if (this._currentPosition > this._fileSize) {
+      // update fileSize and insure sync will update dir entry
+      this._fileSize = this._currentPosition;
+    }
+    this.synchronizeDirectory();
   }
 
   createLFN(index: number, fname: FsName, lfnOrd: number): FatLongFileName | null {
@@ -725,6 +855,20 @@ export class FatFile {
       return null;
     }
     return new FatDirEntry(buffer);
+  }
+
+  private writeLastDirectoryEntry(dir: FatDirEntry): void {
+    this._currentPosition -= FS_DIR_SIZE;
+    this.writeFileData(dir.buffer, true);
+  }
+
+  private addCluster(): void {
+    // TODO: Implement this method
+  }
+
+  private synchronizeDirectory(): void {
+    // TODO: Implement this method
+    // --- Update last write time
   }
 
   parsePathToLfn(path: string): FsPath {

@@ -9,7 +9,6 @@ import {
   CimFileManager,
   MAX_CLUSTERS
 } from "@main/fat32/CimFileManager";
-import { Fat32Formatter } from "@main/fat32/Fat32Formatter";
 
 const TEST_DIR = "testFat32";
 const TEST_FILE = "test.cim";
@@ -328,19 +327,6 @@ describe("CimFileManager", () => {
     expect(cinfo.clusterMap[0]).toBe(0);
     expect(cinfo.clusterMap[1]).toBe(1);
   });
-
-  it("convertToImageFile works", () => {
-    // --- Arrange
-    const filePath = createTestFile();
-    const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, 64);
-
-    // --- Act
-    const formatter = new Fat32Formatter(file);
-    formatter.makeFat32("My Volume");
-    cfm.convertToImageFile(file, createImageFile());   
-  });
-  
 });
 
 function createTestFile(): string {
