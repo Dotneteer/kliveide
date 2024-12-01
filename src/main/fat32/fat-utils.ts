@@ -2,7 +2,6 @@ import {
   FS_ATTR_DIRECTORY,
   FAT_ATTRIB_LABEL,
   FAT_ATTRIB_LONG_NAME,
-  FS_DIR_SIZE,
   O_ACCMODE,
   O_RDWR,
   O_WRONLY
@@ -63,12 +62,8 @@ export function isWriteMode(oflag: number) {
   return oflag === O_WRONLY || oflag === O_RDWR;
 }
 
-export function toFatDirEntry(sector: Uint8Array, offset: number): FatDirEntry {
-  return new FatDirEntry(sector, offset * FS_DIR_SIZE);
-}
-
 export function toFatLongName(dir: FatDirEntry): FatLongFileName {
-  return new FatLongFileName(dir.buffer, dir.offset);
+  return new FatLongFileName(dir.buffer);
 }
 
 export function toMasterBootRecord(sector: Uint8Array): FatMasterBootRecord {

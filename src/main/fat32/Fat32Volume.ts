@@ -16,6 +16,8 @@ import {
 import { FatBootSector } from "./FatBootSector";
 import { FatFile } from "./FatFile";
 import { FatFsInfo } from "./FatFsInfo";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
+import { FatPartitionEntry } from "./FatPartitionEntry";
 
 export const ERROR_INVALID_FAT32_SIZE = "Invalid FAT32 size.";
 export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
@@ -33,6 +35,8 @@ export class Fat32Volume {
   private _sectorsPerClusterShift = 0;
   private _bytesPerClusterShift = 0;
   private _rootDirectoryStartCluster = 0;
+  private _allocSearchStart = 0;
+  private _lastCluster = 0;
 
   constructor(public readonly file: CimFile) {}
 
@@ -68,6 +72,14 @@ export class Fat32Volume {
     return this._rootDirectoryStartCluster;
   }
 
+  get allocSearchStart(): number {
+    return this._allocSearchStart;
+  }
+
+  get lastCluster(): number {
+    return this._lastCluster;
+  }
+
   /**
    * Format the volume
    * @param volumeName The name of the volume
@@ -82,6 +94,51 @@ export class Fat32Volume {
       cimInfo.maxSize < 1024 ? 1 : cimInfo.maxSize < 2048 ? 4 : cimInfo.maxSize < 8192 ? 8 : 16;
     const totalClusters = sectorCount / sectorsPerCluster;
     const fat32Size = Math.ceil((totalClusters * 4) / 512);
+
+
+    const BU32 = 8192;
+    const relativeSectors = BU32;
+    let nc = 0;
+    let dataStart: number;
+    let fatSize = 0;
+    for (dataStart = 2 * BU32; ; dataStart += BU32) {
+      nc = (sectorCount - dataStart) / sectorsPerCluster;
+      fatSize = Math.floor((nc + 2 + BYTES_PER_SECTOR / 4 - 1) / (BYTES_PER_SECTOR / 4));
+      if (dataStart >= relativeSectors + 9 + 2 * fatSize) {
+        break;
+      }
+    }
+
+    // --- Error if too few clusters in FAT32 volume
+    if (nc < 65525) {
+      throw new Error("Invalid cluster count");
+    }
+
+    const reservedSectorCount = dataStart - relativeSectors - 2 * fatSize;
+    const fatStart = relativeSectors + reservedSectorCount;
+    const totalSectors = nc * sectorsPerCluster + dataStart - relativeSectors;
+    let partType = 0x0c;
+    if (relativeSectors + totalSectors <= 16450560) {
+      // --- FAT32 with CHS and LBA
+      partType = 0x0b;
+    }
+
+    // --- Create the MBR
+    const beginChs = this.lbaToMbrChs(relativeSectors);
+    const endChs = this.lbaToMbrChs(relativeSectors + totalSectors - 1);
+
+    // --- Write the MBR information
+    const mbr = new FatMasterBootRecord(new Uint8Array(512));
+    const part1 = new FatPartitionEntry(new Uint8Array(16));
+    part1.bootIndicator = 0x00;
+    part1.beginChs = beginChs;
+    part1.partType = partType;
+    part1.endChs = endChs;
+    part1.relativeSectors = relativeSectors;
+    part1.totalSectors = totalSectors;
+    mbr.partition1 = part1;
+    mbr.bootSignature = SIGNATURE;
+    this.file.writeSector(0, mbr.buffer);
 
     // --- Create the boot sector
     const bs = new FatBootSector(new Uint8Array(BYTES_PER_SECTOR));
@@ -116,15 +173,15 @@ export class Fat32Volume {
     bs.BootSectorSignature = SIGNATURE;
 
     // --- Write the boot sector and its backup
-    this.file.writeSector(0, bs.buffer);
-    this.file.writeSector(6, bs.buffer);
+    this.file.writeSector(relativeSectors, bs.buffer);
+    this.file.writeSector(relativeSectors, bs.buffer);
 
     // --- Write extra boot area and backup
     const extraBoot = new Uint8Array(BYTES_PER_SECTOR);
     const extraDv = new DataView(extraBoot.buffer);
     extraDv.setUint32(508, FSINFO_TRAIL_SIGNATURE);
-    this.file.writeSector(2, extraBoot);
-    this.file.writeSector(8, extraBoot);
+    this.file.writeSector(relativeSectors + 2, extraBoot);
+    this.file.writeSector(relativeSectors + 8, extraBoot);
 
     // --- Calculate the number of free clusters
     const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
@@ -146,13 +203,13 @@ export class Fat32Volume {
     this.file.writeSector(7, fsInfo.buffer);
 
     // --- Initialize the FAT
-    const fatStart = 32;
+    //const fatStart = 32;
     const fatSector = new Uint8Array(BYTES_PER_SECTOR);
     fatSector[0] = 0xf8;
-    for (let i = 1; i < 11; i++) {
+    for (let i = 1; i < 7; i++) {
       fatSector[i] = 0xff;
     }
-    fatSector[11] = 0x0f;
+    fatSector[7] = 0x0f;
     this.file.writeSector(fatStart + 0, fatSector);
     this.file.writeSector(fatStart + fat32Size, fatSector);
   }
@@ -170,6 +227,8 @@ export class Fat32Volume {
     this._sectorsPerClusterShift = Math.floor(Math.log2(bs.BPB_SecPerClus));
     this._bytesPerClusterShift = this._sectorsPerClusterShift + BYTES_PER_SECTOR_SHIFT;
     this._rootDirectoryStartCluster = bs.BPB_RootClus;
+    this._allocSearchStart = 1;
+    this._lastCluster = this._countOfClusters + 1;
 
     if (this._countOfClusters < 65525) {
       throw new Error(ERROR_INVALID_FAT32_SIZE);
@@ -229,6 +288,151 @@ export class Fat32Volume {
     return this._dataStartSector + ((cluster - 2) << this._sectorsPerClusterShift);
   }
 
+  /**
+   * Allocates a cluster for a file.
+   * @param current Current cluster number
+   * @returns Allocate cluster number or null if allocation failed
+   */
+  allocateCluster(current: number): number | null {
+    let found: number;
+    let setStart: boolean;
+
+    // --- We should start searching the FAT chain
+    if (this._allocSearchStart < current) {
+      // --- Try to keep file contiguous. Start just after current cluster.
+      found = current;
+      setStart = false;
+    } else {
+      // --- Start at the beginning of the FAT.
+      found = this._allocSearchStart;
+      setStart = true;
+    }
+
+    // --- Iterate while we find a free cluster
+    while (true) {
+      found++;
+      if (found > this._lastCluster) {
+        if (setStart) {
+          // --- Can't find space, checked all clusters.
+          return null;
+        }
+
+        // --- We found a sector to check
+        found = this._allocSearchStart;
+        setStart = true;
+        continue;
+      }
+
+      if (found === current) {
+        // --- Can't find space, already searched clusters after current.
+        return null;
+      }
+
+      const fatValue = this.getFatEntry(found);
+      if (fatValue === 0) {
+        break;
+      }
+    }
+
+    if (setStart) {
+      this._allocSearchStart = found;
+    }
+
+    // --- Mark end of chain.
+    this.setFatEntry(found, 0x0fffffff);
+
+    if (current) {
+      // --- Link clusters
+      this.setFatEntry(current, found);
+    }
+
+    this.updateFreeClusterCount(-1);
+    return found;
+  }
+
+  /**
+   * Allocates contiguous clusters for a file.
+   * @param count Number of clusters to allocate
+   * @returns First cluster number or null if allocation failed
+   */
+  allocContiguous(count: number): number | null {
+    // --- Flag to save place to start next search
+    let setStart = true;
+    // --- Start of group
+    let bgnCluster: number;
+    // --- End of group
+    let endCluster = (bgnCluster = this._allocSearchStart + 1);
+
+    // --- Search the FAT for free clusters
+    while (1) {
+      if (endCluster > this._lastCluster) {
+        // --- Can't find space.
+        return null;
+      }
+      const fatValue = this.getFatEntry(endCluster);
+      if (fatValue || fatValue >= this._countOfClusters) {
+        // --- Don't update search start if unallocated clusters before endCluster.
+        if (bgnCluster !== endCluster) {
+          setStart = false;
+        }
+
+        // --- Cluster in use try next cluster as bgnCluster
+        bgnCluster = endCluster + 1;
+      } else if (endCluster - bgnCluster + 1 === count) {
+        // done - found space
+        break;
+      }
+      endCluster++;
+    }
+
+    // --- Remember possible next free cluster.
+    if (setStart) {
+      this._allocSearchStart = endCluster;
+    }
+
+    // --- Mark end of chain
+    this.setFatEntry(endCluster, 0x0fffffff);
+
+    // --- Link clusters
+    while (endCluster > bgnCluster) {
+      this.setFatEntry(endCluster - 1, endCluster);
+      endCluster--;
+    }
+
+    // --- Maintain count of free clusters
+    this.updateFreeClusterCount(-count);
+
+    // --- return first cluster number to caller
+    return bgnCluster;
+  }
+
+  updateFreeClusterCount(change: number) {
+    const fsInfo = this.readFsInfoSector();
+    fsInfo.FSI_Free_Count += change;
+    this.writeFsInfoSector(fsInfo);
+  }
+
+  freeChain(cluster: number): boolean {
+    let fatEntry: number;
+    do {
+      fatEntry = this.getFatEntry(cluster);
+
+      // --- Free the cluster
+      this.setFatEntry(cluster, 0x00000000);
+
+      // --- Add one to count of free clusters.
+      this.updateFreeClusterCount(1);
+      if (cluster < this._allocSearchStart) {
+        this._allocSearchStart = cluster - 1;
+      }
+
+      // --- Move to next cluster
+      cluster = fatEntry;
+    } while (fatEntry <= this._countOfClusters);
+
+    return true;
+  }
+
   private calculateFatEntry(index: number): [number, number] {
     if (index < 2 || index >= this._countOfFatEntries) {
       throw new Error(ERROR_FAT_ENTRY_OUT_OF_RANGE);
@@ -237,5 +441,49 @@ export class Fat32Volume {
     const sector = this.bootSector.BPB_ResvdSecCnt + Math.floor((index * 4) / bps);
     const offset = (index * 4) % bps;
     return [sector, offset];
+  }
+
+  private readFsInfoSector(): FatFsInfo {
+    return new FatFsInfo(this.file.readSector(1));
+  }
+
+  private writeFsInfoSector(fsInfo: FatFsInfo) {
+    this.file.writeSector(1, fsInfo.buffer);
+    this.file.writeSector(7, fsInfo.buffer);
+  }
+
+  private lbaToMbrChs(lba: number): [number, number, number] {
+    let numberOfHeads = 0;
+    const capacityMB = this.file.cimInfo.maxSize;
+    let sectorsPerTrack = capacityMB <= 256 ? 32 : 63;
+    if (capacityMB <= 16) {
+      numberOfHeads = 2;
+    } else if (capacityMB <= 32) {
+      numberOfHeads = 4;
+    } else if (capacityMB <= 128) {
+      numberOfHeads = 8;
+    } else if (capacityMB <= 504) {
+      numberOfHeads = 16;
+    } else if (capacityMB <= 1008) {
+      numberOfHeads = 32;
+    } else if (capacityMB <= 2016) {
+      numberOfHeads = 64;
+    } else if (capacityMB <= 4032) {
+      numberOfHeads = 128;
+    } else {
+      numberOfHeads = 255;
+    }
+    let c = Math.floor(lba / (numberOfHeads * sectorsPerTrack));
+    let h = 0;
+    let s = 0;
+    if (c <= 1023) {
+      h = lba % Math.floor((numberOfHeads * sectorsPerTrack) / sectorsPerTrack);
+      s = (lba % sectorsPerTrack) + 1;
+    } else {
+      c = 1023;
+      h = 254;
+      s = 63;
+    }
+    return [h & 0xff, (((c >> 2) & 0xc0) | s) & 0xff, c & 0xff];
   }
 }

@@ -1,9 +1,14 @@
 import {
+  FAT_ATTRIB_LONG_NAME,
   FAT_CASE_LC_BASE,
   FAT_CASE_LC_EXT,
   FNAME_FLAG_LOST_CHARS,
   FNAME_FLAG_MIXED_CASE,
+  FS_ATTR_ARCHIVE,
+  FS_DIR_SIZE
 } from "@main/fat32/Fat32Types";
+import { FatLongFileName } from "./FatLongFileName";
+import { FatDirEntry } from "./FatDirEntry";
 
 export function convertLongToShortName(
   fname: string,
@@ -120,6 +125,62 @@ export function calcShortNameCheckSum(shortName: string): number {
   return sum;
 }
 
+export function getLongFileFatEntries(
+  fname: string,
+  conflict = 0
+): (FatLongFileName | FatDirEntry)[] {
+  fname = fname.trim();
+  const sfn = convertLongToShortName(fname, conflict);
+
+  // --- Create the short file name entry
+  const shortParts = sfn.name.split(".");
+  const shortName = shortParts[0].padEnd(8, " ") + shortParts[1].padEnd(3, " ");
+  const sfnEntry: FatDirEntry = new FatDirEntry(new Uint8Array(FS_DIR_SIZE));
+  sfnEntry.DIR_Name = shortName;
+  sfnEntry.DIR_Attr = FS_ATTR_ARCHIVE;
+  const checksum = calcShortNameCheckSum(shortName);
+
+  // --- Create the long file name entries
+  const lfnEntries: FatLongFileName[] = [];
+  let entryIdx = 0;
+  for (let i = 0; i < fname.length; i += 13) {
+    const name1 = convertTo16BitArray(fname.substring(i, i + 5).padEnd(5, " "));
+    const name2 = convertTo16BitArray(fname.substring(i + 5, i + 11).padEnd(6, " "));
+    const name3 = convertTo16BitArray(fname.substring(i + 11, i + 13).padEnd(2, " "));
+    const remaining = fname.length - i;
+    if (remaining < 5) {
+      name1[remaining] = 0x0000;
+      for (let j = remaining + 1; j < 5; j++) name1[j] = 0xffff;
+      for (let j = 0; j < 6; j++) name2[j] = 0xffff;
+      name3[0] = name3[1] = 0xffff;
+    } else if (remaining < 11) {
+      name2[remaining - 5] = 0x0000;
+      for (let j = remaining + 1; j < 11; j++) name2[j - 5] = 0xffff;
+      name3[0] = name3[1] = 0xffff;
+    } else if (remaining === 11) {
+      name3[0] = 0x0000;
+      name3[1] = 0xffff;
+    } else if (remaining === 12) {
+      name3[1] = 0x0000;
+    }
+    const lfnEntry: FatLongFileName = new FatLongFileName(new Uint8Array(FS_DIR_SIZE));
+    (lfnEntry.LDIR_Ord = ++entryIdx),
+      (lfnEntry.LDIR_Name1 = name1),
+      (lfnEntry.LDIR_Attr = FAT_ATTRIB_LONG_NAME),
+      (lfnEntry.LDIR_Type = 0),
+      (lfnEntry.LDIR_Chksum = checksum),
+      (lfnEntry.LDIR_Name2 = name2),
+      (lfnEntry.LDIR_FstClusLO = 0),
+      (lfnEntry.LDIR_Name3 = name3);
+    lfnEntries.unshift(lfnEntry);
+  }
+
+  // --- Set the last LFN entry's order flag
+  lfnEntries[0].LDIR_Ord |= 0x40;
+
+  return [...lfnEntries, sfnEntry];
+}
+
 function isSfnReservedChar(ch: string) {
   const c = ch.charCodeAt(0);
   if (ch === '"' || ch === "|" || ch === "[" || ch === "\\" || ch === "]") {
@@ -141,4 +202,12 @@ function isLower(c: string) {
 function isUpper(c: string) {
   c = c.charAt(0);
   return "A" <= c && c <= "Z";
+}
+
+function convertTo16BitArray(name: string): number[] {
+  const array: number[] = [];
+  for (let i = 0; i < name.length; i++) {
+    array.push(name.charCodeAt(i));
+  }
+  return array;
 }
