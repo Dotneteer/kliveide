@@ -95,51 +95,6 @@ export class Fat32Volume {
     const totalClusters = sectorCount / sectorsPerCluster;
     const fat32Size = Math.ceil((totalClusters * 4) / 512);
 
-
-    const BU32 = 8192;
-    const relativeSectors = BU32;
-    let nc = 0;
-    let dataStart: number;
-    let fatSize = 0;
-    for (dataStart = 2 * BU32; ; dataStart += BU32) {
-      nc = (sectorCount - dataStart) / sectorsPerCluster;
-      fatSize = Math.floor((nc + 2 + BYTES_PER_SECTOR / 4 - 1) / (BYTES_PER_SECTOR / 4));
-      if (dataStart >= relativeSectors + 9 + 2 * fatSize) {
-        break;
-      }
-    }
-
-    // --- Error if too few clusters in FAT32 volume
-    if (nc < 65525) {
-      throw new Error("Invalid cluster count");
-    }
-
-    const reservedSectorCount = dataStart - relativeSectors - 2 * fatSize;
-    const fatStart = relativeSectors + reservedSectorCount;
-    const totalSectors = nc * sectorsPerCluster + dataStart - relativeSectors;
-    let partType = 0x0c;
-    if (relativeSectors + totalSectors <= 16450560) {
-      // --- FAT32 with CHS and LBA
-      partType = 0x0b;
-    }
-
-    // --- Create the MBR
-    const beginChs = this.lbaToMbrChs(relativeSectors);
-    const endChs = this.lbaToMbrChs(relativeSectors + totalSectors - 1);
-
-    // --- Write the MBR information
-    const mbr = new FatMasterBootRecord(new Uint8Array(512));
-    const part1 = new FatPartitionEntry(new Uint8Array(16));
-    part1.bootIndicator = 0x00;
-    part1.beginChs = beginChs;
-    part1.partType = partType;
-    part1.endChs = endChs;
-    part1.relativeSectors = relativeSectors;
-    part1.totalSectors = totalSectors;
-    mbr.partition1 = part1;
-    mbr.bootSignature = SIGNATURE;
-    this.file.writeSector(0, mbr.buffer);
-
     // --- Create the boot sector
     const bs = new FatBootSector(new Uint8Array(BYTES_PER_SECTOR));
     bs.BS_JmpBoot = JUMP_CODE;
@@ -173,15 +128,15 @@ export class Fat32Volume {
     bs.BootSectorSignature = SIGNATURE;
 
     // --- Write the boot sector and its backup
-    this.file.writeSector(relativeSectors, bs.buffer);
-    this.file.writeSector(relativeSectors, bs.buffer);
+    this.file.writeSector(0, bs.buffer);
+    this.file.writeSector(1, bs.buffer);
 
     // --- Write extra boot area and backup
     const extraBoot = new Uint8Array(BYTES_PER_SECTOR);
     const extraDv = new DataView(extraBoot.buffer);
     extraDv.setUint32(508, FSINFO_TRAIL_SIGNATURE);
-    this.file.writeSector(relativeSectors + 2, extraBoot);
-    this.file.writeSector(relativeSectors + 8, extraBoot);
+    this.file.writeSector(2, extraBoot);
+    this.file.writeSector(8, extraBoot);
 
     // --- Calculate the number of free clusters
     const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
@@ -205,6 +160,7 @@ export class Fat32Volume {
     // --- Initialize the FAT
     //const fatStart = 32;
     const fatSector = new Uint8Array(BYTES_PER_SECTOR);
+    const fatStart = 32;
     fatSector[0] = 0xf8;
     for (let i = 1; i < 7; i++) {
       fatSector[i] = 0xff;

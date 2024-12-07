@@ -18,12 +18,12 @@ describe("FatVolume", () => {
       const filePath = createTestFile();
       const cfm = new CimFileManager();
       const file = cfm.createFile(filePath, SIZE_IN_MB);
-      const imgFilePath = createImageFile();
-      cfm.convertToImageFile(file, imgFilePath);
       const vol = new Fat32Volume(file);
 
       // --- Act
       vol.format();
+      const imgFilePath = createImageFile();
+      cfm.convertToImageFile(file, imgFilePath);
       //vol.init();
 
       // --- Assert
