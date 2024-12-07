@@ -4,8 +4,23 @@ const CHUNK_INCREMENT = 4096;
  * This class implements a writer to a binary stream
  */
 export class BinaryWriter {
-  private _position: number = 0;
-  private _buffer: Uint8Array = new Uint8Array(0);
+  private _position: number;
+  private _buffer: Uint8Array;
+
+  /**
+   * Initializes a new instance of the `BinaryWriter` class
+   */
+  constructor () {
+    this.reset();
+  }
+
+  /**
+   * Resets the writer
+   */
+  reset (): void {
+    this._position = 0;
+    this._buffer = new Uint8Array(0);
+  }
 
   /**
    * Writes a byte value to the stream
@@ -36,6 +51,13 @@ export class BinaryWriter {
     this.writeUint32(value.length);
     for (let i = 0; i < value.length; i++) {
       this._buffer[this._position++] = value[i];
+    }
+  }
+
+  writeString(value: string, length?: number, fallback = 0): void {
+    if (length === undefined) length = value.length;
+    for (let i = 0; i < length; i++) {
+      this.writeByte(value.charCodeAt(i) ?? fallback);
     }
   }
 

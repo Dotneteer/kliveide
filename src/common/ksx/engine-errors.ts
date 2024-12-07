@@ -13,7 +13,7 @@ abstract class EngineError extends Error {
   }
 }
 
-/**í
+/**
  * Custom exception indicating a parser error
  */
 class ScriptParseError extends EngineError {
