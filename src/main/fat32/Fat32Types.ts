@@ -6,7 +6,7 @@ export const SIGNATURE = 0xaa55;
 export const FS_DIR_SIZE = 32;
 
 // --- Boot sector
-export const JUMP_CODE = 0xeb9058;
+export const JUMP_CODE = 0xeb5890;
 export const EXTENDED_BOOT_SIGNATURE = 0x29;
 
 // --- FSInfo signatures

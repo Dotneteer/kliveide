@@ -16,8 +16,6 @@ import {
 import { FatBootSector } from "./FatBootSector";
 import { FatFile } from "./FatFile";
 import { FatFsInfo } from "./FatFsInfo";
-import { FatMasterBootRecord } from "./FatMasterBootRecord";
-import { FatPartitionEntry } from "./FatPartitionEntry";
 
 export const ERROR_INVALID_FAT32_SIZE = "Invalid FAT32 size.";
 export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
@@ -112,6 +110,7 @@ export class Fat32Volume {
     bs.BPB_HiddSec = 0;
     bs.BPB_TotSec32 = sectorCount;
     bs.BPB_FATSz32 = fat32Size;
+    bs.BPB_FATSz32 = 0x000003f0;
     bs.BPB_ExtFlags = 0;
     bs.BPB_FSVer = 0;
     bs.BPB_RootClus = 2;
@@ -129,14 +128,14 @@ export class Fat32Volume {
 
     // --- Write the boot sector and its backup
     this.file.writeSector(0, bs.buffer);
-    this.file.writeSector(1, bs.buffer);
+    this.file.writeSector(6, bs.buffer);
 
     // --- Write extra boot area and backup
     const extraBoot = new Uint8Array(BYTES_PER_SECTOR);
     const extraDv = new DataView(extraBoot.buffer);
     extraDv.setUint32(508, FSINFO_TRAIL_SIGNATURE);
-    this.file.writeSector(2, extraBoot);
-    this.file.writeSector(8, extraBoot);
+    this.file.writeSector(1, extraBoot);
+    this.file.writeSector(7, extraBoot);
 
     // --- Calculate the number of free clusters
     const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
@@ -161,11 +160,13 @@ export class Fat32Volume {
     //const fatStart = 32;
     const fatSector = new Uint8Array(BYTES_PER_SECTOR);
     const fatStart = 32;
-    fatSector[0] = 0xf8;
-    for (let i = 1; i < 7; i++) {
-      fatSector[i] = 0xff;
+    for (let i = 0; i < 2; i++) {
+      fatSector[4 * i + 0] = 0xff;
+      fatSector[4 * i + 1] = 0xff;
+      fatSector[4 * i + 2] = 0xff;
+      fatSector[4 * i + 3] = 0x0f;
     }
-    fatSector[7] = 0x0f;
+    fatSector[0] = 0xf0;
     this.file.writeSector(fatStart + 0, fatSector);
     this.file.writeSector(fatStart + fat32Size, fatSector);
   }

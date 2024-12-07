@@ -67,11 +67,11 @@ describe("FatVolume", () => {
     const vol = new Fat32Volume(file);
     vol.format();
     vol.init();
-    // const imgFilePath = createImageFile();
-    // cfm.convertToImageFile(file, imgFilePath);
 
     // --- Act
     vol.mkdir("testDir");
+    const imgFilePath = createImageFile();
+    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
 });

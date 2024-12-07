@@ -436,6 +436,10 @@ export class FatFile {
     }
   }
 
+  seekRelative(offset: number): void {
+    this.seekSet(this._currentPosition + offset);
+  }
+
   /**
    * Sets the current position to the specified offset
    * @param position File offset
@@ -518,6 +522,12 @@ export class FatFile {
     // --- Convert file to directory
     this._flags = FILE_FLAG_READ;
     this._attributes = FS_ATTR_SUBDIR;
+
+    // --- The parent entry is a directory
+    parent.seekRelative(-FS_DIR_SIZE);
+    let sfn = this._sfnDirectoryEntry.clone();
+    sfn.DIR_Attr = FS_ATTR_DIRECTORY;
+    parent.writeFileData(sfn.buffer, true);
 
     // --- Allocate and zero first cluster
     if (!this.addDirCluster()) {
