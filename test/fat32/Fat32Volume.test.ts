@@ -163,6 +163,24 @@ describe("FatVolume", () => {
 
     // --- Assert
   });
+
+  it("mkdir works #7", () => {
+    // --- Arrange
+    const filePath = createTestFile();
+    const cfm = new CimFileManager();
+    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const vol = new Fat32Volume(file);
+    vol.format();
+    vol.init();
+
+    // --- Act
+    vol.mkdir("TEST");
+    const imgFilePath = createImageFile();
+    cfm.convertToImageFile(file, imgFilePath);
+
+    // --- Assert
+  });
+
 });
 
 function createTestFile(): string {
