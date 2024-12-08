@@ -2,10 +2,11 @@ import {
   dateToNumber,
   isFatFile,
   isFatFileOrSubdir,
+  isFatLongName,
   isWriteMode,
   lfnReservedChar,
   timeMsToNumber,
-  timeToNumber,
+  timeToNumber
 } from "./fat-utils";
 import {
   FS_ATTR_ROOT32,
@@ -14,7 +15,7 @@ import {
   O_EXCL,
   O_RDWR,
   FILE_FLAG_PREALLOCATE,
-  FS_ATTR_FILE,
+  FS_ATTR_LABEL,
   FILE_FLAG_CONTIGUOUS,
   FNAME_FLAG_NEED_LFN,
   FS_DIR_SIZE,
@@ -38,12 +39,13 @@ import {
   FS_ATTR_READ_ONLY,
   FS_ATTR_ARCHIVE,
   O_APPEND,
-  O_AT_END
+  O_AT_END,
+  FAT_ORDER_LAST_LONG_ENTRY
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
-import { getLongFileFatEntries } from "./file-names";
+import { calcShortNameCheckSum, getLongFileFatEntries } from "./file-names";
 import { FsName, FsPath } from "./FsName";
 
 export const ERROR_ALREADY_OPEN = "The file is already open.";
@@ -112,7 +114,7 @@ export class FatFile {
     return this._directorySector;
   }
 
-  get directoryEntries(): (FatLongFileName |FatDirEntry)[] {
+  get directoryEntries(): (FatLongFileName | FatDirEntry)[] {
     return this._directoryEntries;
   }
 
@@ -131,7 +133,7 @@ export class FatFile {
     this._currentCluster = 0;
     this._currentPosition = 0;
     this._fileSize = 0;
-    this._firstCluster = 0;
+    this._firstCluster = attrs & FS_ATTR_ROOT32 ? 2 : 0;
     this._error = "";
     this._directoryIndex = 0;
     this._directoryCluster = 0;
@@ -165,7 +167,7 @@ export class FatFile {
   }
 
   isFile(): boolean {
-    return !!(this._attributes & FS_ATTR_FILE);
+    return !!(this._attributes & FS_ATTR_LABEL);
   }
 
   isContiguous(): boolean {
@@ -223,13 +225,13 @@ export class FatFile {
 
     const fsPath = this.parsePathToLfn(path);
     for (let i = 0; i < fsPath.segments.length - 1; i++) {
-      if (!this.doOpen(parent, fsPath.segments[i], O_RDONLY)) {
+      if (!this.doOpenDir(parent, fsPath.segments[i], O_RDONLY)) {
         if (!createMissingParents || !this.mkdir(parent, fsPath.segments[i].name)) {
           return false;
         }
       }
       parent = this.clone();
-      close();
+      this.close();
     }
     return this.doMkdir(parent, fsPath.segments[fsPath.segments.length - 1]);
   }
@@ -240,9 +242,13 @@ export class FatFile {
    * @param fsName Name of the file or directory
    * @param flags File open
    */
-  doOpen(parent: FatFile, fsName: FsName, flags: number): boolean {
-    const fatFile = this;
+  doOpenDir(parent: FatFile, fsName: FsName, flags: number): boolean {
     let filenameFound = false;
+
+    let lfnOrd = 0;
+    let ldir: FatLongFileName | null = null;
+    let order = 0;
+    let checksum = 0;
 
     // --- Check potential issues
     if (!parent.isDirectory()) {
@@ -257,36 +263,37 @@ export class FatFile {
     // --- Position to the beginning of the directory
     parent.rewind();
 
-    // --- Calculate the number of directory entries needed to create the 
-    // --- specified file. If the file name is short, we need a single entry. 
-    // --- Otherwise, depending on the length of the file name, we need several 
-    // --- additional entries. 
+    // --- Calculate the number of directory entries needed to create the
+    // --- specified file. If the file name is short, we need a single entry.
+    // --- Otherwise, depending on the length of the file name, we need several
+    // --- additional entries.
     const nameEntryCount = Math.floor((fsName.name.length + 12) / 13);
     const freeEntriesNeed = fsName.flags & FNAME_FLAG_NEED_LFN ? 1 + nameEntryCount : 1;
 
-    // --- Let's find the file in the parent directory. We start from the first 
-    // --- entry and loop until we find the file or reach the end of the directory. 
-    // --- While we search, we collect a reusable range of deleted directory entries 
+    // --- Let's find the file in the parent directory. We start from the first
+    // --- entry and loop until we find the file or reach the end of the directory.
+    // --- While we search, we collect a reusable range of deleted directory entries
     // --- for the case to create a new file.
     let freeFound = 0;
     let freeIndex = 0;
     let curIndex = 0;
 
+    const cloned = parent.clone();
+    const listedEntries = cloned.getDirectoryEntries();
+
+    // === NEW CODE
     // --- Loop until the directory entry is found or created.
-    while (true) {
-      // --- Calculate the current index of the directory entry from the current position
-      curIndex = Math.floor(parent._currentPosition / FS_DIR_SIZE);
-
+    while (curIndex < listedEntries.length) {
       // --- Read the subsequent directory entry
-      const dirEntry = parent.readDirectoryEntry();
+      const dirEntry = listedEntries[curIndex];
 
-      // --- Check the first byte of the directory entry to see if it is free, deleted, 
+      // --- Check the first byte of the directory entry to see if it is free, deleted,
       // --- or contains an actual entry name
       const firstByte = dirEntry.DIR_Name.charCodeAt(0);
-      if (firstByte === FAT_NAME_DELETED || firstByte === FAT_NAME_FREE) {
+      if (firstByte === FAT_NAME_DELETED) {
         // --- This FAT entry is free or can be reused
         if (freeFound === 0) {
-          // --- If this is the first free entry found, we start collecting the range of 
+          // --- If this is the first free entry found, we start collecting the range of
           // --- free entries from here
           freeIndex = curIndex;
         }
@@ -295,145 +302,342 @@ export class FatFile {
         if (freeFound < freeEntriesNeed) {
           freeFound++;
         }
-
-        // --- If the directory entry is free, we have reached the end of the 
-        // --- directory file. Let's create the new directory entry and open that.
-        if (firstByte === FAT_NAME_FREE) {
-          return create();
-        }
       } else {
-        // --- This FAT entry is not free. If we do not have enough free entries, we have 
+        // --- This FAT entry is not free. If we do not have enough free entries, we have
         // --- to reset the free entry count and start the search again.
         if (freeFound < freeEntriesNeed) {
           freeFound = 0;
         }
       }
 
-      // // skip empty slot or '.' or '..'
-      // if (dir->name[0] == FAT_NAME_DELETED || dir->name[0] == '.') {
-      //   lfnOrd = 0;
-      // } else if (isFatLongName(dir)) {
-      //   ldir = reinterpret_cast<DirLfn_t*>(dir);
-      //   if (!lfnOrd) {
-      //     order = ldir->order & 0X1F;
-      //     if (order != nameOrd ||
-      //         (ldir->order & FAT_ORDER_LAST_LONG_ENTRY) == 0) {
-      //       continue;
-      //     }
-      //     lfnOrd = nameOrd;
-      //     checksum = ldir->checksum;
-      //   } else if (ldir->order != --order || checksum != ldir->checksum) {
-      //     lfnOrd = 0;
-      //     continue;
-      //   }
-      //   if (order == 1) {
-      //     if (!dirFile->cmpName(curIndex + 1, fname, lfnOrd)) {
-      //       lfnOrd = 0;
-      //     }
-      //   }
-      // } else if (isFatFileOrSubdir(dir)) {
-      //   if (lfnOrd) {
-      //     if (1 == order && lfnChecksum(dir->name) == checksum) {
-      //       // Don't open if create only.
-      //       if (oflag & O_EXCL) {
-      //         DBG_FAIL_MACRO;
-      //         goto fail;
-      //       }
-      //       return fatFile.openDirectoryEntry(parent, curIndex, flags, lfnOrd);en;
-      //     }
-      //     DBG_FAIL_MACRO;
-      //     goto fail;
-      //   }
-      //   if (!memcmp(dir->name, fname->sfn, sizeof(fname->sfn))) {
-      //     if (!(fname->flags & FNAME_FLAG_LOST_CHARS)) {
-      //       // Don't open if create only.
-      //       if (oflag & O_EXCL) {
-      //         DBG_FAIL_MACRO;
-      //         goto fail;
-      //       }
-      //       return fatFile.openDirectoryEntry(parent, curIndex, flags, lfnOrd);en;
-      //     }
-      //     fnameFound = true;
-      //   }
-      // } else {
-      //   lfnOrd = 0;
+      // --- Skip empty slot or '.' or '..'
+      if (firstByte === FAT_NAME_DELETED || firstByte === ".".charCodeAt(0)) {
+        lfnOrd = 0;
+      } else if (isFatLongName(dirEntry)) {
+        ldir = new FatLongFileName(dirEntry.buffer);
+        if (!lfnOrd) {
+          order = ldir.LDIR_Ord & 0x1f;
+          if (order !== nameEntryCount || (ldir.LDIR_Ord & FAT_ORDER_LAST_LONG_ENTRY) === 0) {
+            continue;
+          }
+          lfnOrd = nameEntryCount;
+          checksum = ldir.LDIR_Chksum;
+        } else if (ldir.LDIR_Ord !== --order || checksum !== ldir.LDIR_Chksum) {
+          lfnOrd = 0;
+          continue;
+        }
+        if (order === 1) {
+          // --- Compare the short name entry with the specified one
+          let found = true;
+          for (let i = 0; i < fsName.name.length; i++) {
+            const entryCh = this.getLfnChar(ldir, i);
+            const nameCh = fsName.name.charCodeAt(i);
+            if (entryCh !== nameCh) {
+              found = false;
+              break;
+            }
+          }
+
+          // --- Check name termination
+          if (found) {
+            const entryCh = this.getLfnChar(ldir, fsName.name.length);
+            if (entryCh !== 0) {
+              found = false;
+            }
+          }
+
+          // --- If the name does not match, we have to continue the search
+          if (!found) {
+            lfnOrd = 0;
+          }
+        }
+      } else if (isFatFileOrSubdir(dirEntry)) {
+        if (lfnOrd) {
+          if (order === 1 && calcShortNameCheckSum(dirEntry.DIR_Name) === checksum) {
+            if (flags & O_EXCL) {
+              return false;
+            }
+            // --- Now, open the file
+            this._sfnDirectoryEntry = dirEntry;
+            return this.openDirectoryEntry(parent, curIndex, flags);
+          }
+        }
+
+        // --- Check if the short name matches
+        if (dirEntry.DIR_Name !== fsName.sfn11) {
+          if (flags & O_EXCL) {
+            return false;
+          }
+          // --- Now, open the file
+          this._sfnDirectoryEntry = dirEntry;
+          return this.openDirectoryEntry(parent, curIndex, flags);
+        }
+        filenameFound = true;
+      } else {
+        lfnOrd = 0;
+      }
+
+      // --- Move to the next directory entry
+      curIndex++;
+    }
+
+    // --- The file not found, create it
+    // --- Don't create unless O_CREAT and write mode
+    if (!(flags & O_CREAT) || !isWriteMode(flags)) {
+      this._error = ERROR_NO_WRITE;
+      return false;
+    }
+
+    // ---- Keep found entries or start at current index if no free entries found.
+    if (freeFound === 0) {
+      freeIndex = curIndex;
+    }
+
+    // --- We advance in the directory file until we read all the entries needed
+    // --- to create the new file.
+    while (freeFound < freeEntriesNeed) {
+      const buffer = parent.readFileData(FS_DIR_SIZE);
+
+      // --- We reached the end of the FAT cluster chain without finding enough
+      // --- free entries in the directory file
+      if (!buffer) {
+        break;
+      }
+      freeFound++;
+    }
+
+    // --- Allocate new clusters for this directory file until we have
+    // --- enough space to save the entries.
+    while (freeFound < freeEntriesNeed) {
+      if (!parent.addDirCluster()) {
+        return false;
+      }
+      // --- 16-bit freeTotal needed for large cluster size.
+      freeFound += this.volume.dirEntriesPerCluster;
+    }
+
+    // --- Earlier, we may have found a similar short name while searching for
+    // --- the long-named directory entry. To avoid the conflict, generate a
+    // --- unique short name.
+    if (filenameFound) {
+      // --- Generate a unique short name
+      let x = 0;
+      // if (!dirFile->makeUniqueSfn(fname)) {
+      //   goto fail;
       // }
     }
 
-    function create(): boolean {
-      // --- Don't create unless O_CREAT and write mode
-      if (!(flags & O_CREAT) || !isWriteMode(flags)) {
-        fatFile._error = ERROR_NO_WRITE;
-        return false;
-      }
+    // --- We are ready to create and save the directory entries (LFN and SFN
+    // --- entries) for the new file. `freeIndex` points to the index of the
+    // --- first directory entry within the file. Let's create the entries to save.
+    const entries = (this._directoryEntries = getLongFileFatEntries(fsName.name));
 
-      // ---- Keep found entries or start at current index if no free entries found.
-      if (freeFound === 0) {
-        freeIndex = curIndex;
-      }
+    // --- Initialize the SFN entry to an empty directory file
+    const dir = (this._sfnDirectoryEntry = entries[entries.length - 1] as FatDirEntry);
+    const now = new Date();
+    dir.DIR_NTRes = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fsName.flags;
+    dir.DIR_CrtTimeTenth = timeMsToNumber(now);
+    dir.DIR_CrtTime = timeToNumber(now);
+    dir.DIR_CrtDate = dateToNumber(now);
+    dir.DIR_LstAccDate = dateToNumber(now);
+    dir.DIR_FstClusHI = 0;
+    dir.DIR_WrtTime = timeToNumber(now);
+    dir.DIR_WrtDate = dateToNumber(now);
+    dir.DIR_FstClusLO = 0;
+    dir.DIR_FileSize = 0;
 
-      // --- We advance in the directory file until we read all the entries needed 
-      // --- to create the new file.
-      while (freeFound < freeEntriesNeed) {
-        const buffer = parent.readFileData(FS_DIR_SIZE);
-
-        // --- We reached the end of the FAT cluster chain without finding enough 
-        // --- free entries in the directory file
-        if (!buffer) {
-          break;
-        }
-        freeFound++;
-      }
-
-      // --- Allocate new clusters for this directory file until we have 
-      // --- enough space to save the entries.
-      while (freeFound < freeEntriesNeed) {
-        //     if (!dirFile->addDirCluster()) {
-        //       DBG_FAIL_MACRO;
-        //       goto fail;
-        //     }
-        //     // 16-bit freeTotal needed for large cluster size.
-        //     freeFound += vol->dirEntriesPerCluster();
-      }
-
-      // --- Earlier, we may have found a similar short name while searching for 
-      // --- the long-named directory entry. To avoid the conflict, generate a 
-      // --- unique short name.
-      if (filenameFound) {
-        // if (!dirFile->makeUniqueSfn(fname)) {
-        //   goto fail;
-        // }
-      }
-
-      // --- We are ready to create and save the directory entries (LFN and SFN 
-      // --- entries) for the new file. `freeIndex` points to the index of the 
-      // --- first directory entry within the file. Let's create the entries to save.
-      const entries = fatFile._directoryEntries = getLongFileFatEntries(fsName.name);
-
-      // --- Initialize the SFN entry to an empty directory file
-      const dir = fatFile._sfnDirectoryEntry = entries[entries.length - 1] as FatDirEntry;
-      const now = new Date();
-      dir.DIR_NTRes = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fsName.flags;
-      dir.DIR_CrtTimeTenth = timeMsToNumber(now);
-      dir.DIR_CrtTime = timeToNumber(now);
-      dir.DIR_CrtDate = dateToNumber(now);
-      dir.DIR_LstAccDate = dateToNumber(now);
-      dir.DIR_FstClusHI = 0;
-      dir.DIR_WrtTime = timeToNumber(now);
-      dir.DIR_WrtDate = dateToNumber(now);
-      dir.DIR_FstClusLO = 0;
-      dir.DIR_FileSize = 0;
-
-      // --- Write back all LFN and SFN entries
-      parent.seekSet(freeIndex * FS_DIR_SIZE);
-      for (let i = 0; i < entries.length; i++) {
-        const lfn = entries[i] as FatDirEntry;
-        parent.writeFileData(lfn.buffer, true);
-      }
-
-      // --- Now, open the file
-      return fatFile.openDirectoryEntry(parent, curIndex, flags);
+    // --- Write back all LFN and SFN entries
+    parent.seekSet(freeIndex * FS_DIR_SIZE);
+    for (let i = 0; i < entries.length; i++) {
+      const lfn = entries[i] as FatDirEntry;
+      parent.writeFileData(lfn.buffer, true);
     }
+
+    // --- Now, open the file
+    return this.openDirectoryEntry(parent, curIndex, flags);
+
+    // === END NEW CODE
+
+    // --- OLD CODE
+    // while (true) {
+    //   // --- Calculate the current index of the directory entry from the current position
+    //   curIndex = Math.floor(parent._currentPosition / FS_DIR_SIZE);
+
+    //   // --- Read the subsequent directory entry
+    //   const dirEntry = parent.readDirectoryEntry();
+
+    //   // --- Check the first byte of the directory entry to see if it is free, deleted,
+    //   // --- or contains an actual entry name
+    //   const firstByte = dirEntry.DIR_Name.charCodeAt(0);
+    //   if (firstByte === FAT_NAME_DELETED || firstByte === FAT_NAME_FREE) {
+    //     // --- This FAT entry is free or can be reused
+    //     if (freeFound === 0) {
+    //       // --- If this is the first free entry found, we start collecting the range of
+    //       // --- free entries from here
+    //       freeIndex = curIndex;
+    //     }
+
+    //     // --- Increase the number of free entries found until we have enough
+    //     if (freeFound < freeEntriesNeed) {
+    //       freeFound++;
+    //     }
+
+    //     // --- If the directory entry is free, we have reached the end of the
+    //     // --- directory file. Let's create the new directory entry and open that.
+    //     if (firstByte === FAT_NAME_FREE) {
+    //       return create();
+    //     }
+    //   } else {
+    //     // --- This FAT entry is not free. If we do not have enough free entries, we have
+    //     // --- to reset the free entry count and start the search again.
+    //     if (freeFound < freeEntriesNeed) {
+    //       freeFound = 0;
+    //     }
+    //   }
+
+    //   // --- Skip empty slot or '.' or '..'
+    //   if (firstByte === FAT_NAME_DELETED || firstByte === ".".charCodeAt(0)) {
+    //     lfnOrd = 0;
+    //   } else if (isFatLongName(dirEntry)) {
+    //     ldir = new FatLongFileName(dirEntry.buffer);
+    //     if (!lfnOrd) {
+    //       order = ldir.LDIR_Ord & 0x1f;
+    //       if (order !== nameEntryCount || (ldir.LDIR_Ord & FAT_ORDER_LAST_LONG_ENTRY) === 0) {
+    //         continue;
+    //       }
+    //       lfnOrd = nameEntryCount;
+    //       checksum = ldir.LDIR_Chksum;
+    //     } else if (ldir.LDIR_Ord !== --order || checksum !== ldir.LDIR_Chksum) {
+    //       lfnOrd = 0;
+    //       continue;
+    //     }
+    //     if (order === 1) {
+    //       // --- Compare the short name entry with the specified one
+    //       let found = true;
+    //       for (let i = 0; i < fsName.name.length; i++) {
+    //         const entryCh = this.getLfnChar(ldir, i);
+    //         const nameCh = fsName.name.charCodeAt(i);
+    //         if (entryCh !== nameCh) {
+    //           found = false;
+    //           break;
+    //         }
+    //       }
+
+    //       // --- Check name termination
+    //       if (found) {
+    //         const entryCh = this.getLfnChar(ldir, fsName.name.length);
+    //         if (entryCh !== 0) {
+    //           found = false;
+    //         }
+    //       }
+
+    //       // --- If the name does not match, we have to continue the search
+    //       if (!found) {
+    //         lfnOrd = 0;
+    //       }
+    //     }
+    //   } else if (isFatFileOrSubdir(dirEntry)) {
+    //     if (lfnOrd) {
+    //       if (order === 1 && calcShortNameCheckSum(dirEntry.DIR_Name) === checksum) {
+    //         if (flags & O_EXCL) {
+    //           return false;
+    //         }
+    //         // --- Now, open the file
+    //         this._sfnDirectoryEntry = dirEntry;
+    //         return fatFile.openDirectoryEntry(parent, curIndex, flags);
+    //       }
+    //     }
+
+    //     // --- Check if the short name matches
+    //     if (dirEntry.DIR_Name !== fsName.sfn11) {
+    //       if (flags & O_EXCL) {
+    //         return false;
+    //       }
+    //       // --- Now, open the file
+    //       this._sfnDirectoryEntry = dirEntry;
+    //       return fatFile.openDirectoryEntry(parent, curIndex, flags);
+    //     }
+    //     filenameFound = true;
+    //   } else {
+    //     lfnOrd = 0;
+    //   }
+    // }
+
+    // function create(): boolean {
+    //   // --- Don't create unless O_CREAT and write mode
+    //   if (!(flags & O_CREAT) || !isWriteMode(flags)) {
+    //     fatFile._error = ERROR_NO_WRITE;
+    //     return false;
+    //   }
+
+    //   // ---- Keep found entries or start at current index if no free entries found.
+    //   if (freeFound === 0) {
+    //     freeIndex = curIndex;
+    //   }
+
+    //   // --- We advance in the directory file until we read all the entries needed
+    //   // --- to create the new file.
+    //   while (freeFound < freeEntriesNeed) {
+    //     const buffer = parent.readFileData(FS_DIR_SIZE);
+
+    //     // --- We reached the end of the FAT cluster chain without finding enough
+    //     // --- free entries in the directory file
+    //     if (!buffer) {
+    //       break;
+    //     }
+    //     freeFound++;
+    //   }
+
+    //   // --- Allocate new clusters for this directory file until we have
+    //   // --- enough space to save the entries.
+    //   while (freeFound < freeEntriesNeed) {
+    //     if (!parent.addDirCluster()) {
+    //       return false;
+    //     }
+    //     // --- 16-bit freeTotal needed for large cluster size.
+    //     freeFound += fatFile.volume.dirEntriesPerCluster;
+    //   }
+
+    //   // --- Earlier, we may have found a similar short name while searching for
+    //   // --- the long-named directory entry. To avoid the conflict, generate a
+    //   // --- unique short name.
+    //   if (filenameFound) {
+    //     // --- Generate a unique short name
+    //     let x = 0;
+    //     // if (!dirFile->makeUniqueSfn(fname)) {
+    //     //   goto fail;
+    //     // }
+    //   }
+
+    //   // --- We are ready to create and save the directory entries (LFN and SFN
+    //   // --- entries) for the new file. `freeIndex` points to the index of the
+    //   // --- first directory entry within the file. Let's create the entries to save.
+    //   const entries = (fatFile._directoryEntries = getLongFileFatEntries(fsName.name));
+
+    //   // --- Initialize the SFN entry to an empty directory file
+    //   const dir = (fatFile._sfnDirectoryEntry = entries[entries.length - 1] as FatDirEntry);
+    //   const now = new Date();
+    //   dir.DIR_NTRes = (FAT_CASE_LC_BASE | FAT_CASE_LC_EXT) & fsName.flags;
+    //   dir.DIR_CrtTimeTenth = timeMsToNumber(now);
+    //   dir.DIR_CrtTime = timeToNumber(now);
+    //   dir.DIR_CrtDate = dateToNumber(now);
+    //   dir.DIR_LstAccDate = dateToNumber(now);
+    //   dir.DIR_FstClusHI = 0;
+    //   dir.DIR_WrtTime = timeToNumber(now);
+    //   dir.DIR_WrtDate = dateToNumber(now);
+    //   dir.DIR_FstClusLO = 0;
+    //   dir.DIR_FileSize = 0;
+
+    //   // --- Write back all LFN and SFN entries
+    //   parent.seekSet(freeIndex * FS_DIR_SIZE);
+    //   for (let i = 0; i < entries.length; i++) {
+    //     const lfn = entries[i] as FatDirEntry;
+    //     parent.writeFileData(lfn.buffer, true);
+    //   }
+
+    //   // --- Now, open the file
+    //   return fatFile.openDirectoryEntry(parent, curIndex, flags);
+    // }
   }
 
   seekRelative(offset: number): void {
@@ -515,19 +719,13 @@ export class FatFile {
     }
 
     // --- Create a normal file
-    if (!this.doOpen(parent, fname, O_CREAT | O_EXCL | O_RDWR)) {
+    if (!this.doOpenDir(parent, fname, O_CREAT | O_EXCL | O_RDWR)) {
       return false;
     }
 
     // --- Convert file to directory
     this._flags = FILE_FLAG_READ;
     this._attributes = FS_ATTR_SUBDIR;
-
-    // --- The parent entry is a directory
-    parent.seekRelative(-FS_DIR_SIZE);
-    let sfn = this._sfnDirectoryEntry.clone();
-    sfn.DIR_Attr = FS_ATTR_DIRECTORY;
-    parent.writeFileData(sfn.buffer, true);
 
     // --- Allocate and zero first cluster
     if (!this.addDirCluster()) {
@@ -536,11 +734,19 @@ export class FatFile {
 
     this._firstCluster = this._currentCluster;
 
+    // --- The parent entry is a directory
+    parent.seekRelative(-FS_DIR_SIZE);
+    let sfn = this._sfnDirectoryEntry.clone();
+    sfn.DIR_Attr = FS_ATTR_DIRECTORY;
+    sfn.DIR_FstClusHI = this._firstCluster >> 16;
+    sfn.DIR_FstClusLO = this._firstCluster & 0xffff;
+    parent.writeFileData(sfn.buffer, true);
+
     // --- Set to start of dir
     this.rewind();
 
     // --- Make entry for '.'
-    let dot = this._sfnDirectoryEntry.clone();
+    let dot = sfn.clone();
     dot.DIR_Attr = FS_ATTR_DIRECTORY;
     dot.DIR_Name = ".".padEnd(11, " ");
     this.writeFileData(dot.buffer, true);
@@ -877,11 +1083,7 @@ export class FatFile {
     return true;
   }
 
-  private openDirectoryEntry(
-    dirFile: FatFile,
-    dirIndex: number,
-    oflag: number
-  ): boolean {
+  private openDirectoryEntry(dirFile: FatFile, dirIndex: number, oflag: number): boolean {
     const dir = this._sfnDirectoryEntry;
     this._attributes = dir.DIR_Attr & FS_ATTRIB_COPY;
     this._directoryIndex = dirIndex + this._directoryEntries.length - 1;
@@ -900,7 +1102,7 @@ export class FatFile {
     }
 
     if (isFatFile(dir)) {
-      this._attributes |= FS_ATTR_FILE;
+      this._attributes |= FS_ATTR_LABEL;
     }
 
     switch (oflag & O_ACCMODE) {
@@ -977,5 +1179,40 @@ export class FatFile {
 
     // --- Done
     return result;
+  }
+
+  private getLfnChar(ldir: FatLongFileName, i: number): number {
+    if (i < 5) {
+      return ldir.LDIR_Name1[i] & 0xffff;
+    } else if (i < 11) {
+      return ldir.LDIR_Name2[i - 5] & 0xffff;
+    } else if (i < 13) {
+      return ldir.LDIR_Name3[i - 11] & 0xffff;
+    } else {
+      throw new Error("Invalid long name character index");
+    }
+  }
+
+  private getDirectoryEntries(): FatDirEntry[] {
+    // --- Position to the beginning of the directory
+    this.rewind();
+
+    // --- Loop until the directory entry is found or created.
+    const entriesCollected: FatDirEntry[] = [];
+    while (true) {
+      // --- Read the subsequent directory entry
+      const dirEntry = this.readDirectoryEntry();
+
+      // --- Check the first byte of the directory entry to see if it is free, deleted,
+      // --- or contains an actual entry name
+      const firstByte = dirEntry.DIR_Name.charCodeAt(0);
+      if (firstByte === FAT_NAME_FREE) {
+        // --- No more FAT entries
+        return entriesCollected;
+      }
+
+      // --- This is a valid directory entry
+      entriesCollected.push(dirEntry);
+    }
   }
 }

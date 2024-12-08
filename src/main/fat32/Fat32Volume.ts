@@ -1,4 +1,5 @@
 import { CimFile } from "./CimFileManager";
+import { timeToNumber, dateToNumber } from "./fat-utils";
 import {
   BYTES_PER_SECTOR,
   EXTENDED_BOOT_SIGNATURE,
@@ -11,9 +12,12 @@ import {
   JUMP_CODE,
   SIGNATURE,
   FS_ATTR_DIRECTORY,
-  BYTES_PER_SECTOR_SHIFT
+  BYTES_PER_SECTOR_SHIFT,
+  FS_ATTR_LABEL,
+  FS_ATTR_ARCHIVE
 } from "./Fat32Types";
 import { FatBootSector } from "./FatBootSector";
+import { FatDirEntry } from "./FatDirEntry";
 import { FatFile } from "./FatFile";
 import { FatFsInfo } from "./FatFsInfo";
 
@@ -77,6 +81,11 @@ export class Fat32Volume {
   get lastCluster(): number {
     return this._lastCluster;
   }
+
+  get dirEntriesPerCluster(): number {
+    return this.bootSector.BPB_SecPerClus * Math.floor(BYTES_PER_SECTOR / FS_DIR_SIZE);
+  }
+
 
   /**
    * Format the volume
@@ -157,10 +166,9 @@ export class Fat32Volume {
     this.file.writeSector(7, fsInfo.buffer);
 
     // --- Initialize the FAT
-    //const fatStart = 32;
-    const fatSector = new Uint8Array(BYTES_PER_SECTOR);
     const fatStart = 32;
-    for (let i = 0; i < 2; i++) {
+    const fatSector = new Uint8Array(BYTES_PER_SECTOR);
+    for (let i = 0; i < 3; i++) {
       fatSector[4 * i + 0] = 0xff;
       fatSector[4 * i + 1] = 0xff;
       fatSector[4 * i + 2] = 0xff;
@@ -169,6 +177,18 @@ export class Fat32Volume {
     fatSector[0] = 0xf0;
     this.file.writeSector(fatStart + 0, fatSector);
     this.file.writeSector(fatStart + fat32Size, fatSector);
+
+    // --- Initialize the volume entry
+    const dataStartSector = bs.BPB_ResvdSecCnt + bs.BPB_FATSz32 * bs.BPB_NumFATs;
+    const rootEntry = new FatDirEntry(new Uint8Array(FS_DIR_SIZE));
+    rootEntry.DIR_Name = volumeName.substring(0, 11).padEnd(11, " ");
+    rootEntry.DIR_Attr = FS_ATTR_LABEL | FS_ATTR_ARCHIVE;
+    const now = new Date();
+    rootEntry.DIR_WrtTime = timeToNumber(now);
+    rootEntry.DIR_WrtDate = dateToNumber(now);
+    const rootBuffer = new Uint8Array(BYTES_PER_SECTOR);
+    rootBuffer.set(rootEntry.buffer);
+    this.file.writeSector(dataStartSector, rootBuffer);
   }
 
   /**
@@ -193,7 +213,8 @@ export class Fat32Volume {
   }
 
   openRootDirectory(): FatFile {
-    return new FatFile(this, FS_ATTR_ROOT32 | FS_ATTR_DIRECTORY, FILE_FLAG_READ);
+    const root = new FatFile(this, FS_ATTR_ROOT32 | FS_ATTR_DIRECTORY , FILE_FLAG_READ);
+    return root;
   }
 
   /**
