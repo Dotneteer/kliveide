@@ -18,6 +18,7 @@ export const FSINFO_TRAIL_SIGNATURE = 0xaa550000;
 export const FS_ATTR_READ_ONLY = 0x01;
 export const FS_ATTR_HIDDEN = 0x02;
 export const FS_ATTR_SYSTEM = 0x04;
+export const FS_ATTR_LABEL = 0x08;
 export const FS_ATTR_FILE = 0x08;
 export const FS_ATTR_DIRECTORY = 0x10;
 export const FS_ATTR_SUBDIR = FS_ATTR_DIRECTORY;
