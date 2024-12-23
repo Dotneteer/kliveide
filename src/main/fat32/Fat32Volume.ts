@@ -14,7 +14,9 @@ import {
   FS_ATTR_DIRECTORY,
   BYTES_PER_SECTOR_SHIFT,
   FS_ATTR_LABEL,
-  FS_ATTR_ARCHIVE
+  FS_ATTR_ARCHIVE,
+  O_RDWR,
+  O_RDONLY
 } from "./Fat32Types";
 import { FatBootSector } from "./FatBootSector";
 import { FatDirEntry } from "./FatDirEntry";
@@ -85,7 +87,6 @@ export class Fat32Volume {
   get dirEntriesPerCluster(): number {
     return this.bootSector.BPB_SecPerClus * Math.floor(BYTES_PER_SECTOR / FS_DIR_SIZE);
   }
-
 
   /**
    * Format the volume
@@ -213,7 +214,7 @@ export class Fat32Volume {
   }
 
   openRootDirectory(): FatFile {
-    const root = new FatFile(this, FS_ATTR_ROOT32 | FS_ATTR_DIRECTORY , FILE_FLAG_READ);
+    const root = new FatFile(this, FS_ATTR_ROOT32 | FS_ATTR_DIRECTORY, FILE_FLAG_READ);
     return root;
   }
 
@@ -226,6 +227,27 @@ export class Fat32Volume {
     const parent = this.openRootDirectory();
     const file = new FatFile(this);
     file.mkdir(parent, filePath, createMissingParents);
+  }
+
+  open(filePath: string, mode: number): FatFile | null {
+    const parent = this.openRootDirectory();
+    const file = new FatFile(this);
+    const result = file.open(parent, filePath, mode);
+    return result ? file : null;
+  }
+
+  rmDir(filePath: string): boolean {
+    const parent = this.openRootDirectory();
+    const file = new FatFile(this);
+    const result = file.open(parent, filePath, O_RDONLY);
+    return result ? file.rmDir() : false;
+  }
+
+  remove(filePath: string): boolean {
+    const parent = this.openRootDirectory();
+    const file = new FatFile(this);
+    const result = file.open(parent, filePath, O_RDWR);
+    return result ? file.remove() : false;
   }
 
   /**
@@ -428,40 +450,5 @@ export class Fat32Volume {
   private writeFsInfoSector(fsInfo: FatFsInfo) {
     this.file.writeSector(1, fsInfo.buffer);
     this.file.writeSector(7, fsInfo.buffer);
-  }
-
-  private lbaToMbrChs(lba: number): [number, number, number] {
-    let numberOfHeads = 0;
-    const capacityMB = this.file.cimInfo.maxSize;
-    let sectorsPerTrack = capacityMB <= 256 ? 32 : 63;
-    if (capacityMB <= 16) {
-      numberOfHeads = 2;
-    } else if (capacityMB <= 32) {
-      numberOfHeads = 4;
-    } else if (capacityMB <= 128) {
-      numberOfHeads = 8;
-    } else if (capacityMB <= 504) {
-      numberOfHeads = 16;
-    } else if (capacityMB <= 1008) {
-      numberOfHeads = 32;
-    } else if (capacityMB <= 2016) {
-      numberOfHeads = 64;
-    } else if (capacityMB <= 4032) {
-      numberOfHeads = 128;
-    } else {
-      numberOfHeads = 255;
-    }
-    let c = Math.floor(lba / (numberOfHeads * sectorsPerTrack));
-    let h = 0;
-    let s = 0;
-    if (c <= 1023) {
-      h = lba % Math.floor((numberOfHeads * sectorsPerTrack) / sectorsPerTrack);
-      s = (lba % sectorsPerTrack) + 1;
-    } else {
-      c = 1023;
-      h = 254;
-      s = 63;
-    }
-    return [h & 0xff, (((c >> 2) & 0xc0) | s) & 0xff, c & 0xff];
   }
 }

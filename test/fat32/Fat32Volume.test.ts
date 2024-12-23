@@ -181,6 +181,21 @@ describe("FatVolume", () => {
     // --- Assert
   });
 
+  it("rmDir works #1", () => {
+    // --- Arrange
+    const filePath = createTestFile();
+    const cfm = new CimFileManager();
+    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const vol = new Fat32Volume(file);
+    vol.format();
+    vol.init();
+    vol.mkdir("testDir");
+
+    // --- Act
+    vol.rmDir("testDir");
+    const imgFilePath = createImageFile();
+    cfm.convertToImageFile(file, imgFilePath);
+  });
 });
 
 function createTestFile(): string {
