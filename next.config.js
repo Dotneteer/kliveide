@@ -1,17 +1,21 @@
-const withNextra = require("nextra")({
-  theme: "nextra-theme-docs",
-  themeConfig: "./theme.config.jsx"
-});
+export default async function nextConfig() {
+  // Dynamically import `nextra`
+  const { default: nextra } = await import('nextra');
 
-const isProduction = process.env.NODE_ENV === "production";
-module.exports = withNextra({
-  output: "export",
-  basePath: isProduction ? '/kliveide' : "",
-  distDir: "docs-out",
-  images: {
-    unoptimized: true,
-  },
-});
+  // Create the wrapped configuration
+  const withNextra = nextra({
+    theme: 'nextra-theme-docs',
+    themeConfig: './theme.config.jsx'
+  });
 
-// If you have other Next.js configurations, you can pass them as the parameter:
-// module.exports = withNextra({ /* other next.js config */ })
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  return withNextra({
+    output: 'export',
+    basePath: isProduction ? '/kliveide' : '',
+    distDir: 'docs-out',
+    images: {
+      unoptimized: true,
+    },
+  });
+}
