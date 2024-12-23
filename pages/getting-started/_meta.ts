@@ -1,0 +1,8 @@
+export default {
+  installation: "Installing Klive",
+  "first-run": "Running Klive",
+  keyboard: "Using the Keyboard",
+  tapes: "Loading from Tape",
+  "save-programs": "Saving Files",
+  "creating-project": "Creating a Klive Project"
+};
