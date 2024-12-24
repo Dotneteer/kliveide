@@ -236,6 +236,13 @@ export class Fat32Volume {
     return result ? file : null;
   }
 
+  createFile(filePath: string): FatFile | null {
+    const parent = this.openRootDirectory();
+    const file = new FatFile(this);
+    const result = file.createFile(parent, filePath);
+    return result ? file : null;
+  }
+
   rmDir(filePath: string): boolean {
     const parent = this.openRootDirectory();
     const file = new FatFile(this);
