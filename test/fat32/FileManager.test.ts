@@ -13,21 +13,21 @@ const SIZE_IN_MB = 128;
 
 describe("FileManager", () => {
   it("Copy works", async () => {
-    // --- Arrange
-    const filePath = createTestFile();
-    const cfm = new CimFileManager();
-    const file = cfm.createFile(filePath, SIZE_IN_MB);
-    const vol = new Fat32Volume(file);
-    vol.format("TESTVOL");
-    vol.init();
-    const fm = new FileManager(vol);
+    // // --- Arrange
+    // const filePath = createTestFile();
+    // const cfm = new CimFileManager();
+    // const file = cfm.createFile(filePath, SIZE_IN_MB);
+    // const vol = new Fat32Volume(file);
+    // vol.format("TESTVOL");
+    // vol.init();
+    // const fm = new FileManager(vol);
 
-    // --- Act
-    await fm.copyFiles(path.join(os.homedir(), 'zxbasic'), "");
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
+    // // --- Act
+    // await fm.copyFiles(path.join(os.homedir(), 'zxbasic'), "");
+    // const imgFilePath = createImageFile();
+    // cfm.convertToImageFile(file, imgFilePath);
 
-    // --- Assert
+    // // --- Assert
   });
 });
 

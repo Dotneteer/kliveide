@@ -23,7 +23,7 @@ const SIZE_IN_MB = 64;
 describe("FatVolume", () => {
   it("format works #1", () => {
     // --- Arrange
-    const filePath = createTestFile();
+    const filePath = createTestFile(1);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -47,7 +47,7 @@ describe("FatVolume", () => {
 
   it("Invalid FAT index fails #1", () => {
     // --- Arrange
-    const filePath = createTestFile();
+    const filePath = createTestFile(2);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -60,7 +60,7 @@ describe("FatVolume", () => {
 
   it("Invalid FAT index fails #2", () => {
     // --- Arrange
-    const filePath = createTestFile();
+    const filePath = createTestFile(3);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -74,7 +74,7 @@ describe("FatVolume", () => {
   it("mkdir works #1", () => {
     // --- Arrange
     const FILENAME = "testDir";
-    const filePath = createTestFile();
+    const filePath = createTestFile(4);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -83,8 +83,6 @@ describe("FatVolume", () => {
 
     // --- Act
     vol.mkdir(FILENAME);
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
     const dir = vol.open(FILENAME, O_RDONLY);
@@ -131,7 +129,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "inner1";
-    const filePath = createTestFile();
+    const filePath = createTestFile(5);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -167,7 +165,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir/inner1";
     const FILENAME = "inner2";
-    const filePath = createTestFile();
+    const filePath = createTestFile(6);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -203,7 +201,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "inner1";
-    const filePath = createTestFile();
+    const filePath = createTestFile(7);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -241,7 +239,7 @@ describe("FatVolume", () => {
     const DIR = "testDir";
     const FILENAME1 = "inner1";
     const FILENAME2 = "inner2";
-    const filePath = createTestFile();
+    const filePath = createTestFile(8);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -280,7 +278,7 @@ describe("FatVolume", () => {
     const DIR = "testDir";
     const FILENAME1 = "longinner1";
     const FILENAME2 = "longinner2";
-    const filePath = createTestFile();
+    const filePath = createTestFile(9);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -377,7 +375,7 @@ describe("FatVolume", () => {
   it("mkdir works #7", () => {
     // --- Arrange
     const FILENAME = "TEST";
-    const filePath = createTestFile();
+    const filePath = createTestFile(10);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -415,7 +413,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "inner";
-    const filePath = createTestFile();
+    const filePath = createTestFile(11);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -455,7 +453,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "longer inner file";
-    const filePath = createTestFile();
+    const filePath = createTestFile(12);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -493,7 +491,7 @@ describe("FatVolume", () => {
   it("rmDir works #1", () => {
     // --- Arrange
     const FILENAME = "testDir";
-    const filePath = createTestFile();
+    const filePath = createTestFile(13);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -522,7 +520,7 @@ describe("FatVolume", () => {
   it("rmDir works #2", () => {
     // --- Arrange
     const FILENAME = "testDir with long file name";
-    const filePath = createTestFile();
+    const filePath = createTestFile(14);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -554,7 +552,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "inner1";
-    const filePath = createTestFile();
+    const filePath = createTestFile(15);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -586,7 +584,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir with long file name";
     const FILENAME = "inner1";
-    const filePath = createTestFile();
+    const filePath = createTestFile(16);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -618,7 +616,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const DIR = "testDir";
     const FILENAME = "this is a long file name";
-    const filePath = createTestFile();
+    const filePath = createTestFile(17);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -652,7 +650,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const FILENAME = "testFile.txt";
     const CONTENT = "Hello, world!";
-    const filePath = createTestFile();
+    const filePath = createTestFile(18);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -708,7 +706,7 @@ describe("FatVolume", () => {
     // --- Arrange
     const FILENAME = "testFile with a long name.txt";
     const CONTENT = "Hello, world!";
-    const filePath = createTestFile();
+    const filePath = createTestFile(19);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -799,7 +797,7 @@ describe("FatVolume", () => {
     const DIR = "testDir";
     const FILENAME = "testFile.txt";
     const CONTENT = "Hello, world!";
-    const filePath = createTestFile();
+    const filePath = createTestFile(20);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -813,8 +811,6 @@ describe("FatVolume", () => {
     const uint8array = encoder.encode(CONTENT);
     newFile.writeFileData(uint8array);
     newFile.close();
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
     const testFile = vol.open(`${DIR}/${FILENAME}`, O_RDONLY);
@@ -859,7 +855,7 @@ describe("FatVolume", () => {
     const DIR = "testDir";
     const FILENAME = "testFile with a long name.txt";
     const CONTENT = "Hello, world!";
-    const filePath = createTestFile();
+    const filePath = createTestFile(21);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -873,9 +869,6 @@ describe("FatVolume", () => {
     const uint8array = encoder.encode(CONTENT);
     newFile.writeFileData(uint8array);
     newFile.close();
-
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
     const testFile = vol.open(`${DIR}/${FILENAME}`, O_RDONLY);
@@ -954,7 +947,7 @@ describe("FatVolume", () => {
     const DIR = "testDir";
     const FILENAME = "testFile with a long name.txt";
     const CONTENT = "Hello, world!".repeat(1000);
-    const filePath = createTestFile();
+    const filePath = createTestFile(22);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -968,9 +961,6 @@ describe("FatVolume", () => {
     const uint8array = encoder.encode(CONTENT);
     newFile.writeFileData(uint8array);
     newFile.close();
-
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
     const testFile = vol.open(`${DIR}/${FILENAME}`, O_RDONLY);
@@ -1049,7 +1039,7 @@ describe("FatVolume", () => {
     const DIR = "TESTDIR";
     const FILENAME = "LICENCE.txt";
     const CONTENT = "Hello, world!";
-    const filePath = createTestFile();
+    const filePath = createTestFile(23);
     const cfm = new CimFileManager();
     const file = cfm.createFile(filePath, SIZE_IN_MB);
     const vol = new Fat32Volume(file);
@@ -1063,9 +1053,6 @@ describe("FatVolume", () => {
     const uint8array = encoder.encode(CONTENT);
     newFile.writeFileData(uint8array);
     newFile.close();
-
-    const imgFilePath = createImageFile();
-    cfm.convertToImageFile(file, imgFilePath);
 
     // --- Assert
     const testFile = vol.open(`${DIR}/${FILENAME}`, O_RDONLY);
@@ -1089,10 +1076,10 @@ describe("FatVolume", () => {
   });
 });
 
-function createTestFile(): string {
+function createTestFile(id: number): string {
   const homeDir = os.homedir();
   const testDir = path.join(homeDir, TEST_DIR);
-  const filePath = path.join(testDir, TEST_FILE);
+  const filePath = path.join(testDir, `${TEST_FILE}${id}`);
 
   // Ensure the test directory exists
   if (!fs.existsSync(testDir)) {
