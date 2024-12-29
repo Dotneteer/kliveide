@@ -42,7 +42,7 @@ import {
   O_AT_END,
   FAT_ORDER_LAST_LONG_ENTRY,
   FAT_ATTRIB_LONG_NAME,
-  FS_ATTR_FILE,
+  FS_ATTR_FILE
 } from "./Fat32Types";
 import { Fat32Volume } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
@@ -151,6 +151,7 @@ export class FatFile {
 
   clone(): FatFile {
     const clone = new FatFile(this.volume);
+    clone._parent = this._parent;
     clone._attributes = this._attributes;
     clone._flags = this._flags;
     clone._currentCluster = this._currentCluster;
@@ -158,6 +159,12 @@ export class FatFile {
     clone._fileSize = this._fileSize;
     clone._firstCluster = this._firstCluster;
     clone._error = this._error;
+    clone._directoryIndex = this._directoryIndex;
+    clone._directoryCluster = this._directoryCluster;
+    clone._directorySector = this._directorySector;
+    clone._nameEntries = this._nameEntries.slice();
+    clone._sfnEntry = this._sfnEntry ? this._sfnEntry.clone() : null;
+
     return clone;
   }
 
@@ -281,7 +288,7 @@ export class FatFile {
       // --- The file already exists, remove it
       this.remove();
     }
-      
+
     // --- The file does not exist, create it
     if (!this.open(parent, path, O_CREAT | O_RDWR)) {
       return false;
@@ -294,16 +301,6 @@ export class FatFile {
 
     // --- No cluster allocated for the file yet
     this._firstCluster = 0;
-
-    // --- The parent entry is a directory
-    parent.seekRelative(-FS_DIR_SIZE);
-    let sfn = this._sfnEntry;
-    sfn.DIR_Attr = FS_ATTR_ARCHIVE;
-    sfn.DIR_FstClusHI = this._firstCluster >> 16;
-    sfn.DIR_FstClusLO = this._firstCluster & 0xffff;
-    parent.writeData(sfn.buffer, true);
-
-    // --- Write first sector
     return true;
   }
 
@@ -319,7 +316,7 @@ export class FatFile {
 
       // --- Check the first byte of the directory entry to see if it is free, deleted,
       // --- or contains an actual entry name
-      const firstByte = dirEntry.DIR_Name.charCodeAt(0);
+      const firstByte = dirEntry.buffer.length > 0 ? dirEntry.DIR_Name.charCodeAt(0) : FAT_NAME_FREE;
       if (firstByte === FAT_NAME_FREE) {
         // --- No more FAT entries
         return entriesCollected;
@@ -566,24 +563,19 @@ export class FatFile {
       return;
     }
 
-    // --- calculate cluster index for current position
-    let nCur = (this._currentPosition - 1) >> this.volume.bytesPerClusterShift;
-
-    if (nNew < nCur || this._currentPosition === 0) {
-      // --- Must follow chain from first cluster
-      this._currentCluster = this.isRoot()
-        ? this.volume.rootDirectoryStartCluster
-        : this._firstCluster;
-    } else {
-      // advance from curPosition
-      nNew -= nCur;
-    }
-    while (nNew--) {
-      const fatValue = this.volume.getFatEntry(this._currentCluster);
-      if (fatValue >= this.volume.countOfClusters) {
-        throw new Error(ERROR_SEEK_PAST_EOC);
+    // --- Calculate cluster index for current position
+    // --- Must follow chain from first cluster
+    this._currentCluster = this.isRoot()
+      ? this.volume.rootDirectoryStartCluster
+      : this._firstCluster;
+    if (this._currentCluster > 0) {
+      while (nNew--) {
+        const fatValue = this.volume.getFatEntry(this._currentCluster);
+        if (fatValue >= this.volume.countOfClusters) {
+          throw new Error(ERROR_SEEK_PAST_EOC);
+        }
+        this._currentCluster = fatValue;
       }
-      this._currentCluster = fatValue;
     }
 
     this._currentPosition = position;
@@ -769,13 +761,12 @@ export class FatFile {
     const sfn = this._sfnEntry;
     sfn.DIR_FstClusLO = this._firstCluster & 0xffff;
     sfn.DIR_FstClusHI = this._firstCluster >> 16;
-    sfn.DIR_FileSize = data.length;
+    sfn.DIR_FileSize = this._fileSize;
     sfn.DIR_WrtDate = dateToNumber(new Date());
     sfn.DIR_WrtTime = timeToNumber(new Date());
     this.parent.seekSet(this._directoryIndex * FS_DIR_SIZE);
     this.parent.writeData(sfn.buffer, true);
   }
-
 
   private writeData(src: Uint8Array, forceWrite = false): void {
     // --- Error if not a normal file or is read-only
@@ -865,10 +856,12 @@ export class FatFile {
         }
 
         // --- Write the sectors
+        n = 0;
         for (let i = 0; i < numSectorsToWrite; i++) {
           const sectorContent = src.subarray(0, BYTES_PER_SECTOR);
           this.volume.file.writeSector(sector + i, sectorContent);
           src = src.subarray(BYTES_PER_SECTOR);
+          n += BYTES_PER_SECTOR;
         }
       } else {
         // --- Write a single sector
@@ -1251,6 +1244,6 @@ type FileSearchResult = {
   freeIndex: number;
   freeEntriesNeed: number;
   totalEntries: number;
-  index: number,
+  index: number;
   entries: FatDirEntry[];
 };
