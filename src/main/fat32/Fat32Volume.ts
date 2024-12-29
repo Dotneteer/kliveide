@@ -16,7 +16,8 @@ import {
   FS_ATTR_LABEL,
   FS_ATTR_ARCHIVE,
   O_RDWR,
-  O_RDONLY
+  O_RDONLY,
+  SECTOR_MASK
 } from "./Fat32Types";
 import { FatBootSector } from "./FatBootSector";
 import { FatDirEntry } from "./FatDirEntry";
@@ -236,6 +237,13 @@ export class Fat32Volume {
     return result ? file : null;
   }
 
+  createFile(filePath: string): FatFile | null {
+    const parent = this.openRootDirectory();
+    const file = new FatFile(this);
+    const result = file.createFile(parent, filePath);
+    return result ? file : null;
+  }
+
   rmDir(filePath: string): boolean {
     const parent = this.openRootDirectory();
     const file = new FatFile(this);
@@ -281,7 +289,7 @@ export class Fat32Volume {
   }
 
   sectorOfCluster(position: number): number {
-    return (position >> BYTES_PER_SECTOR_SHIFT) & (this.bootSector.BPB_SecPerClus - 1);
+    return (position >> BYTES_PER_SECTOR_SHIFT) & (this.bootSector.BPB_SecPerClus - 1);;
   }
 
   clusterStartSector(cluster: number): number {

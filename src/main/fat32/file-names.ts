@@ -4,6 +4,7 @@ import {
   FAT_CASE_LC_EXT,
   FNAME_FLAG_LOST_CHARS,
   FNAME_FLAG_MIXED_CASE,
+  FNAME_FLAG_NEED_LFN,
   FS_ATTR_ARCHIVE,
   FS_DIR_SIZE
 } from "@main/fat32/Fat32Types";
@@ -138,10 +139,14 @@ export function getLongFileFatEntries(
   const sfnEntry: FatDirEntry = new FatDirEntry(new Uint8Array(FS_DIR_SIZE));
   sfnEntry.DIR_Name = shortName;
   sfnEntry.DIR_Attr = FS_ATTR_ARCHIVE;
-  const checksum = calcShortNameCheckSum(shortName);
 
+  if (!(sfn.flags & FNAME_FLAG_NEED_LFN)) {
+    // --- We do not need long name entries
+    return [sfnEntry];
+  }
   // --- Create the long file name entries
   const lfnEntries: FatLongFileName[] = [];
+  const checksum = calcShortNameCheckSum(shortName);
   let entryIdx = 0;
   for (let i = 0; i < fname.length; i += 13) {
     const name1 = convertTo16BitArray(fname.substring(i, i + 5).padEnd(5, " "));

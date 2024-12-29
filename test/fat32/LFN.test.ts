@@ -1018,4 +1018,51 @@ describe("Long file names", () => {
     expect(lfn2.DIR_FstClusLO).toBe(0);
     expect(lfn2.DIR_FileSize).toBe(0);
   });
+
+  it("getLongFatEntries works #14", () => {
+    // --- Act
+    const lfn = "LICENSE.TXT";
+    const entries = getLongFileFatEntries(lfn);
+
+    // --- Assert
+    const sfn = convertLongToShortName(lfn);
+    const shortParts = sfn.name.split(".");
+    const shortName = shortParts[0].padEnd(8, " ") + shortParts[1].padEnd(3, " ");
+    const checksum = calcShortNameCheckSum(shortName);
+    expect(entries).toHaveLength(2);
+
+    const lfn1 = entries[0] as FatLongFileName;
+    expect(lfn1.LDIR_Ord).toBe(0x41);
+    expect(lfn1.LDIR_Attr).toBe(0x0f);
+    expect(lfn1.LDIR_Type).toBe(0);
+    expect(lfn1.LDIR_Chksum).toBe(checksum);
+    expect(lfn1.LDIR_FstClusLO).toBe(0);
+    expect(lfn1.LDIR_Name1[0]).toEqual("T".charCodeAt(0));
+    expect(lfn1.LDIR_Name1[1]).toEqual("h".charCodeAt(0));
+    expect(lfn1.LDIR_Name1[2]).toEqual("e".charCodeAt(0));
+    expect(lfn1.LDIR_Name1[3]).toEqual(" ".charCodeAt(0));
+    expect(lfn1.LDIR_Name1[4]).toEqual("q".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[0]).toEqual("u".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[1]).toEqual("i".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[2]).toEqual("c".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[3]).toEqual("k".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[4]).toEqual(".".charCodeAt(0));
+    expect(lfn1.LDIR_Name2[5]).toEqual("f".charCodeAt(0));
+    expect(lfn1.LDIR_Name3[0]).toEqual("o".charCodeAt(0));
+    expect(lfn1.LDIR_Name3[1]).toEqual("x".charCodeAt(0));
+
+    const lfn2 = entries[1] as FatDirEntry;
+    expect(lfn2.DIR_Name).toBe(shortName);
+    expect(lfn2.DIR_Attr).toBe(0x20);
+    expect(lfn2.DIR_NTRes).toBe(0);
+    expect(lfn2.DIR_CrtTimeTenth).toBe(0);
+    expect(lfn2.DIR_CrtTime).toBe(0);
+    expect(lfn2.DIR_CrtDate).toBe(0);
+    expect(lfn2.DIR_LstAccDate).toBe(0);
+    expect(lfn2.DIR_FstClusHI).toBe(0);
+    expect(lfn2.DIR_WrtTime).toBe(0);
+    expect(lfn2.DIR_WrtDate).toBe(0);
+    expect(lfn2.DIR_FstClusLO).toBe(0);
+    expect(lfn2.DIR_FileSize).toBe(0);
+  });
 });
