@@ -1,0 +1,210 @@
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import { calculateCRC7 } from "@emu/utils/crc";
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+
+const READ_DELAY = 56;
+
+export class MmcDevice implements IGenericDevice<IZxNextMachine> {
+  private _selectedCard: number;
+  private _cid: Uint8Array;
+  private _commandIndex: number;
+  private _lastCommand: number;
+  private _lastByteReceived: number;
+  private _response: Uint8Array;
+  private _responseIndex: number;
+  private _ocr: Uint8Array;
+  private _commandParams: number[];
+  private _readAddress: number;
+  constructor(public readonly machine: IZxNextMachine) {
+    this.reset();
+  }
+
+  reset(): void {
+    this._selectedCard = 0;
+    this._cid = Uint8Array.from([
+      0x01, // Manufacturer ID
+      "K".charCodeAt(0), // Application ID (0)
+      "l".charCodeAt(0), // Application ID (1)
+      "i".charCodeAt(0), // Card name (0)
+      "v".charCodeAt(0), // Card name (1)
+      "e".charCodeAt(0), // Card name (2)
+      "I".charCodeAt(0), // Card name (3)
+      "D".charCodeAt(0), // Card name (4)
+      "E".charCodeAt(0), // Card name (5)
+      1, // Revision
+      1, // Serial number
+      2,
+      3,
+      4,
+      127, // Manufacture date
+      128 // CRC7
+    ]);
+    this._cid[15] = ((calculateCRC7(this._cid.slice(0, 15)) << 1) | 0x01) & 0xff;
+    this._lastByteReceived = 0;
+    this._commandIndex = 0;
+    this._lastCommand = 0;
+    this._response = new Uint8Array(0);
+    this._responseIndex = -1;
+    this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
+    this._commandParams = [];
+    this._readAddress = -1;
+  }
+
+  dispose(): void {}
+
+  get selectedCard(): number {
+    return this._selectedCard;
+  }
+
+  set selectedCard(value: number) {
+    console.log(`Select card: ${value} --> ${value === 0xfe ? 0 : 1}`);
+    this._selectedCard = value === 0xfe ? 0 : 1;
+  }
+
+  get cid(): Uint8Array {
+    return this._cid;
+  }
+
+  writeMmcData(data: number): void {
+    console.log(`MMC write: ${toHexa2(data)}`);
+
+    // --- New command, we ignore the rest of the response
+    this._responseIndex = -1;
+
+    if (this._selectedCard) {
+      // --- We can use only card 0
+      return;
+    }
+
+    // --- Note the time of the last byte received
+    this._lastByteReceived = this.machine.tacts;
+
+    if (this._commandIndex === 0) {
+      // --- We have just received the command byte
+      this._lastCommand = data;
+      this._commandIndex = 1;
+      return;
+    }
+
+    // --- Subsequent command byte
+    switch (this._lastCommand) {
+      case 0x40:
+        // --- CMD0: GO_IDLE_STATE
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._response = new Uint8Array([0x01, 0xff, 0xff, 0xff, 0xff]);
+          this._responseIndex = 0;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x49:
+        // --- CMD9: SEND_CSD
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._response = new Uint8Array([
+            0x00, 0xfe, 0x40, 0x00, 0x00, 0x5b, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0xff, 0xff, 0xff
+          ]);
+          this._responseIndex = 0;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x4c:
+        // --- CMD12: STOP_TRANSMISSION
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._response = new Uint8Array([0x04, 0xff, 0xff, 0xff, 0xff]);
+          this._responseIndex = 0;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x48:
+        // --- CMD8: SEND_EXT_CSD
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._response = new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]);
+          this._responseIndex = 0;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x51:
+        this._commandParams.push(data);
+        this._commandIndex++;
+        if (this._commandIndex === 6) {
+          this._commandIndex = 0;
+          this._readAddress =
+            (this._commandParams[0] << 24) |
+            (this._commandParams[1] << 16) |
+            (this._commandParams[2] << 8) |
+            this._commandParams[3];
+          this._response = new Uint8Array([0x00, 0x00, 0x00, 0x00, 0xff]);
+          this._responseIndex = 0;
+        }
+
+      case 0x69:
+        // --- CMD41: Send operation condition
+        this._commandIndex = 0;
+        break;
+
+      case 0x77:
+        // --- CMD55: Application specific command
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._responseIndex = -1;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x7a:
+        // --- CMD58: Read OCR
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._response = this._ocr;
+          this._responseIndex = 0;
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      default:
+        this._commandIndex = 0;
+        break;
+    }
+  }
+
+  readMmcData(): number {
+    if (this._selectedCard !== 0) {
+      // --- We can use only card 0
+      return 0xff;
+    }
+
+    const now = this.machine.tacts;
+    if (now - this._lastByteReceived < READ_DELAY) {
+      // --- We are still waiting for result
+      return 0xff;
+    }
+
+    if (this._responseIndex >= 0 && this._responseIndex < this._response.length) {
+      return this._response[this._responseIndex++];
+    }
+
+    switch (this._lastCommand) {
+      case 0x77:
+        // --- Application specific command
+        return 0xff;
+    }
+
+    // --- No result
+    return 0x00;
+  }
+}

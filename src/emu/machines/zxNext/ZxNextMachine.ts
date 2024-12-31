@@ -33,6 +33,7 @@ import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MmcDevice } from "./MmcDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -52,6 +53,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   nextRegDevice: NextRegDevice;
 
   divMmcDevice: DivMmcDevice;
+
+  mmcDevice: MmcDevice;
 
   layer2Device: Layer2Device;
 
@@ -121,6 +124,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
+    this.mmcDevice = new MmcDevice(this);
     this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
@@ -146,6 +150,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.memoryDevice.reset();
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
+    this.mmcDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();

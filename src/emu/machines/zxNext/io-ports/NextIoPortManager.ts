@@ -386,15 +386,15 @@ export class NextIoPortManager {
       port: 0xe7,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0111,
-      writerFns: writeSpiCsPort
+      writerFns: (_, v) => { machine.mmcDevice.selectedCard = v },
     });
     r({
       description: "SPI DATA",
       port: 0xeb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_1011,
-      readerFns: readSpiDataPort,
-      writerFns: writeSpiDataPort
+      readerFns: () => machine.mmcDevice.readMmcData(),
+      writerFns: (_, v) => { machine.mmcDevice.writeMmcData(v) }
     });
     r({
       description: "divMMC Control",
