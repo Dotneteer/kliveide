@@ -1,48 +1,87 @@
-MMC dependencies
+bp r2:$18bd
+First write of E7 --> R2:$18CC, 0xfe = select card 0
 
-Port 0xE7 write:
+Wait for MMC command response
+ld bc,$0032      ; 10
+in a,($eb)       ; 11
+cp $ff           ; 7
+ret nz           ; 5
+djnz             ; 13
+in a,($eb)       ; 11
+cp $ff           ; 7
+ret nz           ; 11
 
-if (value is 0xF6) invoke mmc_cs(0xFE); otherwise, no write
+After 57 T-States, response is ready
 
-Port 0xEB write:
+CMD12: 0x4c 0x00 0x00 0x00 0x00 0xff
+RESP:  0x04 0xff 0xff 0xff 0xff 0xff
 
-invoke mmc_write(value);
-
-Port 0xE7 read:
-
-return 0xFF;
-
-Port 0xEB read:
-
-return mmc_read();
+CMD0: 0x40 0x00 0x00 0x00 0x00 0x95
+RESP: 0x01 0xff 0xff 0xff 0xff 0xff
 
 
-Dependencies:
+bp r2:$19df --> CMD8
 
-mmc_cs: (mmc.c)
-    - mmc_r1 = 1
-    - mmc_last_command = 0
-    - mmc_index_command = 0
-    - mmc_read_index = -1
-    - mmc_write_index = -1
-    - mmc_csd_index = -1
-    - mmc_cid_index = -1
-    - mmc_ocr_index = -1
-    - mmc_card_selected = 0
+CMD8: 0x48 0x00 0x00 0x01 0xaa 0x87
+RESP: 0x01 0x00 0x00 0x01 0xaa 0xff
 
-mmc_write: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_retorna_dir_32bit(z80_byte a,z80_byte b,z80_byte c,z80_byte d)
-        - none
-    - mmc_write_byte_memory(unsigned int address,z80_byte value)
-        - mmc_disable()
-            -
-        - mmc_set_visualmem_write(unsigned int address)
-            - none
+bp r2:$1a10 --> CMD55
 
-mmc_read: (mmc.c)
-    - mmc_footer_mmc_operating(void)
-        - none
-    - mmc_read_byte_memory(unsigned int address)
-    
+CMD55: 0x77 0x00 0x00 0x00 0x00 0xff
+
+bp r2:$1a19 --> CMD41
+
+CMD41: 0x69 0x40 0x00 0x00 0x00 0xff
+
+bp r2:$1a4f --> CMD58
+
+CMD58: 0x7a 0x00 0x00 0x00 0x00 0xff
+RESP: 0x00 0xc0 0xff 0x80 0x00
+
+bp r2:$18f2 --> CMD9
+
+CMD9: 0x49 0x00 0x00 0x00 0xff
+RESP: (HW)
+    0x00 0xfe 0x40 0x0e 0x00 0x32 0x5b 0x59 
+    0x00 0x00 0x73 0xdf 0x7f 0x80 0x0a 0x40 
+    0x00 0xc7 0x9e 0x08
+RESP: (CSpect) 
+    0x00 0xfe 0x40 0x00 0x00 0x5b 0x50 0x09 
+    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
+    0x00 0xff 0xff 0xff
+
+bp r2:$19bb --> CMD9 completed successfully
+
+bp r3:$1f50 --> CMD17
+
+CMD17: 0x51 0x00 0x00 0x00 0x00 0xff
+RESP:  0x00
+
+r2:$1b51 ok
+r2:$1b5e ok
+r2:$1b6c ok
+r2:$1b79 ok
+    $0333 ok
+    $1b83 ok
+
+r2:$1b86 --> this call deviates
+    $1bf3 ok
+    $1bf6 --> this call deviates
+        $0ded ok --> this call deviates
+        $0a8d ok --> this call deviates
+            $1ebc ok --> this call deviates
+
+
+
+Last stable breakpoint: $1ebc
+
+
+
+
+MBR partition table:
+00: Non-bootable
+fe ff ff: Cylinder-Head-Sector
+0b: Partition type (FAT CHS addressing)
+fe ff ff: Ending CHS
+00 08 00 00: First sector of the partition
+00 f8 3f 00: Number of sectors in the partition
