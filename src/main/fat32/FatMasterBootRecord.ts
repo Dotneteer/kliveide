@@ -5,7 +5,6 @@ export class FatMasterBootRecord {
 
   constructor(
     public readonly buffer: Uint8Array,
-    public readonly offset = 0
   ) {
     this._view = new DataView(buffer.buffer);
   }
@@ -63,10 +62,10 @@ export class FatMasterBootRecord {
   // Boot sector signature
   // Offset: 0x1fe, 2 bytes
   get bootSignature(): number {
-    return this._view.getUint16(510);
+    return this._view.getUint16(510, true);
   }
 
   set bootSignature(value: number) {
-    this._view.setUint16(510, value);
+    this._view.setUint16(510, value, true);
   }
 }

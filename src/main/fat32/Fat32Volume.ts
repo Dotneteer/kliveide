@@ -16,13 +16,14 @@ import {
   FS_ATTR_LABEL,
   FS_ATTR_ARCHIVE,
   O_RDWR,
-  O_RDONLY,
-  SECTOR_MASK
+  O_RDONLY
 } from "./Fat32Types";
 import { FatBootSector } from "./FatBootSector";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatFile } from "./FatFile";
 import { FatFsInfo } from "./FatFsInfo";
+import { FatMasterBootRecord } from "./FatMasterBootRecord";
+import { FatPartitionEntry } from "./FatPartitionEntry";
 
 export const ERROR_INVALID_FAT32_SIZE = "Invalid FAT32 size.";
 export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
@@ -32,7 +33,10 @@ export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
  */
 
 export class Fat32Volume {
+  private _mbrSector: FatMasterBootRecord | null = null;
+  private _volStart: number;
   private _bootSector: FatBootSector | null = null;
+  private _fatStartSector = 0;
   private _dataStartSector = 0;
   private _dataSectors = 0;
   private _countOfClusters = 0;
@@ -45,8 +49,19 @@ export class Fat32Volume {
 
   constructor(public readonly file: CimFile) {}
 
+  get mbrSector(): FatMasterBootRecord {
+    return this._mbrSector ?? (this._mbrSector = new FatMasterBootRecord(this.file.readSector(0)));
+  }
+
   get bootSector(): FatBootSector {
-    return this._bootSector ?? (this._bootSector = new FatBootSector(this.file.readSector(0)));
+    return (
+      this._bootSector ??
+      (this._bootSector = new FatBootSector(this.file.readSector(this._volStart)))
+    );
+  }
+
+  get fatStartSector(): number {
+    return this._fatStartSector;
   }
 
   get dataStartSector(): number {
@@ -77,10 +92,6 @@ export class Fat32Volume {
     return this._rootDirectoryStartCluster;
   }
 
-  get allocSearchStart(): number {
-    return this._allocSearchStart;
-  }
-
   get lastCluster(): number {
     return this._lastCluster;
   }
@@ -103,6 +114,44 @@ export class Fat32Volume {
       cimInfo.maxSize < 1024 ? 1 : cimInfo.maxSize < 2048 ? 4 : cimInfo.maxSize < 8192 ? 8 : 16;
     const totalClusters = sectorCount / sectorsPerCluster;
     const fat32Size = Math.ceil((totalClusters * 4) / 512);
+
+    const BU32 = 1024;
+    const relativeSectors = BU32;
+    let dataStart = 0;
+    let nc = 0;
+    for (dataStart = 2 * BU32; ; dataStart += BU32) {
+      nc = Math.floor((sectorCount - dataStart) / sectorsPerCluster);
+      let r = relativeSectors + 9 + 2 * fat32Size;
+      if (dataStart >= r) {
+        break;
+      }
+    }
+
+    let partType: number;
+    const fatStart = relativeSectors + 32;
+    const totalSectors = nc * sectorsPerCluster + dataStart - relativeSectors;
+    // type depends on address of end sector
+    // max CHS has lba = 16450560 = 1024*255*63
+    if (relativeSectors + totalSectors <= 16450560) {
+      // FAT32 with CHS and LBA
+      partType = 0x0b;
+    } else {
+      // FAT32 with only LBA
+      partType = 0x0c;
+    }
+
+    // --- Create the MBR
+    const mbr = new FatMasterBootRecord(new Uint8Array(BYTES_PER_SECTOR));
+    const partition = new FatPartitionEntry(new Uint8Array(16));
+    partition.bootIndicator = 0x00; // --- Not bootable
+    partition.beginChs = [0xfe, 0xff, 0xff];
+    partition.partType = partType;
+    partition.endChs = [0xfe, 0xff, 0xff];
+    partition.relativeSectors = relativeSectors;
+    partition.totalSectors = totalSectors;
+    mbr.partition1 = partition;
+    mbr.bootSignature = SIGNATURE;
+    this.file.writeSector(0, mbr.buffer);
 
     // --- Create the boot sector
     const bs = new FatBootSector(new Uint8Array(BYTES_PER_SECTOR));
@@ -138,15 +187,8 @@ export class Fat32Volume {
     bs.BootSectorSignature = SIGNATURE;
 
     // --- Write the boot sector and its backup
-    this.file.writeSector(0, bs.buffer);
-    this.file.writeSector(6, bs.buffer);
-
-    // --- Write extra boot area and backup
-    const extraBoot = new Uint8Array(BYTES_PER_SECTOR);
-    const extraDv = new DataView(extraBoot.buffer);
-    extraDv.setUint32(508, FSINFO_TRAIL_SIGNATURE);
-    this.file.writeSector(1, extraBoot);
-    this.file.writeSector(7, extraBoot);
+    this.file.writeSector(relativeSectors + 0, bs.buffer);
+    this.file.writeSector(relativeSectors + 6, bs.buffer);
 
     // --- Calculate the number of free clusters
     const dataSectors = sectorCount - (FS_DIR_SIZE + 2 * fat32Size);
@@ -164,11 +206,10 @@ export class Fat32Volume {
     fsInfo.FSI_TrailSig = FSINFO_TRAIL_SIGNATURE;
 
     // --- Write the FS Information Sector
-    this.file.writeSector(1, fsInfo.buffer);
-    this.file.writeSector(7, fsInfo.buffer);
+    this.file.writeSector(relativeSectors + 1, fsInfo.buffer);
+    this.file.writeSector(relativeSectors + 7, fsInfo.buffer);
 
     // --- Initialize the FAT
-    const fatStart = 32;
     const fatSector = new Uint8Array(BYTES_PER_SECTOR);
     for (let i = 0; i < 3; i++) {
       fatSector[4 * i + 0] = 0xff;
@@ -181,7 +222,7 @@ export class Fat32Volume {
     this.file.writeSector(fatStart + fat32Size, fatSector);
 
     // --- Initialize the volume entry
-    const dataStartSector = bs.BPB_ResvdSecCnt + bs.BPB_FATSz32 * bs.BPB_NumFATs;
+    const dataStartSector = relativeSectors + bs.BPB_ResvdSecCnt + bs.BPB_FATSz32 * bs.BPB_NumFATs;
     const rootEntry = new FatDirEntry(new Uint8Array(FS_DIR_SIZE));
     rootEntry.DIR_Name = volumeName.substring(0, 11).padEnd(11, " ");
     rootEntry.DIR_Attr = FS_ATTR_LABEL | FS_ATTR_ARCHIVE;
@@ -198,8 +239,13 @@ export class Fat32Volume {
    */
   init(): void {
     // --- Read the boot sector
+    const mbr = this.mbrSector;
+    const partition = mbr.partition1;
+    this._volStart = partition.relativeSectors;
     const bs = this.bootSector;
-    this._dataStartSector = bs.BPB_ResvdSecCnt + bs.BPB_FATSz32 * bs.BPB_NumFATs;
+
+    this._dataStartSector = this._volStart + bs.BPB_ResvdSecCnt + bs.BPB_FATSz32 * bs.BPB_NumFATs;
+    this._fatStartSector = this._volStart + bs.BPB_ResvdSecCnt;
     this._dataSectors = bs.BPB_TotSec32 - this._dataStartSector;
     this._countOfClusters = Math.floor(this._dataSectors / bs.BPB_SecPerClus);
     this._countOfFatEntries = bs.BPB_FATSz32 * (bs.BPB_BytsPerSec >> 2);
@@ -289,7 +335,7 @@ export class Fat32Volume {
   }
 
   sectorOfCluster(position: number): number {
-    return (position >> BYTES_PER_SECTOR_SHIFT) & (this.bootSector.BPB_SecPerClus - 1);;
+    return (position >> BYTES_PER_SECTOR_SHIFT) & (this.bootSector.BPB_SecPerClus - 1);
   }
 
   clusterStartSector(cluster: number): number {
@@ -446,17 +492,17 @@ export class Fat32Volume {
       throw new Error(ERROR_FAT_ENTRY_OUT_OF_RANGE);
     }
     const bps = this.bootSector.BPB_BytsPerSec;
-    const sector = this.bootSector.BPB_ResvdSecCnt + Math.floor((index * 4) / bps);
+    const sector = this._fatStartSector + Math.floor((index * 4) / bps);
     const offset = (index * 4) % bps;
     return [sector, offset];
   }
 
   private readFsInfoSector(): FatFsInfo {
-    return new FatFsInfo(this.file.readSector(1));
+    return new FatFsInfo(this.file.readSector(this._volStart + 1));
   }
 
   private writeFsInfoSector(fsInfo: FatFsInfo) {
-    this.file.writeSector(1, fsInfo.buffer);
-    this.file.writeSector(7, fsInfo.buffer);
+    this.file.writeSector(this._volStart + 1, fsInfo.buffer);
+    this.file.writeSector(this._volStart + 7, fsInfo.buffer);
   }
 }
