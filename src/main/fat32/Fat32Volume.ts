@@ -170,7 +170,6 @@ export class Fat32Volume {
     bs.BPB_HiddSec = 0;
     bs.BPB_TotSec32 = sectorCount;
     bs.BPB_FATSz32 = fat32Size;
-    bs.BPB_FATSz32 = 0x000003f0;
     bs.BPB_ExtFlags = 0;
     bs.BPB_FSVer = 0;
     bs.BPB_RootClus = 2;

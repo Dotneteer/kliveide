@@ -1,3 +1,4 @@
+import { CimHandler } from "@emu/machines/zxNext/CimHandler";
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
 import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
@@ -66,6 +67,8 @@ export interface IZxNextMachine extends IZ80Machine {
   ulaDevice: UlaDevice;
 
   loResDevice: LoResDevice;
+
+  cimHandler: CimHandler;
 
   /**
    * Reads the screen memory byte

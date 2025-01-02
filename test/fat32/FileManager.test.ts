@@ -7,27 +7,29 @@ import { Fat32Volume } from "@main/fat32/Fat32Volume";
 import { FileManager } from "@main/fat32/FileManager";
 
 const TEST_DIR = "testFat32";
-const TEST_FILE = "test.cim";
-const TEST_IMAGE_FILE = "testImage.img";
-const SIZE_IN_MB = 128;
+const TEST_FILE = "ks2.cim";
+const TEST_IMAGE_FILE = "ks2Image.img";
+const SIZE_IN_MB = 2048;
 
 describe("FileManager", () => {
   it("Copy works", async () => {
-    // // --- Arrange
-    // const filePath = createTestFile();
-    // const cfm = new CimFileManager();
-    // const file = cfm.createFile(filePath, SIZE_IN_MB);
-    // const vol = new Fat32Volume(file);
-    // vol.format("TESTVOL");
-    // vol.init();
-    // const fm = new FileManager(vol);
+    // --- Arrange
+    const filePath = createTestFile();
+    const cfm = new CimFileManager();
+    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const vol = new Fat32Volume(file);
+    vol.format("KS2");
+    vol.init();
+    const fm = new FileManager(vol);
 
-    // // --- Act
-    // await fm.copyFiles(path.join(os.homedir(), 'zxbasic'), "");
+    // --- Act
+    try {
+      await fm.copyFiles(path.join(os.homedir(), "KliveIDE KS2 Image"), "");
+    } catch (e) {
+      console.log(e);
+    }
     // const imgFilePath = createImageFile();
     // cfm.convertToImageFile(file, imgFilePath);
-
-    // // --- Assert
   });
 });
 
