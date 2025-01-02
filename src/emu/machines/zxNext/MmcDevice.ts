@@ -57,7 +57,6 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set selectedCard(value: number) {
-    console.log(`Select card: ${value} --> ${value === 0xfe ? 0 : 1}`);
     this._selectedCard = value === 0xfe ? 0 : 1;
   }
 
@@ -66,8 +65,6 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   writeMmcData(data: number): void {
-    console.log(`MMC write: ${toHexa2(data)}`);
-
     // --- New command, we ignore the rest of the response
     this._responseIndex = -1;
 
@@ -137,12 +134,10 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
         break;
 
       case 0x51:
-        console.log("CMD17", data);
         this._commandParams.push(data);
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-          console.log("CMD17", this._commandParams);
 
           // --- Address to read
           const address =
@@ -158,7 +153,6 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
           response.set(baseSector, 3);
 
           this._response = response;
-          console.log(`Read sector: ${address}, ${response}`);
           this._responseIndex = 0;
         }
         break;

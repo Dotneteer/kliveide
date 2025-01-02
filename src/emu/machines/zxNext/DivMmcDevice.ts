@@ -98,7 +98,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   set port0xe3Value(value: number) {
     if (!this._enabled) return;
-    
+
     this._portLastE3Value = value;
     this._conmem = (value & 0x80) !== 0;
     const mapramBit = (value & 0x40) !== 0;
@@ -236,7 +236,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     // --- We need to know if ROM 3 is paged in
     const memoryDevice = this.machine.memoryDevice;
     const rom3PagedIn =
-      !memoryDevice.enableAltRom &&
+      //!memoryDevice.enableAltRom &&
       (memoryDevice.selectedRomMsb | memoryDevice.selectedRomLsb) === 0x03;
 
     // --- Check for traps
@@ -284,8 +284,10 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         }
         break;
       default:
-        if (pc >= 0x3d00 && pc <= 0x3dff && this.automapOn3dxx && rom3PagedIn) {
-          this._autoMapActive = true;
+        if (pc >= 0x3d00 && pc <= 0x3dff) {
+          if (this.automapOn3dxx && rom3PagedIn) {
+            this._autoMapActive = true;
+          }
         } else if (pc >= 0x1ff8 && pc <= 0x1fff) {
           if (this.disableAutomapOn1ff8) {
             this._requestAutomapOff = true;

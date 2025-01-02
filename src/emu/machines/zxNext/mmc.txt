@@ -62,13 +62,16 @@ r2:$1b5e ok
 r2:$1b6c ok
 r2:$1b79 ok
 r2:$1b89 ok
-r2:$1b8d --> This call does not return in Klive
-    $1cfe ok --> This call does not return in Klive
-        $0398 ok --> This call does not return in Klive
-            $3f2a ok
-            $3f36 ok
+r2:$1b8d ok
+r2:$1bc7 ok
 
 
-Last stable breakpoint: $0398
+
+
+
+
+Last stable breakpoint: $1c50
 
 R2:3cfc nextreg $8e,$03
+R2:3d00 nop --> before executing nop, it should switch to ROM, read a $c9 (RET) and execute that statement.
+

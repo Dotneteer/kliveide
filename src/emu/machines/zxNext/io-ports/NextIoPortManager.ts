@@ -630,5 +630,7 @@ const excluded = [
   { port: 0x7ffd, mask: 0xffff },
   { port: 0x1ffd, mask: 0xffff },
   { port: 0xdffd, mask: 0xffff },
-  { port: 0x00e3, mask: 0x00ff }
+  { port: 0x00e3, mask: 0x00ff },
+  { port: 0x00e7, mask: 0x00ff },
+  { port: 0x00eb, mask: 0x00ff },
 ];
