@@ -1,3 +1,4 @@
+import { getNextRegisters, NextRegInfo } from "@emu/machines/zxNext/NextRegDevice";
 import { ICustomDisassembler } from "./custom-disassembly";
 import {
   DisassemblyItem,
@@ -10,6 +11,7 @@ import {
   FetchResult,
   DisassemblyOptions
 } from "./disassembly-helper";
+import { get } from "lodash";
 
 /**
  * This class implements the Z80 disassembler
@@ -25,6 +27,7 @@ export class Z80Disassembler {
   private _indexMode = 0;
   private _overflow = false;
   private _addressOffset = 0;
+  private _nextRegInfo: NextRegInfo[] = [];
 
   /**
    * Initializes a new instance of the disassembler
@@ -40,6 +43,7 @@ export class Z80Disassembler {
   ) {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
+    this._nextRegInfo = getNextRegisters();
   }
 
   /**
@@ -59,8 +63,8 @@ export class Z80Disassembler {
     custom.setDisassemblyApi({
       getMemoryContents: () => this.memoryContents,
       getOffset: () => this._offset,
-      fetch: () => this._apiFetch(),
-      peek: (ahead?: number) => this._peek(ahead),
+      fetch: () => this.apiFetch(),
+      peek: (ahead?: number) => this.peek(ahead),
       addDisassemblyItem: (item: DisassemblyItem) => this._output.addItem(item),
       createLabel: (address: number) => this._output.createLabel(address)
     });
@@ -89,19 +93,19 @@ export class Z80Disassembler {
       }
       switch (section.sectionType) {
         case MemorySectionType.Disassemble:
-          await this._disassembleSection(toDisassemble);
+          await this.disassembleSection(toDisassemble);
           break;
 
         case MemorySectionType.ByteArray:
-          await this._generateByteArray(toDisassemble);
+          await this.generateByteArray(toDisassemble);
           break;
 
         case MemorySectionType.WordArray:
-          await this._generateWordArray(toDisassemble);
+          await this.generateWordArray(toDisassemble);
           break;
 
         case MemorySectionType.Skip:
-          this._generateSkipOutput(toDisassemble);
+          this.generateSkipOutput(toDisassemble);
           break;
       }
     }
@@ -112,30 +116,30 @@ export class Z80Disassembler {
    * Creates disassembler output for the specified section
    * @param section Section information
    */
-  private async _disassembleSection(section: MemorySection): Promise<void> {
+  private async disassembleSection(section: MemorySection): Promise<void> {
     this._customDisassembler?.startSectionDisassembly(section);
     this._offset = section.startAddress;
     this._overflow = false;
     const endOffset = section.endAddress;
     while (this._offset <= endOffset && !this._overflow) {
       // --- Disassemble the current item
-      const customTakes = this._customDisassembler?.beforeInstruction(this._peek()) ?? false;
+      const customTakes = this._customDisassembler?.beforeInstruction(this.peek()) ?? false;
       if (!customTakes) {
-        const item = this._disassembleOperation();
+        const item = this.disassembleOperation();
         if (item) {
           this._output.addItem(item);
         }
         this._customDisassembler?.afterInstruction(item);
       }
     }
-    this._labelFixup();
+    this.labelFixup();
   }
 
   /**
    * Generates byte array output for the specified section
    * @param section Section information
    */
-  private async _generateByteArray(section: MemorySection): Promise<void> {
+  private async generateByteArray(section: MemorySection): Promise<void> {
     const length = section.endAddress - section.startAddress + 1;
     for (let i = 0; i < length; i += 8) {
       let bytes: string[] = [];
@@ -159,7 +163,7 @@ export class Z80Disassembler {
    * Generates word array output for the specified section
    * @param section Section information
    */
-  private async _generateWordArray(section: MemorySection): Promise<void> {
+  private async generateWordArray(section: MemorySection): Promise<void> {
     const length = section.endAddress - section.startAddress + 1;
     for (let i = 0; i < length; i += 8) {
       if (i + 1 >= length) {
@@ -184,7 +188,7 @@ export class Z80Disassembler {
       });
     }
     if (length % 2 === 1) {
-      this._generateByteArray(new MemorySection(section.endAddress, section.endAddress));
+      this.generateByteArray(new MemorySection(section.endAddress, section.endAddress));
     }
   }
 
@@ -192,7 +196,7 @@ export class Z80Disassembler {
    * Generates skip output for the specified section
    * @param section Section information
    */
-  private _generateSkipOutput(section: MemorySection): void {
+  private generateSkipOutput(section: MemorySection): void {
     this._output.addItem({
       partition: this.partitionLabels?.[section.startAddress >> 13] ?? undefined,
       address: section.startAddress,
@@ -203,7 +207,7 @@ export class Z80Disassembler {
   /**
    * Disassembles a single instruction
    */
-  private _disassembleOperation(): DisassemblyItem {
+  private disassembleOperation(): DisassemblyItem {
     this._opOffset = this._offset;
     this._currentOpCodes = "";
     this._displacement = undefined;
@@ -212,11 +216,11 @@ export class Z80Disassembler {
     const address = this._offset & 0xffff;
 
     // --- We should generate a normal instruction disassembly
-    this._opCode = this._fetch();
+    this._opCode = this.fetch();
     if (this._opCode === 0xed) {
       // --- Decode extended instruction set
 
-      this._opCode = this._fetch();
+      this._opCode = this.fetch();
       decodeInfo =
         !(this.options?.allowExtendedSet ?? false) && z80NextSet[this._opCode]
           ? "nop"
@@ -224,7 +228,7 @@ export class Z80Disassembler {
     } else if (this._opCode === 0xcb) {
       // --- Decode bit operations
 
-      this._opCode = this._fetch();
+      this._opCode = this.fetch();
       if (this._opCode < 0x40) {
         switch (this._opCode >> 3) {
           case 0x00:
@@ -263,35 +267,35 @@ export class Z80Disassembler {
       // --- Decode IX-indexed operations
 
       this._indexMode = 1; // IX
-      this._opCode = this._fetch();
-      decodeInfo = this._disassembleIndexedOperation();
+      this._opCode = this.fetch();
+      decodeInfo = this.disassembleIndexedOperation();
     } else if (this._opCode === 0xfd) {
       // --- Decode IY-indexed operations
 
       this._indexMode = 2; // IY
-      this._opCode = this._fetch();
-      decodeInfo = this._disassembleIndexedOperation();
+      this._opCode = this.fetch();
+      decodeInfo = this.disassembleIndexedOperation();
     } else {
       // --- Decode standard operations
       decodeInfo = standardInstructions[this._opCode];
     }
-    return this._decodeInstruction(address, decodeInfo);
+    return this.decodeInstruction(address, decodeInfo);
   }
 
   /**
    * Gets the operation map for an indexed operation
    */
-  private _disassembleIndexedOperation(): string | undefined {
+  private disassembleIndexedOperation(): string | undefined {
     if (this._opCode !== 0xcb) {
       let decodeInfo = indexedInstructions[this._opCode] ?? standardInstructions[this._opCode];
       if (decodeInfo && decodeInfo.indexOf("^D") >= 0) {
         // --- The instruction used displacement, get it
-        this._displacement = this._fetch();
+        this._displacement = this.fetch();
       }
       return decodeInfo;
     }
-    this._displacement = this._fetch();
-    this._opCode = this._fetch();
+    this._displacement = this.fetch();
+    this._opCode = this.fetch();
 
     if (this._opCode < 0x40) {
       let pattern = "";
@@ -336,7 +340,7 @@ export class Z80Disassembler {
   /**
    * Fetches the next byte to disassemble
    */
-  private _fetch(): number {
+  private fetch(): number {
     if (this._offset >= this.memoryContents.length) {
       this._offset = 0;
       this._overflow = true;
@@ -349,17 +353,17 @@ export class Z80Disassembler {
   /**
    * Fetches the next word to disassemble
    */
-  private _fetchWord(): number {
-    const l = this._fetch();
-    const h = this._fetch();
+  private fetchWord(): number {
+    const l = this.fetch();
+    const h = this.fetch();
     return ((h << 8) | l) & 0xffff;
   }
 
   /**
    * Fetches the next byte to disassemble (for the custom API)
    */
-  private _apiFetch(): FetchResult {
-    const opcode = this._fetch();
+  private apiFetch(): FetchResult {
+    const opcode = this.fetch();
     return {
       offset: this._offset,
       overflow: this._overflow,
@@ -370,7 +374,7 @@ export class Z80Disassembler {
   /**
    * Fetches the next byte from the stream to disassemble
    */
-  private _peek(ahead?: number): FetchResult {
+  private peek(ahead?: number): FetchResult {
     let overflow = false;
     ahead = ahead ?? 0;
     let offset = this._offset + ahead;
@@ -393,7 +397,7 @@ export class Z80Disassembler {
    * @param address Instruction address
    * @param opInfo Operation inforamtion
    */
-  private _decodeInstruction(address: number, opInfo: string | undefined): DisassemblyItem {
+  private decodeInstruction(address: number, opInfo: string | undefined): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
       partition: this.partitionLabels?.[address >> 13] ?? undefined,
@@ -414,7 +418,7 @@ export class Z80Disassembler {
           break;
         }
         pragmaCount++;
-        this._processPragma(disassemblyItem, pragmaIndex);
+        this.processPragma(disassemblyItem, pragmaIndex);
       } while (pragmaCount < 4);
     }
 
@@ -428,7 +432,7 @@ export class Z80Disassembler {
    * @param disassemblyItem Disassembly item to process
    * @param pragmaIndex Index of the pragma within the instruction string
    */
-  private _processPragma(disassemblyItem: DisassemblyItem, pragmaIndex: number): void {
+  private processPragma(disassemblyItem: DisassemblyItem, pragmaIndex: number): void {
     const instruction = disassemblyItem.instruction;
     if (!instruction || pragmaIndex >= instruction.length) {
       return;
@@ -446,7 +450,7 @@ export class Z80Disassembler {
         break;
       case "r":
         // --- #r: relative label (8 bit offset)
-        var distance = this._fetch();
+        var distance = this.fetch();
         var labelAddr = (this._addressOffset + this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
         replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(labelAddr)}`;
@@ -456,7 +460,7 @@ export class Z80Disassembler {
         break;
       case "L":
         // --- #L: absolute label (16 bit address)
-        var target = this._fetchWord();
+        var target = this.fetchWord();
         this._output.createLabel(target, this._opOffset);
         replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(target)}`;
         symbolPresent = true;
@@ -470,21 +474,30 @@ export class Z80Disassembler {
         break;
       case "B":
         // --- #B: 8-bit value from the code
-        var value = this._fetch();
+        var value = this.fetch();
         replacement = `$${intToX2(value)}`;
         symbolPresent = true;
         symbolValue = value;
         break;
+      case "N":
+        // --- #N: 8-bit Next Register index from the code
+        var value = this.fetch();
+        replacement = `$${intToX2(value)}`;
+        const regInfo = this._nextRegInfo.find((n) => n?.id === value);
+        if (regInfo) {
+          disassemblyItem.hardComment = regInfo.description;
+        }
+        break;
       case "W":
         // --- #W: 16-bit word from the code
-        var word = this._fetchWord();
+        var word = this.fetchWord();
         replacement = `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
       case "w":
         // --- #W: 16-bit word from the code, big endian
-        var word = (this._fetch() << 8) | this._fetch();
+        var word = (this.fetch() << 8) | this.fetch();
         replacement = `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
@@ -527,7 +540,7 @@ export class Z80Disassembler {
   /**
    * Fixes the labels within the disassembly output
    */
-  private _labelFixup(): void {
+  private labelFixup(): void {
     for (const label of this._output.labels) {
       const outputItem = this._output.get(label[0]);
       if (outputItem) {
@@ -934,8 +947,8 @@ const extendedInstructions: { [key: number]: string } = {
   0x7e: "im 2",
   0x8a: "push ^w", // BIG ENDIAN!
   0x90: "outinb",
-  0x91: "nextreg ^B,^B",
-  0x92: "nextreg ^B,a",
+  0x91: "nextreg ^N,^B",
+  0x92: "nextreg ^N,a",
   0x93: "pixeldn",
   0x94: "pixelad",
   0x95: "setae",

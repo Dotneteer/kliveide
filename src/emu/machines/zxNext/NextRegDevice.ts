@@ -51,7 +51,7 @@ const writeOnlyRegs: number[] = [
 ];
 
 export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
-  private readonly regs: NextRegInfo[] = [];
+  regs: NextRegInfo[] = [];
   private lastRegister: number = 0;
   private readonly regLastWriteValues: number[] = [];
   private readonly regValues: number[] = [];
@@ -256,7 +256,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x04,
-      description: "Config Mapping (config mode only, bootrom disabled)",
+      description: "Config Mapping",
       writeFn: (v) => (machine.memoryDevice.configRomRamBank = v & 0x7f),
       slices: [
         {
@@ -627,7 +627,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x0e,
       readFn: () => CORE_VERSION_SUB_MINOR,
       writeFn: () => {},
-      description: "Core Version (sub minor number)"
+      description: "Core Version"
     });
     r({
       id: 0x0f,
@@ -669,7 +669,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x11,
-      description: "Video Timing (writable in config mode only)",
+      description: "Video Timing",
       readFn: () => machine.screenDevice.videoTimingMode,
       writeFn: (v) => {
         machine.screenDevice.videoTimingMode = v & 0x07;
@@ -812,7 +812,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x1a,
-      description: "Clip Window ULA and LoRes",
+      description: "Clip Window ULA",
       readFn: () => machine.ulaDevice.nextReg1aValue,
       writeFn: (v) => (machine.ulaDevice.nextReg1aValue = v & 0xff)
     });
@@ -868,7 +868,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x1e,
-      description: "Active video line (MSB)",
+      description: "Active video line MSB",
       readFn: () => (machine.screenDevice.activeVideoLine & 0x100) >> 8,
       writeFn: () => {},
       slices: [
@@ -880,7 +880,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x1f,
-      description: "Active video line (LSB)",
+      description: "Active video line LSB",
       readFn: () => machine.screenDevice.activeVideoLine & 0xff,
       writeFn: () => {}
     });
@@ -1066,7 +1066,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x75,
-      description: "Sprite Attribute 0 with automatic post increment of Sprite Number",
+      description: "Sprite Attribute 0 (automatic increment)",
       writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(0, v)
     });
     r({
@@ -1076,7 +1076,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x76,
-      description: "Sprite Attribute 1 with automatic post increment of Sprite Number",
+      description: "Sprite Attribute 1  (automatic increment)",
       writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(1, v)
     });
     r({
@@ -1086,7 +1086,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x77,
-      description: "Sprite Attribute 2 with automatic post increment of Sprite Number",
+      description: "Sprite Attribute 2 (automatic increment)",
       writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(2, v)
     });
     r({
@@ -1096,7 +1096,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x78,
-      description: "Sprite Attribute 3 with automatic post increment of Sprite Number",
+      description: "Sprite Attribute 3 (automatic increment)",
       writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(3, v)
     });
     r({
@@ -1106,7 +1106,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x79,
-      description: "Sprite Attribute 4 with automatic post increment of Sprite Number",
+      description: "Sprite Attribute 4 (automatic increment)",
       writeFn: (v) => machine.spriteDevice.writeSpriteAttributeDirectWithAutoInc(4, v)
     });
     r({
@@ -1117,7 +1117,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x41,
-      description: "Palette Value (8 bit colour)",
+      description: "Palette Value (8 bit)",
       readFn: () => machine.paletteDevice.nextReg41Value,
       writeFn: (v) => (machine.paletteDevice.nextReg41Value = v & 0xff)
     });
@@ -1177,7 +1177,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x44,
-      description: "Palette Value (9 bit colour)",
+      description: "Palette Value (9 bit)",
       readFn: () => machine.paletteDevice.nextReg44Value,
       writeFn: (v) => (machine.paletteDevice.nextReg44Value = v & 0xff)
     });
@@ -1198,49 +1198,49 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x50,
-      description: "MMU slot 0",
+      description: "MMU 0",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(0),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(0, v)
     });
     r({
       id: 0x51,
-      description: "MMU slot 1",
+      description: "MMU 1",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(1),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(1, v)
     });
     r({
       id: 0x52,
-      description: "MMU slot 2",
+      description: "MMU 2",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(2),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(2, v)
     });
     r({
       id: 0x53,
-      description: "MMU slot 3",
+      description: "MMU 3",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(3),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(3, v)
     });
     r({
       id: 0x54,
-      description: "MMU slot 4",
+      description: "MMU 4",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(4),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(4, v)
     });
     r({
       id: 0x55,
-      description: "MMU slot 5",
+      description: "MMU 5",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(5),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(5, v)
     });
     r({
       id: 0x56,
-      description: "MMU slot 6",
+      description: "MMU 6",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(6),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(6, v)
     });
     r({
       id: 0x57,
-      description: "MMU slot 7",
+      description: "MMU 7",
       readFn: () => machine.memoryDevice.getNextRegMmuValue(7),
       writeFn: (v) => machine.memoryDevice.setNextRegMmuValue(7, v)
     });
@@ -1638,7 +1638,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x82,
-      description: "Internal Port Decoding Enables (#1)",
+      description: "Internal Port Decoding Enables #1 (LSB)",
       writeFn: () => {},
       slices: [
         {
@@ -1684,7 +1684,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x83,
-      description: "Internal Port Decoding Enables (#2)",
+      description: "Internal Port Decoding Enables #2",
       writeFn: (v) => (machine.divMmcDevice.nextReg83Value = v & 0xff),
       slices: [
         {
@@ -1730,7 +1730,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x84,
-      description: "Internal Port Decoding Enables (#3)",
+      description: "Internal Port Decoding Enables #3",
       writeFn: () => {},
       slices: [
         {
@@ -1776,7 +1776,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x85,
-      description: "Internal Port Decoding Enables (#4)",
+      description: "Internal Port Decoding Enables #4 (MSB)",
       readFn: () => (this.regValues[0x85] ?? 0x00) & 0x8f,
       writeFn: () => {},
       slices: [
@@ -1808,7 +1808,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x86,
-      description: "Expansion Bus Decoding Enables (#1)",
+      description: "Expansion Bus Decoding Enables #1 (LSB)",
       writeFn: () => {},
       slices: [
         {
@@ -1854,7 +1854,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x87,
-      description: "Expansion Bus Decoding Enables (#2)",
+      description: "Expansion Bus Decoding Enables #2",
       writeFn: () => {},
       slices: [
         {
@@ -1900,7 +1900,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x88,
-      description: "Expansion Bus Decoding Enables (#3)",
+      description: "Expansion Bus Decoding Enables #3",
       writeFn: () => {},
       slices: [
         {
@@ -1946,7 +1946,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x89,
-      description: "Expansion Bus Decoding Enables (#4)",
+      description: "Expansion Bus Decoding Enables #4 (MSB)",
       readFn: () => (this.regValues[0x89] ?? 0x00) & 0x8f,
       writeFn: () => {},
       slices: [
@@ -2120,43 +2120,43 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x90,
-      description: "PI GPIO Output Enable (#1)",
+      description: "PI GPIO Output Enable #1 (LSB)",
       writeFn: () => {}
     });
     r({
       id: 0x91,
-      description: "PI GPIO Output Enable (#2)",
+      description: "PI GPIO Output Enable #2",
       writeFn: () => {}
     });
     r({
       id: 0x92,
-      description: "PI GPIO Output Enable (#3)",
+      description: "PI GPIO Output Enable #3",
       writeFn: () => {}
     });
     r({
       id: 0x93,
-      description: "PI GPIO Output Enable (#4)",
+      description: "PI GPIO Output Enable #4 (MSB)",
       readFn: () => (this.regValues[0x93] ?? 0x00) & 0x0f,
       writeFn: () => {}
     });
     r({
       id: 0x98,
-      description: "PI GPIO (#1)",
+      description: "PI GPIO #1 (LSB)",
       writeFn: () => {}
     });
     r({
       id: 0x99,
-      description: "PI GPIO (#2)",
+      description: "PI GPIO #2",
       writeFn: () => {}
     });
     r({
       id: 0x9a,
-      description: "PI GPIO (#3)",
+      description: "PI GPIO #3",
       writeFn: () => {}
     });
     r({
       id: 0x9b,
-      description: "PI GPIO (#4)",
+      description: "PI GPIO #4 (LSB)",
       readFn: () => (this.regValues[0x9b] ?? 0x00) & 0x0f,
       writeFn: () => {}
     });
@@ -3235,4 +3235,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn
     };
   }
+}
+
+export function getNextRegisters(): NextRegInfo[] {
+  const device = new NextRegDevice(null);
+  return device.regs.slice(0);
 }

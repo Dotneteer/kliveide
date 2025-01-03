@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 import { Z80Tester } from "./z80-tester";
+import { getNextRegisters } from "@emu/machines/zxNext/NextRegDevice";
 
 describe("Disassembler - extended instructions", function () {
   it("Next extended instructions work as expected", async () => {
@@ -213,18 +214,29 @@ describe("Disassembler - extended instructions", function () {
   });
 
   for (let op = 0x00; op < 0x40; op++) {
-    it(`Invalid extended instruction 0x${op.toString(
-      16
-    )} work as NOP`, async () => {
+    it(`Invalid extended instruction 0x${op.toString(16)} work as NOP`, async () => {
       await Z80Tester.Test("nop", 0xed, op);
     });
   }
 
   for (let op = 0xc0; op < 0x100; op++) {
-    it(`Invalid extended instruction 0x${op.toString(
-      16
-    )} work as NOP`, async () => {
+    it(`Invalid extended instruction 0x${op.toString(16)} work as NOP`, async () => {
       await Z80Tester.Test("nop", 0xed, op);
     });
   }
+
+  const nextRegs = getNextRegisters();
+  nextRegs.forEach((reg, idx) => {
+    it(`nextreg N,N comment with reg #${idx}`, async () => {
+      if (reg.id !== undefined) {
+        await Z80Tester.TestExtComment(reg.description, 0xed, 0x91, reg.id, 0x56);
+      }
+    });
+
+    it(`nextreg N,a comment with reg #${idx}`, async () => {
+      if (reg.id !== undefined) {
+        await Z80Tester.TestExtComment(reg.description, 0xed, 0x92, reg.id);
+      }
+    });
+  });
 });
