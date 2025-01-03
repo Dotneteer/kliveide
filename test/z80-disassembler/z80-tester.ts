@@ -76,6 +76,33 @@ export class Z80Tester {
   }
 
   /**
+   * Tests if Z80 extended instruction set disassembly works
+   * @param expectedComment Expected disassembly text
+   * @param opCodes Operation codes
+   */
+  static async TestExtComment (expectedComment: string, ...opCodes: number[]): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+
+    const disassembler = new Z80Disassembler(
+      map.sections,
+      new Uint8Array(opCodes),
+      undefined,
+      {
+        allowExtendedSet: true
+      }
+    );
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(1);
+    const item = output.outputItems[0];
+    expect(item.hardComment).toBe(expectedComment);
+  }
+
+  /**
    * Tests custom disassemblers
    * @provider Custom disassembler provider
    * @param expected Expected result
