@@ -13,10 +13,12 @@ export class FileManager {
   async copyFiles(sourcePath: string, targetPath: string) {
     // Define how you want to handle folders and files
     const handleFolder = async (fullPath: string) => {
+      console.log(`Creating folder: ${fullPath}`);
       this.volume.mkdir(path.join(targetPath, fullPath));
     };
 
     const handleFile = async (fullPath: string) => {
+      console.log(`Copying file: ${fullPath}`);
       const sourceFilename = path.join(sourcePath, fullPath);
       const targetFile = this.volume.createFile(path.join(targetPath, fullPath));
       const fileHandle = await fs.promises.open(sourceFilename, "r");

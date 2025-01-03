@@ -1,7 +1,8 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { calculateCRC7 } from "@emu/utils/crc";
+import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 const READ_DELAY = 56;
 
@@ -15,7 +16,7 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   private _responseIndex: number;
   private _ocr: Uint8Array;
   private _commandParams: number[];
-  private _readAddress: number;
+  private _readCount: number;
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -48,7 +49,7 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
     this._responseIndex = -1;
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
-    this._readAddress = -1;
+    this._readCount = 0;
   }
 
   dispose(): void {}
@@ -58,7 +59,6 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set selectedCard(value: number) {
-    console.log(`Select card: ${value} --> ${value === 0xfe ? 0 : 1}`);
     this._selectedCard = value === 0xfe ? 0 : 1;
   }
 
@@ -67,8 +67,6 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   writeMmcData(data: number): void {
-    console.log(`MMC write: ${toHexa2(data)}`);
-
     // --- New command, we ignore the rest of the response
     this._responseIndex = -1;
 
@@ -83,6 +81,7 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._commandIndex === 0) {
       // --- We have just received the command byte
       this._lastCommand = data;
+      this._commandParams = [];
       this._commandIndex = 1;
       return;
     }
@@ -141,14 +140,24 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-          this._readAddress =
+
+          // --- Address to read
+          const address =
             (this._commandParams[0] << 24) |
             (this._commandParams[1] << 16) |
             (this._commandParams[2] << 8) |
             this._commandParams[3];
-          this._response = new Uint8Array([0x00, 0x00, 0x00, 0x00, 0xff]);
+
+          // --- Physical sector and offset within the MMC
+          const baseSector = this.machine.cimHandler.readSector(address);
+          const response = new Uint8Array(3 + BYTES_PER_SECTOR);
+          response.set(new Uint8Array([0x00, 0xff, 0xfe]));
+          response.set(baseSector, 3);
+          this._readCount++;
+          this._response = response;
           this._responseIndex = 0;
         }
+        break;
 
       case 0x69:
         // --- CMD41: Send operation condition
@@ -178,6 +187,7 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
 
       default:
         this._commandIndex = 0;
+        console.log(`Unknown MMC command: ${this._lastCommand} at ${toHexa4(this.machine.pc)}`);
         break;
     }
   }
@@ -199,8 +209,8 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     switch (this._lastCommand) {
+      case 0x51:
       case 0x77:
-        // --- Application specific command
         return 0xff;
     }
 

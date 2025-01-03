@@ -34,6 +34,7 @@ import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MmcDevice } from "./MmcDevice";
+import { CimHandler } from "./CimHandler";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -102,6 +103,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the tape device of ZX Spectrum 48K
    */
   tapeDevice: ITapeDevice;
+
+  /**
+   * Represents the MMC image attached to the machine
+   */
+  cimHandler: CimHandler
 
   /**
    * Initialize the machine
@@ -186,6 +192,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Get the alternate ROM file
     romContents = await this.loadRomFromFile("roms/enAltZX.rom");
     this.memoryDevice.upload(romContents, OFFS_ALT_ROM_0);
+
+    const mmcContents = await this.loadRomFromFile("mmc/ks2.cim");
+    this.cimHandler = new CimHandler(mmcContents);
   }
 
   /**

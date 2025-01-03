@@ -2,6 +2,7 @@ import fs from "fs";
 import { CimInfo } from "@abstractions/CimInfo";
 import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { BinaryReader } from "@common/utils/BinaryReader";
+import { isInteger } from "lodash";
 
 export const CIM_VERSION_MAJOR = 1;
 export const CIM_VERSION_MINOR = 0;
@@ -49,6 +50,38 @@ export class CimFileManager {
       fs.writeSync(fd, cluster, 0, cluster.length);
     }
     fs.closeSync(fd);
+  }
+
+  convertImageFileToCim(imageFilename: string, cimFilename: string): CimFile {
+    // --- Check the image file size
+    const stats = fs.statSync(imageFilename);
+    const length = stats.size;
+    const sizeInMegaByte = length / 1024 / 1024;
+    if (!isInteger(sizeInMegaByte)) {
+      throw new Error("Invalid image file size");
+    }
+
+    // --- Create the file
+    const cimFile = this.createFile(cimFilename, sizeInMegaByte);
+    const sectors = sizeInMegaByte * 2048;
+    const fd = fs.openSync(imageFilename, "r");
+    try {
+      const sector = new Uint8Array(512);
+      for (let i = 0; i < sectors; i++) {
+        fs.readSync(fd, sector, 0, 512, i * 512);
+        let sum = 0;
+        for (let j = 0; j < 512; j++) {
+          sum += sector[j];
+        }
+        if (sum !== 0) {
+          cimFile.writeSector(i, sector);
+        }
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+
+    return cimFile;
   }
 }
 

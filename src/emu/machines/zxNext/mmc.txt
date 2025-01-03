@@ -55,33 +55,26 @@ bp r2:$19bb --> CMD9 completed successfully
 bp r3:$1f50 --> CMD17
 
 CMD17: 0x51 0x00 0x00 0x00 0x00 0xff
-RESP:  0x00
+RESP:  0x00 0xff 0xfe 512 bytes sector data
 
 r2:$1b51 ok
 r2:$1b5e ok
 r2:$1b6c ok
 r2:$1b79 ok
-    $0333 ok
-    $1b83 ok
+r2:$1b89 ok
+r2:$1b8d ok
+r2:$1bc7 ok
 
-r2:$1b86 --> this call deviates
-    $1bf3 ok
-    $1bf6 --> this call deviates
-        $0ded ok --> this call deviates
-        $0a8d ok --> this call deviates
-            $1ebc ok --> this call deviates
+$1f64 --> After reading 314 sectors (all needed to display the start page)
+    $1c52 (RST 30), after second reach ok
 
-
-
-Last stable breakpoint: $1ebc
-
-
+$1bae ok
+$0109 ok
+$044d ok
+$1a9f ok --> Memory paging issue during the call
+    $1ab7 ok --> Memory paging issue during the call
+    Issue at $1061> nextreg $51,a (A=$df) does not page in the right memory page
 
 
-MBR partition table:
-00: Non-bootable
-fe ff ff: Cylinder-Head-Sector
-0b: Partition type (FAT CHS addressing)
-fe ff ff: Ending CHS
-00 08 00 00: First sector of the partition
-00 f8 3f 00: Number of sectors in the partition
+Last stable breakpoint: $1c52 (after reading the 314 sectors, second reach)
+Last stable breakpoint: $1a9f 
