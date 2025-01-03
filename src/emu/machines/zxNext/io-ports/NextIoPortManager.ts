@@ -1,6 +1,5 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { readUlaPort } from "./UlaPortHandler";
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
   readSpectrumP3FdcControlPort,
@@ -26,8 +25,6 @@ import {
   writeDacBandCPort,
   writeDacCPort
 } from "./DacPortHandler";
-import { writeSpiCsPort } from "./SpiCsPortHandler";
-import { readSpiDataPort, writeSpiDataPort } from "./SpiDataPortHandler";
 import {
   readKempstonJoy1AliasPort,
   readKempstonJoy1Port,
@@ -77,36 +74,8 @@ export class NextIoPortManager {
       port: 0xfe,
       pmask: 0b0000_0000_0000_0001,
       value: 0b0000_0000_0000_0000,
-      readerFns: (p) => readUlaPort(p),
-      writerFns: (_, v) => {
-        // --- Extract the border color
-        machine.screenDevice.borderColor = v & 0x07;
-
-        // // --- Store the last EAR bit
-        // var bit4 = value & 0x10;
-        // this.beeperDevice.setEarBit(bit4 !== 0);
-
-        // // --- Set the last value of bit3
-        // this._portBit3LastValue = (value & 0x08) !== 0;
-
-        // // --- Instruct the tape device process the MIC bit
-        // this.tapeDevice.processMicBit(this._portBit3LastValue);
-
-        // // --- Manage bit 4 value
-        // if (this._portBit4LastValue) {
-        //   // --- Bit 4 was 1, is it now 0?
-        //   if (!bit4) {
-        //     this._portBit4ChangedFrom1Tacts = this.tacts;
-        //     this._portBit4LastValue = false;
-        //   }
-        // } else {
-        //   // --- Bit 4 was 0, is it now 1?
-        //   if (bit4) {
-        //     this._portBit4ChangedFrom0Tacts = this.tacts;
-        //     this._portBit4LastValue = true;
-        //   }
-        // }
-      }
+      readerFns: (p) => this.machine.ulaDevice.readPort0xfe(p),
+      writerFns: (_, v) => { this.machine.ulaDevice.writePort0xfe(v) }
     });
     r({
       description: "Timex video, floating bus",

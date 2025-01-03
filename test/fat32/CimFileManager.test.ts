@@ -327,16 +327,6 @@ describe("CimFileManager", () => {
     expect(cinfo.clusterMap[0]).toBe(0);
     expect(cinfo.clusterMap[1]).toBe(1);
   });
-
-  it("convert to CimFile", () => {
-    // --- Arrange
-    const homeDir = os.homedir();
-    const testDir = path.join(homeDir, TEST_DIR);
-    const filePath = path.join(homeDir, "Desktop", "ks2.img");
-    const outPath = path.join(testDir, "ks2converted.cim");
-    const cfm = new CimFileManager();
-    const file = cfm.convertImageFileToCim(filePath, outPath);
-  });
 });
 
 function createTestFile(): string {
