@@ -65,13 +65,16 @@ r2:$1b89 ok
 r2:$1b8d ok
 r2:$1bc7 ok
 
+$1f64 --> After reading 314 sectors (all needed to display the start page)
+    $1c52 (RST 30), after second reach ok
+
+$1bae ok
+$0109 ok
+$044d ok
+$1a9f ok --> Memory paging issue during the call
+    $1ab7 ok --> Memory paging issue during the call
+    Issue at $1061> nextreg $51,a (A=$df) does not page in the right memory page
 
 
-
-
-
-Last stable breakpoint: $1c50
-
-R2:3cfc nextreg $8e,$03
-R2:3d00 nop --> before executing nop, it should switch to ROM, read a $c9 (RET) and execute that statement.
-
+Last stable breakpoint: $1c52 (after reading the 314 sectors, second reach)
+Last stable breakpoint: $1a9f 

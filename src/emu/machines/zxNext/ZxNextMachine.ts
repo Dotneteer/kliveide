@@ -195,7 +195,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     const mmcContents = await this.loadRomFromFile("mmc/ks2.cim");
     this.cimHandler = new CimHandler(mmcContents);
-    console.log(`CIM file loaded (${mmcContents.length} bytes)`);
   }
 
   /**

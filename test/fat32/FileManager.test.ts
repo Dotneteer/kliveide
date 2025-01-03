@@ -28,8 +28,8 @@ describe("FileManager", () => {
     } catch (e) {
       console.log(e);
     }
-    // const imgFilePath = createImageFile();
-    // cfm.convertToImageFile(file, imgFilePath);
+    const imgFilePath = createImageFile();
+    cfm.convertToImageFile(file, imgFilePath);
   });
 });
 

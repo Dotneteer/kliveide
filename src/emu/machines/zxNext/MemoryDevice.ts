@@ -1,7 +1,7 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
+import { toHexa2, toHexa4, toHexa6 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -239,9 +239,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * @param data Data to write
    */
   writeMemory(address: number, data: number): void {
-    if (address === 0x2007) {
-      console.log(`Write to 0x2007: ${data} from ${this.machine.pc}`);
-    }
     address &= 0xffff;
     const page = address >>> 13;
     const slot = page >>> 1;
@@ -713,7 +710,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const bank8k = this.mmuRegs[slotNo];
     if (bank8k !== 0xff) {
       // --- It is not a ROM, uset the MMU reg value
-      this.setRamSlotByMmu(slotIndex);
+      this.setRamSlotByMmu(slotNo);
       return;
     }
 
