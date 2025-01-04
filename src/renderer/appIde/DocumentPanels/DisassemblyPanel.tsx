@@ -562,6 +562,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 <Secondary text={item?.opCodes} width={100} />
                 <Label text={item?.hasLabel ? `L${toHexa4(address)}:` : ""} width={80} />
                 <Value text={item?.instruction} width={160} />
+                <Label
+                  text={
+                    item?.tstates
+                      ? `${item?.tstates}${item?.tstates2 ? `/${item.tstates2}` : ""}`
+                      : ""
+                  }
+                  width={40}
+                />
                 {item.hardComment && <Secondary text={"; " + item?.hardComment} />}
               </div>
             );
