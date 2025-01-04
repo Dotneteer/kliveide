@@ -110,6 +110,12 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   get screenHeightInPixels(): number;
 
   /**
+   * Use canvas size multipliers
+   * @returns The aspect ratio of the screen
+   */
+  getAspectRatio?: () => [number, number];
+
+  /**
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array;

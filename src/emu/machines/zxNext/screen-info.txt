@@ -15,6 +15,10 @@ Memory map:
 
 
 
-Screen dimensions:
-    width: (48+256+48)*2 (left border + screen + right border, multiplied by 2)
-    
+Visible screen dimensions:
+    width: (48+256+48)*2 = 704 (left border + screen + right border, multiplied by 2) =
+    height: = 48 + 192 + 48 = 288; (top border + screen height + bottom border)
+
+Screen tacts: 
+    horizontal: 224
+    vertical: 312

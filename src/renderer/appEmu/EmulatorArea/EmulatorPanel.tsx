@@ -52,6 +52,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [canvasHeight, setCanvasHeight] = useState(0);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
+  const xRatio = useRef(1);
+  const yRatio = useRef(1);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
@@ -127,9 +129,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
+    if (controller?.machine?.getAspectRatio) {
+      const [ratX, ratY] = controller?.machine?.getAspectRatio();
+      xRatio.current = ratX ?? 1;
+      yRatio.current = ratY ?? 1;
+      console.log(`Aspect ratio: ${xRatio.current}:${yRatio.current}`);
+    }
     configureScreen();
     calculateDimensions();
-  }, [controller?.machine?.screenWidthInPixels, controller?.machine?.screenHeightInPixels]);
+  }, [
+    controller?.machine?.screenWidthInPixels,
+    controller?.machine?.screenHeightInPixels,
+    controller?.machine?.getAspectRatio
+  ]);
 
   // --- Respond to the FAST LOAD flag changes
   useEffect(() => {
@@ -309,13 +321,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const clientHeight = hostElement.current.offsetHeight;
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor((clientWidth - 8) / width);
+    let widthRatio = Math.floor(1 * (clientWidth - 8) / width) / 1 / xRatio.current;
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((clientHeight - 8) / height);
+    let heightRatio = Math.floor(1 * (clientHeight - 8) / height) / 1 / yRatio.current;
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
-    setCanvasWidth(width * ratio);
-    setCanvasHeight(height * ratio);
+    setCanvasWidth(width * ratio * xRatio.current);
+    setCanvasHeight(height * ratio * yRatio.current);
     if (shadowScreenElement.current) {
       shadowScreenElement.current.width = width;
       shadowScreenElement.current.height = height;
