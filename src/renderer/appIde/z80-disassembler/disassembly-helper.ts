@@ -106,6 +106,16 @@ export interface DisassemblyItem {
    * The optional prefix comment
    */
   prefixComment?: string;
+
+  /**
+   * The number of T-states consumed by the instruction
+   */
+  tstates?: number;
+
+  /**
+   * The number of T-states consumed by the instruction (alternative)
+   */
+  tstates2?: number;
 }
 
 /**
