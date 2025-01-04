@@ -288,7 +288,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._configuration.borderBottomLines -
       1;
     this.screenWidth =
-      2 *
+      4 *
       (this._configuration.borderLeftTime +
         this._configuration.displayLineTime +
         this._configuration.borderRightTime);
@@ -523,7 +523,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- At this point, tactInLine and line contain the X and Y coordinates of the corresponding pixel pair.
     return line >= this.firstVisibleLine
-      ? 2 * (((line - this.firstVisibleLine) * this.screenWidth) / 2 + tactInLine)
+      ? 4 * (((line - this.firstVisibleLine) * this.screenWidth) / 4 + tactInLine)
       : 0;
   }
 
@@ -553,8 +553,11 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactBorder(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
-    this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
+    this._pixelBuffer[addr] =
+      this._pixelBuffer[addr + 1] =
+      this._pixelBuffer[addr + 2] =
+      this._pixelBuffer[addr + 3] =
+        this.s_SpectrumColors[this.borderColor];
   }
 
   /**
@@ -563,8 +566,11 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactBorderFetchPixel(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
-    this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
+    this._pixelBuffer[addr] =
+      this._pixelBuffer[addr + 1] =
+      this._pixelBuffer[addr + 2] =
+      this._pixelBuffer[addr + 3] =
+        this.s_SpectrumColors[this.borderColor];
     this._pixelByte1 = this.readScreenMemory(rt.pixelAddress);
   }
 
@@ -574,8 +580,11 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactBorderFetchAttr(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
-    this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
+    this._pixelBuffer[addr] =
+      this._pixelBuffer[addr + 1] =
+      this._pixelBuffer[addr + 2] =
+      this._pixelBuffer[addr + 3] =
+        this.s_SpectrumColors[this.borderColor];
     this._attrByte1 = this.readScreenMemory(rt.attributeAddress);
   }
 
@@ -585,8 +594,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte1 & 0x80,
+      this._attrByte1
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte1 & 0x40,
+      this._attrByte1
+    );
     this._pixelByte1 = this._pixelByte1 << 2;
   }
 
@@ -596,8 +611,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte1FetchByte2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte1 & 0x80,
+      this._attrByte1
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte1 & 0x40,
+      this._attrByte1
+    );
     this._pixelByte1 = this._pixelByte1 << 2;
     this._pixelByte2 = this.readScreenMemory(rt.pixelAddress);
   }
@@ -608,8 +629,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte1FetchAttr2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte1 & 0x80,
+      this._attrByte1
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte1 & 0x40,
+      this._attrByte1
+    );
     this._pixelByte1 = this._pixelByte1 << 2;
     this._attrByte2 = this.readScreenMemory(rt.attributeAddress);
   }
@@ -620,8 +647,11 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte2 & 0x80,
+      this._attrByte2
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
   }
 
@@ -631,8 +661,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte2FetchByte1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte2 & 0x80,
+      this._attrByte2
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte2 & 0x40,
+      this._attrByte2
+    );
     this._pixelByte2 = this._pixelByte2 << 2;
     this._pixelByte1 = this.readScreenMemory(rt.pixelAddress);
   }
@@ -643,8 +679,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private renderTactDislayByte2FetchAttr1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
-    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
+    this._pixelBuffer[addr] = this._pixelBuffer[addr + 1] = this.getPixelColor(
+      this._pixelByte2 & 0x80,
+      this._attrByte2
+    );
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte2 & 0x40,
+      this._attrByte2
+    );
     this._pixelByte2 = this._pixelByte2 << 2;
     this._attrByte1 = this.readScreenMemory(rt.attributeAddress);
   }

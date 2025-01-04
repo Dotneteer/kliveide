@@ -133,6 +133,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       const [ratX, ratY] = controller?.machine?.getAspectRatio();
       xRatio.current = ratX ?? 1;
       yRatio.current = ratY ?? 1;
+      console.log(`Aspect ratio: ${xRatio.current}:${yRatio.current}`);
     }
     configureScreen();
     calculateDimensions();
@@ -320,13 +321,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const clientHeight = hostElement.current.offsetHeight;
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor((clientWidth - 8) / width);
+    let widthRatio = Math.floor(1 * (clientWidth - 8) / width) / 1 / xRatio.current;
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((clientHeight - 8) / height);
+    let heightRatio = Math.floor(1 * (clientHeight - 8) / height) / 1 / yRatio.current;
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
-    setCanvasWidth(width * xRatio.current * ratio);
-    setCanvasHeight(height * yRatio.current * ratio);
+    setCanvasWidth(width * ratio * xRatio.current);
+    setCanvasHeight(height * ratio * yRatio.current);
     if (shadowScreenElement.current) {
       shadowScreenElement.current.width = width;
       shadowScreenElement.current.height = height;
