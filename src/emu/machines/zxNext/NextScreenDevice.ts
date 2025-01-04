@@ -94,7 +94,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
-  static readonly ZxSpectrum48PalScreenConfiguration: ScreenConfiguration = {
+  static readonly NextScreenConfiguration: ScreenConfiguration = {
     verticalSyncLines: 8,
     nonVisibleBorderTopLines: 7,
     borderTopLines: 49,
@@ -109,66 +109,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
-  };
-
-  /**
-   * Define the screen configuration attributes of ZX Spectrum 48K (NTSC)
-   */
-  static readonly ZxSpectrum48NtscScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 15,
-    borderTopLines: 25,
-    borderBottomLines: 24,
-    nonVisibleBorderBottomLines: 0,
-    displayLines: 192,
-    borderLeftTime: 24,
-    borderRightTime: 24,
-    displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 8,
-    pixelDataPrefetchTime: 2,
-    attributeDataPrefetchTime: 1,
-    contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
-  };
-
-  /**
-   * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
-   */
-  static readonly ZxSpectrum128ScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
-    borderTopLines: 48,
-    borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
-    displayLines: 192,
-    borderLeftTime: 24,
-    borderRightTime: 24,
-    displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 12,
-    pixelDataPrefetchTime: 2,
-    attributeDataPrefetchTime: 1,
-    contentionValues: [4, 3, 2, 1, 0, 0, 6, 5]
-  };
-
-  /**
-   * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
-   */
-  static readonly ZxSpectrumP3EScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
-    borderTopLines: 48,
-    borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
-    displayLines: 192,
-    borderLeftTime: 24,
-    borderRightTime: 24,
-    displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 12,
-    pixelDataPrefetchTime: 2,
-    attributeDataPrefetchTime: 1,
-    contentionValues: [0, 7, 6, 5, 4, 3, 2, 1]
   };
 
   /**
@@ -252,6 +192,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    * Get the number of visible screen lines.
    */
   screenLines: number;
+
+  /**
+   * Use canvas size multipliers
+   * @returns The aspect ratio of the screen
+   */
+  getAspectRatio(): [number, number] {
+    return [0.5, 1];
+  }
 
   /**
    *

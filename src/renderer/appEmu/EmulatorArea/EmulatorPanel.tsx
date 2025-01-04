@@ -52,6 +52,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [canvasHeight, setCanvasHeight] = useState(0);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
+  const xRatio = useRef(1);
+  const yRatio = useRef(1);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
@@ -127,9 +129,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
+    if (controller?.machine?.getAspectRatio) {
+      const [ratX, ratY] = controller?.machine?.getAspectRatio();
+      xRatio.current = ratX ?? 1;
+      yRatio.current = ratY ?? 1;
+    }
     configureScreen();
     calculateDimensions();
-  }, [controller?.machine?.screenWidthInPixels, controller?.machine?.screenHeightInPixels]);
+  }, [
+    controller?.machine?.screenWidthInPixels,
+    controller?.machine?.screenHeightInPixels,
+    controller?.machine?.getAspectRatio
+  ]);
 
   // --- Respond to the FAST LOAD flag changes
   useEffect(() => {
@@ -314,8 +325,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     let heightRatio = Math.floor((clientHeight - 8) / height);
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
-    setCanvasWidth(width * ratio);
-    setCanvasHeight(height * ratio);
+    setCanvasWidth(width * xRatio.current * ratio);
+    setCanvasHeight(height * yRatio.current * ratio);
     if (shadowScreenElement.current) {
       shadowScreenElement.current.width = width;
       shadowScreenElement.current.height = height;

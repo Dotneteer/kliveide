@@ -140,7 +140,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.keyboardDevice = new NextKeyboardDevice(this);
     this.screenDevice = new NextScreenDevice(
       this,
-      NextScreenDevice.ZxSpectrum48PalScreenConfiguration
+      NextScreenDevice.NextScreenConfiguration
     );
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
@@ -564,6 +564,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return this.screenDevice.screenLines;
   }
 
+  /**
+   * Use canvas size multipliers
+   * @returns The aspect ratio of the screen
+   */
+  getAspectRatio(): [number, number] {
+    return this.screenDevice.getAspectRatio();
+  }
+ 
   /**
    * Gets the buffer that stores the rendered pixels
    * @returns
