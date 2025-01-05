@@ -402,21 +402,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       if (this._frameCompleted) {
         const currentFrameStart = this.tacts - this._frameOverflow;
 
-        // --- Update the CPU's clock multiplier, if the machine's has changed.
-        let clockMultiplierChanged = false;
-        if (this.allowCpuClockChange() && this.clockMultiplier !== this.targetClockMultiplier) {
-          // --- Use the current clock multiplier
-          this.clockMultiplier = this.targetClockMultiplier;
-          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
-          clockMultiplierChanged = true;
-        }
-
         // --- Allow a machine to handle frame initialization
-        this.onInitNewFrame(clockMultiplierChanged);
+        this.onInitNewFrame();
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame;
 
         // --- Emulate a keystroke, if any has been queued at all
         this.emulateKeystroke();
@@ -506,21 +497,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       if (this._frameCompleted) {
         const currentFrameStart = this.tacts - this._frameOverflow;
 
-        // --- Update the CPU's clock multiplier, if the machine's has changed.
-        var clockMultiplierChanged = false;
-        if (this.allowCpuClockChange() && this.clockMultiplier != this.targetClockMultiplier) {
-          // --- Use the current clock multiplier
-          this.clockMultiplier = this.targetClockMultiplier;
-          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
-          clockMultiplierChanged = true;
-        }
-
         // --- Allow a machine to handle frame initialization
-        this.onInitNewFrame(clockMultiplierChanged);
+        this.onInitNewFrame();
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame;
       }
 
       // --- Set the interrupt signal, if required so
@@ -663,7 +645,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  protected onInitNewFrame(_clockMultiplierChanged: boolean): void {
+  protected onInitNewFrame(_clockMultiplierChanged?: boolean): void {
     // --- Override this method in derived classes.
   }
 

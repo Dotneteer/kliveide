@@ -5,6 +5,8 @@
     "src/main/**/*", 
     "src/preload/**/*",
     "src/common/**/*",
+    "src/renderer/**/*",
+    "src/emu/**/*",
     "src/script-packages/**/*",
 
   ],

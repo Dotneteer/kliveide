@@ -20,11 +20,12 @@ import {
   CT_DISASSEMBLER_VIEW,
   MC_Z88_KEYBOARD,
   MC_Z88_SLOT0,
-  MI_ZXNEXT
+  MI_ZXNEXT,
+  MF_ALLOW_CLOCK_MULTIPLIER,
 } from "./constants";
-import { ZxSpectrum48CustomDisassembler } from "../../renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
-import { Z88CustomDisassembler } from "../../renderer/appIde/z80-disassembler/z88-custom.disassembler";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
+import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
+import { Z88CustomDisassembler } from "@renderer/appIde/z80-disassembler/z88-custom.disassembler";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
 
 /**
@@ -121,7 +122,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_TAPE_SUPPORT]: false,
       [MF_ULA]: true,
       [MF_ROM]: 7,
-      [MF_BANK]: 224
+      [MF_BANK]: 224,
+      [MF_ALLOW_CLOCK_MULTIPLIER]: false
     },
     mediaIds: [MEDIA_TAPE],
     toolInfo: {

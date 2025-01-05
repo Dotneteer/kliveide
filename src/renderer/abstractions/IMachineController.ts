@@ -161,4 +161,5 @@ export type FrameCompletedArgs = {
   savedFileInfo?: SavedFileInfo;
   diskAChanges?: SectorChanges;
   diskBChanges?: SectorChanges;
+  clockMultiplier?: number;
 };
