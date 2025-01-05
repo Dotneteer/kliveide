@@ -200,7 +200,7 @@ export interface IZ80Cpu {
    * By default, the CPU works with its regular (base) clock frequency; however, you can use an integer clock
    * frequency multiplier to emulate a faster CPU.
    */
-  readonly clockMultiplier: number;
+  clockMultiplier: number;
 
   /**
    * The number of T-states (clock cycles) elapsed since the last reset

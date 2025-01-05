@@ -385,8 +385,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => (this.actualCpuSpeed << 4) | this.programmedCpuSpeed,
       writeFn: (v) => {
         this.programmedCpuSpeed = v & 0x03;
-        // TODO: Implement CPU speed change
         this.actualCpuSpeed = this.programmedCpuSpeed;
+        this.machine.clockMultiplier = 1 << (this.programmedCpuSpeed);
       },
       slices: [
         {

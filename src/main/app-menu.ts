@@ -57,6 +57,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
+import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -535,19 +536,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   // --- Prepare the clock multiplier submenu
   const multiplierValues = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24];
-  const multiplierMenu: MenuItemConstructorOptions[] = multiplierValues.map((v) => {
-    return {
-      id: `${CLOCK_MULT}_${v}`,
-      label: v === 1 ? "Normal" : `${v}x`,
-      type: "checkbox",
-      checked: appState.emulatorState?.clockMultiplier === v,
-      click: async () => {
-        mainStore.dispatch(setClockMultiplierAction(v));
-        await logEmuEvent(`Clock multiplier set to ${v}`);
-        await saveKliveProject();
-      }
-    };
-  });
+  const multiplierMenu: MenuItemConstructorOptions[] =
+    currentMachine?.features?.[MF_ALLOW_CLOCK_MULTIPLIER] !== false
+      ? multiplierValues.map((v) => {
+          return {
+            id: `${CLOCK_MULT}_${v}`,
+            label: v === 1 ? "Normal" : `${v}x`,
+            type: "checkbox",
+            checked: appState.emulatorState?.clockMultiplier === v,
+            click: async () => {
+              mainStore.dispatch(setClockMultiplierAction(v));
+              await logEmuEvent(`Clock multiplier set to ${v}`);
+              await saveKliveProject();
+            }
+          };
+        })
+      : [];
 
   // --- Prepare the sound level submenus
   const soundLevelValues = [
@@ -700,13 +704,19 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOut");
       }
-    },
-    { type: "separator" },
-    {
-      id: CLOCK_MULT,
-      label: "Clock Multiplier",
-      submenu: multiplierMenu
-    },
+    }
+  ];
+  if (multiplierMenu.length > 0) {
+    machineSubMenu.push(
+      { type: "separator" },
+      {
+        id: CLOCK_MULT,
+        label: "Clock Multiplier",
+        submenu: multiplierMenu
+      }
+    );
+  }
+  machineSubMenu.push(
     { type: "separator" },
     {
       id: SOUND_LEVEL,
@@ -734,7 +744,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         await saveKliveProject();
       }
     }
-  ];
+  );
 
   // --- Prepare the machine menu
   template.push({

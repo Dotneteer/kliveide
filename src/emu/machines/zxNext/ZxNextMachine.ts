@@ -651,8 +651,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
-    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
-    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    const startTact = this.tacts + frameOffset * this.tactsInFrame;
+    const endTact = startTact + frames * this.tactsInFrame;
     const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
     this.emulatedKeyStrokes.push(keypress);
   }

@@ -471,7 +471,8 @@ export class MachineController implements IMachineController {
           fullFrame: frameCompleted,
           savedFileInfo,
           diskAChanges,
-          diskBChanges
+          diskBChanges,
+          clockMultiplier: this.machine.clockMultiplier
         });
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {

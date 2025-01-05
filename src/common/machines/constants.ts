@@ -27,6 +27,7 @@ export const MF_BANK = "bank";
 export const MF_ULA = "ula";
 export const MF_PSG = "psg";
 export const MF_BLINK = "blink";
+export const MF_ALLOW_CLOCK_MULTIPLIER = "allowClockMultiplier";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";

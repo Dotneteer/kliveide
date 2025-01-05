@@ -18,6 +18,7 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
 import { useMainApi } from "@renderer/core/MainApi";
+import { setClockMultiplierAction } from "@common/state/actions";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -126,17 +127,23 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }, [hostElement.current]);
 
   // --- Respond to screen dimension changes
-  useEffect(() => {
+  const updateScreenDimensions = () => {
     shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
     if (controller?.machine?.getAspectRatio) {
       const [ratX, ratY] = controller?.machine?.getAspectRatio();
       xRatio.current = ratX ?? 1;
       yRatio.current = ratY ?? 1;
-      console.log(`Aspect ratio: ${xRatio.current}:${yRatio.current}`);
+    } else {
+      xRatio.current = 1;
+      yRatio.current = 1;
     }
     configureScreen();
     calculateDimensions();
+  };
+
+  useEffect(() => {
+    updateScreenDimensions();
   }, [
     controller?.machine?.screenWidthInPixels,
     controller?.machine?.screenHeightInPixels,
@@ -197,6 +204,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       await releaseBeeperContext();
       beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerFrame));
     }
+
+    // --- Preapre screen
+    updateScreenDimensions();
 
     // --- Prepare key codes
     keyCodeSet.current = ctrl.machine.getKeyCodeSet();
@@ -300,6 +310,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       saveDiskChanges(1, args.diskBChanges);
     }
 
+    if (args.clockMultiplier) {
+      store.dispatch(setClockMultiplierAction(args.clockMultiplier));
+    }
+
     // --- Sends disk changes to the main process
     async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
       const response = await mainApi.saveDiskChanges(diskIndex, changes);
@@ -321,9 +335,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const clientHeight = hostElement.current.offsetHeight;
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor(1 * (clientWidth - 8) / width) / 1 / xRatio.current;
+    let widthRatio = Math.floor((1 * (clientWidth - 8)) / width) / 1 / xRatio.current;
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor(1 * (clientHeight - 8) / height) / 1 / yRatio.current;
+    let heightRatio = Math.floor((1 * (clientHeight - 8)) / height) / 1 / yRatio.current;
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);
