@@ -20,6 +20,7 @@ import { CallStackInfo } from "@emu/abstractions/CallStack";
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
  */
 export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
+  
   // --- Store the start tact of the next machine frame
   protected _nextFrameStartTact = 0;
 
@@ -166,6 +167,15 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       throw new Error("Could not obtain file provider instance");
     }
     return await fileProvider.readBinaryFile(filename);
+  }
+
+  /**
+   * Sets the number of tacts within a single machine frame
+   * @param tacts Tacts to set
+   */
+  setTactsInFrame(tacts: number): void {
+    super.setTactsInFrame(tacts);
+    this.tactsInFrame28 = tacts * 8;
   }
 
   /**
@@ -378,7 +388,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * Gets the current call stack information
    */
   abstract getCallStack(frames): CallStackInfo;
-  
+
   /**
    * Executes the specified custom command
    * @param _command Command to execute
@@ -407,7 +417,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame28;
 
         // --- Emulate a keystroke, if any has been queued at all
         this.emulateKeystroke();
@@ -502,7 +512,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame28;
       }
 
       // --- Set the interrupt signal, if required so

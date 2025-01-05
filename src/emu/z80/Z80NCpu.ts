@@ -4,7 +4,11 @@ import { Z80Cpu, Z80Operation, parityTable, sz53Table, sz53pvTable } from "./Z80
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
+  // --- Number of tacts in the current frame with 28MHz clock
+  protected tactsInFrame28 = 0;
+
   readonly mergedOps: Z80Operation[];
+  
   constructor() {
     super();
     this.mergedOps = [...super.getExtendedOpsTable()];
@@ -37,10 +41,10 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += n;
-    if (this.frameTacts >= this.tactsInCurrentFrame) {
+    this.frameTacts += n/this.clockMultiplier;
+    if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
-      this.frameTacts -= this.tactsInCurrentFrame;
+      this.frameTacts -= this.tactsInFrame;
     }
     this.currentFrameTact = Math.floor(this.frameTacts);
     this.onTactIncremented();
