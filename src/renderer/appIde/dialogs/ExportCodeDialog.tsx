@@ -43,11 +43,11 @@ const borderIds = [
   },
   {
     value: "2",
-    label: "magenta"
+    label: "red"
   },
   {
     value: "3",
-    label: "red"
+    label: "magenta"
   },
   {
     value: "4",
@@ -132,6 +132,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           startAddress ? ` -addr ${startAddress}` : ""
         }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename}"` : ""}`;
         const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+        console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
           await mainApi.displayMessageBox(

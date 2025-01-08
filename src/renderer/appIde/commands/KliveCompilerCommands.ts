@@ -118,7 +118,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
-    commandOptions: ["-as", "-p", "-c", "-b", "-sb", "-addr", "-scr"],
+    commandOptions: ["-as", "-p", "-c", "-sb", "-scr"],
     namedOptions: [
       { name: "-n" },
       { name: "-f" },
@@ -521,7 +521,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       // --- Add 'RANDOMIZE USR address'
       codeLine.push(RAND_TKN);
       codeLine.push(USR_TKN);
-      writeNumber(codeLine, args["-addr"]);
+      writeNumber(codeLine, address);
 
       // --- Complete the line
       codeLine.push(NEW_LINE);
@@ -702,7 +702,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       // --- Add 'RANDOMIZE USR address: STOP'
       codeLine.push(RAND_TKN);
       codeLine.push(USR_TKN);
-      writeNumber(codeLine, args["-addr"]);
+      writeNumber(codeLine, address);
       codeLine.push(COLON);
       codeLine.push(STOP_TKN);
       codeLine.push(NEW_LINE);

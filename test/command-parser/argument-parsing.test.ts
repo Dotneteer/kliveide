@@ -108,7 +108,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg2"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: "myArg0", arg1: "myArg1", arg2: "myArg2" });
@@ -127,7 +127,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg2"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: "myArg0", arg1: "myArg1", arg2: "myArg2" });
@@ -140,7 +140,7 @@ describe("Command argument parsing", () => {
           name: "arg0",
           type: "number"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: 123 });
@@ -157,7 +157,7 @@ describe("Command argument parsing", () => {
           name: "arg1",
           type: "number"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: 160, arg1: 7 });
@@ -176,7 +176,7 @@ describe("Command argument parsing", () => {
           name: "arg1",
           type: "number"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: 123, arg1: 18 });
@@ -199,7 +199,7 @@ describe("Command argument parsing", () => {
           name: "arg2",
           type: "number"
         }
-      ],
+      ]
     });
 
     expect(result).toEqual({ arg0: 123, arg1: "myArg1", arg2: 0xf0 });
@@ -211,7 +211,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg0"
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -228,7 +228,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg1"
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -237,8 +237,7 @@ describe("Command argument parsing", () => {
   });
 
   it("Too many arguments fail #1", () => {
-    const result = parseArguments("dummy value0", {
-    });
+    const result = parseArguments("dummy value0", {});
 
     const issues = result as string[];
     expect(issues.length).toEqual(1);
@@ -251,7 +250,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg0"
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -266,7 +265,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg0"
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -285,7 +284,7 @@ describe("Command argument parsing", () => {
         {
           name: "arg1"
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -301,7 +300,7 @@ describe("Command argument parsing", () => {
           type: "number",
           minValue: 200
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -317,7 +316,7 @@ describe("Command argument parsing", () => {
           type: "number",
           maxValue: 100
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -334,7 +333,7 @@ describe("Command argument parsing", () => {
           minValue: 50,
           maxValue: 100
         }
-      ],
+      ]
     });
 
     const issues = result as string[];
@@ -344,7 +343,7 @@ describe("Command argument parsing", () => {
 
   it("Single option works #1", () => {
     const result = parseArguments("dummy -a", {
-      commandOptions: ["-a"],
+      commandOptions: ["-a"]
     });
 
     expect(result).toEqual({ "-a": true });
@@ -352,7 +351,7 @@ describe("Command argument parsing", () => {
 
   it("Single option works #2", () => {
     const result = parseArguments("dummy -a", {
-      commandOptions: ["-a", "-b"],
+      commandOptions: ["-a", "-b"]
     });
 
     expect(result).toEqual({ "-a": true });
@@ -360,7 +359,7 @@ describe("Command argument parsing", () => {
 
   it("Single option works #3", () => {
     const result = parseArguments("dummy -b", {
-      commandOptions: ["-a", "-b"],
+      commandOptions: ["-a", "-b"]
     });
 
     expect(result).toEqual({ "-b": true });
@@ -368,7 +367,7 @@ describe("Command argument parsing", () => {
 
   it("Multiple option works #1", () => {
     const result = parseArguments("dummy -a -b", {
-      commandOptions: ["-a", "-b"],
+      commandOptions: ["-a", "-b"]
     });
 
     expect(result).toEqual({ "-a": true, "-b": true });
@@ -376,7 +375,7 @@ describe("Command argument parsing", () => {
 
   it("Multiple option works #2", () => {
     const result = parseArguments("dummy -b -a", {
-      commandOptions: ["-a", "-b"],
+      commandOptions: ["-a", "-b"]
     });
 
     expect(result).toEqual({ "-a": true, "-b": true });
@@ -384,7 +383,7 @@ describe("Command argument parsing", () => {
 
   it("Repeated option fails #1", () => {
     const result = parseArguments("dummy -a -a", {
-      commandOptions: ["-a"],
+      commandOptions: ["-a"]
     });
 
     const issues = result as string[];
@@ -394,7 +393,7 @@ describe("Command argument parsing", () => {
 
   it("Repeated option fails #1", () => {
     const result = parseArguments("dummy -a -b -a", {
-      commandOptions: ["-a", "-b"],
+      commandOptions: ["-a", "-b"]
     });
 
     const issues = result as string[];
@@ -469,7 +468,7 @@ describe("Command argument parsing", () => {
 
   it("Rest arguments work #2", () => {
     const result = parseArguments("dummy a b c", {
-      mandatory: [ { name: "arg0" } ],
+      mandatory: [{ name: "arg0" }],
       allowRest: true
     });
 
@@ -478,14 +477,13 @@ describe("Command argument parsing", () => {
 
   it("Rest arguments work #3", () => {
     const result = parseArguments("dummy a b c", {
-      mandatory: [ { name: "arg0" } ],
-      optional: [ { name: "arg1" } ],
+      mandatory: [{ name: "arg0" }],
+      optional: [{ name: "arg1" }],
       allowRest: true
     });
 
     expect(result).toEqual({ arg0: "a", arg1: "b", rest: ["c"] });
   });
-
 });
 
 function parseArguments(

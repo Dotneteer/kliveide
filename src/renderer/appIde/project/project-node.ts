@@ -27,8 +27,13 @@ export function getNodeDir(node: ProjectNode | string): string {
  * @returns Filename + extension part of the project node
  */
 export function getNodeFile(node: ProjectNode | string): string {
+  console.log("node", node);
   const fullPath = typeof node === "string" ? node : node.fullPath;
-  const segments = fullPath.split("/").slice(0, -1);
+  let segments = fullPath.split("/");
+  if (segments.length > 1) {
+    segments = segments.slice(0, -1);
+  }
+  console.log("segments", segments);
   return fullPath && segments.length > 0 ? segments[segments.length - 1] : "";
 }
 
@@ -40,6 +45,7 @@ export function getNodeFile(node: ProjectNode | string): string {
 export function getNodeName(node: ProjectNode | string): string {
   const filename = getNodeFile(node);
   if (!filename) {
+    console.log("Filename is empty");
     return "";
   }
   const fileParts = filename.split(".");

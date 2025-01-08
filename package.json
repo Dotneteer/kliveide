@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.32.3",
+  "version": "0.32.4",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -26,7 +26,8 @@
     "dev": "electron-vite dev",
     "build": "tsc && electron-vite build && electron-builder",
     "build:check": "tsc && electron-vite build",
-    "build:win": "npm run build && electron-builder build --win --x64",
+    "bui
+    ld:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
