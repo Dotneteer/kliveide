@@ -124,7 +124,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         }
         const fullFilename = exportFolder ? `${exportFolder}/${filename}` : filename;
         const name = programName ? programName : getNodeName(exportName);
-        const command = `expc ${fullFilename} -n ${name} -f ${formatId}${
+        const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
           startBlock ? " -as" : ""
         }${addPause ? " -p" : ""}${
           borderId !== "none" ? ` -b ${borderId}` : ""
