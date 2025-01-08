@@ -114,7 +114,8 @@ import type {
   EmuParsePartitionLabelRequest,
   EmuGetPartitionLabelsRequest,
   EmuGetCallStackRequest,
-  EmuGetCallStackResponse
+  EmuGetCallStackResponse,
+  EmuSetKeyStateRequest
 } from "./main-to-emu";
 import {
   IdeDisplayOutputRequest,
@@ -229,6 +230,7 @@ export type RequestMessage =
   | EmuParsePartitionLabelRequest
   | EmuGetPartitionLabelsRequest
   | EmuGetCallStackRequest
+  | EmuSetKeyStateRequest
   | MainReadTextFileRequest
   | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
