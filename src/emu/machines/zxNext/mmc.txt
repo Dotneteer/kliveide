@@ -78,3 +78,21 @@ $1a9f ok --> Memory paging issue during the call
 
 Last stable breakpoint: $1c52 (after reading the 314 sectors, second reach)
 Last stable breakpoint: $1a9f 
+
+Write command>
+
+#1: (WRITE_BLOCK)
+OUT: 58 00 01 e1 2c ff
+IN : ff 00
+OUT: fe 512 bytes OUT ff ff 
+IN : 05 ff fe 
+
+#2: (SEND_STATUS)
+OUT: 4d 00 00 00 00 ff
+IN : ff 00 00
+
+deviation point:
+Wait for start screen
+$0953 ok
+$0942 ok
+

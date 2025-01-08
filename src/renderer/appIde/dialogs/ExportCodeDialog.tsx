@@ -43,11 +43,11 @@ const borderIds = [
   },
   {
     value: "2",
-    label: "magenta"
+    label: "red"
   },
   {
     value: "3",
-    label: "red"
+    label: "magenta"
   },
   {
     value: "4",
@@ -122,16 +122,17 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         if (!exportExt || exportExt === ".") {
           filename += `.${formatId}`;
         }
-        const fullFilename = exportFolder ? `${exportFolder}/${filename}` : filename;
+        const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll("\\", "/");
         const name = programName ? programName : getNodeName(exportName);
-        const command = `expc ${fullFilename} -n ${name} -f ${formatId}${
+        const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
           startBlock ? " -as" : ""
         }${addPause ? " -p" : ""}${
           borderId !== "none" ? ` -b ${borderId}` : ""
         }${singleBlock ? " -sb" : ""}${
           startAddress ? ` -addr ${startAddress}` : ""
-        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename}"` : ""}`;
+        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${(screenFilename).replaceAll("\\", "/")}"` : ""}`;
         const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+        console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
           await mainApi.displayMessageBox(

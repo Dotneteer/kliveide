@@ -104,6 +104,7 @@ type FlagProps = {
   adjustLeft?: boolean;
   center?: boolean;
   tooltip?: string;
+  clicked?: () => void;
 };
 
 export const Flag = ({
@@ -111,7 +112,8 @@ export const Flag = ({
   width,
   adjustLeft = true,
   center = true,
-  tooltip
+  tooltip,
+  clicked
 }: FlagProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const toolTipLines = (tooltip ?? "").split("\n");
@@ -124,8 +126,10 @@ export const Flag = ({
         width,
         display: "flex",
         justifyContent: center ? "center" : undefined,
-        marginLeft: adjustLeft ? -4 : undefined
+        marginLeft: adjustLeft ? -4 : undefined,
+        cursor: clicked ? "pointer" : undefined
       }}
+      onClick={() => clicked?.()}
     >
       <Icon
         iconName={

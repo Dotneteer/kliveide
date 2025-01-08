@@ -84,7 +84,7 @@ export async function processRendererToMainMessages(
       try {
         const fullPath = resolveMessagePath(message.path, message.resolveIn);
         const contents = fs.readFileSync(fullPath);
-        return binaryContentsResponse(contents);
+        return binaryContentsResponse(new Uint8Array(contents));
       } catch (err) {
         return errorResponse(err.toString());
       }
@@ -474,8 +474,9 @@ export async function processRendererToMainMessages(
     case "EmuGetNextRegState":
     case "EmuGetNextMemoryMapping":
     case "EmuParsePartitionLabel":
-    case "EmuGetPartitionLabels":  
+    case "EmuGetPartitionLabels":
     case "EmuGetCallStack":
+    case "EmuSetKeyState":
       return await sendFromMainToEmu(message);
   }
   return defaultResponse();
@@ -583,7 +584,7 @@ function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMes
 
   try {
     const contents = fs.readFileSync(diskFile);
-    const diskInfo = readDiskData(contents);
+    const diskInfo = readDiskData(new Uint8Array(contents));
 
     const handle = fs.openSync(diskFile, "r+");
     try {

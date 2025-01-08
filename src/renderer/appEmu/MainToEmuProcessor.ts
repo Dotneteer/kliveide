@@ -495,6 +495,13 @@ export async function processMainToEmuMessages(
         callStack
       };
     }
+
+    case "EmuSetKeyState": {
+      const controller = machineService.getMachineController();
+      if (!controller) return noControllerResponse();
+      controller.machine.setKeyStatus(message.key, message.isDown);
+      break;
+    }
   }
   return defaultResponse();
 

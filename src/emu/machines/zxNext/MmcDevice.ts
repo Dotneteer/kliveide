@@ -17,6 +17,9 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
   private _ocr: Uint8Array;
   private _commandParams: number[];
   private _readCount: number;
+  private _waitForBlock: boolean;
+  private _blockToWrite: Uint8Array;
+  private _dataIndex: number;
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -50,6 +53,9 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
     this._readCount = 0;
+    this._waitForBlock = false;
+    this._blockToWrite = new Uint8Array(0);
+    this._dataIndex = 0;
   }
 
   dispose(): void {}
@@ -77,6 +83,29 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Note the time of the last byte received
     this._lastByteReceived = this.machine.tacts;
+
+    if (this._waitForBlock) {
+      // --- We are waiting for a block to be written
+      this._blockToWrite[this._dataIndex++] = data;
+      if (this._dataIndex === this._blockToWrite.length) {
+        this._waitForBlock = false;
+        this._responseIndex = 0;
+
+        // --- Sector to write
+        const sectorIndex =
+          (this._commandParams[0] << 24) |
+          (this._commandParams[1] << 16) |
+          (this._commandParams[2] << 8) |
+          this._commandParams[3];
+
+        // --- Read the specified sector and prepare the response
+        const sectorData = this._blockToWrite.slice(1, 1 + BYTES_PER_SECTOR);
+        this.machine.cimHandler.writeSector(sectorIndex, sectorData);
+        this._response = new Uint8Array([0x05, 0xff, 0xfe]);
+        this._responseIndex = 0;
+      }
+      return;
+    }
 
     if (this._commandIndex === 0) {
       // --- We have just received the command byte
@@ -141,20 +170,34 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
 
-          // --- Address to read
-          const address =
+          // --- Sector to read
+          const sectorIndex =
             (this._commandParams[0] << 24) |
             (this._commandParams[1] << 16) |
             (this._commandParams[2] << 8) |
             this._commandParams[3];
 
-          // --- Physical sector and offset within the MMC
-          const baseSector = this.machine.cimHandler.readSector(address);
+          // --- Read the specified sector and prepare the response
+          const baseSector = this.machine.cimHandler.readSector(sectorIndex);
           const response = new Uint8Array(3 + BYTES_PER_SECTOR);
           response.set(new Uint8Array([0x00, 0xff, 0xfe]));
           response.set(baseSector, 3);
           this._readCount++;
           this._response = response;
+          this._responseIndex = 0;
+        }
+        break;
+
+      case 0x58:
+        this._commandParams.push(data);
+        this._commandIndex++;
+        if (this._commandIndex === 6) {
+          this._commandIndex = 0;
+          this._waitForBlock = true;
+          this._blockToWrite = new Uint8Array(1 + BYTES_PER_SECTOR);
+          this._dataIndex = 0;
+          this._readCount++;
+          this._response = new Uint8Array([0xff, 0x00]);
           this._responseIndex = 0;
         }
         break;

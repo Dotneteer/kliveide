@@ -70,6 +70,7 @@ export interface EmuApi {
   parsePartitionLabel(label: string): Promise<ValueResponse>;
   getPartitionLabels(): Promise<ValueResponse>;
   getCallStack(): Promise<EmuGetCallStackResponse>;
+  setKeyStatus(key: number, isDown: boolean): Promise<void>;
 }
 
 class EmuApiImpl implements EmuApi {
@@ -389,6 +390,15 @@ class EmuApiImpl implements EmuApi {
   async getCallStack(): Promise<EmuGetCallStackResponse> {
     const response = await this.sendMessage({ type: "EmuGetCallStack" }, "EmuGetCallStackResponse");
     return response as EmuGetCallStackResponse;
+  }
+
+  /**
+   * Sets the key status
+   * @param key Key code
+   * @param isDown Is the key down?
+   */
+  async setKeyStatus(key: number, isDown: boolean): Promise<void> {
+    await this.sendMessage({ type: "EmuSetKeyState", key, isDown });
   }
 
   private async sendMessage(

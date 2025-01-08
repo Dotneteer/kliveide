@@ -206,6 +206,12 @@ export interface EmuGetCallStackRequest extends MessageBase {
   type: "EmuGetCallStack";
 }
 
+export interface EmuSetKeyStateRequest extends MessageBase {
+  type: "EmuSetKeyState";
+  key: number;
+  isDown: boolean;
+}
+
 // --- The response with the CPU state information
 export interface EmuGetCpuStateResponse extends MessageBase {
   type: "EmuGetCpuStateResponse";
