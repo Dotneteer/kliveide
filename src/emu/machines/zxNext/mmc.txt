@@ -96,3 +96,21 @@ Wait for start screen
 $0953 ok
 $0942 ok
 
+Examining NextBASIC issue
+
+Last stable breakpoint: $2759, then $2759 again.
+
+$035e ok
+$0380 ok --> Next RST 0x20 starts to return with different values
+$0386 deviation
+$0387 deviation
+
+
+ 
+
+
+
+
+
+
+
