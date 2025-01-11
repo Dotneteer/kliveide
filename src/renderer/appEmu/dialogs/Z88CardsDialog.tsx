@@ -24,8 +24,8 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IMachineController } from "@renderer/abstractions/IMachineController";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MainApi } from "@common/messaging/MainApi";
-import { useMainApi } from "@renderer/core/MainApi";
+import { MainApiAlt } from "@common/messaging/MainApiAlt";
+import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 // --- ID of the open file dialog path
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
@@ -172,7 +172,7 @@ type CardColumnProps = {
 };
 
 const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
-  const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   const [slotState, setSlotState] = useState<SlotState>(initialState);
 
   const getCardTypes = (size: string) => {
@@ -258,7 +258,7 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
                 let filename: string | undefined;
                 if (card?.hasContent) {
                   await delay(10);
-                  filename = await getCardFile(mainApi, slotState.size);
+                  filename = await getCardFile(mainApiAlt, slotState.size);
                   if (!filename) {
                     return true;
                   }
@@ -283,8 +283,8 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
   );
 };
 
-async function getCardFile(mainApi: MainApi, size: string): Promise<string | undefined> {
-  const response = await mainApi.showOpenFileDialog(
+async function getCardFile(mainApiAlt: MainApiAlt, size: string): Promise<string | undefined> {
+  const file = await mainApiAlt.showOpenFileDialog(
     [
       { name: "ROM files", extensions: ["bin", "rom", "epr"] },
       { name: "EPROM files", extensions: ["epr"] },
@@ -295,16 +295,16 @@ async function getCardFile(mainApi: MainApi, size: string): Promise<string | und
 
   // --- Check the selected file
   const expectedSize = cardSizeOptions.find((co) => co.value === size)?.physicalSize;
-  const checkResponse = await mainApi.checkZ88Card(response.file, expectedSize);
+  const checkResponse = await mainApiAlt.checkZ88Card(file, expectedSize);
 
   // --- Result of test
   if (checkResponse.content) {
-    return response.file;
+    return file;
   } else if (checkResponse.message) {
-    mainApi.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
+    mainApiAlt.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
     return null;
   }
-  return response.file;
+  return file;
 
   return null;
 }
@@ -316,14 +316,14 @@ type FileNameProps = {
 };
 
 const Filename = ({ file, size, changed }: FileNameProps) => {
-  const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   return (
     <div
       className={styles.filenameRow}
       style={{ cursor: file ? "pointer" : undefined }}
       onClick={async () => {
         if (!file) return;
-        const filename = await getCardFile(mainApi, size);
+        const filename = await getCardFile(mainApiAlt, size);
         if (filename) changed?.(filename);
       }}
     >

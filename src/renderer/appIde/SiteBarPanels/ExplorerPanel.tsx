@@ -39,6 +39,7 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -47,6 +48,7 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
@@ -235,7 +237,7 @@ const ExplorerPanel = () => {
         // --- Check for successful operation
         if (response.type === "ErrorResponse") {
           // --- Display an error message
-          await mainApi.displayMessageBox("error", "Rename Error", response.message);
+          await mainApiAlt.displayMessageBox("error", "Rename Error", response.message);
         } else {
           // --- Succesfully renamed
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
@@ -276,7 +278,7 @@ const ExplorerPanel = () => {
 
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          await mainApi.displayMessageBox("error", "Delete Error", response.message);
+          await mainApiAlt.displayMessageBox("error", "Delete Error", response.message);
         } else {
           // --- Succesfully deleted
           selectedContextNode.parentNode.removeChild(selectedContextNode);
@@ -311,7 +313,7 @@ const ExplorerPanel = () => {
         );
         if (response.type === "ErrorResponse") {
           // --- Delete failed
-          await mainApi.displayMessageBox("error", "Add new item error", response.message);
+          await mainApiAlt.displayMessageBox("error", "Add new item error", response.message);
         } else {
           // --- Succesfully added
           const fileTypeEntry = getFileTypeEntry(newName, store);

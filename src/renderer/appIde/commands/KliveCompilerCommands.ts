@@ -141,7 +141,6 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
       if (errorNo > 0) {
         const message = "Code compilation failed, no program to export.";
-        await context.mainApi.displayMessageBox("error", "Exporting code", message);
         return commandError(message);
       }
     }
@@ -972,7 +971,7 @@ async function injectCode(
     }
     if (errorNo > 0) {
       const returnMessage = "Code compilation failed, no program to inject.";
-      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
+      await context.mainApiAlt.displayMessageBox("error", "Injecting code", returnMessage);
       return commandError(returnMessage);
     }
   }

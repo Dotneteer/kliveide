@@ -211,9 +211,10 @@ async function checkScriptFile(
 
   // --- Check if the script file exists
   const filePath = isAbsolutePath(filename) ? filename : `${projectFolder}/${filename}`;
-  const response = await context.mainApi.readTextFile(filePath, null, "project");
-  if (response.type === "ErrorResponse") {
-    return { error: response.message };
+  try {
+    await context.mainApiAlt.readTextFile(filePath, null, "project");
+  } catch (err) {
+    return { error: err.message };
   }
   return { file: filePath };
 }

@@ -5,19 +5,15 @@ import type { MessageBase } from "./messages-core";
 import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
-// --- Read the contents of a text file
-export interface MainReadTextFileRequest extends MessageBase {
-  type: "MainReadTextFile";
-  path: string;
-  encoding?: string;
-  resolveIn?: string;
+export interface MainGeneralRequest extends MessageBase {
+  type: "MainGeneralRequest";
+  method: string;
+  args: any;
 }
 
-// --- Read the contents of a binary file
-export interface MainReadBinaryFileRequest extends MessageBase {
-  type: "MainReadBinaryFile";
-  path: string;
-  resolveIn?: string;
+export interface MainGeneralResponse extends MessageBase {
+  type: "MainGeneralResponse";
+  result: any;
 }
 
 export type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
@@ -91,21 +87,6 @@ export interface MainRenameFileEntryRequest extends MessageBase {
   type: "MainRenameFileEntry";
   oldName: string;
   newName: string;
-}
-
-// --- Show the open folder dialog
-export interface MainShowOpenFolderDialogRequest extends MessageBase {
-  type: "MainShowOpenFolderDialog";
-  title?: string;
-  settingsId?: string;
-}
-
-// --- Show the Electron open file dialog
-export interface MainShowOpenFileDialogRequest extends MessageBase {
-  type: "MainShowOpenFileDialog";
-  title?: string;
-  filters?: { name: string; extensions: string[] }[];
-  settingsId?: string;
 }
 
 // --- Save a text file
@@ -204,14 +185,6 @@ export interface MainSaveDiskChangesRequest extends MessageBase {
   changes: SectorChanges;
 }
 
-// --- Create a new virtual disk file
-export interface MainCreateDiskFileRequest extends MessageBase {
-  type: "MainCreateDiskFile";
-  diskFolder: string;
-  filename: string;
-  diskType: string;
-}
-
 // --- Get the list of template directories for a particluar machine type
 export interface MainGetTemplateDirsRequest extends MessageBase {
   type: "MainGetTemplateDirs";
@@ -288,18 +261,6 @@ export interface MainCreateKliveProjectResponse extends MessageBase {
   errorMessage?: string;
 }
 
-// --- The response with the Electron oped folder dialog result
-export interface MainShowOpenFolderDialogResponse extends MessageBase {
-  type: "MainShowOpenFolderDialogResponse";
-  folder?: string;
-}
-
-// --- The response with the Electron open file dialog result
-export interface MainShowOpenFileDialogResponse extends MessageBase {
-  type: "MainShowOpenFileDialogResponse";
-  file?: string;
-}
-
 // --- The response with the compile main file result
 export interface MainCompileResponse extends MessageBase {
   type: "MainCompileFileResponse";
@@ -330,7 +291,6 @@ export interface MainCheckZ88CardResponse extends MessageBase {
 export interface MainCreateDiskFileResponse extends MessageBase {
   type: "MainCreateDiskFileResponse";
   path?: string;
-  errorMessage?: string;
 }
 
 // --- The response with the list of template directories
@@ -359,6 +319,16 @@ export interface MainGetBuildFunctionsResponse extends MessageBase {
   type: "MainGetBuildFunctionsResponse";
   functions: string[];
 }
+
+// --- Creates a TextContentsResponse message wih the specified contents
+export function genericResponse (result: any): MainGeneralResponse {
+  return {
+    type: "MainGeneralResponse",
+    result
+  };
+}
+
+
 
 // --- Creates a TextContentsResponse message wih the specified contents
 export function textContentsResponse (contents: string): TextContentsResponse {

@@ -9,6 +9,7 @@ import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -27,6 +28,7 @@ type Props = {
 
 export const NewProjectDialog = ({ onClose }: Props) => {
   const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
@@ -88,7 +90,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
 
         if (response.errorMessage) {
           // --- Display the error
-          await mainApi.displayMessageBox(
+          await mainApiAlt.displayMessageBox(
             "error",
             "New Klive Project Error",
             response.errorMessage
@@ -145,11 +147,11 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
-            if (response.folder) {
-              setProjectFolder(response.folder);
+            const folder = await mainApiAlt.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
+            if (folder) {
+              setProjectFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setProjectFolder(val);

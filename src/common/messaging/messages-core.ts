@@ -17,8 +17,6 @@
 // ====================================================================================================================
 
 import type {
-  MainReadTextFileRequest,
-  MainReadBinaryFileRequest,
   MainDisplayMessageBoxRequest,
   BinaryContentsResponse,
   TextContentsResponse,
@@ -33,8 +31,6 @@ import type {
   MainSetGloballyExcludedProjectItemsRequest,
   MainDeleteFileEntryRequest,
   MainRenameFileEntryRequest,
-  MainShowOpenFolderDialogRequest,
-  MainShowOpenFolderDialogResponse,
   MainSaveTextFileRequest,
   MainSaveProjectRequest,
   MainSaveSettingsRequest,
@@ -42,8 +38,6 @@ import type {
   MainExitAppRequest,
   MainCompileResponse,
   MainSaveBinaryFileRequest,
-  MainShowOpenFileDialogResponse,
-  MainShowOpenFileDialogRequest,
   MainSaveFileResponse,
   MainShowItemInFolderRequest,
   MainApplyUserSettingsRequest,
@@ -56,7 +50,6 @@ import type {
   MainCheckZ88CardRequest,
   MainCheckZ88CardResponse,
   MainSaveDiskChangesRequest,
-  MainCreateDiskFileRequest,
   MainCreateDiskFileResponse,
   MainGetTemplateDirsResponse,
   MainGetTemplateDirsRequest,
@@ -69,7 +62,9 @@ import type {
   MainGetBuildFunctionsRequest,
   MainGetBuildFunctionsResponse,
   MainRemoveCompletedScriptsRequest,
-  MainCheckBuildRootRequest
+  MainCheckBuildRootRequest,
+  MainGeneralRequest,
+  MainGeneralResponse
 } from "./any-to-main";
 import type { ForwardActionRequest } from "./forwarding";
 import type {
@@ -176,6 +171,7 @@ export interface DefaultResponse extends MessageBase {
  */
 export interface ErrorResponse extends MessageBase {
   type: "ErrorResponse";
+  __ERROR_RESPONSE__: true;
   message: string;
 }
 
@@ -200,6 +196,7 @@ export interface ValueResponse extends MessageBase {
  */
 export type RequestMessage =
   | ForwardActionRequest
+  | MainGeneralRequest
   | EmuSetMachineTypeRequest
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
@@ -231,8 +228,6 @@ export type RequestMessage =
   | EmuGetPartitionLabelsRequest
   | EmuGetCallStackRequest
   | EmuSetKeyStateRequest
-  | MainReadTextFileRequest
-  | MainReadBinaryFileRequest
   | MainDisplayMessageBoxRequest
   | MainGetDirectoryContentRequest
   | MainOpenFolderRequest
@@ -243,8 +238,6 @@ export type RequestMessage =
   | MainSetGloballyExcludedProjectItemsRequest
   | MainDeleteFileEntryRequest
   | MainRenameFileEntryRequest
-  | MainShowOpenFolderDialogRequest
-  | MainShowOpenFileDialogRequest
   | MainSaveTextFileRequest
   | MainSaveBinaryFileRequest
   | MainSaveProjectRequest
@@ -260,7 +253,6 @@ export type RequestMessage =
   | MainShowWebsiteRequest
   | MainCheckZ88CardRequest
   | MainSaveDiskChangesRequest
-  | MainCreateDiskFileRequest
   | MainGetTemplateDirsRequest
   | MainStartScriptRequest
   | MainStopScriptRequest
@@ -282,6 +274,7 @@ export type RequestMessage =
  * All Response messages
  */
 export type ResponseMessage =
+  | MainGeneralResponse
   | NotReadyResponse
   | DefaultResponse
   | ErrorResponse
@@ -291,8 +284,6 @@ export type ResponseMessage =
   | BinaryContentsResponse
   | MainGetDirectoryContentResponse
   | MainCreateKliveProjectResponse
-  | MainShowOpenFolderDialogResponse
-  | MainShowOpenFileDialogResponse
   | MainSaveFileResponse
   | MainGetSettingsResponse
   | MainCompileResponse
@@ -335,6 +326,7 @@ export function defaultResponse (): DefaultResponse {
  */
 export function errorResponse (message: string): ErrorResponse {
   return {
+    __ERROR_RESPONSE__: true,
     type: "ErrorResponse",
     message
   };

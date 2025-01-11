@@ -4,8 +4,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
-import { useMainApi } from "@renderer/core/MainApi";
-import { reportMessagingError } from "@renderer/reportError";
+import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 import { useEffect, useRef, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
@@ -23,7 +22,7 @@ type Props = {
 
 export const CreateDiskDialog = ({ onClose }: Props) => {
   const modalApi = useRef<ModalApi>(null);
-  const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   const { validationService } = useAppServices();
 
   const [diskType, setDiskType] = useState<string>("ss");
@@ -45,6 +44,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
       title="Create a new disk file"
       isOpen={true}
       fullScreen={false}
+      translateY={0}
       width={500}
       onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Create"
@@ -54,24 +54,18 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
         const name = result ? result[0] : filename;
         const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
-        const response = await mainApi.createDiskFile(folder, name, diskType);
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`MainCreateDiskFile call failed: ${response.message}`);
-        } else {
-          if (response.errorMessage) {
-            // --- Display the error
-            await mainApi.displayMessageBox(
-              "error",
-              "Create Disk File Error",
-              response.errorMessage
-            );
-
-            // --- Keep the dialog open
-            return true;
-          }
+        try {
+          const path = await mainApiAlt.createDiskFile(folder, name, diskType);
+          await mainApiAlt.displayMessageBox(
+            "info",
+            "Disk created",
+            `Disk file successfully created: ${path}`
+          );
+          return false;
+        } catch (err) {
+          await mainApiAlt.displayMessageBox("error", "Create Disk File Error", err.toString());
+          return true;
         }
-        // --- Close the dialog
-        return false;
       }}
       onClose={() => {
         onClose();
@@ -98,11 +92,11 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
-            if (response.folder) {
-              setDiskFileFolder(response.folder);
+            const folder = await mainApiAlt.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
+            if (folder) {
+              setDiskFileFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setDiskFileFolder(val);

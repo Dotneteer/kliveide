@@ -16,6 +16,7 @@ import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
+import { createMainAltApi } from "@common/messaging/MainApiAlt";
 
 const MAX_HISTORY = 1024;
 
@@ -178,7 +179,8 @@ class IdeCommandService implements IIdeCommandService {
       messenger: this.messenger,
       messageSource: this.messageSource,
       emuApi: createEmulatorApi(this.messenger),
-      mainApi: createMainApi(this.messenger)
+      mainApi: createMainApi(this.messenger),
+      mainApiAlt: createMainAltApi(this.messenger)
     };
 
     // --- Check if the command is a new style command or not

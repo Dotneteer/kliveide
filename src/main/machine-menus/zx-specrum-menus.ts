@@ -170,7 +170,7 @@ export async function setSelectedTapeFile(filename: string): Promise<void> {
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setTapeFile(filename, contents);
+    await getEmuApi().setTapeFile(filename, new Uint8Array(contents));
     await logEmuEvent(`Tape file set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -253,7 +253,7 @@ async function setDiskFile(
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setDiskFile(index, filename, contents);
+    await getEmuApi().setDiskFile(index, filename, new Uint8Array(contents));
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(

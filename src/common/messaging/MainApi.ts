@@ -8,10 +8,8 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import {
-  BinaryContentsResponse,
   MainCheckZ88CardResponse,
   MainCompileResponse,
-  MainCreateDiskFileResponse,
   MainCreateKliveProjectResponse,
   MainGetBuildFunctionsResponse,
   MainGetDirectoryContentResponse,
@@ -20,8 +18,6 @@ import {
   MainResolveModuleResponse,
   MainRunScriptResponse,
   MainSaveFileResponse,
-  MainShowOpenFileDialogResponse,
-  MainShowOpenFolderDialogResponse,
   MessageBoxType,
   TextContentsResponse
 } from "./any-to-main";
@@ -33,12 +29,6 @@ import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
  * This interface defines the API exposed by the Emulator
  */
 export interface MainApi {
-  readTextFile(
-    path: string,
-    encoding?: string,
-    resolveIn?: string
-  ): Promise<TextContentsResponse | ErrorResponse>;
-  readBinaryFile(path: string, resolveIn?: string): Promise<BinaryContentsResponse | ErrorResponse>;
   displayMessageBox(messageType?: MessageBoxType, title?: string, message?: string): Promise<void>;
   getDirectoryContent(directory: string): Promise<MainGetDirectoryContentResponse>;
   openFolder(folder?: string): Promise<DefaultResponse | ErrorResponse>;
@@ -59,11 +49,6 @@ export interface MainApi {
     folder?: string
   ): Promise<DefaultResponse | ErrorResponse>;
   renameFileEntry(oldName: string, newName: string): Promise<DefaultResponse | ErrorResponse>;
-  showOpenFolderDialog(settingsId?: string): Promise<MainShowOpenFolderDialogResponse>;
-  showOpenFileDialog(
-    filters?: { name: string; extensions: string[] }[],
-    settingsId?: string
-  ): Promise<MainShowOpenFileDialogResponse>;
   saveTextFile(
     path: string,
     data: string,
@@ -95,11 +80,6 @@ export interface MainApi {
     diskIndex: number,
     changes: SectorChanges
   ): Promise<DefaultResponse | ErrorResponse>;
-  createDiskFile(
-    diskFolder: string,
-    filename: string,
-    diskType: string
-  ): Promise<MainCreateDiskFileResponse | ErrorResponse>;
   getTemplateDirectories(machineId: string): Promise<MainGetTemplateDirsResponse>;
   startScript(
     filename: string,
@@ -117,41 +97,6 @@ export interface MainApi {
 
 class MainApiImpl implements MainApi {
   constructor(private readonly messenger: MessengerBase) {}
-
-  /**
-   * Reads the contents of a text file
-   * @param path Path of the file to read
-   * @param encoding Encoding of the file
-   * @param resolveIn Path to resolve the file in
-   */
-  async readTextFile(
-    path: string,
-    encoding?: string,
-    resolveIn?: string
-  ): Promise<TextContentsResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<TextContentsResponse>({
-      type: "MainReadTextFile",
-      path,
-      encoding,
-      resolveIn
-    });
-  }
-
-  /**
-   * Reads the contents of a binary file
-   * @param path Path of the file to read
-   * @param resolveIn Path to resolve the file in
-   */
-  async readBinaryFile(
-    path: string,
-    resolveIn?: string
-  ): Promise<BinaryContentsResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<BinaryContentsResponse>({
-      type: "MainReadBinaryFile",
-      path,
-      resolveIn
-    });
-  }
 
   /**
    * Displays a message box
@@ -311,41 +256,6 @@ class MainApiImpl implements MainApi {
       oldName,
       newName
     });
-  }
-
-  /**
-   * Shows the open folder dialog
-   * @param title Title of the dialog
-   * @param settingsId Identifier of the settings
-   */
-  async showOpenFolderDialog(settingsId?: string): Promise<MainShowOpenFolderDialogResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainShowOpenFolderDialog",
-        settingsId
-      },
-      "MainShowOpenFolderDialogResponse"
-    )) as MainShowOpenFolderDialogResponse;
-  }
-
-  /**
-   * Shows the open file dialog
-   * @param title Title of the dialog
-   * @param filters File filters
-   * @param settingsId Identifier of the settings
-   */
-  async showOpenFileDialog(
-    filters?: { name: string; extensions: string[] }[],
-    settingsId?: string
-  ): Promise<MainShowOpenFileDialogResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainShowOpenFileDialog",
-        filters,
-        settingsId
-      },
-      "MainShowOpenFileDialogResponse"
-    )) as MainShowOpenFileDialogResponse;
   }
 
   /**
@@ -550,25 +460,6 @@ class MainApiImpl implements MainApi {
       type: "MainSaveDiskChanges",
       diskIndex,
       changes
-    });
-  }
-
-  /**
-   * Creates a disk file
-   * @param diskFolder Folder of the disk
-   * @param filename Name of the file
-   * @param diskType Type of the disk
-   */
-  async createDiskFile(
-    diskFolder: string,
-    filename: string,
-    diskType: string
-  ): Promise<MainCreateDiskFileResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<MainCreateDiskFileResponse>({
-      type: "MainCreateDiskFile",
-      diskFolder,
-      filename,
-      diskType
     });
   }
 

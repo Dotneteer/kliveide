@@ -19,6 +19,7 @@ import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { createMainApi } from "@common/messaging/MainApi";
+import { createMainAltApi } from "@common/messaging/MainApiAlt";
 
 const JOB_KIND_SAVE_FILE = 21;
 
@@ -252,20 +253,10 @@ class ProjectService implements IProjectService {
     let contents: string | Uint8Array;
     if (isBinary ?? fileTypeEntry?.isBinary) {
       // --- Read a binary file file
-      const response = await createMainApi(this.messenger).readBinaryFile(file);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      } else {
-        contents = response.contents;
-      }
+      contents = await createMainAltApi(this.messenger).readBinaryFile(file);
     } else {
       // --- Read a text file
-      const response = await createMainApi(this.messenger).readTextFile(file);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      } else {
-        contents = response.contents;
-      }
+      contents = await createMainAltApi(this.messenger).readTextFile(file);
     }
 
     // --- Done

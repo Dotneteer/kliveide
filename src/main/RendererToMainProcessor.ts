@@ -5,8 +5,6 @@ import _ from "lodash";
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import type {
   MainCreateKliveProjectResponse,
-  MainShowOpenFolderDialogResponse,
-  MainShowOpenFileDialogResponse
 } from "@messaging/any-to-main";
 import type {
   KliveCompilerOutput,
@@ -22,7 +20,7 @@ import {
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
-import { textContentsResponse, binaryContentsResponse } from "@messaging/any-to-main";
+import { textContentsResponse, genericResponse } from "@messaging/any-to-main";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import {
@@ -55,6 +53,64 @@ import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
+import { Dispatch } from "react";
+import { Action } from "@common/state/Action";
+
+class MainMessageProcessor {
+  constructor(
+    private readonly window: BrowserWindow,
+    private readonly dispatch: Dispatch<Action>
+  ) {}
+
+  readTextFile(...args: any[]) {
+    const fullPath = resolveMessagePath(args[0], args[2]);
+    return fs.readFileSync(fullPath, {
+      encoding: (args[1] ?? "utf8") as BufferEncoding
+    });
+  }
+
+  readBinaryFile(...args: any[]) {
+    const fullPath = resolveMessagePath(args[0], args[1]);
+    return new Uint8Array(fs.readFileSync(fullPath));
+  }
+
+  async displayMessageBox(...args: any[]) {
+    try {
+      await dialog.showMessageBox(this.window, {
+        type: args[0] ?? "none",
+        title: args[1],
+        message: args[2]
+      });
+    } finally {
+      this.dispatch(dimMenuAction(false));
+    }
+  }
+
+  showOpenFolderDialog(...args: any[]) {
+    return displayOpenFolderDialog(this.window, args[0]);
+  }
+
+  showOpenFileDialog(...args: any[]) {
+    return displayOpenFileDialog(this.window, args[0], args[1]);
+  }
+
+  createDiskFile(...args: any[]) {
+    return createDiskFile(args[0], args[1], args[2]);
+  }
+
+  async checkZ88Card(...args: any[]): Promise<{ message?: string; content?: Uint8Array }> {
+    const cardResult = await checkZ88SlotFile(args[0], args[1]);
+    if (typeof cardResult === "string") {
+      return {
+        message: cardResult
+      };
+    } else {
+      return {
+        content: cardResult
+      };
+    }
+  }
+}
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -64,30 +120,29 @@ import { collectedBuildTasks } from "./build";
 export async function processRendererToMainMessages(
   message: RequestMessage,
   window: BrowserWindow
-): Promise<ResponseMessage> {
+): Promise<any> {
   const dispatch = mainStore.dispatch;
-  switch (message.type) {
-    case "MainReadTextFile":
-      // --- A client want to read the contents of a text file
-      try {
-        const fullPath = resolveMessagePath(message.path, message.resolveIn);
-        const contents = fs.readFileSync(fullPath, {
-          encoding: (message.encoding ?? "utf8") as BufferEncoding
-        });
-        return textContentsResponse(contents);
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
+  const mainMessageProcessor = new MainMessageProcessor(window, dispatch);
 
-    case "MainReadBinaryFile":
-      // --- A client want to read the contents of a binary file
-      try {
-        const fullPath = resolveMessagePath(message.path, message.resolveIn);
-        const contents = fs.readFileSync(fullPath);
-        return binaryContentsResponse(new Uint8Array(contents));
-      } catch (err) {
-        return errorResponse(err.toString());
+  switch (message.type) {
+    case "MainGeneralRequest":
+      // --- We accept only methods defined in the MainMessageProcessor
+      const processingMethod = mainMessageProcessor[message.method];
+      if (typeof processingMethod === "function") {
+        try {
+          // --- Call the method with the given arguments. We do not call the
+          // --- function through the mainMessageProcessor instance, so we need
+          // --- to pass it as the "this" parameter.
+          return genericResponse(
+            await (processingMethod as Function).call(mainMessageProcessor, ...message.args)
+          );
+        } catch (err) {
+          // --- Report the error
+          console.error(`Error processing message: ${err}`);
+          return errorResponse(err.toString());
+        }
       }
+      return errorResponse(`Unknown method ${message.method}`);
 
     case "MainDisplayMessageBox":
       // --- A client wants to display an error message.
@@ -190,30 +245,6 @@ export async function processRendererToMainMessages(
       } catch (err) {
         return errorResponse(err.toString());
       }
-
-    case "MainShowOpenFolderDialog": {
-      const selectedFolder = await displayOpenFolderDialog(
-        window,
-        message.title,
-        message.settingsId
-      );
-      return {
-        type: "MainShowOpenFolderDialogResponse",
-        folder: selectedFolder
-      } as MainShowOpenFolderDialogResponse;
-    }
-
-    case "MainShowOpenFileDialog":
-      const selectedFile = await displayOpenFileDialog(
-        window,
-        message.title,
-        message.filters,
-        message.settingsId
-      );
-      return {
-        type: "MainShowOpenFileDialogResponse",
-        file: selectedFile
-      } as MainShowOpenFileDialogResponse;
 
     case "MainSaveTextFile":
       try {
@@ -365,13 +396,6 @@ export async function processRendererToMainMessages(
     case "MainSaveDiskChanges":
       return saveDiskChanges(message.diskIndex, message.changes);
 
-    case "MainCreateDiskFile":
-      const diskCreated = createDiskFile(message.diskFolder, message.filename, message.diskType);
-      return {
-        type: "MainCreateDiskFileResponse",
-        path: diskCreated
-      };
-
     case "MainGetTemplateDirs":
       try {
         return {
@@ -489,12 +513,11 @@ export async function processRendererToMainMessages(
  */
 async function displayOpenFolderDialog(
   browserWindow: BrowserWindow,
-  title?: string,
   settingsId?: string
 ): Promise<string> {
   const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: title ?? "Open Folder",
+    title: "Open Folder",
     defaultPath,
     properties: ["openDirectory"]
   });
@@ -520,13 +543,12 @@ async function displayOpenFolderDialog(
  */
 async function displayOpenFileDialog(
   browserWindow: BrowserWindow,
-  title?: string,
   filters?: Electron.FileFilter[],
   settingsId?: string
 ): Promise<string> {
   const defaultPath = appSettings?.folders?.[settingsId ?? ""] || app.getPath("home");
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: title ?? "Open File",
+    title: "Open File",
     defaultPath,
     properties: ["openFile"],
     filters
@@ -543,6 +565,7 @@ async function displayOpenFileDialog(
     saveAppSettings();
   }
 
+  console.log("selectedFile:", selectedFile);
   return selectedFile;
 }
 

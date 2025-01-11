@@ -34,15 +34,15 @@ export abstract class MessengerBase {
    * @param message Message to send out
    * @returns Response for the message
    */
-  async sendMessage<TResp extends ResponseMessage> (
+  async sendMessage (
     message: RequestMessage
-  ): Promise<TResp> {
+  ): Promise<any> {
     if (message.correlationId === undefined) {
       message.correlationId = this._requestSeqNo++;
     }
 
     // --- Create a promise and store the resolver function with the message ID.
-    const promise = new Promise<TResp>((resolve) => {
+    const promise = new Promise<any>((resolve) => {
       this._messageResolvers.set(
         message.correlationId!,
         resolve as (

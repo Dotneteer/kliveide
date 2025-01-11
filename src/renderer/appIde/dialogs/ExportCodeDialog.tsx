@@ -8,7 +8,7 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
-import { useMainApi } from "@renderer/core/MainApi";
+import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -73,7 +73,7 @@ type Props = {
 };
 
 export const ExportCodeDialog = ({ onClose }: Props) => {
-  const mainApi = useMainApi();
+  const mainApiAlt = useMainApiAlt();
   const { outputPaneService, ideCommandsService, validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
@@ -135,13 +135,13 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
-          await mainApi.displayMessageBox(
+          await mainApiAlt.displayMessageBox(
             "info",
             "Exporting code",
             result.finalMessage ?? "Code successfully exported."
           );
         } else {
-          await mainApi.displayMessageBox(
+          await mainApiAlt.displayMessageBox(
             "error",
             "Exporting code",
             result.finalMessage ?? "Code export failed."
@@ -170,11 +170,11 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
-            if (response.folder) {
-              setExportFolder(response.folder);
+            const folder = await mainApiAlt.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
+            if (folder) {
+              setExportFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setExportFolder(val);
@@ -222,17 +222,18 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="file-code"
           buttonTitle="Select the screen file"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFileDialog(
+            const file = await mainApiAlt.showOpenFileDialog(
               [
                 { name: "Tape files", extensions: ["tap", "tzx"] },
                 { name: "All Files", extensions: ["*"] }
               ],
               EXPORT_CODE_FOLDER_ID
             );
-            if (response.file) {
-              setScreenFilename(response.file);
+            console.log("file:", file);
+            if (file) {
+              setScreenFilename(file);
             }
-            return response.file;
+            return file;
           }}
           valueChanged={(val) => {
             setScreenFilename(val);

@@ -8,6 +8,7 @@ import type { MessageSource } from "@messaging/messages-core";
 import type { MachineInfo } from "@common/machines/info-types";
 import { EmuApi } from "@common/messaging/EmuApi";
 import { MainApi } from "@common/messaging/MainApi";
+import { MainApiAlt } from "@common/messaging/MainApiAlt";
 
 /**
  * Describes the execution context of a command
@@ -62,4 +63,9 @@ export type IdeCommandContext = {
    * Main API
    */
   mainApi: MainApi;
+
+  /**
+   * Alternative main API
+   */
+  mainApiAlt: MainApiAlt;
 };
