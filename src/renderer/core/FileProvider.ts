@@ -1,7 +1,7 @@
 import { IFileProvider } from "@renderer/core/IFileProvider";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { reportMessagingError } from "@renderer/reportError";
-import { createMainAltApi } from "@common/messaging/MainApiAlt";
+import { createMainApi } from "@common/messaging/MainApi";
 
 /**
  * This class implements a file provider to read and write files throught the main process
@@ -16,7 +16,7 @@ export class FileProvider implements IFileProvider {
    */
   async readTextFile(path: string, encoding?: string): Promise<string> {
     try {
-      return await createMainAltApi(this.messenger).readTextFile(path, encoding);
+      return await createMainApi(this.messenger).readTextFile(path, encoding);
     } catch (err) {
       reportMessagingError(`readTextFile call failed: ${err.message}`);
       return null;
@@ -30,7 +30,7 @@ export class FileProvider implements IFileProvider {
    */
   async readBinaryFile(path: string): Promise<Uint8Array> {
     try {
-      return await createMainAltApi(this.messenger).readBinaryFile(path);
+      return await createMainApi(this.messenger).readBinaryFile(path);
     } catch (err) {
       reportMessagingError(`readBinaryFile call failed: ${err.message}`);
       return null;

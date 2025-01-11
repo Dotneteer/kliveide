@@ -20,7 +20,7 @@ import { PANE_ID_BUILD } from "@common/integration/constants";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type Props = {
   ide: boolean;
@@ -65,7 +65,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
   const ideApi = useIdeApi();
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const machineId = useSelector((s) => s.emulatorState.machineId);
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const state = useSelector((s) => s.emulatorState?.machineState);
@@ -94,7 +94,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
     await new Promise((r) => setTimeout(r, 100));
-    await mainApiAlt.saveProject();
+    await mainApi.saveProject();
   };
 
   const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;

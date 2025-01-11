@@ -35,29 +35,30 @@ class ScriptService implements IScriptService {
    * @returns The script ID if the script is started, or a negative number if the script is already running.
    */
   async runScript(scriptFilePath: string): Promise<number> {
-    const response = await createMainApi(this.messenger).startScript(scriptFilePath);
-    if (response.type === "ErrorResponse") {
-      throw new Error(response.message);
-    }
-    if (response.hasParseError) {
+    const scriptInfo = await createMainApi(this.messenger).startScript(scriptFilePath);
+    if (scriptInfo.hasParseError) {
       throw new Error("The script contains parse errors. See the Script Output pane for details.");
     }
 
     // --- Create a new output buffer for the script
-    if (response.id > 0) {
+    if (scriptInfo.id > 0) {
       const buffer = new OutputPaneBuffer();
-      this._scriptOutputs.set(response.id, buffer);
+      this._scriptOutputs.set(scriptInfo.id, buffer);
     }
 
     // --- Check the target
-    if (response.target !== "emu") {
+    if (scriptInfo.target !== "emu") {
       // --- Script runs in the main process, nothing to do
-      return response.id;
+      return scriptInfo.id;
     }
 
     // --- Script runs in the emulator, we need to forward the output
-    createEmulatorApi(this.messenger).startScript(response.id, scriptFilePath, response.contents);
-    return response.id;
+    createEmulatorApi(this.messenger).startScript(
+      scriptInfo.id,
+      scriptFilePath,
+      scriptInfo.contents
+    );
+    return scriptInfo.id;
   }
 
   /**
@@ -75,26 +76,20 @@ class ScriptService implements IScriptService {
     speciality: string
   ): Promise<number> {
     console.log("Running script text", scriptText);
-    const response = await createMainApi(this.messenger).startScript(
+    const scriptInfo = await createMainApi(this.messenger).startScript(
       filename,
       scriptFunction,
       scriptText,
       speciality
     );
-    if (response.type === "ErrorResponse") {
-      throw new Error(response.message);
+    if (scriptInfo.hasParseError) {
+      throw new Error("The script contains parse errors.");
     }
-    if (response.type === "MainRunScriptResponse") {
-      if (response.hasParseError) {
-        throw new Error("The script contains parse errors.");
-      }
 
-      // --- Create a new output buffer for the script
-      const buffer = new OutputPaneBuffer();
-      this._scriptOutputs.set(response.id, buffer);
-      return response.id;
-    }
-    throw new Error("Unexpected response");
+    // --- Create a new output buffer for the script
+    const buffer = new OutputPaneBuffer();
+    this._scriptOutputs.set(scriptInfo.id, buffer);
+    return scriptInfo.id;
   }
 
   /**
@@ -127,13 +122,7 @@ class ScriptService implements IScriptService {
     }
 
     // --- Send the stop script message
-    const response = await createMainApi(this.messenger).stopScript(
-      script.id
-    );
-    if (response.type === "FlagResponse") {
-      return response.flag;
-    }
-    throw new Error("Unexpected response");
+    return await createMainApi(this.messenger).stopScript(script.id);
   }
 
   /**

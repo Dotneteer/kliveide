@@ -3,21 +3,16 @@ import fs from "fs";
 import _ from "lodash";
 
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
-import type {
-  KliveCompilerOutput,
-  SimpleAssemblerOutput
-} from "./compiler-integration/compiler-registry";
+import type { KliveCompilerOutput } from "./compiler-integration/compiler-registry";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 
 import { app, BrowserWindow, dialog, shell } from "electron";
 import {
   defaultResponse,
   errorResponse,
-  flagResponse,
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
-import { genericResponse } from "@messaging/any-to-main";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import {
@@ -34,7 +29,6 @@ import { appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
-  applyUserSettingAction,
   dimMenuAction,
   refreshExcludedProjectItemsAction,
   saveProjectSettingAction,
@@ -199,7 +193,7 @@ class MainMessageProcessor {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(filePath, args[1], { flag: "w" });
-    filePath;
+    return filePath;
   }
 
   saveProject() {
@@ -216,6 +210,122 @@ class MainMessageProcessor {
 
   getProjectSettings() {
     return mainStore.getState().projectSettings ?? {};
+  }
+
+  applyUserSettings(...args: any[]) {
+    if (args[0]) {
+      appSettings.userSettings ??= {};
+      if (args[1] === undefined) {
+        _.unset(appSettings.userSettings, args[0]);
+      } else {
+        _.set(appSettings.userSettings, args[0], args[1]);
+      }
+      saveAppSettings();
+    }
+  }
+
+  applyProjectSettings(...args: any[]) {
+    if (args[0]) {
+      this.dispatch(applyProjectSettingAction(args[0], args[1]));
+      saveKliveProject();
+    }
+  }
+
+  async moveSettings(...args: any[]) {
+    if (args[0]) {
+      // --- User --> Project
+      let projSettings: Record<string, any> = {};
+      if (args[1]) {
+        projSettings = appSettings.userSettings ?? {};
+      } else {
+        projSettings = {
+          ...(mainStore.getState()?.projectSettings ?? {}),
+          ...(appSettings.userSettings ?? {})
+        };
+      }
+      this.dispatch(saveProjectSettingAction(projSettings));
+      await saveKliveProject();
+    } else {
+      // --- Project --> User
+      if (args[1]) {
+        appSettings.userSettings = mainStore.getState()?.projectSettings ?? {};
+      } else {
+        appSettings.userSettings = {
+          ...(appSettings.userSettings ?? {}),
+          ...(mainStore.getState()?.projectSettings ?? {})
+        };
+        this.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
+        saveAppSettings();
+      }
+    }
+  }
+
+  async compileFile(...args: any[]) {
+    const compiler = getCompiler(args[1]);
+    return (await compiler.compileFile(args[0], args[2])) as KliveCompilerOutput;
+  }
+
+  async showItemInFolder(...args: any[]) {
+    shell.showItemInFolder(path.normalize(args[0]));
+  }
+
+  async exitApp() {
+    app.quit();
+  }
+
+  async showWebsite() {
+    shell.openExternal(KLIVE_GITHUB_PAGES);
+  }
+
+  async saveDiskChanges(...args: any[]) {
+    return saveDiskChanges(args[0], args[1]);
+  }
+
+  async getTemplateDirectories(...args: any[]) {
+    return getTemplateDirs(args[0]);
+  }
+
+  async startScript(...args: any[]) {
+    let scriptInfo: ScriptStartInfo;
+    if (args[2]) {
+      // --- Script text specified, run as script text
+      scriptInfo = await mainScriptManager.runScriptText(args[2], args[1], args[0], args[3]);
+    } else {
+      scriptInfo = await mainScriptManager.runScript(args[0]);
+    }
+    return scriptInfo;
+  }
+
+  stopScript(...args: any[]) {
+    mainScriptManager.stopScript(args[0]);
+  }
+
+  async closeScript(...args: any[]) {
+    await mainScriptManager.closeScript(args[0]);
+  }
+
+  removeCompletedScripts() {
+    mainScriptManager.removeCompletedScripts();
+  }
+
+  resolveModule(...args: any[]) {
+    return mainScriptManager.resolveModule(args[0], args[1]);
+  }
+
+  getBuildFunctions() {
+    return collectedBuildTasks.map((t) => t.id);
+  }
+
+  checkBuildRoot(...args: any[]) {
+    if (!mainStore.getState().project?.buildRoots) {
+      return;
+    }
+    const buildRoots = mainStore.getState().project.buildRoots;
+    if (buildRoots.includes(args[0])) {
+      buildRoots.splice(buildRoots.indexOf(args[0]), 1);
+      this.dispatch(setBuildRootAction(buildRoots));
+      saveKliveProject();
+    }
   }
 }
 
@@ -240,9 +350,10 @@ export async function processRendererToMainMessages(
           // --- Call the method with the given arguments. We do not call the
           // --- function through the mainMessageProcessor instance, so we need
           // --- to pass it as the "this" parameter.
-          return genericResponse(
-            await (processingMethod as Function).call(mainMessageProcessor, ...message.args)
-          );
+          return {
+            type: "MainGeneralResponse",
+            result: await (processingMethod as Function).call(mainMessageProcessor, ...message.args)
+          };
         } catch (err) {
           // --- Report the error
           console.error(`Error processing message: ${err}`);
@@ -250,176 +361,6 @@ export async function processRendererToMainMessages(
         }
       }
       return errorResponse(`Unknown method ${message.method}`);
-
-    case "MainDisplayMessageBox":
-      // --- A client wants to display an error message.
-      // --- We intentionally do not wait for confirmation.
-      dispatch(dimMenuAction(true));
-      try {
-        await dialog.showMessageBox(window, {
-          type: message.messageType ?? "none",
-          title: message.title,
-          message: message.message
-        });
-      } finally {
-        dispatch(dimMenuAction(false));
-      }
-      break;
-
-    case "MainApplyUserSettings":
-      if (message.key) {
-        appSettings.userSettings ??= {};
-        if (message.value === undefined) {
-          _.unset(appSettings.userSettings, message.key);
-        } else {
-          _.set(appSettings.userSettings, message.key, message.value);
-        }
-        saveAppSettings();
-        dispatch(applyUserSettingAction(message.key, message.value));
-      }
-      break;
-
-    case "MainApplyProjectSettings":
-      if (message.key) {
-        dispatch(applyProjectSettingAction(message.key, message.value));
-        await saveKliveProject();
-      }
-      break;
-
-    case "MainMoveSettings":
-      if (message.pull) {
-        // --- User --> Project
-        let projSettings: Record<string, any> = {};
-        if (message.copy) {
-          projSettings = appSettings.userSettings ?? {};
-        } else {
-          projSettings = {
-            ...(mainStore.getState()?.projectSettings ?? {}),
-            ...(appSettings.userSettings ?? {})
-          };
-        }
-        mainStore.dispatch(saveProjectSettingAction(projSettings));
-        await saveKliveProject();
-      } else {
-        // --- Project --> User
-        if (message.copy) {
-          appSettings.userSettings = mainStore.getState()?.projectSettings ?? {};
-        } else {
-          appSettings.userSettings = {
-            ...(appSettings.userSettings ?? {}),
-            ...(mainStore.getState()?.projectSettings ?? {})
-          };
-          mainStore.dispatch(saveUserSettingAction({ ...appSettings.userSettings }));
-          saveAppSettings();
-        }
-      }
-      break;
-
-    case "MainCompileFile":
-      const compiler = getCompiler(message.language);
-      try {
-        const result = (await compiler.compileFile(
-          message.filename,
-          message.options
-        )) as KliveCompilerOutput;
-        return {
-          type: "MainCompileFileResponse",
-          result,
-          failed: (result as SimpleAssemblerOutput).failed
-        };
-      } catch (err) {
-        return {
-          type: "MainCompileFileResponse",
-          result: { errors: [] },
-          failed: err.toString()
-        };
-      }
-
-    case "MainShowItemInFolder":
-      shell.showItemInFolder(path.normalize(message.itemPath));
-      break;
-
-    case "MainExitApp":
-      app.quit();
-      break;
-
-    case "MainShowWebsite":
-      shell.openExternal(KLIVE_GITHUB_PAGES);
-      break;
-
-    case "MainSaveDiskChanges":
-      return saveDiskChanges(message.diskIndex, message.changes);
-
-    case "MainGetTemplateDirs":
-      try {
-        return {
-          type: "MainGetTemplateDirsResponse",
-          dirs: getTemplateDirs(message.machineId)
-        };
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainStartScript": {
-      let scriptInfo: ScriptStartInfo;
-      if (message.scriptText) {
-        // --- Script text specified, run as script text
-        scriptInfo = await mainScriptManager.runScriptText(
-          message.scriptText,
-          message.scriptFunction,
-          message.filename,
-          message.speciality
-        );
-      } else {
-        scriptInfo = await mainScriptManager.runScript(message.filename);
-      }
-      return {
-        type: "MainRunScriptResponse",
-        id: scriptInfo.id,
-        target: scriptInfo.target,
-        contents: scriptInfo.contents,
-        hasParseError: scriptInfo.hasParseError
-      };
-    }
-
-    case "MainStopScript":
-      return flagResponse(await mainScriptManager.stopScript(message.idOrFilename));
-
-    case "MainCloseScript":
-      await mainScriptManager.closeScript(message.script);
-      break;
-
-    case "MainRemoveCompletedScripts":
-      mainScriptManager.removeCompletedScripts();
-      break;
-
-    case "MainResolveModule":
-      const resolvedModule = await mainScriptManager.resolveModule(
-        message.mainFile,
-        message.moduleName
-      );
-      return {
-        type: "MainResolveModuleResponse",
-        contents: resolvedModule
-      };
-
-    case "MainGetBuildFunctions":
-      return {
-        type: "MainGetBuildFunctionsResponse",
-        functions: collectedBuildTasks.map((t) => t.id)
-      };
-
-    case "MainCheckBuildRoot":
-      if (!mainStore.getState().project?.buildRoots) {
-        break;
-      }
-      const buildRoots = mainStore.getState().project.buildRoots;
-      if (buildRoots.includes(message.filename)) {
-        buildRoots.splice(buildRoots.indexOf(message.filename), 1);
-        dispatch(setBuildRootAction(buildRoots));
-        await saveKliveProject();
-      }
-      break;
 
     case "IdeDisplayOutput":
     case "IdeExecuteCommand":

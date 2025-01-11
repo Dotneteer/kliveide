@@ -37,7 +37,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
     const machineId = parts[0];
     const modelId = parts.length > 1 ? parts[1] : undefined;
     try {
-      const responsePath = await context.mainApiAlt.createKliveProject(
+      const responsePath = await context.mainApi.createKliveProject(
         machineId,
         args.projectName,
         args["-p"],
@@ -45,7 +45,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
         args.templateId ?? "default"
       );
       if (args["-o"]) {
-        const errorMessage = await context.mainApiAlt.openFolder(responsePath);
+        const errorMessage = await context.mainApi.openFolder(responsePath);
         if (errorMessage) {
           return {
             success: false,

@@ -114,11 +114,11 @@ export class ListSettingsCommand extends IdeCommandBase<ListSettingsArgs> {
     return commandSuccess;
 
     async function readUserSettings() {
-      return await context.mainApiAlt.getUserSettings();
+      return await context.mainApi.getUserSettings();
     }
 
     async function readProjectSettings() {
-      return await context.mainApiAlt.getProjectSettings();
+      return await context.mainApi.getProjectSettings();
     }
   }
 }

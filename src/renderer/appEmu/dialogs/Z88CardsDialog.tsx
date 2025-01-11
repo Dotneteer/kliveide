@@ -24,8 +24,8 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { IMachineController } from "@renderer/abstractions/IMachineController";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MainApiAlt } from "@common/messaging/MainApiAlt";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { MainApi } from "@common/messaging/MainApi";
+import { useMainApi } from "@renderer/core/MainApi";
 
 // --- ID of the open file dialog path
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
@@ -172,7 +172,7 @@ type CardColumnProps = {
 };
 
 const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const [slotState, setSlotState] = useState<SlotState>(initialState);
 
   const getCardTypes = (size: string) => {
@@ -258,7 +258,7 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
                 let filename: string | undefined;
                 if (card?.hasContent) {
                   await delay(10);
-                  filename = await getCardFile(mainApiAlt, slotState.size);
+                  filename = await getCardFile(mainApi, slotState.size);
                   if (!filename) {
                     return true;
                   }
@@ -283,7 +283,7 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
   );
 };
 
-async function getCardFile(mainApiAlt: MainApiAlt, size: string): Promise<string | undefined> {
+async function getCardFile(mainApiAlt: MainApi, size: string): Promise<string | undefined> {
   const file = await mainApiAlt.showOpenFileDialog(
     [
       { name: "ROM files", extensions: ["bin", "rom", "epr"] },
@@ -316,14 +316,14 @@ type FileNameProps = {
 };
 
 const Filename = ({ file, size, changed }: FileNameProps) => {
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   return (
     <div
       className={styles.filenameRow}
       style={{ cursor: file ? "pointer" : undefined }}
       onClick={async () => {
         if (!file) return;
-        const filename = await getCardFile(mainApiAlt, size);
+        const filename = await getCardFile(mainApi, size);
         if (filename) changed?.(filename);
       }}
     >

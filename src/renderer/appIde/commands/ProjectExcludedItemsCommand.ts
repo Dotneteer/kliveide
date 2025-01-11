@@ -85,13 +85,13 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
         if (args.rest.length > 0) {
           const excludedItems = await getExcludedProjectItemsFromGlobalSettings(context.messenger);
           args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
-          await context.mainApiAlt.setGloballyExcludedProjectItems(
+          await context.mainApi.setGloballyExcludedProjectItems(
             excludedItems
               .map((item) => item.value)
               ?.filter((p) => !args.rest.some((t) => t.localeCompare(p) === 0))
           );
         } else {
-          await context.mainApiAlt.setGloballyExcludedProjectItems([]);
+          await context.mainApi.setGloballyExcludedProjectItems([]);
         }
       } else {
         // Add new entries to system-wide exclusion list
@@ -106,9 +106,9 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
           filteredPaths.push(p);
         }
         needSaveProject = beforeExcluded(context, filteredPaths);
-        await context.mainApiAlt.addGlobalExcludedProjectItem(filteredPaths);
+        await context.mainApi.addGlobalExcludedProjectItem(filteredPaths);
       }
-      await context.mainApiAlt.saveSettings();
+      await context.mainApi.saveSettings();
     } else {
       // Project-specific operation
       const proj = context.store.getState().project;

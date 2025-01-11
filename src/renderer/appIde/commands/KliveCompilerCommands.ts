@@ -1,5 +1,4 @@
 import type { BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
-import type { MainCompileResponse, MainSaveFileResponse } from "@messaging/any-to-main";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type {
@@ -145,6 +144,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
+    console.log("result", result);
     if (!isInjectableCompilerOutput(result)) {
       return commandError("Compiled code is not injectable.");
     }
@@ -404,7 +404,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
       // --- Save the data to a file
       try {
-        const path = await context.mainApiAlt.saveTextFile(
+        const path = await context.mainApi.saveTextFile(
           filename,
           hexOut,
           `home:${EXPORT_FILE_FOLDER}`
@@ -836,19 +836,17 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
         // --- Save the data to a file
         if (args.filename) {
-          const response = await context.mainApi.saveBinaryFile(
-            args.filename,
-            writer.buffer,
-            `home:${EXPORT_FILE_FOLDER}`
-          );
-          if (response.type === "ErrorResponse") {
-            return commandError(response.message);
+          try {
+            const filePath = await context.mainApi.saveBinaryFile(
+              args.filename,
+              writer.buffer,
+              `home:${EXPORT_FILE_FOLDER}`
+            );
+            return commandSuccessWith(`Code successfully exported to '${filePath}'`);
+          } catch (err) {
+            return commandError(err.toString());
           }
-          return commandSuccessWith(
-            `Code successfully exported to '${(response as MainSaveFileResponse).path}'`
-          );
         }
-
         return commandSuccess;
       } catch (err) {
         return commandError(err.toString());
@@ -901,12 +899,11 @@ async function compileCode(
 
   context.store.dispatch(startCompileAction(fullPath));
   let result: KliveCompilerOutput;
-  let response: MainCompileResponse;
+  let failedMessage = "";
   try {
-    response = await context.mainApi.compileFile(fullPath, language);
-    if (response.type === "MainCompileFileResponse") {
-      result = response.result;
-    }
+    result = await context.mainApi.compileFile(fullPath, language);
+  } catch (err) {
+    failedMessage = err.toString();
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
@@ -923,10 +920,10 @@ async function compileCode(
   // --- Collect errors
   const errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
 
-  if (response.failed) {
+  if (failedMessage) {
     if (!result || errorCount === 0) {
       // --- Some unexpected error with the compilation
-      return { message: response.failed };
+      return { message: failedMessage };
     }
   }
 
@@ -967,11 +964,12 @@ async function injectCode(
     }
     if (errorNo > 0) {
       const returnMessage = "Code compilation failed, no program to inject.";
-      await context.mainApiAlt.displayMessageBox("error", "Injecting code", returnMessage);
+      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
       return commandError(returnMessage);
     }
   }
 
+  console.log("result", result);
   if (!isInjectableCompilerOutput(result)) {
     return commandError("Compiled code is not injectable.");
   }

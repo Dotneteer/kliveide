@@ -18,7 +18,7 @@ export class OpenFolderCommand extends IdeCommandBase<OpenFolderArgs> {
   };
 
   async execute(context: IdeCommandContext, args: OpenFolderArgs): Promise<IdeCommandResult> {
-    const errorMessage = await context.mainApiAlt.openFolder(args.folder);
+    const errorMessage = await context.mainApi.openFolder(args.folder);
     if (errorMessage) {
       return {
         success: false,

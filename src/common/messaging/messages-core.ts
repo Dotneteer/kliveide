@@ -17,33 +17,6 @@
 // ====================================================================================================================
 
 import type {
-  MainDisplayMessageBoxRequest,
-  BinaryContentsResponse,
-  TextContentsResponse,
-  MainCompileFileRequest,
-  MainExitAppRequest,
-  MainCompileResponse,
-  MainSaveFileResponse,
-  MainShowItemInFolderRequest,
-  MainApplyUserSettingsRequest,
-  MainApplyProjectSettingsRequest,
-  MainGetSettingsResponse,
-  MainMoveSettingsRequest,
-  MainShowWebsiteRequest,
-  MainSaveDiskChangesRequest,
-  MainCreateDiskFileResponse,
-  MainGetTemplateDirsResponse,
-  MainGetTemplateDirsRequest,
-  MainStartScriptRequest,
-  MainStopScriptRequest,
-  MainRunScriptResponse,
-  MainResolveModuleRequest,
-  MainResolveModuleResponse,
-  MainCloseScriptRequest,
-  MainGetBuildFunctionsRequest,
-  MainGetBuildFunctionsResponse,
-  MainRemoveCompletedScriptsRequest,
-  MainCheckBuildRootRequest,
   MainGeneralRequest,
   MainGeneralResponse
 } from "./any-to-main";
@@ -209,23 +182,6 @@ export type RequestMessage =
   | EmuGetPartitionLabelsRequest
   | EmuGetCallStackRequest
   | EmuSetKeyStateRequest
-  | MainDisplayMessageBoxRequest
-  | MainApplyUserSettingsRequest
-  | MainApplyProjectSettingsRequest
-  | MainMoveSettingsRequest
-  | MainCompileFileRequest
-  | MainExitAppRequest
-  | MainShowItemInFolderRequest
-  | MainShowWebsiteRequest
-  | MainSaveDiskChangesRequest
-  | MainGetTemplateDirsRequest
-  | MainStartScriptRequest
-  | MainStopScriptRequest
-  | MainResolveModuleRequest
-  | MainCloseScriptRequest
-  | MainRemoveCompletedScriptsRequest
-  | MainGetBuildFunctionsRequest
-  | MainCheckBuildRootRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -245,16 +201,6 @@ export type ResponseMessage =
   | ErrorResponse
   | FlagResponse
   | ValueResponse
-  | TextContentsResponse
-  | BinaryContentsResponse
-  | MainSaveFileResponse
-  | MainGetSettingsResponse
-  | MainCompileResponse
-  | MainCreateDiskFileResponse
-  | MainGetTemplateDirsResponse
-  | MainRunScriptResponse
-  | MainResolveModuleResponse
-  | MainGetBuildFunctionsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse

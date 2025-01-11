@@ -35,7 +35,6 @@ import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { createMainApi } from "@common/messaging/MainApi";
-import { createMainAltApi } from "@common/messaging/MainApiAlt";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -524,7 +523,7 @@ export async function processMainToEmuMessages(
       result = tapReader.readContent();
       if (result) {
         if (!message.suppressError) {
-          await createMainAltApi(emuToMain).displayMessageBox(
+          await createMainApi(emuToMain).displayMessageBox(
             "error",
             "Tape file error",
             `Error while processing tape file ${message.file} (${result})`
@@ -551,7 +550,7 @@ export async function processMainToEmuMessages(
 
     // --- Done.
     if (message.confirm) {
-      await createMainAltApi(emuToMain).displayMessageBox(
+      await createMainApi(emuToMain).displayMessageBox(
         "info",
         "Tape file set",
         `Tape file ${message.file} successfully set.`
@@ -579,7 +578,7 @@ export async function processMainToEmuMessages(
 
       // --- Done.
       if (message.confirm) {
-        await createMainAltApi(emuToMain).displayMessageBox(
+        await createMainApi(emuToMain).displayMessageBox(
           "info",
           message.contents ? "Disk inserted" : "Disk ejected",
           message.contents
@@ -589,7 +588,7 @@ export async function processMainToEmuMessages(
       }
     } catch (err) {
       if (!message.suppressError) {
-        await createMainAltApi(emuToMain).displayMessageBox(
+        await createMainApi(emuToMain).displayMessageBox(
           "error",
           "Disk file error",
           `Error while processing disk file ${message.file} (${err})`

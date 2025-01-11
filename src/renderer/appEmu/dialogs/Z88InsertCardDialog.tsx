@@ -11,8 +11,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MC_Z88_SLOT0 } from "@common/machines/constants";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
-import { MainApiAlt } from "@common/messaging/MainApiAlt";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { MainApi } from "@common/messaging/MainApi";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
@@ -23,7 +23,7 @@ type Props = {
 
 export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const { store } = useRendererContext();
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const { machineService } = useAppServices();
   const machine = machineService.getMachineController().machine as IZ88Machine;
   const [cardType, setCardType] = useState<CardTypeData>();
@@ -42,7 +42,7 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
   const selectCardFile = async () => {
     const slot0AcceptedSizes = acceptedSizes.filter((s) => [128, 256, 512].includes(s));
     const cardFileInfo = await getCardFile(
-      mainApiAlt,
+      mainApi,
       slot,
       slot ? acceptedSizes : slot0AcceptedSizes
     );
@@ -164,7 +164,7 @@ type GetCardFileMessage = {
 };
 
 async function getCardFile(
-  mainApiAlt: MainApiAlt,
+  mainApiAlt: MainApi,
   slot: number,
   acceptedSizes: number[]
 ): Promise<GetCardFileMessage | undefined> {

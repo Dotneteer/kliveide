@@ -3,7 +3,7 @@ import { selectActivityAction, showSideBarAction } from "@state/actions";
 import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type Props = {
   activities: Activity[];
@@ -11,14 +11,14 @@ type Props = {
 };
 
 export const ActivityBar = ({ order, activities }: Props) => {
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const dispatch = useDispatch();
   const activeActitity = useSelector((s) => s.ideView?.activity);
   const sideBarVisible = useSelector((s) => s.ideViewOptions?.showSidebar);
 
   const saveProject = async () => {
     await new Promise((r) => setTimeout(r, 100));
-    await mainApiAlt.saveProject();
+    await mainApi.saveProject();
   };
 
   return (

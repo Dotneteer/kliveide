@@ -59,7 +59,7 @@ export class CreateDiskFileCommand extends IdeCommandBase<CreateDiskFileCommandA
       }
     }
     try {
-      const result = await context.mainApiAlt.createDiskFile(folder, args.diskName, args.diskType);
+      const result = await context.mainApi.createDiskFile(folder, args.diskName, args.diskType);
       writeSuccessMessage(context.output, `Disk file successfully created: ${result}`);
       return commandSuccess;
     } catch (err) {

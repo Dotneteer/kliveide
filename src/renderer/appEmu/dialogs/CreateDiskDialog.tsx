@@ -4,7 +4,7 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { useMainApi } from "@renderer/core/MainApi";
 import { useEffect, useRef, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
@@ -22,7 +22,7 @@ type Props = {
 
 export const CreateDiskDialog = ({ onClose }: Props) => {
   const modalApi = useRef<ModalApi>(null);
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const { validationService } = useAppServices();
 
   const [diskType, setDiskType] = useState<string>("ss");
@@ -55,15 +55,15 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
         const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
         try {
-          const path = await mainApiAlt.createDiskFile(folder, name, diskType);
-          await mainApiAlt.displayMessageBox(
+          const path = await mainApi.createDiskFile(folder, name, diskType);
+          await mainApi.displayMessageBox(
             "info",
             "Disk created",
             `Disk file successfully created: ${path}`
           );
           return false;
         } catch (err) {
-          await mainApiAlt.displayMessageBox("error", "Create Disk File Error", err.toString());
+          await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
           return true;
         }
       }}
@@ -92,7 +92,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const folder = await mainApiAlt.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
+            const folder = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
             if (folder) {
               setDiskFileFolder(folder);
             }

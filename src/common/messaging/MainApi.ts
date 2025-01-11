@@ -1,302 +1,190 @@
-import { MessengerBase } from "@messaging/MessengerBase";
-import {
-  DefaultResponse,
-  ErrorResponse,
-  FlagResponse,
-  MessageBase,
-  RequestMessage,
-  ResponseMessage
-} from "@messaging/messages-core";
-import {
-  MainCompileResponse,
-  MainGetBuildFunctionsResponse,
-  MainGetSettingsResponse,
-  MainGetTemplateDirsResponse,
-  MainResolveModuleResponse,
-  MainRunScriptResponse,
-} from "./any-to-main";
+import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
+import { buildMessagingProxy } from "./MessageProxy";
+import { MessengerBase } from "./MessengerBase";
+import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
-/**
- * This interface defines the API exposed by the Emulator
- */
-export interface MainApi {
-  applyUserSettings(key: string, value?: any): Promise<void>;
-  applyProjectSettings(key: string, value?: any): Promise<void>;
-  moveSettings(pull: boolean, copy: boolean): Promise<void>;
-  compileFile(
-    filename: string,
-    language: string,
-    options?: CompilerOptions,
-    params?: any
-  ): Promise<MainCompileResponse>;
-  showItemInFolder(itemPath: string): void;
-  exitApp(): void;
-  showWebsite(): Promise<void>;
-  saveDiskChanges(
-    diskIndex: number,
-    changes: SectorChanges
-  ): Promise<DefaultResponse | ErrorResponse>;
-  getTemplateDirectories(machineId: string): Promise<MainGetTemplateDirsResponse>;
-  startScript(
-    filename: string,
-    scriptFunction?: string,
-    scriptText?: string,
-    speciality?: string
-  ): Promise<MainRunScriptResponse | ErrorResponse>;
-  stopScript(idOrFilename: number | string): Promise<FlagResponse>;
-  closeScript(script: ScriptRunInfo): Promise<void>;
-  removeCompletedScripts(): Promise<void>;
-  resolveModule(mainFile: string, moduleName: string): Promise<MainResolveModuleResponse>;
-  getBuildFunctions(): Promise<MainGetBuildFunctionsResponse | ErrorResponse>;
-  checkBuildRoot(filename: string): Promise<void>;
-}
+const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
-class MainApiImpl implements MainApi {
-  constructor(private readonly messenger: MessengerBase) {}
+type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
 
-  /**
-   * Applies user settings
-   * @param key Key of the setting
-   * @param value Value of the setting
-   */
-  async applyUserSettings(key: string, value?: any): Promise<void> {
-    await this.sendMessage({
-      type: "MainApplyUserSettings",
-      key,
-      value
-    });
+class MainApiImpl {
+  readTextFile(_path: string, _encoding?: string, _resolveIn?: string): string {
+    throw new Error(NO_PROXY_ERROR);
+  }
+  readBinaryFile(_path: string, _resolveIn?: string): Uint8Array {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Applies project settings
-   * @param key Key of the setting
-   * @param value Value of the setting
-   */
-  async applyProjectSettings(key: string, value?: any): Promise<void> {
-    await this.sendMessage({
-      type: "MainApplyProjectSettings",
-      key,
-      value
-    });
+  async displayMessageBox(_messageType?: MessageBoxType, _title?: string, _message?: string) {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Moves settings
-   * @param pull Pull settings
-   * @param copy Copy settings
-   */
-  async moveSettings(pull: boolean, copy: boolean): Promise<void> {
-    await this.sendMessage({
-      type: "MainMoveSettings",
-      pull,
-      copy
-    });
+  async createDiskFile(_diskFolder: string, _filename: string, _diskType: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Compiles a file
-   * @param filename Name of the file
-   * @param language Language of the file
-   * @param options Compilation options
-   * @param params Additional parameters
-   */
+  async showOpenFolderDialog(_settingsId?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async showOpenFileDialog(
+    _filters?: { name: string; extensions: string[] }[],
+    _settingsId?: string
+  ): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getDirectoryContent(_directory: string): Promise<ProjectNodeWithChildren> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async openFolder(_folder?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async checkZ88Card(_path: string, _expectedSize?: number): Promise<any> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async createKliveProject(
+    _machineId: string,
+    _projectName: string,
+    _folder?: string,
+    _modelId?: string,
+    _templateId?: string
+  ): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getGloballyExcludedProjectItems(): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async addGlobalExcludedProjectItem(_files: string[]): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async setGloballyExcludedProjectItems(_files: string[]): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async deleteFileEntry(_isFolder: boolean, _name: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async addNewFileEntry(_name: string, _isFolder?: boolean, _folder?: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async renameFileEntry(_oldName: string, _newName: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveTextFile(_path: string, _data: string, _resolveIn?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveBinaryFile(_path: string, _data: Uint8Array, _resolveIn?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveProject(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveSettings(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getUserSettings(): Promise<Record<string, any>> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getProjectSettings(): Promise<Record<string, any>> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async applyUserSettings(_key: string, _value?: any): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async applyProjectSettings(_key: string, _value?: any): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async moveSettings(_pull: boolean, _copy: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
   async compileFile(
-    filename: string,
-    language: string,
-    options?: CompilerOptions,
-    params?: any
-  ): Promise<MainCompileResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainCompileFile",
-        filename,
-        language,
-        options,
-        params
-      },
-      "MainCompileFileResponse"
-    )) as MainCompileResponse;
+    _filename: string,
+    _language: string,
+    _options?: CompilerOptions,
+    _params?: any
+  ): Promise<KliveCompilerOutput> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Shows the item in the folder
-   * @param itemPath Path of the item
-   */
-  showItemInFolder(itemPath: string): void {
-    this.postMessage({
-      type: "MainShowItemInFolder",
-      itemPath
-    });
+  async showItemInFolder(_itemPath: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Exits the application
-   */
-  exitApp(): void {
-    this.postMessage({
-      type: "MainExitApp"
-    });
+  async exitApp(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Shows the Klive website
-   */
   async showWebsite(): Promise<void> {
-    await this.sendMessage({
-      type: "MainShowWebsite"
-    });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Saves the changes of a disk
-   * @param diskIndex Index of the disk
-   * @param changes Changes to save
-   */
-  async saveDiskChanges(
-    diskIndex: number,
-    changes: SectorChanges
-  ): Promise<DefaultResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
-      type: "MainSaveDiskChanges",
-      diskIndex,
-      changes
-    });
+  async saveDiskChanges(_diskIndex: number, _changes: SectorChanges): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the template directories
-   * @param machineId Identifier of the machine
-   */
-  async getTemplateDirectories(machineId: string): Promise<MainGetTemplateDirsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainGetTemplateDirs",
-        machineId
-      },
-      "MainGetTemplateDirsResponse"
-    )) as MainGetTemplateDirsResponse;
+  async getTemplateDirectories(_machineId: string): Promise<string[]> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Starts a script
-   * @param filename Name of the script file
-   * @param scriptFunction Name of the script function
-   * @param scriptText Text of the script
-   * @param speciality Speciality of the script
-   */
   async startScript(
-    filename: string,
-    scriptFunction?: string,
-    scriptText?: string,
-    speciality?: string
-  ): Promise<MainRunScriptResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<MainRunScriptResponse>({
-      type: "MainStartScript",
-      filename,
-      scriptFunction,
-      scriptText,
-      speciality
-    });
+    _filename: string,
+    _scriptFunction?: string,
+    _scriptText?: string,
+    _speciality?: string
+  ): Promise<ScriptStartInfo> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Stops a script
-   * @param idOrFilename Identifier or filename of the script
-   */
-  async stopScript(idOrFilename: number | string): Promise<FlagResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainStopScript",
-        idOrFilename
-      },
-      "FlagResponse"
-    )) as FlagResponse;
+  async stopScript(_idOrFilename: number | string): Promise<boolean> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Closes a script
-   * @param script Script to close
-   */
-  async closeScript(script: ScriptRunInfo): Promise<void> {
-    await this.sendMessage({
-      type: "MainCloseScript",
-      script
-    });
+  async closeScript(_script: ScriptRunInfo): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Removes completed scripts
-   */
   async removeCompletedScripts(): Promise<void> {
-    await this.sendMessage({
-      type: "MainRemoveCompletedScripts"
-    });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Resolves a module
-   * @param mainFile Main file
-   * @param moduleName Name of the module
-   */
-  async resolveModule(mainFile: string, moduleName: string): Promise<MainResolveModuleResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainResolveModule",
-        mainFile,
-        moduleName
-      },
-      "MainResolveModuleResponse"
-    )) as MainResolveModuleResponse;
+  async resolveModule(_mainFile: string, _moduleName: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the build functions
-   */
-  async getBuildFunctions(): Promise<MainGetBuildFunctionsResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<MainGetBuildFunctionsResponse>({
-      type: "MainGetBuildFunctions"
-    });
+  async getBuildFunctions(): Promise<string[]> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Checks the build root
-   * @param filename Name of the file
-   */
-  async checkBuildRoot(filename: string): Promise<void> {
-    await this.sendMessage({
-      type: "MainCheckBuildRoot",
-      filename
-    });
-  }
-
-  private async sendMessage(
-    message: RequestMessage,
-    msgType?: ResponseMessage["type"]
-  ): Promise<MessageBase> {
-    const response = await this.messenger.sendMessage(message);
-    if (response.type === "ErrorResponse") {
-      console.log(`Error while sending IPC message: ${response.message}`);
-    } else if (msgType && response.type !== msgType) {
-      console.log(`Unexpected response type for request type '${message.type}': ${response.type}`);
-    }
-    return response;
-  }
-
-  private async sendMessageWithNoErrorCheck<T extends MessageBase>(
-    message: RequestMessage
-  ): Promise<T | ErrorResponse> {
-    const response = await this.messenger.sendMessage(message);
-    return response as T | ErrorResponse;
-  }
-
-  private postMessage(message: RequestMessage): void {
-    this.messenger.postMessage(message);
+  async checkBuildRoot(_filename: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 }
 
-export function createMainApi(messenger: MessengerBase): MainApi {
-  return new MainApiImpl(messenger);
+export type MainApi = MainApiImpl;
+
+export function createMainApi(messenger: MessengerBase): MainApiImpl {
+  return buildMessagingProxy(new MainApiImpl(), messenger);
 }

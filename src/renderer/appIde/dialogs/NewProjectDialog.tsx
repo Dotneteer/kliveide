@@ -9,7 +9,6 @@ import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -28,7 +27,6 @@ type Props = {
 
 export const NewProjectDialog = ({ onClose }: Props) => {
   const mainApi = useMainApi();
-  const mainApiAlt = useMainApiAlt();
   const { validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
@@ -43,8 +41,8 @@ export const NewProjectDialog = ({ onClose }: Props) => {
   // --- Refresh the template list according to the current machine id
   const refreshTemplateList = async () => {
     if (!machineId) return;
-    const response = await mainApi.getTemplateDirectories(machineId);
-    setTemplateDirs(response.dirs.map((d) => ({ value: d, label: d })));
+    const dirs = await mainApi.getTemplateDirectories(machineId);
+    setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
   };
   useInitializeAsync(async () => {
     await refreshTemplateList();
@@ -87,7 +85,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
         // --- Create the project
         console.log("project", machineId, modelId, templateId, name, folder);
         try {
-          const responsePath = await mainApiAlt.createKliveProject(
+          const responsePath = await mainApi.createKliveProject(
             machine,
             name,
             folder,
@@ -95,9 +93,9 @@ export const NewProjectDialog = ({ onClose }: Props) => {
             template
           );
           // --- Open the newly created project
-          await mainApiAlt.openFolder(responsePath);
+          await mainApi.openFolder(responsePath);
         } catch (error) {
-          await mainApiAlt.displayMessageBox("error", "New Klive Project Error", error.toString());
+          await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
           return true;
         }
 
@@ -145,7 +143,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const folder = await mainApiAlt.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
+            const folder = await mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
             if (folder) {
               setProjectFolder(folder);
             }

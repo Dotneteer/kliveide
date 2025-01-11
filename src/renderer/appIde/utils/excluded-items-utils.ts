@@ -1,7 +1,7 @@
 import { IdeProject } from "@common/state/AppState";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { getIsWindows } from "@renderer/os-utils";
-import { createMainAltApi } from "@common/messaging/MainApiAlt";
+import { createMainApi } from "@common/messaging/MainApi";
 
 export type ExcludedItemInfo = {
   id: string;
@@ -11,7 +11,7 @@ export type ExcludedItemInfo = {
 export async function getExcludedProjectItemsFromGlobalSettings(
   messenger: MessengerBase
 ): Promise<ExcludedItemInfo[]> {
-  const content = await createMainAltApi(messenger).getGloballyExcludedProjectItems();
+  const content = await createMainApi(messenger).getGloballyExcludedProjectItems();
   return excludedItemsFromGlobalSettings(content);
 }
 

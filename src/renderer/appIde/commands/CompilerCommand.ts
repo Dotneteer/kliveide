@@ -1,4 +1,3 @@
-import type { MainCompileResponse } from "@messaging/any-to-main";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
@@ -114,13 +113,13 @@ async function compileCode(
 
   context.store.dispatch(startCompileAction(fullPath));
   let result: KliveCompilerOutput;
-  let response: MainCompileResponse;
+  let failedMessage = "";
   try {
-    response = await context.mainApi.compileFile(fullPath, language);
-    if (response.type === "MainCompileFileResponse") {
-      result = response.result;
-    }
-  } finally {
+    result = await context.mainApi.compileFile(fullPath, language);
+  } catch (err) {
+    failedMessage = err.message;
+  }
+  finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
@@ -136,10 +135,10 @@ async function compileCode(
   // --- Collect errors
   const errorCount = result?.errors.filter((m) => !m.isWarning).length ?? 0;
 
-  if (response.failed) {
+  if (failedMessage) {
     if (!result || errorCount === 0) {
       // --- Some unexpected error with the compilation
-      return { message: response.failed };
+      return { message: failedMessage };
     }
   }
 
@@ -180,7 +179,7 @@ async function injectCode(
     }
     if (errorNo > 0) {
       const returnMessage = "Code compilation failed, no program to inject.";
-      await context.mainApiAlt.displayMessageBox("error", "Injecting code", returnMessage);
+      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
       return commandError(returnMessage);
     }
   }
@@ -192,7 +191,7 @@ async function injectCode(
   let sumCodeLength = 0;
   result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
-    await context.mainApiAlt.displayMessageBox(
+    await context.mainApi.displayMessageBox(
       "info",
       "Injecting code",
 
@@ -204,7 +203,7 @@ async function injectCode(
 
   if (operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
-      await context.mainApiAlt.displayMessageBox(
+      await context.mainApi.displayMessageBox(
         "warning",
         "Injecting code",
         "To inject the code into the virtual machine, please put it in paused state."
@@ -241,7 +240,7 @@ async function injectCode(
         .toString(16)
         .padStart(4, "0")
         .toUpperCase()}`;
-      await context.mainApiAlt.displayMessageBox("info", "Injecting code", returnMessage);
+      await context.mainApi.displayMessageBox("info", "Injecting code", returnMessage);
       break;
 
     case "run": {

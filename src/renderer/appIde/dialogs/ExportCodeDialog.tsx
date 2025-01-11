@@ -8,7 +8,7 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -73,7 +73,7 @@ type Props = {
 };
 
 export const ExportCodeDialog = ({ onClose }: Props) => {
-  const mainApiAlt = useMainApiAlt();
+  const mainApi = useMainApi();
   const { outputPaneService, ideCommandsService, validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
   const [formatId, setFormatId] = useState("tzx");
@@ -135,13 +135,13 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
         if (result.success) {
-          await mainApiAlt.displayMessageBox(
+          await mainApi.displayMessageBox(
             "info",
             "Exporting code",
             result.finalMessage ?? "Code successfully exported."
           );
         } else {
-          await mainApiAlt.displayMessageBox(
+          await mainApi.displayMessageBox(
             "error",
             "Exporting code",
             result.finalMessage ?? "Code export failed."
@@ -170,7 +170,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const folder = await mainApiAlt.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
+            const folder = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
             if (folder) {
               setExportFolder(folder);
             }
@@ -222,7 +222,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="file-code"
           buttonTitle="Select the screen file"
           buttonClicked={async () => {
-            const file = await mainApiAlt.showOpenFileDialog(
+            const file = await mainApi.showOpenFileDialog(
               [
                 { name: "Tape files", extensions: ["tap", "tzx"] },
                 { name: "All Files", extensions: ["*"] }

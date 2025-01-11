@@ -39,7 +39,6 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { useMainApi } from "@renderer/core/MainApi";
-import { useMainApiAlt } from "@renderer/core/MainApiAlt";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -48,7 +47,6 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
-  const mainApiAlt = useMainApiAlt();
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
@@ -230,13 +228,13 @@ const ExplorerPanel = () => {
         const oldProjectFolder = getNodeDir(selectedContextNode.data.projectPath);
         const wasBuildRoot = buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0;
         try {
-          await mainApiAlt.renameFileEntry(selectedContextNode.data.fullPath, newFullName);
+          await mainApi.renameFileEntry(selectedContextNode.data.fullPath, newFullName);
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
 
           if (wasBuildRoot) {
             const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;
             dispatch(setBuildRootAction([newProjectPath], true));
-            await mainApiAlt.saveProject();
+            await mainApi.saveProject();
           }
 
           // --- Refresh the tree and notify other objects listening to a rename
@@ -248,7 +246,7 @@ const ExplorerPanel = () => {
             setSelected(newIndex);
           }
         } catch (err) {
-          await mainApiAlt.displayMessageBox("error", "Rename Error", err.toString());
+          await mainApi.displayMessageBox("error", "Rename Error", err.toString());
         }
       }}
       onClose={() => {
@@ -264,7 +262,7 @@ const ExplorerPanel = () => {
       entry={selectedContextNode.data.fullPath}
       onDelete={async () => {
         // --- Delete the item
-        await mainApiAlt.deleteFileEntry(
+        await mainApi.deleteFileEntry(
           selectedContextNodeIsFolder,
           selectedContextNode.data.fullPath
         );
@@ -295,7 +293,7 @@ const ExplorerPanel = () => {
 
         // --- Add the item
         try {
-          await mainApiAlt.addNewFileEntry(
+          await mainApi.addNewFileEntry(
             newName,
             newItemIsFolder,
             selectedContextNode.data.fullPath
@@ -329,7 +327,7 @@ const ExplorerPanel = () => {
             }
           }, 0);
         } catch (err) {
-          await mainApiAlt.displayMessageBox("error", "Add new item error", err.toString());
+          await mainApi.displayMessageBox("error", "Add new item error", err.toString());
         }
       }}
       onClose={() => {
@@ -443,7 +441,7 @@ const ExplorerPanel = () => {
     }
 
     // --- Read the folder tree
-    const contents = await mainApiAlt.getDirectoryContent(folderPath);
+    const contents = await mainApi.getDirectoryContent(folderPath);
 
     // --- Build the folder tree
     const projectTree = buildProjectTree(contents, store, lastExpanded);
@@ -542,7 +540,7 @@ const ExplorerPanel = () => {
         disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
-        clicked={async () => await mainApiAlt.openFolder()}
+        clicked={async () => await mainApi.openFolder()}
       />
       <div className={styles.noFolder}>or</div>
       <Button
