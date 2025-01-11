@@ -8,18 +8,12 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import {
-  MainCheckZ88CardResponse,
   MainCompileResponse,
-  MainCreateKliveProjectResponse,
   MainGetBuildFunctionsResponse,
-  MainGetDirectoryContentResponse,
   MainGetSettingsResponse,
   MainGetTemplateDirsResponse,
   MainResolveModuleResponse,
   MainRunScriptResponse,
-  MainSaveFileResponse,
-  MessageBoxType,
-  TextContentsResponse
 } from "./any-to-main";
 import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -29,40 +23,6 @@ import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
  * This interface defines the API exposed by the Emulator
  */
 export interface MainApi {
-  displayMessageBox(messageType?: MessageBoxType, title?: string, message?: string): Promise<void>;
-  getDirectoryContent(directory: string): Promise<MainGetDirectoryContentResponse>;
-  openFolder(folder?: string): Promise<DefaultResponse | ErrorResponse>;
-  createKliveProject(
-    machineId: string,
-    projectName: string,
-    folder?: string,
-    modelId?: string,
-    templateId?: string
-  ): Promise<MainCreateKliveProjectResponse>;
-  getGloballyExcludedProjectItems(): Promise<TextContentsResponse>;
-  addGlobalExcludedProjectItem(files: string[]): Promise<TextContentsResponse>;
-  setGloballyExcludedProjectItems(files: string[]): Promise<TextContentsResponse>;
-  deleteFileEntry(isFolder: boolean, name: string): Promise<DefaultResponse | ErrorResponse>;
-  addNewFileEntry(
-    name: string,
-    isFolder?: boolean,
-    folder?: string
-  ): Promise<DefaultResponse | ErrorResponse>;
-  renameFileEntry(oldName: string, newName: string): Promise<DefaultResponse | ErrorResponse>;
-  saveTextFile(
-    path: string,
-    data: string,
-    resolveIn?: string
-  ): Promise<MainSaveFileResponse | ErrorResponse>;
-  saveBinaryFile(
-    path: string,
-    data: Uint8Array,
-    resolveIn?: string
-  ): Promise<MainSaveFileResponse | ErrorResponse>;
-  saveProject(): Promise<void>;
-  saveSettings(): Promise<void>;
-  getUserSettings(): Promise<MainGetSettingsResponse>;
-  getProjectSettings(): Promise<MainGetSettingsResponse>;
   applyUserSettings(key: string, value?: any): Promise<void>;
   applyProjectSettings(key: string, value?: any): Promise<void>;
   moveSettings(pull: boolean, copy: boolean): Promise<void>;
@@ -75,7 +35,6 @@ export interface MainApi {
   showItemInFolder(itemPath: string): void;
   exitApp(): void;
   showWebsite(): Promise<void>;
-  checkZ88Card(path: string, expectedSize?: number): Promise<MainCheckZ88CardResponse>;
   saveDiskChanges(
     diskIndex: number,
     changes: SectorChanges
@@ -97,246 +56,6 @@ export interface MainApi {
 
 class MainApiImpl implements MainApi {
   constructor(private readonly messenger: MessengerBase) {}
-
-  /**
-   * Displays a message box
-   * @param messageType Type of the message box
-   * @param title Title of the message box
-   * @param message Message to display
-   */
-  async displayMessageBox(
-    messageType?: MessageBoxType,
-    title?: string,
-    message?: string
-  ): Promise<void> {
-    await this.sendMessage({
-      type: "MainDisplayMessageBox",
-      messageType,
-      title,
-      message
-    });
-  }
-
-  /**
-   * Gets the content of a directory
-   * @param directory Directory path
-   */
-  async getDirectoryContent(directory: string): Promise<MainGetDirectoryContentResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainGetDirectoryContent",
-        directory
-      },
-      "MainGetDirectoryContentResponse"
-    )) as MainGetDirectoryContentResponse;
-  }
-
-  /**
-   * Opens a folder in the file explorer
-   * @param folder Folder path
-   */
-  async openFolder(folder?: string): Promise<DefaultResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
-      type: "MainOpenFolder",
-      folder
-    });
-  }
-
-  /**
-   * Creates a new Klive project
-   * @param machineId Identifier of the machine
-   * @param projectName Name of the project
-   * @param folder Folder path
-   * @param modelId Identifier of the model
-   * @param templateId Identifier of the template
-   */
-  async createKliveProject(
-    machineId: string,
-    projectName: string,
-    projectFolder?: string,
-    modelId?: string,
-    templateId?: string
-  ): Promise<MainCreateKliveProjectResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainCreateKliveProject",
-        machineId,
-        projectName,
-        projectFolder,
-        modelId,
-        templateId
-      },
-      "MainCreateKliveProjectResponse"
-    )) as MainCreateKliveProjectResponse;
-  }
-
-  /**
-   * Gets the list of excluded project items
-   */
-  async getGloballyExcludedProjectItems(): Promise<TextContentsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainGloballyExcludedProjectItems"
-      },
-      "TextContents"
-    )) as TextContentsResponse;
-  }
-
-  /**
-   * Adds an item to the list of excluded project items
-   * @param files Files to add to the list
-   */
-  async addGlobalExcludedProjectItem(files: string[]): Promise<TextContentsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainAddGloballyExcludedProjectItems",
-        files
-      },
-      "TextContents"
-    )) as TextContentsResponse;
-  }
-
-  /**
-   * Sets the list of excluded project items
-   * @param files Files to set in the list
-   */
-  async setGloballyExcludedProjectItems(files: string[]): Promise<TextContentsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainSetGloballyExcludedProjectItems",
-        files
-      },
-      "TextContents"
-    )) as TextContentsResponse;
-  }
-
-  /**
-   * Deletes a file entry
-   * @param isFolder Indicates if the entry is a folder
-   * @param name Name of the entry
-   */
-  async deleteFileEntry(isFolder: boolean, name: string): Promise<DefaultResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
-      type: "MainDeleteFileEntry",
-      isFolder,
-      name
-    });
-  }
-
-  /**
-   * Adds a new file entry
-   * @param name Name of the entry
-   * @param isFolder Indicates if the entry is a folder
-   * @param folder Folder path
-   */
-  async addNewFileEntry(
-    name: string,
-    isFolder?: boolean,
-    folder?: string
-  ): Promise<DefaultResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
-      type: "MainAddNewFileEntry",
-      name,
-      isFolder,
-      folder
-    });
-  }
-
-  /**
-   * Renames a file entry
-   * @param oldName Old name of the entry
-   * @param newName New name of the entry
-   */
-  async renameFileEntry(
-    oldName: string,
-    newName: string
-  ): Promise<DefaultResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<DefaultResponse>({
-      type: "MainRenameFileEntry",
-      oldName,
-      newName
-    });
-  }
-
-  /**
-   * Saves the contents of a text file
-   * @param path Path of the file to save
-   * @param data Data to save
-   * @param resolveIn Path to resolve the file in
-   */
-  async saveTextFile(
-    path: string,
-    data: string,
-    resolveIn?: string
-  ): Promise<MainSaveFileResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<MainSaveFileResponse>({
-      type: "MainSaveTextFile",
-      path,
-      data,
-      resolveIn
-    });
-  }
-
-  /**
-   * Saves the contents of a binary file
-   * @param path Path of the file to save
-   * @param data Data to save
-   * @param resolveIn Path to resolve the file in
-   */
-  async saveBinaryFile(
-    path: string,
-    data: Uint8Array,
-    resolveIn?: string
-  ): Promise<MainSaveFileResponse | ErrorResponse> {
-    return await this.sendMessageWithNoErrorCheck<MainSaveFileResponse>({
-      type: "MainSaveBinaryFile",
-      path,
-      data,
-      resolveIn
-    });
-  }
-
-  /**
-   * Saves the current project
-   */
-  async saveProject(): Promise<void> {
-    await this.sendMessage({
-      type: "MainSaveProject"
-    });
-  }
-
-  /**
-   * Saves the current settings
-   */
-  async saveSettings(): Promise<void> {
-    await this.sendMessage({
-      type: "MainSaveSettings"
-    });
-  }
-
-  /**
-   * Gets the user settings
-   */
-  async getUserSettings(): Promise<MainGetSettingsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainGetUserSettings"
-      },
-      "MainGetSettingsResponse"
-    )) as MainGetSettingsResponse;
-  }
-
-  /**
-   * Gets the project settings
-   */
-  async getProjectSettings(): Promise<MainGetSettingsResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainGetProjectSettings"
-      },
-      "MainGetSettingsResponse"
-    )) as MainGetSettingsResponse;
-  }
 
   /**
    * Applies user settings
@@ -429,22 +148,6 @@ class MainApiImpl implements MainApi {
     await this.sendMessage({
       type: "MainShowWebsite"
     });
-  }
-
-  /**
-   * Checks the Z88 card
-   * @param path Path of the card
-   * @param expectedSize Expected size of the card
-   */
-  async checkZ88Card(path: string, expectedSize?: number): Promise<MainCheckZ88CardResponse> {
-    return (await this.sendMessage(
-      {
-        type: "MainCheckZ88Card",
-        path,
-        expectedSize
-      },
-      "MainCheckZ88CardResponse"
-    )) as MainCheckZ88CardResponse;
   }
 
   /**

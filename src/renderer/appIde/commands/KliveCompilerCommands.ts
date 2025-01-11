@@ -403,20 +403,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       hexOut += ":00000001FF";
 
       // --- Save the data to a file
-      if (filename) {
-        const response = await context.mainApi.saveTextFile(
+      try {
+        const path = await context.mainApiAlt.saveTextFile(
           filename,
           hexOut,
           `home:${EXPORT_FILE_FOLDER}`
         );
-        if (response.type === "ErrorResponse") {
-          return commandError(response.message);
-        }
-        return commandSuccessWith(
-          `Code successfully exported to '${(response as MainSaveFileResponse).path}'`
-        );
+        return commandSuccessWith(`Code successfully exported to '${path}'`);
+      } catch (err) {
+        return commandError(err.toString());
       }
-      return commandError("Filename not specified");
 
       // --- Write out a single data record
       function writeDataRecord(segment: BinarySegment, offset: number, bytesCount: number): void {

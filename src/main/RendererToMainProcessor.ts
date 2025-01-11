@@ -4,9 +4,6 @@ import _ from "lodash";
 
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import type {
-  MainCreateKliveProjectResponse,
-} from "@messaging/any-to-main";
-import type {
   KliveCompilerOutput,
   SimpleAssemblerOutput
 } from "./compiler-integration/compiler-registry";
@@ -20,7 +17,7 @@ import {
   RequestMessage,
   ResponseMessage
 } from "@messaging/messages-core";
-import { textContentsResponse, genericResponse } from "@messaging/any-to-main";
+import { genericResponse } from "@messaging/any-to-main";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import {
@@ -98,6 +95,37 @@ class MainMessageProcessor {
     return createDiskFile(args[0], args[1], args[2]);
   }
 
+  async getDirectoryContent(...args: any[]) {
+    const filter = await getProjectDirectoryContentFilter();
+    return await getDirectoryContent(args[0], filter);
+  }
+
+  async openFolder(...args: any[]): Promise<string | null> {
+    if (args[0]) {
+      const errorMessage = await openFolderByPath(args[0]);
+      if (errorMessage) {
+        return errorMessage;
+      }
+    } else {
+      openFolder(this.window);
+    }
+    return null;
+  }
+
+  async createKliveProject(...args: any[]): Promise<string> {
+    const createFolderResponse = await createKliveProject(
+      args[0],
+      args[3],
+      args[4],
+      args[1],
+      args[2]
+    );
+    if (createFolderResponse.errorMessage) {
+      throw new Error(createFolderResponse.errorMessage);
+    }
+    return createFolderResponse.path;
+  }
+
   async checkZ88Card(...args: any[]): Promise<{ message?: string; content?: Uint8Array }> {
     const cardResult = await checkZ88SlotFile(args[0], args[1]);
     if (typeof cardResult === "string") {
@@ -109,6 +137,85 @@ class MainMessageProcessor {
         content: cardResult
       };
     }
+  }
+
+  getGloballyExcludedProjectItems() {
+    return appSettings.excludedProjectItems?.join(path.delimiter);
+  }
+
+  addGlobalExcludedProjectItem(...args: any[]) {
+    const excludedItems = args[0].map((p: any) => p.trim().replace(path.sep, "/"));
+    appSettings.excludedProjectItems = (
+      appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
+    ).filter((v: any, i: any, a: string | any[]) => a.indexOf(v) === i);
+    this.dispatch(refreshExcludedProjectItemsAction());
+    return appSettings.excludedProjectItems.join(path.delimiter);
+  }
+
+  setGloballyExcludedProjectItems(...args: any[]) {
+    appSettings.excludedProjectItems = args[0];
+    this.dispatch(refreshExcludedProjectItemsAction());
+    return appSettings.excludedProjectItems?.join(path.delimiter);
+  }
+
+  deleteFileEntry(...args: any[]) {
+    if (args[0]) {
+      fs.rmdirSync(args[1], { recursive: true });
+    } else {
+      fs.unlinkSync(args[1]);
+    }
+  }
+
+  async addNewFileEntry(...args: any[]): Promise<void> {
+    const newItemName = path.join(args[2], args[0]);
+    if (fs.existsSync(newItemName)) {
+      throw new Error(`${newItemName} already exists`);
+    }
+    if (args[1]) {
+      fs.mkdirSync(newItemName);
+    } else {
+      fs.closeSync(fs.openSync(newItemName, "w"));
+    }
+  }
+
+  renameFileEntry(...args: any[]) {
+    fs.renameSync(args[0], args[1]);
+  }
+
+  saveTextFile(...args: any[]) {
+    const filePath = resolveMessagePath(args[0], args[2]);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, args[1], { flag: "w" });
+    return filePath;
+  }
+
+  saveBinaryFile(...args: any[]) {
+    const filePath = resolveMessagePath(args[0], args[2]);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(filePath, args[1], { flag: "w" });
+    filePath;
+  }
+
+  saveProject() {
+    saveKliveProject();
+  }
+
+  saveSettings() {
+    saveAppSettings();
+  }
+
+  getUserSettings() {
+    return appSettings.userSettings ?? {};
+  }
+
+  getProjectSettings() {
+    return mainStore.getState().projectSettings ?? {};
   }
 }
 
@@ -158,145 +265,6 @@ export async function processRendererToMainMessages(
         dispatch(dimMenuAction(false));
       }
       break;
-
-    case "MainGetDirectoryContent":
-      const filter = await getProjectDirectoryContentFilter();
-      const folderContent = await getDirectoryContent(message.directory, filter);
-      return {
-        type: "MainGetDirectoryContentResponse",
-        contents: folderContent
-      };
-
-    case "MainGloballyExcludedProjectItems":
-      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
-
-    case "MainAddGloballyExcludedProjectItems": {
-      const excludedItems = message.files.map((p) => p.trim().replace(path.sep, "/"));
-      appSettings.excludedProjectItems = (
-        appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
-      ).filter((v, i, a) => a.indexOf(v) === i);
-      mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(appSettings.excludedProjectItems.join(path.delimiter));
-    }
-
-    case "MainSetGloballyExcludedProjectItems": {
-      appSettings.excludedProjectItems = message.files;
-      mainStore.dispatch(refreshExcludedProjectItemsAction());
-      return textContentsResponse(appSettings.excludedProjectItems?.join(path.delimiter));
-    }
-
-    case "MainOpenFolder":
-      if (message.folder) {
-        const openError = await openFolderByPath(message.folder);
-        if (openError) {
-          return errorResponse(openError);
-        }
-      } else {
-        openFolder(window);
-      }
-      break;
-
-    case "MainCreateKliveProject":
-      const createFolderResponse = await createKliveProject(
-        message.machineId,
-        message.modelId,
-        message.templateId,
-        message.projectName,
-        message.projectFolder
-      );
-      return {
-        type: "MainCreateKliveProjectResponse",
-        path: createFolderResponse.path,
-        errorMessage: createFolderResponse.errorMessage
-      } as MainCreateKliveProjectResponse;
-
-    case "MainRenameFileEntry":
-      try {
-        fs.renameSync(message.oldName, message.newName);
-        break;
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainDeleteFileEntry":
-      try {
-        if (message.isFolder) {
-          fs.rmdirSync(message.name, { recursive: true });
-        } else {
-          fs.unlinkSync(message.name);
-        }
-        break;
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainAddNewFileEntry":
-      const newItemName = path.join(message.folder, message.name);
-      if (fs.existsSync(newItemName)) {
-        return errorResponse(`${newItemName} already exists`);
-      }
-      try {
-        if (message.isFolder) {
-          fs.mkdirSync(newItemName);
-        } else {
-          fs.closeSync(fs.openSync(newItemName, "w"));
-        }
-        break;
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainSaveTextFile":
-      try {
-        const filePath = resolveMessagePath(message.path, message.resolveIn);
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(filePath, message.data, { flag: "w" });
-        return {
-          type: "MainSaveFileResponse",
-          path: filePath
-        };
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainSaveBinaryFile":
-      try {
-        const filePath = resolveMessagePath(message.path, message.resolveIn);
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(filePath, message.data, { flag: "w" });
-        return {
-          type: "MainSaveFileResponse",
-          path: filePath
-        };
-      } catch (err) {
-        return errorResponse(err.toString());
-      }
-
-    case "MainSaveProject":
-      await saveKliveProject();
-      break;
-
-    case "MainSaveSettings":
-      saveAppSettings();
-      break;
-
-    case "MainGetUserSettings":
-      return {
-        type: "MainGetSettingsResponse",
-        settings: appSettings.userSettings ?? {}
-      };
-
-    case "MainGetProjectSettings":
-      return {
-        type: "MainGetSettingsResponse",
-        settings: mainStore.getState()?.projectSettings ?? {}
-      };
 
     case "MainApplyUserSettings":
       if (message.key) {
@@ -378,20 +346,6 @@ export async function processRendererToMainMessages(
     case "MainShowWebsite":
       shell.openExternal(KLIVE_GITHUB_PAGES);
       break;
-
-    case "MainCheckZ88Card":
-      const cardResult = await checkZ88SlotFile(message.path, message.expectedSize);
-      if (typeof cardResult === "string") {
-        return {
-          type: "MainCheckZ88CardResponse",
-          message: cardResult
-        };
-      } else {
-        return {
-          type: "MainCheckZ88CardResponse",
-          content: cardResult
-        };
-      }
 
     case "MainSaveDiskChanges":
       return saveDiskChanges(message.diskIndex, message.changes);

@@ -229,23 +229,14 @@ const ExplorerPanel = () => {
         // --- Check if the item was a build root
         const oldProjectFolder = getNodeDir(selectedContextNode.data.projectPath);
         const wasBuildRoot = buildRoots.indexOf(selectedContextNode.data.projectPath) >= 0;
-        const response = await mainApi.renameFileEntry(
-          selectedContextNode.data.fullPath,
-          newFullName
-        );
-
-        // --- Check for successful operation
-        if (response.type === "ErrorResponse") {
-          // --- Display an error message
-          await mainApiAlt.displayMessageBox("error", "Rename Error", response.message);
-        } else {
-          // --- Succesfully renamed
+        try {
+          await mainApiAlt.renameFileEntry(selectedContextNode.data.fullPath, newFullName);
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
 
           if (wasBuildRoot) {
             const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;
             dispatch(setBuildRootAction([newProjectPath], true));
-            await mainApi.saveProject();
+            await mainApiAlt.saveProject();
           }
 
           // --- Refresh the tree and notify other objects listening to a rename
@@ -256,6 +247,8 @@ const ExplorerPanel = () => {
           if (newIndex >= 0) {
             setSelected(newIndex);
           }
+        } catch (err) {
+          await mainApiAlt.displayMessageBox("error", "Rename Error", err.toString());
         }
       }}
       onClose={() => {
@@ -271,23 +264,18 @@ const ExplorerPanel = () => {
       entry={selectedContextNode.data.fullPath}
       onDelete={async () => {
         // --- Delete the item
-        const response = await mainApi.deleteFileEntry(
+        await mainApiAlt.deleteFileEntry(
           selectedContextNodeIsFolder,
           selectedContextNode.data.fullPath
         );
 
-        if (response.type === "ErrorResponse") {
-          // --- Delete failed
-          await mainApiAlt.displayMessageBox("error", "Delete Error", response.message);
-        } else {
-          // --- Succesfully deleted
-          selectedContextNode.parentNode.removeChild(selectedContextNode);
-          refreshTree();
-          projectService.signItemDeleted(selectedContextNode);
+        // --- Succesfully deleted
+        selectedContextNode.parentNode.removeChild(selectedContextNode);
+        refreshTree();
+        projectService.signItemDeleted(selectedContextNode);
 
-          // --- Check if build root should be deleted
-          await mainApi.checkBuildRoot(selectedContextNode.data.projectPath);
-        }
+        // --- Check if build root should be deleted
+        await mainApi.checkBuildRoot(selectedContextNode.data.projectPath);
       }}
       onClose={() => {
         setIsDeleteDialogOpen(false);
@@ -306,15 +294,13 @@ const ExplorerPanel = () => {
         selectedContextNode.isExpanded = true;
 
         // --- Add the item
-        const response = await mainApi.addNewFileEntry(
-          newName,
-          newItemIsFolder,
-          selectedContextNode.data.fullPath
-        );
-        if (response.type === "ErrorResponse") {
-          // --- Delete failed
-          await mainApiAlt.displayMessageBox("error", "Add new item error", response.message);
-        } else {
+        try {
+          await mainApiAlt.addNewFileEntry(
+            newName,
+            newItemIsFolder,
+            selectedContextNode.data.fullPath
+          );
+
           // --- Succesfully added
           const fileTypeEntry = getFileTypeEntry(newName, store);
           const newNode = new TreeNode<ProjectNode>({
@@ -322,6 +308,7 @@ const ExplorerPanel = () => {
             name: newName,
             fullPath: `${selectedContextNode.data.fullPath}/${newName}`
           });
+
           if (fileTypeEntry) {
             newNode.data.icon = fileTypeEntry.icon;
             newNode.data.editor = fileTypeEntry.editor;
@@ -341,6 +328,8 @@ const ExplorerPanel = () => {
               await ideCommandsService.executeCommand(`nav "${newNode.data.fullPath}"`);
             }
           }, 0);
+        } catch (err) {
+          await mainApiAlt.displayMessageBox("error", "Add new item error", err.toString());
         }
       }}
       onClose={() => {
@@ -454,10 +443,10 @@ const ExplorerPanel = () => {
     }
 
     // --- Read the folder tree
-    const response = await mainApi.getDirectoryContent(folderPath);
+    const contents = await mainApiAlt.getDirectoryContent(folderPath);
 
     // --- Build the folder tree
-    const projectTree = buildProjectTree(response.contents, store, lastExpanded);
+    const projectTree = buildProjectTree(contents, store, lastExpanded);
     setTree(projectTree);
     setVisibleNodes(projectTree.getVisibleNodes());
     projectService.setProjectTree(projectTree);
@@ -553,7 +542,7 @@ const ExplorerPanel = () => {
         disabled={dimmed}
         spaceLeft={16}
         spaceRight={16}
-        clicked={async () => await mainApi.openFolder()}
+        clicked={async () => await mainApiAlt.openFolder()}
       />
       <div className={styles.noFolder}>or</div>
       <Button

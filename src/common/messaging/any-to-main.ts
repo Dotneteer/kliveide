@@ -1,6 +1,5 @@
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import type { CompilerOptions } from "@abstractions/CompilerInfo";
-import type { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import type { MessageBase } from "./messages-core";
 import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -24,105 +23,6 @@ export interface MainDisplayMessageBoxRequest extends MessageBase {
   messageType?: MessageBoxType;
   title?: string;
   message?: string;
-}
-
-// --- Get the contents of a particular directory
-export interface MainGetDirectoryContentRequest extends MessageBase {
-  type: "MainGetDirectoryContent";
-  directory: string;
-}
-
-// --- Open a folder
-export interface MainOpenFolderRequest extends MessageBase {
-  type: "MainOpenFolder";
-  folder?: string;
-}
-
-// --- Create a new Klive project
-export interface MainCreateKliveProjectRequest extends MessageBase {
-  type: "MainCreateKliveProject";
-  machineId: string;
-  modelId?: string;
-  templateId: string;
-  projectName: string;
-  projectFolder?: string;
-}
-
-// --- Get the list of globally excluded project items
-export interface MainGloballyExcludedProjectItemsRequest extends MessageBase {
-  type: "MainGloballyExcludedProjectItems";
-}
-
-// --- Add project items to the list of globally excluded items
-export interface MainAddGloballyExcludedProjectItemsRequest
-  extends MessageBase {
-  type: "MainAddGloballyExcludedProjectItems";
-  files: string[];
-}
-
-// --- Set the list of globally excluded project items
-export interface MainSetGloballyExcludedProjectItemsRequest
-  extends MessageBase {
-  type: "MainSetGloballyExcludedProjectItems";
-  files: string[];
-}
-
-// --- Delete a particluar file or folder from the file system
-export interface MainDeleteFileEntryRequest extends MessageBase {
-  type: "MainDeleteFileEntry";
-  isFolder: boolean;
-  name: string;
-}
-
-// --- Add a new empty file entry
-export interface MainAddNewFileEntryRequest extends MessageBase {
-  type: "MainAddNewFileEntry";
-  isFolder?: boolean;
-  folder?: string;
-  name: string;
-}
-
-// --- Rename a file entry
-export interface MainRenameFileEntryRequest extends MessageBase {
-  type: "MainRenameFileEntry";
-  oldName: string;
-  newName: string;
-}
-
-// --- Save a text file
-export interface MainSaveTextFileRequest extends MessageBase {
-  type: "MainSaveTextFile";
-  path: string;
-  data: string;
-  resolveIn?: string;
-}
-
-// --- Save a binary file
-export interface MainSaveBinaryFileRequest extends MessageBase {
-  type: "MainSaveBinaryFile";
-  path: string;
-  data: Uint8Array;
-  resolveIn?: string;
-}
-
-// --- Save the project file
-export interface MainSaveProjectRequest extends MessageBase {
-  type: "MainSaveProject";
-}
-
-// --- Save the settings file
-export interface MainSaveSettingsRequest extends MessageBase {
-  type: "MainSaveSettings";
-}
-
-// --- Get the current user-level settings
-export interface MainGetUserSettingsRequest extends MessageBase {
-  type: "MainGetUserSettings";
-}
-
-// --- Get the current project-level settings
-export interface MainGetProjectSettingsRequest extends MessageBase {
-  type: "MainGetProjectSettings";
 }
 
 // --- Apply and save a user-level setting
@@ -169,13 +69,6 @@ export interface MainExitAppRequest extends MessageBase {
 // --- Show the Klive IDE website
 export interface MainShowWebsiteRequest extends MessageBase {
   type: "MainShowWebsite";
-}
-
-// --- Check if a Z88 card file is valid
-export interface MainCheckZ88CardRequest extends MessageBase {
-  type: "MainCheckZ88Card";
-  path: string;
-  expectedSize?: number;
 }
 
 // --- Save the changes of a virtual floppy disk (.DSK)
@@ -248,19 +141,6 @@ export interface BinaryContentsResponse extends MessageBase {
   contents: Uint8Array;
 }
 
-// --- The response with the contents of a directory
-export interface MainGetDirectoryContentResponse extends MessageBase {
-  type: "MainGetDirectoryContentResponse";
-  contents: ProjectNodeWithChildren;
-}
-
-// --- The response with the result of creating a new Klive project
-export interface MainCreateKliveProjectResponse extends MessageBase {
-  type: "MainCreateKliveProjectResponse";
-  path?: string;
-  errorMessage?: string;
-}
-
 // --- The response with the compile main file result
 export interface MainCompileResponse extends MessageBase {
   type: "MainCompileFileResponse";
@@ -278,13 +158,6 @@ export interface MainSaveFileResponse extends MessageBase {
 export interface MainGetSettingsResponse extends MessageBase {
   type: "MainGetSettingsResponse";
   settings: Record<string, any>;
-}
-
-// --- The response with the Z88 card check result
-export interface MainCheckZ88CardResponse extends MessageBase {
-  type: "MainCheckZ88CardResponse";
-  message?: string;
-  content?: Uint8Array;
 }
 
 // --- The response with the create virtual disk result

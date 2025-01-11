@@ -1,3 +1,4 @@
+import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 import { MessageBoxType } from "./any-to-main";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
@@ -31,7 +32,73 @@ class MainApiAltImpl {
     throw new Error(NO_PROXY_ERROR);
   }
 
+  async getDirectoryContent(_directory: string): Promise<ProjectNodeWithChildren> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async openFolder(_folder?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
   async checkZ88Card(_path: string, _expectedSize?: number): Promise<any> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async createKliveProject(
+    _machineId: string,
+    _projectName: string,
+    _folder?: string,
+    _modelId?: string,
+    _templateId?: string
+  ): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getGloballyExcludedProjectItems(): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async addGlobalExcludedProjectItem(_files: string[]): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async setGloballyExcludedProjectItems(_files: string[]): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async deleteFileEntry(_isFolder: boolean, _name: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async addNewFileEntry(_name: string, _isFolder?: boolean, _folder?: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async renameFileEntry(_oldName: string, _newName: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveTextFile(_path: string, _data: string, _resolveIn?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveBinaryFile(_path: string, _data: Uint8Array, _resolveIn?: string): Promise<string> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveProject(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async saveSettings(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getUserSettings(): Promise<Record<string, any>> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getProjectSettings(): Promise<Record<string, any>> {
     throw new Error(NO_PROXY_ERROR);
   }
 }

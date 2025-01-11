@@ -39,19 +39,20 @@ export class ProjectListExcludedItemsCommand extends IdeCommandBase<ListExcluded
   };
 
   async execute(context: IdeCommandContext, args: ListExcludedItemArgs): Promise<IdeCommandResult> {
-    let result: Promise<ExcludedItemInfo[]>;
+    let result: ExcludedItemInfo[];
     if (args["-global"]) {
-      result = getExcludedProjectItemsFromGlobalSettings(context.messenger);
+      result = await getExcludedProjectItemsFromGlobalSettings(context.messenger);
     } else {
       const proj = context.store.getState().project;
-      result = Promise.resolve(excludedItemsFromProject(proj));
+      result = excludedItemsFromProject(proj);
     }
-    const items = await result;
-    if (items.length <= 0) {
+
+    console.log("result", result);
+    if (result.length <= 0) {
       writeInfoMessage(context.output, "There are no excluded items.");
     } else {
       writeInfoMessage(context.output, "Excluded items:");
-      items.forEach((t) => writeInfoMessage(context.output, `${t.value}`));
+      result.forEach((t) => writeInfoMessage(context.output, `${t.value}`));
     }
     return commandSuccess;
   }
@@ -67,7 +68,7 @@ type ExcludeItemArgs = {
 export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> {
   readonly id = "project:exclude-item";
   readonly description = "Exclude/restore an item to project or globally.";
-  readonly usage = "project:exclude-item [--global] [-d] <item-path>...";
+  readonly usage = "project:exclude-item [-global] [-d] <item-path>...";
   readonly aliases = ["project:exclude", "proj:exclude-item", "proj:exclude", "p:x"];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -84,13 +85,13 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
         if (args.rest.length > 0) {
           const excludedItems = await getExcludedProjectItemsFromGlobalSettings(context.messenger);
           args.rest = args.rest.map((t) => t.replace(getIsWindows() ? "\\" : "/", "/"));
-          await context.mainApi.setGloballyExcludedProjectItems(
+          await context.mainApiAlt.setGloballyExcludedProjectItems(
             excludedItems
               .map((item) => item.value)
               ?.filter((p) => !args.rest.some((t) => t.localeCompare(p) === 0))
           );
         } else {
-          await context.mainApi.setGloballyExcludedProjectItems([]);
+          await context.mainApiAlt.setGloballyExcludedProjectItems([]);
         }
       } else {
         // Add new entries to system-wide exclusion list
@@ -105,10 +106,9 @@ export class ProjectExcludeItemsCommand extends IdeCommandBase<ExcludeItemArgs> 
           filteredPaths.push(p);
         }
         needSaveProject = beforeExcluded(context, filteredPaths);
-        console.log("filteredPaths", filteredPaths);
-        await context.mainApi.addGlobalExcludedProjectItem(filteredPaths);
+        await context.mainApiAlt.addGlobalExcludedProjectItem(filteredPaths);
       }
-      await context.mainApi.saveSettings();
+      await context.mainApiAlt.saveSettings();
     } else {
       // Project-specific operation
       const proj = context.store.getState().project;

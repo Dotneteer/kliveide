@@ -296,10 +296,7 @@ class ProjectService implements IProjectService {
 
   private async saveFileContentInner(file: string, contents: string | Uint8Array): Promise<void> {
     if (typeof contents === "string") {
-      const response = await createMainApi(this.messenger).saveTextFile(file, contents);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      }
+      await createMainAltApi(this.messenger).saveTextFile(file, contents);
     } else {
       const response = await createMainApi(this.messenger).saveBinaryFile(file, contents);
       if (response.type === "ErrorResponse") {

@@ -20,35 +20,16 @@ import type {
   MainDisplayMessageBoxRequest,
   BinaryContentsResponse,
   TextContentsResponse,
-  MainGetDirectoryContentRequest,
-  MainGetDirectoryContentResponse,
-  MainCreateKliveProjectRequest,
-  MainCreateKliveProjectResponse,
-  MainOpenFolderRequest,
-  MainAddNewFileEntryRequest,
-  MainGloballyExcludedProjectItemsRequest,
-  MainAddGloballyExcludedProjectItemsRequest,
-  MainSetGloballyExcludedProjectItemsRequest,
-  MainDeleteFileEntryRequest,
-  MainRenameFileEntryRequest,
-  MainSaveTextFileRequest,
-  MainSaveProjectRequest,
-  MainSaveSettingsRequest,
   MainCompileFileRequest,
   MainExitAppRequest,
   MainCompileResponse,
-  MainSaveBinaryFileRequest,
   MainSaveFileResponse,
   MainShowItemInFolderRequest,
   MainApplyUserSettingsRequest,
   MainApplyProjectSettingsRequest,
-  MainGetUserSettingsRequest,
-  MainGetProjectSettingsRequest,
   MainGetSettingsResponse,
   MainMoveSettingsRequest,
   MainShowWebsiteRequest,
-  MainCheckZ88CardRequest,
-  MainCheckZ88CardResponse,
   MainSaveDiskChangesRequest,
   MainCreateDiskFileResponse,
   MainGetTemplateDirsResponse,
@@ -229,21 +210,6 @@ export type RequestMessage =
   | EmuGetCallStackRequest
   | EmuSetKeyStateRequest
   | MainDisplayMessageBoxRequest
-  | MainGetDirectoryContentRequest
-  | MainOpenFolderRequest
-  | MainCreateKliveProjectRequest
-  | MainAddNewFileEntryRequest
-  | MainGloballyExcludedProjectItemsRequest
-  | MainAddGloballyExcludedProjectItemsRequest
-  | MainSetGloballyExcludedProjectItemsRequest
-  | MainDeleteFileEntryRequest
-  | MainRenameFileEntryRequest
-  | MainSaveTextFileRequest
-  | MainSaveBinaryFileRequest
-  | MainSaveProjectRequest
-  | MainSaveSettingsRequest
-  | MainGetUserSettingsRequest
-  | MainGetProjectSettingsRequest
   | MainApplyUserSettingsRequest
   | MainApplyProjectSettingsRequest
   | MainMoveSettingsRequest
@@ -251,7 +217,6 @@ export type RequestMessage =
   | MainExitAppRequest
   | MainShowItemInFolderRequest
   | MainShowWebsiteRequest
-  | MainCheckZ88CardRequest
   | MainSaveDiskChangesRequest
   | MainGetTemplateDirsRequest
   | MainStartScriptRequest
@@ -282,12 +247,9 @@ export type ResponseMessage =
   | ValueResponse
   | TextContentsResponse
   | BinaryContentsResponse
-  | MainGetDirectoryContentResponse
-  | MainCreateKliveProjectResponse
   | MainSaveFileResponse
   | MainGetSettingsResponse
   | MainCompileResponse
-  | MainCheckZ88CardResponse
   | MainCreateDiskFileResponse
   | MainGetTemplateDirsResponse
   | MainRunScriptResponse

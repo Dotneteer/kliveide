@@ -36,26 +36,30 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
     const parts = args.machineId.split(":");
     const machineId = parts[0];
     const modelId = parts.length > 1 ? parts[1] : undefined;
-    const response = await context.mainApi.createKliveProject(
-      machineId,
-      args.projectName,
-      args["-p"],
-      modelId,
-      args.templateId ?? "default"
-    );
-    if (response.errorMessage) {
-      return commandError(response.errorMessage);
-    }
-    if (args["-o"]) {
-      const result = await context.mainApi.openFolder(response.path);
-      if (result.type === "ErrorResponse") {
-        return {
-          success: false,
-          finalMessage: `Error opening folder: ${result.message}`
-        };
+    try {
+      const responsePath = await context.mainApiAlt.createKliveProject(
+        machineId,
+        args.projectName,
+        args["-p"],
+        modelId,
+        args.templateId ?? "default"
+      );
+      if (args["-o"]) {
+        const errorMessage = await context.mainApiAlt.openFolder(responsePath);
+        if (errorMessage) {
+          return {
+            success: false,
+            finalMessage: `Error opening folder: ${errorMessage}`
+          };
+        }
+        writeSuccessMessage(
+          context.output,
+          `Klive project successfully created in ${responsePath}`
+        );
       }
+    } catch (error) {
+      return commandError(error.toString());
     }
-    writeSuccessMessage(context.output, `Klive project successfully created in ${response.path}`);
     return commandSuccess;
   }
 }

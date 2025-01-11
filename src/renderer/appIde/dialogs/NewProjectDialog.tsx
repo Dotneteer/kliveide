@@ -64,7 +64,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
     const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
-    console.log("Validation", fValid, nValid)
+    console.log("Validation", fValid, nValid);
   }, [projectFolder, projectName]);
 
   return (
@@ -86,22 +86,20 @@ export const NewProjectDialog = ({ onClose }: Props) => {
 
         // --- Create the project
         console.log("project", machineId, modelId, templateId, name, folder);
-        const response = await mainApi.createKliveProject(machine, name, folder, modelId, template);
-
-        if (response.errorMessage) {
-          // --- Display the error
-          await mainApiAlt.displayMessageBox(
-            "error",
-            "New Klive Project Error",
-            response.errorMessage
+        try {
+          const responsePath = await mainApiAlt.createKliveProject(
+            machine,
+            name,
+            folder,
+            modelId,
+            template
           );
-
-          // --- Keep the dialog open
+          // --- Open the newly created project
+          await mainApiAlt.openFolder(responsePath);
+        } catch (error) {
+          await mainApiAlt.displayMessageBox("error", "New Klive Project Error", error.toString());
           return true;
         }
-
-        // --- Open the newly created project
-        await mainApi.openFolder(response.path);
 
         // --- Dialog can be closed
         return false;
