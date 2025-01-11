@@ -164,13 +164,13 @@ type GetCardFileMessage = {
 };
 
 async function getCardFile(
-  mainApi: MainApi,
+  mainApiAlt: MainApi,
   slot: number,
   acceptedSizes: number[]
 ): Promise<GetCardFileMessage | undefined> {
   const filterName = slot == 0 ? "ROM files" : "EPROM files";
   const filterExtensions = slot == 0 ? ["bin", "rom"] : ["epr"];
-  const response = await mainApi.showOpenFileDialog(
+  const file = await mainApiAlt.showOpenFileDialog(
     [
       { name: filterName, extensions: filterExtensions },
       { name: "All Files", extensions: ["*"] }
@@ -179,10 +179,10 @@ async function getCardFile(
   );
 
   // --- No card is selected
-  if (!response.file) return null;
+  if (!file) return null;
 
   // --- Check the selected file
-  const checkResponse = await mainApi.checkZ88Card(response.file);
+  const checkResponse = await mainApiAlt.checkZ88Card(file);
 
   // --- Result of test
   if (checkResponse.content) {
@@ -190,7 +190,7 @@ async function getCardFile(
     const fileSize = checkResponse.content.length;
     const isAllowed = acceptedSizes.some((s) => s * 1024 === fileSize);
     if (!isAllowed) {
-      mainApi.displayMessageBox(
+      mainApiAlt.displayMessageBox(
         "error",
         "Invalid Z88 Card",
         `The size of the selected card is ${fileSize} bytes (${Math.floor(
@@ -199,10 +199,10 @@ async function getCardFile(
       );
       return null;
     }
-    return { filename: response.file, contents: checkResponse.content };
+    return { filename: file, contents: checkResponse.content };
   } else if (checkResponse.message) {
-    mainApi.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
+    mainApiAlt.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
     return null;
   }
-  return { filename: response.file, contents: checkResponse.content };
+  return { filename: file, contents: checkResponse.content };
 }

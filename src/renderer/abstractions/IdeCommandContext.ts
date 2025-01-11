@@ -59,7 +59,7 @@ export type IdeCommandContext = {
   emuApi: EmuApi;
 
   /**
-   * Main API
+   * Alternative main API
    */
   mainApi: MainApi;
 };

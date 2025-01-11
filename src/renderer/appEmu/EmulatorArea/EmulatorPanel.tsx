@@ -17,8 +17,8 @@ import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
-import { useMainApi } from "@renderer/core/MainApi";
 import { setClockMultiplierAction } from "@common/state/actions";
+import { useMainApi } from "@renderer/core/MainApi";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -287,15 +287,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- There's a saved file, store it
     if (args.savedFileInfo) {
       (async () => {
-        const response = await mainApi.saveBinaryFile(
-          args.savedFileInfo.name,
-          args.savedFileInfo.contents,
-          "saveFolder"
-        );
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(
-            `File saved with the SAVE ZX Spectrum command failed: ${response.message}.`
+        try {
+          await mainApi.saveBinaryFile(
+            args.savedFileInfo.name,
+            args.savedFileInfo.contents,
+            "saveFolder"
           );
+        } catch (err) {
+          reportMessagingError(`Saving file failed: ${err.toString()}.`);
         }
       })();
     }
@@ -316,9 +315,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     // --- Sends disk changes to the main process
     async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
-      const response = await mainApi.saveDiskChanges(diskIndex, changes);
-      if (response.type === "ErrorResponse") {
-        reportMessagingError(`Saving disk changes failed: ${response.message}.`);
+      try {
+        await mainApi.saveDiskChanges(diskIndex, changes);
+      } catch (err) {
+        reportMessagingError(`Saving disk changes failed: ${err.toString()}.`);
       }
     }
   }

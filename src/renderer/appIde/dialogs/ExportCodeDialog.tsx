@@ -170,11 +170,11 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
-            if (response.folder) {
-              setExportFolder(response.folder);
+            const folder = await mainApi.showOpenFolderDialog(EXPORT_CODE_FOLDER_ID);
+            if (folder) {
+              setExportFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setExportFolder(val);
@@ -222,17 +222,18 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           buttonIcon="file-code"
           buttonTitle="Select the screen file"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFileDialog(
+            const file = await mainApi.showOpenFileDialog(
               [
                 { name: "Tape files", extensions: ["tap", "tzx"] },
                 { name: "All Files", extensions: ["*"] }
               ],
               EXPORT_CODE_FOLDER_ID
             );
-            if (response.file) {
-              setScreenFilename(response.file);
+            console.log("file:", file);
+            if (file) {
+              setScreenFilename(file);
             }
-            return response.file;
+            return file;
           }}
           valueChanged={(val) => {
             setScreenFilename(val);

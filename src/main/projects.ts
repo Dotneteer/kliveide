@@ -227,7 +227,7 @@ export function copyFileSync(source: string, target: string) {
       targetFile = path.join(target, path.basename(source));
     }
   }
-  fs.writeFileSync(targetFile, fs.readFileSync(source));
+  fs.writeFileSync(targetFile, new Uint8Array(fs.readFileSync(source)));
 }
 
 /**

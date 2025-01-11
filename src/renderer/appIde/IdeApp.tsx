@@ -110,7 +110,7 @@ import { ExportCodeCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInj
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 
-const ipcRenderer = window.electron.ipcRenderer;
+const ipcRenderer = (window as any).electron.ipcRenderer;
 
 const IdeApp = () => {
   // --- Used services

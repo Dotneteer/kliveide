@@ -17,59 +17,8 @@
 // ====================================================================================================================
 
 import type {
-  MainReadTextFileRequest,
-  MainReadBinaryFileRequest,
-  MainDisplayMessageBoxRequest,
-  BinaryContentsResponse,
-  TextContentsResponse,
-  MainGetDirectoryContentRequest,
-  MainGetDirectoryContentResponse,
-  MainCreateKliveProjectRequest,
-  MainCreateKliveProjectResponse,
-  MainOpenFolderRequest,
-  MainAddNewFileEntryRequest,
-  MainGloballyExcludedProjectItemsRequest,
-  MainAddGloballyExcludedProjectItemsRequest,
-  MainSetGloballyExcludedProjectItemsRequest,
-  MainDeleteFileEntryRequest,
-  MainRenameFileEntryRequest,
-  MainShowOpenFolderDialogRequest,
-  MainShowOpenFolderDialogResponse,
-  MainSaveTextFileRequest,
-  MainSaveProjectRequest,
-  MainSaveSettingsRequest,
-  MainCompileFileRequest,
-  MainExitAppRequest,
-  MainCompileResponse,
-  MainSaveBinaryFileRequest,
-  MainShowOpenFileDialogResponse,
-  MainShowOpenFileDialogRequest,
-  MainSaveFileResponse,
-  MainShowItemInFolderRequest,
-  MainApplyUserSettingsRequest,
-  MainApplyProjectSettingsRequest,
-  MainGetUserSettingsRequest,
-  MainGetProjectSettingsRequest,
-  MainGetSettingsResponse,
-  MainMoveSettingsRequest,
-  MainShowWebsiteRequest,
-  MainCheckZ88CardRequest,
-  MainCheckZ88CardResponse,
-  MainSaveDiskChangesRequest,
-  MainCreateDiskFileRequest,
-  MainCreateDiskFileResponse,
-  MainGetTemplateDirsResponse,
-  MainGetTemplateDirsRequest,
-  MainStartScriptRequest,
-  MainStopScriptRequest,
-  MainRunScriptResponse,
-  MainResolveModuleRequest,
-  MainResolveModuleResponse,
-  MainCloseScriptRequest,
-  MainGetBuildFunctionsRequest,
-  MainGetBuildFunctionsResponse,
-  MainRemoveCompletedScriptsRequest,
-  MainCheckBuildRootRequest
+  MainGeneralRequest,
+  MainGeneralResponse
 } from "./any-to-main";
 import type { ForwardActionRequest } from "./forwarding";
 import type {
@@ -176,6 +125,7 @@ export interface DefaultResponse extends MessageBase {
  */
 export interface ErrorResponse extends MessageBase {
   type: "ErrorResponse";
+  __ERROR_RESPONSE__: true;
   message: string;
 }
 
@@ -200,6 +150,7 @@ export interface ValueResponse extends MessageBase {
  */
 export type RequestMessage =
   | ForwardActionRequest
+  | MainGeneralRequest
   | EmuSetMachineTypeRequest
   | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
@@ -231,44 +182,6 @@ export type RequestMessage =
   | EmuGetPartitionLabelsRequest
   | EmuGetCallStackRequest
   | EmuSetKeyStateRequest
-  | MainReadTextFileRequest
-  | MainReadBinaryFileRequest
-  | MainDisplayMessageBoxRequest
-  | MainGetDirectoryContentRequest
-  | MainOpenFolderRequest
-  | MainCreateKliveProjectRequest
-  | MainAddNewFileEntryRequest
-  | MainGloballyExcludedProjectItemsRequest
-  | MainAddGloballyExcludedProjectItemsRequest
-  | MainSetGloballyExcludedProjectItemsRequest
-  | MainDeleteFileEntryRequest
-  | MainRenameFileEntryRequest
-  | MainShowOpenFolderDialogRequest
-  | MainShowOpenFileDialogRequest
-  | MainSaveTextFileRequest
-  | MainSaveBinaryFileRequest
-  | MainSaveProjectRequest
-  | MainSaveSettingsRequest
-  | MainGetUserSettingsRequest
-  | MainGetProjectSettingsRequest
-  | MainApplyUserSettingsRequest
-  | MainApplyProjectSettingsRequest
-  | MainMoveSettingsRequest
-  | MainCompileFileRequest
-  | MainExitAppRequest
-  | MainShowItemInFolderRequest
-  | MainShowWebsiteRequest
-  | MainCheckZ88CardRequest
-  | MainSaveDiskChangesRequest
-  | MainCreateDiskFileRequest
-  | MainGetTemplateDirsRequest
-  | MainStartScriptRequest
-  | MainStopScriptRequest
-  | MainResolveModuleRequest
-  | MainCloseScriptRequest
-  | MainRemoveCompletedScriptsRequest
-  | MainGetBuildFunctionsRequest
-  | MainCheckBuildRootRequest
   | IdeDisplayOutputRequest
   | IdeShowMemoryRequest
   | IdeShowDisassemblyRequest
@@ -282,26 +195,12 @@ export type RequestMessage =
  * All Response messages
  */
 export type ResponseMessage =
+  | MainGeneralResponse
   | NotReadyResponse
   | DefaultResponse
   | ErrorResponse
   | FlagResponse
   | ValueResponse
-  | TextContentsResponse
-  | BinaryContentsResponse
-  | MainGetDirectoryContentResponse
-  | MainCreateKliveProjectResponse
-  | MainShowOpenFolderDialogResponse
-  | MainShowOpenFileDialogResponse
-  | MainSaveFileResponse
-  | MainGetSettingsResponse
-  | MainCompileResponse
-  | MainCheckZ88CardResponse
-  | MainCreateDiskFileResponse
-  | MainGetTemplateDirsResponse
-  | MainRunScriptResponse
-  | MainResolveModuleResponse
-  | MainGetBuildFunctionsResponse
   | EmuGetCpuStateResponse
   | EmuGetUlaStateResponse
   | EmuGetPsgStateResponse
@@ -335,6 +234,7 @@ export function defaultResponse (): DefaultResponse {
  */
 export function errorResponse (message: string): ErrorResponse {
   return {
+    __ERROR_RESPONSE__: true,
     type: "ErrorResponse",
     message
   };

@@ -58,7 +58,10 @@ export class CancelScriptCommand extends IdeCommandBase<CancelScriptCommandArgs>
 
   readonly requiresProject = true;
 
-  async execute(context: IdeCommandContext, args: CancelScriptCommandArgs): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: CancelScriptCommandArgs
+  ): Promise<IdeCommandResult> {
     // --- Check if the script file exists
     const scriptId = parseInt(args.fileId, 10);
     let arg: number | string = args.fileId;
@@ -85,7 +88,6 @@ type DisplayScriptOutputCommandArgs = {
   scriptId: number;
 };
 
-
 export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutputCommandArgs> {
   readonly id = "script-output";
   readonly description = "Displays the output of the specified script";
@@ -98,7 +100,10 @@ export class DisplayScriptOutputCommand extends IdeCommandBase<DisplayScriptOutp
 
   readonly requiresProject = true;
 
-  async execute(context: IdeCommandContext, args: DisplayScriptOutputCommandArgs): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: DisplayScriptOutputCommandArgs
+  ): Promise<IdeCommandResult> {
     // --- Get the script output
     const scriptId = args.scriptId;
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
@@ -147,7 +152,10 @@ export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandA
 
   readonly requiresProject = true;
 
-  async execute(context: IdeCommandContext, args: RunBuildScriptCommandArgs): Promise<IdeCommandResult> {
+  async execute(
+    context: IdeCommandContext,
+    args: RunBuildScriptCommandArgs
+  ): Promise<IdeCommandResult> {
     // --- Check for function name syntax
     const functionName = args.functionName;
     if (!functionName.match(/^[$A-Z_][0-9A-Z_$]*$/i)) {
@@ -165,37 +173,37 @@ export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandA
     }
 
     // --- Check if build function exists
-    const buildFunctionsResponse = await context.mainApi.getBuildFunctions();
-    if (buildFunctionsResponse.type === "ErrorResponse") {
-      return commandError(buildFunctionsResponse.message);
-    }
-    if (!buildFunctionsResponse.functions.includes(functionName)) {
-      return commandError(`Function '${functionName}' not found in the build file.`);
-    }
-
-    // --- Get the current project's build file name
-    const projectFolder = context.store.getState().project?.folderPath;
-    const buildFileName = `${projectFolder}/${BUILD_FILE}`;
-
-    // --- Create the script to run
-    const script = `import { ${functionName} } from "./${BUILD_FILE}";\n\n${functionName}();`;
-
-    let id = 0;
     try {
-      id = await context.service.scriptService.runScriptText(
-        script,
-        functionName,
-        buildFileName,
-        "build"
-      );
-      return commandSuccessWith(
-        `Script ${functionName} (with ID ${Math.abs(id)}) ${
-          id < 0 ? "is already running" : "has been started"
-        }.`,
-        id
-      );
+      const functions = await context.mainApi.getBuildFunctions();
+      if (!functions.includes(functionName)) {
+        return commandError(`Function '${functionName}' not found in the build file.`);
+      }
+      // --- Get the current project's build file name
+      const projectFolder = context.store.getState().project?.folderPath;
+      const buildFileName = `${projectFolder}/${BUILD_FILE}`;
+
+      // --- Create the script to run
+      const script = `import { ${functionName} } from "./${BUILD_FILE}";\n\n${functionName}();`;
+
+      let id = 0;
+      try {
+        id = await context.service.scriptService.runScriptText(
+          script,
+          functionName,
+          buildFileName,
+          "build"
+        );
+        return commandSuccessWith(
+          `Script ${functionName} (with ID ${Math.abs(id)}) ${
+            id < 0 ? "is already running" : "has been started"
+          }.`,
+          id
+        );
+      } catch (err) {
+        return commandError(err.message, id);
+      }
     } catch (err) {
-      return commandError(err.message, id);
+      return commandError(err.message);
     }
   }
 }
@@ -211,9 +219,10 @@ async function checkScriptFile(
 
   // --- Check if the script file exists
   const filePath = isAbsolutePath(filename) ? filename : `${projectFolder}/${filename}`;
-  const response = await context.mainApi.readTextFile(filePath, null, "project");
-  if (response.type === "ErrorResponse") {
-    return { error: response.message };
+  try {
+    await context.mainApi.readTextFile(filePath, null, "project");
+  } catch (err) {
+    return { error: err.message };
   }
   return { file: filePath };
 }
