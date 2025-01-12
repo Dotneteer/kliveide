@@ -1,7 +1,7 @@
 import type { MachineConfigSet } from "@common/machines/info-types";
 import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 
-import { getEmuAltApi } from "@messaging/MainToEmuMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
@@ -45,7 +45,7 @@ export async function setMachineType(
   modelId?: string,
   config?: MachineConfigSet
 ): Promise<void> {
-  await getEmuAltApi().setMachineType(machineId, modelId, config);
+  await getEmuApi().setMachineType(machineId, modelId, config);
   const mt = registeredMachines.find((mt) => mt.id === machineId);
   if (mt) {
     await logEmuEvent(`Machine type set to ${mt.displayName} (${mt.id})`, "bright-cyan");

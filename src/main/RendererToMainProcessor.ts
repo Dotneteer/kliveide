@@ -368,16 +368,6 @@ export async function processRendererToMainMessages(
         }
       }
       return errorResponse(`Unknown method ${message.method}`);
-
-    // --- Forward these messages to the emulator
-    case "EmuGetNextRegDescriptors":
-    case "EmuGetNextRegState":
-    case "EmuGetNextMemoryMapping":
-    case "EmuParsePartitionLabel":
-    case "EmuGetPartitionLabels":
-    case "EmuGetCallStack":
-    case "EmuSetKeyState":
-      return await sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

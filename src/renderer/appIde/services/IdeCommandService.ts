@@ -14,9 +14,8 @@ import { parseCommand } from "./command-parser";
 import { extractArguments, IdeCommandBase, NoCommandArgs } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 const MAX_HISTORY = 1024;
 
@@ -178,8 +177,7 @@ class IdeCommandService implements IIdeCommandService {
       service: this._appServices,
       messenger: this.messenger,
       messageSource: this.messageSource,
-      emuApi: createEmulatorApi(this.messenger),
-      emuApiAlt: createEmuAltApi(this.messenger),
+      emuApi: createEmuApi(this.messenger),
       mainApi: createMainApi(this.messenger)
     };
 

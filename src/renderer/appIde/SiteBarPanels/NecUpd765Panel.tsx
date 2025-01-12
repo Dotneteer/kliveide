@@ -9,7 +9,7 @@ import styles from "./NecUpd765Panel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -18,7 +18,7 @@ const NecUpd765Panel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshLogEntries = async () => {
     // --- Get breakpoint information
-    const log = await createEmuAltApi(messenger).getNecUpd765State();
+    const log = await createEmuApi(messenger).getNecUpd765State();
     // --- Store the breakpoint info
     setLog(log);
   };

@@ -2,7 +2,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { ScriptCallContext } from "./MainScriptManager";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { getEmuAltApi } from "@common/messaging/MainToEmuMessenger";
+import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 
 export interface EmulatorApi {
   readonly executionState: MachineControllerState;
@@ -27,44 +27,44 @@ export function createEmulatorApi(context: ScriptCallContext): EmulatorApi {
       return context.state?.emulatorState?.machineState ?? MachineControllerState.None;
     },
     start: async () => {
-      await getEmuAltApi().issueMachineCommand("start");
+      await getEmuApi().issueMachineCommand("start");
     },
     pause: async () => {
-      await getEmuAltApi().issueMachineCommand("pause");
+      await getEmuApi().issueMachineCommand("pause");
     },
     stop: async () => {
-      await getEmuAltApi().issueMachineCommand("stop");
+      await getEmuApi().issueMachineCommand("stop");
     },
     reset: async () => {
-      await getEmuAltApi().issueMachineCommand("reset");
+      await getEmuApi().issueMachineCommand("reset");
     },
     restart: async () => {
-      await getEmuAltApi().issueMachineCommand("restart");
+      await getEmuApi().issueMachineCommand("restart");
     },
     debug: async () => {
-      await getEmuAltApi().issueMachineCommand("debug");
+      await getEmuApi().issueMachineCommand("debug");
     },
     stepInto: async () => {
-      await getEmuAltApi().issueMachineCommand("stepInto");
+      await getEmuApi().issueMachineCommand("stepInto");
     },
     stepOver: async () => {
-      await getEmuAltApi().issueMachineCommand("stepOver");
+      await getEmuApi().issueMachineCommand("stepOver");
     },
     stepOut: async () => {
-      await getEmuAltApi().issueMachineCommand("stepOut");
+      await getEmuApi().issueMachineCommand("stepOut");
     },
     async injectCode(code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> {
-      await getEmuAltApi().injectCodeCommand(createCodeToInject(code, org, partition));
+      await getEmuApi().injectCodeCommand(createCodeToInject(code, org, partition));
     },
     runCode: async (code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> => {
-      await getEmuAltApi().runCodeCommand(createCodeToInject(code, org, partition), false);
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), false);
     },
     debugCode: async (
       code: Uint8Array,
       org: number = 0x8000,
       partition?: number
     ): Promise<void> => {
-      await getEmuAltApi().runCodeCommand(createCodeToInject(code, org, partition), true);
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), true);
     }
   };
 }

@@ -1,5 +1,5 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
@@ -69,5 +69,5 @@ export async function refreshSourceCodeBreakpoints(
       }
     }
   }
-  await createEmuAltApi(messenger).resolveBreakpoints(resolvedBp);
+  await createEmuApi(messenger).resolveBreakpoints(resolvedBp);
 }

@@ -73,7 +73,7 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
     args: DisassemblyCommandArgs
   ): Promise<OutputPaneBuffer> {
     // --- Get the memory
-    const getMemoryResponse = await context.emuApiAlt.getMemoryContents();
+    const getMemoryResponse = await context.emuApi.getMemoryContents();
 
     const memory = getMemoryResponse.memory;
     const partitions = getMemoryResponse.partitionLabels;

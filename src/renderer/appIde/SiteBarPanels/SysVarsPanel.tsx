@@ -9,7 +9,7 @@ import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory } from "@controls/Tooltip";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
@@ -22,7 +22,7 @@ type SysVarData = {
 };
 
 const SysVarsPanel = () => {
-  const emuApiAlt = useEmuApiAlt();
+  const emuApiAlt = useEmuApi();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 

@@ -32,7 +32,6 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -67,8 +66,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
-  const emuApi = useEmuApi();
-  const emuApiAlt = useEmuApiAlt();
+  const emuApiAlt = useEmuApi();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -305,8 +303,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Obtain available partition labels for the current machine type
   useEffect(() => {
     (async function () {
-      const labels = await emuApi.getPartitionLabels();
-      setPartitionLabels(labels.value);
+      const labels = await emuApiAlt.getPartitionLabels();
+      setPartitionLabels(labels);
     })();
   }, [machineId]);
 

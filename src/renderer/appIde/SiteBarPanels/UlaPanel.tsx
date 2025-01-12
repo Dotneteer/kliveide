@@ -1,25 +1,22 @@
 import { Flag, Label, Separator } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { EmuGetUlaStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
-import { UlaState } from "@common/messaging/EmuApiAlt";
+import { UlaState } from "@common/messaging/EmuApi";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 48;
 
 const UlaPanel = () => {
   const emuApi = useEmuApi();
-  const emuApiAlt = useEmuApiAlt();
   const [ulaState, setUlaState] = useState<UlaState>(null);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
 
-  useStateRefresh(250, async () => setUlaState(await emuApiAlt.getUlaState()));
+  useStateRefresh(250, async () => setUlaState(await emuApi.getUlaState()));
 
   const keyClicked = async (lineNo: number, bitNo: number) => {
     const keyState = !!(ulaState?.keyLines?.[lineNo] & (1 << bitNo));

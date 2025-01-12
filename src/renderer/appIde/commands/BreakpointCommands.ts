@@ -17,7 +17,7 @@ import {
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
@@ -26,8 +26,8 @@ export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly aliases = ["eab"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    const bps = await context.emuApiAlt.listBreakpoints();
-    await context.emuApiAlt.eraseAllBreakpoints();
+    const bps = await context.emuApi.listBreakpoints();
+    await context.emuApi.eraseAllBreakpoints();
     const bpCount = bps.breakpoints.length;
     writeMessage(
       context.output,
@@ -46,7 +46,7 @@ export class ListBreakpointsCommand extends IdeCommandBase {
   readonly aliases = ["bpl"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    const bps = await context.emuApiAlt.listBreakpoints();
+    const bps = await context.emuApi.listBreakpoints();
     if (bps.breakpoints.length) {
       let ordered = bps.breakpoints;
       ordered.forEach((bp, idx) => {
@@ -137,7 +137,7 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
               }
 
               // --- Extract partition information
-              const partition = await createEmulatorApi(context.messenger).parsePartitionLabel(
+              const partition = await createEmuApi(context.messenger).parsePartitionLabel(
                 segments[0]
               );
               console.log("Partition: ", partition);
@@ -189,7 +189,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApiAlt.setBreakpoint({
+    const flag = await context.emuApi.setBreakpoint({
       address: args.address,
       resource: args.resource,
       partition: args.partition,
@@ -220,7 +220,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApiAlt.removeBreakpoint({
+    const flag = await context.emuApi.removeBreakpoint({
       address: args.address,
       partition: args.partition,
       resource: args.resource,
@@ -261,7 +261,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApiAlt.enableBreakpoint(
+    const flag = await context.emuApi.enableBreakpoint(
       {
         address: args.address,
         partition: args.partition,

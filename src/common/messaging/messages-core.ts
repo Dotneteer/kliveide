@@ -21,19 +21,6 @@ import type {
   MainGeneralResponse
 } from "./any-to-main";
 import type { ForwardActionRequest } from "./forwarding";
-import type {
-  EmuGetNextRegDescriptorsRequest,
-  EmuGetNextRegDescriptorsResponse,
-  EmuGetNextRegStateResponse,
-  EmuGetNextRegStateRequest,
-  EmuGetNextMemoryMappingRequest,
-  EmuGetNextMemoryMappingResponse,
-  EmuParsePartitionLabelRequest,
-  EmuGetPartitionLabelsRequest,
-  EmuGetCallStackRequest,
-  EmuGetCallStackResponse,
-  EmuSetKeyStateRequest
-} from "./main-to-emu";
 
 /**
  * Potential message sources
@@ -107,14 +94,7 @@ export interface ValueResponse extends MessageBase {
  */
 export type RequestMessage =
   | ForwardActionRequest
-  | MainGeneralRequest
-  | EmuGetNextRegDescriptorsRequest
-  | EmuGetNextRegStateRequest
-  | EmuGetNextMemoryMappingRequest
-  | EmuParsePartitionLabelRequest
-  | EmuGetPartitionLabelsRequest
-  | EmuGetCallStackRequest
-  | EmuSetKeyStateRequest;
+  | MainGeneralRequest;
 
 /**
  * All Response messages
@@ -125,11 +105,7 @@ export type ResponseMessage =
   | DefaultResponse
   | ErrorResponse
   | FlagResponse
-  | ValueResponse
-  | EmuGetNextRegDescriptorsResponse
-  | EmuGetNextRegStateResponse
-  | EmuGetNextMemoryMappingResponse
-  | EmuGetCallStackResponse;
+  | ValueResponse;
 
 /**
  * All messages

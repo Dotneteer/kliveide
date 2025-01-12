@@ -8,9 +8,7 @@ import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import {
   RequestMessage,
   ResponseMessage,
-  flagResponse,
   defaultResponse,
-  ErrorResponse,
   errorResponse
 } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -463,7 +461,6 @@ class EmuMessageProcessor {
       noController();
     }
     controller.runCode(codeToInject, debug);
-
   }
 
   resolveBreakpoints(breakpoints: ResolvedBreakpoint[]) {
@@ -511,6 +508,71 @@ class EmuMessageProcessor {
     const runner = getEmuScriptRunner();
     return runner.stopScript(id);
   }
+
+  getNextRegDescriptors() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    return {
+      descriptors: (machine as IZxNextMachine)?.nextRegDevice?.getDescriptors()
+    };
+  }
+
+  getNextRegState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    const devState = (machine as IZxNextMachine)?.nextRegDevice?.getNextRegDeviceState();
+    return {
+      lastRegisterIndex: devState?.lastRegisterIndex,
+      regs: devState?.regs
+    };
+  }
+
+  getNextMemoryMapping() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as IZxNextMachine;
+    return machine.memoryDevice.getMemoryMappings();
+  }
+
+  parsePartitionLabel(label: string) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.parsePartitionLabel(label);
+  }
+
+  getPartitionLabels() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getPartitionLabels();
+  }
+
+  getCallStack() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getCallStack();
+  }
+
+  setKeyStatus(key: number, isDown: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.machine.setKeyStatus(key, isDown);
+  }
 }
 
 /**
@@ -551,82 +613,8 @@ export async function processMainToEmuMessages(
         }
       }
       return errorResponse(`Unknown method ${message.method}`);
-
-    case "EmuGetNextRegDescriptors": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const machine = controller.machine;
-      return {
-        type: "EmuGetNextRegDescriptorsResponse",
-        descriptors: (machine as IZxNextMachine)?.nextRegDevice?.getDescriptors()
-      };
-    }
-
-    case "EmuGetNextRegState": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const machine = controller.machine;
-      const devState = (machine as IZxNextMachine)?.nextRegDevice?.getNextRegDeviceState();
-      return {
-        type: "EmuGetNextRegStateResponse",
-        lastRegisterIndex: devState?.lastRegisterIndex,
-        regs: devState?.regs
-      };
-    }
-
-    case "EmuGetNextMemoryMapping": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const machine = controller.machine as IZxNextMachine;
-      return {
-        type: "EmuGetNextMemoryMappingResponse",
-        ...machine.memoryDevice.getMemoryMappings()
-      };
-    }
-
-    case "EmuParsePartitionLabel": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const partition = controller.machine.parsePartitionLabel(message.label);
-      return {
-        type: "ValueResponse",
-        value: partition
-      };
-    }
-
-    case "EmuGetPartitionLabels": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const labels = controller.machine.getPartitionLabels();
-      return {
-        type: "ValueResponse",
-        value: labels
-      };
-    }
-
-    case "EmuGetCallStack": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      const callStack = controller.machine.getCallStack();
-      return {
-        type: "EmuGetCallStackResponse",
-        callStack
-      };
-    }
-
-    case "EmuSetKeyState": {
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      controller.machine.setKeyStatus(message.key, message.isDown);
-      break;
-    }
   }
   return defaultResponse();
-
-  // --- Retrieves a controller error message
-  function noControllerResponse(): ErrorResponse {
-    return errorResponse("Machine controller not available");
-  }
 }
 
 let emuScriptRunner: EmuScriptRunner | undefined;

@@ -7,7 +7,6 @@ import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { incBuildFileVersionAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -16,7 +15,6 @@ export const IdeEventsHandler = () => {
   const { store, messenger } = useRendererContext();
   const { ideCommandsService, projectService } = useAppServices();
   const emuApi = useEmuApi();
-  const emuApiAlt = useEmuApiAlt();
 
   const project = useSelector((s) => s.project);
   const compilation = useSelector((s) => s.compilation);
@@ -81,7 +79,7 @@ export const IdeEventsHandler = () => {
     }
 
     // --- Get the available breakpoints
-    const cpuResponse = await emuApiAlt.getCpuState();
+    const cpuResponse = await emuApi.getCpuState();
     // --- Check if there is a location for PC
     const fileLine = compilation.result.sourceMap[cpuResponse.pc];
     if (!fileLine) return;

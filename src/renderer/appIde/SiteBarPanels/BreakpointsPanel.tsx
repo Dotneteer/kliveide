@@ -13,11 +13,9 @@ import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
-  const emuApiAlt = useEmuApiAlt();
   const [bps, setBps] = useState<BreakpointInfo[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -29,8 +27,8 @@ const BreakpointsPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
-    const bpResponse = await emuApiAlt.listBreakpoints();
-    const cpuResponse = await emuApiAlt.getCpuState();
+    const bpResponse = await emuApi.listBreakpoints();
+    const cpuResponse = await emuApi.getCpuState();
     pcValue.current = cpuResponse.pc;
 
     // --- Any memory information received?
@@ -84,7 +82,7 @@ const BreakpointsPanel = () => {
   useEffect(() => {
     (async function () {
       const labels = await emuApi.getPartitionLabels();
-      setPartitionLabels(labels.value);
+      setPartitionLabels(labels);
     })();
   }, [machineId]);
 

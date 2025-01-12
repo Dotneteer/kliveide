@@ -1,13 +1,13 @@
 import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CallStackPanel.module.scss";
-import { useEmuApi } from "@renderer/core/EmuApi";
 import { Icon } from "@renderer/controls/Icon";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const CallStackPanel = () => {
   const emuApi = useEmuApi();
@@ -20,9 +20,9 @@ const CallStackPanel = () => {
   const refreshMemoryMappingState = async () => {
     // --- Get breakpoint information
     if (machineState !== MachineControllerState.None) {
-      const response = await emuApi.getCallStack();
-      setSpValue(response.callStack.sp);
-      setFrames(response.callStack.frames);
+      const callStack = await emuApi.getCallStack();
+      setSpValue(callStack.sp);
+      setFrames(callStack.frames);
       setRefreshed(true);
     }
   };

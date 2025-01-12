@@ -20,7 +20,7 @@ import { PANE_ID_BUILD } from "@common/integration/constants";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 type Props = {
   ide: boolean;
@@ -63,7 +63,7 @@ const ideStartOptions = [
 
 export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const dispatch = useDispatch();
-  const emuApi = useEmuApiAlt();
+  const emuApi = useEmuApi();
   const ideApi = useIdeApi();
   const mainApi = useMainApi();
   const machineId = useSelector((s) => s.emulatorState.machineId);

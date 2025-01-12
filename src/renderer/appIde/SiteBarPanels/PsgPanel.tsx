@@ -5,10 +5,10 @@ import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 import styles from "./PsgPanel.module.scss";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const PsgPanel = () => {
-  const emuApi = useEmuApiAlt();
+  const emuApi = useEmuApi();
   const [psgState, setPsgState] = useState<PsgChipState>(null);
 
   useStateRefresh(250, async () => {

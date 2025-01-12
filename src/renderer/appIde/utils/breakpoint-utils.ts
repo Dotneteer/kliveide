@@ -1,11 +1,11 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 
 export async function getBreakpoints(messenger: MessengerBase): Promise<BreakpointInfo[]> {
   // --- Get breakpoint information
-  const bpResponse = await createEmuAltApi(messenger).listBreakpoints();
+  const bpResponse = await createEmuApi(messenger).listBreakpoints();
   return bpResponse.breakpoints;
 }
 
@@ -14,7 +14,7 @@ export async function addBreakpoint(
   bp: BreakpointInfo
 ): Promise<boolean> {
   // --- Get breakpoint information
-  return await createEmuAltApi(messenger).setBreakpoint({
+  return await createEmuApi(messenger).setBreakpoint({
     address: bp.address,
     resource: bp.resource,
     line: bp.line
@@ -26,7 +26,7 @@ export async function removeBreakpoint(
   bp: BreakpointInfo
 ): Promise<boolean> {
   // --- Get breakpoint information
-  return await createEmuAltApi(messenger).removeBreakpoint({
+  return await createEmuApi(messenger).removeBreakpoint({
     address: bp.address,
     resource: bp.resource,
     line: bp.line,

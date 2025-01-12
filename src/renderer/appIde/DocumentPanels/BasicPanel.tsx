@@ -23,7 +23,6 @@ import { ZxSpectrumChars } from "./char-codes";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "@renderer/utils/classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 
 type BasicViewState = {
   topIndex?: number;
@@ -35,7 +34,7 @@ type BasicViewState = {
 const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
-  const emuApi = useEmuApiAlt();
+  const emuApi = useEmuApi();
 
   const documentHubService = useDocumentHubService();
 

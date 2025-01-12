@@ -5,7 +5,7 @@ import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info
 import type { AppState } from "@state/AppState";
 
 import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
-import { getEmuAltApi, getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import {
   setFastLoadAction,
@@ -46,7 +46,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       id: "rewind_tape",
       label: "Rewind Tape",
       click: async () => {
-        await getEmuAltApi().issueMachineCommand("rewind");
+        await getEmuApi().issueMachineCommand("rewind");
       }
     });
     items.push({
@@ -170,7 +170,7 @@ export async function setSelectedTapeFile(filename: string): Promise<void> {
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuAltApi().setTapeFile(filename, new Uint8Array(contents));
+    await getEmuApi().setTapeFile(filename, new Uint8Array(contents));
     await logEmuEvent(`Tape file set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -253,7 +253,7 @@ async function setDiskFile(
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuAltApi().setDiskFile(index, filename, new Uint8Array(contents));
+    await getEmuApi().setDiskFile(index, filename, new Uint8Array(contents));
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -272,7 +272,7 @@ async function setDiskFile(
 async function ejectDiskFile(index: number, suffix: string): Promise<void> {
   mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {}));
   try {
-    await getEmuAltApi().setDiskFile(index);
+    await getEmuApi().setDiskFile(index);
     await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -288,7 +288,7 @@ async function setDiskWriteProtection(
   protect: boolean
 ): Promise<void> {
   try {
-    await getEmuAltApi().setDiskWriteProtection(index, protect);
+    await getEmuApi().setDiskWriteProtection(index, protect);
     await logEmuEvent(
       `Write protection turned ${protect ? "on" : "off"} for drive ${suffix.toUpperCase()}`
     );

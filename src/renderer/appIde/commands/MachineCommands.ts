@@ -24,7 +24,7 @@ export class StartMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Paused ||
       machineState === MachineControllerState.Stopped
     ) {
-      await context.emuApiAlt.issueMachineCommand("start");
+      await context.emuApi.issueMachineCommand("start");
       writeSuccessMessage(context.output, "Machine started");
       return commandSuccess;
     }
@@ -43,8 +43,8 @@ export class PauseMachineCommand extends IdeCommandBase {
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (machineState === MachineControllerState.Running) {
-      const cpuState = await context.emuApiAlt.getCpuState();
-      await context.emuApiAlt.issueMachineCommand("pause");
+      const cpuState = await context.emuApi.getCpuState();
+      await context.emuApi.issueMachineCommand("pause");
       writeSuccessMessage(
         context.output,
         `Machine paused at PC=$${toHexa4(cpuState.pc)}`
@@ -67,8 +67,8 @@ export class StopMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      const cpuState = await context.emuApiAlt.getCpuState();
-      await context.emuApiAlt.issueMachineCommand("stop");
+      const cpuState = await context.emuApi.getCpuState();
+      await context.emuApi.issueMachineCommand("stop");
       writeSuccessMessage(
         context.output,
         `Machine stopped at PC=$${toHexa4(cpuState.pc)}`
@@ -91,7 +91,7 @@ export class RestartMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      await context.emuApiAlt.issueMachineCommand("restart");
+      await context.emuApi.issueMachineCommand("restart");
       writeSuccessMessage(context.output, "Machine restarted");
       return commandSuccess;
     }
@@ -112,7 +112,7 @@ export class StartDebugMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Paused ||
       machineState === MachineControllerState.Stopped
     ) {
-      await context.emuApiAlt.issueMachineCommand("debug");
+      await context.emuApi.issueMachineCommand("debug");
       writeSuccessMessage(context.output, "Machine started in debug mode");
       return commandSuccess;
     }
@@ -162,8 +162,8 @@ async function stepCommand (
 ): Promise<IdeCommandResult> {
   const machineState = context.store.getState()?.emulatorState?.machineState;
   if (machineState === MachineControllerState.Paused) {
-    const cpuState = await context.emuApiAlt.getCpuState();
-    await context.emuApiAlt.issueMachineCommand(cmd);
+    const cpuState = await context.emuApi.getCpuState();
+    await context.emuApi.issueMachineCommand(cmd);
     writeSuccessMessage(
       context.output,
       `${cmdName} at PC=$${toHexa4(cpuState.pc)}`

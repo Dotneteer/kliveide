@@ -17,10 +17,8 @@ import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 let monacoInitialized = false;
 
@@ -112,7 +110,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const { store, messenger } = useRendererContext();
   const { projectService } = useAppServices();
   const emuApi = useEmuApi();
-  const emuApiAlt = useEmuApiAlt();
 
   // --- Recognize if something changed in the current document hub
   const hubVersion = useDocumentHubServiceVersion();
@@ -254,7 +251,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         // --- Have we deleted one or more EOLs?
         if (deletedLines > 0) {
           // --- Yes, scroll up breakpoints
-          await createEmuAltApi(messenger).scrollBreakpoints(
+          await createEmuApi(messenger).scrollBreakpoints(
             {
               resource: resourceName,
               line: change.range.startLineNumber
@@ -267,7 +264,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
         if (insertedLines > 0) {
           // --- Yes, scroll down breakpoints.
-          await createEmuAltApi(messenger).scrollBreakpoints(
+          await createEmuApi(messenger).scrollBreakpoints(
             {
               resource: resourceName,
               line: change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1)
@@ -277,7 +274,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         }
 
         // --- If changed, normalize breakpoints
-        await createEmuAltApi(messenger).normalizeBreakpoints(
+        await createEmuApi(messenger).normalizeBreakpoints(
           resourceName,
           editor.current.getModel()?.getLineCount() ?? -1
         );
@@ -495,7 +492,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
 
     // --- Get the current PC value
-    const cpuStateResponse = await emuApiAlt.getCpuState();
+    const cpuStateResponse = await emuApi.getCpuState();
     const pc = cpuStateResponse.pc;
 
     // --- Does this file contains the default breakpoint?

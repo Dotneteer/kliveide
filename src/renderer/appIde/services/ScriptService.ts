@@ -8,7 +8,7 @@ import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { createMainApi } from "@common/messaging/MainApi";
-import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 class ScriptService implements IScriptService {
   private _scriptOutputs = new Map<number, OutputPaneBuffer>();
@@ -53,7 +53,7 @@ class ScriptService implements IScriptService {
     }
 
     // --- Script runs in the emulator, we need to forward the output
-    createEmuAltApi(this.messenger).startScript(
+    createEmuApi(this.messenger).startScript(
       scriptInfo.id,
       scriptFilePath,
       scriptInfo.contents
@@ -118,7 +118,7 @@ class ScriptService implements IScriptService {
     // --- Is it an emulator script?
     if (script.runsInEmu) {
       // --- Script runs in the emulator, we need to forward the output
-      await createEmuAltApi(this.messenger).stopScript(script.id);
+      await createEmuApi(this.messenger).stopScript(script.id);
     }
 
     // --- Send the stop script message

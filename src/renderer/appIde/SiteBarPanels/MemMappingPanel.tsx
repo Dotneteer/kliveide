@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { toHexa2, toHexa6 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./MemMappingPanel.module.scss";
-import { useEmuApi } from "@renderer/core/EmuApi";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const VAR_WIDTH = 108;
 

@@ -2,8 +2,8 @@ import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels"
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
-import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
-import { CpuState } from "@common/messaging/EmuApiAlt";
+import { useEmuApi } from "@renderer/core/EmuApi";
+import { CpuState } from "@common/messaging/EmuApi";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 36;
@@ -11,7 +11,7 @@ const R16_WIDTH = 48;
 const TACT_WIDTH = 72;
 
 const CpuPanel = () => {
-  const emuApiAlt = useEmuApiAlt();
+  const emuApiAlt = useEmuApi();
   const [cpuState, setCpuState] = useState<CpuState>(null);
 
   const toHexa2 = (value?: number) =>
