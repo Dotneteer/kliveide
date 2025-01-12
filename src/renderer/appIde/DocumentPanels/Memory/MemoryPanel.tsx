@@ -22,6 +22,7 @@ import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 //import Switch from "react-switch";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
@@ -50,6 +51,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
+  const emuApiAlt = useEmuApiAlt();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -155,7 +157,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       }
 
       // --- Get memory information
-      const response = await emuApi.getMemoryContents(partition);
+      const response = await emuApiAlt.getMemoryContents(partition);
 
       memory.current = response.memory;
       partitionLabels.current = response.partitionLabels;
@@ -187,7 +189,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
       // --- Obtain ULA information
       if (hasUla) {
-        const ulaResponse = await emuApi.getUlaState();
+        const ulaResponse = await emuApiAlt.getUlaState();
         setCurrentRomPage(ulaResponse.romP);
         setCurrentRamBank(ulaResponse.ramB);
       }

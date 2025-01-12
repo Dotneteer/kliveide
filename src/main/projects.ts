@@ -38,7 +38,7 @@ import {
   PROJECT_MERGE_FILE,
   BUILD_FILE
 } from "@common/structs/project-const";
-import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getEmuAltApi } from "@messaging/MainToEmuMessenger";
 import { setMachineType } from "./registeredMachines";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { getModelConfig } from "@common/machines/machine-registry";
@@ -183,10 +183,10 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(saveProjectSettingAction(projectStruct.settings));
 
       // --- Restore breakpoints
-      await getEmuApi().eraseAllBreakpoints();
+      await getEmuAltApi().eraseAllBreakpoints();
       if (projectStruct.debugger?.breakpoints) {
         for (const bp of projectStruct.debugger.breakpoints) {
-          await getEmuApi().setBreakpoint(bp);
+          await getEmuAltApi().setBreakpoint(bp);
         }
       }
 
@@ -309,7 +309,7 @@ export function getKliveProjectFolder(projectFolder: string): string {
 // --- Get the current klive project structure to save
 export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
   const state = mainStore.getState();
-  const bpResponse = await getEmuApi().listBreakpoints();
+  const bpResponse = await getEmuAltApi().listBreakpoints();
   return {
     kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,

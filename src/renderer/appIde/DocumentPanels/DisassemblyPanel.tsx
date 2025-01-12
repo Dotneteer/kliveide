@@ -32,6 +32,7 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -67,6 +68,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
+  const emuApiAlt = useEmuApiAlt();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -202,7 +204,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         }
       }
 
-      const getMemoryResponse = await emuApi.getMemoryContents(partition);
+      const getMemoryResponse = await emuApiAlt.getMemoryContents(partition);
 
       const memory = getMemoryResponse.memory;
       setPausedPc(getMemoryResponse.pc);

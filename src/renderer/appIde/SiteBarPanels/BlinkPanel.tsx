@@ -7,12 +7,12 @@ import {
   Separator,
   Value
 } from "@controls/Labels";
-import { EmuGetBlinkStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./BlinkPanel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
-import { useEmuApi } from "@renderer/core/EmuApi";
+import { useEmuApiAlt } from "@renderer/core/EmuApiAlt";
+import { BlinkState } from "@common/messaging/EmuApiAlt";
 
 const FLAG_WIDTH = 12;
 const LAB_WIDTH = 48;
@@ -20,8 +20,8 @@ const VALUE_WIDTH = 40;
 const KEY_LAB_WIDTH = 46;
 
 const BlinkPanel = () => {
-  const emuApi = useEmuApi();
-  const [blinkState, setBlinkState] = useState<EmuGetBlinkStateResponse>(null);
+  const emuApi = useEmuApiAlt();
+  const [blinkState, setBlinkState] = useState<BlinkState>(null);
 
   useStateRefresh(250, async () => setBlinkState(await emuApi.getBlinkState()));
 

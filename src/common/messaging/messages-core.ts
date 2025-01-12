@@ -22,36 +22,6 @@ import type {
 } from "./any-to-main";
 import type { ForwardActionRequest } from "./forwarding";
 import type {
-  EmuSetTapeFileRequest,
-  EmuGetCpuStateRequest,
-  EmuGetCpuStateResponse,
-  EmuGetUlaStateRequest,
-  EmuGetUlaStateResponse,
-  EmuEraseAllBreakpointsRequest,
-  EmuSetBreakpointRequest,
-  EmuRemoveBreakpointRequest,
-  EmuListBreakpointsRequest,
-  EmuListBreakpointsResponse,
-  EmuEnableBreakpointRequest,
-  EmuGetMemoryRequest,
-  EmuGetMemoryResponse,
-  EmuGetSysVarsRequest,
-  EmuGetSysVarsResponse,
-  EmuInjectCodeRequest,
-  EmuRunCodeRequest,
-  EmuResolveBreakpointsRequest,
-  EmuNormalizeBreakpointsRequest,
-  EmuScrollBreakpointsRequest,
-  EmuGetPsgStateRequest,
-  EmuGetPsgStateResponse,
-  EmuGetNecUpd765Request,
-  EmuGetNecUpd765Response,
-  EmuSetDiskFileRequest,
-  EmuGetBlinkStateRequest,
-  EmuGetBlinkStateResponse,
-  EmuSetDiskWriteProtectionRequest,
-  EmuStartScriptRequest,
-  EmuStopScriptRequest,
   EmuGetNextRegDescriptorsRequest,
   EmuGetNextRegDescriptorsResponse,
   EmuGetNextRegStateResponse,
@@ -138,28 +108,6 @@ export interface ValueResponse extends MessageBase {
 export type RequestMessage =
   | ForwardActionRequest
   | MainGeneralRequest
-  | EmuSetTapeFileRequest
-  | EmuSetDiskFileRequest
-  | EmuSetDiskWriteProtectionRequest
-  | EmuGetCpuStateRequest
-  | EmuGetUlaStateRequest
-  | EmuGetPsgStateRequest
-  | EmuEraseAllBreakpointsRequest
-  | EmuSetBreakpointRequest
-  | EmuRemoveBreakpointRequest
-  | EmuListBreakpointsRequest
-  | EmuEnableBreakpointRequest
-  | EmuGetMemoryRequest
-  | EmuGetSysVarsRequest
-  | EmuInjectCodeRequest
-  | EmuRunCodeRequest
-  | EmuResolveBreakpointsRequest
-  | EmuNormalizeBreakpointsRequest
-  | EmuScrollBreakpointsRequest
-  | EmuGetNecUpd765Request
-  | EmuGetBlinkStateRequest
-  | EmuStartScriptRequest
-  | EmuStopScriptRequest
   | EmuGetNextRegDescriptorsRequest
   | EmuGetNextRegStateRequest
   | EmuGetNextMemoryMappingRequest
@@ -178,14 +126,6 @@ export type ResponseMessage =
   | ErrorResponse
   | FlagResponse
   | ValueResponse
-  | EmuGetCpuStateResponse
-  | EmuGetUlaStateResponse
-  | EmuGetPsgStateResponse
-  | EmuListBreakpointsResponse
-  | EmuGetMemoryResponse
-  | EmuGetSysVarsResponse
-  | EmuGetNecUpd765Response
-  | EmuGetBlinkStateResponse
   | EmuGetNextRegDescriptorsResponse
   | EmuGetNextRegStateResponse
   | EmuGetNextMemoryMappingResponse

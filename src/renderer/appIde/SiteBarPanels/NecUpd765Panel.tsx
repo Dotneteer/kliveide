@@ -6,12 +6,10 @@ import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./NecUpd765Panel.module.scss";
-import { reportMessagingError, reportUnexpectedMessageType } from "@renderer/reportError";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
-import { create } from "lodash";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
 
 const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -20,9 +18,9 @@ const NecUpd765Panel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshLogEntries = async () => {
     // --- Get breakpoint information
-    const logResponse = await createEmulatorApi(messenger).getNecUpd765State();
+    const log = await createEmuAltApi(messenger).getNecUpd765State();
     // --- Store the breakpoint info
-    setLog(logResponse.log);
+    setLog(log);
   };
 
   // --- Take care of refreshing the screen

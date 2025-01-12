@@ -170,7 +170,7 @@ export async function setSelectedTapeFile(filename: string): Promise<void> {
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setTapeFile(filename, new Uint8Array(contents));
+    await getEmuAltApi().setTapeFile(filename, new Uint8Array(contents));
     await logEmuEvent(`Tape file set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -253,7 +253,7 @@ async function setDiskFile(
 
   try {
     const contents = fs.readFileSync(filename);
-    await getEmuApi().setDiskFile(index, filename, new Uint8Array(contents));
+    await getEmuAltApi().setDiskFile(index, filename, new Uint8Array(contents));
     await logEmuEvent(`Disk file in drive ${suffix.toUpperCase()} set to ${filename}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -272,7 +272,7 @@ async function setDiskFile(
 async function ejectDiskFile(index: number, suffix: string): Promise<void> {
   mainStore.dispatch(setMediaAction(index ? MEDIA_DISK_B : MEDIA_DISK_A, {}));
   try {
-    await getEmuApi().setDiskFile(index);
+    await getEmuAltApi().setDiskFile(index);
     await logEmuEvent(`Disk ejected from drive ${suffix.toUpperCase()}`);
   } catch (err) {
     dialog.showErrorBox(
@@ -288,7 +288,7 @@ async function setDiskWriteProtection(
   protect: boolean
 ): Promise<void> {
   try {
-    await getEmuApi().setDiskWriteProtection(index, protect);
+    await getEmuAltApi().setDiskWriteProtection(index, protect);
     await logEmuEvent(
       `Write protection turned ${protect ? "on" : "off"} for drive ${suffix.toUpperCase()}`
     );

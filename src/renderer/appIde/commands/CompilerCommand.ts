@@ -231,7 +231,7 @@ async function injectCode(
 
   switch (operationType) {
     case "inject":
-      await context.emuApi.injectCodeCommand(codeToInject);
+      await context.emuApiAlt.injectCodeCommand(codeToInject);
       returnMessage = `Successfully injected ${sumCodeLength} bytes in ${
         codeToInject.segments.length
       } segment${
@@ -244,13 +244,13 @@ async function injectCode(
       break;
 
     case "run": {
-      await context.emuApi.runCodeCommand(codeToInject, false);
+      await context.emuApiAlt.runCodeCommand(codeToInject, false);
       returnMessage = `Code injected and started.`;
       break;
     }
 
     case "debug": {
-      await context.emuApi.runCodeCommand(codeToInject, true);
+      await context.emuApiAlt.runCodeCommand(codeToInject, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

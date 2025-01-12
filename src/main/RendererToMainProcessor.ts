@@ -370,26 +370,6 @@ export async function processRendererToMainMessages(
       return errorResponse(`Unknown method ${message.method}`);
 
     // --- Forward these messages to the emulator
-    case "EmuMachineCommand":
-    case "EmuGetCpuState":
-    case "EmuGetUlaState":
-    case "EmuGetPsgState":
-    case "EmuGetBlinkState":
-    case "EmuEraseAllBreakpoints":
-    case "EmuListBreakpoints":
-    case "EmuSetBreakpoint":
-    case "EmuRemoveBreakpoint":
-    case "EmuEnableBreakpoint":
-    case "EmuGetMemory":
-    case "EmuGetSysVars":
-    case "EmuInjectCode":
-    case "EmuRunCode":
-    case "EmuResolveBreakpoints":
-    case "EmuScrollBreakpoints":
-    case "EmuNormalizeBreakpoints":
-    case "EmuGetNecUpd765State":
-    case "EmuStartScript":
-    case "EmuStopScript":
     case "EmuGetNextRegDescriptors":
     case "EmuGetNextRegState":
     case "EmuGetNextMemoryMapping":

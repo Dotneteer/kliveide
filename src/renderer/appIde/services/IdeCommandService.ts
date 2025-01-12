@@ -16,6 +16,7 @@ import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
+import { createEmuAltApi } from "@common/messaging/EmuApiAlt";
 
 const MAX_HISTORY = 1024;
 
@@ -178,6 +179,7 @@ class IdeCommandService implements IIdeCommandService {
       messenger: this.messenger,
       messageSource: this.messageSource,
       emuApi: createEmulatorApi(this.messenger),
+      emuApiAlt: createEmuAltApi(this.messenger),
       mainApi: createMainApi(this.messenger)
     };
 

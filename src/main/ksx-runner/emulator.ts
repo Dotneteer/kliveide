@@ -2,7 +2,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { ScriptCallContext } from "./MainScriptManager";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { getEmuAltApi, getEmuApi } from "@common/messaging/MainToEmuMessenger";
+import { getEmuAltApi } from "@common/messaging/MainToEmuMessenger";
 
 export interface EmulatorApi {
   readonly executionState: MachineControllerState;
@@ -64,7 +64,7 @@ export function createEmulatorApi(context: ScriptCallContext): EmulatorApi {
       org: number = 0x8000,
       partition?: number
     ): Promise<void> => {
-      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), true);
+      await getEmuAltApi().runCodeCommand(createCodeToInject(code, org, partition), true);
     }
   };
 }

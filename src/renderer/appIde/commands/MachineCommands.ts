@@ -43,7 +43,7 @@ export class PauseMachineCommand extends IdeCommandBase {
   async execute (context: IdeCommandContext): Promise<IdeCommandResult> {
     const machineState = context.store.getState()?.emulatorState?.machineState;
     if (machineState === MachineControllerState.Running) {
-      const cpuState = await context.emuApi.getCpuState();
+      const cpuState = await context.emuApiAlt.getCpuState();
       await context.emuApiAlt.issueMachineCommand("pause");
       writeSuccessMessage(
         context.output,
@@ -67,7 +67,7 @@ export class StopMachineCommand extends IdeCommandBase {
       machineState === MachineControllerState.Running ||
       machineState === MachineControllerState.Paused
     ) {
-      const cpuState = await context.emuApi.getCpuState();
+      const cpuState = await context.emuApiAlt.getCpuState();
       await context.emuApiAlt.issueMachineCommand("stop");
       writeSuccessMessage(
         context.output,
@@ -162,7 +162,7 @@ async function stepCommand (
 ): Promise<IdeCommandResult> {
   const machineState = context.store.getState()?.emulatorState?.machineState;
   if (machineState === MachineControllerState.Paused) {
-    const cpuState = await context.emuApi.getCpuState();
+    const cpuState = await context.emuApiAlt.getCpuState();
     await context.emuApiAlt.issueMachineCommand(cmd);
     writeSuccessMessage(
       context.output,
