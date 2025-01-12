@@ -15,7 +15,6 @@ import {
   EmuGetSysVarsResponse,
   EmuGetUlaStateResponse,
   EmuListBreakpointsResponse,
-  MachineCommand
 } from "@messaging/main-to-emu";
 import {
   FlagResponse,
@@ -29,8 +28,6 @@ import {
  * This interface defines the API exposed by the Emulator
  */
 export interface EmuApi {
-  setMachineType(machineId: string, modelId?: string, config?: Record<string, any>): Promise<void>;
-  issueMachineCommand(command: MachineCommand, customCommand?: string): Promise<void>;
   setTapeFile(
     file: string,
     contents: Uint8Array,
@@ -75,29 +72,6 @@ export interface EmuApi {
 
 class EmuApiImpl implements EmuApi {
   constructor(private readonly messenger: MessengerBase) {}
-
-  /**
-   * Sets the machine type to use
-   * @param machineId ID of the machine type
-   * @param modelId ID of the machine model
-   * @param config Optional machine configuration
-   */
-  async setMachineType(
-    machineId: string,
-    modelId?: string,
-    config?: Record<string, any>
-  ): Promise<void> {
-    await this.sendMessage({ type: "EmuSetMachineType", machineId, modelId, config });
-  }
-
-  /**
-   * Issue a machine command
-   * @param command Command to issue
-   * @param customCommand Optional custom command
-   */
-  async issueMachineCommand(command: MachineCommand, customCommand?: string): Promise<void> {
-    await this.sendMessage({ type: "EmuMachineCommand", command, customCommand });
-  }
 
   /**
    * Sets the tape file to use with the machine

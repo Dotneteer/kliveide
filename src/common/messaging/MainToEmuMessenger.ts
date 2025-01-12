@@ -4,6 +4,7 @@ import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { createEmulatorApi } from "./EmuApi";
+import { createEmuAltApi, EmuApiAlt } from "./EmuApiAlt";
 
 /**
  * Implements a messenger that forwards messages from the Main process to the Emu process
@@ -49,6 +50,7 @@ class MainToEmuMessenger extends MessengerBase {
  */
 let mainToEmuMessenger: MainToEmuMessenger | undefined;
 let emuApiInstance: EmuApi | undefined;
+let emuApiAltInstance: EmuApiAlt | undefined;
 
 /**
  * Registers the messenger to be used with the main process.
@@ -57,6 +59,7 @@ let emuApiInstance: EmuApi | undefined;
 export function registerMainToEmuMessenger(window: BrowserWindow) {
   mainToEmuMessenger = new MainToEmuMessenger(window);
   emuApiInstance = createEmulatorApi(mainToEmuMessenger);
+  emuApiAltInstance = createEmuAltApi(mainToEmuMessenger);
 }
 
 /**
@@ -75,4 +78,11 @@ export function sendFromMainToEmu<TResp extends ResponseMessage>(
  */
 export function getEmuApi(): EmuApi {
   return emuApiInstance;
+}
+
+/**
+ * Gets the EmuApi instance
+ */
+export function getEmuAltApi(): EmuApiAlt {
+  return emuApiAltInstance;
 }

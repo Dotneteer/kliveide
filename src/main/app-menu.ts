@@ -37,7 +37,7 @@ import {
   setKeyMappingsAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getEmuAltApi, getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
@@ -635,7 +635,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       accelerator: "F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
-        await getEmuApi().issueMachineCommand("start");
+        await getEmuAltApi().issueMachineCommand("start");
       }
     },
     {
@@ -644,7 +644,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machineRuns,
       accelerator: "Shift+F5",
       click: async () => {
-        await getEmuApi().issueMachineCommand("pause");
+        await getEmuAltApi().issueMachineCommand("pause");
       }
     },
     {
@@ -653,7 +653,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machineRestartable,
       accelerator: "F4",
       click: async () => {
-        await getEmuApi().issueMachineCommand("stop");
+        await getEmuAltApi().issueMachineCommand("stop");
       }
     },
     {
@@ -663,7 +663,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       accelerator: "Shift+F4",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
-        await getEmuApi().issueMachineCommand("restart");
+        await getEmuAltApi().issueMachineCommand("restart");
       }
     },
     { type: "separator" },
@@ -674,7 +674,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       accelerator: "Ctrl+F5",
       click: async () => {
         mainStore.dispatch(setRestartTarget("machine"));
-        await getEmuApi().issueMachineCommand("debug");
+        await getEmuAltApi().issueMachineCommand("debug");
       }
     },
     {
@@ -683,7 +683,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machinePaused,
       accelerator: "F10",
       click: async () => {
-        await getEmuApi().issueMachineCommand("stepInto");
+        await getEmuAltApi().issueMachineCommand("stepInto");
       }
     },
     {
@@ -692,7 +692,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machinePaused,
       accelerator: "Shift+F11",
       click: async () => {
-        await getEmuApi().issueMachineCommand("stepOver");
+        await getEmuAltApi().issueMachineCommand("stepOver");
       }
     },
     {
@@ -701,7 +701,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machinePaused,
       accelerator: "Ctrl+F11",
       click: async () => {
-        await getEmuApi().issueMachineCommand("stepOut");
+        await getEmuAltApi().issueMachineCommand("stepOut");
       }
     }
   ];

@@ -5,7 +5,7 @@ import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info
 import type { AppState } from "@state/AppState";
 
 import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
-import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getEmuAltApi, getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import {
   setFastLoadAction,
@@ -46,7 +46,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       id: "rewind_tape",
       label: "Rewind Tape",
       click: async () => {
-        await getEmuApi().issueMachineCommand("rewind");
+        await getEmuAltApi().issueMachineCommand("rewind");
       }
     });
     items.push({

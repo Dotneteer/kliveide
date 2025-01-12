@@ -22,8 +22,6 @@ import type {
 } from "./any-to-main";
 import type { ForwardActionRequest } from "./forwarding";
 import type {
-  EmuSetMachineTypeRequest,
-  EmuMachineCommandRequest,
   EmuSetTapeFileRequest,
   EmuGetCpuStateRequest,
   EmuGetCpuStateResponse,
@@ -140,8 +138,6 @@ export interface ValueResponse extends MessageBase {
 export type RequestMessage =
   | ForwardActionRequest
   | MainGeneralRequest
-  | EmuSetMachineTypeRequest
-  | EmuMachineCommandRequest
   | EmuSetTapeFileRequest
   | EmuSetDiskFileRequest
   | EmuSetDiskWriteProtectionRequest

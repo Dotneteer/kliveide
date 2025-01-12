@@ -35,8 +35,64 @@ import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { createMainApi } from "@common/messaging/MainApi";
+import { IMachineService } from "@renderer/abstractions/IMachineService";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
+
+// --- Retrieves a controller error message
+function noController() {
+  throw new Error("Machine controller not available");
+}
+
+class EmuMessageProcessor {
+  constructor(private readonly machineService: IMachineService) {}
+
+  setMachineType(...args: any[]) {
+    this.machineService.setMachineType(args[0], args[1], args[2]);
+  }
+
+  issueMachineCommand(...args: any[]) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    switch (args[0]) {
+      case "start":
+        controller.start();
+        break;
+      case "pause":
+        controller.pause();
+        break;
+      case "stop":
+        controller.stop();
+        break;
+      case "reset":
+        controller.cpuReset();
+        break;
+      case "restart":
+        controller.restart();
+        break;
+      case "debug":
+        controller.startDebug();
+        break;
+      case "stepInto":
+        controller.stepInto();
+        break;
+      case "stepOver":
+        controller.stepOver();
+        break;
+      case "stepOut":
+        controller.stepOut();
+        break;
+      case "rewind":
+        controller.machine.setMachineProperty(REWIND_REQUESTED, true);
+        break;
+      case "custom":
+        controller.customCommand(args[1]);
+        break;
+    }
+  }
+}
 
 /**
  * Process the messages coming from the emulator to the main process
@@ -49,58 +105,33 @@ export async function processMainToEmuMessages(
   emuToMain: MessengerBase,
   { machineService }: AppServices
 ): Promise<ResponseMessage> {
+  const emuMessageProcessor = new EmuMessageProcessor(machineService);
+
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
       store.dispatch(message.action, message.sourceId);
       break;
 
-    case "EmuSetMachineType":
-      // --- Change the current machine type to a new one
-      await machineService.setMachineType(message.machineId, message.modelId, message.config);
-      break;
-
-    case "EmuMachineCommand": {
-      // --- Execute the specified machine command
-      const controller = machineService.getMachineController();
-      if (!controller) return noControllerResponse();
-      switch (message.command) {
-        case "start":
-          await controller.start();
-          break;
-        case "pause":
-          await controller.pause();
-          break;
-        case "stop":
-          await controller.stop();
-          break;
-        case "reset":
-          await controller.cpuReset();
-          break;
-        case "restart":
-          await controller.restart();
-          break;
-        case "debug":
-          await controller.startDebug();
-          break;
-        case "stepInto":
-          await controller.stepInto();
-          break;
-        case "stepOver":
-          await controller.stepOver();
-          break;
-        case "stepOut":
-          await controller.stepOut();
-          break;
-        case "rewind":
-          controller.machine.setMachineProperty(REWIND_REQUESTED, true);
-          break;
-        case "custom":
-          controller.customCommand(message.customCommand);
-          break;
+    case "MainGeneralRequest":
+      // --- We accept only methods defined in the MainMessageProcessor
+      const processingMethod = emuMessageProcessor[message.method];
+      if (typeof processingMethod === "function") {
+        try {
+          // --- Call the method with the given arguments. We do not call the
+          // --- function through the mainMessageProcessor instance, so we need
+          // --- to pass it as the "this" parameter.
+          return {
+            type: "MainGeneralResponse",
+            result: await (processingMethod as Function).call(emuMessageProcessor, ...message.args)
+          };
+        } catch (err) {
+          // --- Report the error
+          console.error(`Error processing message: ${err}`);
+          return errorResponse(err.toString());
+        }
       }
-      break;
-    }
+      return errorResponse(`Unknown method ${message.method}`);
 
     case "EmuSetTapeFile":
       await setTapeFile(message);

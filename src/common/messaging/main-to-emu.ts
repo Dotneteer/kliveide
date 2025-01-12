@@ -8,14 +8,6 @@ import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 
-// --- Set the emulator's machine type to use
-export interface EmuSetMachineTypeRequest extends MessageBase {
-  type: "EmuSetMachineType";
-  machineId: string;
-  modelId?: string;
-  config?: Record<string, any>;
-}
-
 /**
  * Available machine commands
  */
@@ -32,12 +24,6 @@ export type MachineCommand =
   | "rewind"
   | "custom";
 
-// --- Execute an emulated machine's control command
-export interface EmuMachineCommandRequest extends MessageBase {
-  type: "EmuMachineCommand";
-  command: MachineCommand;
-  customCommand?: string;
-}
 
 // --- Set the tape file to use
 export interface EmuSetTapeFileRequest extends MessageBase {
