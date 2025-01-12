@@ -341,6 +341,13 @@ export async function processRendererToMainMessages(
   const dispatch = mainStore.dispatch;
   const mainMessageProcessor = new MainMessageProcessor(window, dispatch);
 
+  if (message.targetId === "emu") {
+    return await sendFromMainToEmu(message);
+  }
+  if (message.targetId === "ide") {
+    return await sendFromMainToIde(message);
+  }
+
   switch (message.type) {
     case "MainGeneralRequest":
       // --- We accept only methods defined in the MainMessageProcessor
@@ -361,12 +368,6 @@ export async function processRendererToMainMessages(
         }
       }
       return errorResponse(`Unknown method ${message.method}`);
-
-    case "IdeDisplayOutput":
-    case "IdeExecuteCommand":
-    case "IdeScriptOutput":
-      // --- A client wants to display an output message
-      return await sendFromMainToIde(message);
 
     // --- Forward these messages to the emulator
     case "EmuMachineCommand":

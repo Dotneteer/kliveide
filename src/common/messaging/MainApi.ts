@@ -186,5 +186,5 @@ class MainApiImpl {
 export type MainApi = MainApiImpl;
 
 export function createMainApi(messenger: MessengerBase): MainApiImpl {
-  return buildMessagingProxy(new MainApiImpl(), messenger);
+  return buildMessagingProxy(new MainApiImpl(), messenger, "main");
 }

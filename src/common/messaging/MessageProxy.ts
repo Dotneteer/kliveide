@@ -1,19 +1,21 @@
 import { MainGeneralResponse } from "./any-to-main";
-import { ErrorResponse } from "./messages-core";
+import { ErrorResponse, MessageSource } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 
 /**
  * Builds a messaging proxy for the given target object
  * @param proxyTarget Object to build the proxy for
  * @param messenger Messenger to use for communication
+ * @param targetId Target process ID
  * @returns The resulting proxy object
  */
-export function buildMessagingProxy(proxyTarget: any, messenger: MessengerBase): any {
+export function buildMessagingProxy(proxyTarget: any, messenger: MessengerBase, targetId: MessageSource): any {
   // --- Sends a message to the main process, turns error responses into exceptions
   const sendMessage = async (propName: string, ...args: any[]) => {
     const response = (await messenger.sendMessage({
       type: "MainGeneralRequest",
       method: propName,
+      targetId,
       args
     })) as MainGeneralResponse | ErrorResponse;
     if (response.type === "ErrorResponse") {

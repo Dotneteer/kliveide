@@ -1,4 +1,4 @@
-import { getIdeApi } from "../../common/messaging/MainToIdeMessenger";
+import { getIdeAltApi } from "../../common/messaging/MainToIdeMessenger";
 import { collectedBuildTasks } from "../../main/build";
 
 export type ProjectTreeNode = {
@@ -23,9 +23,9 @@ export type ProjectStructure = {
 
 export async function createProjectStructure (
 ): Promise<ProjectStructure> {
-  const response = await getIdeApi().getProjectStructure();
+  const structure = await getIdeAltApi().getProjectStructure();
 
   // --- Collect build functions
   const buildFunctions = collectedBuildTasks.map(bt => bt.id);
-  return { ...response.projectStructure, buildFunctions };
+  return { ...structure, buildFunctions };
 }

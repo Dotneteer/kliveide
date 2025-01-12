@@ -66,18 +66,6 @@ import type {
   EmuGetCallStackResponse,
   EmuSetKeyStateRequest
 } from "./main-to-emu";
-import {
-  IdeDisplayOutputRequest,
-  IdeShowBasicRequest,
-  IdeExecuteCommandRequest,
-  IdeExecuteCommandResponse,
-  IdeSaveAllBeforeQuitRequest,
-  IdeScriptOutputRequest,
-  IdeShowMemoryRequest,
-  IdeShowDisassemblyRequest,
-  IdeGetProjectStructureRequest,
-  IdeGetProjectStructureResponse
-} from "./any-to-ide";
 
 /**
  * Potential message sources
@@ -104,6 +92,7 @@ export interface MessageBase {
   type: AnyMessage["type"];
   correlationId?: number;
   sourceId?: MessageSource;
+  targetId?: MessageSource;
 }
 
 /**
@@ -181,15 +170,7 @@ export type RequestMessage =
   | EmuParsePartitionLabelRequest
   | EmuGetPartitionLabelsRequest
   | EmuGetCallStackRequest
-  | EmuSetKeyStateRequest
-  | IdeDisplayOutputRequest
-  | IdeShowMemoryRequest
-  | IdeShowDisassemblyRequest
-  | IdeShowBasicRequest
-  | IdeExecuteCommandRequest
-  | IdeSaveAllBeforeQuitRequest
-  | IdeScriptOutputRequest
-  | IdeGetProjectStructureRequest;
+  | EmuSetKeyStateRequest;
 
 /**
  * All Response messages
@@ -212,9 +193,7 @@ export type ResponseMessage =
   | EmuGetNextRegDescriptorsResponse
   | EmuGetNextRegStateResponse
   | EmuGetNextMemoryMappingResponse
-  | EmuGetCallStackResponse
-  | IdeExecuteCommandResponse
-  | IdeGetProjectStructureResponse;
+  | EmuGetCallStackResponse;
 
 /**
  * All messages
