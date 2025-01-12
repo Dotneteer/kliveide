@@ -55,7 +55,7 @@ import {
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
-import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
+import { getIdeAltApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
 import { MEDIA_TAPE } from "@common/structs/project-const";
@@ -511,6 +511,6 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
 }
 
 async function saveOnClose() {
-  await getIdeApi().saveAllBeforeQuit();
+  await getIdeAltApi().saveAllBeforeQuit();
   ideSaved = true;
 }

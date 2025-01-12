@@ -5,7 +5,6 @@ import type { Store } from "@common/state/redux-light";
 
 import { setScriptsStatusAction } from "@common/state/actions";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import { IdeDisplayOutputRequest } from "@common/messaging/any-to-ide";
 import { PANE_ID_SCRIPTIMG } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
 

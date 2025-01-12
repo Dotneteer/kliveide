@@ -1,10 +1,9 @@
-import type { IdeExecuteCommandResponse } from "@messaging/any-to-ide";
+import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
+import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
-
-export async function executeIdeCommand (
-  scriptId: number,  
+export async function executeIdeCommand(
+  scriptId: number,
   commandText: string
-): Promise<IdeExecuteCommandResponse> {
-  return await getIdeApi().executeCommand(commandText, scriptId);
+): Promise<IdeCommandResult> {
+  return await getIdeAltApi().executeCommand(commandText, scriptId);
 }

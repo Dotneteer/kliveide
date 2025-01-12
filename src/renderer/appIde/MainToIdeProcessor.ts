@@ -2,7 +2,8 @@ import { AppServices } from "@renderer/abstractions/AppServices";
 import {
   RequestMessage,
   ResponseMessage,
-  defaultResponse
+  defaultResponse,
+  errorResponse
 } from "@messaging/messages-core";
 import { AppState } from "@state/AppState";
 import {
@@ -15,136 +16,151 @@ import { Store } from "@state/redux-light";
 import { dimMenuAction } from "@common/state/actions";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { PANE_ID_BUILD } from "@common/integration/constants";
-import { IdeScriptOutputRequest } from "@common/messaging/any-to-ide";
-import { getCachedAppServices } from "../CachedServices";
-import {
-  ProjectStructure,
-  ProjectTreeNode
-} from "@main/ksx-runner/ProjectStructure";
+import { ProjectStructure, ProjectTreeNode } from "@main/ksx-runner/ProjectStructure";
 import { CompositeOutputBuffer } from "./ToolArea/CompositeOutputBuffer";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
+import { IOutputPaneService } from "@renderer/abstractions/IOutputPaneService";
+import { IScriptService } from "@renderer/abstractions/IScriptService";
+import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
+import { BufferOperation } from "./ToolArea/abstractions";
+
+class IdeMessageProcessor {
+  constructor(
+    private readonly store: Store<AppState>,
+    private readonly outputPaneService: IOutputPaneService,
+    private readonly ideCommandsService: IIdeCommandService,
+    private readonly projectService: IProjectService,
+    private readonly scriptService: IScriptService
+  ) {}
+
+  // --- Forward messages to the IDE
+  displayOutput(...args: any[]) {
+    const toDisplay = args[0];
+    const buffer = this.outputPaneService.getOutputPaneBuffer(toDisplay.pane);
+    if (!buffer) return;
+    buffer.resetStyle();
+    if (toDisplay.foreground !== undefined) buffer.color(toDisplay.foreground);
+    if (toDisplay.background !== undefined) buffer.backgroundColor(toDisplay.background);
+    buffer.bold(toDisplay.isBold ?? false);
+    buffer.italic(toDisplay.isItalic ?? false);
+    buffer.underline(toDisplay.isUnderline ?? false);
+    buffer.strikethru(toDisplay.isStrikeThru ?? false);
+    if (toDisplay.writeLine) {
+      buffer.writeLine(toDisplay.text, toDisplay.data, toDisplay.actionable);
+    } else {
+      buffer.write(toDisplay.text, toDisplay.data, toDisplay.actionable);
+    }
+  }
+
+  scriptOutput(...args: any[]) {
+    executeScriptOutput(this.scriptService, args[0], args[1], args[2]);
+  }
+
+  showMemory(...args: any[]) {
+    if (args[0]) {
+      this.ideCommandsService.executeCommand("show-memory");
+    } else {
+      this.projectService.getActiveDocumentHubService().closeDocument(MEMORY_PANEL_ID);
+    }
+  }
+
+  showDisassembly(...args: any[]) {
+    if (args[0]) {
+      this.ideCommandsService.executeCommand("show-disass");
+    } else {
+      this.projectService.getActiveDocumentHubService().closeDocument(DISASSEMBLY_PANEL_ID);
+    }
+  }
+
+  showBasic(...args: any[]) {
+    if (args[0]) {
+      this.projectService.getActiveDocumentHubService().openDocument(
+        {
+          id: BASIC_PANEL_ID,
+          name: "BASIC Listing",
+          type: BASIC_EDITOR
+        },
+        undefined,
+        false
+      );
+    } else {
+      this.projectService.getActiveDocumentHubService().closeDocument(BASIC_PANEL_ID);
+    }
+  }
+
+  async executeCommand(...args: any[]) {
+    const buildOutput = this.outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+    const scriptOutput = args[1]
+      ? this.scriptService.getScriptOutputBuffer(args[1])
+      : undefined;
+    const buffers = [buildOutput];
+    if (scriptOutput) {
+      buffers.push(scriptOutput);
+    }
+    return await this.ideCommandsService.executeCommand(
+      args[0],
+      new CompositeOutputBuffer(buffers)
+    );
+  }
+
+  saveAllBeforeQuit() {
+    saveAllBeforeQuit(this.store, this.projectService);
+  }
+
+  getProjectStructure() {
+    return convertToProjectStructure(this.store, this.projectService.getProjectTree());
+  }
+}
 
 /**
  * Process the messages coming from the emulator to the main process
  * @param message Emulator message
  * @returns Message response
  */
-export async function processMainToIdeMessages (
+export async function processMainToIdeMessages(
   message: RequestMessage,
   store: Store<AppState>,
-  {
+  { outputPaneService, ideCommandsService, projectService, scriptService }: AppServices
+): Promise<ResponseMessage> {
+  const ideMessageProcessor = new IdeMessageProcessor(
+    store,
     outputPaneService,
     ideCommandsService,
     projectService,
     scriptService
-  }: AppServices
-): Promise<ResponseMessage> {
-  const documentHubService = projectService.getActiveDocumentHubService();
+  );
+
   switch (message.type) {
     case "ForwardAction":
       // --- The emu sent a state change action. Replay it in the main store without formarding it
       store.dispatch(message.action, message.sourceId);
       break;
 
-    case "IdeDisplayOutput":
-      // --- Display the output message
-      const toDisplay = message.toDisplay;
-      const buffer = outputPaneService.getOutputPaneBuffer(toDisplay.pane);
-      if (!buffer) break;
-      buffer.resetStyle();
-      if (toDisplay.foreground !== undefined) buffer.color(toDisplay.foreground);
-      if (toDisplay.background !== undefined)
-        buffer.backgroundColor(toDisplay.background);
-      buffer.bold(toDisplay.isBold ?? false);
-      buffer.italic(toDisplay.isItalic ?? false);
-      buffer.underline(toDisplay.isUnderline ?? false);
-      buffer.strikethru(toDisplay.isStrikeThru ?? false);
-      if (toDisplay.writeLine) {
-        buffer.writeLine(toDisplay.text, toDisplay.data, toDisplay.actionable);
-      } else {
-        buffer.write(toDisplay.text, toDisplay.data, toDisplay.actionable);
+    case "MainGeneralRequest":
+      // --- We accept only methods defined in the MainMessageProcessor
+      const processingMethod = ideMessageProcessor[message.method];
+      if (typeof processingMethod === "function") {
+        try {
+          // --- Call the method with the given arguments. We do not call the
+          // --- function through the mainMessageProcessor instance, so we need
+          // --- to pass it as the "this" parameter.
+          return {
+            type: "MainGeneralResponse",
+            result: await (processingMethod as Function).call(ideMessageProcessor, ...message.args)
+          };
+        } catch (err) {
+          // --- Report the error
+          console.error(`Error processing message: ${err}`);
+          return errorResponse(err.toString());
+        }
       }
-      break;
-
-    case "IdeShowMemory": {
-      if (message.show) {
-        await ideCommandsService.executeCommand("show-memory");
-      } else {
-        await documentHubService.closeDocument(MEMORY_PANEL_ID);
-      }
-      break;
-    }
-
-    case "IdeShowDisassembly": {
-      if (message.show) {
-        await ideCommandsService.executeCommand("show-disass");
-      } else {
-        await documentHubService.closeDocument(DISASSEMBLY_PANEL_ID);
-      }
-      break;
-    }
-
-    case "IdeShowBasic": {
-      if (message.show) {
-        await documentHubService.openDocument(
-          {
-            id: BASIC_PANEL_ID,
-            name: "BASIC Listing",
-            type: BASIC_EDITOR
-          },
-          undefined,
-          false
-        );
-      } else {
-        await documentHubService.closeDocument(BASIC_PANEL_ID);
-      }
-      break;
-    }
-
-    case "IdeExecuteCommand": {
-      const buildOutput = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-      const scriptOutput = message.scriptId ? scriptService.getScriptOutputBuffer(message.scriptId) : undefined;
-      const buffers = [ buildOutput ];
-      if (scriptOutput) {
-        buffers.push(scriptOutput);
-      }
-      const response = await ideCommandsService.executeCommand(
-        message.commandText,
-        new CompositeOutputBuffer(buffers)
-      );
-      return {
-        type: "IdeExecuteCommandResponse",
-        success: response.success,
-        finalMessage: response.finalMessage,
-        value: response.value
-      };
-    }
-
-    case "IdeSaveAllBeforeQuit": {
-      await saveAllBeforeQuit(store, projectService);
-      break;
-    }
-
-    case "IdeScriptOutput": {
-      executeScriptOutput(message);
-      break;
-    }
-
-    case "IdeGetProjectStructure": {
-      return {
-        type: "IdeGetProjectStructureResponse",
-        projectStructure: convertToProjectStructure(
-          store,
-          projectService.getProjectTree()
-        )
-      };
-    }
+      return errorResponse(`Unknown method ${message.method}`);
   }
   return defaultResponse();
 }
 
-export async function saveAllBeforeQuit (
+export async function saveAllBeforeQuit(
   store: Store<AppState>,
   projectService: IProjectService
 ): Promise<void> {
@@ -157,43 +173,47 @@ export async function saveAllBeforeQuit (
   }
 }
 
-function executeScriptOutput (message: IdeScriptOutputRequest): void {
-  const scriptService = getCachedAppServices().scriptService;
+function executeScriptOutput(
+  scriptService: IScriptService,
+  id: number,
+  operation: BufferOperation,
+  args?: any[]
+): void {
   if (!scriptService) return;
 
-  const buffer = scriptService.getScriptOutputBuffer(message.id);
+  const buffer = scriptService.getScriptOutputBuffer(id);
   if (!buffer) return;
 
-  switch (message.operation) {
+  switch (operation) {
     case "clear":
       buffer.clear();
       break;
     case "write":
-      buffer.write(message.args[0]?.toString(), message.args[1], message.args[2]);
+      buffer.write(args[0]?.toString(), args[1], args[2]);
       break;
     case "writeLine":
-      buffer.writeLine(message.args[0]?.toString(), message.args[1], message.args[2]);
+      buffer.writeLine(args[0]?.toString(), args[1], args[2]);
       break;
     case "resetStyle":
       buffer.resetStyle();
       break;
     case "color":
-      buffer.color(message.args[0]);
+      buffer.color(args[0]);
       break;
     case "backgroundColor":
-      buffer.backgroundColor(message.args[0]);
+      buffer.backgroundColor(args[0]);
       break;
     case "bold":
-      buffer.bold(message.args[0]);
+      buffer.bold(args[0]);
       break;
     case "italic":
-      buffer.italic(message.args[0]);
+      buffer.italic(args[0]);
       break;
     case "underline":
-      buffer.underline(message.args[0]);
+      buffer.underline(args[0]);
       break;
     case "strikethru":
-      buffer.strikethru(message.args[0]);
+      buffer.strikethru(args[0]);
       break;
     case "pushStyle":
       buffer.pushStyle();
@@ -204,7 +224,7 @@ function executeScriptOutput (message: IdeScriptOutputRequest): void {
   }
 }
 
-function convertToProjectStructure (
+function convertToProjectStructure(
   store: Store<AppState>,
   tree: ITreeView<ProjectNode>
 ): ProjectStructure {
@@ -219,11 +239,11 @@ function convertToProjectStructure (
     children: nodes
   };
 
-  function collectNodes (children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
+  function collectNodes(children: ITreeNode<ProjectNode>[]): ProjectTreeNode[] {
     if (!children) return [];
 
     const result: ProjectTreeNode[] = [];
-    children.forEach(child => {
+    children.forEach((child) => {
       const nodeChildren = collectNodes(child.children);
       result.push({
         depth: child.depth,

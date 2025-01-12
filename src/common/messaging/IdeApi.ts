@@ -1,135 +1,50 @@
-import { MessengerBase } from "@messaging/MessengerBase";
-import { MessageBase, RequestMessage, ResponseMessage } from "@messaging/messages-core";
-import { BufferOperation, OutputSpecification } from "@renderer/appIde/ToolArea/abstractions";
-import { IdeExecuteCommandResponse, IdeGetProjectStructureResponse } from "./any-to-ide";
+import { OutputSpecification } from "@renderer/appIde/ToolArea/abstractions";
+import { buildMessagingProxy } from "./MessageProxy";
+import { MessengerBase } from "./MessengerBase";
+import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import { ProjectStructure } from "@main/ksx-runner/ProjectStructure";
 
-/**
- * This interface defines the API exposed by the Emulator
- */
-export interface IdeApi {
-  displayOutput(toDisplay: OutputSpecification): Promise<void>;
-  scriptOutput(id: number, operation: BufferOperation, args?: any[]): Promise<void>;
-  showMemory(show: boolean): Promise<void>;
-  showDisassembly(show: boolean): Promise<void>;
-  showBasic(show: boolean): Promise<void>;
-  executeCommand(commandText: string, scriptId?: number): Promise<IdeExecuteCommandResponse>;
-  saveAllBeforeQuit(): Promise<void>;
-  getProjectStructure(): Promise<IdeGetProjectStructureResponse>;
-}
+const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
-class IdeApiImpl implements IdeApi {
-  constructor(private readonly messenger: MessengerBase) {}
-
-  /**
-   * Displays output on the specified pane
-   * @param toDisplay Output specification
-   */
-  async displayOutput(toDisplay: OutputSpecification): Promise<void> {
-    await this.sendMessage({
-      type: "IdeDisplayOutput",
-      toDisplay
-    });
+class IdeApiImpl {
+  displayOutput(_toDisplay: OutputSpecification): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sends a script output request to the IDE
-   * @param id Script ID
-   * @param operation Buffer operation
-   * @param args Optional arguments
-   */
-  async scriptOutput(id: number, operation: BufferOperation, args?: any[]): Promise<void> {
-    await this.sendMessage({
-      type: "IdeScriptOutput",
-      id,
-      operation,
-      args
-    });
+  scriptOutput(_id: number, _operation: any, _args?: any[]): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Shows or hides the memory pane
-   * @param show Show or hide
-   */
-  async showMemory(show: boolean): Promise<void> {
-    await this.sendMessage({
-      type: "IdeShowMemory",
-      show
-    });
+  showMemory(_show: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Shows or hides the disassembly pane
-   * @param show Show or hide
-   */
-  async showDisassembly(show: boolean): Promise<void> {
-    await this.sendMessage({
-      type: "IdeShowDisassembly",
-      show
-    });
+  showDisassembly(_show: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Shows or hides the BASIC pane
-   * @param show Show or hide
-   */
-  async showBasic(show: boolean): Promise<void> {
-    await this.sendMessage({
-      type: "IdeShowBasic",
-      show
-    });
+  showBasic(_show: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Executes a command in the IDE
-   * @param commandText Command text
-   * @param scriptId Optional script ID
-   */
-  async executeCommand(commandText: string, scriptId?: number): Promise<IdeExecuteCommandResponse> {
-    return (await this.sendMessage(
-      {
-        type: "IdeExecuteCommand",
-        commandText,
-        scriptId
-      },
-      "IdeExecuteCommandResponse"
-    )) as IdeExecuteCommandResponse;
+  executeCommand(
+    _commandText: string,
+    _scriptId?: number
+  ): Promise<IdeCommandResult> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Saves all files before quitting the IDE
-   */
-  async saveAllBeforeQuit(): Promise<void> {
-    await this.sendMessage({
-      type: "IdeSaveAllBeforeQuit"
-    });
+  saveAllBeforeQuit(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the current project structure
-   */
-  async getProjectStructure(): Promise<IdeGetProjectStructureResponse> {
-    return (await this.sendMessage(
-      {
-        type: "IdeGetProjectStructure"
-      },
-      "IdeGetProjectStructureResponse"
-    )) as IdeGetProjectStructureResponse;
-  }
-
-  private async sendMessage(
-    message: RequestMessage,
-    msgType?: ResponseMessage["type"]
-  ): Promise<MessageBase> {
-    const response = await this.messenger.sendMessage(message);
-    if (response.type === "ErrorResponse") {
-      console.log(`Error while sending IPC message: ${response.message}`);
-    } else if (msgType && response.type !== msgType) {
-      console.log(`Unexpected response type for request type '${message.type}': ${response.type}`);
-    }
-    return response;
+  getProjectStructure(): Promise<ProjectStructure> {
+    throw new Error(NO_PROXY_ERROR);
   }
 }
 
-export function createIdeApi(messenger: MessengerBase): IdeApi {
-  return new IdeApiImpl(messenger);
+export type IdeApi = IdeApiImpl;
+
+export function createIdeApi(messenger: MessengerBase): IdeApiImpl {
+  return buildMessagingProxy(new IdeApiImpl(), messenger, "ide");
 }
