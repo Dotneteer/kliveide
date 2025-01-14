@@ -18,9 +18,9 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
-import { useEmuApi } from "@renderer/core/EmuApi";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 type Props = {
   ide: boolean;

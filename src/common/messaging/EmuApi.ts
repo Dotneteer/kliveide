@@ -1,420 +1,308 @@
+import { PsgChipState } from "@emu/abstractions/PsgChipState";
+import { MachineCommand } from "@abstractions/MachineCommand";
+import { buildMessagingProxy } from "./MessageProxy";
+import { MessengerBase } from "./MessengerBase";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { MessengerBase } from "@messaging/MessengerBase";
-import {
-  EmuGetBlinkStateResponse,
-  EmuGetCallStackResponse,
-  EmuGetCpuStateResponse,
-  EmuGetMemoryResponse,
-  EmuGetNecUpd765Response,
-  EmuGetNextMemoryMappingResponse,
-  EmuGetNextRegDescriptorsResponse,
-  EmuGetNextRegStateResponse,
-  EmuGetPsgStateResponse,
-  EmuGetSysVarsResponse,
-  EmuGetUlaStateResponse,
-  EmuListBreakpointsResponse,
-  MachineCommand
-} from "@messaging/main-to-emu";
-import {
-  FlagResponse,
-  MessageBase,
-  RequestMessage,
-  ResponseMessage,
-  ValueResponse
-} from "@messaging/messages-core";
+import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
+import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
+
+const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
 /**
- * This interface defines the API exposed by the Emulator
+ * This class defines the shape of the Emu process API that can be called from
+ * the main and Ide processes. The methods are called through a JavaScript proxy.
  */
-export interface EmuApi {
-  setMachineType(machineId: string, modelId?: string, config?: Record<string, any>): Promise<void>;
-  issueMachineCommand(command: MachineCommand, customCommand?: string): Promise<void>;
-  setTapeFile(
-    file: string,
-    contents: Uint8Array,
-    confirm?: boolean,
-    suppressError?: boolean
-  ): Promise<void>;
-  setDiskFile(
-    diskIndex: number,
-    file?: string,
-    contents?: Uint8Array,
-    confirm?: boolean,
-    suppressError?: boolean
-  ): Promise<void>;
-  setDiskWriteProtection(index: number, protect: boolean): Promise<void>;
-  getCpuState(): Promise<EmuGetCpuStateResponse>;
-  getUlaState(): Promise<EmuGetUlaStateResponse>;
-  getPsgState(): Promise<EmuGetPsgStateResponse>;
-  getBlinkState(): Promise<EmuGetBlinkStateResponse>;
-  eraseAllBreakpoints(): Promise<void>;
-  setBreakpoint(breakpoint: BreakpointInfo): Promise<FlagResponse>;
-  removeBreakpoint(breakpoint: BreakpointInfo): Promise<FlagResponse>;
-  listBreakpoints(): Promise<EmuListBreakpointsResponse>;
-  enableBreakpoint(breakpoint: BreakpointInfo, enable: boolean): Promise<FlagResponse>;
-  getMemoryContents(partition?: number): Promise<EmuGetMemoryResponse>;
-  getSysVars(): Promise<EmuGetSysVarsResponse>;
-  injectCodeCommand(codeToInject: CodeToInject): Promise<void>;
-  runCodeCommand(codeToInject: CodeToInject, debug: boolean): Promise<void>;
-  resolveBreakpoints(breakpoints: ResolvedBreakpoint[]): Promise<void>;
-  scrollBreakpoints(addr: BreakpointInfo, shift: number): Promise<void>;
-  normalizeBreakpoints(resource: string, lineCount: number): Promise<void>;
-  getNecUpd765State(): Promise<EmuGetNecUpd765Response>;
-  startScript(id: number, scriptFile: string, contents: string): Promise<void>;
-  stopScript(id: number): Promise<void>;
-  getNextRegDescriptors(): Promise<EmuGetNextRegDescriptorsResponse>;
-  getNextRegState(): Promise<EmuGetNextRegStateResponse>;
-  getNextMemoryMapping(): Promise<EmuGetNextMemoryMappingResponse>;
-  parsePartitionLabel(label: string): Promise<ValueResponse>;
-  getPartitionLabels(): Promise<ValueResponse>;
-  getCallStack(): Promise<EmuGetCallStackResponse>;
-  setKeyStatus(key: number, isDown: boolean): Promise<void>;
-}
-
-class EmuApiImpl implements EmuApi {
-  constructor(private readonly messenger: MessengerBase) {}
-
-  /**
-   * Sets the machine type to use
-   * @param machineId ID of the machine type
-   * @param modelId ID of the machine model
-   * @param config Optional machine configuration
-   */
+class EmuApiImpl {
   async setMachineType(
-    machineId: string,
-    modelId?: string,
-    config?: Record<string, any>
+    _machineId: string,
+    _modelId?: string,
+    _config?: Record<string, any>
   ): Promise<void> {
-    await this.sendMessage({ type: "EmuSetMachineType", machineId, modelId, config });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Issue a machine command
-   * @param command Command to issue
-   * @param customCommand Optional custom command
-   */
-  async issueMachineCommand(command: MachineCommand, customCommand?: string): Promise<void> {
-    await this.sendMessage({ type: "EmuMachineCommand", command, customCommand });
+  async issueMachineCommand(_command: MachineCommand, _customCommand?: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sets the tape file to use with the machine
-   * @param file Tape file
-   * @param contents Tape contents
-   * @param confirm Should the operation be confirmed?
-   * @param suppressError Should errors be suppressed?
-   */
   async setTapeFile(
-    file: string,
-    contents: Uint8Array,
-    confirm?: boolean,
-    suppressError?: boolean
+    _file: string,
+    _contents: Uint8Array,
+    _confirm?: boolean,
+    _suppressError?: boolean
   ): Promise<void> {
-    await this.sendMessage({ type: "EmuSetTapeFile", file, contents, confirm, suppressError });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sets the disk file to use with the machine
-   * @param diskIndex Disk index
-   * @param file Disk file
-   * @param contents Disk contents
-   * @param confirm Should the operation be confirmed?
-   * @param suppressError Should errors be suppressed?
-   */
   async setDiskFile(
-    diskIndex: number,
-    file?: string,
-    contents?: Uint8Array,
-    confirm?: boolean,
-    suppressError?: boolean
+    _diskIndex: number,
+    _file?: string,
+    _contents?: Uint8Array,
+    _confirm?: boolean,
+    _suppressError?: boolean
   ): Promise<void> {
-    await this.sendMessage({
-      type: "EmuSetDiskFile",
-      diskIndex,
-      file,
-      contents,
-      confirm,
-      suppressError
-    });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sets the disk write protection state
-   * @param index Disk index
-   * @param protect Should the disk be protected?
-   */
-  async setDiskWriteProtection(index: number, protect: boolean): Promise<void> {
-    await this.sendMessage({ type: "EmuSetDiskWriteProtection", diskIndex: index, protect });
+  async setDiskWriteProtection(_index: number, _protect: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the current CPU state
-   */
-  async getCpuState(): Promise<EmuGetCpuStateResponse> {
-    const response = await this.sendMessage({ type: "EmuGetCpuState" }, "EmuGetCpuStateResponse");
-    return response as EmuGetCpuStateResponse;
+  async getCpuState(): Promise<CpuState> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the current PSG state
-   */
-  async getPsgState(): Promise<EmuGetPsgStateResponse> {
-    const response = await this.sendMessage({ type: "EmuGetPsgState" }, "EmuGetPsgStateResponse");
-    return response as EmuGetPsgStateResponse;
+  async getUlaState(): Promise<UlaState> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the current ULA state
-   */
-  async getUlaState(): Promise<EmuGetUlaStateResponse> {
-    const response = await this.sendMessage({ type: "EmuGetUlaState" }, "EmuGetUlaStateResponse");
-    return response as EmuGetUlaStateResponse;
+  async getPsgState(): Promise<PsgChipState> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the current BLINK state
-   */
-  async getBlinkState(): Promise<EmuGetBlinkStateResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuGetBlinkState" },
-      "EmuGetBlinkStateResponse"
-    );
-    return response as EmuGetBlinkStateResponse;
+  async getBlinkState(): Promise<BlinkState> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Erases all breakpoints
-   */
   async eraseAllBreakpoints(): Promise<void> {
-    await this.sendMessage({ type: "EmuEraseAllBreakpoints" });
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sets a breakpoint
-   * @param breakpoint Breakpoint to set
-   */
-  async setBreakpoint(breakpoint: BreakpointInfo): Promise<FlagResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuSetBreakpoint", breakpoint },
-      "FlagResponse"
-    );
-    return response as FlagResponse;
+  async setBreakpoint(_breakpoint: BreakpointInfo): Promise<boolean> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Removes a breakpoint
-   * @param breakpoint Breakpoint to remove
-   */
-  async removeBreakpoint(breakpoint: BreakpointInfo): Promise<FlagResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuRemoveBreakpoint", breakpoint },
-      "FlagResponse"
-    );
-    return response as FlagResponse;
+  async removeBreakpoint(_breakpoint: BreakpointInfo): Promise<boolean> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Lists all breakpoints
-   */
-  async listBreakpoints(): Promise<EmuListBreakpointsResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuListBreakpoints" },
-      "EmuListBreakpointsResponse"
-    );
-    return response as EmuListBreakpointsResponse;
+  async listBreakpoints(): Promise<BreakpointsInfo> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Enables or disables a breakpoint
-   * @param breakpoint Breakpoint to enable or disable
-   * @param enable Should the breakpoint be enabled?
-   */
-  async enableBreakpoint(breakpoint: BreakpointInfo, enable: boolean): Promise<FlagResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuEnableBreakpoint", breakpoint, enable },
-      "FlagResponse"
-    );
-    return response as FlagResponse;
+  async enableBreakpoint(_breakpoint: BreakpointInfo, _enable: boolean): Promise<boolean> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the memory contents
-   * @param partition Memory partition
-   */
-  async getMemoryContents(partition?: number): Promise<EmuGetMemoryResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuGetMemory", partition },
-      "EmuGetMemoryResponse"
-    );
-    return response as EmuGetMemoryResponse;
+  async getMemoryContents(_partition?: number): Promise<MemoryInfo> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the system variables
-   */
-  async getSysVars(): Promise<EmuGetSysVarsResponse> {
-    const response = await this.sendMessage({ type: "EmuGetSysVars" }, "EmuGetSysVarsResponse");
-    return response as EmuGetSysVarsResponse;
+  async getSysVars(): Promise<SysVar[]> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Injects code into the emulator
-   * @param codeToInject Code to inject
-   */
-  async injectCodeCommand(codeToInject: CodeToInject): Promise<void> {
-    await this.sendMessage({ type: "EmuInjectCode", codeToInject });
+  async injectCodeCommand(_codeToInject: CodeToInject): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Runs code in the emulator
-   * @param codeToInject Code to inject
-   * @param debug Should the code be run in debug mode?
-   */
-  async runCodeCommand(codeToInject: CodeToInject, debug: boolean): Promise<void> {
-    await this.sendMessage({ type: "EmuRunCode", codeToInject, debug });
+  async runCodeCommand(_codeToInject: CodeToInject, _debug: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Resolves the specified breakpoints
-   * @param breakpoints Breakpoints to resolve
-   */
-  async resolveBreakpoints(breakpoints: ResolvedBreakpoint[]): Promise<void> {
-    await this.sendMessage({ type: "EmuResolveBreakpoints", breakpoints });
+  async resolveBreakpoints(_breakpoints: ResolvedBreakpoint[]): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Scrolls the specified breakpoint
-   * @param addr Breakpoint address
-   * @param shift Shift value
-   */
-  async scrollBreakpoints(addr: BreakpointInfo, shift: number): Promise<void> {
-    await this.sendMessage({ type: "EmuScrollBreakpoints", addr, shift });
+  async scrollBreakpoints(_addr: BreakpointInfo, _shift: number): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Normalizes the breakpoints in the specified resource
-   * @param resource Resource name
-   * @param lineCount Number of lines
-   */
-  async normalizeBreakpoints(resource: string, lineCount: number): Promise<void> {
-    await this.sendMessage({ type: "EmuNormalizeBreakpoints", resource, lineCount });
+  async normalizeBreakpoints(_resource: string, _lineCount: number): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the NEC UPD765 state
-   */
-  async getNecUpd765State(): Promise<EmuGetNecUpd765Response> {
-    const response = await this.sendMessage(
-      { type: "EmuGetNecUpd765State" },
-      "EmuGetNecUpd765StateResponse"
-    );
-    return response as EmuGetNecUpd765Response;
+  async getNecUpd765State(): Promise<FloppyLogEntry[]> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Starts the specified script
-   * @param id Script ID
-   * @param scriptFile Script file
-   * @param contents Script contents
-   */
-  async startScript(id: number, scriptFile: string, contents: string): Promise<void> {
-    await this.sendMessage({ type: "EmuStartScript", id, scriptFile, contents });
+  async startScript(_id: number, _scriptFile: string, _contents: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Stops the specified script
-   * @param id Script ID
-   */
-  async stopScript(id: number): Promise<void> {
-    await this.sendMessage({ type: "EmuStopScript", id });
+  async stopScript(_id: number): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the Next register descriptors
-   */
-  async getNextRegDescriptors(): Promise<EmuGetNextRegDescriptorsResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuGetNextRegDescriptors" },
-      "EmuGetNextRegDescriptorsResponse"
-    );
-    return response as EmuGetNextRegDescriptorsResponse;
+  async getNextRegDescriptors(): Promise<NextRegDescriptors> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the Next register device state
-   */
-  async getNextRegState(): Promise<EmuGetNextRegStateResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuGetNextRegState" },
-      "EmuGetNextRegStateResponse"
-    );
-    return response as EmuGetNextRegStateResponse;
+  async getNextRegState(): Promise<NextRegState> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the Next memory mapping data
-   */
-  async getNextMemoryMapping(): Promise<EmuGetNextMemoryMappingResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuGetNextMemoryMapping" },
-      "EmuGetNextMemoryMappingResponse"
-    );
-    return response as EmuGetNextMemoryMappingResponse;
+  async getNextMemoryMapping(): Promise<NextMemoryMapping> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Parses the specified partition label
-   * @param label Partition label
-   */
-  async parsePartitionLabel(label: string): Promise<ValueResponse> {
-    const response = await this.sendMessage(
-      { type: "EmuParsePartitionLabel", label },
-      "ValueResponse"
-    );
-    return response as ValueResponse;
+  async parsePartitionLabel(_label: string): Promise<any> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the partition labels
-   */
-  async getPartitionLabels(): Promise<ValueResponse> {
-    const response = await this.sendMessage({ type: "EmuGetPartitionLabels" }, "ValueResponse");
-    return response as ValueResponse;
+  async getPartitionLabels(): Promise<any> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Gets the call stack
-   */
-  async getCallStack(): Promise<EmuGetCallStackResponse> {
-    const response = await this.sendMessage({ type: "EmuGetCallStack" }, "EmuGetCallStackResponse");
-    return response as EmuGetCallStackResponse;
+  async getCallStack(): Promise<CallStackInfo> {
+    throw new Error(NO_PROXY_ERROR);
   }
 
-  /**
-   * Sets the key status
-   * @param key Key code
-   * @param isDown Is the key down?
-   */
-  async setKeyStatus(key: number, isDown: boolean): Promise<void> {
-    await this.sendMessage({ type: "EmuSetKeyState", key, isDown });
-  }
-
-  private async sendMessage(
-    message: RequestMessage,
-    msgType?: ResponseMessage["type"]
-  ): Promise<MessageBase> {
-    const response = await this.messenger.sendMessage(message);
-    if (response.type === "ErrorResponse") {
-      console.log(`Error while sending IPC message: ${response.message}`);
-    } else if (msgType && response.type !== msgType) {
-      console.log(`Unexpected response type for request type '${message.type}': ${response.type}`);
-    }
-    return response;
+  async setKeyStatus(_key: number, _isDown: boolean): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
   }
 }
 
-export function createEmulatorApi(messenger: MessengerBase): EmuApi {
-  return new EmuApiImpl(messenger);
+// --- The response with the CPU state information
+export type CpuState = {
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  af_: number;
+  bc_: number;
+  de_: number;
+  hl_: number;
+  pc: number;
+  sp: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+  tacts: number;
+  tactsAtLastStart: number;
+  interruptMode: number;
+  iff1: boolean;
+  iff2: boolean;
+  sigINT: boolean;
+  halted: boolean;
+  snoozed: boolean;
+};
+
+export type UlaState = {
+  fcl: number;
+  frm: number;
+  ras: number;
+  pos: number;
+  pix: string;
+  bor: string;
+  flo: number;
+  con: number;
+  lco: number;
+  ear: boolean;
+  mic: boolean;
+  keyLines: number[];
+  romP: number;
+  ramB: number;
+};
+
+export type BlinkState = {
+  SR0: number;
+  SR1: number;
+  SR2: number;
+  SR3: number;
+  TIM0: number;
+  TIM1: number;
+  TIM2: number;
+  TIM3: number;
+  TIM4: number;
+  TSTA: number;
+  TMK: number;
+  INT: number;
+  STA: number;
+  COM: number;
+  EPR: number;
+  keyLines: number[];
+  oscBit: boolean;
+  earBit: boolean;
+  PB0: number;
+  PB1: number;
+  PB2: number;
+  PB3: number;
+  SBR: number;
+  SCW: number;
+  SCH: number;
+};
+
+// --- The response with the breakpoints set in the emulator
+export type BreakpointsInfo = {
+  breakpoints: BreakpointInfo[];
+  memorySegments?: number[][];
+};
+
+// --- The response with the memory contents
+export type MemoryInfo = {
+  memory: Uint8Array;
+  pc: number;
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  af_: number;
+  bc_: number;
+  de_: number;
+  hl_: number;
+  sp: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+  partitionLabels: string[];
+  selectedRom?: number;
+  selectedBank?: number;
+  osInitialized: boolean;
+  memBreakpoints: BreakpointInfo[];
+};
+
+// --- The response with the Next register descriptors
+export type NextRegDescriptors = {
+  descriptors: {
+    id: number;
+    description: string;
+    isReadOnly?: boolean;
+    isWriteOnly?: boolean;
+    slices?: {
+      mask?: number;
+      shift?: number;
+      description?: string;
+      valueSet?: Record<number, string>;
+      view?: "flag" | "number";
+    }[];
+  }[];
+};
+
+// --- The response with the Next register device state
+export type NextRegState = {
+  lastRegisterIndex: number;
+  regs: {
+    id: number;
+    lastWrite?: number;
+    value?: number;
+  }[];
+};
+
+// --- The response with the Next register device state
+export type NextMemoryMapping = {
+  allRamsBanks?: number[];
+  selectedRom: number;
+  selectedBank: number;
+  port7ffd: number;
+  port1ffd: number;
+  portDffd: number;
+  portEff7: number;
+  portLayer2: number;
+  portTimex: number;
+  divMmc: number;
+  divMmcIn: boolean;
+  pageInfo: MemoryPageInfo[];
+};
+
+export type EmuApi = EmuApiImpl;
+
+export function createEmuApi(messenger: MessengerBase): EmuApiImpl {
+  return buildMessagingProxy(new EmuApiImpl(), messenger, "emu");
 }

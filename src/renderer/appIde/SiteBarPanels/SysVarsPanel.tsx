@@ -22,19 +22,19 @@ type SysVarData = {
 };
 
 const SysVarsPanel = () => {
-  const emuApi = useEmuApi();
+  const emuApiAlt = useEmuApi();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
     // --- Get breakpoint information
-    const sysVarsResponse = await emuApi.getSysVars();
+    const sysVars = await emuApiAlt.getSysVars();
 
-    const memResponse = await emuApi.getMemoryContents();
+    const memResponse = await emuApiAlt.getMemoryContents();
 
     const memory = memResponse.memory;
-    const vars = sysVarsResponse.sysVars.map((sv) => {
+    const vars = sysVars.map((sv) => {
       const addr = sv.address;
       let value: number;
       let valueList: Uint8Array;

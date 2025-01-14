@@ -46,6 +46,9 @@ import { mainScriptManager } from "./ksx-runner/MainScriptManager";
 import { collectedBuildTasks } from "./build";
 import { Dispatch } from "react";
 import { Action } from "@common/state/Action";
+import { MessageBoxType } from "@common/messaging/MainApi";
+import { CompilerOptions } from "@abstractions/CompilerInfo";
+import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 class MainMessageProcessor {
   constructor(
@@ -53,50 +56,50 @@ class MainMessageProcessor {
     private readonly dispatch: Dispatch<Action>
   ) {}
 
-  readTextFile(...args: any[]) {
-    const fullPath = resolveMessagePath(args[0], args[2]);
+  readTextFile(path: string, encoding?: string, resolveIn?: string) {
+    const fullPath = resolveMessagePath(path, resolveIn);
     return fs.readFileSync(fullPath, {
-      encoding: (args[1] ?? "utf8") as BufferEncoding
+      encoding: (encoding ?? "utf8") as BufferEncoding
     });
   }
 
-  readBinaryFile(...args: any[]) {
-    const fullPath = resolveMessagePath(args[0], args[1]);
+  readBinaryFile(path: string, resolveIn?: string) {
+    const fullPath = resolveMessagePath(path, resolveIn);
     return new Uint8Array(fs.readFileSync(fullPath));
   }
 
-  async displayMessageBox(...args: any[]) {
+  async displayMessageBox(messageType?: MessageBoxType, title?: string, message?: string) {
     try {
       await dialog.showMessageBox(this.window, {
-        type: args[0] ?? "none",
-        title: args[1],
-        message: args[2]
+        type: messageType ?? "none",
+        title: title,
+        message: message
       });
     } finally {
       this.dispatch(dimMenuAction(false));
     }
   }
 
-  showOpenFolderDialog(...args: any[]) {
-    return displayOpenFolderDialog(this.window, args[0]);
+  showOpenFolderDialog(settingsId?: string) {
+    return displayOpenFolderDialog(this.window, settingsId);
   }
 
-  showOpenFileDialog(...args: any[]) {
-    return displayOpenFileDialog(this.window, args[0], args[1]);
+  showOpenFileDialog(filters?: { name: string; extensions: string[] }[], settingsId?: string) {
+    return displayOpenFileDialog(this.window, filters, settingsId);
   }
 
-  createDiskFile(...args: any[]) {
-    return createDiskFile(args[0], args[1], args[2]);
+  createDiskFile(diskFolder: string, filename: string, diskType: string) {
+    return createDiskFile(diskFolder, filename, diskType);
   }
 
-  async getDirectoryContent(...args: any[]) {
+  async getDirectoryContent(directory: string) {
     const filter = await getProjectDirectoryContentFilter();
-    return await getDirectoryContent(args[0], filter);
+    return await getDirectoryContent(directory, filter);
   }
 
-  async openFolder(...args: any[]): Promise<string | null> {
-    if (args[0]) {
-      const errorMessage = await openFolderByPath(args[0]);
+  async openFolder(folder?: string): Promise<string | null> {
+    if (folder) {
+      const errorMessage = await openFolderByPath(folder);
       if (errorMessage) {
         return errorMessage;
       }
@@ -106,13 +109,19 @@ class MainMessageProcessor {
     return null;
   }
 
-  async createKliveProject(...args: any[]): Promise<string> {
+  async createKliveProject(
+    machineId: string,
+    projectName: string,
+    folder?: string,
+    modelId?: string,
+    templateId?: string
+  ) {
     const createFolderResponse = await createKliveProject(
-      args[0],
-      args[3],
-      args[4],
-      args[1],
-      args[2]
+      machineId,
+      modelId,
+      templateId,
+      projectName,
+      folder
     );
     if (createFolderResponse.errorMessage) {
       throw new Error(createFolderResponse.errorMessage);
@@ -120,8 +129,8 @@ class MainMessageProcessor {
     return createFolderResponse.path;
   }
 
-  async checkZ88Card(...args: any[]): Promise<{ message?: string; content?: Uint8Array }> {
-    const cardResult = await checkZ88SlotFile(args[0], args[1]);
+  async checkZ88Card(path: string, expectedSize?: number) {
+    const cardResult = await checkZ88SlotFile(path, expectedSize);
     if (typeof cardResult === "string") {
       return {
         message: cardResult
@@ -137,8 +146,8 @@ class MainMessageProcessor {
     return appSettings.excludedProjectItems?.join(path.delimiter);
   }
 
-  addGlobalExcludedProjectItem(...args: any[]) {
-    const excludedItems = args[0].map((p: any) => p.trim().replace(path.sep, "/"));
+  addGlobalExcludedProjectItem(files: string[]) {
+    const excludedItems = files.map((p: any) => p.trim().replace(path.sep, "/"));
     appSettings.excludedProjectItems = (
       appSettings.excludedProjectItems?.concat(excludedItems) ?? excludedItems
     ).filter((v: any, i: any, a: string | any[]) => a.indexOf(v) === i);
@@ -146,53 +155,53 @@ class MainMessageProcessor {
     return appSettings.excludedProjectItems.join(path.delimiter);
   }
 
-  setGloballyExcludedProjectItems(...args: any[]) {
-    appSettings.excludedProjectItems = args[0];
+  setGloballyExcludedProjectItems(files: string[]) {
+    appSettings.excludedProjectItems = files;
     this.dispatch(refreshExcludedProjectItemsAction());
     return appSettings.excludedProjectItems?.join(path.delimiter);
   }
 
-  deleteFileEntry(...args: any[]) {
-    if (args[0]) {
-      fs.rmdirSync(args[1], { recursive: true });
+  deleteFileEntry(isFolder: boolean, name: string) {
+    if (isFolder) {
+      fs.rmdirSync(name, { recursive: true });
     } else {
-      fs.unlinkSync(args[1]);
+      fs.unlinkSync(name);
     }
   }
 
-  async addNewFileEntry(...args: any[]): Promise<void> {
-    const newItemName = path.join(args[2], args[0]);
+  async addNewFileEntry(name: string, isFolder?: boolean, folder?: string): Promise<void> {
+    const newItemName = path.join(folder, name);
     if (fs.existsSync(newItemName)) {
       throw new Error(`${newItemName} already exists`);
     }
-    if (args[1]) {
+    if (isFolder) {
       fs.mkdirSync(newItemName);
     } else {
       fs.closeSync(fs.openSync(newItemName, "w"));
     }
   }
 
-  renameFileEntry(...args: any[]) {
-    fs.renameSync(args[0], args[1]);
+  renameFileEntry(oldName: string, newName: string) {
+    fs.renameSync(oldName, newName);
   }
 
-  saveTextFile(...args: any[]) {
-    const filePath = resolveMessagePath(args[0], args[2]);
+  saveTextFile(savePath: string, data: string, resolveIn?: string) {
+    const filePath = resolveMessagePath(savePath, resolveIn);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(filePath, args[1], { flag: "w" });
+    fs.writeFileSync(filePath, data, { flag: "w" });
     return filePath;
   }
 
-  saveBinaryFile(...args: any[]) {
-    const filePath = resolveMessagePath(args[0], args[2]);
+  saveBinaryFile(savePath: string, data: Uint8Array, resolveIn?: string) {
+    const filePath = resolveMessagePath(savePath, resolveIn);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(filePath, args[1], { flag: "w" });
+    fs.writeFileSync(filePath, data, { flag: "w" });
     return filePath;
   }
 
@@ -212,30 +221,30 @@ class MainMessageProcessor {
     return mainStore.getState().projectSettings ?? {};
   }
 
-  applyUserSettings(...args: any[]) {
-    if (args[0]) {
+  applyUserSettings(key: string, value?: any) {
+    if (key) {
       appSettings.userSettings ??= {};
-      if (args[1] === undefined) {
-        _.unset(appSettings.userSettings, args[0]);
+      if (value === undefined) {
+        _.unset(appSettings.userSettings, key);
       } else {
-        _.set(appSettings.userSettings, args[0], args[1]);
+        _.set(appSettings.userSettings, key, value);
       }
       saveAppSettings();
     }
   }
 
-  applyProjectSettings(...args: any[]) {
-    if (args[0]) {
-      this.dispatch(applyProjectSettingAction(args[0], args[1]));
+  applyProjectSettings(key: string, value?: any) {
+    if (key) {
+      this.dispatch(applyProjectSettingAction(key, value));
       saveKliveProject();
     }
   }
 
-  async moveSettings(...args: any[]) {
-    if (args[0]) {
+  async moveSettings(pull: boolean, copy: boolean) {
+    if (pull) {
       // --- User --> Project
       let projSettings: Record<string, any> = {};
-      if (args[1]) {
+      if (copy) {
         projSettings = appSettings.userSettings ?? {};
       } else {
         projSettings = {
@@ -247,7 +256,7 @@ class MainMessageProcessor {
       await saveKliveProject();
     } else {
       // --- Project --> User
-      if (args[1]) {
+      if (copy) {
         appSettings.userSettings = mainStore.getState()?.projectSettings ?? {};
       } else {
         appSettings.userSettings = {
@@ -260,13 +269,13 @@ class MainMessageProcessor {
     }
   }
 
-  async compileFile(...args: any[]) {
-    const compiler = getCompiler(args[1]);
-    return (await compiler.compileFile(args[0], args[2])) as KliveCompilerOutput;
+  async compileFile(filename: string, language: string, options?: CompilerOptions) {
+    const compiler = getCompiler(language);
+    return (await compiler.compileFile(filename, options)) as KliveCompilerOutput;
   }
 
-  async showItemInFolder(...args: any[]) {
-    shell.showItemInFolder(path.normalize(args[0]));
+  async showItemInFolder(itemPath: string) {
+    shell.showItemInFolder(path.normalize(itemPath));
   }
 
   async exitApp() {
@@ -277,52 +286,57 @@ class MainMessageProcessor {
     shell.openExternal(KLIVE_GITHUB_PAGES);
   }
 
-  async saveDiskChanges(...args: any[]) {
-    return saveDiskChanges(args[0], args[1]);
+  async saveDiskChanges(diskIndex: number, changes: SectorChanges) {
+    return saveDiskChanges(diskIndex, changes);
   }
 
-  async getTemplateDirectories(...args: any[]) {
-    return getTemplateDirs(args[0]);
+  async getTemplateDirectories(machineId: string) {
+    return getTemplateDirs(machineId);
   }
 
-  async startScript(...args: any[]) {
+  async startScript(
+    filename: string,
+    scriptFunction?: string,
+    scriptText?: string,
+    speciality?: string
+  ) {
     let scriptInfo: ScriptStartInfo;
-    if (args[2]) {
+    if (scriptText) {
       // --- Script text specified, run as script text
-      scriptInfo = await mainScriptManager.runScriptText(args[2], args[1], args[0], args[3]);
+      scriptInfo = await mainScriptManager.runScriptText(scriptText, scriptFunction, filename, speciality);
     } else {
-      scriptInfo = await mainScriptManager.runScript(args[0]);
+      scriptInfo = await mainScriptManager.runScript(filename);
     }
     return scriptInfo;
   }
 
-  stopScript(...args: any[]) {
-    mainScriptManager.stopScript(args[0]);
+  stopScript(idOrFilename: number | string) {
+    mainScriptManager.stopScript(idOrFilename);
   }
 
-  async closeScript(...args: any[]) {
-    await mainScriptManager.closeScript(args[0]);
+  async closeScript(script: ScriptRunInfo) {
+    await mainScriptManager.closeScript(script);
   }
 
   removeCompletedScripts() {
     mainScriptManager.removeCompletedScripts();
   }
 
-  resolveModule(...args: any[]) {
-    return mainScriptManager.resolveModule(args[0], args[1]);
+  resolveModule(mainFile: string, moduleName: string) {
+    return mainScriptManager.resolveModule(mainFile, moduleName);
   }
 
   getBuildFunctions() {
     return collectedBuildTasks.map((t) => t.id);
   }
 
-  checkBuildRoot(...args: any[]) {
+  checkBuildRoot(filename: string) {
     if (!mainStore.getState().project?.buildRoots) {
       return;
     }
     const buildRoots = mainStore.getState().project.buildRoots;
-    if (buildRoots.includes(args[0])) {
-      buildRoots.splice(buildRoots.indexOf(args[0]), 1);
+    if (buildRoots.includes(filename)) {
+      buildRoots.splice(buildRoots.indexOf(filename), 1);
       this.dispatch(setBuildRootAction(buildRoots));
       saveKliveProject();
     }
@@ -349,7 +363,7 @@ export async function processRendererToMainMessages(
   }
 
   switch (message.type) {
-    case "MainGeneralRequest":
+    case "ApiMethodRequest":
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = mainMessageProcessor[message.method];
       if (typeof processingMethod === "function") {
@@ -358,7 +372,7 @@ export async function processRendererToMainMessages(
           // --- function through the mainMessageProcessor instance, so we need
           // --- to pass it as the "this" parameter.
           return {
-            type: "MainGeneralResponse",
+            type: "ApiMethodResponse",
             result: await (processingMethod as Function).call(mainMessageProcessor, ...message.args)
           };
         } catch (err) {
@@ -368,36 +382,6 @@ export async function processRendererToMainMessages(
         }
       }
       return errorResponse(`Unknown method ${message.method}`);
-
-    // --- Forward these messages to the emulator
-    case "EmuMachineCommand":
-    case "EmuGetCpuState":
-    case "EmuGetUlaState":
-    case "EmuGetPsgState":
-    case "EmuGetBlinkState":
-    case "EmuEraseAllBreakpoints":
-    case "EmuListBreakpoints":
-    case "EmuSetBreakpoint":
-    case "EmuRemoveBreakpoint":
-    case "EmuEnableBreakpoint":
-    case "EmuGetMemory":
-    case "EmuGetSysVars":
-    case "EmuInjectCode":
-    case "EmuRunCode":
-    case "EmuResolveBreakpoints":
-    case "EmuScrollBreakpoints":
-    case "EmuNormalizeBreakpoints":
-    case "EmuGetNecUpd765State":
-    case "EmuStartScript":
-    case "EmuStopScript":
-    case "EmuGetNextRegDescriptors":
-    case "EmuGetNextRegState":
-    case "EmuGetNextMemoryMapping":
-    case "EmuParsePartitionLabel":
-    case "EmuGetPartitionLabels":
-    case "EmuGetCallStack":
-    case "EmuSetKeyState":
-      return await sendFromMainToEmu(message);
   }
   return defaultResponse();
 }

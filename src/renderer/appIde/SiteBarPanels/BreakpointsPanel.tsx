@@ -82,7 +82,7 @@ const BreakpointsPanel = () => {
   useEffect(() => {
     (async function () {
       const labels = await emuApi.getPartitionLabels();
-      setPartitionLabels(labels.value);
+      setPartitionLabels(labels);
     })();
   }, [machineId]);
 
