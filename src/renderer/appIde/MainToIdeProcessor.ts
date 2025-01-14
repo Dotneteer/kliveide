@@ -23,7 +23,7 @@ import { ProjectNode } from "@abstractions/ProjectNode";
 import { IOutputPaneService } from "@renderer/abstractions/IOutputPaneService";
 import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
-import { BufferOperation } from "./ToolArea/abstractions";
+import { BufferOperation, OutputSpecification } from "./ToolArea/abstractions";
 
 class IdeMessageProcessor {
   constructor(
@@ -35,8 +35,7 @@ class IdeMessageProcessor {
   ) {}
 
   // --- Forward messages to the IDE
-  displayOutput(...args: any[]) {
-    const toDisplay = args[0];
+  displayOutput(toDisplay: OutputSpecification) {
     const buffer = this.outputPaneService.getOutputPaneBuffer(toDisplay.pane);
     if (!buffer) return;
     buffer.resetStyle();
@@ -53,28 +52,28 @@ class IdeMessageProcessor {
     }
   }
 
-  scriptOutput(...args: any[]) {
-    executeScriptOutput(this.scriptService, args[0], args[1], args[2]);
+  scriptOutput(id: number, operation: any, args?: any[]) {
+    executeScriptOutput(this.scriptService, id, operation, args);
   }
 
-  showMemory(...args: any[]) {
-    if (args[0]) {
+  showMemory(show: boolean) {
+    if (show) {
       this.ideCommandsService.executeCommand("show-memory");
     } else {
       this.projectService.getActiveDocumentHubService().closeDocument(MEMORY_PANEL_ID);
     }
   }
 
-  showDisassembly(...args: any[]) {
-    if (args[0]) {
+  showDisassembly(show: boolean) {
+    if (show) {
       this.ideCommandsService.executeCommand("show-disass");
     } else {
       this.projectService.getActiveDocumentHubService().closeDocument(DISASSEMBLY_PANEL_ID);
     }
   }
 
-  showBasic(...args: any[]) {
-    if (args[0]) {
+  showBasic(show: boolean) {
+    if (show) {
       this.projectService.getActiveDocumentHubService().openDocument(
         {
           id: BASIC_PANEL_ID,
@@ -89,17 +88,17 @@ class IdeMessageProcessor {
     }
   }
 
-  async executeCommand(...args: any[]) {
+  async executeCommand(commandText: string, scriptId?: number) {
     const buildOutput = this.outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-    const scriptOutput = args[1]
-      ? this.scriptService.getScriptOutputBuffer(args[1])
+    const scriptOutput = scriptId
+      ? this.scriptService.getScriptOutputBuffer(scriptId)
       : undefined;
     const buffers = [buildOutput];
     if (scriptOutput) {
       buffers.push(scriptOutput);
     }
     return await this.ideCommandsService.executeCommand(
-      args[0],
+      commandText,
       new CompositeOutputBuffer(buffers)
     );
   }
@@ -137,7 +136,7 @@ export async function processMainToIdeMessages(
       store.dispatch(message.action, message.sourceId);
       break;
 
-    case "MainGeneralRequest":
+    case "ApiMethodRequest":
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = ideMessageProcessor[message.method];
       if (typeof processingMethod === "function") {
@@ -146,7 +145,7 @@ export async function processMainToIdeMessages(
           // --- function through the mainMessageProcessor instance, so we need
           // --- to pass it as the "this" parameter.
           return {
-            type: "MainGeneralResponse",
+            type: "ApiMethodResponse",
             result: await (processingMethod as Function).call(ideMessageProcessor, ...message.args)
           };
         } catch (err) {

@@ -16,11 +16,7 @@
 // |-----------------------------------------------------|
 // ====================================================================================================================
 
-import type {
-  MainGeneralRequest,
-  MainGeneralResponse
-} from "./any-to-main";
-import type { ForwardActionRequest } from "./forwarding";
+import { Action } from "@common/state/Action";
 
 /**
  * Potential message sources
@@ -51,6 +47,20 @@ export interface MessageBase {
 }
 
 /**
+ * This message type forwards an action from the main process to the emulator or vice versa
+ */
+export interface ForwardActionRequest extends MessageBase {
+  type: "ForwardAction";
+  action: Action;
+}
+
+export interface ApiMethodRequest extends MessageBase {
+  type: "ApiMethodRequest";
+  method: string;
+  args: any;
+}
+
+/**
  * Default response for actions
  */
 export interface NotReadyResponse extends MessageBase {
@@ -69,24 +79,12 @@ export interface DefaultResponse extends MessageBase {
  */
 export interface ErrorResponse extends MessageBase {
   type: "ErrorResponse";
-  __ERROR_RESPONSE__: true;
   message: string;
 }
 
-/**
- * Send back flagged messages
- */
-export interface FlagResponse extends MessageBase {
-  type: "FlagResponse";
-  flag: boolean;
-}
-
-/**
- * Send back single values
- */
-export interface ValueResponse extends MessageBase {
-  type: "ValueResponse";
-  value: any;
+export interface ApiMethodResponse extends MessageBase {
+  type: "ApiMethodResponse";
+  result: any;
 }
 
 /**
@@ -94,18 +92,16 @@ export interface ValueResponse extends MessageBase {
  */
 export type RequestMessage =
   | ForwardActionRequest
-  | MainGeneralRequest;
+  | ApiMethodRequest;
 
 /**
  * All Response messages
  */
 export type ResponseMessage =
-  | MainGeneralResponse
+  | ApiMethodResponse
   | NotReadyResponse
   | DefaultResponse
-  | ErrorResponse
-  | FlagResponse
-  | ValueResponse;
+  | ErrorResponse;
 
 /**
  * All messages
@@ -125,19 +121,7 @@ export function defaultResponse (): DefaultResponse {
  */
 export function errorResponse (message: string): ErrorResponse {
   return {
-    __ERROR_RESPONSE__: true,
     type: "ErrorResponse",
     message
-  };
-}
-
-/**
- * Creates an error response
- * @param message Error message
- */
-export function flagResponse (flag: boolean): FlagResponse {
-  return {
-    type: "FlagResponse",
-    flag
   };
 }

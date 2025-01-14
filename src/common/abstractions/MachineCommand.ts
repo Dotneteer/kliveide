@@ -1,6 +1,3 @@
-/**
- * Available machine commands
- */
 export type MachineCommand =
   | "start"
   | "pause"

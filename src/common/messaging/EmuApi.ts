@@ -1,5 +1,5 @@
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
-import { MachineCommand } from "./main-to-emu";
+import { MachineCommand } from "@abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -12,6 +12,10 @@ import { CallStackInfo } from "@emu/abstractions/CallStack";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
+/**
+ * This class defines the shape of the Emu process API that can be called from
+ * the main and Ide processes. The methods are called through a JavaScript proxy.
+ */
 class EmuApiImpl {
   async setMachineType(
     _machineId: string,

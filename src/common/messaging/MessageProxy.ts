@@ -1,5 +1,4 @@
-import { MainGeneralResponse } from "./any-to-main";
-import { ErrorResponse, MessageSource } from "./messages-core";
+import { ApiMethodResponse, ErrorResponse, MessageSource } from "./messages-core";
 import { MessengerBase } from "./MessengerBase";
 
 /**
@@ -13,11 +12,11 @@ export function buildMessagingProxy(proxyTarget: any, messenger: MessengerBase, 
   // --- Sends a message to the main process, turns error responses into exceptions
   const sendMessage = async (propName: string, ...args: any[]) => {
     const response = (await messenger.sendMessage({
-      type: "MainGeneralRequest",
+      type: "ApiMethodRequest",
       method: propName,
       targetId,
       args
-    })) as MainGeneralResponse | ErrorResponse;
+    })) as ApiMethodResponse | ErrorResponse;
     if (response.type === "ErrorResponse") {
       throw new Error(response.message);
     }

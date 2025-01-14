@@ -9,8 +9,12 @@ import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
-type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
+export type MessageBoxType = "none" | "info" | "error" | "question" | "warning";
 
+/**
+ * This class defines the shape of the main process API that can be called from
+ * the Emu and Ide processes. The methods are called through a JavaScript proxy.
+ */
 class MainApiImpl {
   readTextFile(_path: string, _encoding?: string, _resolveIn?: string): string {
     throw new Error(NO_PROXY_ERROR);

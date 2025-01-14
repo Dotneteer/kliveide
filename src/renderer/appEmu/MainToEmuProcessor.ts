@@ -32,6 +32,7 @@ import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { MachineCommand } from "@abstractions/MachineCommand";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -46,16 +47,16 @@ class EmuMessageProcessor {
     private readonly machineService: IMachineService
   ) {}
 
-  setMachineType(...args: any[]) {
-    this.machineService.setMachineType(args[0], args[1], args[2]);
+  setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
+    this.machineService.setMachineType(machineId, modelId, config);
   }
 
-  issueMachineCommand(...args: any[]) {
+  issueMachineCommand(command: MachineCommand, customCommand?: string) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    switch (args[0]) {
+    switch (command) {
       case "start":
         controller.start();
         break;
@@ -87,14 +88,18 @@ class EmuMessageProcessor {
         controller.machine.setMachineProperty(REWIND_REQUESTED, true);
         break;
       case "custom":
-        controller.customCommand(args[1]);
+        controller.customCommand(customCommand);
         break;
     }
   }
 
-  async setTapeFile(...args: any[]) {
+  async setTapeFile(
+    file: string,
+    contents: Uint8Array,
+    confirm?: boolean,
+    suppressError?: boolean) {
     let dataBlocks: TapeDataBlock[] = [];
-    const reader = new BinaryReader(args[1]);
+    const reader = new BinaryReader(contents);
     const tzxReader = new TzxReader(reader);
     let result = tzxReader.readContent();
     if (result) {
@@ -102,11 +107,11 @@ class EmuMessageProcessor {
       const tapReader = new TapReader(reader);
       result = tapReader.readContent();
       if (result) {
-        if (!args[3]) {
+        if (!suppressError) {
           await createMainApi(this.mainMessenger).displayMessageBox(
             "error",
             "Tape file error",
-            `Error while processing tape file ${args[0]} (${result})`
+            `Error while processing tape file ${file} (${result})`
           );
         }
         return;
@@ -120,7 +125,7 @@ class EmuMessageProcessor {
     // --- Store the tape file in the media store
     mediaStore.addMedia({
       id: MEDIA_TAPE,
-      mediaFile: args[0],
+      mediaFile: file,
       mediaContents: dataBlocks
     });
 
@@ -129,57 +134,63 @@ class EmuMessageProcessor {
     controller.machine.setMachineProperty(MEDIA_TAPE, dataBlocks);
 
     // --- Done.
-    if (args[2]) {
+    if (confirm) {
       await createMainApi(this.mainMessenger).displayMessageBox(
         "info",
         "Tape file set",
-        `Tape file ${args[0]} successfully set.`
+        `Tape file ${file} successfully set.`
       );
     }
   }
 
-  async setDiskFile(...args: any[]) {
+  async setDiskFile(
+    diskIndex: number,
+    file?: string,
+    contents?: Uint8Array,
+    confirm?: boolean,
+    suppressError?: boolean
+  ) {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
-    const mediaId = args[0] ? MEDIA_DISK_B : MEDIA_DISK_A;
-    const drive = args[0] ? "B" : "A";
+    const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
+    const drive = diskIndex[0] ? "B" : "A";
     // --- Try to parse the disk file
     try {
       // --- Store the tape file in the media store
       mediaStore.addMedia({
         id: mediaId,
-        mediaFile: args[1],
-        mediaContents: args[2]
+        mediaFile: file,
+        mediaContents: contents
       });
 
       // --- Pass the tape file data blocks to the machine
-      controller.machine.setMachineProperty(mediaId, args[2] ?? null);
+      controller.machine.setMachineProperty(mediaId, contents ?? null);
 
       // --- Done.
-      if (args[3]) {
+      if (confirm) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "info",
-          args[2] ? "Disk inserted" : "Disk ejected",
-          args[2]
-            ? `Disk file ${args[1]} successfully inserted into drive ${drive}.`
+          contents ? "Disk inserted" : "Disk ejected",
+          contents
+            ? `Disk file ${file} successfully inserted into drive ${drive}.`
             : `Disk successfully ejected from drive ${drive}`
         );
       }
     } catch (err) {
-      if (!args[4]) {
+      if (!suppressError) {
         await createMainApi(this.mainMessenger).displayMessageBox(
           "error",
           "Disk file error",
-          `Error while processing disk file ${args[1]} (${err})`
+          `Error while processing disk file ${file} (${err})`
         );
       }
     }
   }
 
-  setDiskWriteProtection(...args: any[]) {
+  setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
-    const propName = args[0] ? DISK_B_WP : DISK_A_WP;
-    controller.machine.setMachineProperty(propName, args[1]);
+    const propName = index ? DISK_B_WP : DISK_A_WP;
+    controller.machine.setMachineProperty(propName, protect);
   }
 
   getCpuState() {
@@ -331,20 +342,20 @@ class EmuMessageProcessor {
     controller.debugSupport.eraseAllBreakpoints();
   }
 
-  setBreakpoint(...args: any[]) {
+  setBreakpoint(breakpoint: BreakpointInfo) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    return controller.debugSupport.addBreakpoint(args[0]);
+    return controller.debugSupport.addBreakpoint(breakpoint);
   }
 
-  removeBreakpoint(...args: any[]) {
+  removeBreakpoint(breakpoint: BreakpointInfo) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    return controller.debugSupport.removeBreakpoint(args[0]);
+    return controller.debugSupport.removeBreakpoint(breakpoint);
   }
 
   listBreakpoints() {
@@ -394,12 +405,12 @@ class EmuMessageProcessor {
     };
   }
 
-  enableBreakpoint(...args: any[]) {
+  enableBreakpoint(breakpoint: BreakpointInfo, enable: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    return controller.debugSupport.enableBreakpoint(args[0], args[1]);
+    return controller.debugSupport.enableBreakpoint(breakpoint, enable);
   }
 
   getMemoryContents(partition?: number) {
@@ -594,7 +605,7 @@ export async function processMainToEmuMessages(
       store.dispatch(message.action, message.sourceId);
       break;
 
-    case "MainGeneralRequest":
+    case "ApiMethodRequest":
       // --- We accept only methods defined in the MainMessageProcessor
       const processingMethod = emuMessageProcessor[message.method];
       if (typeof processingMethod === "function") {
@@ -603,7 +614,7 @@ export async function processMainToEmuMessages(
           // --- function through the mainMessageProcessor instance, so we need
           // --- to pass it as the "this" parameter.
           return {
-            type: "MainGeneralResponse",
+            type: "ApiMethodResponse",
             result: await (processingMethod as Function).call(emuMessageProcessor, ...message.args)
           };
         } catch (err) {
