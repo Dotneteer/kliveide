@@ -1,6 +1,5 @@
-import { TooltipFactory } from "@renderer/controls/Tooltip";
-import { useEffect, useRef, useState } from "react";
 import styles from "./ExecutionStateOverlay.module.scss";
+import { Tooltip, useTooltipId } from "@renderer/controls/Tooltip2";
 
 type Props = {
   text: string;
@@ -11,27 +10,25 @@ type Props = {
  * Represents the overlay of the emulator's panel
  */
 export const ExecutionStateOverlay = ({ text, clicked }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => {
-    setVersion(version + 1);
-  }, [ref, text]);
+  const tooltipId = useTooltipId();
 
   if (text) {
     return (
       <div
-        ref={ref}
+        id={tooltipId.current}
         className={styles.stateOverlay}
-        onClick={e => {
+        onClick={(e) => {
           e.stopPropagation();
           clicked?.();
         }}
       >
         <div className={styles.overlay}>{text}</div>
-        <TooltipFactory refElement={ref.current} placement='top' showDelay={2000}>
-          Hide overlay (click to show again)
-        </TooltipFactory>
+        <Tooltip
+          anchorId={tooltipId.current}
+          delayShow={2000}
+          place="top"
+          content="Hide overlay (click to show again)"
+        />
       </div>
     );
   } else {

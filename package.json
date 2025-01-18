@@ -87,7 +87,9 @@
     "@electron-toolkit/utils": "^3.0.0",
     "electron-updater": "^6.3.0",
     "react-switch": "^7.0.0",
-    "vite-plugin-copy": "^0.1.6"
+    "react-tooltip": "^5.28.0",
+    "vite-plugin-copy": "^0.1.6",
+    "xmlui": "^0.7.9"
   },
   "build": {
     "appId": "dotneteer.kliveide",

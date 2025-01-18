@@ -4,6 +4,7 @@ import { TooltipFactory } from "@controls/Tooltip";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
+import { Tooltip, useTooltipId } from "@renderer/controls/Tooltip2";
 
 type Props = {
   address: number | string;
@@ -22,6 +23,7 @@ export const BreakpointIndicator = ({
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const ref = useRef<HTMLDivElement>(null);
+  const tooltipId = useTooltipId();
   const [pointed, setPointed] = useState(false);
 
   // --- Calculate tooltip text
@@ -40,7 +42,6 @@ export const BreakpointIndicator = ({
           disabled ? "enable" : "disable"
         }`
       : "Click to set a breakpoint");
-  const toolTipLines = (tooltip ?? "").split("\n");
 
   // --- Select the icon to show
   let iconName = "";
@@ -77,6 +78,7 @@ export const BreakpointIndicator = ({
 
   return (
     <div
+      
       ref={ref}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
@@ -84,13 +86,14 @@ export const BreakpointIndicator = ({
       onContextMenu={handleRightClick}
     >
       {iconName ? (
-        <div className={styles.breakpointIndicator}>
+        <div id={tooltipId.current} className={styles.breakpointIndicator}>
           <Icon width={16} height={16} iconName={iconName} fill={fill} />
         </div>
       ) : (
         <div className={styles.iconPlaceholder} />
       )}
-      <TooltipFactory
+      <Tooltip anchorId={tooltipId.current} place="top-end" content={tooltip} />
+      {/* <TooltipFactory
         refElement={ref.current}
         placement='right'
         offsetX={0}
@@ -100,7 +103,7 @@ export const BreakpointIndicator = ({
         {toolTipLines.map((l, idx) => (
           <div key={idx}>{l}</div>
         ))}
-      </TooltipFactory>
+      </TooltipFactory> */}
     </div>
   );
 };

@@ -21,7 +21,8 @@ import {
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   DISASSEMBLY_EDITOR,
-  UNKNOWN_EDITOR
+  UNKNOWN_EDITOR,
+  XMLUI_VIEWER
 } from "@state/common-ids";
 import { BUILD_FILE, PROJECT_FILE } from "@common/structs/project-const";
 import { Activity } from "./abstractions/Activity";
@@ -90,6 +91,7 @@ import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFil
 import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
 import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
 import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
+import { createXmluiPanel } from "./appIde/DocumentPanels/XmlUiPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -387,6 +389,13 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "note",
     iconFill: "--console-ansi-bright-green"
   },
+  {
+    id: XMLUI_VIEWER,
+    renderer: createXmluiPanel,
+    icon: "vm",
+    iconFill: "--console-ansi-magenta"
+  },
+
 ];
 
 // --- The registry of ile types
@@ -632,7 +641,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     openPermanent: true
-  }
+  },
+  {
+    matchType: "ends",
+    pattern: ".xmlui",
+    editor: XMLUI_VIEWER,
+    icon: "vm",
+    iconFill: "--console-ansi-magenta",
+    isBinary: false,
+    isReadOnly: true,
+    openPermanent: true
+  },
+
 ];
 
 export const unknownFileType: FileTypeEditor = {

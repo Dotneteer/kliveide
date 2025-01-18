@@ -24,3 +24,5 @@ export const NXI_EDITOR = "NxiEditor";
 export const SPR_EDITOR = "SprEditor";
 export const VID_VIEWER = "VidViewer";
 export const SCRIPT_OUTPUT_VIEWER = "ScriptOutputViewer";
+
+export const XMLUI_VIEWER = "XmlUiViewer";
