@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Icon } from "@controls/Icon";
-import { TooltipFactory } from "@controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -21,26 +21,21 @@ export const BreakpointIndicator = ({
   current
 }: Props) => {
   const { ideCommandsService } = useAppServices();
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const [pointed, setPointed] = useState(false);
 
   // --- Calculate tooltip text
   const addrLabel =
     typeof address === "number"
       ? partition !== undefined
-        ? `${partition}:$${toHexa4(
-            address
-          )}`
+        ? `${partition}:$${toHexa4(address)}`
         : `$${toHexa4(address)}`
       : address;
   const tooltip =
     `${addrLabel}\n` +
     (hasBreakpoint
-      ? `Left-click to remove\nRight-click to ${
-          disabled ? "enable" : "disable"
-        }`
+      ? `Left-click to remove\nRight-click to ${disabled ? "enable" : "disable"}`
       : "Click to set a breakpoint");
-  const toolTipLines = (tooltip ?? "").split("\n");
 
   // --- Select the icon to show
   let iconName = "";
@@ -53,8 +48,8 @@ export const BreakpointIndicator = ({
     fill = disabled
       ? "--color-breakpoint-disabled"
       : typeof address === "number"
-      ? "--color-breakpoint-binary"
-      : "--color-breakpoint-code";
+        ? "--color-breakpoint-binary"
+        : "--color-breakpoint-code";
   } else if (pointed) {
     iconName = "circle-large-outline";
     fill = "--color-breakpoint-disabled";
@@ -92,15 +87,12 @@ export const BreakpointIndicator = ({
       )}
       <TooltipFactory
         refElement={ref.current}
-        placement='right'
+        placement="right"
         offsetX={0}
         offsetY={40}
         showDelay={100}
-      >
-        {toolTipLines.map((l, idx) => (
-          <div key={idx}>{l}</div>
-        ))}
-      </TooltipFactory>
+        content={tooltip}
+      />
     </div>
   );
 };

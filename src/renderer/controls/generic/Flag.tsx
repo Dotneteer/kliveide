@@ -1,6 +1,6 @@
 import styles from "./GeneralControls.module.scss";
 import { useRef } from "react";
-import { TooltipFactory } from "../Tooltip";
+import { TooltipFactory, useTooltipRef } from "../Tooltip";
 import { Icon } from "../Icon";
 
 type Props = {
@@ -18,8 +18,7 @@ export const Flag = ({
   center = true,
   tooltip
 }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <div
@@ -51,11 +50,8 @@ export const Flag = ({
           offsetX={0}
           offsetY={16}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={tooltip}
+        />
       )}
     </div>
   );

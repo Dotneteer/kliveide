@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Icon } from "./Icon";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import styles from "./Labels.module.scss";
 
 type Props = {
@@ -11,8 +11,7 @@ type Props = {
 };
 
 export const Text = ({ text, width, tooltip }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <div ref={ref} className={styles.text} style={{ width }}>
@@ -24,11 +23,8 @@ export const Text = ({ text, width, tooltip }: Props) => {
           offsetX={-8}
           offsetY={24}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={tooltip}
+        />
       )}
     </div>
   );
@@ -36,8 +32,7 @@ export const Text = ({ text, width, tooltip }: Props) => {
 
 
 export const Label = ({ text, width, center, tooltip }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <>
@@ -57,11 +52,8 @@ export const Label = ({ text, width, center, tooltip }: Props) => {
             offsetX={0}
             offsetY={0}
             showDelay={100}
-          >
-            {toolTipLines.map((l, idx) => (
-              <div key={idx}>{l}</div>
-            ))}
-          </TooltipFactory>
+            content={tooltip}
+          />
         )}
       </div>
     </>
@@ -69,8 +61,7 @@ export const Label = ({ text, width, center, tooltip }: Props) => {
 };
 
 export const Value = ({ text, width, tooltip }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <div ref={ref} className={styles.value} style={{ width }}>
@@ -82,11 +73,8 @@ export const Value = ({ text, width, tooltip }: Props) => {
           offsetX={-8}
           offsetY={24}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={tooltip}
+        />
       )}
     </div>
   );
@@ -115,8 +103,7 @@ export const Flag = ({
   tooltip,
   clicked
 }: FlagProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <div
@@ -150,11 +137,8 @@ export const Flag = ({
           offsetX={0}
           offsetY={16}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={tooltip}
+        />
       )}
     </div>
   );

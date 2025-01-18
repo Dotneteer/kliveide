@@ -96,7 +96,7 @@ export const lightTheme: ThemeProperties = {
   "--color-activitybar-active": "#000000",
 
   // --- Tooltip
-  "--border-tooltip": "1px solid #808080",
+  "--border-tooltip": "1px solid #007acc",
   "--font-size-tooltip": "0.9em",
   "--bgcolor-tooltip": "#c0c0c0",
   "--color-tooltip": "#000000",

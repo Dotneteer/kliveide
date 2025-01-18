@@ -1,9 +1,9 @@
 import styles from "./SpriteEditor.module.scss";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
-import { TooltipFactory } from "@renderer/controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import classnames from "@renderer/utils/classnames";
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
   title?: string;
@@ -28,18 +28,14 @@ export const SpriteImage = ({
   selected,
   clicked
 }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
     setVersion(version + 1);
   }, [showTransparencyColor]);
 
-  const createPixelData = (
-    data: Uint8Array,
-    palette: number[],
-    target: Uint32Array
-  ) => {
+  const createPixelData = (data: Uint8Array, palette: number[], target: Uint32Array) => {
     for (let i = 0; i < 256; i++) {
       const colorIndex = data[i];
       target[i] =
@@ -67,12 +63,11 @@ export const SpriteImage = ({
       />
       <TooltipFactory
         refElement={ref.current}
-        placement='right'
+        placement="right"
         offsetX={-12}
         offsetY={28}
-      >
-        {title}
-      </TooltipFactory>
+        content={title}
+      />
     </div>
   );
 };

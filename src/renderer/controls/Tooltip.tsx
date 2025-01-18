@@ -8,11 +8,12 @@ import { useTheme } from "@renderer/theming/ThemeProvider";
 // Tooltip React component definition
 
 type Placement = "left" | "right" | "top" | "bottom";
+
 /**
  * Tooltip properties
  */
 type Props = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   refElement: HTMLElement | null;
   showDelay?: number;
   placement?: Placement;
@@ -39,9 +40,7 @@ export const Tooltip = ({
   const { root } = useTheme();
   const handle = useRef<any>();
   const [visible, setVisible] = useState(isShown);
-  const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(
-    null
-  );
+  const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null);
   const [popperElement, setPopperElement] = useState(null);
   let fallbackPlacement: Placement = "bottom";
   switch (placement) {
@@ -58,28 +57,24 @@ export const Tooltip = ({
       fallbackPlacement = "left";
   }
 
-  const { styles: popperStyles, attributes } = usePopper(
-    referenceElement,
-    popperElement,
-    {
-      placement,
-      modifiers: [
-        {
-          name: "flip",
-          options: {
-            fallbackPlacements: [fallbackPlacement]
-          }
-        },
-        {
-          name: "offset",
-          options: {
-            offset: [offsetY, offsetX]
-          }
+  const { styles: popperStyles, attributes } = usePopper(referenceElement, popperElement, {
+    placement,
+    modifiers: [
+      {
+        name: "flip",
+        options: {
+          fallbackPlacements: [fallbackPlacement]
         }
-      ],
-      strategy: "fixed"
-    }
-  );
+      },
+      {
+        name: "offset",
+        options: {
+          offset: [offsetY, offsetX]
+        }
+      }
+    ],
+    strategy: "fixed"
+  });
 
   const onMouseEnter = useCallback(() => {
     handle.current = setTimeout(() => setVisible(true), showDelay);
@@ -138,7 +133,8 @@ export const Tooltip = ({
  * @param forTruncatedText Is it only for truncated text?
  * @constructor
  */
-export function TooltipFactory ({
+export function TooltipFactory({
+  content,
   refElement,
   children,
   showDelay = 800,
@@ -146,12 +142,8 @@ export function TooltipFactory ({
   offsetX = 8,
   offsetY = 8,
   isShown = false
-}: Props) {
-  const [_, setVersion] = useState(0);
-
-  useEffect(() => {
-    setVersion(1);
-  }, [refElement]);
+}: Props & { content?: string }) {
+  const contentSegments = content ? content.split("\n") : [];
 
   return (
     <Tooltip
@@ -162,7 +154,21 @@ export function TooltipFactory ({
       offsetY={offsetY}
       isShown={isShown}
     >
+      {contentSegments.map((segment, index) => (
+        <div key={index}>{segment}</div>
+      ))}
       {children}
     </Tooltip>
   );
+}
+
+export function useTooltipRef(...deps: any[]) {
+  const ref = useRef<any>(null);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    setVersion(version + 1);
+  }, [ref?.current, ...deps]);
+
+  return ref;
 }
