@@ -228,6 +228,12 @@ export type ThemeProperties = {
   "--color-ruler-sprite-editor"?: string;
   "--color-dash-sprite-editor"?: string;
   "--color-pos-sprite-editor"?: string;
+
+  // --- Switch
+  "--color-switch-on"?: string;
+  "--bgcolor-switch-on"?: string;
+  "--color-switch-off"?: string;
+  "--bgcolor-switch-off"?: string;
 };
 
 /**
