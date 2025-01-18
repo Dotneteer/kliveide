@@ -8,7 +8,7 @@ import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVarType } from "@abstractions/SysVar";
-import { TooltipFactory } from "@controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { useEmuApi } from "@renderer/core/EmuApi";
 
 const VAR_WIDTH = 64;
@@ -168,11 +168,10 @@ type ByteValueProps = {
 };
 
 const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const title = `Address: $${toHexa4(address)}, Value: $${toHexa2(
     value
   )} (${value})\n${tooltip ?? ""}`;
-  const toolTipLines = title.split("\n");
   return (
     <div ref={ref} className={styles.byteValue}>
       {toHexa2(value)}
@@ -183,11 +182,8 @@ const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
           offsetX={8}
           offsetY={32}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );

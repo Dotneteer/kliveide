@@ -1,7 +1,6 @@
-import { useRef } from "react";
 import { Icon } from "./Icon";
 import styles from "./LabeledSwitch.module.scss";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 
 type Props = {
   label: string;
@@ -10,13 +9,8 @@ type Props = {
   clicked?: (val: boolean) => void;
 };
 
-export const LabeledSwitch = ({
-  label,
-  title,
-  value,
-  clicked
-}: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
+export const LabeledSwitch = ({ label, title, value, clicked }: Props) => {
+  const ref = useTooltipRef();
   return (
     <div
       ref={ref}
@@ -32,16 +26,15 @@ export const LabeledSwitch = ({
         width={20}
         height={20}
       />
-      <div style={{width: 4}}></div>
+      <div style={{ width: 4 }}></div>
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={-8}
           offsetY={32}
-        >
-          {title}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );

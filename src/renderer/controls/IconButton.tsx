@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "@renderer/utils/classnames";
 import styles from "./IconButton.module.scss";
 
@@ -32,7 +32,7 @@ export const IconButton = ({
   clicked,
   noPadding
 }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const [keyDown, setKeyDown] = useState(null);
   const [hover, setHover] = useState(false);
   const isActive = enable;
@@ -40,6 +40,7 @@ export const IconButton = ({
   useEffect(() => {
     setKeyDown(false);
   }, [ref.current]);
+
   return (
     <div
       ref={ref}
@@ -50,8 +51,7 @@ export const IconButton = ({
       style={{
         width: buttonWidth + (noPadding ? 0 : 4),
         height: buttonHeight,
-        backgroundColor:
-          hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
+        backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
       }}
       onMouseEnter={() => setHover(true)}
       onMouseDown={() => setKeyDown(true)}
@@ -72,12 +72,11 @@ export const IconButton = ({
       >
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={-12}
           offsetY={28}
-        >
-          {title}
-        </TooltipFactory>
+          content={title}
+        />
         <Icon
           iconName={iconName}
           fill={isActive ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}

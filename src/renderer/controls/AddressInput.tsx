@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./AddressInput.module.scss";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "@renderer/utils/classnames";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
@@ -20,7 +20,7 @@ export const AddressInput = ({
   onAddressSent
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>();
-  const spanRef = useRef<HTMLSpanElement>(null);
+  const spanRef = useTooltipRef();
   const [radix, setRadix] = useState(16);
   const mounted = useRef(false);
 
@@ -111,9 +111,8 @@ export const AddressInput = ({
           offsetX={-16}
           offsetY={28}
           showDelay={200}
-        >
-          {`Type in a ${radix === 10 ? "decimal" : "hexadecimal"} address`}
-        </TooltipFactory>
+          content={`Type in a ${radix === 10 ? "decimal" : "hexadecimal"} address`}
+        />
       </span>
     </div>
   );

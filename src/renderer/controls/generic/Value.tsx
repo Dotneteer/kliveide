@@ -1,6 +1,5 @@
 import styles from "./GeneralControls.module.scss";
-import { useRef } from "react";
-import { TooltipFactory } from "../Tooltip";
+import { TooltipFactory, useTooltipRef } from "../Tooltip";
 
 type Props = {
   text: string;
@@ -10,8 +9,7 @@ type Props = {
 };
 
 export const Value = ({ text, width, tooltip }: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const toolTipLines = (tooltip ?? "").split("\n");
+  const ref = useTooltipRef();
 
   return (
     <div ref={ref} className={styles.value} style={{ width }}>
@@ -23,11 +21,8 @@ export const Value = ({ text, width, tooltip }: Props) => {
           offsetX={-8}
           offsetY={24}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={tooltip}
+        />
       )}
     </div>
   );

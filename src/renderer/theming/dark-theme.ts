@@ -99,7 +99,7 @@ export const darkTheme: ThemeProperties = {
   "--color-activitybar-active": "#ffffff",
 
   // --- Tooltip
-  "--border-tooltip": "1px solid #808080",
+  "--border-tooltip": "1px solid #007acc",
   "--font-size-tooltip": "0.9em",
   "--bgcolor-tooltip": "#303030",
   "--color-tooltip": "#ffffff",

@@ -1,7 +1,6 @@
 import { LabelSeparator, Label } from "@controls/Labels";
-import { TooltipFactory } from "@controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "@renderer/utils/classnames";
-import { useRef } from "react";
 import { toHexa4, toHexa2 } from "../services/ide-commands";
 import { ZxSpectrumChars } from "./char-codes";
 import styles from "./DumpSection.module.scss";
@@ -137,14 +136,13 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
   // --- Do not display non-existing values
   if (value === undefined) return <div style={{ width: 20 }}></div>;
 
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef(value);
   const pointedHint = pointedInfo?.[address];
   const pointed = pointedHint !== undefined;
   const pcPointed = pointed && pointedHint.indexOf("PC") >= 0;
   const title = `Value at $${toHexa4(address)} (${address}):\n${
     tooltipCache[value]
   }${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
-  const toolTipLines = (title ?? "").split("\n");
   return (
     <div
       ref={ref}
@@ -161,11 +159,8 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
           offsetX={8}
           offsetY={32}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );
@@ -173,14 +168,13 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
 
 const CharValue = ({ address, value }: ByteValueProps) => {
   const hasValue = value !== undefined;
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef(value);
   const valueInfo = ZxSpectrumChars[(value ?? 0x20) & 0xff];
   let text = valueInfo.v ?? ".";
   const title = `Value at $${toHexa4(address)} (${address}):\n${
     tooltipCache[value]
   }`;
   value;
-  const toolTipLines = (title ?? "").split("\n");
   return (
     <div ref={ref} className={styles.char}>
       {text}
@@ -191,11 +185,8 @@ const CharValue = ({ address, value }: ByteValueProps) => {
           offsetX={8}
           offsetY={32}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );
