@@ -81,7 +81,7 @@ export const lightTheme: ThemeProperties = {
   "--console-ansi-white": "#e5e5e5",
   "--console-ansi-yellow": "#949800",
   "--console-lineNo": "#808080",
-  
+
   // --- Label colors
   "--color-label": "#b85406",
   "--color-value": "#003f7f",
@@ -137,7 +137,6 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-display": "#c0c0c0",
   "--color-display": "#202020",
   "--color-display-hilite": "#2144b0",
-
 
   // --- Keyboard
   "--bgcolor-keyboard": "#202020",
@@ -226,4 +225,10 @@ export const lightTheme: ThemeProperties = {
   "--color-ruler-sprite-editor": "#606060",
   "--color-dash-sprite-editor": "#e0e0e0",
   "--color-pos-sprite-editor": "#00a0ff",
+
+  // --- Switch
+  "--color-switch-on": "#007acc",
+  "--bgcolor-switch-on": "#c0c0c0",
+  "--color-switch-off": "#808080",
+  "--bgcolor-switch-off": "#c0c0c0"
 };
