@@ -173,7 +173,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             state === MachineControllerState.Paused)
         }
         clicked={async () => {
-          var response: any;
           switch (restartTarget) {
             case "project": {
               if (kliveProjectLoaded) {
@@ -188,10 +187,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               await emuApi.issueMachineCommand("restart");
               break;
             }
-          }
-
-          if (response.type === "ErrorResponse") {
-            reportMessagingError(`Restarting machine failed: ${response.message}`);
           }
         }}
       />
