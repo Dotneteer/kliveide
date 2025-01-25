@@ -11,6 +11,8 @@ type Props = {
   hasBreakpoint: boolean;
   disabled: boolean;
   current: boolean;
+  memoryRead?: boolean;
+  memoryWrite?: boolean;
 };
 
 export const BreakpointIndicator = ({
@@ -18,19 +20,27 @@ export const BreakpointIndicator = ({
   partition,
   hasBreakpoint,
   disabled,
-  current
+  current,
+  memoryRead,
+  memoryWrite
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const ref = useTooltipRef();
   const [pointed, setPointed] = useState(false);
 
   // --- Calculate tooltip text
-  const addrLabel =
+  let addrLabel =
     typeof address === "number"
       ? partition !== undefined
         ? `${partition}:$${toHexa4(address)}`
         : `$${toHexa4(address)}`
       : address;
+
+  if (memoryRead) {
+    addrLabel += ":R";
+  } else if (memoryWrite) {
+    addrLabel += ":W";
+  }
   const tooltip =
     `${addrLabel}\n` +
     (hasBreakpoint

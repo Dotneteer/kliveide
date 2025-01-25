@@ -557,6 +557,19 @@ export class Z80Cpu implements IZ80Cpu {
   opStartAddress: number;
 
   // ----------------------------------------------------------------------------------------------------------------
+  // Z80 debugging support
+
+  /**
+   * The memory addresses of the last memory read operations
+   */
+  lastMemoryReads: number[] = [];
+
+  /**
+   * The memory addresses of the last memory write operations
+   */
+  lastMemoryWrites: number[] = [];
+
+  // ----------------------------------------------------------------------------------------------------------------
   // Z80 core methods
 
   /**
@@ -600,6 +613,9 @@ export class Z80Cpu implements IZ80Cpu {
     this.frames = 0;
     this.frameTacts = 0;
     this.setTactsInFrame(1_000_000);
+
+    this.lastMemoryReads = [];
+    this.lastMemoryWrites = [];
   }
 
   /**
@@ -637,6 +653,9 @@ export class Z80Cpu implements IZ80Cpu {
     this.setTactsInFrame(1_000_000);
 
     this._snoozed = false;
+
+    this.lastMemoryReads = [];
+    this.lastMemoryWrites = [];
   }
 
   /**
@@ -744,8 +763,11 @@ export class Z80Cpu implements IZ80Cpu {
 
     // --- Second, let's execute the M1 machine cycle that reads the next opcode from the memory.
     // --- For IX and IY indexed bit operations, the opcode is already read, the next byte is the displacement.
-    const m1Active = this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB;
+    const m1Active = this.prefix === OpCodePrefix.None; // this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB;
     if (m1Active) {
+      this.lastMemoryReads = [];
+      this.lastMemoryWrites = [];
+
       // --- During M1, DivMMC may page out memory banks
       this.beforeOpcodeFetch();
     }
@@ -787,12 +809,14 @@ export class Z80Cpu implements IZ80Cpu {
       // --- Bit instructions
       case OpCodePrefix.CB:
         this.bitOps[this.opCode](this);
+        this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
 
       // --- Extended instructions
       case OpCodePrefix.ED:
         this.getExtendedOpsTable()[this.opCode](this);
+        this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
 
@@ -807,6 +831,7 @@ export class Z80Cpu implements IZ80Cpu {
           this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
           this.indexedOps[this.opCode](this);
+          this.tactPlus1();
           this.prefix = OpCodePrefix.None;
         }
         break;
@@ -820,6 +845,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.tactPlus2WithAddress(this.pc);
         this.pc++;
         this.indexedBitOps[this.opCode](this);
+        this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
     }
@@ -1339,6 +1365,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readMemory(address: number): number {
     this.delayMemoryRead(address);
+    this.lastMemoryReads.push(address);
     return this.doReadMemory(address);
   }
 
@@ -1350,6 +1377,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
+    this.lastMemoryWrites.push(address);
     this.doWriteMemory(address, data);
   }
 
@@ -1409,6 +1437,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   fetchCodeByte(): number {
     this.delayMemoryRead(this.pc);
+    this.lastMemoryReads.push(this.pc);
     return this.doReadMemory(this.pc++);
   }
 

@@ -221,7 +221,9 @@ class EmuMessageProcessor {
       iff2: cpu.iff2,
       sigINT: cpu.sigINT,
       halted: cpu.halted,
-      snoozed: cpu.isCpuSnoozed()
+      snoozed: cpu.isCpuSnoozed(),
+      lastMemoryReads: cpu.lastMemoryReads,
+      lastMemoryWrites: cpu.lastMemoryWrites
     };
   }
 

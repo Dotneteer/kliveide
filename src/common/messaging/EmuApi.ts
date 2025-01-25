@@ -181,6 +181,8 @@ export type CpuState = {
   sigINT: boolean;
   halted: boolean;
   snoozed: boolean;
+  lastMemoryReads: number[];
+  lastMemoryWrites: number[];
 };
 
 export type UlaState = {

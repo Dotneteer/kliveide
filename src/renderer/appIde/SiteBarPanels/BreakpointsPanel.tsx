@@ -13,11 +13,13 @@ import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { CpuState } from "@common/messaging/EmuApi";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
   const [bps, setBps] = useState<BreakpointInfo[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
+  const [lastCpuState, setLastCpuState] = useState<CpuState>();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
@@ -27,20 +29,21 @@ const BreakpointsPanel = () => {
   // --- This function queries the breakpoints from the emulator
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
-    const bpResponse = await emuApi.listBreakpoints();
-    const cpuResponse = await emuApi.getCpuState();
-    pcValue.current = cpuResponse.pc;
+    const bpState = await emuApi.listBreakpoints();
+    const cpuState = await emuApi.getCpuState();
+    setLastCpuState(cpuState);
+    pcValue.current = cpuState.pc;
 
     // --- Any memory information received?
-    if (!bpResponse.memorySegments) return;
+    if (!bpState.memorySegments) return;
 
     // --- Copy memory segment samples
     const mem = new Uint8Array(0x1_0000);
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const memSegment = bpResponse.memorySegments[i];
+    for (let i = 0; i < bpState.breakpoints.length; i++) {
+      const memSegment = bpState.memorySegments[i];
       if (!memSegment) continue;
 
-      const addr = bpResponse.breakpoints[i].address;
+      const addr = bpState.breakpoints[i].address;
       for (let j = 0; j < memSegment.length; j++) {
         mem[(addr + j) & 0xffff] = memSegment[j];
       }
@@ -48,8 +51,8 @@ const BreakpointsPanel = () => {
 
     // --- Disassemble memory data
     disassLines.current = [];
-    for (let i = 0; i < bpResponse.breakpoints.length; i++) {
-      const bpInfo = bpResponse.breakpoints[i];
+    for (let i = 0; i < bpState.breakpoints.length; i++) {
+      const bpInfo = bpState.breakpoints[i];
       if (bpInfo.address !== undefined) {
         const bpAddr = bpInfo.address;
         const disass = new Z80Disassembler(
@@ -68,7 +71,7 @@ const BreakpointsPanel = () => {
     }
 
     // --- Store the breakpoint info
-    setBps(bpResponse.breakpoints);
+    setBps(bpState.breakpoints);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -104,10 +107,19 @@ const BreakpointsPanel = () => {
             const addrKey = getBreakpointKey(bp, partitionLabels);
             const addr = bp.address;
             const disabled = bp.disabled ?? false;
-            const isCurrent =
-              (machineState === MachineControllerState.Running ||
-                machineState === MachineControllerState.Paused) &&
-              (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
+            let isCurrent = false;
+            if (bp.exec) {
+              isCurrent =
+                (machineState === MachineControllerState.Running ||
+                  machineState === MachineControllerState.Paused) &&
+                (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
+            } else if (machineState === MachineControllerState.Paused) {
+              if (bp.memoryRead) {
+                isCurrent = lastCpuState?.lastMemoryReads?.includes(addr) ?? false;
+              } else if (bp.memoryWrite) {
+                isCurrent = lastCpuState?.lastMemoryWrites?.includes(addr) ?? false;
+              } 
+            }
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
@@ -119,15 +131,16 @@ const BreakpointsPanel = () => {
                   current={isCurrent}
                   hasBreakpoint={true}
                   disabled={disabled}
+                  memoryRead={bp.memoryRead}
+                  memoryWrite={bp.memoryWrite}
                 />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
                 )}
-                <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
-                {bp.address !== undefined && <Label text="" width={32} />}
-
-                <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+                <Label text={addrKey} width={addr !== undefined ? 56 : undefined} />
+                {bp.address !== undefined && <Label text="" width={40} />}
+                {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
               </div>
             );
           }}
