@@ -636,7 +636,7 @@ describe("Z80 extended ops 50-5f", () => {
     m.shouldKeepRegisters("AF");
     m.shouldKeepMemory();
 
-    expect(m.cpu.a).toBe(0xd7);
+    expect(m.cpu.a).toBe(0xd6);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -661,7 +661,7 @@ describe("Z80 extended ops 50-5f", () => {
     expect(cpu.isHFlagSet()).toBe(false);
     expect(cpu.isNFlagSet()).toBe(false);
 
-    expect(m.cpu.a).toBe(0xd5);
+    expect(m.cpu.a).toBe(0xd4);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -685,7 +685,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isSFlagSet()).toBe(true);
 
-    expect(m.cpu.a).toBe(0xd5);
+    expect(m.cpu.a).toBe(0xd4);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -709,7 +709,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isSFlagSet()).toBe(false);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -721,7 +721,7 @@ describe("Z80 extended ops 50-5f", () => {
       0xed,
       0x5f // LD A,R
     ]);
-    m.cpu.r = 0x7e;
+    m.cpu.r = 0x7f;
 
     // --- Act
     m.run();
@@ -757,7 +757,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isZFlagSet()).toBe(false);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -782,7 +782,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isPvFlagSet()).toBe(false);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -807,7 +807,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isPvFlagSet()).toBe(true);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -832,7 +832,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isCFlagSet()).toBe(true);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
@@ -857,7 +857,7 @@ describe("Z80 extended ops 50-5f", () => {
 
     expect(cpu.isCFlagSet()).toBe(false);
 
-    expect(m.cpu.a).toBe(0x25);
+    expect(m.cpu.a).toBe(0x24);
     expect(cpu.pc).toBe(0x0002);
     expect(cpu.tacts).toBe(9);
   });
