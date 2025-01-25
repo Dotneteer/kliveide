@@ -5,6 +5,7 @@ import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 
 export function getBreakpointKey(
@@ -14,22 +15,22 @@ export function getBreakpointKey(
   // --- Collect memory/IO breakpoint suffix
   let suffix = "";
   if (bp.memoryRead) {
-    suffix = ":MR";
+    suffix = ":R";
   } else if (bp.memoryWrite) {
-    suffix = ":MW";
+    suffix = ":W";
   } else if (bp.ioRead) {
-    suffix = ":IOR";
+    suffix = ":IR";
   } else if (bp.ioWrite) {
-    suffix = ":IOW";
+    suffix = ":IW";
   }
   if (bp.address !== undefined) {
     // --- Breakpoint defined with address
     if (bp.partition === undefined) {
-      return `$${bp.address.toString(16).padStart(4, "0")}${suffix}`;
+      return `$${toHexa4(bp.address)}${suffix}`;
     }
     return partitionMap
-      ? `${partitionMap[bp.partition] ?? "?"}:$${bp.address.toString(16)}${suffix}`
-      : `${bp.partition.toString(16)}:$${bp.address.toString(16)}${suffix}`;
+      ? `${partitionMap[bp.partition] ?? "?"}:$${toHexa4(bp.address)}${suffix}`
+      : `${bp.partition.toString(16)}:$${toHexa4(bp.address)}${suffix}`;
   } else if (bp.resource && bp.line !== undefined) {
     return `[${bp.resource}]:${bp.line}`;
   }

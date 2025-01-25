@@ -69,6 +69,7 @@ const BreakpointsPanel = () => {
 
     // --- Store the breakpoint info
     setBps(bpResponse.breakpoints);
+    console.log("Breakpoints refreshed", bpResponse.breakpoints);
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -119,13 +120,15 @@ const BreakpointsPanel = () => {
                   current={isCurrent}
                   hasBreakpoint={true}
                   disabled={disabled}
+                  memoryRead={bp.memoryRead}
+                  memoryWrite={bp.memoryWrite}
                 />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
                 )}
-                <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
-                {bp.address !== undefined && <Label text="" width={32} />}
+                <Label text={addrKey} width={addr !== undefined ? 56 : undefined} />
+                {bp.address !== undefined && <Label text="" width={40} />}
 
                 <Value text={disassLines.current[idx] ?? "???"} width="auto" />
               </div>
