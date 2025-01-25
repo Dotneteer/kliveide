@@ -90,10 +90,13 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     ]
   };
 
+  partitionLabels: string[];
+
   async validateCommandArgs(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<ValidationMessage[]> {
+    this.partitionLabels = await createEmuApi(context.messenger).getPartitionLabels();
     const addrArg = args.addrSpec?.trim() ?? "";
     let messages: ValidationMessage[] = [];
     if (addrArg.startsWith("[")) {
@@ -121,7 +124,7 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
             break;
           default:
             const segments = addrArg.toLowerCase().split(":");
-            if (segments.length === 2 && segments[0].length <= 2) {
+            if (segments.length === 2) {
               // --- Check for partition support
               const { machine } = context.service.machineService.getMachineInfo();
               const roms = machine.features?.[MF_ROM] ?? 0;
@@ -140,14 +143,12 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
               const partition = await createEmuApi(context.messenger).parsePartitionLabel(
                 segments[0]
               );
-              console.log("Partition: ", partition);
-              if (partition.value === undefined) {
+              if (partition === undefined) {
                 messages = [{ type: ValidationMessageType.Error, message: "Invalid partition" }];
                 break;
               }
 
-              args.partition = partition.value;
-              console.log("Partition: ", partition);
+              args.partition = partition;
 
               // --- Extract address
               const tokens = parseCommand(segments[1]);
@@ -196,12 +197,15 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       line: args.line,
       exec: true
     });
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line
+      },
+      this.partitionLabels
+    );
     writeSuccessMessage(
       context.output,
       `Breakpoint at address ${addrKey} ${flag ? "set" : "updated"}`
@@ -227,12 +231,15 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
       line: args.line,
       exec: true
     });
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line
+      },
+      this.partitionLabels
+    );
     if (flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
     } else {
@@ -271,12 +278,15 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       },
       !args["-d"]
     );
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line
+      },
+      this.partitionLabels
+    );
     if (flag) {
       writeSuccessMessage(
         context.output,
