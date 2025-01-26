@@ -159,7 +159,7 @@ const BreakpointsPanel = () => {
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
                 )}
-                <Label text={addrKey} width={addr !== undefined ? 56 : undefined} />
+                <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
                 {bp.address !== undefined && <Label text="" width={40} />}
                 {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
                 {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&

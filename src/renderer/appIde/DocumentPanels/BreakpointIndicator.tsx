@@ -91,7 +91,7 @@ export const BreakpointIndicator = ({
     const command =
       `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-ir" : ""} ${ioWrite ? "-iw" : ""}` +
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}` +
       `${ioMask ? ` -m ${toHexa4(ioMask)}` : ""}`
       ;
     console.log(command);
@@ -103,8 +103,8 @@ export const BreakpointIndicator = ({
     const command =
       `bp-en ${addrLabel} ${disabled ? "" : "-d"} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-ir" : ""} ${ioWrite ? "-iw" : ""}` +
-      `${ioMask ? ` -pm ${toHexa4(ioMask)}` : ""}`;
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}` +
+      `${ioMask ? ` -m ${toHexa4(ioMask)}` : ""}`;
     console.log(command);
     if (hasBreakpoint) {
       await ideCommandsService.executeCommand(command);
