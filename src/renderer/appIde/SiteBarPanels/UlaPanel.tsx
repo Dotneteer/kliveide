@@ -24,7 +24,6 @@ const UlaPanel = () => {
     newUlaState.keyLines[lineNo] = keyState
       ? newUlaState.keyLines[lineNo] & ~(1 << bitNo)
       : newUlaState.keyLines[lineNo] | (1 << bitNo);
-    console.log("KeyState", keyState);
     await emuApi.setKeyStatus(5 * lineNo + bitNo, !keyState);
     setUlaState(newUlaState);
   }

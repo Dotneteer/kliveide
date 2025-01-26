@@ -565,9 +565,19 @@ export class Z80Cpu implements IZ80Cpu {
   lastMemoryReads: number[] = [];
 
   /**
+   * The last value read from memory
+   */
+  lastMemoryReadValue: number;
+
+  /**
    * The memory addresses of the last memory write operations
    */
   lastMemoryWrites: number[] = [];
+
+  /**
+   * The last value written to memory
+   */
+  lastMemoryWriteValue: number;
 
   // ----------------------------------------------------------------------------------------------------------------
   // Z80 core methods
@@ -1366,7 +1376,7 @@ export class Z80Cpu implements IZ80Cpu {
   readMemory(address: number): number {
     this.delayMemoryRead(address);
     this.lastMemoryReads.push(address);
-    return this.doReadMemory(address);
+    return this.lastMemoryReadValue = this.doReadMemory(address);
   }
 
   /**
@@ -1378,6 +1388,7 @@ export class Z80Cpu implements IZ80Cpu {
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
     this.lastMemoryWrites.push(address);
+    this.lastMemoryWriteValue = data;
     this.doWriteMemory(address, data);
   }
 

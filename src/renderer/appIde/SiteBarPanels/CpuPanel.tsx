@@ -221,6 +221,21 @@ const CpuPanel = () => {
       </div>
       <Separator />
       <div className={styles.cols}>
+        <Label text="LMR" width={LAB_WIDTH} />
+        <Value
+          text={toHexa2(cpuState?.lastMemoryReadValue ?? 0)}
+          tooltip="Last value read from memory"
+          width={R16_WIDTH}
+        />
+        <Label text="LMW" width={LAB_WIDTH} />
+        <Value
+          text={toHexa2(cpuState?.lastMemoryWriteValue ?? 0)}
+          tooltip="Last value written to memory"
+          width={R16_WIDTH}
+        />
+      </div>
+      <Separator />
+      <div className={styles.cols}>
         <Label text="IM" width={LAB_WIDTH} />
         <Value
           text={cpuState?.interruptMode?.toString() ?? "-"}
