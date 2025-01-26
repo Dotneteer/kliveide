@@ -579,6 +579,26 @@ export class Z80Cpu implements IZ80Cpu {
    */
   lastMemoryWriteValue: number;
 
+  /**
+   * The port address of the last I/O read operation
+   */
+  lastIoReadPort: number;
+
+  /**
+   * The last value read from the I/O port
+   */
+  lastIoReadValue: number;
+
+  /**
+   * The port address of the last I/O write operation
+   */
+  lastIoWritePort: number;
+
+  /**
+   * The last value written to the I/O port
+   */
+  lastIoWriteValue: number;
+
   // ----------------------------------------------------------------------------------------------------------------
   // Z80 core methods
 
@@ -1460,7 +1480,8 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readPort(address: number): number {
     this.delayPortRead(address);
-    return this.doReadPort(address);
+    this.lastIoReadPort = address;
+    return this.lastIoReadValue = this.doReadPort(address);
   }
 
   /**
@@ -1471,6 +1492,8 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writePort(address: number, data: number): void {
     this.delayPortWrite(address);
+    this.lastIoWritePort = address;
+    this.lastIoWriteValue = data;
     this.doWritePort(address, data);
   }
 

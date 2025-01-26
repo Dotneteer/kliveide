@@ -81,6 +81,9 @@ type BreakpointWithAddressArgs = {
   "-d"?: boolean;
   "-r"?: boolean;
   "-w"?: boolean;
+  "-ir"?: boolean;
+  "-iw"?: boolean;
+  "-pm"?: number;
 };
 
 abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
@@ -90,7 +93,13 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w"]
+    commandOptions: ["-r", "-w", "-ir", "-iw"],
+    namedOptions: [
+      {
+        name: "-pm",
+        type: "number"
+      }
+    ]
   };
 
   partitionLabels: string[];
@@ -181,8 +190,16 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     }
 
     // --- Validate options
-    if (args["-r"] && args["-w"]) {
-      return [validationError("Cannot set both read and write breakpoints")];
+    let bpOptions =
+      (args["-r"] ? 1 : 0) + (args["-w"] ? 1 : 0) + (args["-ir"] ? 1 : 0) + (args["-iw"] ? 1 : 0);
+    if (bpOptions > 1) {
+      return [validationError("You can use only one of the -r, -w, -ir, -iw options")];
+    }
+    if (args["-pm"] && !args["-ir"] && !args["-iw"]) {
+      return [validationError("You can use the -pm option only with the -ir or -iw option")];
+    }
+    if (args.partition !== undefined && (args["-ir"] || args["-iw"])) {
+      return [validationError("You cannot use partition with I/O breakpoints")];
     }
 
     // --- Done.
@@ -193,7 +210,7 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
 export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
-  readonly usage = "bp-set <address> [-r] [-w]";
+  readonly usage = "bp-set <address> [-r] [-w] [-ir] [-iw] [-pm <port mask>] ";
   readonly aliases = ["bp"];
 
   async execute(
@@ -207,7 +224,10 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       line: args.line,
       exec: !(args["-r"] || args["-w"]),
       memoryRead: args["-r"],
-      memoryWrite: args["-w"]
+      memoryWrite: args["-w"],
+      ioRead: args["-ir"],
+      ioWrite: args["-iw"],
+      ioMask: args["-pm"]
     });
     let addrKey = getBreakpointKey(
       {
@@ -216,13 +236,18 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
         resource: args.resource,
         line: args.line,
         memoryRead: args["-r"],
-        memoryWrite: args["-w"]
+        memoryWrite: args["-w"],
+        ioRead: args["-ir"],
+        ioWrite: args["-iw"],
+        ioMask: args["-pm"]
       },
       this.partitionLabels
     );
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address ${addrKey} ${flag ? "set" : "updated"}`
+      `Breakpoint at address ${addrKey}` +
+        `${(args["-ir"] || args["-iw"]) && args["-pm"] ? " /$" + toHexa4(args["-pm"]) : ""}` +
+        `${flag ? " set" : " updated"}`
     );
     return commandSuccess;
   }
@@ -231,7 +256,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
 export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-del";
   readonly description = "Removes the breakpoint from the specified address";
-  readonly usage = "bp-del <address>";
+  readonly usage = "bp-del <address> [-r] [-w] [-ir] [-iw]";
   readonly aliases = ["bd"];
 
   async execute(
@@ -245,7 +270,9 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
       line: args.line,
       exec: !(args["-r"] || args["-w"]),
       memoryRead: args["-r"],
-      memoryWrite: args["-w"]
+      memoryWrite: args["-w"],
+      ioRead: args["-ir"],
+      ioWrite: args["-iw"]
     });
     let addrKey = getBreakpointKey(
       {
@@ -254,7 +281,9 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
         resource: args.resource,
         line: args.line,
         memoryRead: args["-r"],
-        memoryWrite: args["-w"]
+        memoryWrite: args["-w"],
+        ioRead: args["-ir"],
+        ioWrite: args["-iw"]
       },
       this.partitionLabels
     );
@@ -270,7 +299,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
 export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-en";
   readonly description = "Enables/disables a breakpoint";
-  readonly usage = "bp-en <address> [-d]";
+  readonly usage = "bp-en <address> [-r] [-w] [-ir] [-iw] [-d]";
   readonly aliases = ["be"];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -279,7 +308,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-d", "-r", "-w"]
+    commandOptions: ["-r", "-w", "-ir", "-iw", "-d"]
   };
 
   async execute(
@@ -294,7 +323,9 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         line: args.line,
         exec: !(args["-r"] || args["-w"]),
         memoryRead: args["-r"],
-        memoryWrite: args["-w"]
+        memoryWrite: args["-w"],
+        ioRead: args["-ir"],
+        ioWrite: args["-iw"]
       },
       !args["-d"]
     );
@@ -305,7 +336,9 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         resource: args.resource,
         line: args.line,
         memoryRead: args["-r"],
-        memoryWrite: args["-w"]
+        memoryWrite: args["-w"],
+        ioRead: args["-ir"],
+        ioWrite: args["-iw"]
       },
       this.partitionLabels
     );

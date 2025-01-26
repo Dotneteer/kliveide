@@ -194,6 +194,9 @@ export class DebugSupport implements IDebugSupport {
         resolvedPartition: bp.resolvedPartition,
         memoryRead: bp.memoryRead,
         memoryWrite: bp.memoryWrite,
+        ioRead: bp.ioRead,
+        ioWrite: bp.ioWrite,
+        ioMask: bp.ioMask,
       });
     } catch (err) {
       console.log("err in addBreakpoint", err.toString());

@@ -13,6 +13,9 @@ type Props = {
   current: boolean;
   memoryRead?: boolean;
   memoryWrite?: boolean;
+  ioRead?: boolean;
+  ioWrite?: boolean;
+  ioMask?: number;
 };
 
 export const BreakpointIndicator = ({
@@ -22,7 +25,10 @@ export const BreakpointIndicator = ({
   disabled,
   current,
   memoryRead,
-  memoryWrite
+  memoryWrite,
+  ioRead,
+  ioWrite,
+  ioMask,
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const ref = useTooltipRef();
@@ -40,9 +46,13 @@ export const BreakpointIndicator = ({
     addrLabel += ":R";
   } else if (memoryWrite) {
     addrLabel += ":W";
+  } else if (ioRead) {
+    addrLabel += ":IR";
+  } else if (ioWrite) {
+    addrLabel += ":IW";
   }
   const tooltip =
-    `${addrLabel}\n` +
+    `${addrLabel}${(ioRead || ioWrite) && ioMask ? ' /$' + toHexa4(ioMask) : ''} \n` +
     (hasBreakpoint
       ? `Left-click to remove\nRight-click to ${disabled ? "enable" : "disable"}`
       : "Click to set a breakpoint");
