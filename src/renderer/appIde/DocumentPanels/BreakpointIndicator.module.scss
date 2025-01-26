@@ -1,5 +1,10 @@
 @import "@styles/core.scss";
 
+.breakpointWrapper {
+  display: flex;
+  flex-direction: row;
+}
+
 .breakpointIndicator {
   display: flex;
   flex-grow: 0;

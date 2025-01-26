@@ -14,7 +14,6 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
-import { Icon } from "@renderer/controls/Icon";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
@@ -116,7 +115,10 @@ const BreakpointsPanel = () => {
           fixItemHeight={true}
           itemRenderer={(idx) => {
             const bp = bps[idx];
-            const addrKey = getBreakpointKey(bp, partitionLabels);
+            const addrKey = getBreakpointKey(
+              { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
+              partitionLabels
+            );
             const addr = bp.address;
             const disabled = bp.disabled ?? false;
             let isCurrent = false;
@@ -136,22 +138,6 @@ const BreakpointsPanel = () => {
                 isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
               }
             }
-
-            let iconName = "symbol-event";
-            let iconColor = "--console-ansi-bright-blue"
-            if (bp.memoryRead) {
-              iconName = "bp-mem-read";
-              iconColor = "--console-ansi-bright-green";
-            } else if (bp.memoryWrite) {
-              iconName = "bp-mem-write";
-              iconColor = "--console-ansi-bright-magenta";
-            } else if (bp.ioRead) {
-              iconName = "bp-io-read";
-              iconColor = "--console-ansi-bright-green";
-            } else if (bp.ioWrite) {
-              iconName = "bp-io-write";
-              iconColor = "--console-ansi-bright-magenta";
-            }
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
@@ -169,7 +155,6 @@ const BreakpointsPanel = () => {
                   ioWrite={bp.ioWrite}
                   ioMask={bp.ioMask}
                 />
-                <Icon iconName={iconName} width={16} height={16} fill={iconColor} />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
@@ -180,8 +165,11 @@ const BreakpointsPanel = () => {
                 {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
                   machineState === MachineControllerState.Paused && (
                     <>
-                    <Secondary text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`} width={52} />
-                    <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+                      <Secondary
+                        text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
+                        width={52}
+                      />
+                      <Value text={disassLines.current[idx] ?? "???"} width="auto" />
                     </>
                   )}
               </div>

@@ -28,7 +28,7 @@ export const BreakpointIndicator = ({
   memoryWrite,
   ioRead,
   ioWrite,
-  ioMask,
+  ioMask
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const ref = useTooltipRef();
@@ -42,17 +42,28 @@ export const BreakpointIndicator = ({
         : `$${toHexa4(address)}`
       : address;
 
+  let bpType = "execute";
+  let typeIcon = "symbol-event";
+  let typeColor = "--console-ansi-bright-blue";
   if (memoryRead) {
-    addrLabel += ":R";
+    bpType = "memory read";
+    typeIcon = "bp-mem-read";
+    typeColor = "--console-ansi-bright-green";
   } else if (memoryWrite) {
-    addrLabel += ":W";
+    bpType = "memory write";
+    typeIcon = "bp-mem-write";
+    typeColor = "--console-ansi-bright-magenta";
   } else if (ioRead) {
-    addrLabel += ":IR";
+    bpType = "I/O read";
+    typeIcon = "bp-io-read";
+    typeColor = "--console-ansi-bright-green";
   } else if (ioWrite) {
-    addrLabel += ":IW";
+    bpType = "I/O write";
+    typeIcon = "bp-io-write";
+    typeColor = "--console-ansi-bright-magenta";
   }
   const tooltip =
-    `${addrLabel}${(ioRead || ioWrite) && ioMask ? ' /$' + toHexa4(ioMask) : ''} \n` +
+    `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})\n` +
     (hasBreakpoint
       ? `Left-click to remove\nRight-click to ${disabled ? "enable" : "disable"}`
       : "Click to set a breakpoint");
@@ -78,8 +89,11 @@ export const BreakpointIndicator = ({
   // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
     const command =
-      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address} ` +
-      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}`;
+      `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel} ` +
+      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
+      `${ioRead ? "-ir" : ""} ${ioWrite ? "-iw" : ""}` +
+      `${ioMask ? ` -m ${toHexa4(ioMask)}` : ""}`
+      ;
     console.log(command);
     await ideCommandsService.executeCommand(command);
   };
@@ -87,8 +101,10 @@ export const BreakpointIndicator = ({
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
     const command =
-      `bp-en ${address} ${disabled ? "" : "-d"} ` +
-      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}`;
+      `bp-en ${addrLabel} ${disabled ? "" : "-d"} ` +
+      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
+      `${ioRead ? "-ir" : ""} ${ioWrite ? "-iw" : ""}` +
+      `${ioMask ? ` -pm ${toHexa4(ioMask)}` : ""}`;
     console.log(command);
     if (hasBreakpoint) {
       await ideCommandsService.executeCommand(command);
@@ -98,6 +114,7 @@ export const BreakpointIndicator = ({
   return (
     <div
       ref={ref}
+      className={styles.breakpointWrapper}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onClick={handleLeftClick}
@@ -118,6 +135,7 @@ export const BreakpointIndicator = ({
         showDelay={100}
         content={tooltip}
       />
+      <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />
     </div>
   );
 };
