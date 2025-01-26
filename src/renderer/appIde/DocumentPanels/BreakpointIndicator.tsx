@@ -67,13 +67,18 @@ export const BreakpointIndicator = ({
 
   // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
-    const command = `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel}`;
+    const command =
+      `${hasBreakpoint ? "bp-del" : "bp-set"} ${address} ` +
+      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}`;
+    console.log(command);
     await ideCommandsService.executeCommand(command);
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
-    const command = `bp-en ${addrLabel} ${disabled ? "" : "-d"}`;
+    const command =
+      `bp-en ${address} ${disabled ? "" : "-d"} ` +
+      `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}`;
     console.log(command);
     if (hasBreakpoint) {
       await ideCommandsService.executeCommand(command);

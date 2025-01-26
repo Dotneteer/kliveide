@@ -1,6 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { LabelSeparator, Label, Value } from "@controls/Labels";
+import { LabelSeparator, Label, Value, Secondary } from "@controls/Labels";
 import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -26,6 +26,14 @@ const BreakpointsPanel = () => {
   const disassLines = useRef<string[]>();
   const pcValue = useRef(-1);
 
+  // --- Gets the address to display in the context of the breakpoint
+  const getBpAddress = (bp: BreakpointInfo): number => {
+    if (bp.memoryRead || bp.memoryWrite) {
+      return lastCpuState?.opStartAddress ?? -1;
+    }
+    return bp.address ?? -1;
+  };
+
   // --- This function queries the breakpoints from the emulator
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
@@ -43,7 +51,7 @@ const BreakpointsPanel = () => {
       const memSegment = bpState.memorySegments[i];
       if (!memSegment) continue;
 
-      const addr = bpState.breakpoints[i].address;
+      const addr = getBpAddress(bpState.breakpoints[i]);
       for (let j = 0; j < memSegment.length; j++) {
         mem[(addr + j) & 0xffff] = memSegment[j];
       }
@@ -54,7 +62,9 @@ const BreakpointsPanel = () => {
     for (let i = 0; i < bpState.breakpoints.length; i++) {
       const bpInfo = bpState.breakpoints[i];
       if (bpInfo.address !== undefined) {
-        const bpAddr = bpInfo.address;
+        const bpAddr = getBpAddress(bpInfo);
+
+        // --- Do the disassembly
         const disass = new Z80Disassembler(
           [new MemorySection(bpAddr, bpAddr, MemorySectionType.Disassemble)],
           mem,
@@ -118,7 +128,7 @@ const BreakpointsPanel = () => {
                 isCurrent = lastCpuState?.lastMemoryReads?.includes(addr) ?? false;
               } else if (bp.memoryWrite) {
                 isCurrent = lastCpuState?.lastMemoryWrites?.includes(addr) ?? false;
-              } 
+              }
             }
             return (
               <div className={styles.breakpoint}>
@@ -141,6 +151,13 @@ const BreakpointsPanel = () => {
                 <Label text={addrKey} width={addr !== undefined ? 56 : undefined} />
                 {bp.address !== undefined && <Label text="" width={40} />}
                 {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
+                {(bp.memoryRead || bp.memoryWrite) &&
+                  machineState === MachineControllerState.Paused && (
+                    <>
+                    <Secondary text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`} width={52} />
+                    <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+                    </>
+                  )}
               </div>
             );
           }}

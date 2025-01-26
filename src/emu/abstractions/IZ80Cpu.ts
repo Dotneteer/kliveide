@@ -299,9 +299,19 @@ export interface IZ80Cpu {
   lastMemoryReads: number[];
 
   /**
+   * The last value read from memory
+   */
+  lastMemoryReadValue: number;
+
+  /**
    * The memory addresses of the last memory write operations
    */
   lastMemoryWrites: number[];
+
+  /**
+   * The last value written to memory
+   */
+  lastMemoryWriteValue: number;
 
   /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.

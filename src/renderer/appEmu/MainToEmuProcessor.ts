@@ -33,6 +33,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
+import { CpuState } from "@common/messaging/EmuApi";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -193,7 +194,7 @@ class EmuMessageProcessor {
     controller.machine.setMachineProperty(propName, protect);
   }
 
-  getCpuState() {
+  getCpuState(): CpuState {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
@@ -222,8 +223,11 @@ class EmuMessageProcessor {
       sigINT: cpu.sigINT,
       halted: cpu.halted,
       snoozed: cpu.isCpuSnoozed(),
+      opStartAddress: cpu.opStartAddress,
       lastMemoryReads: cpu.lastMemoryReads,
-      lastMemoryWrites: cpu.lastMemoryWrites
+      lastMemoryReadValue: cpu.lastMemoryReadValue,
+      lastMemoryWrites: cpu.lastMemoryWrites,
+      lastMemoryWriteValue: cpu.lastMemoryWriteValue
     };
   }
 
@@ -365,6 +369,8 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+
+    const lastOpStart = controller.machine.opStartAddress;
     const execBreakpoints = controller.debugSupport.breakpoints
       .map((bp) => ({
         ...bp
@@ -393,10 +399,11 @@ class EmuMessageProcessor {
       });
     const segments: number[][] = [];
     for (let i = 0; i < execBreakpoints.length; i++) {
-      const addr = execBreakpoints[i].address;
+      const bp = execBreakpoints[i];
+      const addr = bp.exec ? bp.address : lastOpStart;
       segments[i] = [];
       if (!addr) continue;
-      for (let j = 0; j < 32; j++) {
+      for (let j = 0; j < 8; j++) {
         segments[i][j] = controller.machine.doReadMemory((addr + j) & 0xffff);
       }
     }
