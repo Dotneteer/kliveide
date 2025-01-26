@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "./Icon";
 import classnames from "@renderer/utils/classnames";
 import styles from "./TabButton.module.scss";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 
 type Props = {
   hide?: boolean;
@@ -25,10 +25,9 @@ export function TabButton ({
   disabled,
   clicked
 }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const [keyDown, setKeyDown] = useState(null);
-  const toolTipLines = (title ?? "").split("\n");
-
+  
   useEffect(() => {
     setKeyDown(false);
   }, [ref.current]);
@@ -56,11 +55,8 @@ export function TabButton ({
             placement='right'
             offsetX={8}
             offsetY={32}
-          >
-            {toolTipLines.map((l, idx) => (
-              <div key={idx}>{l}</div>
-            ))}
-          </TooltipFactory>
+            content={title}
+          />
         )}
 
         {hide && <div className={styles.placeholder}></div>}

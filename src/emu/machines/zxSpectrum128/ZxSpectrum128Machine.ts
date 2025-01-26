@@ -197,8 +197,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    */
   parsePartitionLabel(label: string): number | undefined {
     if (!label) return undefined;
-    const isRom = label.startsWith("R") || label.startsWith("r");
-    const index = isRom ? label.substring(1) : label;
+    let isRom = false;
+    label = label.trim().toUpperCase();
+    if (label.startsWith("R")) {
+      isRom = true;
+    } else if (!label.startsWith("B")) {
+      return undefined;
+    }
+    const index = label.substring(1);
     if (!index.match(/^\d+$/)) {
       return undefined;
     }
@@ -215,14 +221,14 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     return {
       [-2]: "R1",
       [-1]: "R0",
-      0: "0",
-      1: "1",
-      2: "2",
-      3: "3",
-      4: "4",
-      5: "5",
-      6: "6",
-      7: "7"
+      0: "B0",
+      1: "B1",
+      2: "B2",
+      3: "B3",
+      4: "B4",
+      5: "B5",
+      6: "B6",
+      7: "B7"
     };
   }
 

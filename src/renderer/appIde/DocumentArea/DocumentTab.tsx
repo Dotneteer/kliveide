@@ -1,7 +1,7 @@
 import { Icon } from "../../controls/Icon";
 import { TabButton } from "@controls/TabButton";
 import { useLayoutEffect, useRef, useState } from "react";
-import { TooltipFactory } from "@controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
 import classnames from "@renderer/utils/classnames";
@@ -61,8 +61,8 @@ export const DocumentTab = ({
   const mainApi = useMainApi();
 
   const ref = useRef<HTMLDivElement>(null);
-  const nameRef = useRef<HTMLSpanElement>(null);
-  const readOnlyRef = useRef<HTMLDivElement>(null);
+  const nameRef = useTooltipRef();
+  const readOnlyRef = useTooltipRef();
   const isWindows = !!store.getState().isWindows;
   const [pointed, setPointed] = useState(false);
 
@@ -138,9 +138,13 @@ export const DocumentTab = ({
       >
         <bdi>{name}</bdi>
         {path && (
-          <TooltipFactory refElement={nameRef.current} placement="right" offsetX={-28} offsetY={28}>
-            {path}
-          </TooltipFactory>
+          <TooltipFactory
+            refElement={nameRef.current}
+            placement="right"
+            offsetX={-28}
+            offsetY={28}
+            content={path}
+          />
         )}
       </span>
       {isReadOnly && (
@@ -156,9 +160,8 @@ export const DocumentTab = ({
             placement="right"
             offsetX={-16}
             offsetY={28}
-          >
-            This file is read-only
-          </TooltipFactory>
+            content="This file is read-only"
+          />
         </div>
       )}
 

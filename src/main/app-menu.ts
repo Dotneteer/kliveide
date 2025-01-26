@@ -11,8 +11,6 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-import type { IdeExecuteCommandResponse } from "@messaging/any-to-ide";
-
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
@@ -40,7 +38,7 @@ import {
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -58,6 +56,7 @@ import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
+import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -223,7 +222,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         enabled: !!folderOpen,
         click: async () => {
           ensureIdeWindow();
-          await getIdeApi().saveAllBeforeQuit();
+          await getIdeAltApi().saveAllBeforeQuit();
           mainStore.dispatch(closeFolderAction());
           fileChangeWatcher.stopWatching();
           await saveKliveProject();
@@ -819,7 +818,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         type: "checkbox",
         checked: volatileDocs[MEMORY_PANEL_ID],
         click: async () => {
-          await getIdeApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
+          await getIdeAltApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
           mainStore.dispatch(
             setVolatileDocStateAction(MEMORY_PANEL_ID, !volatileDocs[MEMORY_PANEL_ID])
           );
@@ -831,7 +830,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         type: "checkbox",
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
-          await getIdeApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
+          await getIdeAltApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
           mainStore.dispatch(
             setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, !volatileDocs[DISASSEMBLY_PANEL_ID])
           );
@@ -1037,8 +1036,8 @@ export async function executeIdeCommand(
   commandText: string,
   title?: string,
   ignoreSuccess = false
-): Promise<IdeExecuteCommandResponse> {
-  const response = await getIdeApi().executeCommand(commandText);
+): Promise<IdeCommandResult> {
+  const response = await getIdeAltApi().executeCommand(commandText);
   if (response.success) {
     if (!ignoreSuccess) {
       await showMessage(

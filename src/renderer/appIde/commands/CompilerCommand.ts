@@ -1,4 +1,3 @@
-import type { MainCompileResponse } from "@messaging/any-to-main";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
@@ -114,13 +113,13 @@ async function compileCode(
 
   context.store.dispatch(startCompileAction(fullPath));
   let result: KliveCompilerOutput;
-  let response: MainCompileResponse;
+  let failedMessage = "";
   try {
-    response = await context.mainApi.compileFile(fullPath, language);
-    if (response.type === "MainCompileFileResponse") {
-      result = response.result;
-    }
-  } finally {
+    result = await context.mainApi.compileFile(fullPath, language);
+  } catch (err) {
+    failedMessage = err.message;
+  }
+  finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
@@ -136,10 +135,10 @@ async function compileCode(
   // --- Collect errors
   const errorCount = result?.errors.filter((m) => !m.isWarning).length ?? 0;
 
-  if (response.failed) {
+  if (failedMessage) {
     if (!result || errorCount === 0) {
       // --- Some unexpected error with the compilation
-      return { message: response.failed };
+      return { message: failedMessage };
     }
   }
 

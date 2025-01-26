@@ -103,6 +103,58 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Gets memory read breakpoint information for the specified address/partition
+   * @param reads Addresses read during the current instruction
+   * @param partitionResolver A function to resolve the current partition
+   */
+  hasMemoryRead(reads: number[], partitionResolver: (address: number) => number | undefined): boolean {
+    for (const read of reads) {
+      const flags = this.breakpointFlags[read];
+      if (flags & MEM_READ_BP) {
+        if (flags & DIS_MR_BP) {
+          return false;
+        }
+        const bpData = this.breakpointData.get(read);
+        if (!bpData?.partitions || bpData.partitions.length === 0) {
+          return true;
+        }
+        const partition = partitionResolver(read);
+        const partitionEntry = bpData.partitions.find(p => p[0] === partition);
+        if (partitionEntry && !partitionEntry[1]) {
+          return true;
+        }
+      }
+    }
+    return false
+  }
+
+  /**
+   * Gets memory write breakpoint information for the specified address/partition
+   * @param writes Addresses written during the current instruction
+   * @param partitionResolver A function to resolve the current partition
+   */
+  hasMemoryWrite(writes: number[], partitionResolver: (address: number) => number | undefined): boolean {
+    for (const write of writes) {
+      const flags = this.breakpointFlags[write];
+      if (flags & MEM_WRITE_BP) {
+        if (flags & DIS_MW_BP) {
+          return false;
+        }
+        const bpData = this.breakpointData.get(write);
+        if (!bpData?.partitions || bpData.partitions.length === 0) {
+          return true;
+        }
+        const partition = partitionResolver(write);
+        const partitionEntry = bpData.partitions.find(p => p[0] === partition);
+        if (partitionEntry && !partitionEntry[1]) {
+          return true;
+        }
+      }
+    }
+    return false
+  }
+
+  /**
    * The last breakpoint we stopped in the frame
    */
   lastBreakpoint?: number;
@@ -137,9 +189,11 @@ export class DebugSupport implements IDebugSupport {
         partition: bp.partition,
         resource: bp.resource,
         line: bp.line,
-        exec: true,
+        exec: !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite),
         resolvedAddress: bp.resolvedAddress,
-        resolvedPartition: bp.resolvedPartition
+        resolvedPartition: bp.resolvedPartition,
+        memoryRead: bp.memoryRead,
+        memoryWrite: bp.memoryWrite,
       });
     } catch (err) {
       console.log("err in addBreakpoint", err.toString());

@@ -1,4 +1,4 @@
-import type { MachineCommand } from "@messaging/main-to-emu";
+import type { MachineCommand } from "@abstractions/MachineCommand";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 

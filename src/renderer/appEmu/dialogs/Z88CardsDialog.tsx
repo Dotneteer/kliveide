@@ -283,8 +283,8 @@ const CardData = ({ slot, initialState, changed }: CardColumnProps) => {
   );
 };
 
-async function getCardFile(mainApi: MainApi, size: string): Promise<string | undefined> {
-  const response = await mainApi.showOpenFileDialog(
+async function getCardFile(mainApiAlt: MainApi, size: string): Promise<string | undefined> {
+  const file = await mainApiAlt.showOpenFileDialog(
     [
       { name: "ROM files", extensions: ["bin", "rom", "epr"] },
       { name: "EPROM files", extensions: ["epr"] },
@@ -295,16 +295,16 @@ async function getCardFile(mainApi: MainApi, size: string): Promise<string | und
 
   // --- Check the selected file
   const expectedSize = cardSizeOptions.find((co) => co.value === size)?.physicalSize;
-  const checkResponse = await mainApi.checkZ88Card(response.file, expectedSize);
+  const checkResponse = await mainApiAlt.checkZ88Card(file, expectedSize);
 
   // --- Result of test
   if (checkResponse.content) {
-    return response.file;
+    return file;
   } else if (checkResponse.message) {
-    mainApi.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
+    mainApiAlt.displayMessageBox("error", "Invalid Z88 Card", checkResponse.message);
     return null;
   }
-  return response.file;
+  return file;
 
   return null;
 }

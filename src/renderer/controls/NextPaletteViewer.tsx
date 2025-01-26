@@ -5,8 +5,8 @@ import {
   getLuminanceForPaletteCode,
   getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
-import { TooltipFactory } from "./Tooltip";
-import { useEffect, useRef, useState } from "react";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
+import { useEffect, useState } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
@@ -225,7 +225,7 @@ const PaletteItem = ({
   onPriority,
   selectedIndex
 }: PaletteItemProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const [r, setR] = useState(null);
   const [g, setG] = useState(null);
   const [b, setB] = useState(null);

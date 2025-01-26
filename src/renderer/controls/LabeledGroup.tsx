@@ -1,6 +1,5 @@
-import { useRef } from "react";
 import styles from "./LabeledGroup.module.scss";
-import { TooltipFactory } from "./Tooltip";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classNames from "../utils/classnames";
 type Props = {
   label: string;
@@ -12,20 +11,13 @@ type Props = {
   clicked?: (val: number) => void;
 };
 
-export const LabeledGroup = ({
-  label,
-  title,
-  values,
-  marked,
-  selected,
-  clicked
-}: Props) => {
-  const ref = useRef<HTMLDivElement>(null);
+export const LabeledGroup = ({ label, title, values, marked, selected, clicked }: Props) => {
+  const ref = useTooltipRef();
   return (
     <>
       <div ref={ref} className={styles.labeledGroup}>
         <span className={styles.headerLabel}>{label}</span>
-        {values.map(v => (
+        {values.map((v) => (
           <OptionValue
             key={v}
             label={v}
@@ -40,12 +32,11 @@ export const LabeledGroup = ({
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={-8}
           offsetY={32}
-        >
-          {title}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </>
   );
@@ -58,12 +49,7 @@ type OptionValueProp = {
   clicked?: () => void;
 };
 
-const OptionValue = ({
-  label,
-  isMarked,
-  isSelected,
-  clicked
-}: OptionValueProp) => {
+const OptionValue = ({ label, isMarked, isSelected, clicked }: OptionValueProp) => {
   return (
     <div
       className={classNames(styles.label, {

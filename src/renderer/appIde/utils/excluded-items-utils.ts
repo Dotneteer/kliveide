@@ -1,4 +1,3 @@
-import { ResponseMessage } from "@common/messaging/messages-core";
 import { IdeProject } from "@common/state/AppState";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { getIsWindows } from "@renderer/os-utils";
@@ -12,18 +11,16 @@ export type ExcludedItemInfo = {
 export async function getExcludedProjectItemsFromGlobalSettings(
   messenger: MessengerBase
 ): Promise<ExcludedItemInfo[]> {
-  const response = await createMainApi(messenger).getGloballyExcludedProjectItems();
-  return excludedItemsFromGlobalSettings(response);
+  const content = await createMainApi(messenger).getGloballyExcludedProjectItems();
+  return excludedItemsFromGlobalSettings(content);
 }
 
-export function excludedItemsFromGlobalSettings(response: ResponseMessage): ExcludedItemInfo[] {
+function excludedItemsFromGlobalSettings(content: string): ExcludedItemInfo[] {
   return postprocessResult(
-    response.type == "TextContents"
-      ? response.contents
-          .split(getIsWindows() ? ";" : ":")
-          .filter((id) => id?.length > 0)
-          .map((id) => ({ id, value: cvtPath(id) }))
-      : []
+    content
+      .split(getIsWindows() ? ";" : ":")
+      .filter((id) => id?.length > 0)
+      .map((id) => ({ id, value: cvtPath(id) }))
   );
 }
 
@@ -34,7 +31,7 @@ export function excludedItemsFromProject(project?: IdeProject): ExcludedItemInfo
       const value = cvtPath(id);
       return {
         id,
-        value,
+        value
       };
     }) ?? []
   );

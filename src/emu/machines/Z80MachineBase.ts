@@ -556,6 +556,24 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
 
+      // --- Check for memory read/write breakpoints
+      if (this.executionContext.debugSupport) {
+        if (
+          this.executionContext.debugSupport.hasMemoryRead(z80Machine.lastMemoryReads, (addr) =>
+            z80Machine.getPartition(addr)
+          )
+        ) {
+          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
+        }
+        if (
+          this.executionContext.debugSupport.hasMemoryWrite(z80Machine.lastMemoryWrites, (addr) =>
+            z80Machine.getPartition(addr)
+          )
+        ) {
+          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
+        }
+      }
+
       // --- Do the machine reached the termination point?
       if (this.testTerminationPoint()) {
         // --- The machine reached the termination point

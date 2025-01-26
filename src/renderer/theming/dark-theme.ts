@@ -27,7 +27,6 @@ export const darkTheme: ThemeProperties = {
   "--color-input": "#ffffff",
   "--bgcolor-item-hover": "#383838",
 
-
   // --- Drowpdown
   "--bg-color-dropdown-input": "#505050",
   "--color-dropdown-input": "#ffffff",
@@ -99,7 +98,7 @@ export const darkTheme: ThemeProperties = {
   "--color-activitybar-active": "#ffffff",
 
   // --- Tooltip
-  "--border-tooltip": "1px solid #808080",
+  "--border-tooltip": "1px solid #007acc",
   "--font-size-tooltip": "0.9em",
   "--bgcolor-tooltip": "#303030",
   "--color-tooltip": "#ffffff",
@@ -230,4 +229,9 @@ export const darkTheme: ThemeProperties = {
   "--color-dash-sprite-editor": "#101010",
   "--color-pos-sprite-editor": "#00a0ff",
 
+  // --- Switch
+  "--color-switch-on": "#00afff",
+  "--bgcolor-switch-on": "#505050",
+  "--color-switch-off": "#808080",
+  "--bgcolor-switch-off": "#505050"
 };

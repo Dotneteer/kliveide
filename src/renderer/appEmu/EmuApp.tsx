@@ -48,7 +48,7 @@ import {
 } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
 
-const ipcRenderer = window.electron.ipcRenderer;
+const ipcRenderer = (window as any).electron.ipcRenderer;
 
 const EmuApp = () => {
   // --- Used services

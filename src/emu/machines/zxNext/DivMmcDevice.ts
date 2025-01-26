@@ -1,6 +1,5 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _enabled: boolean;

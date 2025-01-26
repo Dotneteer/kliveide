@@ -35,6 +35,7 @@ import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
 import { emuSetKeyboardLayoutAction } from "@common/state/actions";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -51,7 +52,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Gets the ROM ID to load the ROM file
    */
-  get romId (): string {
+  get romId(): string {
     return this.machineId;
   }
 
@@ -97,7 +98,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Initialize the machine
    */
-  constructor (
+  constructor(
     private readonly store: Store<AppState>,
     model: MachineModel,
     public readonly config: MachineConfigSet
@@ -130,21 +131,46 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Gets the current partition values for all 16K/8K partitions
    */
-  getCurrentPartitions (): number[] {
+  getCurrentPartitions(): number[] {
     return this.memory.getPartitions();
   }
 
   /**
    * Gets the current partition labels for all 16K/8K partitions
    */
-  getCurrentPartitionLabels (): string[] {
+  getCurrentPartitionLabels(): string[] {
     return this.memory.getPartitionLabels();
+  }
+
+  /**
+   * Parses a partition label to get the partition number
+   * @param label Label to parse
+   */
+  parsePartitionLabel(label: string): number | undefined {
+    if (!label) return undefined;
+    if (!label.match(/^[0-9a-fA-F]{1,2}$/)) {
+      return undefined;
+    }
+    let partition = parseInt(label, 16);
+    return partition >= 0 && partition < 256 ? partition : undefined;
+  }
+
+  /**
+   * Gets the label of the specified partition
+   * @param partition Partition index
+   */
+  getPartitionLabels(): Record<number, string> {
+    const labels: string[] = [];
+    for (let i = 0; i <= 0xff; i++) {
+      labels.push(toHexa2(i));
+    }
+    return labels;
   }
 
   /**
    * Sets up the machine (async)
    */
-  async setup (): Promise<void> {
+  async setup(): Promise<void> {
     try {
       // --- Get the ROM file
       let romContents: Uint8Array;
@@ -200,7 +226,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Dispose the resources held by the machine
    */
-  dispose (): void {
+  dispose(): void {
     this.keyboardDevice?.dispose();
     this.screenDevice?.dispose();
     this.beeperDevice?.dispose();
@@ -209,7 +235,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Configures the machine after setting it up
    */
-  async configure (): Promise<void> {
+  async configure(): Promise<void> {
     // --- Use the dynamic configuation, too
     const config = { ...this.config, ...this.dynamicConfig };
 
@@ -220,10 +246,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     handleSlot(3, config?.[MC_Z88_SLOT3]);
 
     // --- Handle the specified slot
-    async function handleSlot (
-      slotId: number,
-      slot: CardSlotState
-    ): Promise<void> {
+    async function handleSlot(slotId: number, slot: CardSlotState): Promise<void> {
       if (!slot || slot.cardType === "-" || slot.size === undefined) {
         // --- No slot info
         machine.memory.removeCard(slotId);
@@ -249,7 +272,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Emulates turning on a machine (after it has been turned off).
    */
-  async hardReset (): Promise<void> {
+  async hardReset(): Promise<void> {
     super.hardReset();
     this.memory.reset();
     await this.setup();
@@ -259,7 +282,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * This method emulates resetting a machine with a hardware reset button.
    */
-  reset (): void {
+  reset(): void {
     // --- Reset the CPU
     super.reset();
 
@@ -290,7 +313,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Get the 64K of addressable memory of the Z88 computer
    * @returns Bytes of the flat memory
    */
-  get64KFlatMemory (): Uint8Array {
+  get64KFlatMemory(): Uint8Array {
     return this.memory.get64KFlatMemory();
   }
 
@@ -299,7 +322,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param index Partition index
    * @returns Bytes of the partition
    */
-  get16KPartition (index: number): Uint8Array {
+  get16KPartition(index: number): Uint8Array {
     return this.memory.get16KPartition(index);
   }
 
@@ -307,7 +330,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Reads the memory directly from the physical memory
    * @param absAddress Absolute memory address
    */
-  directReadMemory (absAddress: number): number {
+  directReadMemory(absAddress: number): number {
     return this.memory.directRead(absAddress);
   }
 
@@ -315,7 +338,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples (): number[] {
+  getAudioSamples(): number[] {
     return this.beeperDevice.getAudioSamples();
   }
 
@@ -324,7 +347,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param address 16-bit memory address
    * @returns The byte read from the memory
    */
-  doReadMemory (address: number): number {
+  doReadMemory(address: number): number {
     return this.memory.readMemory(address);
   }
 
@@ -333,7 +356,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param address 16-bit memory address
    * @param value Byte to write into the memory
    */
-  doWriteMemory (address: number, value: number): void {
+  doWriteMemory(address: number, value: number): void {
     this.memory.writeMemory(address, value);
   }
 
@@ -345,7 +368,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port read operation.
    */
-  doReadPort (address: number): number {
+  doReadPort(address: number): number {
     const addr8 = address & 0xff;
     const blink = this.blinkDevice;
 
@@ -420,7 +443,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * When placing the CPU into an emulated environment, you must provide a concrete function that emulates the
    * I/O port write operation.
    */
-  doWritePort (port: number, value: number): void {
+  doWritePort(port: number, value: number): void {
     const addr8 = port & 0xff;
     // --- No ports below address 0x70 are handled
     if (addr8 < 0x70) {
@@ -504,14 +527,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Width of the screen in native machine screen pixels
    */
-  get screenWidthInPixels () {
+  get screenWidthInPixels() {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
-  get screenHeightInPixels () {
+  get screenHeightInPixels() {
     return this.screenDevice.screenLines;
   }
 
@@ -519,21 +542,21 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the buffer that stores the rendered pixels
    * @returns
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
   }
 
   /**
    * Gets the key code set used for the machine
    */
-  getKeyCodeSet (): KeyCodeSet {
+  getKeyCodeSet(): KeyCodeSet {
     return Z88KeyCode;
   }
 
   /**
    * Gets the default key mapping for the machine
    */
-  getDefaultKeyMapping (): KeyMapping {
+  getDefaultKeyMapping(): KeyMapping {
     return z88KeyMappings;
   }
 
@@ -542,14 +565,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setKeyStatus (key: number, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     this.keyboardDevice.setStatus(key, isDown);
   }
 
   /**
    * Emulates queued key strokes as if those were pressed by the user
    */
-  emulateKeystroke (): void {
+  emulateKeystroke(): void {
     if (this._emulatedKeyStrokes.length === 0) return;
 
     // --- Check the next keystroke
@@ -592,29 +615,17 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    *
    * The keyboard provider can play back emulated key strokes
    */
-  queueKeystroke (
-    frameOffset: number,
-    frames: number,
-    primary: number,
-    secondary?: number
-  ): void {
-    const startTact =
-      this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
-    const endTact =
-      startTact + frames * this.tactsInFrame * this.clockMultiplier;
-    const keypress = new EmulatedKeyStroke(
-      startTact,
-      endTact,
-      primary,
-      secondary
-    );
+  queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
+    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
+    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
     this._emulatedKeyStrokes.push(keypress);
   }
 
   /**
    * Gets the length of the key emulation queue
    */
-  getKeyQueueLength (): number {
+  getKeyQueueLength(): number {
     return this._emulatedKeyStrokes.length;
   }
 
@@ -622,7 +633,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow (_model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
     // TODO: Implement this
     return [];
   }
@@ -632,7 +643,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param _codeToInject Code to inject into the machine
    * @returns The start address of the injected code
    */
-  injectCodeToRun (_codeToInject: CodeToInject): number {
+  injectCodeToRun(_codeToInject: CodeToInject): number {
     // TODO: Implement this
     return 0;
   }
@@ -642,7 +653,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (_clockMultiplierChanged: boolean): void {
+  onInitNewFrame(_clockMultiplierChanged: boolean): void {
     // --- 5ms frame completed, update the real time clock
     const blink = this.blinkDevice;
     blink.incrementRtc();
@@ -685,14 +696,14 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Tests if the machine should raise a Z80 maskable interrupt
    * @returns True, if the INT signal should be active; otherwise, false.
    */
-  shouldRaiseInterrupt (): boolean {
+  shouldRaiseInterrupt(): boolean {
     return this.blinkDevice.interruptSignalActive;
   }
 
   /**
    * Whatever should be done before the CPU executes the next instruction
    */
-  afterInstructionExecuted (): void {
+  afterInstructionExecuted(): void {
     // ---Awake the CPU whenever a key is pressed
     if (this.keyboardDevice.isKeyPressed) {
       this.awakeCpu();
@@ -704,7 +715,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (): void {
+  onTactIncremented(): void {
     // TODO: Implement this
     this.beeperDevice.setNextAudioSample();
   }
@@ -712,7 +723,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * Indicates if the machine's operating system is initialized
    */
-  get isOsInitialized (): boolean {
+  get isOsInitialized(): boolean {
     // TODO: Implement this
     return true;
   }
@@ -721,7 +732,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  async executeCustomCommand (command: string): Promise<void> {
+  async executeCustomCommand(command: string): Promise<void> {
     const machine = this;
     switch (command) {
       case "battery_low":
@@ -741,10 +752,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
         break;
     }
 
-    async function pressShifts (): Promise<void> {
+    async function pressShifts(): Promise<void> {
       machine.setKeyStatus(Z88KeyCode.ShiftL, true);
       machine.setKeyStatus(Z88KeyCode.ShiftR, true);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 400));
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
     }
@@ -760,7 +771,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * as the flap is open; when the flap is closed, NO interrupt is fired -
    * only STA.FLAPOPEN is set to 0.
    */
-  signalFlapOpened (): void {
+  signalFlapOpened(): void {
     const blink = this.blinkDevice;
     const INT = this.blinkDevice.INT;
     if (!!(INT & INTFlags.FLAP) && !!(INT & INTFlags.GINT)) {
@@ -778,7 +789,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    *
    * This is not an interrupt (but Z80 goes out of snooze), only the STA.FLAPOPEN bit set to 0
    */
-  signalFlapClosed (): void {
+  signalFlapClosed(): void {
     this.blinkDevice.setACK(STAFlags.FLAPOPEN);
     this.awakeCpu();
   }

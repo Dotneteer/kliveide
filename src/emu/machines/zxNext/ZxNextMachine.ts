@@ -35,6 +35,7 @@ import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MmcDevice } from "./MmcDevice";
 import { CimHandler } from "./CimHandler";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -273,23 +274,23 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         return -3;
       case "R3":
         return -4;
-      case "A0":
+      case "Q0":
         return -5;
-      case "A1":
+      case "Q1":
         return -6;
       case "DM":
         return -7;
       default:
-        if (label.startsWith("d") || label.startsWith("D")) {
+        if (label.startsWith("M")) {
           const part = label.substring(1);
-          if (part.match(/^\d+$/)) {
-            let partition = parseInt(part);
+          if (part.match(/^[0-9a-fA-F]$/)) {
+            let partition = parseInt(part, 16);
             return partition >= 0 && partition <= 15 ? -8 - partition : undefined;
           }
           return -8 - parseInt(label.substring(1));
         }
-        if (label.match(/^\d+$/)) {
-          const partValue = parseInt(label);
+        if (label.match(/^[0-9a-fA-F]{1,2}$/)) {
+          const partValue = parseInt(label, 16);
           return partValue >= 0 && partValue < 224 ? partValue : undefined;
         }
         return undefined;
@@ -306,15 +307,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       [-2]: "R1",
       [-3]: "R2",
       [-4]: "R3",
-      [-5]: "A0",
-      [-6]: "A1",
+      [-5]: "Q0",
+      [-6]: "Q1",
       [-7]: "DM"
     };
     for (let i = 0; i < 16; i++) {
-      result[-8 - i] = `D${i}`;
+      result[-8 - i] = `M${i.toString(16).toUpperCase()}`;
     }
     for (let i = 0; i < 224; i++) {
-      result[i] = i.toString();
+      result[i] = toHexa2(i).toUpperCase();
     }
     return result;
   }

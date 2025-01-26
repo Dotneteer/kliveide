@@ -7,6 +7,7 @@
     "src/common/**/*",
     "src/renderer/**/*",
     "src/emu/**/*",
+    "src/lib/**/*",
     "src/script-packages/**/*",
 
   ],

@@ -23,6 +23,20 @@ export interface IDebugSupport {
   shouldStopAt(address: number, partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
+   * Gets memory read breakpoint information for the specified address/partition
+   * @param reads Addresses read during the current instruction
+   * @param partitionResolver A function to resolve the current partition
+   */
+  hasMemoryRead(reads: number[], partitionResolver: (address: number) => number | undefined): boolean;
+
+  /**
+   * Gets memory write breakpoint information for the specified address/partition
+   * @param writes Addresses written during the current instruction
+   * @param partitionResolver A function to resolve the current partition
+   */
+  hasMemoryWrite(writes: number[], partitionResolver: (address: number) => number | undefined): boolean;
+
+  /**
    * The last breakpoint we stopped in the frame
    */
   lastBreakpoint?: number;

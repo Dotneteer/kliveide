@@ -2,7 +2,7 @@ import type { Channel, RequestMessage, ResponseMessage } from "@messaging/messag
 
 import { MessengerBase } from "@messaging/MessengerBase";
 
-const ipcRenderer = window.electron.ipcRenderer;
+const ipcRenderer = (window as any).electron.ipcRenderer;
 
 /**
  * Implements a messenger that send messages from the Ide to the Main process

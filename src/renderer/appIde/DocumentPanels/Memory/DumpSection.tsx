@@ -1,7 +1,7 @@
 import { LabelSeparator, Label } from "@controls/Labels";
-import { TooltipFactory } from "@controls/Tooltip";
+import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "@renderer/utils/classnames";
-import { memo, useRef, useState } from "react";
+import { memo, useState } from "react";
 import styles from "./DumpSection.module.scss";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { ZxSpectrumChars } from "../char-codes";
@@ -58,26 +58,20 @@ const ByteValue = ({ address, value }: ByteValueProps) => {
     setVersion(version + 1);
   });
 
-  const ref = useRef<HTMLDivElement>(null);
-  const title = `Value at $${toHexa4(address)} (${address}):\n${
-    tooltipCache[value]
-  }`;
-  const toolTipLines = (title ?? "").split("\n");
+  const ref = useTooltipRef();
+  const title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
   return (
     <div ref={ref} className={classnames(styles.value)}>
       {toHexa2(value)}
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={8}
           offsetY={32}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );
@@ -85,14 +79,11 @@ const ByteValue = ({ address, value }: ByteValueProps) => {
 
 const CharValue = ({ address, value }: ByteValueProps) => {
   const hasValue = value !== undefined;
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useTooltipRef();
   const valueInfo = ZxSpectrumChars[(value ?? 0x20) & 0xff];
   let text = valueInfo.v ?? ".";
-  const title = `Value at $${toHexa4(address)} (${address}):\n${
-    tooltipCache[value]
-  }`;
+  const title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
   value;
-  const toolTipLines = (title ?? "").split("\n");
 
   // --- Hack to force the component to re-render because of the tooltip
   const [version, setVersion] = useState(1);
@@ -106,15 +97,12 @@ const CharValue = ({ address, value }: ByteValueProps) => {
       {title && hasValue && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={8}
           offsetY={32}
           showDelay={100}
-        >
-          {toolTipLines.map((l, idx) => (
-            <div key={idx}>{l}</div>
-          ))}
-        </TooltipFactory>
+          content={title}
+        />
       )}
     </div>
   );

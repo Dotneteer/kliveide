@@ -40,7 +40,7 @@ import {
 } from "@common/structs/project-const";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { setMachineType } from "./registeredMachines";
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
@@ -149,7 +149,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   if (!fs.existsSync(projectFolder)) {
     return `Folder ${projectFolder} does not exists.`;
   }
-  await getIdeApi().saveAllBeforeQuit();
+  await getIdeAltApi().saveAllBeforeQuit();
   const disp = mainStore.dispatch;
   disp(closeFolderAction());
 
@@ -227,7 +227,7 @@ export function copyFileSync(source: string, target: string) {
       targetFile = path.join(target, path.basename(source));
     }
   }
-  fs.writeFileSync(targetFile, fs.readFileSync(source));
+  fs.writeFileSync(targetFile, new Uint8Array(fs.readFileSync(source)));
 }
 
 /**

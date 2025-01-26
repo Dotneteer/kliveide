@@ -1,9 +1,9 @@
 import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
-import { EmuGetCpuStateResponse } from "@messaging/main-to-emu";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { CpuState } from "@common/messaging/EmuApi";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 36;
@@ -11,8 +11,8 @@ const R16_WIDTH = 48;
 const TACT_WIDTH = 72;
 
 const CpuPanel = () => {
-  const emuApi = useEmuApi();
-  const [cpuState, setCpuState] = useState<EmuGetCpuStateResponse>(null);
+  const emuApiAlt = useEmuApi();
+  const [cpuState, setCpuState] = useState<CpuState>(null);
 
   const toHexa2 = (value?: number) =>
     value !== undefined ? value.toString(16).toUpperCase().padStart(2, "0") : "--";
@@ -42,7 +42,7 @@ const CpuPanel = () => {
 
   // --- Take care of refreshing the screen
   useStateRefresh(250, async () => {
-    setCpuState(await emuApi.getCpuState());
+    setCpuState(await emuApiAlt.getCpuState());
   });
 
   return (

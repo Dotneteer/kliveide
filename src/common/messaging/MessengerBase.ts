@@ -1,21 +1,11 @@
-// ====================================================================================================================
-// This file defines the MessengerBase class, which is responsible for providing correlated async message sending
-// between two processes. Each message contains a correlation identifier, and the message response contains the same
-// identifier. Thus the messenger class can match the returned answers with the corresponding request.
-// ====================================================================================================================
-
 import type { Channel, RequestMessage, ResponseMessage } from "./messages-core";
 
-/**
- * Base class for messengers that provide renderer-to-main and * main-to-renderer communication
- */
+// Base class for messengers that provide renderer-to-main and main-to-renderer communication
 export abstract class MessengerBase {
-  // Sequential number of the next request
+  // --- Sequential number of the next request
   protected _requestSeqNo = 1;
 
-  /**
-   * Stores resolvers to correlate incoming messages with outcoming ones
-   */
+  // Stores resolvers to correlate incoming messages with outcoming ones
   private _messageResolvers = new Map<
     number,
     (msg?: ResponseMessage | PromiseLike<ResponseMessage>) => void
@@ -34,15 +24,15 @@ export abstract class MessengerBase {
    * @param message Message to send out
    * @returns Response for the message
    */
-  async sendMessage<TResp extends ResponseMessage> (
+  async sendMessage (
     message: RequestMessage
-  ): Promise<TResp> {
+  ): Promise<any> {
     if (message.correlationId === undefined) {
       message.correlationId = this._requestSeqNo++;
     }
 
     // --- Create a promise and store the resolver function with the message ID.
-    const promise = new Promise<TResp>((resolve) => {
+    const promise = new Promise<any>((resolve) => {
       this._messageResolvers.set(
         message.correlationId!,
         resolve as (

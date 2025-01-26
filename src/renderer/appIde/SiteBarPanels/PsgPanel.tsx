@@ -12,7 +12,7 @@ const PsgPanel = () => {
   const [psgState, setPsgState] = useState<PsgChipState>(null);
 
   useStateRefresh(250, async () => {
-    const state = (await emuApi.getPsgState()).psgState;
+    const state = (await emuApi.getPsgState());
     setPsgState(state);
   });
 

@@ -17,8 +17,8 @@ import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 let monacoInitialized = false;
 
@@ -251,7 +251,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         // --- Have we deleted one or more EOLs?
         if (deletedLines > 0) {
           // --- Yes, scroll up breakpoints
-          await createEmulatorApi(messenger).scrollBreakpoints(
+          await createEmuApi(messenger).scrollBreakpoints(
             {
               resource: resourceName,
               line: change.range.startLineNumber
@@ -264,7 +264,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
         if (insertedLines > 0) {
           // --- Yes, scroll down breakpoints.
-          await createEmulatorApi(messenger).scrollBreakpoints(
+          await createEmuApi(messenger).scrollBreakpoints(
             {
               resource: resourceName,
               line: change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1)
@@ -274,7 +274,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         }
 
         // --- If changed, normalize breakpoints
-        await createEmulatorApi(messenger).normalizeBreakpoints(
+        await createEmuApi(messenger).normalizeBreakpoints(
           resourceName,
           editor.current.getModel()?.getLineCount() ?? -1
         );

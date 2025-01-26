@@ -1,8 +1,8 @@
 import { useRef } from "react";
 
-import type { EmuApi } from "@messaging/EmuApi";
+import type { EmuApi } from "@common/messaging/EmuApi";
 
-import { createEmulatorApi } from "@messaging/EmuApi";
+import { createEmuApi } from "@common/messaging/EmuApi";
 import { useRendererContext } from "./RendererProvider";
 
 export function useEmuApi(): EmuApi {
@@ -11,6 +11,6 @@ export function useEmuApi(): EmuApi {
   if (api.current) {
     return api.current;
   }
-  api.current = createEmulatorApi(messenger);
+  api.current = createEmuApi(messenger);
   return api.current;
 }

@@ -2,6 +2,7 @@ import { resolveHomeFilePath } from "../../main/projects";
 import { BinaryWriter } from "./BinaryWriter";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 const CPC_HEAD = "MV - CPCEMU Disk-File\r\nDisk-Info\r\n";
 const CPC_EXT_HEAD = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";
@@ -16,6 +17,7 @@ export function createDiskFile (
   const writer = new BinaryWriter();
   createDisk(writer, diskFormat);
   const fileExt = path.extname(filename);
+  foldername = foldername ? resolveHomeFilePath(foldername) : os.homedir();
   if (!fileExt) {
     filename += ".dsk";
   }

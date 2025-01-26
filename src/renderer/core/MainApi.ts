@@ -1,12 +1,9 @@
+import { createMainApi } from "@common/messaging/MainApi";
 import { useRef } from "react";
-
-import type { MainApi } from "@messaging/MainApi";
-
-import { createMainApi } from "@messaging/MainApi";
 import { useRendererContext } from "./RendererProvider";
 
-export function useMainApi(): MainApi {
-  const api = useRef<MainApi>(null);
+export function useMainApi() {
+  const api = useRef<ReturnType<typeof createMainApi>>(null);
   const { messenger } = useRendererContext();
   if (api.current) {
     return api.current;

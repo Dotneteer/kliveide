@@ -15,12 +15,11 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as a string
    */
   async readTextFile(path: string, encoding?: string): Promise<string> {
-    const response = await createMainApi(this.messenger).readTextFile(path, encoding);
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainReadTextFile call failed: ${response.message}`);
+    try {
+      return await createMainApi(this.messenger).readTextFile(path, encoding);
+    } catch (err) {
+      reportMessagingError(`readTextFile call failed: ${err.message}`);
       return null;
-    } else {
-      return response.contents;
     }
   }
 
@@ -30,13 +29,12 @@ export class FileProvider implements IFileProvider {
    * @returns The contents of a file as an Uint8Array instance
    */
   async readBinaryFile(path: string): Promise<Uint8Array> {
-    const response = await createMainApi(this.messenger).readBinaryFile(path);
-    if (response.type === "ErrorResponse") {
-      reportMessagingError(`MainBinaryTextFile call failed: ${response.message}`);
+    try {
+      return await createMainApi(this.messenger).readBinaryFile(path);
+    } catch (err) {
+      reportMessagingError(`readBinaryFile call failed: ${err.message}`);
       return null;
-    } else {
-      return response.contents;
-    }
+    } 
   }
 
   /**

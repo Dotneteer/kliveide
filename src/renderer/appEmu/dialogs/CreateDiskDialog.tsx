@@ -5,7 +5,6 @@ import { DialogRow } from "@renderer/controls/DialogRow";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
 import { useMainApi } from "@renderer/core/MainApi";
-import { reportMessagingError } from "@renderer/reportError";
 import { useEffect, useRef, useState } from "react";
 
 const NEW_DISK_FOLDER_ID = "newDiskFolder";
@@ -45,6 +44,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
       title="Create a new disk file"
       isOpen={true}
       fullScreen={false}
+      translateY={0}
       width={500}
       onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Create"
@@ -54,24 +54,18 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
         const name = result ? result[0] : filename;
         const folder = result ? result[1] : diskFileFolder;
         // --- Create the project
-        const response = await mainApi.createDiskFile(folder, name, diskType);
-        if (response.type === "ErrorResponse") {
-          reportMessagingError(`MainCreateDiskFile call failed: ${response.message}`);
-        } else {
-          if (response.errorMessage) {
-            // --- Display the error
-            await mainApi.displayMessageBox(
-              "error",
-              "Create Disk File Error",
-              response.errorMessage
-            );
-
-            // --- Keep the dialog open
-            return true;
-          }
+        try {
+          const path = await mainApi.createDiskFile(folder, name, diskType);
+          await mainApi.displayMessageBox(
+            "info",
+            "Disk created",
+            `Disk file successfully created: ${path}`
+          );
+          return false;
+        } catch (err) {
+          await mainApi.displayMessageBox("error", "Create Disk File Error", err.toString());
+          return true;
         }
-        // --- Close the dialog
-        return false;
       }}
       onClose={() => {
         onClose();
@@ -98,11 +92,11 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
-            if (response.folder) {
-              setDiskFileFolder(response.folder);
+            const folder = await mainApi.showOpenFolderDialog(NEW_DISK_FOLDER_ID);
+            if (folder) {
+              setDiskFileFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setDiskFileFolder(val);

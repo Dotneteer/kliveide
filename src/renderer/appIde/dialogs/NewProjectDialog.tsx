@@ -41,8 +41,8 @@ export const NewProjectDialog = ({ onClose }: Props) => {
   // --- Refresh the template list according to the current machine id
   const refreshTemplateList = async () => {
     if (!machineId) return;
-    const response = await mainApi.getTemplateDirectories(machineId);
-    setTemplateDirs(response.dirs.map((d) => ({ value: d, label: d })));
+    const dirs = await mainApi.getTemplateDirectories(machineId);
+    setTemplateDirs(dirs.map((d) => ({ value: d, label: d })));
   };
   useInitializeAsync(async () => {
     await refreshTemplateList();
@@ -62,7 +62,7 @@ export const NewProjectDialog = ({ onClose }: Props) => {
     const nValid = validationService.isValidFilename(projectName);
     setProjectIsValid(nValid);
     modalApi.current.enablePrimaryButton(fValid && nValid);
-    console.log("Validation", fValid, nValid)
+    console.log("Validation", fValid, nValid);
   }, [projectFolder, projectName]);
 
   return (
@@ -84,22 +84,20 @@ export const NewProjectDialog = ({ onClose }: Props) => {
 
         // --- Create the project
         console.log("project", machineId, modelId, templateId, name, folder);
-        const response = await mainApi.createKliveProject(machine, name, folder, modelId, template);
-
-        if (response.errorMessage) {
-          // --- Display the error
-          await mainApi.displayMessageBox(
-            "error",
-            "New Klive Project Error",
-            response.errorMessage
+        try {
+          const responsePath = await mainApi.createKliveProject(
+            machine,
+            name,
+            folder,
+            modelId,
+            template
           );
-
-          // --- Keep the dialog open
+          // --- Open the newly created project
+          await mainApi.openFolder(responsePath);
+        } catch (error) {
+          await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
           return true;
         }
-
-        // --- Open the newly created project
-        await mainApi.openFolder(response.path);
 
         // --- Dialog can be closed
         return false;
@@ -145,11 +143,11 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           buttonIcon="folder"
           buttonTitle="Select the root project folder"
           buttonClicked={async () => {
-            const response = await mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
-            if (response.folder) {
-              setProjectFolder(response.folder);
+            const folder = await mainApi.showOpenFolderDialog(NEW_PROJECT_FOLDER_ID);
+            if (folder) {
+              setProjectFolder(folder);
             }
-            return response.folder;
+            return folder;
           }}
           valueChanged={(val) => {
             setProjectFolder(val);

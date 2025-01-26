@@ -28,15 +28,15 @@ describe("Memory partitions", () => {
     { l: "R1", p: -2 },
     { l: "R2", p: undefined },
     { l: "R3", p: undefined },
-    { l: "0", p: 0 },
-    { l: "1", p: 1 },
-    { l: "2", p: 2 },
-    { l: "3", p: 3 },
-    { l: "4", p: 4 },
-    { l: "5", p: 5 },
-    { l: "6", p: 6 },
-    { l: "7", p: 7 },
-    { l: "8", p: undefined }
+    { l: "B0", p: 0 },
+    { l: "B1", p: 1 },
+    { l: "B2", p: 2 },
+    { l: "B3", p: 3 },
+    { l: "B4", p: 4 },
+    { l: "B5", p: 5 },
+    { l: "B6", p: 6 },
+    { l: "B7", p: 7 },
+    { l: "B8", p: undefined }
   ];
 
   sp128Cases.forEach((c) => {
@@ -53,15 +53,15 @@ describe("Memory partitions", () => {
     { l: "R2", p: -3 },
     { l: "R3", p: -4 },
     { l: "R4", p: undefined },
-    { l: "0", p: 0 },
-    { l: "1", p: 1 },
-    { l: "2", p: 2 },
-    { l: "3", p: 3 },
-    { l: "4", p: 4 },
-    { l: "5", p: 5 },
-    { l: "6", p: 6 },
-    { l: "7", p: 7 },
-    { l: "8", p: undefined }
+    { l: "B0", p: 0 },
+    { l: "B1", p: 1 },
+    { l: "B2", p: 2 },
+    { l: "B3", p: 3 },
+    { l: "B4", p: 4 },
+    { l: "B5", p: 5 },
+    { l: "B6", p: 6 },
+    { l: "B7", p: 7 },
+    { l: "B8", p: undefined }
   ];
 
   spp3Cases.forEach((c) => {
@@ -83,9 +83,9 @@ describe("Memory partitions", () => {
     { l: "R2", p: -3 },
     { l: "R3", p: -4 },
     { l: "R4", p: undefined },
-    { l: "A0", p: -5 },
-    { l: "A1", p: -6 },
-    { l: "A2", p: undefined },
+    { l: "Q0", p: -5 },
+    { l: "Q1", p: -6 },
+    { l: "Q2", p: undefined },
     { l: "DM", p: -7 },
     { l: "0", p: 0 },
     { l: "1", p: 1 },
@@ -96,8 +96,8 @@ describe("Memory partitions", () => {
     { l: "6", p: 6 },
     { l: "7", p: 7 },
     { l: "8", p: 8 },
-    { l: "223", p: 223 },
-    { l: "224", p: undefined }
+    { l: "df", p: 223 },
+    { l: "e0", p: undefined }
   ];
 
   spNextCases.forEach((c) => {

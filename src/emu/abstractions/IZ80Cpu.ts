@@ -294,6 +294,16 @@ export interface IZ80Cpu {
   opStartAddress: number;
 
   /**
+   * The memory addresses of the last memory read operations
+   */
+  lastMemoryReads: number[];
+
+  /**
+   * The memory addresses of the last memory write operations
+   */
+  lastMemoryWrites: number[];
+
+  /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
   hardReset(): void | Promise<void>;

@@ -2,7 +2,7 @@ import type { MachineConfigSet } from "@common/machines/info-types";
 import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
 
 export const registeredMachines = [
@@ -62,7 +62,7 @@ let loggedEmuOutputEvents = 0;
  */
 export async function logEmuEvent(text: string, foreground?: OutputColor): Promise<void> {
   loggedEmuOutputEvents++;
-  const ideApi = getIdeApi();
+  const ideApi = getIdeAltApi();
   await ideApi.displayOutput({
     pane: PANE_ID_EMU,
     text: `[${loggedEmuOutputEvents}] `,

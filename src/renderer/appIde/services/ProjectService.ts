@@ -252,20 +252,10 @@ class ProjectService implements IProjectService {
     let contents: string | Uint8Array;
     if (isBinary ?? fileTypeEntry?.isBinary) {
       // --- Read a binary file file
-      const response = await createMainApi(this.messenger).readBinaryFile(file);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      } else {
-        contents = response.contents;
-      }
+      contents = await createMainApi(this.messenger).readBinaryFile(file);
     } else {
       // --- Read a text file
-      const response = await createMainApi(this.messenger).readTextFile(file);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      } else {
-        contents = response.contents;
-      }
+      contents = await createMainApi(this.messenger).readTextFile(file);
     }
 
     // --- Done
@@ -305,15 +295,9 @@ class ProjectService implements IProjectService {
 
   private async saveFileContentInner(file: string, contents: string | Uint8Array): Promise<void> {
     if (typeof contents === "string") {
-      const response = await createMainApi(this.messenger).saveTextFile(file, contents);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      }
+      await createMainApi(this.messenger).saveTextFile(file, contents);
     } else {
-      const response = await createMainApi(this.messenger).saveBinaryFile(file, contents);
-      if (response.type === "ErrorResponse") {
-        throw new Error(response.message);
-      }
+      await createMainApi(this.messenger).saveBinaryFile(file, contents);
     }
 
     // --- Done.

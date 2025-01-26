@@ -12,8 +12,6 @@ import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
 import { Text } from "@renderer/controls/generic/Text";
 import { useMainApi } from "@renderer/core/MainApi";
-import { TooltipFactory } from "@renderer/controls/Tooltip";
-import { initial } from "lodash";
 
 const ScriptingHistoryPanel = () => {
   const { ideCommandsService, projectService } = useAppServices();

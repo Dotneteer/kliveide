@@ -49,7 +49,7 @@ class MainToIdeMessenger extends MessengerBase {
  * The singleton messenger instance of the messenger
  */
 let mainToIdeMessenger: MainToIdeMessenger | undefined;
-let ideApiInstance: IdeApi | undefined;
+let ideApiAltInstance: IdeApi | undefined;
 
 /**
  * Registers the messenger to be used with the main process.
@@ -57,7 +57,7 @@ let ideApiInstance: IdeApi | undefined;
  */
 export function registerMainToIdeMessenger(window: BrowserWindow) {
   mainToIdeMessenger = new MainToIdeMessenger(window);
-  ideApiInstance = createIdeApi(mainToIdeMessenger);
+  ideApiAltInstance = createIdeApi(mainToIdeMessenger);
 }
 
 /**
@@ -81,6 +81,6 @@ export function sendFromMainToIde<TResp extends ResponseMessage>(
 /**
  * Gets the EmuApi instance
  */
-export function getIdeApi(): IdeApi {
-  return ideApiInstance;
+export function getIdeAltApi(): IdeApi {
+  return ideApiAltInstance;
 }

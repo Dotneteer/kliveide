@@ -17,7 +17,7 @@ import {
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
-import { createEmulatorApi } from "@common/messaging/EmuApi";
+import { createEmuApi } from "@common/messaging/EmuApi";
 
 export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
@@ -79,6 +79,8 @@ type BreakpointWithAddressArgs = {
   resource?: string;
   line?: number;
   "-d"?: boolean;
+  "-r"?: boolean;
+  "-w"?: boolean;
 };
 
 abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWithAddressArgs> {
@@ -87,15 +89,21 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
       {
         name: "addrSpec"
       }
-    ]
+    ],
+    commandOptions: ["-r", "-w"]
   };
+
+  partitionLabels: string[];
 
   async validateCommandArgs(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<ValidationMessage[]> {
+    this.partitionLabels = await createEmuApi(context.messenger).getPartitionLabels();
     const addrArg = args.addrSpec?.trim() ?? "";
     let messages: ValidationMessage[] = [];
+
+    // --- Validate address and partition
     if (addrArg.startsWith("[")) {
       const addrInfo = context.service.projectService.getBreakpointAddressInfo(addrArg);
       if (!addrInfo) {
@@ -121,26 +129,31 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
             break;
           default:
             const segments = addrArg.toLowerCase().split(":");
-            if (segments.length === 2 && segments[0].length <= 2) {
+            if (segments.length === 2) {
               // --- Check for partition support
               const { machine } = context.service.machineService.getMachineInfo();
               const roms = machine.features?.[MF_ROM] ?? 0;
               const banks = machine.features?.[MF_BANK] ?? 0;
               if (!roms && !banks) {
-                messages = [{ type: ValidationMessageType.Error, message: "This model does not support partitions" }];
+                messages = [
+                  {
+                    type: ValidationMessageType.Error,
+                    message: "This model does not support partitions"
+                  }
+                ];
                 break;
               }
 
               // --- Extract partition information
-              const partition = await createEmulatorApi(context.messenger).parsePartitionLabel(segments[0]);
-              console.log("Partition: ", partition);
-              if (partition.value === undefined) {
+              const partition = await createEmuApi(context.messenger).parsePartitionLabel(
+                segments[0]
+              );
+              if (partition === undefined) {
                 messages = [{ type: ValidationMessageType.Error, message: "Invalid partition" }];
                 break;
               }
 
-              args.partition = partition.value;
-              console.log("Partition: ", partition);
+              args.partition = partition;
 
               // --- Extract address
               const tokens = parseCommand(segments[1]);
@@ -167,6 +180,11 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
       }
     }
 
+    // --- Validate options
+    if (args["-r"] && args["-w"]) {
+      return [validationError("Cannot set both read and write breakpoints")];
+    }
+
     // --- Done.
     return messages;
   }
@@ -175,29 +193,36 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
 export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
-  readonly usage = "bp-set <address>";
+  readonly usage = "bp-set <address> [-r] [-w]";
   readonly aliases = ["bp"];
 
   async execute(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const response = await context.emuApi.setBreakpoint({
+    const flag = await context.emuApi.setBreakpoint({
       address: args.address,
       resource: args.resource,
       partition: args.partition,
       line: args.line,
-      exec: true
+      exec: !(args["-r"] || args["-w"]),
+      memoryRead: args["-r"],
+      memoryWrite: args["-w"]
     });
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line,
+        memoryRead: args["-r"],
+        memoryWrite: args["-w"]
+      },
+      this.partitionLabels
+    );
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address ${addrKey} ${response.flag ? "set" : "updated"}`
+      `Breakpoint at address ${addrKey} ${flag ? "set" : "updated"}`
     );
     return commandSuccess;
   }
@@ -213,20 +238,27 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const response = await context.emuApi.removeBreakpoint({
+    const flag = await context.emuApi.removeBreakpoint({
       address: args.address,
       partition: args.partition,
       resource: args.resource,
       line: args.line,
-      exec: true
+      exec: !(args["-r"] || args["-w"]),
+      memoryRead: args["-r"],
+      memoryWrite: args["-w"]
     });
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
-    if (response.flag) {
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line,
+        memoryRead: args["-r"],
+        memoryWrite: args["-w"]
+      },
+      this.partitionLabels
+    );
+    if (flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
     } else {
       writeSuccessMessage(context.output, `No breakpoint has been set at address ${addrKey}`);
@@ -247,30 +279,37 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-d"]
+    commandOptions: ["-d", "-r", "-w"]
   };
 
   async execute(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const response = await context.emuApi.enableBreakpoint(
+    const flag = await context.emuApi.enableBreakpoint(
       {
         address: args.address,
         partition: args.partition,
         resource: args.resource,
         line: args.line,
-        exec: true
+        exec: !(args["-r"] || args["-w"]),
+        memoryRead: args["-r"],
+        memoryWrite: args["-w"]
       },
       !args["-d"]
     );
-    let addrKey = getBreakpointKey({
-      address: args.address,
-      partition: args.partition,
-      resource: args.resource,
-      line: args.line
-    });
-    if (response.flag) {
+    let addrKey = getBreakpointKey(
+      {
+        address: args.address,
+        partition: args.partition,
+        resource: args.resource,
+        line: args.line,
+        memoryRead: args["-r"],
+        memoryWrite: args["-w"]
+      },
+      this.partitionLabels
+    );
+    if (flag) {
       writeSuccessMessage(
         context.output,
         `Breakpoint at address ${addrKey} ${args["-d"] ? "disabled" : "enabled"}`

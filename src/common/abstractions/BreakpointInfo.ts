@@ -68,6 +68,11 @@ export type BreakpointInfo = {
   ioWrite?: boolean;
 
   /**
+   * The optional mask for I/O breakpoints
+   */
+  ioMask?: number;
+
+  /**
    * Memory breakpoint target hit counter
    */
   hitCount?: number;

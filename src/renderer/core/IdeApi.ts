@@ -1,8 +1,8 @@
 import { useRef } from "react";
 
-import type { IdeApi } from "@messaging/IdeApi";
+import type { IdeApi } from "@common/messaging/IdeApi";
 
-import { createIdeApi } from "@messaging/IdeApi";
+import { createIdeApi } from "@common/messaging/IdeApi";
 import { useRendererContext } from "./RendererProvider";
 
 export function useIdeApi(): IdeApi {
