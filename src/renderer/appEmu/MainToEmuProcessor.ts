@@ -227,7 +227,11 @@ class EmuMessageProcessor {
       lastMemoryReads: cpu.lastMemoryReads,
       lastMemoryReadValue: cpu.lastMemoryReadValue,
       lastMemoryWrites: cpu.lastMemoryWrites,
-      lastMemoryWriteValue: cpu.lastMemoryWriteValue
+      lastMemoryWriteValue: cpu.lastMemoryWriteValue,
+      lastIoReadPort: cpu.lastIoReadPort,
+      lastIoReadValue: cpu.lastIoReadValue,
+      lastIoWritePort: cpu.lastIoWritePort,
+      lastIoWriteValue: cpu.lastIoWriteValue
     };
   }
 

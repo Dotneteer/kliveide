@@ -28,7 +28,7 @@ const BreakpointsPanel = () => {
 
   // --- Gets the address to display in the context of the breakpoint
   const getBpAddress = (bp: BreakpointInfo): number => {
-    if (bp.memoryRead || bp.memoryWrite) {
+    if (bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) {
       return lastCpuState?.opStartAddress ?? -1;
     }
     return bp.address ?? -1;
@@ -38,6 +38,7 @@ const BreakpointsPanel = () => {
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
     const bpState = await emuApi.listBreakpoints();
+    console.log("Breakpoints", bpState);
     const cpuState = await emuApi.getCpuState();
     setLastCpuState(cpuState);
     pcValue.current = cpuState.pc;
@@ -114,7 +115,10 @@ const BreakpointsPanel = () => {
           fixItemHeight={true}
           itemRenderer={(idx) => {
             const bp = bps[idx];
-            const addrKey = getBreakpointKey(bp, partitionLabels);
+            const addrKey = getBreakpointKey(
+              { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
+              partitionLabels
+            );
             const addr = bp.address;
             const disabled = bp.disabled ?? false;
             let isCurrent = false;
@@ -128,6 +132,10 @@ const BreakpointsPanel = () => {
                 isCurrent = lastCpuState?.lastMemoryReads?.includes(addr) ?? false;
               } else if (bp.memoryWrite) {
                 isCurrent = lastCpuState?.lastMemoryWrites?.includes(addr) ?? false;
+              } else if (bp.ioRead) {
+                isCurrent = !!(lastCpuState?.lastIoReadPort === addr);
+              } else if (bp.ioWrite) {
+                isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
               }
             }
             return (
@@ -143,19 +151,25 @@ const BreakpointsPanel = () => {
                   disabled={disabled}
                   memoryRead={bp.memoryRead}
                   memoryWrite={bp.memoryWrite}
+                  ioRead={bp.ioRead}
+                  ioWrite={bp.ioWrite}
+                  ioMask={bp.ioMask}
                 />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
                 )}
-                <Label text={addrKey} width={addr !== undefined ? 56 : undefined} />
+                <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
                 {bp.address !== undefined && <Label text="" width={40} />}
                 {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
-                {(bp.memoryRead || bp.memoryWrite) &&
+                {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
                   machineState === MachineControllerState.Paused && (
                     <>
-                    <Secondary text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`} width={52} />
-                    <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+                      <Secondary
+                        text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
+                        width={52}
+                      />
+                      <Value text={disassLines.current[idx] ?? "???"} width="auto" />
                     </>
                   )}
               </div>

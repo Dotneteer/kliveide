@@ -314,6 +314,26 @@ export interface IZ80Cpu {
   lastMemoryWriteValue: number;
 
   /**
+   * The port address of the last I/O read operation
+   */
+  lastIoReadPort: number;
+
+  /**
+   * The last value read from the I/O port
+   */
+  lastIoReadValue: number;
+
+  /**
+   * The port address of the last I/O write operation
+   */
+  lastIoWritePort: number;
+
+  /**
+   * The last value written to the I/O port
+   */
+  lastIoWriteValue: number;
+
+  /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
   hardReset(): void | Promise<void>;

@@ -38,11 +38,6 @@ export type BreakpointInfo = {
   resolvedPartition?: number;
 
   /**
-   * Optional mask for I/O addresses
-   */
-  mask?: number;
-
-  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

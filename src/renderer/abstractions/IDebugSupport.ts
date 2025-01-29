@@ -37,6 +37,18 @@ export interface IDebugSupport {
   hasMemoryWrite(writes: number[], partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
+   * Gets IO read breakpoint information for the specified port
+   * @param port Port read during the current instruction
+   */
+  hasIoRead(port: number): boolean;
+
+  /**
+   * Gets IO write breakpoint information for the specified port
+   * @param port Port written during the current instruction
+   */
+  hasIoWrite(port: number): boolean;
+
+  /**
    * The last breakpoint we stopped in the frame
    */
   lastBreakpoint?: number;

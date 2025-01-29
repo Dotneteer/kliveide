@@ -185,7 +185,8 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Breakpoints",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
-    renderer: breakpointsPanelRenderer
+    renderer: breakpointsPanelRenderer,
+    expandedOnInit: true
   },
   {
     id: "sysVarsPanel",

@@ -186,6 +186,10 @@ export type CpuState = {
   lastMemoryReadValue: number;
   lastMemoryWrites: number[];
   lastMemoryWriteValue: number;
+  lastIoReadPort: number;
+  lastIoReadValue: number;
+  lastIoWritePort: number;
+  lastIoWriteValue: number;
 };
 
 export type UlaState = {
