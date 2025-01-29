@@ -18,6 +18,7 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { parseCommand, TokenType } from "@renderer/appIde/services/command-parser";
 import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { createEmuApi } from "@common/messaging/EmuApi";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 export class EraseAllBreakpointsCommand extends IdeCommandBase {
   readonly id = "bp-ea";
@@ -96,7 +97,7 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     commandOptions: ["-r", "-w", "-i", "-o"],
     namedOptions: [
       {
-        name: "-p",
+        name: "-m",
         type: "number"
       }
     ]
@@ -217,36 +218,24 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApi.setBreakpoint({
+    const bpDef = {
       address: args.address,
-      resource: args.resource,
       partition: args.partition,
+      resource: args.resource,
       line: args.line,
-      exec: !(args["-r"] || args["-w"]),
+      exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),
       memoryRead: args["-r"],
       memoryWrite: args["-w"],
       ioRead: args["-i"],
       ioWrite: args["-o"],
       ioMask: args["-m"]
-    });
-    let addrKey = getBreakpointKey(
-      {
-        address: args.address,
-        partition: args.partition,
-        resource: args.resource,
-        line: args.line,
-        memoryRead: args["-r"],
-        memoryWrite: args["-w"],
-        ioRead: args["-i"],
-        ioWrite: args["-o"],
-        ioMask: args["-m"]
-      },
-      this.partitionLabels
-    );
+    };
+    const flag = await context.emuApi.setBreakpoint(bpDef);
+    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
     writeSuccessMessage(
       context.output,
       `Breakpoint at address ${addrKey}` +
-        `${(args["-i"] || args["-o"]) && args["-m"] ? " /$" + toHexa4(args["-pm"]) : ""}` +
+        `${(args["-i"] || args["-o"]) && args["-m"] ? " /$" + toHexa4(args["-m"]) : ""}` +
         `${flag ? " set" : " updated"}`
     );
     return commandSuccess;
@@ -256,37 +245,27 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
 export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-del";
   readonly description = "Removes the breakpoint from the specified address";
-  readonly usage = "bp-del <address> [-r] [-w] [-i] [-o]";
+  readonly usage = "bp-del <address> [-r] [-w] [-i] [-o] [-m <port mask>]";
   readonly aliases = ["bd"];
 
   async execute(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApi.removeBreakpoint({
+    const bpDef: BreakpointInfo = {
       address: args.address,
       partition: args.partition,
       resource: args.resource,
       line: args.line,
-      exec: !(args["-r"] || args["-w"]),
+      exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),
       memoryRead: args["-r"],
       memoryWrite: args["-w"],
       ioRead: args["-i"],
-      ioWrite: args["-o"]
-    });
-    let addrKey = getBreakpointKey(
-      {
-        address: args.address,
-        partition: args.partition,
-        resource: args.resource,
-        line: args.line,
-        memoryRead: args["-r"],
-        memoryWrite: args["-w"],
-        ioRead: args["-i"],
-        ioWrite: args["-o"]
-      },
-      this.partitionLabels
-    );
+      ioWrite: args["-o"],
+      ioMask: args["-m"]
+    };
+    const flag = await context.emuApi.removeBreakpoint(bpDef);
+    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
     if (flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
     } else {
@@ -299,7 +278,7 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
 export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-en";
   readonly description = "Enables/disables a breakpoint";
-  readonly usage = "bp-en <address> [-r] [-w] [-i] [-o] [-d]";
+  readonly usage = "bp-en <address> [-r] [-w] [-i] [-o] [-d] [-m <port mask>]";
   readonly aliases = ["be"];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -308,40 +287,33 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-d"]
+    commandOptions: ["-r", "-w", "-i", "-o", "-d"],
+    namedOptions: [
+      {
+        name: "-m",
+        type: "number"
+      }
+    ]
   };
 
   async execute(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
-    const flag = await context.emuApi.enableBreakpoint(
-      {
-        address: args.address,
-        partition: args.partition,
-        resource: args.resource,
-        line: args.line,
-        exec: !(args["-r"] || args["-w"]),
-        memoryRead: args["-r"],
-        memoryWrite: args["-w"],
-        ioRead: args["-i"],
-        ioWrite: args["-o"]
-      },
-      !args["-d"]
-    );
-    let addrKey = getBreakpointKey(
-      {
-        address: args.address,
-        partition: args.partition,
-        resource: args.resource,
-        line: args.line,
-        memoryRead: args["-r"],
-        memoryWrite: args["-w"],
-        ioRead: args["-i"],
-        ioWrite: args["-o"]
-      },
-      this.partitionLabels
-    );
+    const bpDef: BreakpointInfo = {
+      address: args.address,
+      partition: args.partition,
+      resource: args.resource,
+      line: args.line,
+      exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"]),
+      memoryRead: args["-r"],
+      memoryWrite: args["-w"],
+      ioRead: args["-i"],
+      ioWrite: args["-o"],
+      ioMask: args["-m"]
+    };
+    const flag = await context.emuApi.enableBreakpoint(bpDef, !args["-d"]);
+    let addrKey = getBreakpointKey(bpDef, this.partitionLabels);
     if (flag) {
       writeSuccessMessage(
         context.output,

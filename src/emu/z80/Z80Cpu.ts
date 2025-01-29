@@ -646,6 +646,8 @@ export class Z80Cpu implements IZ80Cpu {
 
     this.lastMemoryReads = [];
     this.lastMemoryWrites = [];
+    this.lastIoReadPort = undefined;
+    this.lastIoWritePort = undefined;
   }
 
   /**
@@ -686,6 +688,8 @@ export class Z80Cpu implements IZ80Cpu {
 
     this.lastMemoryReads = [];
     this.lastMemoryWrites = [];
+    this.lastIoReadPort = undefined;
+    this.lastIoWritePort = undefined;
   }
 
   /**
@@ -797,6 +801,8 @@ export class Z80Cpu implements IZ80Cpu {
     if (m1Active) {
       this.lastMemoryReads = [];
       this.lastMemoryWrites = [];
+      this.lastIoReadPort = undefined;
+      this.lastIoWritePort = undefined;
 
       // --- During M1, DivMMC may page out memory banks
       this.beforeOpcodeFetch();

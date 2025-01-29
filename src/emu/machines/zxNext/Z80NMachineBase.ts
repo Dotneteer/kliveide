@@ -534,8 +534,8 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       // --- Allow the machine to do additional tasks after the completed CPU instruction
       this.afterInstructionExecuted();
 
-      // --- Check for memory read/write breakpoints
       if (this.executionContext.debugSupport) {
+        // --- Check for memory read/write breakpoints
         if (
           this.executionContext.debugSupport.hasMemoryRead(z80Machine.lastMemoryReads, (addr) =>
             z80Machine.getPartition(addr)
@@ -548,6 +548,14 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
             z80Machine.getPartition(addr)
           )
         ) {
+          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
+        }
+
+        // --- Check for port read/write breakpoints
+        if (this.executionContext.debugSupport.hasIoRead(z80Machine.lastIoReadPort)) {
+          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
+        }
+        if (this.executionContext.debugSupport.hasIoWrite(z80Machine.lastIoWritePort)) {
           return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
         }
       }
