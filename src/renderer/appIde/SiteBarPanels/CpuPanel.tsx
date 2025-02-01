@@ -234,6 +234,20 @@ const CpuPanel = () => {
           width={R16_WIDTH}
         />
       </div>
+      <div className={styles.cols}>
+        <Label text="IRV" width={LAB_WIDTH} />
+        <Value
+          text={toHexa2(cpuState?.lastIoReadValue ?? 0)}
+          tooltip="Last value read from the I/O port"
+          width={R16_WIDTH}
+        />
+        <Label text="IWV" width={LAB_WIDTH} />
+        <Value
+          text={toHexa2(cpuState?.lastIoWriteValue ?? 0)}
+          tooltip="Last value written to the I/O port"
+          width={R16_WIDTH}
+        />
+      </div>
       <Separator />
       <div className={styles.cols}>
         <Label text="IM" width={LAB_WIDTH} />
