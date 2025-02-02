@@ -38,7 +38,6 @@ const BreakpointsPanel = () => {
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
     const bpState = await emuApi.listBreakpoints();
-    console.log("Breakpoints", bpState);
     const cpuState = await emuApi.getCpuState();
     setLastCpuState(cpuState);
     pcValue.current = cpuState.pc;

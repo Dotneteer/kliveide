@@ -771,11 +771,13 @@ export class Z80Cpu implements IZ80Cpu {
       // --- RESET is active. Process it and then inactivate the signal
       this.reset();
       this.sigRST = false;
+      return;
     }
     // --- The CPU does not test the NMI signal while an instruction is being executed
     else if (this.sigNMI && this.prefix === OpCodePrefix.None) {
       // --- NMI is active. Process the non-maskable interrupt
       this.processNmi();
+      return;
     }
     // --- The CPU does not test the INT signal while an instruction is being executed
     else if (this.sigINT && this.prefix === OpCodePrefix.None) {
@@ -783,6 +785,7 @@ export class Z80Cpu implements IZ80Cpu {
       if (this.iff1 && this.eiBacklog === 0) {
         // --- Yes, INT is enabled, and the CPU has already executed the first instruction after EI.
         this.processInt();
+        return;
       }
     }
 
@@ -797,7 +800,7 @@ export class Z80Cpu implements IZ80Cpu {
 
     // --- Second, let's execute the M1 machine cycle that reads the next opcode from the memory.
     // --- For IX and IY indexed bit operations, the opcode is already read, the next byte is the displacement.
-    const m1Active = this.prefix === OpCodePrefix.None; // this.prefix != OpCodePrefix.DDCB && this.prefix != OpCodePrefix.FDCB;
+    const m1Active = this.prefix === OpCodePrefix.None;
     if (m1Active) {
       this.lastMemoryReads = [];
       this.lastMemoryWrites = [];
@@ -943,7 +946,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.pushPC();
     this.refreshMemory();
 
-    if (this.interruptMode == 2) {
+    if (this.interruptMode === 2) {
       // --- The official Zilog documentation states this:
       // --- "The programmer maintains a table of 16-bit starting addresses for every interrupt service routine.
       // --- This table can be located anywhere in memory. When an interrupt is accepted, a 16-bit pointer must

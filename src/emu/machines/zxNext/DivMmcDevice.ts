@@ -108,8 +108,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       this._mapram = false;
     }
     this._bank = value & 0x0f;
-
-    // TODO: Update DivMMC state
+    this.machine.memoryDevice.updateMemoryConfig();
   }
 
   set nextReg83Value(value: number) {
@@ -227,6 +226,8 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
+    const pc = this.machine.pc;
+
     if (!this.enableAutomap) {
       // --- No page in/out if automap is disabled or the memory is already paged in
       return;
@@ -239,7 +240,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       (memoryDevice.selectedRomMsb | memoryDevice.selectedRomLsb) === 0x03;
 
     // --- Check for traps
-    const pc = this.machine.pc;
     switch (pc) {
       case 0x0000:
       case 0x0008:

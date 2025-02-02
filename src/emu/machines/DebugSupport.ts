@@ -310,12 +310,10 @@ export class DebugSupport implements IDebugSupport {
             }
           }
         }
-        console.log("removeBreakpoint", address, this.breakpointFlags);
       }
 
       if (this.breakpointData.has(address)) {
         // --- Handle the additional data
-        console.log("removeBreakpoint", address, this.breakpointFlags);
         const prevData = this.breakpointData.get(address);
         if (partition !== undefined) {
           prevData.partitions = prevData.partitions.filter((p) => p[0] !== partition);
