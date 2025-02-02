@@ -33,7 +33,7 @@ import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
-import { MmcDevice } from "./MmcDevice";
+import { SdCardDevice } from "./SdCardDevice";
 import { CimHandler } from "./CimHandler";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
@@ -56,7 +56,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   divMmcDevice: DivMmcDevice;
 
-  mmcDevice: MmcDevice;
+  sdCardDevice: SdCardDevice;
 
   layer2Device: Layer2Device;
 
@@ -131,7 +131,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
-    this.mmcDevice = new MmcDevice(this);
+    this.sdCardDevice = new SdCardDevice(this);
     this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
@@ -157,7 +157,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.memoryDevice.reset();
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
-    this.mmcDevice.reset();
+    this.sdCardDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();

@@ -8,7 +8,7 @@ import { JoystickDevice } from "@emu/machines/zxNext/JoystickDevice";
 import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
 import { LoResDevice } from "@emu/machines/zxNext/LoResDevice";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
-import { MmcDevice } from "@emu/machines/zxNext/MmcDevice";
+import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
 import { MouseDevice } from "@emu/machines/zxNext/MouseDevice";
 import { NextKeyboardDevice } from "@emu/machines/zxNext/NextKeyboardDevice";
 import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
@@ -40,7 +40,7 @@ export interface IZxNextMachine extends IZ80Machine {
 
   divMmcDevice: DivMmcDevice;
 
-  mmcDevice: MmcDevice;
+  sdCardDevice: SdCardDevice;
 
   layer2Device: Layer2Device;
 

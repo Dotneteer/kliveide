@@ -6,7 +6,7 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 const READ_DELAY = 56;
 
-export class MmcDevice implements IGenericDevice<IZxNextMachine> {
+export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _selectedCard: number;
   private _cid: Uint8Array;
   private _commandIndex: number;
@@ -194,7 +194,7 @@ export class MmcDevice implements IGenericDevice<IZxNextMachine> {
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
           this._waitForBlock = true;
-          this._blockToWrite = new Uint8Array(1 + BYTES_PER_SECTOR);
+          this._blockToWrite = new Uint8Array(3 + BYTES_PER_SECTOR);
           this._dataIndex = 0;
           this._readCount++;
           this._response = new Uint8Array([0xff, 0x00]);
