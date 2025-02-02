@@ -1,98 +1,20 @@
-bp r2:$18bd
-First write of E7 --> R2:$18CC, 0xfe = select card 0
+1. Set a write breakpoint to $5ccb
+2. Go to the fifth hit (after the welcom screen)
+3. Set a breakpoint to $2e07
+4. Run, press space (#5ccb write will be reached)
 
-Wait for MMC command response
-ld bc,$0032      ; 10
-in a,($eb)       ; 11
-cp $ff           ; 7
-ret nz           ; 5
-djnz             ; 13
-in a,($eb)       ; 11
-cp $ff           ; 7
-ret nz           ; 11
+Comment: R1:$0993 -- DE points to the next source code character
+Comment: R1:$0574 -- HL points to the 
 
-After 57 T-States, response is ready
-
-CMD12: 0x4c 0x00 0x00 0x00 0x00 0xff
-RESP:  0x04 0xff 0xff 0xff 0xff 0xff
-
-CMD0: 0x40 0x00 0x00 0x00 0x00 0x95
-RESP: 0x01 0xff 0xff 0xff 0xff 0xff
+$2e07 ok -- The call from here is the issue ($2712)
+$26fe -- $e3 to 00 -- DIVMMC RAM 0 should be paged, but it remains the ROM
 
 
-bp r2:$19df --> CMD8
-
-CMD8: 0x48 0x00 0x00 0x01 0xaa 0x87
-RESP: 0x01 0x00 0x00 0x01 0xaa 0xff
-
-bp r2:$1a10 --> CMD55
-
-CMD55: 0x77 0x00 0x00 0x00 0x00 0xff
-
-bp r2:$1a19 --> CMD41
-
-CMD41: 0x69 0x40 0x00 0x00 0x00 0xff
-
-bp r2:$1a4f --> CMD58
-
-CMD58: 0x7a 0x00 0x00 0x00 0x00 0xff
-RESP: 0x00 0xc0 0xff 0x80 0x00
-
-bp r2:$18f2 --> CMD9
-
-CMD9: 0x49 0x00 0x00 0x00 0xff
-RESP: (HW)
-    0x00 0xfe 0x40 0x0e 0x00 0x32 0x5b 0x59 
-    0x00 0x00 0x73 0xdf 0x7f 0x80 0x0a 0x40 
-    0x00 0xc7 0x9e 0x08
-RESP: (CSpect) 
-    0x00 0xfe 0x40 0x00 0x00 0x5b 0x50 0x09 
-    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 
-    0x00 0xff 0xff 0xff
-
-bp r2:$19bb --> CMD9 completed successfully
-
-bp r3:$1f50 --> CMD17
-
-CMD17: 0x51 0x00 0x00 0x00 0x00 0xff
-RESP:  0x00 0xff 0xfe 512 bytes sector data
-
-r2:$1b51 ok
-r2:$1b5e ok
-r2:$1b6c ok
-r2:$1b79 ok
-r2:$1b89 ok
-r2:$1b8d ok
-r2:$1bc7 ok
-
-$1f64 --> After reading 314 sectors (all needed to display the start page)
-    $1c52 (RST 30), after second reach ok
-
-$1bae ok
-$0109 ok
-$044d ok
-$1a9f ok --> Memory paging issue during the call
-    $1ab7 ok --> Memory paging issue during the call
-    Issue at $1061> nextreg $51,a (A=$df) does not page in the right memory page
 
 
-Last stable breakpoint: $1c52 (after reading the 314 sectors, second reach)
-Last stable breakpoint: $1a9f 
 
-Write command>
 
-#1: (WRITE_BLOCK)
-OUT: 58 00 01 e1 2c ff
-IN : ff 00
-OUT: fe 512 bytes OUT ff ff 
-IN : 05 ff fe 
 
-#2: (SEND_STATUS)
-OUT: 4d 00 00 00 00 ff
-IN : ff 00 00
 
-deviation point:
-Wait for start screen
-$0953 ok
-$0942 ok
+
 

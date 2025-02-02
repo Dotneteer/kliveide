@@ -88,21 +88,25 @@ export const BreakpointIndicator = ({
 
   // --- Handle adding/removing a breakpoint
   const handleLeftClick = async () => {
-    const command =
+    let command =
       `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}` +
-      `${ioMask ? ` -m $${toHexa4(ioMask)}` : ""}`;
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}`;
+    if (ioRead || ioWrite) {
+      command += ` -m $${toHexa4(ioMask)}`;
+    }
     await ideCommandsService.executeCommand(command);
   };
 
   // --- Handle enabling/disabling a breakpoint
   const handleRightClick = async () => {
-    const command =
+    let command =
       `bp-en ${addrLabel} ${disabled ? "" : "-d"} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}` +
-      `${ioMask ? ` -m $${toHexa4(ioMask)}` : ""}`;
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}`;
+    if (ioRead || ioWrite) {
+      command += ` -m $${toHexa4(ioMask)}`;
+    }
     if (hasBreakpoint) {
       await ideCommandsService.executeCommand(command);
     }
