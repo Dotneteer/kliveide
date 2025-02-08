@@ -17,6 +17,11 @@ export type MachineInfo = {
   displayName: string;
 
   /**
+   * The character set of the machine
+   */
+  charSet: Record<number, CharDescriptor>;
+
+  /**
    * Machine features (all models have the same features)
    */
   features?: MachineFeatureSet;
@@ -143,6 +148,17 @@ export type MachineMenuRenderer = (
 export type HelpLinkInfo = {
   label?: string;
   url?: string;
+};
+
+
+export type CharDescriptor = {
+  // --- Character value
+  v?: string;
+
+  c?: "ctrl" | "pr" | "graph" | "udg" | "token";
+
+  // --- Character tooltip
+  t?: string;
 };
 
 /**

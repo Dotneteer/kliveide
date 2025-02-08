@@ -19,10 +19,11 @@ import {
   SpectrumColor
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
-import { ZxSpectrumChars } from "./char-codes";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "@renderer/utils/classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { ErrorBoundary } from "@renderer/controls/ErrorBoundary";
+import { useAppServices } from "../services/AppServicesProvider";
 
 type BasicViewState = {
   topIndex?: number;
@@ -43,6 +44,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   // --- Use these app state variables
   const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const { machineService } = useAppServices();
+  const machineCharSet = machineService.getMachineInfo()?.machine?.charSet;
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
@@ -95,14 +98,14 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
       // --- Start displaying the line
       lastLineNo = lineNo;
+      let lastCode = 0;
       buffer.resetColor();
-      let spaceBeforeToken = false;
       let segment = "";
       let withinQuotes = false;
 
       // --- Line number
       buffer.ink("cyan");
-      buffer.write(lineNo.toString().padStart(4, " ") + " ");
+      buffer.write(lineNo.toString().padStart(4, "\xa0") + "\xa0");
       buffer.resetColor();
 
       // --- Iterate through the line
@@ -126,7 +129,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           withinQuotes = !withinQuotes;
         }
 
-        const nextSymbol = ZxSpectrumChars[code];
+        const nextSymbol = machineCharSet[code];
         switch (nextSymbol.c) {
           case "ctrl":
             if (useCodes.current) {
@@ -222,13 +225,15 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
             }
             break;
           case "token":
-            if (spaceBeforeToken) segment += "\xa0";
-            segment += nextSymbol.t.toUpperCase();
-            const lastTokenChar = nextSymbol.t[nextSymbol.t.length - 1];
-            if (code > 0xa7 && lastTokenChar >= "A" && lastTokenChar <= "Z") {
-              segment += " ";
-              spaceBeforeToken = false;
+            if (
+              (lastCode >= "a".charCodeAt(0) && lastCode <= "z".charCodeAt(0)) ||
+              (lastCode >= "A".charCodeAt(0) && lastCode <= "Z".charCodeAt(0)) ||
+              (lastCode >= "0".charCodeAt(0) && lastCode <= "9".charCodeAt(0))
+            ) {
+              segment += "\xa0";
             }
+            segment += nextSymbol.t.toUpperCase();
+            segment += " ";
             break;
           default:
             segment = nextSymbol.v;
@@ -242,6 +247,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           buffer.write(segment);
           segment = "";
         }
+
+        lastCode = code;
       }
 
       // --- Next line
@@ -263,7 +270,10 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     // --- Done.
     const lines = buffer.getContents();
     cachedLines.current = lines;
-    setBasicLines(lines);
+    (async () => {
+      await new Promise((r) => setTimeout(r, 500));
+      setBasicLines(lines);
+    })();
   };
 
   // --- This function refreshes the BASIC list
@@ -278,7 +288,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
       showListing.current = response.osInitialized;
 
       // --- Calculate tooltips for pointed addresses
-      if (toRefresh) {
+      if (toRefresh && showListing.current) {
         createListing();
       }
     } finally {
@@ -305,7 +315,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   }, [topIndex, autoRefresh, showCodes, showSpectrumFont]);
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
-    if (!basicLines.length) return;
+    if (!basicLines?.length) return;
     vlApi.current?.scrollToIndex(topIndex, {
       align: "start"
     });
@@ -388,27 +398,28 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
       )}
       {showListing.current && basicLines && basicLines.length > 0 && (
         <div className={styles.listWrapper}>
-          <VirtualizedListView
-            items={basicLines}
-            approxSize={20}
-            fixItemHeight={false}
-            scrolled={() => {
-              if (!vlApi.current || cachedLines.current.length === 0) return;
-
-              storeTopAddress();
-            }}
-            vlApiLoaded={(api) => (vlApi.current = api)}
-            itemRenderer={(idx) => {
-              return (
-                <div className={styles.item}>
-                  <BasicLineDisplay
-                    spans={basicLines[idx].spans}
-                    showSpectrumFont={showSpectrumFont}
-                  />
-                </div>
-              );
-            }}
-          />
+          <ErrorBoundary>
+            <VirtualizedListView
+              items={basicLines}
+              approxSize={20}
+              fixItemHeight={false}
+              scrolled={() => {
+                if (!vlApi.current || cachedLines.current.length === 0) return;
+                storeTopAddress();
+              }}
+              vlApiLoaded={(api) => (vlApi.current = api)}
+              itemRenderer={(idx) => {
+                return (
+                  <div className={styles.item}>
+                    <BasicLineDisplay
+                      spans={basicLines[idx]?.spans}
+                      showSpectrumFont={showSpectrumFont}
+                    />
+                  </div>
+                );
+              }}
+            />
+          </ErrorBoundary>
         </div>
       )}
     </div>
