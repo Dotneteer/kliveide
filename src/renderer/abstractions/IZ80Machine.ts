@@ -237,4 +237,26 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Indicates if the machine's operating system is initialized
    */
   get isOsInitialized(): boolean;
+
+
+  /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any;
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command 
+   */
+  setFrameCommand(command: any): void;
+
+  /**
+   * Processes the frame command
+   */
+  processFrameCommand(): void;
+
+  /**
+   * Indicates that the frame has just completed
+   */
+  frameJustCompleted: boolean;
 }

@@ -16,7 +16,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _responseIndex: number;
   private _ocr: Uint8Array;
   private _commandParams: number[];
-  private _readCount: number;
   private _waitForBlock: boolean;
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
@@ -52,7 +51,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._responseIndex = -1;
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
-    this._readCount = 0;
     this._waitForBlock = false;
     this._blockToWrite = new Uint8Array(0);
     this._dataIndex = 0;
@@ -100,9 +98,12 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
 
         // --- Read the specified sector and prepare the response
         const sectorData = this._blockToWrite.slice(1, 1 + BYTES_PER_SECTOR);
-        this.machine.cimHandler.writeSector(sectorIndex, sectorData);
-        this._response = new Uint8Array([0x05, 0xff, 0xfe]);
-        this._responseIndex = 0;
+        this.machine.setFrameCommand({
+          command: "sd-write",
+          sector: sectorIndex,
+          data: sectorData
+        });
+        // this.writeSector(sectorIndex, sectorData);
       }
       return;
     }
@@ -121,8 +122,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // --- CMD0: GO_IDLE_STATE
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._response = new Uint8Array([0x01, 0xff, 0xff, 0xff, 0xff]);
-          this._responseIndex = 0;
+          this.setMmcResponse(new Uint8Array([0x01, 0xff, 0xff, 0xff, 0xff]));
         } else {
           this._commandIndex++;
         }
@@ -132,11 +132,12 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // --- CMD9: SEND_CSD
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._response = new Uint8Array([
-            0x00, 0xfe, 0x40, 0x00, 0x00, 0x5b, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0xff, 0xff, 0xff
-          ]);
-          this._responseIndex = 0;
+          this.setMmcResponse(
+            new Uint8Array([
+              0x00, 0xfe, 0x40, 0x00, 0x00, 0x5b, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+              0x00, 0x00, 0x00, 0xff, 0xff, 0xff
+            ])
+          );
         } else {
           this._commandIndex++;
         }
@@ -146,8 +147,17 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // --- CMD12: STOP_TRANSMISSION
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._response = new Uint8Array([0x04, 0xff, 0xff, 0xff, 0xff]);
-          this._responseIndex = 0;
+          this.setMmcResponse(new Uint8Array([0x04, 0xff, 0xff, 0xff, 0xff]));
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x4d:
+        // --- CMD13: SEND_STATUS
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this.setMmcResponse(new Uint8Array([0xff, 0x00, 0x00, 0xff]));
         } else {
           this._commandIndex++;
         }
@@ -157,8 +167,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // --- CMD8: SEND_EXT_CSD
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._response = new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]);
-          this._responseIndex = 0;
+          this.setMmcResponse(new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]));
         } else {
           this._commandIndex++;
         }
@@ -178,13 +187,11 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             this._commandParams[3];
 
           // --- Read the specified sector and prepare the response
-          const baseSector = this.machine.cimHandler.readSector(sectorIndex);
-          const response = new Uint8Array(3 + BYTES_PER_SECTOR);
-          response.set(new Uint8Array([0x00, 0xff, 0xfe]));
-          response.set(baseSector, 3);
-          this._readCount++;
-          this._response = response;
-          this._responseIndex = 0;
+          this.machine.setFrameCommand({
+            command: "sd-read",
+            sector: sectorIndex
+          });
+          // this.readSector(sectorIndex);
         }
         break;
 
@@ -196,9 +203,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
           this._waitForBlock = true;
           this._blockToWrite = new Uint8Array(3 + BYTES_PER_SECTOR);
           this._dataIndex = 0;
-          this._readCount++;
-          this._response = new Uint8Array([0xff, 0x00]);
-          this._responseIndex = 0;
+          this.setMmcResponse(new Uint8Array([0xff, 0x00]));
         }
         break;
 
@@ -259,5 +264,23 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- No result
     return 0x00;
+  }
+
+  setMmcResponse(response: Uint8Array): void {
+    this._response = response;
+    this._responseIndex = 0;
+  }
+
+  writeSector(sectorIndex: number, data: Uint8Array): void {
+    this.machine.cimHandler.writeSector(sectorIndex, data);
+    this.setMmcResponse(new Uint8Array([0x05, 0xff, 0xfe]));
+  }
+
+  readSector(sectorIndex: number): void {
+    const sectorData = this.machine.cimHandler.readSector(sectorIndex);
+    const response = new Uint8Array(3 + BYTES_PER_SECTOR);
+    response.set(new Uint8Array([0x00, 0xff, 0xfe]));
+    response.set(sectorData, 3);
+    this.setMmcResponse(response);
   }
 }

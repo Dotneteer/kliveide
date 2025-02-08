@@ -168,11 +168,41 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any {
+    // --- Override in derived classes
+    return undefined;
+  }
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command
+   */
+  setFrameCommand(_command: any): void {
+    // --- Override in derived classes
+  }
+
+  /**
+   * Processes the frame command
+   */
+  processFrameCommand(): void {
+    // --- Override in derived classes
+  }
+
+  /**
+   * Indicates that the frame has just completed
+   */
+  get frameJustCompleted(): boolean {
+    return this._frameCompleted;
+  }
+
+  /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
-    return this.executionContext.frameTerminationMode == FrameTerminationMode.Normal
+    return this.executionContext.debugStepMode === DebugStepMode.NoDebug
       ? this.executeMachineLoopWithNoDebug()
       : this.executeMachineLoopWithDebug();
   }

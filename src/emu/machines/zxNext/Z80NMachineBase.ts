@@ -26,6 +26,9 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   // --- Store machine-specific properties here
   private readonly _machineProps = new Map<string, any>();
 
+  // --- Optional frame command
+  private _frameCommand: any;
+
   // --- This flag indicates that the last machine frame has been completed.
   protected _frameCompleted: boolean;
 
@@ -178,11 +181,39 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   }
 
   /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any {
+    return this._frameCommand;
+  }
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command
+   */
+  setFrameCommand(command: any): void {
+    this._frameCommand = command;
+  }
+
+  /**
+   * Processes the frame command
+   */
+  abstract processFrameCommand(): void;
+
+  /**
+   * Indicates that the frame has just completed
+   */
+  get frameJustCompleted(): boolean {
+    return this._frameCompleted;
+  }
+
+  /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
-    return this.executionContext.frameTerminationMode == FrameTerminationMode.Normal
+    this.setFrameCommand(null);
+    return this.executionContext.debugStepMode === DebugStepMode.NoDebug
       ? this.executeMachineLoopWithNoDebug()
       : this.executeMachineLoopWithDebug();
   }
@@ -458,7 +489,13 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
           FrameTerminationMode.UntilExecutionPoint);
       }
 
+      // --- Test if the machine frame has just been completed.
       this._frameCompleted = this.tacts >= this._nextFrameStartTact;
+
+      // --- Exit, if there is a frame command to execute
+      if (this.getFrameCommand()) {
+        return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+      }
     } while (!this._frameCompleted);
 
     // --- Calculate the overflow, we need this value in the next frame
@@ -581,6 +618,11 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       }
 
       this._frameCompleted = this.tacts >= this._nextFrameStartTact;
+
+      // --- Exit, if there is a frame command to execute
+      if (this.getFrameCommand()) {
+        return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+      }
     } while (!this._frameCompleted);
 
     // --- Calculate the overflow, we need this value in the next frame

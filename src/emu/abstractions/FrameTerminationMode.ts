@@ -15,5 +15,5 @@ export const enum FrameTerminationMode {
   /**
    * The execution completes when the current PC address (and an optional memory partition) reaches a specified termination point.
    */
-  UntilExecutionPoint
+  UntilExecutionPoint,
 }

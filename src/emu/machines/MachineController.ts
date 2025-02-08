@@ -444,10 +444,13 @@ export class MachineController implements IMachineController {
         const frameStartTime = performance.now();
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
-        const frameCompleted = termination === FrameTerminationMode.Normal;
+        const frameCompleted =
+          termination === FrameTerminationMode.Normal && this.machine.frameJustCompleted;
         let savedFileInfo: SavedFileInfo;
         let diskAChanges: SectorChanges;
         let diskBChanges: SectorChanges;
+
+        // --- Handle frame completion events
         if (frameCompleted) {
           // --- Check for file to save
           savedFileInfo = this.machine.getMachineProperty(SAVED_TO_TAPE) as SavedFileInfo;
@@ -467,6 +470,8 @@ export class MachineController implements IMachineController {
             this.machine.setMachineProperty(DISK_B_CHANGES);
           }
         }
+
+        // --- Refresh the UI, if required so
         this.frameCompleted?.fire({
           fullFrame: frameCompleted,
           savedFileInfo,
@@ -474,6 +479,8 @@ export class MachineController implements IMachineController {
           diskBChanges,
           clockMultiplier: this.machine.clockMultiplier
         });
+
+        // --- Calculate diagnostics
         const frameTime = performance.now() - frameStartTime;
         if (frameCompleted) {
           this.frameStats.frameCount++;
@@ -496,11 +503,13 @@ export class MachineController implements IMachineController {
                 this.frameStats.lastFrameTimeInMs) /
               this.frameStats.frameCount;
 
+        // --- Handle termination
         if (this._cancelRequested) {
           // --- The machine is paused or stopped
           this.context.canceled = true;
           return;
         }
+
         if (termination !== FrameTerminationMode.Normal) {
           this.state = MachineControllerState.Paused;
           this._machineTask = undefined;
@@ -515,12 +524,21 @@ export class MachineController implements IMachineController {
           return;
         }
 
-        // --- Calculate the time to wait before the next machine frame starts
-        if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
-          const curTime = performance.now();
-          const toWait = Math.floor(nextFrameTime - curTime);
-          await delay(toWait - 2);
-          nextFrameTime += nextFrameGap;
+        // --- Execute the optional frame command
+        const frameCommand = this.machine.getFrameCommand();
+        if (frameCommand) {
+          this.machine.processFrameCommand();
+        }
+
+        // --- Wait for the next frame in case of normal termination
+        if (frameCompleted) {
+          // --- Calculate the time to wait before the next machine frame starts
+          if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
+            const curTime = performance.now();
+            const toWait = Math.floor(nextFrameTime - curTime);
+            await delay(toWait - 2);
+            nextFrameTime += nextFrameGap;
+          }
         }
       } while (true);
     })();

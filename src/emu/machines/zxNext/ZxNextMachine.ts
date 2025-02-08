@@ -108,7 +108,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Represents the MMC image attached to the machine
    */
-  cimHandler: CimHandler
+  cimHandler: CimHandler;
 
   /**
    * Initialize the machine
@@ -139,10 +139,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
-    this.screenDevice = new NextScreenDevice(
-      this,
-      NextScreenDevice.NextScreenConfiguration
-    );
+    this.screenDevice = new NextScreenDevice(this, NextScreenDevice.NextScreenConfiguration);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
     this.joystickDevice = new JoystickDevice(this);
@@ -490,7 +487,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param tact Machine frame tact
    * @param value Contention value
    */
-  setContentionValue(tact: number, value: number): void {
+  setContentionValue(_tact: number, _value: number): void {
     // TODO: Implement this
   }
 
@@ -499,7 +496,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param tact Machine frame tact
    * @returns The contention value associated with the specified tact.
    */
-  getContentionValue(tact: number): number {
+  getContentionValue(_tact: number): number {
     // TODO: Implement this
     return 0;
   }
@@ -533,7 +530,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
-    
   }
 
   /**
@@ -547,7 +543,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
-  protected delayContendedIo(address: number): void {
+  protected delayContendedIo(_address: number): void {
     // TODO: Implement this
   }
 
@@ -572,7 +568,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   getAspectRatio(): [number, number] {
     return this.screenDevice.getAspectRatio();
   }
- 
+
   /**
    * Gets the buffer that stores the rendered pixels
    * @returns
@@ -674,9 +670,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   /**
    * Gets the main execution point information of the machine
-   * @param model Machine model to use for code execution
+   * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
     // TODO: Implement this
     return [];
   }
@@ -757,4 +753,22 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency = 1;
+
+  /**
+   * Processes the frame command
+   */
+  processFrameCommand(): void {
+    const frameCommand = this.getFrameCommand();
+    switch (frameCommand.command) {
+      case "sd-write":
+        this.sdCardDevice.writeSector(frameCommand.sector, frameCommand.data);
+        break;
+      case "sd-read":
+        this.sdCardDevice.readSector(frameCommand.sector);
+        break;
+      default:
+        console.log("Unknown frame command", frameCommand);
+        break;
+    }
+  }
 }
