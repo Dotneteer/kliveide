@@ -185,6 +185,14 @@ class MainApiImpl {
   async checkBuildRoot(_filename: string): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async readSdCardSector(_sectorIndex: number): Promise<Uint8Array> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async writeSdCardSector(_sectorIndex: number, _data: Uint8Array): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 export type MainApi = MainApiImpl;

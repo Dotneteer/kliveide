@@ -30,7 +30,8 @@
   @include fill-parent-flex;
   box-sizing: border-box;
   flex-direction: column;
-  user-select: none;
+  user-select: text;
+  padding-left: 4px;
 }
 
 .item {
@@ -38,10 +39,6 @@
   width: fit-content;
   overflow-x: hidden;
   word-break: break-all;
-
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-  }
 }
 
 .spectrum {

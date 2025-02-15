@@ -1,18 +1,12 @@
-1. Set a write breakpoint to $5ccb
-2. Go to the fifth hit (after the welcom screen)
-3. Set a breakpoint to $2e07
-4. Run, press space (#5ccb write will be reached)
+writing block
 
-Comment: R1:$0993 -- DE points to the next source code character
-Comment: R1:$0574 -- HL points to the 
+58 00 01 e1 2c ff
 
-$2e07 ok -- The call from here is the issue ($2712)
-$26fe -- $e3 to 00 -- DIVMMC RAM 0 should be paged, but it remains the ROM
+GET STATUS
 
+4d 00 00 00 00 ff 
 
-
-
-
+ff 00 00 ff
 
 
 

@@ -33,9 +33,10 @@ import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
-import { MmcDevice } from "./MmcDevice";
-import { CimHandler } from "./CimHandler";
+import { SdCardDevice } from "./SdCardDevice";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { createMainApi } from "@common/messaging/MainApi";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -56,7 +57,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   divMmcDevice: DivMmcDevice;
 
-  mmcDevice: MmcDevice;
+  sdCardDevice: SdCardDevice;
 
   layer2Device: Layer2Device;
 
@@ -106,11 +107,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   tapeDevice: ITapeDevice;
 
   /**
-   * Represents the MMC image attached to the machine
-   */
-  cimHandler: CimHandler
-
-  /**
    * Initialize the machine
    */
   constructor(public readonly modelInfo?: MachineModel) {
@@ -131,7 +127,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
-    this.mmcDevice = new MmcDevice(this);
+    this.sdCardDevice = new SdCardDevice(this);
     this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
@@ -139,10 +135,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
-    this.screenDevice = new NextScreenDevice(
-      this,
-      NextScreenDevice.NextScreenConfiguration
-    );
+    this.screenDevice = new NextScreenDevice(this, NextScreenDevice.NextScreenConfiguration);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
     this.joystickDevice = new JoystickDevice(this);
@@ -157,7 +150,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.memoryDevice.reset();
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
-    this.mmcDevice.reset();
+    this.sdCardDevice.reset();
     this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();
@@ -193,9 +186,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Get the alternate ROM file
     romContents = await this.loadRomFromFile("roms/enAltZX.rom");
     this.memoryDevice.upload(romContents, OFFS_ALT_ROM_0);
-
-    const mmcContents = await this.loadRomFromFile("mmc/ks2.cim");
-    this.cimHandler = new CimHandler(mmcContents);
   }
 
   /**
@@ -490,7 +480,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param tact Machine frame tact
    * @param value Contention value
    */
-  setContentionValue(tact: number, value: number): void {
+  setContentionValue(_tact: number, _value: number): void {
     // TODO: Implement this
   }
 
@@ -499,7 +489,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param tact Machine frame tact
    * @returns The contention value associated with the specified tact.
    */
-  getContentionValue(tact: number): number {
+  getContentionValue(_tact: number): number {
     // TODO: Implement this
     return 0;
   }
@@ -533,7 +523,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
-    
   }
 
   /**
@@ -547,7 +536,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
-  protected delayContendedIo(address: number): void {
+  protected delayContendedIo(_address: number): void {
     // TODO: Implement this
   }
 
@@ -572,7 +561,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   getAspectRatio(): [number, number] {
     return this.screenDevice.getAspectRatio();
   }
- 
+
   /**
    * Gets the buffer that stores the rendered pixels
    * @returns
@@ -674,9 +663,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   /**
    * Gets the main execution point information of the machine
-   * @param model Machine model to use for code execution
+   * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
     // TODO: Implement this
     return [];
   }
@@ -757,4 +746,26 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency = 1;
+
+  /**
+   * Processes the frame command
+   */
+  async processFrameCommand(messenger: MessengerBase): Promise<void> {
+    const frameCommand = this.getFrameCommand();
+    switch (frameCommand.command) {
+      case "sd-write":
+        await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+        this.sdCardDevice.setWriteResponse();
+        //this.sdCardDevice.writeSector(frameCommand.sector, frameCommand.data);
+        break;
+      case "sd-read":
+        const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+        this.sdCardDevice.setReadResponse(sectorData);
+        //this.sdCardDevice.readSector(frameCommand.sector);
+        break;
+      default:
+        console.log("Unknown frame command", frameCommand);
+        break;
+    }
+  }
 }

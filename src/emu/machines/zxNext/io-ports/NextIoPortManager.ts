@@ -355,15 +355,15 @@ export class NextIoPortManager {
       port: 0xe7,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0111,
-      writerFns: (_, v) => { machine.mmcDevice.selectedCard = v },
+      writerFns: (_, v) => { machine.sdCardDevice.selectedCard = v },
     });
     r({
       description: "SPI DATA",
       port: 0xeb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_1011,
-      readerFns: () => machine.mmcDevice.readMmcData(),
-      writerFns: (_, v) => { machine.mmcDevice.writeMmcData(v) }
+      readerFns: () => machine.sdCardDevice.readMmcData(),
+      writerFns: (_, v) => { machine.sdCardDevice.writeMmcData(v) }
     });
     r({
       description: "divMMC Control",

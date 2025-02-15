@@ -10,6 +10,7 @@ import type { IMachineEventHandler } from "./IMachineEventHandler";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import type { MachineConfigSet } from "@common/machines/info-types";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from separate hardware
@@ -237,4 +238,26 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Indicates if the machine's operating system is initialized
    */
   get isOsInitialized(): boolean;
+
+
+  /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any;
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command 
+   */
+  setFrameCommand(command: any): void;
+
+  /**
+   * Processes the frame command
+   */
+  processFrameCommand(messenger: MessengerBase): Promise<void>;
+
+  /**
+   * Indicates that the frame has just completed
+   */
+  frameJustCompleted: boolean;
 }

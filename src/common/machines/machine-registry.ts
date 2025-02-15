@@ -27,6 +27,7 @@ import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/z80-disassemble
 import { Z88CustomDisassembler } from "@renderer/appIde/z80-disassembler/z88-custom.disassembler";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
+import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
 
 /**
  * The registry of available machine types with their available models
@@ -35,6 +36,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: MI_SPECTRUM_48,
     displayName: "ZX Spectrum 48K",
+    charSet: ZxSpectrumChars,
     features: {
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true
@@ -71,6 +73,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: MI_SPECTRUM_128,
     displayName: "ZX Spectrum 128K",
+    charSet: ZxSpectrumChars,
     features: {
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true,
@@ -83,6 +86,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: MI_SPECTRUM_3E,
     displayName: "ZX Spectrum +2E/+3E",
+    charSet: ZxSpectrumChars,
     features: {
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true,
@@ -118,6 +122,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: MI_ZXNEXT,
     displayName: "ZX Spectrum Next",
+    charSet: ZxNextChars,
     features: {
       [MF_TAPE_SUPPORT]: false,
       [MF_ULA]: true,
@@ -133,6 +138,7 @@ export const machineRegistry: MachineInfo[] = [
   {
     machineId: MI_Z88,
     displayName: "Cambridge Z88",
+    charSet: ZxSpectrumChars,
     features: {
       [MF_BANK]: 256,
       [MF_BLINK]: true
@@ -294,6 +300,25 @@ export const machineRegistry: MachineInfo[] = [
     }
   }
 ];
+
+/**
+ * Gets the name of the specified machine
+ * @param machineId Machine ID to get
+ * @param modelId Model ID to get
+ * @returns Model name
+ */
+export function getMachineName(machineId: string, modelId?: string): string {
+  const machine = machineRegistry.find((m) => m.machineId === machineId);
+  if (!machine) {
+    return "";
+  }
+  if (!modelId) {
+    return machine.displayName;
+  }
+  const model = machine.models?.find((m) => m.modelId === modelId);
+  return model?.displayName ?? "";
+}
+
 
 /**
  * Gets all available machine models

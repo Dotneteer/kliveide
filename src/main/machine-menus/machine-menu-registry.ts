@@ -4,18 +4,12 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
-  MI_Z88
+  MI_Z88,
+  MI_ZXNEXT
 } from "@common/machines/constants";
-import {
-  tapeMenuRenderer,
-  spectrumIdeRenderer,
-  diskMenuRenderer
-} from "./zx-specrum-menus";
-import {
-  z88KeyboardLayoutRenderer,
-  z88LcdRenderer,
-  z88ResetRenderer,
-} from "./z88-menus";
+import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-specrum-menus";
+import { z88KeyboardLayoutRenderer, z88LcdRenderer, z88ResetRenderer } from "./z88-menus";
+import { initializeZxSpectrumNext, sdCardMenuRenderer, setupZxSpectrumNext } from "./zx-next-menus";
 
 /**
  * Machine-specific menu information
@@ -40,7 +34,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     machineItems: (windowInfo, machine, model) => [
       ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
       ...z88LcdRenderer(windowInfo, machine, model),
-      ...z88ResetRenderer(windowInfo, machine, model),
+      ...z88ResetRenderer(windowInfo, machine, model)
     ],
     helpLinks: [
       {
@@ -69,5 +63,13 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
         url: "https://gitlab.com/bits4fun"
       }
     ]
+  },
+  [MI_ZXNEXT]: {
+    machineItems: (windowInfo, machine, model) => [
+      ...sdCardMenuRenderer(windowInfo, machine, model)
+    ],
+    ideItems: spectrumIdeRenderer,
+    initializer: initializeZxSpectrumNext,
+    setup: setupZxSpectrumNext
   }
 };

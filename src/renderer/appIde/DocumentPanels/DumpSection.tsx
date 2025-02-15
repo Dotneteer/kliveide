@@ -2,8 +2,11 @@ import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "@renderer/utils/classnames";
 import { toHexa4, toHexa2 } from "../services/ide-commands";
-import { ZxSpectrumChars } from "./char-codes";
 import styles from "./DumpSection.module.scss";
+import { useAppServices } from "../services/AppServicesProvider";
+import { CharDescriptor } from "@common/machines/info-types";
+import { useEffect } from "react";
+import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
 type DumpProps = {
   showPartitions?: boolean;
@@ -23,6 +26,16 @@ export const DumpSection = ({
   pointedInfo
 }: DumpProps) => {
   if (!memory) return null;
+
+  const { machineService } = useAppServices();
+  const machineCharSet = machineService.getMachineInfo()?.machine?.charSet;
+  if (characterSet === EMPTY_OBJECT) {
+    initTooltipCache(machineCharSet);
+  }
+  
+  useEffect(() => {
+    initTooltipCache(machineCharSet);
+  }, [machineCharSet]);
 
   return (
     <div className={classnames(styles.dumpSection)}>
@@ -169,7 +182,7 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
 const CharValue = ({ address, value }: ByteValueProps) => {
   const hasValue = value !== undefined;
   const ref = useTooltipRef(value);
-  const valueInfo = ZxSpectrumChars[(value ?? 0x20) & 0xff];
+  const valueInfo = characterSet[(value ?? 0x20) & 0xff];
   let text = valueInfo.v ?? ".";
   const title = `Value at $${toHexa4(address)} (${address}):\n${
     tooltipCache[value]
@@ -193,16 +206,21 @@ const CharValue = ({ address, value }: ByteValueProps) => {
 };
 
 // --- Cache tooltip value
-const tooltipCache: string[] = [];
-for (let i = 0; i < 0x100; i++) {
-  const valueInfo = ZxSpectrumChars[i];
-  let description = valueInfo.t ?? "";
-  if (valueInfo.c === "graph") {
-    description = "(graphics)";
-  } else if (valueInfo.c) {
-    description = valueInfo.t ?? "";
+let tooltipCache: string[] = [];
+let characterSet: Record<number, CharDescriptor> = EMPTY_OBJECT;
+function initTooltipCache(charset: Record<number, CharDescriptor>) {
+  tooltipCache = [];
+  characterSet = charset;
+  for (let i = 0; i < 0x100; i++) {
+    const valueInfo = charset[i];
+    let description = valueInfo.t ?? "";
+    if (valueInfo.c === "graph") {
+      description = "(graphics)";
+    } else if (valueInfo.c) {
+      description = valueInfo.t ?? "";
+    }
+    tooltipCache[i] =
+      `$${toHexa2(i)} (${i}, %${i.toString(2)})\n` +
+      `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
   }
-  tooltipCache[i] =
-    `$${toHexa2(i)} (${i}, %${i.toString(2)})\n` +
-    `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
 }
