@@ -171,4 +171,6 @@ export type MachineMenuInfo = {
   ideItems?: MachineMenuRenderer;
   helpItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
+  initializer?: () => Promise<void>;
+  setup?: () => Promise<void>;
 };

@@ -302,6 +302,25 @@ export const machineRegistry: MachineInfo[] = [
 ];
 
 /**
+ * Gets the name of the specified machine
+ * @param machineId Machine ID to get
+ * @param modelId Model ID to get
+ * @returns Model name
+ */
+export function getMachineName(machineId: string, modelId?: string): string {
+  const machine = machineRegistry.find((m) => m.machineId === machineId);
+  if (!machine) {
+    return "";
+  }
+  if (!modelId) {
+    return machine.displayName;
+  }
+  const model = machine.models?.find((m) => m.modelId === modelId);
+  return model?.displayName ?? "";
+}
+
+
+/**
  * Gets all available machine models
  * @returns
  */

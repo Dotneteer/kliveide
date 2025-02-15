@@ -13,7 +13,7 @@ export const CIM_HEADER = "CIMF";
  * This class is responsible for managing the file system of the CIM.
  */
 export class CimFileManager {
-  createFile(name: string, sizeInMegaByte: number): CimFile {
+  createFile(name: string, sizeInMegaByte: number, isReadonly = false): CimFile {
     // --- Name must not be empty or whitespace only
     if (!name || name.trim() === "") {
       throw new Error("Invalid name");
@@ -35,7 +35,7 @@ export class CimFileManager {
       }
     }
 
-    const cimFile = new CimFile(name, sizeInMegaByte, selectedClusterSize, clusterCount);
+    const cimFile = new CimFile(name, sizeInMegaByte, selectedClusterSize, clusterCount, isReadonly);
 
     // --- Create the file
     fs.writeFileSync(name, new Uint8Array(0x1_0000));
@@ -94,7 +94,7 @@ const availableClusterSizes = [1, 2, 4, 8, 16];
 export class CimFile {
   private _filename: string;
   private _cimInfo: CimInfo;
-  constructor(filename: string, maxSize: number, clusterSize: number, clusterCount: number) {
+  constructor(filename: string, maxSize: number, clusterSize: number, clusterCount: number, isReadOnly = false) {
     this._filename = filename;
     this._cimInfo = {
       header: CIM_HEADER,
@@ -105,7 +105,7 @@ export class CimFile {
       clusterSize,
       maxClusters: 0,
       maxSize,
-      reserved: 0,
+      reserved: isReadOnly ? 1 : 0,
       clusterMap: []
     };
 
@@ -192,6 +192,10 @@ export class CimFile {
   }
 
   writeSector(sectorIndex: number, data: Uint8Array): void {
+    if (this._cimInfo.reserved) {
+      throw new Error("The file is read-only");
+    }
+    
     this.checkSectorIndex(sectorIndex);
 
     // --- Check the data length
@@ -246,6 +250,11 @@ export class CimFile {
       fs.closeSync(fd);
     }
     return buffer;
+  }
+
+  setReadonly(readOnly: boolean): void {
+    this._cimInfo.reserved = readOnly ? 0 : 1;
+    this.writeHeader();
   }
 
   private checkSectorIndex(sectorIndex: number): void {

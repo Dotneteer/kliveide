@@ -1,6 +1,5 @@
 import { CimInfo } from "@abstractions/CimInfo";
 import { BinaryReader } from "@common/utils/BinaryReader";
-import { head } from "lodash";
 
 export const MAX_CLUSTERS = 32760;
 

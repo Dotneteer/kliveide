@@ -4,35 +4,8 @@ import type { OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
 import { PANE_ID_EMU } from "@common/integration/constants";
-
-export const registeredMachines = [
-  {
-    id: "sp48",
-    displayName: "ZX Spectrum 48K"
-  },
-  {
-    id: "sp128",
-    displayName: "ZX Spectrum 128K"
-  },
-  {
-    id: "spp2e",
-    displayName: "ZX Spectrum +2E"
-  },
-  {
-    id: "spp3e",
-    displayName: "ZX Spectrum +3E WIP (1 FDD)",
-    supportedFdds: 1
-  },
-  {
-    id: "spp3ef2",
-    displayName: "ZX Spectrum +3E WIP (2 FDDs)",
-    supportedFdds: 2
-  },
-  {
-    id: "z88",
-    displayName: "Cambridge Z88 WIP"
-  }
-];
+import { getMachineName } from "@common/machines/machine-registry";
+import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 
 /**
  * This function set the machine type to the specified one
@@ -45,11 +18,14 @@ export async function setMachineType(
   modelId?: string,
   config?: MachineConfigSet
 ): Promise<void> {
+  // --- Setup the machine, it it requires a setup
+  const machineInfo = machineMenuRegistry[machineId];
+  machineInfo?.setup?.();
+
+  // --- Set the emulator to the selected machine type and log the event
   await getEmuApi().setMachineType(machineId, modelId, config);
-  const mt = registeredMachines.find((mt) => mt.id === machineId);
-  if (mt) {
-    await logEmuEvent(`Machine type set to ${mt.displayName} (${mt.id})`, "bright-cyan");
-  }
+  const machineName = getMachineName(machineId, modelId);
+  await logEmuEvent(`Machine type changed to ${machineName}`, "bright-cyan");
 }
 
 // --- The number of events logged with the emulator

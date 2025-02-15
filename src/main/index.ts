@@ -51,14 +51,15 @@ import {
   toolPanelsOnTopAction,
   maximizeToolsAction,
   emuSetKeyboardLayoutAction,
-  setMachineSpecificAction
+  setMachineSpecificAction,
+  setMediaAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeAltApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
@@ -73,6 +74,7 @@ import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
+import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -101,6 +103,7 @@ registerCompiler(new Z80Compiler());
 registerCompiler(new ZxBasicCompiler());
 
 loadAppSettings();
+
 // --- Store initial user settings
 mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 
@@ -135,6 +138,13 @@ const preload = join(__dirname, "../preload/index.js");
 // --- Store the latest build menu version to detect changes
 let lastBuildMenuVersion = 0;
 
+async function initializeMachineTypes() {
+  Object.entries(machineMenuRegistry).forEach(async ([_, machine]) => {
+    await machine.initializer?.();
+  });
+}
+
+// --- Prepare the application windows
 async function createAppWindows() {
   // --- Reset renderer window flags used during re-activation
   machineTypeInitialized = false;
@@ -241,11 +251,6 @@ async function createAppWindows() {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
-      await setMachineType(
-        appSettings.machineId ?? "sp48",
-        appSettings.modelId,
-        appSettings.config
-      );
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
@@ -259,6 +264,16 @@ async function createAppWindows() {
       mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
       mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
       mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
+      Object.entries(appSettings.media).forEach(([key, value]) => {
+        mainStore.dispatch(setMediaAction(key, value));
+      });
+
+      // --- At this point the machine can be initialized
+      await setMachineType(
+        appSettings.machineId ?? "sp48",
+        appSettings.modelId,
+        appSettings.config
+      );
       if (appSettings.media[MEDIA_TAPE]) {
         setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
       }
@@ -425,6 +440,7 @@ async function createAppWindows() {
 
 // --- Initialize the renderer windows whenever the app is ready to display them
 app.whenReady().then(() => {
+  initializeMachineTypes();
   createAppWindows();
 });
 
