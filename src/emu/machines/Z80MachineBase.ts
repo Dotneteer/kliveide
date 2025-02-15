@@ -186,7 +186,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * Processes the frame command
    */
-  processFrameCommand(): void {
+  async processFrameCommand(): Promise<void> {
     // --- Override in derived classes
   }
 

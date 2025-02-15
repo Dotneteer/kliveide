@@ -271,13 +271,11 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._responseIndex = 0;
   }
 
-  writeSector(sectorIndex: number, data: Uint8Array): void {
-    this.machine.cimHandler.writeSector(sectorIndex, data);
+  setWriteResponse(): void {
     this.setMmcResponse(new Uint8Array([0x05, 0xff, 0xfe]));
   }
 
-  readSector(sectorIndex: number): void {
-    const sectorData = this.machine.cimHandler.readSector(sectorIndex);
+  setReadResponse(sectorData: Uint8Array): void {
     const response = new Uint8Array(3 + BYTES_PER_SECTOR);
     response.set(new Uint8Array([0x00, 0xff, 0xfe]));
     response.set(sectorData, 3);

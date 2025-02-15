@@ -15,6 +15,7 @@ import { LiteEvent } from "@emu/utils/lite-event";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -198,7 +199,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   /**
    * Processes the frame command
    */
-  abstract processFrameCommand(): void;
+  abstract processFrameCommand(_messenger: MessengerBase): Promise<void>;
 
   /**
    * Indicates that the frame has just completed

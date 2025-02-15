@@ -527,7 +527,7 @@ export class MachineController implements IMachineController {
         // --- Execute the optional frame command
         const frameCommand = this.machine.getFrameCommand();
         if (frameCommand) {
-          this.machine.processFrameCommand();
+          await this.machine.processFrameCommand(this.messenger);
         }
 
         // --- Wait for the next frame in case of normal termination

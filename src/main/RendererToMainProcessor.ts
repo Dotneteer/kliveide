@@ -49,6 +49,7 @@ import { Action } from "@common/state/Action";
 import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import { getSdCardHandler } from "./machine-menus/zx-next-menus";
 
 class MainMessageProcessor {
   constructor(
@@ -340,6 +341,16 @@ class MainMessageProcessor {
       this.dispatch(setBuildRootAction(buildRoots));
       saveKliveProject();
     }
+  }
+
+  async readSdCardSector(sectorIndex: number) {
+    const sdHandler = getSdCardHandler();
+    return sdHandler.readSector(sectorIndex);
+  }
+
+  async writeSdCardSector(sectorIndex: number, data: Uint8Array) {
+    const sdHandler = getSdCardHandler();
+    sdHandler.writeSector(sectorIndex, data);
   }
 }
 

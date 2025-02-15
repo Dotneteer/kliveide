@@ -34,8 +34,9 @@ import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { CimHandler } from "./CimHandler";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { createMainApi } from "@common/messaging/MainApi";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -104,11 +105,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the tape device of ZX Spectrum 48K
    */
   tapeDevice: ITapeDevice;
-
-  /**
-   * Represents the MMC image attached to the machine
-   */
-  cimHandler: CimHandler;
 
   /**
    * Initialize the machine
@@ -190,9 +186,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Get the alternate ROM file
     romContents = await this.loadRomFromFile("roms/enAltZX.rom");
     this.memoryDevice.upload(romContents, OFFS_ALT_ROM_0);
-
-    const mmcContents = await this.loadRomFromFile("mmc/ks2.cim");
-    this.cimHandler = new CimHandler(mmcContents);
   }
 
   /**
@@ -757,14 +750,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Processes the frame command
    */
-  processFrameCommand(): void {
+  async processFrameCommand(messenger: MessengerBase): Promise<void> {
     const frameCommand = this.getFrameCommand();
     switch (frameCommand.command) {
       case "sd-write":
-        this.sdCardDevice.writeSector(frameCommand.sector, frameCommand.data);
+        await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+        this.sdCardDevice.setWriteResponse();
+        //this.sdCardDevice.writeSector(frameCommand.sector, frameCommand.data);
         break;
       case "sd-read":
-        this.sdCardDevice.readSector(frameCommand.sector);
+        const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+        this.sdCardDevice.setReadResponse(sectorData);
+        //this.sdCardDevice.readSector(frameCommand.sector);
         break;
       default:
         console.log("Unknown frame command", frameCommand);
