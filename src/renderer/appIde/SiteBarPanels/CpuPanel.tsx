@@ -11,7 +11,7 @@ const R16_WIDTH = 48;
 const TACT_WIDTH = 72;
 
 const CpuPanel = () => {
-  const emuApiAlt = useEmuApi();
+  const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<CpuState>(null);
 
   const toHexa2 = (value?: number) =>
@@ -42,7 +42,7 @@ const CpuPanel = () => {
 
   // --- Take care of refreshing the screen
   useStateRefresh(250, async () => {
-    setCpuState(await emuApiAlt.getCpuState());
+    setCpuState(await emuApi.getCpuState());
   });
 
   return (

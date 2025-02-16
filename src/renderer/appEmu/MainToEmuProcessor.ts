@@ -34,6 +34,7 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState } from "@common/messaging/EmuApi";
+import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -98,7 +99,8 @@ class EmuMessageProcessor {
     file: string,
     contents: Uint8Array,
     confirm?: boolean,
-    suppressError?: boolean) {
+    suppressError?: boolean
+  ) {
     let dataBlocks: TapeDataBlock[] = [];
     const reader = new BinaryReader(contents);
     const tzxReader = new TzxReader(reader);
@@ -596,6 +598,30 @@ class EmuMessageProcessor {
       noController();
     }
     controller.machine.setKeyStatus(key, isDown);
+  }
+
+  getPalettedDeviceInfo() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine as ZxNextMachine;
+    const pd = machine.paletteDevice;
+    return {
+      ulaFirst: pd.ulaFirst,
+      ulaSecond: pd.ulaSecond,
+      layer2First: pd.layer2First,
+      layer2Second: pd.layer2Second,
+      spriteFirst: pd.spriteFirst,
+      spriteSecond: pd.spriteSecond,
+      tilemapFirst: pd.tilemapFirst,
+      tilemapSecond: pd.tilemapSecond,
+      ulaNextByteFormat: pd.ulaNextByteFormat,
+      storedPaletteValue: pd.storedPaletteValue,
+      trancparencyColor: machine.screenDevice.fallbackColor,
+      reg43Value: pd.nextReg43Value,
+      reg6bValue: machine.tilemapDevice.nextReg6bValue
+    };
   }
 }
 
