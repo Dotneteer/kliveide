@@ -69,4 +69,9 @@ export interface IScreenDevice extends IGenericDevice<IZxSpectrumMachine> {
    * This method signs that a new screen frame has been started
    */
   onNewFrame(): void;
+
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   */
+  renderShadowScreen(full: boolean): void;
 }

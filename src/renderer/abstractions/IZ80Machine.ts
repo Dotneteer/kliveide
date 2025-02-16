@@ -239,7 +239,6 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   get isOsInitialized(): boolean;
 
-
   /**
    * Gets the current frame command
    */
@@ -247,7 +246,7 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
 
   /**
    * Sets a frame command that terminates the current frame for execution.
-   * @param command 
+   * @param command
    */
   setFrameCommand(command: any): void;
 
@@ -260,4 +259,9 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Indicates that the frame has just completed
    */
   frameJustCompleted: boolean;
+
+  /**
+   * Stores the last rendered machine frame tact.
+   */
+  lastRenderedFrameTact: number;
 }

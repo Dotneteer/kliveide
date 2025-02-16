@@ -1,3 +1,5 @@
+import styles from "./Toolbar.module.scss";
+
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
@@ -5,12 +7,11 @@ import {
   setFastLoadAction,
   setRestartTarget,
   showKeyboardAction,
+  showShadowScreenAction,
   syncSourceBreakpointsAction
 } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import styles from "./Toolbar.module.scss";
-import { reportMessagingError } from "@renderer/reportError";
 import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
@@ -71,6 +72,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const state = useSelector((s) => s.emulatorState?.machineState);
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const showKeyboard = useSelector((s) => s.emuViewOptions?.showKeyboard ?? false);
+  const showShadowScreen = useSelector((s) => s.emuViewOptions?.showShadowScreen ?? false);
   const syncSourceBps = useSelector((s) => s.ideViewOptions?.syncSourceBreakpoints ?? true);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad ?? false);
@@ -223,6 +225,17 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       />
       {!ide && (
         <>
+          <ToolbarSeparator />
+          <IconButton
+            iconName="vm"
+            fill="--color-toolbarbutton"
+            selected={showShadowScreen}
+            title="Turn on/off shadow screen"
+            clicked={async () => {
+              dispatch(showShadowScreenAction(!showShadowScreen));
+              await saveProject();
+            }}
+          />
           <ToolbarSeparator />
           <IconButton
             iconName="keyboard"

@@ -74,11 +74,6 @@ export abstract class ZxSpectrumBase
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
-   * Stores the last rendered machine frame tact.
-   */
-  protected lastRenderedFrameTact: number;
-
-  /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
   keyboardDevice: ISpectrumKeyboardDevice;

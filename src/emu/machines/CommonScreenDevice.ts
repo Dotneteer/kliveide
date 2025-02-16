@@ -143,7 +143,7 @@ export class CommonScreenDevice implements IScreenDevice {
 
   // --- We use this reference for the default contention values so that in the future, we can configure it (for
   // --- example, when implementing ZX Spectrum +2/+3)
-  private get contentionValues () {
+  private get contentionValues() {
     return this._configuration.contentionValues;
   }
 
@@ -177,7 +177,7 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * This flag indicates whether the flash is in the standard (false) or inverted (true) phase.
    */
-  public get flashFlag (): boolean {
+  public get flashFlag(): boolean {
     return this._flashFlag;
   }
 
@@ -186,7 +186,7 @@ export class CommonScreenDevice implements IScreenDevice {
   /// </summary>
   /// <param name="machine">The machine hosting this device</param>
   /// <param name="config">Screen configuration to use</param>
-  constructor (
+  constructor(
     public readonly machine: IZxSpectrumMachine,
     configuration: ScreenConfiguration
   ) {
@@ -197,14 +197,14 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Dispose the resources held by the device
    */
-  dispose (): void {
+  dispose(): void {
     // --- Nothing to dispose
   }
 
   /**
    * Reset the device to its initial state.
    */
-  reset (): void {
+  reset(): void {
     // --- Set default color values
     this.borderColor = 7;
     this._flashFlag = false;
@@ -217,10 +217,10 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Get or set the configuration of this device.
    */
-  get configuration (): ScreenConfiguration {
+  get configuration(): ScreenConfiguration {
     return this._configuration;
   }
-  set configuration (value: ScreenConfiguration) {
+  set configuration(value: ScreenConfiguration) {
     this._configuration = value;
     this.reset();
   }
@@ -244,7 +244,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the pixel pair belonging to the specified frame tact.
    * @param tact Frame tact to render
    */
-  renderTact (tact: number): void {
+  renderTact(tact: number): void {
     const renderTact = this.renderingTactTable[tact];
     renderTact.renderingAction?.(renderTact);
   }
@@ -252,16 +252,27 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Gets the buffer that stores the rendered pixels
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this._pixelBuffer;
   }
 
   /**
    * This method signs that a new screen frame has been started
    */
-  onNewFrame (): void {
-    this._flashFlag =
-      Math.floor(this.machine.frames / this.flashToggleFrames) % 2 === 0;
+  onNewFrame(): void {
+    this._flashFlag = Math.floor(this.machine.frames / this.flashToggleFrames) % 2 === 0;
+  }
+
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param full True, if the full screen should be rendered; otherwise, only from the start
+   * to the last rendered frmae tact
+   */
+  renderShadowScreen(full: boolean): void {
+    const lastTact = full ? this.renderingTactTable.length : this.machine.lastRenderedFrameTact;
+    for (let tact = 0; tact < lastTact; tact++) {
+      this.renderTact(tact);
+    }
   }
 
   /**
@@ -282,7 +293,7 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Initialize the helper tables that accelerate ink and paper color handling.
    */
-  private initializeInkAndPaperTables (): void {
+  private initializeInkAndPaperTables(): void {
     // --- Iterate through all the 256 combinations of attribute values
     for (let attr = 0; attr < 0x100; attr++) {
       const ink = (attr & 0x07) | ((attr & 0x40) >> 3);
@@ -302,15 +313,14 @@ export class CommonScreenDevice implements IScreenDevice {
   /**
    * Initialize the helper tables that accelerate screen rendering by precalculating rendering tact information.
    */
-  private initializeRenderingTactTable (): void {
+  private initializeRenderingTactTable(): void {
     // --- Shortcut to the memory device
     // --- Calculate helper screen dimensions
     this.firstDisplayLine =
       this._configuration.verticalSyncLines +
       this._configuration.nonVisibleBorderTopLines +
       this._configuration.borderTopLines;
-    const lastDisplayLine =
-      this.firstDisplayLine + this._configuration.displayLines - 1;
+    const lastDisplayLine = this.firstDisplayLine + this._configuration.displayLines - 1;
 
     // --- Calculate the rendered screen size in pixels
     this.rasterLines =
@@ -330,9 +340,7 @@ export class CommonScreenDevice implements IScreenDevice {
         this._configuration.borderRightTime);
 
     // --- Prepare the pixel buffer to store the rendered screen bitmap
-    this._pixelBuffer = new Uint32Array(
-      (this.screenLines + 4) * this.screenWidth
-    );
+    this._pixelBuffer = new Uint32Array((this.screenLines + 4) * this.screenWidth);
 
     // --- Calculate the entire rendering time of a single screen line
     const screenLineTime =
@@ -354,22 +362,17 @@ export class CommonScreenDevice implements IScreenDevice {
 
     // --- Calculate the first and last visible lines
     this.firstVisibleLine =
-      this._configuration.verticalSyncLines +
-      this._configuration.nonVisibleBorderTopLines;
-    const lastVisibleLine =
-      this.rasterLines - this._configuration.nonVisibleBorderBottomLines;
-    this.firstVisibleBorderTact =
-      screenLineTime - this._configuration.borderLeftTime;
+      this._configuration.verticalSyncLines + this._configuration.nonVisibleBorderTopLines;
+    const lastVisibleLine = this.rasterLines - this._configuration.nonVisibleBorderBottomLines;
+    this.firstVisibleBorderTact = screenLineTime - this._configuration.borderLeftTime;
 
     // --- Calculate the last visible line tact
     const lastVisibleLineTact =
       this._configuration.displayLineTime + this._configuration.borderRightTime;
 
     // --- Calculate border pixel and attribute fetch tacts
-    const borderPixelFetchTact =
-      screenLineTime - this._configuration.pixelDataPrefetchTime;
-    var borderAttrFetchTact =
-      screenLineTime - this._configuration.attributeDataPrefetchTime;
+    const borderPixelFetchTact = screenLineTime - this._configuration.pixelDataPrefetchTime;
+    var borderAttrFetchTact = screenLineTime - this._configuration.attributeDataPrefetchTime;
 
     // --- Iterate through all tacts to create the rendering table
     this.renderingTactTable = [];
@@ -392,8 +395,7 @@ export class CommonScreenDevice implements IScreenDevice {
       if (
         line >= this.firstVisibleLine &&
         line <= lastVisibleLine &&
-        (tactInLine < lastVisibleLineTact ||
-          tactInLine >= this.firstVisibleBorderTact)
+        (tactInLine < lastVisibleLineTact || tactInLine >= this.firstVisibleBorderTact)
       ) {
         // --- Yes, the tact is visible.
         // --- Is it the first pixel/attr prefetch?
@@ -401,22 +403,20 @@ export class CommonScreenDevice implements IScreenDevice {
         if (line === this.firstDisplayLine - 1) {
           if (tactInLine == borderPixelFetchTact - 1) {
             currentTact.phase = RenderingPhase.Border;
-            currentTact.renderingAction = rt => this.renderTactBorder(rt);
+            currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
             this.machine.setContentionValue(tact, this.contentionValues[6]);
             calculated = true;
           } else if (tactInLine == borderPixelFetchTact) {
             // --- Yes, prefetch pixel data
             currentTact.phase = RenderingPhase.BorderFetchPixel;
             currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
-            currentTact.renderingAction = rt =>
-              this.renderTactBorderFetchPixel(rt);
+            currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
             this.machine.setContentionValue(tact, this.contentionValues[7]);
             calculated = true;
           } else if (tactInLine == borderAttrFetchTact) {
             currentTact.phase = RenderingPhase.BorderFetchAttr;
             currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
-            currentTact.renderingAction = rt =>
-              this.renderTactBorderFetchAttr(rt);
+            currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
             this.machine.setContentionValue(tact, this.contentionValues[0]);
             calculated = true;
           }
@@ -435,54 +435,41 @@ export class CommonScreenDevice implements IScreenDevice {
             switch (pixelTact) {
               case 0:
                 currentTact.phase = RenderingPhase.DisplayB1FetchB2;
-                currentTact.pixelAddress = this.calcPixelAddress(
-                  line,
-                  tactInLine + 4
-                );
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte1FetchByte2(rt);
+                currentTact.pixelAddress = this.calcPixelAddress(line, tactInLine + 4);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte1FetchByte2(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[1]);
                 break;
               case 1:
                 currentTact.phase = RenderingPhase.DisplayB1FetchA2;
-                currentTact.attributeAddress = this.calcAttrAddress(
-                  line,
-                  tactInLine + 3
-                );
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte1FetchAttr2(rt);
+                currentTact.attributeAddress = this.calcAttrAddress(line, tactInLine + 3);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte1FetchAttr2(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[2]);
                 break;
               case 2:
                 currentTact.phase = RenderingPhase.DisplayB1;
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte1(rt);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte1(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[3]);
                 break;
               case 3:
                 currentTact.phase = RenderingPhase.DisplayB1;
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte1(rt);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte1(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[4]);
                 break;
               case 4:
                 currentTact.phase = RenderingPhase.DisplayB2;
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte2(rt);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[5]);
                 break;
               case 5:
                 currentTact.phase = RenderingPhase.DisplayB2;
-                currentTact.renderingAction = rt =>
-                  this.renderTactDislayByte2(rt);
+                currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[6]);
                 break;
               case 6:
                 // --- Test, if there are more pixels to display in this line
                 if (
                   tactInLine <
-                  this._configuration.displayLineTime -
-                    this._configuration.pixelDataPrefetchTime
+                  this._configuration.displayLineTime - this._configuration.pixelDataPrefetchTime
                 ) {
                   // --- Yes, there are still more bytes
                   currentTact.phase = RenderingPhase.DisplayB2FetchB1;
@@ -490,17 +477,12 @@ export class CommonScreenDevice implements IScreenDevice {
                     line,
                     tactInLine + this._configuration.pixelDataPrefetchTime
                   );
-                  currentTact.renderingAction = rt =>
-                    this.renderTactDislayByte2FetchByte1(rt);
-                  this.machine.setContentionValue(
-                    tact,
-                    this.contentionValues[7]
-                  );
+                  currentTact.renderingAction = (rt) => this.renderTactDislayByte2FetchByte1(rt);
+                  this.machine.setContentionValue(tact, this.contentionValues[7]);
                 } else {
                   // --- Last byte in this line
                   currentTact.phase = RenderingPhase.DisplayB2;
-                  currentTact.renderingAction = rt =>
-                    this.renderTactDislayByte2(rt);
+                  currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                 }
                 break;
               case 7:
@@ -516,24 +498,19 @@ export class CommonScreenDevice implements IScreenDevice {
                     line,
                     tactInLine + this._configuration.attributeDataPrefetchTime
                   );
-                  currentTact.renderingAction = rt =>
-                    this.renderTactDislayByte2FetchAttr1(rt);
-                  this.machine.setContentionValue(
-                    tact,
-                    this.contentionValues[0]
-                  );
+                  currentTact.renderingAction = (rt) => this.renderTactDislayByte2FetchAttr1(rt);
+                  this.machine.setContentionValue(tact, this.contentionValues[0]);
                 } else {
                   // --- Last byte in this line
                   currentTact.phase = RenderingPhase.DisplayB2;
-                  currentTact.renderingAction = rt =>
-                    this.renderTactDislayByte2(rt);
+                  currentTact.renderingAction = (rt) => this.renderTactDislayByte2(rt);
                 }
                 break;
             }
           } else {
             // --- It is the border area
             currentTact.phase = RenderingPhase.Border;
-            currentTact.renderingAction = rt => this.renderTactBorder(rt);
+            currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
 
             // --- Left or right border?
             if (line >= this.firstDisplayLine && line < lastDisplayLine) {
@@ -543,17 +520,12 @@ export class CommonScreenDevice implements IScreenDevice {
                 // --- Yes, prefetch pixel data
                 currentTact.phase = RenderingPhase.BorderFetchPixel;
                 currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
-                currentTact.renderingAction = rt =>
-                  this.renderTactBorderFetchPixel(rt);
+                currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[7]);
               } else if (tactInLine === borderAttrFetchTact) {
                 currentTact.phase = RenderingPhase.BorderFetchAttr;
-                currentTact.attributeAddress = this.calcAttrAddress(
-                  line + 1,
-                  0
-                );
-                currentTact.renderingAction = rt =>
-                  this.renderTactBorderFetchAttr(rt);
+                currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
+                currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[0]);
               }
             }
@@ -563,10 +535,7 @@ export class CommonScreenDevice implements IScreenDevice {
 
       // --- Pre-calculate the pixel buffer index for the pixel pair to display.
       if (currentTact.phase !== RenderingPhase.None) {
-        currentTact.pixelBufferIndex = this.calculateBufferIndex(
-          line,
-          tactInLine
-        );
+        currentTact.pixelBufferIndex = this.calculateBufferIndex(line, tactInLine);
       }
 
       // --- Store the current rendering item
@@ -580,14 +549,9 @@ export class CommonScreenDevice implements IScreenDevice {
    * @param tactInLine Tact within the line
    * @returns The calculated pixel address
    */
-  private calcPixelAddress (line: number, tactInLine: number): number {
+  private calcPixelAddress(line: number, tactInLine: number): number {
     const row = line - this.firstDisplayLine;
-    return (
-      ((row & 0xc0) << 5) +
-      ((row & 0x07) << 8) +
-      ((row & 0x38) << 2) +
-      (tactInLine >> 2)
-    );
+    return ((row & 0xc0) << 5) + ((row & 0x07) << 8) + ((row & 0x38) << 2) + (tactInLine >> 2);
   }
 
   /**
@@ -596,10 +560,8 @@ export class CommonScreenDevice implements IScreenDevice {
    * @param tactInLine Tact within the line
    * @returns The calculated attribute address
    */
-  private calcAttrAddress (line: number, tactInLine: number): number {
-    return (
-      (tactInLine >> 2) + (((line - this.firstDisplayLine) >> 3) << 5) + 0x1800
-    );
+  private calcAttrAddress(line: number, tactInLine: number): number {
+    return (tactInLine >> 2) + (((line - this.firstDisplayLine) >> 3) << 5) + 0x1800;
   }
 
   /**
@@ -610,7 +572,7 @@ export class CommonScreenDevice implements IScreenDevice {
    *
    * Remember, a single tact represents two consecutive pixels.
    */
-  private calculateBufferIndex (line: number, tactInLine: number): number {
+  private calculateBufferIndex(line: number, tactInLine: number): number {
     if (tactInLine >= this.firstVisibleBorderTact) {
       // --- This part is the left border
       line++;
@@ -621,8 +583,7 @@ export class CommonScreenDevice implements IScreenDevice {
 
     // --- At this point, tactInLine and line contain the X and Y coordinates of the corresponding pixel pair.
     return line >= this.firstVisibleLine
-      ? 2 *
-          (((line - this.firstVisibleLine) * this.screenWidth) / 2 + tactInLine)
+      ? 2 * (((line - this.firstVisibleLine) * this.screenWidth) / 2 + tactInLine)
       : 0;
   }
 
@@ -632,21 +593,21 @@ export class CommonScreenDevice implements IScreenDevice {
    * @param attr Attribute byte to use
    * @returns ARGB color to display
    */
-  private getPixelColor (pixel: number, attr: number): number {
+  private getPixelColor(pixel: number, attr: number): number {
     return pixel
       ? this._flashFlag
         ? this.s_SpectrumColors[this._inkColorFlashOn[attr]]
         : this.s_SpectrumColors[this._inkColorFlashOff[attr]]
       : this._flashFlag
-      ? this.s_SpectrumColors[this._paperColorFlashOn[attr]]
-      : this.s_SpectrumColors[this._paperColorFlashOff[attr]];
+        ? this.s_SpectrumColors[this._paperColorFlashOn[attr]]
+        : this.s_SpectrumColors[this._paperColorFlashOff[attr]];
   }
 
   /**
    * Render a border pixel.
    * @param rt Rendering tact information
    */
-  private renderTactBorder (rt: RenderingTact): void {
+  private renderTactBorder(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
     this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
     this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
@@ -656,7 +617,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render a border pixel and fetch the pixel byte for the first pixel in the line.
    * @param rt Rendering tact information
    */
-  private renderTactBorderFetchPixel (rt: RenderingTact): void {
+  private renderTactBorderFetchPixel(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
     this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
     this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
@@ -667,7 +628,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render a border pixel and fetch the attribute byte for the first pixel in the line.
    * @param rt Rendering tact information
    */
-  private renderTactBorderFetchAttr (rt: RenderingTact): void {
+  private renderTactBorderFetchAttr(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
     this._pixelBuffer[addr] = this.s_SpectrumColors[this.borderColor];
     this._pixelBuffer[addr + 1] = this.s_SpectrumColors[this.borderColor];
@@ -678,16 +639,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #1.
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte1 (rt: RenderingTact): void {
+  private renderTactDislayByte1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte1 & 0x80,
-      this._attrByte1
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte1 & 0x40,
-      this._attrByte1
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
     this._pixelByte1 = this._pixelByte1 << 2;
   }
 
@@ -695,16 +650,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #1 and fetch byte #2,
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte1FetchByte2 (rt: RenderingTact): void {
+  private renderTactDislayByte1FetchByte2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte1 & 0x80,
-      this._attrByte1
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte1 & 0x40,
-      this._attrByte1
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
     this._pixelByte1 = this._pixelByte1 << 2;
     this._pixelByte2 = this.machine.readScreenMemory(rt.pixelAddress);
   }
@@ -713,16 +662,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #1 and fetch attribute #2.
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte1FetchAttr2 (rt: RenderingTact): void {
+  private renderTactDislayByte1FetchAttr2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte1 & 0x80,
-      this._attrByte1
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte1 & 0x40,
-      this._attrByte1
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte1 & 0x80, this._attrByte1);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte1 & 0x40, this._attrByte1);
     this._pixelByte1 = this._pixelByte1 << 2;
     this._attrByte2 = this.machine.readScreenMemory(rt.attributeAddress);
   }
@@ -731,16 +674,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #2.
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte2 (rt: RenderingTact): void {
+  private renderTactDislayByte2(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte2 & 0x80,
-      this._attrByte2
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte2 & 0x40,
-      this._attrByte2
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
   }
 
@@ -748,16 +685,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #2 and fetch byte #1.
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte2FetchByte1 (rt: RenderingTact): void {
+  private renderTactDislayByte2FetchByte1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte2 & 0x80,
-      this._attrByte2
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte2 & 0x40,
-      this._attrByte2
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
     this._pixelByte1 = this.machine.readScreenMemory(rt.pixelAddress);
   }
@@ -766,16 +697,10 @@ export class CommonScreenDevice implements IScreenDevice {
    * Render the next pixel of byte #2 and fetch attribute #1,
    * @param rt Rendering tact information
    */
-  private renderTactDislayByte2FetchAttr1 (rt: RenderingTact): void {
+  private renderTactDislayByte2FetchAttr1(rt: RenderingTact): void {
     const addr = rt.pixelBufferIndex;
-    this._pixelBuffer[addr] = this.getPixelColor(
-      this._pixelByte2 & 0x80,
-      this._attrByte2
-    );
-    this._pixelBuffer[addr + 1] = this.getPixelColor(
-      this._pixelByte2 & 0x40,
-      this._attrByte2
-    );
+    this._pixelBuffer[addr] = this.getPixelColor(this._pixelByte2 & 0x80, this._attrByte2);
+    this._pixelBuffer[addr + 1] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
     this._pixelByte2 = this._pixelByte2 << 2;
     this._attrByte1 = this.machine.readScreenMemory(rt.attributeAddress);
   }

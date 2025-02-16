@@ -137,6 +137,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * Stores the last rendered machine frame tact.
+   */
+  lastRenderedFrameTact: number;
+
+  /**
    * Load the specified ROM
    * @param romName Name of the ROM file to load
    * @param page Optional ROM page for multi-rom machines
