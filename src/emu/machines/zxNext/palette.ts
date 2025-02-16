@@ -1,3 +1,5 @@
+import { zxNext9BitColors } from "./PaletteDevice";
+
 const colorIntensity = [0x00, 0x25, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff];
 
 /**
@@ -44,13 +46,11 @@ export function getCssStringForPaletteCode (
   code: number,
   use8Bit?: boolean
 ): string {
-  const r = (code >> 5) & 0x07;
-  const g = (code >> 2) & 0x07;
-  let b = (code & 0x03) << 1;
+  let index = (code << 1) & 0x1ff;
   if (code & 0x100 && !use8Bit) {
-    b |= 0x01;
+    index |= 0x01;
   }
-  return `rgba(${colorIntensity[r]},${colorIntensity[g]},${colorIntensity[b]})`;
+  return zxNext9BitColors[index];
 }
 
 export function getLuminanceForPaletteCode (

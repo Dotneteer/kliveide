@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useStateRefresh } from "../useStateRefresh";
+import classnames from "@renderer/utils/classnames";
 
 const noInfo: number[] = Array.from({ length: 0x100 }, () => 0);
 
@@ -79,7 +80,7 @@ const Palette = ({ title, palette, intiallyVisible, active }: Props) => {
   const [showNineBits, setShowNineBits] = useState(false);
   return (
     <div className={styles.rows}>
-      <div className={styles.cols}>
+      <div className={classnames(styles.cols, { [styles.active]: active })}>
         <div style={{ width: "140px" }}>
           <LabeledSwitch label={title} value={visible} clicked={(v) => setVisible(v)} />
         </div>
