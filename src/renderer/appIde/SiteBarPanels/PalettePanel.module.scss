@@ -1,0 +1,23 @@
+@import "@styles/core.scss";
+
+.palettePanel {
+  @include side-panel-content;
+  font-family: var(--monospace-font);
+  font-size: 0.8em;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.cols {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+}

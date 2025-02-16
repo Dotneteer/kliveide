@@ -90,6 +90,7 @@ import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFil
 import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
 import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
 import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
+import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -210,6 +211,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: necUpd765PanelRenderer,
     initialSize: 500,
     requireConfig: [MC_DISK_SUPPORT]
+  },
+  {
+    id: "nextPalettePanel",
+    title: "Next Palettes",
+    hostActivity: ACTIVITY_MACHINE_INFO_ID,
+    renderer: nextPalettePanelRenderer,
+    restrictTo: [MI_ZXNEXT]
   },
   {
     id: "scriptingHistory",

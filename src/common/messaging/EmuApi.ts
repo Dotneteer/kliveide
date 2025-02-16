@@ -155,6 +155,10 @@ class EmuApiImpl {
   async setKeyStatus(_key: number, _isDown: boolean): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async getPalettedDeviceInfo(): Promise<PaletteDeviceInfo> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 // --- The response with the CPU state information
@@ -308,6 +312,23 @@ export type NextMemoryMapping = {
   divMmc: number;
   divMmcIn: boolean;
   pageInfo: MemoryPageInfo[];
+};
+
+// --- The response with the Next palette device state
+export type PaletteDeviceInfo = {
+  ulaFirst: number[];
+  ulaSecond: number[];
+  layer2First: number[];
+  layer2Second: number[];
+  spriteFirst: number[];
+  spriteSecond: number[];
+  tilemapFirst: number[];
+  tilemapSecond: number[];
+  ulaNextByteFormat: number;
+  storedPaletteValue: number;
+  trancparencyColor: number;
+  reg43Value: number;
+  reg6bValue: number;
 };
 
 export type EmuApi = EmuApiImpl;
