@@ -137,6 +137,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
+   * Stores the last rendered machine frame tact.
+   */
+  lastRenderedFrameTact: number;
+
+  /**
    * Load the specified ROM
    * @param romName Name of the ROM file to load
    * @param page Optional ROM page for multi-rom machines
@@ -229,6 +234,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Height of the screen in native machine screen pixels
    */
   abstract get screenHeightInPixels(): number;
+
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  abstract renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
 
   /**
    * Gets the buffer that stores the rendered pixels

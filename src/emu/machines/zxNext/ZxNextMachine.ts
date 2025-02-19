@@ -333,11 +333,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
-   * Stores the last rendered machine frame tact.
-   */
-  protected lastRenderedFrameTact: number;
-
-  /**
    * Gets the ROM ID to load the ROM file
    */
   get romId(): string {
@@ -568,6 +563,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
+  }
+
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    return this.screenDevice.renderShadowScreen(savedPixelBuffer);
   }
 
   /*

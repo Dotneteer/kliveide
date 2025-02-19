@@ -52,7 +52,8 @@ import {
   maximizeToolsAction,
   emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
-  setMediaAction
+  setMediaAction,
+  showShadowScreenAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -255,6 +256,7 @@ async function createAppWindows() {
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
+      mainStore.dispatch(showShadowScreenAction(appSettings.showShadowScreen ?? false));
       mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
       mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
       mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));

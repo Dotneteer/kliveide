@@ -121,6 +121,13 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   getPixelBuffer(): Uint32Array;
 
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
+
   /*
    * Gets the offset of the pixel buffer in the memory
    */
@@ -239,7 +246,6 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    */
   get isOsInitialized(): boolean;
 
-
   /**
    * Gets the current frame command
    */
@@ -247,7 +253,7 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
 
   /**
    * Sets a frame command that terminates the current frame for execution.
-   * @param command 
+   * @param command
    */
   setFrameCommand(command: any): void;
 
@@ -260,4 +266,9 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * Indicates that the frame has just completed
    */
   frameJustCompleted: boolean;
+
+  /**
+   * Stores the last rendered machine frame tact.
+   */
+  lastRenderedFrameTact: number;
 }

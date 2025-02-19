@@ -22,6 +22,7 @@ import {
   showIdeStatusBarAction,
   showIdeToolbarAction,
   showKeyboardAction,
+  showShadowScreenAction,
   showSideBarAction,
   showToolPanelsAction,
   toolPanelsOnTopAction
@@ -173,6 +174,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
       disp(showIdeStatusBarAction(projectStruct.viewOptions.showIdeStatusbar));
       disp(showKeyboardAction(projectStruct.viewOptions.showKeyboard));
+      disp(showShadowScreenAction(projectStruct.viewOptions.showShadowScreen));
       disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
       disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
       disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
@@ -333,6 +335,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
       showEmuStatusbar: state.emuViewOptions.showStatusBar,
       showEmuToolbar: state.emuViewOptions.showToolbar,
       showKeyboard: state.emuViewOptions.showKeyboard,
+      showShadowScreen: state.emuViewOptions.showShadowScreen,
       keyboardLayout: state.emuViewOptions.keyboardLayout,
       showFrameInfo: state.ideViewOptions.showFrameInfo,
       showIdeStatusbar: state.ideViewOptions.showStatusBar,
@@ -418,6 +421,7 @@ interface ViewOptions {
   showIdeStatusbar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
+  showShadowScreen?: boolean;
   keyboardLayout?: string;
   showSidebar?: boolean;
   keyboardHeight?: number;

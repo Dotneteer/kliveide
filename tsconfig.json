@@ -26,18 +26,41 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "paths": {
-      "@abstractions/*": ["./src/common/abstractions/*"],
-      "@common/*": ["./src/common/*"],
-      "@styles/*": ["./src/renderer/assets/styles/*"],
-      "@messaging/*": ["./src/common/messaging/*"],
-      "@state/*": ["./src/common/state/*"],
-      "@utils/*": ["./src/common/utils/*"],
-      "@renderer/*": ["./src/renderer/*"],
-      "@emu/*": ["./src/emu/*"],
-      "@appIde/*": ["./src/renderer/appIde/*"],
-      "@main/*": ["./src/main/*"],
-      "@controls/*": ["./src/renderer/controls/*"],
-		}
+      "@abstractions/*": [
+        "./src/common/abstractions/*"
+      ],
+      "@common/*": [
+        "./src/common/*"
+      ],
+      "@styles/*": [
+        "./src/renderer/assets/styles/*"
+      ],
+      "@messaging/*": [
+        "./src/common/messaging/*"
+      ],
+      "@state/*": [
+        "./src/common/state/*"
+      ],
+      "@utils/*": [
+        "./src/common/utils/*"
+      ],
+      "@renderer/*": [
+        "./src/renderer/*"
+      ],
+      "@emu/*": [
+        "./src/emu/*"
+      ],
+      "@appIde/*": [
+        "./src/renderer/appIde/*"
+      ],
+      "@main/*": [
+        "./src/main/*"
+      ],
+      "@controls/*": [
+        "./src/renderer/controls/*"
+      ]
+    },
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",

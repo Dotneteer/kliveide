@@ -59,6 +59,7 @@ export type EmuViewOptions = {
   showKeyboard?: boolean;
   showToolbar?: boolean;
   showStatusBar?: boolean;
+  showShadowScreen?: boolean;
   keyboardLayout?: string;
 };
 
