@@ -265,14 +265,19 @@ export class CommonScreenDevice implements IScreenDevice {
 
   /**
    * This method renders the entire screen frame as the shadow screen
-   * @param full True, if the full screen should be rendered; otherwise, only from the start
-   * to the last rendered frmae tact
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
    */
-  renderShadowScreen(full: boolean): void {
-    const lastTact = full ? this.renderingTactTable.length : this.machine.lastRenderedFrameTact;
-    for (let tact = 0; tact < lastTact; tact++) {
-      this.renderTact(tact);
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    const pixelBuffer = new Uint32Array(this._pixelBuffer);
+    if (savedPixelBuffer) {
+      this._pixelBuffer = new Uint32Array(savedPixelBuffer);
+    } else {
+      for (let tact = 0; tact < this.renderingTactTable.length; tact++) {
+        this.renderTact(tact);
+      }
     }
+    return pixelBuffer;
   }
 
   /**

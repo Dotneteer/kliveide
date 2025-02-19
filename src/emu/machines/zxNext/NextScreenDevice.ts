@@ -216,6 +216,23 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    const pixelBuffer = new Uint32Array(this._pixelBuffer);
+    if (savedPixelBuffer) {
+      this._pixelBuffer = new Uint32Array(savedPixelBuffer);
+    } else {
+      for (let tact = 0; tact < this.renderingTactTable.length; tact++) {
+        this.renderTact(tact);
+      }
+    }
+    return pixelBuffer;
+  }
+
+  /**
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array {
@@ -651,7 +668,10 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._pixelByte2 & 0x80,
       this._attrByte2
     );
-    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(this._pixelByte2 & 0x40, this._attrByte2);
+    this._pixelBuffer[addr + 2] = this._pixelBuffer[addr + 3] = this.getPixelColor(
+      this._pixelByte2 & 0x40,
+      this._attrByte2
+    );
     this._pixelByte2 = this._pixelByte2 << 2;
   }
 

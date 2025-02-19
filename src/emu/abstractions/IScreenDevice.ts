@@ -72,6 +72,8 @@ export interface IScreenDevice extends IGenericDevice<IZxSpectrumMachine> {
 
   /**
    * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
    */
-  renderShadowScreen(full: boolean): void;
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
 }

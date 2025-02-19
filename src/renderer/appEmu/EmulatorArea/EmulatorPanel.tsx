@@ -26,6 +26,7 @@ let machineStateHandlerQueue: {
 }[] = [];
 let machineStateProcessing = false;
 let currentDialogId = 0;
+let savedPixelBuffer: Uint32Array | null = null;
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -55,9 +56,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
   const yRatio = useRef(1);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
+  const showShadowScreen = useSelector((s) => s.emuViewOptions?.showShadowScreen);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
@@ -104,6 +107,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   };
 
+  // --- Render shadow screen according to the current state
+  const renderShadowScreen = (savedPixelBuffer?: Uint32Array) => {
+    return controller?.machine?.renderShadowScreen(savedPixelBuffer);
+  };
+
+  // --- Sets the overlay for paused mode
+  const setPauseOverlay = () => {
+    const showShadow = store.getState()?.emuViewOptions?.showShadowScreen;
+    setOverlay(
+      `Paused (PC: $${toHexa4(controller.machine.pc)})${showShadow ? " - Shadow screen" : ""}`
+    );
+  };
+
   // --- Prepare the key mappings
   useEffect(() => {
     updateKeyMappings();
@@ -142,6 +158,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     calculateDimensions();
   };
 
+  // --- Update screen dimensions
   useEffect(() => {
     updateScreenDimensions();
   }, [
@@ -154,6 +171,26 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     controller?.machine?.setMachineProperty(FAST_LOAD, fastLoad);
   }, [fastLoad]);
+
+  // --- Respond to shadow screen changes
+  useEffect(() => {
+    if (showShadowScreen) {
+      if (machineState === MachineControllerState.Paused) {
+        setPauseOverlay();
+        const shadow = renderShadowScreen();
+        if (!savedPixelBuffer) {
+          savedPixelBuffer = new Uint32Array(shadow);
+        }
+        displayScreenData();
+      }
+    } else {
+      if (machineState === MachineControllerState.Paused) {
+        setPauseOverlay();
+        renderShadowScreen(savedPixelBuffer);
+        displayScreenData();
+      }
+    }
+  }, [showShadowScreen]);
 
   // --- Respond to resizing the main container
   useResizeObserver(hostElement, () => calculateDimensions());
@@ -245,11 +282,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             break;
 
           case MachineControllerState.Paused:
-            setOverlay(`Paused (PC: $${toHexa4(controller.machine.pc)})`);
+            setPauseOverlay();
             await beeperRenderer?.current?.suspend();
+            const showShadow = store.getState()?.emuViewOptions?.showShadowScreen;
+            if (showShadow) {
+              const shadow = renderShadowScreen();
+              if (!savedPixelBuffer) {
+                savedPixelBuffer = new Uint32Array(shadow);
+              }
+              displayScreenData();
+            }
             break;
 
           case MachineControllerState.Stopped:
+            savedPixelBuffer = null;
             setOverlay(`Stopped (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
             machineStateHandlerQueue.length = 0;
@@ -270,6 +316,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Update the screen
     if (controller.machine.frames % controller.machine.uiFrameFrequency === 0) {
       displayScreenData();
+    }
+
+    if (args.fullFrame) {
+      savedPixelBuffer = renderShadowScreen();
     }
 
     // --- Stop sound rendering when fast load has been invoked

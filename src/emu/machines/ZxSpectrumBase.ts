@@ -49,10 +49,7 @@ export const SP_KEY_WAIT = 250;
 /**
  * The common core functionality for all ZX Spectrum machines
  */
-export abstract class ZxSpectrumBase
-  extends Z80MachineBase
-  implements IZxSpectrumMachine
-{
+export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectrumMachine {
   // --- This byte array stores the contention values associated with a particular machine frame tact.
   protected contentionValues: number[] = [];
 
@@ -101,21 +98,21 @@ export abstract class ZxSpectrumBase
   /**
    * Gets the ROM ID to load the ROM file
    */
-  get romId (): string {
+  get romId(): string {
     return this.machineId;
   }
 
   /**
    * Indicates if the currently selected ROM is the ZX Spectrum 48 ROM
    */
-  get isSpectrum48RomSelected (): boolean {
+  get isSpectrum48RomSelected(): boolean {
     return true;
   }
 
   /**
    * Indicates if the machine's operating system is initialized
    */
-  get isOsInitialized (): boolean {
+  get isOsInitialized(): boolean {
     return this.iy === 0x5c3a;
   }
 
@@ -139,7 +136,7 @@ export abstract class ZxSpectrumBase
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
-  get tactsInDisplayLine (): number {
+  get tactsInDisplayLine(): number {
     return this.screenDevice.screenWidth;
   }
 
@@ -151,7 +148,7 @@ export abstract class ZxSpectrumBase
    *  action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryRead (address: number): void {
+  delayMemoryRead(address: number): void {
     this.delayAddressBusAccess(address);
     this.tactPlus3();
     this.totalContentionDelaySinceStart += 3;
@@ -166,7 +163,7 @@ export abstract class ZxSpectrumBase
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
    */
-  delayMemoryWrite (address: number): void {
+  delayMemoryWrite(address: number): void {
     this.delayMemoryRead(address);
   }
 
@@ -178,7 +175,7 @@ export abstract class ZxSpectrumBase
    * delay values for a particular machine frame tact in _contentionValues.Independently of the memory address,
    * the Z80 CPU takes 3 T-states to read or write the memory contents.
    */
-  delayAddressBusAccess (address: number): void {
+  delayAddressBusAccess(address: number): void {
     if ((address & 0xc000) != 0x4000) return;
 
     // --- We read from contended memory
@@ -198,7 +195,7 @@ export abstract class ZxSpectrumBase
    * @param tact Machine frame tact
    * @param value Contention value
    */
-  setContentionValue (tact: number, value: number): void {
+  setContentionValue(tact: number, value: number): void {
     this.contentionValues[tact] = value;
   }
 
@@ -207,7 +204,7 @@ export abstract class ZxSpectrumBase
    * @param tact Machine frame tact
    * @returns The contention value associated with the specified tact.
    */
-  getContentionValue (tact: number): number {
+  getContentionValue(tact: number): number {
     return this.contentionValues[tact];
   }
 
@@ -219,7 +216,7 @@ export abstract class ZxSpectrumBase
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortRead (address: number): void {
+  delayPortRead(address: number): void {
     this.delayContendedIo(address);
   }
 
@@ -231,7 +228,7 @@ export abstract class ZxSpectrumBase
    * action, the Z80 CPU will use its default 4-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 4 T-states!
    */
-  delayPortWrite (address: number): void {
+  delayPortWrite(address: number): void {
     this.delayContendedIo(address);
   }
 
@@ -240,7 +237,7 @@ export abstract class ZxSpectrumBase
    * @param address Port address
    * @returns Byte value read from the generic port
    */
-  protected readPort0Xfe (address: number): number {
+  protected readPort0Xfe(address: number): number {
     var portValue = this.keyboardDevice.getKeyLineStatus(address);
 
     // --- Check for LOAD mode
@@ -253,15 +250,13 @@ export abstract class ZxSpectrumBase
       var bit4Sensed = this._portBit4LastValue;
       if (!bit4Sensed) {
         // --- Changed later to 1 from 0 than to 0 from 1?
-        let chargeTime =
-          this._portBit4ChangedFrom1Tacts - this._portBit4ChangedFrom0Tacts;
+        let chargeTime = this._portBit4ChangedFrom1Tacts - this._portBit4ChangedFrom0Tacts;
         if (chargeTime > 0) {
           // --- Yes, calculate charge time
           chargeTime = chargeTime > 700 ? 2800 : 4 * chargeTime;
 
           // --- Calculate time ellapsed since last change from 1 to 0
-          bit4Sensed =
-            this.tacts - this._portBit4ChangedFrom1Tacts < chargeTime;
+          bit4Sensed = this.tacts - this._portBit4ChangedFrom1Tacts < chargeTime;
         }
       }
 
@@ -283,7 +278,7 @@ export abstract class ZxSpectrumBase
    * Wites the specified data byte to the ZX Spectrum generic output port.
    * @param value Data byte to write
    */
-  protected writePort0xFE (value: number): void {
+  protected writePort0xFE(value: number): void {
     // --- Extract the border color
     this.screenDevice.borderColor = value & 0x07;
 
@@ -317,7 +312,7 @@ export abstract class ZxSpectrumBase
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
-  protected delayContendedIo (address: number): void {
+  protected delayContendedIo(address: number): void {
     const spectrum = this;
     var lowbit = (address & 0x0001) !== 0;
 
@@ -356,7 +351,7 @@ export abstract class ZxSpectrumBase
     this.contentionDelaySincePause += 4;
 
     // --- Apply I/O contention
-    function applyContentionDelay (): void {
+    function applyContentionDelay(): void {
       const delay = spectrum.getContentionValue(spectrum.currentFrameTact);
       spectrum.tactPlusN(delay);
       spectrum.totalContentionDelaySinceStart += delay;
@@ -367,14 +362,14 @@ export abstract class ZxSpectrumBase
   /**
    * Width of the screen in native machine screen pixels
    */
-  get screenWidthInPixels () {
+  get screenWidthInPixels() {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
-  get screenHeightInPixels () {
+  get screenHeightInPixels() {
     return this.screenDevice.screenLines;
   }
 
@@ -382,28 +377,37 @@ export abstract class ZxSpectrumBase
    * Gets the buffer that stores the rendered pixels
    * @returns
    */
-  getPixelBuffer (): Uint32Array {
+  getPixelBuffer(): Uint32Array {
     return this.screenDevice.getPixelBuffer();
+  }
+
+  /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    return this.screenDevice.renderShadowScreen(savedPixelBuffer);
   }
 
   /*
    * Gets the offset of the pixel buffer in the memory
    */
-  getBufferStartOffset (): number {
+  getBufferStartOffset(): number {
     return this.screenDevice.screenWidth;
   }
 
   /**
    * Gets the key code set used for the machine
    */
-  getKeyCodeSet (): KeyCodeSet {
+  getKeyCodeSet(): KeyCodeSet {
     return SpectrumKeyCode;
   }
 
   /**
    * Gets the default key mapping for the machine
    */
-  getDefaultKeyMapping (): KeyMapping {
+  getDefaultKeyMapping(): KeyMapping {
     return spectrumKeyMappings;
   }
 
@@ -412,14 +416,14 @@ export abstract class ZxSpectrumBase
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setKeyStatus (key: number, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     this.keyboardDevice.setStatus(key, isDown);
   }
 
   /**
    * Emulates queued key strokes as if those were pressed by the user
    */
-  emulateKeystroke (): void {
+  emulateKeystroke(): void {
     if (this.emulatedKeyStrokes.length === 0) return;
 
     // --- Check the next keystroke
@@ -456,36 +460,24 @@ export abstract class ZxSpectrumBase
    *
    * The keyboard provider can play back emulated key strokes
    */
-  queueKeystroke (
-    frameOffset: number,
-    frames: number,
-    primary: number,
-    secondary?: number
-  ): void {
-    const startTact =
-      this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
-    const endTact =
-      startTact + frames * this.tactsInFrame * this.clockMultiplier;
-    const keypress = new EmulatedKeyStroke(
-      startTact,
-      endTact,
-      primary,
-      secondary
-    );
+  queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
+    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
+    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
     this.emulatedKeyStrokes.push(keypress);
   }
 
   /**
    * Gets the length of the key emulation queue
    */
-  getKeyQueueLength (): number {
+  getKeyQueueLength(): number {
     return this.emulatedKeyStrokes.length;
   }
 
   /**
    * Gets the current cursor mode
    */
-  getCursorMode (): number {
+  getCursorMode(): number {
     return this.doReadMemory(0x5c41);
   }
 
@@ -500,7 +492,7 @@ export abstract class ZxSpectrumBase
    * @param codeToInject Code to inject into the machine
    * @returns The start address of the injected code
    */
-  injectCodeToRun (codeToInject: CodeToInject): number {
+  injectCodeToRun(codeToInject: CodeToInject): number {
     // --- Clear the screen unless otherwise requested
     if (!codeToInject.options.noCls) {
       for (let addr = 0x4000; addr < 0x5800; addr++) {
@@ -536,7 +528,7 @@ export abstract class ZxSpectrumBase
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame (_clockMultiplierChanged: boolean): void {
+  onInitNewFrame(_clockMultiplierChanged: boolean): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 
@@ -551,14 +543,14 @@ export abstract class ZxSpectrumBase
    * Tests if the machine should raise a Z80 maskable interrupt
    * @returns True, if the INT signal should be active; otherwise, false.
    */
-  shouldRaiseInterrupt (): boolean {
+  shouldRaiseInterrupt(): boolean {
     return this.currentFrameTact < 32;
   }
 
   /**
    * Check for current tape mode after each executed instruction
    */
-  afterInstructionExecuted (): void {
+  afterInstructionExecuted(): void {
     this.tapeDevice.updateTapeMode();
   }
 
@@ -566,7 +558,7 @@ export abstract class ZxSpectrumBase
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
    */
-  onTactIncremented (): void {
+  onTactIncremented(): void {
     const machineTact = this.currentFrameTact;
     while (this.lastRenderedFrameTact <= machineTact) {
       this.screenDevice.renderTact(this.lastRenderedFrameTact++);

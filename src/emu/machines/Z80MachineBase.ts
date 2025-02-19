@@ -236,6 +236,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract get screenHeightInPixels(): number;
 
   /**
+   * This method renders the entire screen frame as the shadow screen
+   * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
+   * @returns The pixel buffer that represents the previous screen
+   */
+  abstract renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
+
+  /**
    * Gets the buffer that stores the rendered pixels
    */
   abstract getPixelBuffer(): Uint32Array;
