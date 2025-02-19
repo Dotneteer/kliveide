@@ -65,6 +65,12 @@ export const pageMap = [{
     frontMatter: {
       "sidebarTitle": "File Extensions"
     }
+  }, {
+    name: "shadow-screen",
+    route: "/howto/shadow-screen",
+    frontMatter: {
+      "sidebarTitle": "Shadow Screen"
+    }
   }]
 }, {
   name: "index",
