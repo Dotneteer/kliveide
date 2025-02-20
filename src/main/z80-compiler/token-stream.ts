@@ -1268,6 +1268,7 @@ export enum TokenType {
   IncludeBinPragma,
   CompareBinPragma,
   InjectOptPragma,
+  OnSuccessPragma,
 
   Macro,
   Endm,
@@ -2078,6 +2079,11 @@ const resolverHash: { [key: string]: TokenType } = {
   ".INJECTOPT": TokenType.InjectOptPragma,
   injectopt: TokenType.InjectOptPragma,
   INJECTOPT: TokenType.InjectOptPragma,
+
+  ".onsuccess": TokenType.OnSuccessPragma,
+  ".ONSUCCESS": TokenType.OnSuccessPragma,
+  onsuccess: TokenType.OnSuccessPragma,
+  ONSUCCESS: TokenType.OnSuccessPragma,
 
   ".macro": TokenType.Macro,
   ".MACRO": TokenType.Macro,

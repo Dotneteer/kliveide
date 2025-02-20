@@ -41,6 +41,29 @@ const EXPORT_FILE_FOLDER = "KliveExports";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 
+export class KliveBuildCommand extends IdeCommandBase {
+  readonly id = "klive.build";
+  readonly description =
+    "Compiles the current project with the Klive Z80 Compiler and runs the optional build commands";
+  readonly usage = "klive.build";
+  readonly aliases = ["kl.b"];
+  //readonly noInteractiveUsage = true;
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const compileResult = await compileCode(context);
+    if (compileResult.message) {
+      return commandError(compileResult.message);
+    }
+
+    // --- Compile succeeded, run the onSuccess commands
+    if ((compileResult.result as any)?.onSuccessCommands) {
+      const commands = (compileResult.result as any).onSuccessCommands as string[];
+      console.log("onSuccessCommands", commands);
+    }
+    return commandSuccessWith(`Project file successfully compiled.`);
+  }
+}
+
 export class KliveCompileCommand extends IdeCommandBase {
   readonly id = "klive.compile";
   readonly description = "Compiles the current project with the Klive Z80 Compiler";

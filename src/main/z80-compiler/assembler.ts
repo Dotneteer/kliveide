@@ -55,6 +55,7 @@ import type {
   ModuleStatement,
   NextRegInstruction,
   NodePosition,
+  OnSuccessPragma,
   Operand,
   OrgPragma,
   OrInstruction,
@@ -1462,6 +1463,9 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.processDefGXPragma(pragmaLine);
         }
         break;
+      case "OnSuccessPragma":
+        this.processOnSuccessPragma(pragmaLine);
+        break;
     }
   }
 
@@ -2172,6 +2176,15 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
     var pattern = value.asString().trim();
     this.emitDefgBytes(pragma as unknown as Z80AssemblyLine, pattern, true, emitAction);
+  }
+
+  /**
+   * Processes the .onsuccess pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processOnSuccessPragma(pragma: OnSuccessPragma): void {
+    this._output.onSuccessCommands.push(pragma.command);
   }
 
   /**

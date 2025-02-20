@@ -621,3 +621,15 @@ This code contains two segments (it has two `.org` pragmas) and three `.compareb
 - Though `origin.bin` has six bytes, the first comparison succeeds, utilizing only the three bytes emitted in the first segment.
 - The second comparison fails, as the file starts with #00, #01, #02, while the segment emits #03, #04, and #05.
 - The third comparison succeeds, as it starts the examination from the 4th byte (offset 3) of the binary file.
+
+## The ONSUCCESS pragma
+
+This pragma declares an interactive Klive command that is executed when the code is successfully compiled. The argument of the pragma is a string literal that defines the command text (with its parameters) to execute.
+
+You can put this pragma anywhere in the source code and use multiple pragmas. The compiler collects them and executes the commands in their declaration order.
+
+Here is a sample:
+
+```
+.onsuccess "expc mycode.tap"
+```

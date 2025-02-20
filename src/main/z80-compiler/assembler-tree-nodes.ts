@@ -123,7 +123,8 @@ export type Pragma =
   | ErrorPragma
   | IncBinPragma
   | CompareBinPragma
-  | InjectOptPragma;
+  | InjectOptPragma
+  | OnSuccessPragma;
 
 export type ByteEmittingPragma =
   | DefBPragma
@@ -1244,6 +1245,15 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
    * Option identifier
    */
   identifiers: IdentifierNode[];
+}
+
+export interface OnSuccessPragma extends PartialZ80AssemblyLine {
+  type: "OnSuccessPragma";
+
+  /**
+   * Pragma values
+   */
+  command: string;
 }
 
 // ============================================================================

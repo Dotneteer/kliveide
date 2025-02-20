@@ -106,7 +106,7 @@ import {
   setCachedStore
 } from "../CachedServices";
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
-import { ExportCodeCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
+import { ExportCodeCommand, KliveBuildCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 
@@ -327,6 +327,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new NewProjectCommand());
   cmdSrv.registerCommand(new CloseFolderCommand());
 
+  cmdSrv.registerCommand(new KliveBuildCommand());
   cmdSrv.registerCommand(new KliveCompileCommand());
   cmdSrv.registerCommand(new KliveInjectCodeCommand());
   cmdSrv.registerCommand(new KliveRunCodeCommand());

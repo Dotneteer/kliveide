@@ -500,6 +500,8 @@ tokenTraits.set(TokenType.OctalLiteral, {
   expressionStart: true,
   literal: true
 });
+tokenTraits.set(TokenType.OnErrorPragma, { pragma: true });
+tokenTraits.set(TokenType.OnSuccessPragma, { pragma: true });
 tokenTraits.set(TokenType.Or, { instruction: true });
 tokenTraits.set(TokenType.OrgPragma, { pragma: true });
 tokenTraits.set(TokenType.Otdr, { instruction: true, simple: true });

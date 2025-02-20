@@ -1446,4 +1446,58 @@ describe("Assembler - pragmas", async () => {
       await await testCodeEmit(dgxc.source, ...dgxc.expected);
     })
   );
+
+  it("onsuccess #1", async () => {
+    const compiler = new Z80Assembler();
+    const source = '.onsuccess "somecommand"';
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.onSuccessCommands.length).toBe(1);
+    expect(output.onSuccessCommands[0]).toBe("somecommand");
+  });
+
+  it("onsuccess #2", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    .onsuccess "somecommand"
+    .ONSUCCESS "command2"
+    onsuccess "command3"
+    ONSUCCESS "command4"
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.onSuccessCommands.length).toBe(4);
+    expect(output.onSuccessCommands[0]).toBe("somecommand");
+    expect(output.onSuccessCommands[1]).toBe("command2");
+    expect(output.onSuccessCommands[2]).toBe("command3");
+    expect(output.onSuccessCommands[3]).toBe("command4");
+  });
+
+  it("onsuccess #3", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      ld a,b
+    .onsuccess "somecommand"
+      ld a,b
+    .ONSUCCESS "command2"
+      ld a,b
+    onsuccess "command3"
+      ld a,b
+    ONSUCCESS "command4"
+      ld a,b
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.onSuccessCommands.length).toBe(4);
+    expect(output.onSuccessCommands[0]).toBe("somecommand");
+    expect(output.onSuccessCommands[1]).toBe("command2");
+    expect(output.onSuccessCommands[2]).toBe("command3");
+    expect(output.onSuccessCommands[3]).toBe("command4");
+  });
 });
