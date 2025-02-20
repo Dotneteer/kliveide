@@ -24,7 +24,7 @@ jobs:
         run: npm run build:win
 
       - name: Add install Emulator install kit to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install-kit
           path: artifacts/*.exe
@@ -50,7 +50,7 @@ jobs:
         run: npm run build:linux
 
       - name: Add install Emulator install kit to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install-kit
           path: artifacts/*x86_64.AppImage
@@ -76,7 +76,7 @@ jobs:
         run: npm run build:linux:arm64
 
       - name: Add install Emulator install kit to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install-kit
           path: artifacts/*arm64.AppImage
@@ -102,7 +102,7 @@ jobs:
         run: npm run build:mac
 
       - name: Add install Emulator install kit to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install-kit
           path: artifacts/*x64.pkg
@@ -128,7 +128,7 @@ jobs:
         run: npm run build:mac:arm64
 
       - name: Add install Emulator install kit to artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: install-kit
           path: artifacts/*arm64.pkg
