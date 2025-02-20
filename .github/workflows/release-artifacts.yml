@@ -26,7 +26,7 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: install-kit
+          name: install-kit-winx86
           path: artifacts/*.exe
 
   build-on-linux:
@@ -52,7 +52,7 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: install-kit
+          name: install-kit-linux
           path: artifacts/*x86_64.AppImage
 
   build-on-linux-arm64:
@@ -78,7 +78,7 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: install-kit
+          name: install-kit-linux-arm64
           path: artifacts/*arm64.AppImage
 
   build-on-mac:
@@ -104,7 +104,7 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: install-kit
+          name: install-kit-mac
           path: artifacts/*x64.pkg
 
   build-on-mac-arm64:
@@ -130,5 +130,5 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: install-kit
+          name: install-kit-mac-arm64
           path: artifacts/*arm64.pkg
