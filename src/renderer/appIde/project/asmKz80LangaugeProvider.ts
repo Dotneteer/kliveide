@@ -458,7 +458,11 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".zxbasic",
       ".ZXBASIC",
       "zxbasic",
-      "ZXBASIC"
+      "ZXBASIC",
+      ".onsuccess",
+      ".ONSUCCESS",
+      "onsuccess",
+      "ONSUCCESS",
     ],
 
     boolLiterals: [

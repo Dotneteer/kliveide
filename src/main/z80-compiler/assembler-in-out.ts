@@ -69,6 +69,11 @@ export class AssemblerOutput extends AssemblyModule {
   injectOptions: Record<string, boolean> = {};
 
   /**
+   * The commands to execute when the compilation is successful
+   */
+  onSuccessCommands: string[] = [];
+
+  /**
    * The source files involved in this compilation, in
    * their file index order
    */

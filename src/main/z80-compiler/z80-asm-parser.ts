@@ -129,7 +129,8 @@ import type {
   FunctionInvocation,
   IdentifierNode,
   Expression,
-  ExpressionNode
+  ExpressionNode,
+  OnSuccessPragma,
 } from "./assembler-tree-nodes";
 import type { ParserErrorMessage, ErrorCodes } from "./assembler-errors";
 
@@ -740,6 +741,18 @@ export class Z80AsmParser {
           type: "InjectOptPragma",
           identifiers: optIds
         };
+
+      case TokenType.OnSuccessPragma: {
+        const expr = this.getExpression();
+        if (expr.type !== "StringLiteral") {
+          this.reportError("Z0108");
+          return null;
+        }
+        return <OnSuccessPragma>{
+          type: "OnSuccessPragma",
+          command: expr.value
+        };
+      }
     }
     return null;
   }
