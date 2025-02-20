@@ -1,5 +1,12 @@
 # Klive IDE Changelog
 
+## 0.33.0
+
+### Features
+
+- Shadow Screen feature (https://dotneteer.github.io/kliveide/howto/shadow-screen)
+- ZX Spectrum Next implementation now handles startup from SD Card
+
 ## 0.32.3
 
 ### Fixes
