@@ -75,7 +75,7 @@
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron-renderer": "^0.14.6",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^3.0.4"
+    "vitest": "^3.0.5"
   },
   "debug": {
     "env": {
