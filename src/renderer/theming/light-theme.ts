@@ -1,6 +1,9 @@
 import { ThemeProperties } from "./theme";
 
 export const lightTheme: ThemeProperties = {
+  // --- General
+  "--space-base": "0.25em",
+  
   // --- Font attributes
   "--shell-font-family":
     "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
@@ -9,6 +12,7 @@ export const lightTheme: ThemeProperties = {
   "--shell-monospace-font-family": "Menlo, Monaco, Courier New, monospace",
 
   // --- Global theme attributes
+  "--color-text": "#202020",
   "--bgcolor-splitter": "#61a4d0",
   "--color-command-icon": "#303030",
   "--color-command-icon-disabled": "#a0a0a0",

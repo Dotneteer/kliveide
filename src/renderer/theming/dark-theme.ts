@@ -1,6 +1,9 @@
 import { ThemeProperties } from "./theme";
 
 export const darkTheme: ThemeProperties = {
+  // --- General
+  "--space-base": "0.25em",
+  
   // --- Font attributes
   "--shell-font-family":
     "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif",
@@ -9,6 +12,7 @@ export const darkTheme: ThemeProperties = {
   "--shell-monospace-font-family": "Menlo, Monaco, Courier New, monospace",
 
   // --- Global theme attributes
+  "--color-text": "#e0e0e0",
   "--bgcolor-splitter": "#007acc",
   "--color-command-icon": "#c0c0c0",
   "--color-command-icon-disabled": "#606060",
