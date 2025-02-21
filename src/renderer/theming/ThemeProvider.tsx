@@ -33,7 +33,7 @@ const ThemeContext = React.createContext<ThemeManager | undefined>(undefined);
 /**
  * This React hook makes the current theme information available within any component logic using the hook.
  */
-export function useTheme (): ThemeManager {
+export function useTheme(): ThemeManager {
   return useContext(ThemeContext)!;
 }
 
@@ -57,47 +57,48 @@ type Props = {
  * @param defaultTone The default theming tone
  * @constructor
  */
-function ThemeProvider ({ children }: Props) {
-  const [root, setRoot] = useState(
-    () => document.getElementById("root") || document.body
-  );
-  const selectedTheme = useSelector(s => s.theme);
-  const isWindows = useSelector(s => s.isWindows);
+function ThemeProvider({ children }: Props) {
+  const [root, setRoot] = useState(() => document.getElementById("root") || document.body);
+  const selectedTheme = useSelector((s) => s.theme);
+  const isWindows = useSelector((s) => s.isWindows);
 
-  const [styleProps, setStyleProps] =
-    useState<Record<string, any>>(EMPTY_OBJECT);
+  const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
 
   const rootRef = useCallback((rootElement: HTMLDivElement) => {
     setRoot(rootElement);
   }, []);
 
   const themeValue = useMemo(() => {
+    // --- Collect theme variables from the current themes
     const activeThemeInfo = availableThemes[selectedTheme];
+
+    // --- Set the main font and monospace font
     const mainFont =
-      activeThemeInfo.properties[
-        isWindows ? "--shell-windows-font-family" : "--shell-font-family"
-      ];
+      activeThemeInfo.properties[isWindows ? "--shell-windows-font-family" : "--shell-font-family"];
     const monospaceFont =
       activeThemeInfo.properties[
-        isWindows
-          ? "--shell-windows-monospace-font-family"
-          : "--shell-monospace-font-family"
+        isWindows ? "--shell-windows-monospace-font-family" : "--shell-monospace-font-family"
       ];
-    setStyleProps({
+
+    // --- Set the initial theme variables
+    const themeVariables: Record<string, any> = {
       ...activeThemeInfo.properties,
       "--main-font-family": mainFont,
       "--monospace-font": monospaceFont
-    });
+    };
+
+    setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });
+
     return {
       theme: activeThemeInfo,
       root,
       getThemeProperty: (key: string) => activeThemeInfo.properties[key],
       getIcon: (key: string) =>
-        iconLibrary.find(ic => ic.name === key) ??
-        iconLibrary.find(ic => ic.name === "unknown"),
+        iconLibrary.find((ic) => ic.name === key) ??
+        iconLibrary.find((ic) => ic.name === "unknown"),
       getImage: (key: string) =>
-        imageLibrary.find(im => im.name === key) ??
-        imageLibrary.find(im => im.name === "file-code")
+        imageLibrary.find((im) => im.name === key) ??
+        imageLibrary.find((im) => im.name === "file-code")
     };
   }, [selectedTheme, root, isWindows]);
 
@@ -112,6 +113,41 @@ function ThemeProvider ({ children }: Props) {
       </div>
     </ThemeContext.Provider>
   );
+}
+
+export function generateBaseSpacings(theme: Record<string, string> | undefined) {
+  if (!theme) {
+    return {};
+  }
+  const base = theme["--space-base"];
+  if (!base || typeof base !== "string") {
+    return {};
+  }
+
+  let baseTrimmed = base.trim();
+  if (baseTrimmed.startsWith(".")) {
+    // --- If we have something like .5rem
+    baseTrimmed = `0${baseTrimmed}`;
+  }
+
+  const baseNum = parseFloat(baseTrimmed);
+  let baseUnit = baseTrimmed.replace(baseNum + "", "") || "px";
+
+  // --- a) non-baseNum -> "0px"
+  if (Number.isNaN(baseNum)) {
+    return {};
+  }
+
+  const scale = [
+    0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40,
+    44, 48, 52, 56, 60, 64, 72, 80, 96
+  ];
+  const ret: Record<string, string> = {};
+
+  scale.forEach((step) => {
+    ret[`--space-${(step + "").replace(".", "_")}`] = `${step * baseNum}${baseUnit}`;
+  });
+  return ret;
 }
 
 export default ThemeProvider;
