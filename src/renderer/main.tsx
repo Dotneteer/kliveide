@@ -38,7 +38,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <RendererProvider store={store} messenger={messenger} messageSource={messageSource}>
       <ThemeProvider>
-        <AppServicesProvider>{isEmu ? <EmuApp2 /> : <IdeApp />}</AppServicesProvider>
+        <AppServicesProvider>{isEmu ? <EmuApp /> : <IdeApp />}</AppServicesProvider>
         </ThemeProvider>
     </RendererProvider>
   </React.StrictMode>
