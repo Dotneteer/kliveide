@@ -1,7 +1,6 @@
 import path from "path";
 import fs from "fs";
 import _ from "lodash";
-
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import type { KliveCompilerOutput } from "./compiler-integration/compiler-registry";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -304,7 +303,12 @@ class MainMessageProcessor {
     let scriptInfo: ScriptStartInfo;
     if (scriptText) {
       // --- Script text specified, run as script text
-      scriptInfo = await mainScriptManager.runScriptText(scriptText, scriptFunction, filename, speciality);
+      scriptInfo = await mainScriptManager.runScriptText(
+        scriptText,
+        scriptFunction,
+        filename,
+        speciality
+      );
     } else {
       scriptInfo = await mainScriptManager.runScript(filename);
     }
@@ -351,6 +355,24 @@ class MainMessageProcessor {
   async writeSdCardSector(sectorIndex: number, data: Uint8Array) {
     const sdHandler = getSdCardHandler();
     sdHandler.writeSector(sectorIndex, data);
+  }
+
+  async openWithShell(
+    filename: string,
+  ): Promise<{ path?: string; error?: string }> {
+    let fullPath = filename;
+    if (!path.isAbsolute(filename)) {
+      const projectFolder = mainStore.getState().project?.folderPath ?? "";
+      if (!projectFolder) {
+        fullPath = path.join(app.getPath("home"), filename);
+      }
+      fullPath = path.join(projectFolder, filename);
+    }
+    const errMsg = await shell.openPath(fullPath);
+    if (errMsg) {
+      return { path: fullPath, error: `Shell error: ${errMsg} while opening file ${fullPath}` };
+    }
+    return { path: fullPath };
   }
 }
 

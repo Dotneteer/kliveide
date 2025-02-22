@@ -193,6 +193,10 @@ class MainApiImpl {
   async writeSdCardSector(_sectorIndex: number, _data: Uint8Array): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async openWithShell(_path: string): Promise<{ path?: string; error?: string }> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 export type MainApi = MainApiImpl;

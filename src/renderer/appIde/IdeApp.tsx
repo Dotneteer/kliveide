@@ -109,6 +109,7 @@ import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
 import { ExportCodeCommand, KliveBuildCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
+import { ShellCommand } from "./commands/ShellCommand";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -322,6 +323,7 @@ function registerCommands (cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new EnableBreakpointCommand());
 
   cmdSrv.registerCommand(new NumCommand());
+  cmdSrv.registerCommand(new ShellCommand());
   cmdSrv.registerCommand(new DisassemblyCommand());
   cmdSrv.registerCommand(new OpenFolderCommand());
   cmdSrv.registerCommand(new NewProjectCommand());
