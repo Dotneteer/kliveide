@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import styles from "./VirtualizedList.module.scss";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type ScrollAlignment = "start" | "center" | "end" | "auto";
 type ScrollBehavior = "auto" | "smooth";

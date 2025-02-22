@@ -10,7 +10,7 @@ import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { createElement, useEffect, useRef, useState } from "react";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";

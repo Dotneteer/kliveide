@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useStateRefresh } from "../useStateRefresh";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 const noInfo: number[] = Array.from({ length: 0x100 }, () => 0);
 

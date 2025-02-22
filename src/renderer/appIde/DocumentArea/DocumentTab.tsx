@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 
 import styles from "./DocumentTab.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import {
   ContextMenu,
   ContextMenuItem,

@@ -1,7 +1,7 @@
 import { useSelector } from "@renderer/core/RendererProvider";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 import React, { useCallback, useContext, useMemo, useState } from "react";
-import classnames from "../utils/classnames";
+import classnames from "classnames";
 import { darkTheme } from "./dark-theme";
 import { iconLibrary } from "./icon-defs";
 import { imageLibrary } from "./image-defs";

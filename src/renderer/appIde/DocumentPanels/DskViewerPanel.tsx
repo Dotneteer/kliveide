@@ -1,7 +1,7 @@
 import { Flag, Label, LabelSeparator, Secondary } from "@controls/Labels";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useEffect, useState } from "react";
 import { ScrollViewer } from "@controls/ScrollViewer";
 import {

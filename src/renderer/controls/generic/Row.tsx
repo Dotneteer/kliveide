@@ -1,4 +1,4 @@
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import styles from "./GeneralControls.module.scss";
 
 type Props = {

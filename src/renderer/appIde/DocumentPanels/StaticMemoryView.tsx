@@ -1,4 +1,4 @@
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { DumpSection } from "./DumpSection";
 import styles from "./StaticMemoryView.module.scss";
 import { LabeledSwitch } from "@controls/LabeledSwitch";

@@ -3,7 +3,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useState } from "react";
 import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
-import classnames from "../../utils/classnames";
+import classnames from "classnames";
 import styles from "./IdeStatusBar.module.scss";
 
 type IdeStatusBarProps = {

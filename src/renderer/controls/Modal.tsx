@@ -1,5 +1,5 @@
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { dimMenuAction } from "@state/actions";
 import {
   MouseEventHandler,

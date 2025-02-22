@@ -26,7 +26,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { Dropdown } from "@renderer/controls/Dropdown";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";

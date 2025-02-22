@@ -1,5 +1,5 @@
 import styles from "./ToolTab.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useDispatch } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { activateToolAction } from "@state/actions";

@@ -5,7 +5,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { FrameStats } from "@renderer/abstractions/FrameStats";
-import classnames from "../../utils/classnames";
+import classnames from "classnames";
 import styles from "./EmuStatusBar.module.scss";
 import { FrameCompletedArgs } from "@renderer/abstractions/IMachineController";
 

@@ -2,7 +2,7 @@ import styles from "./SpriteEditor.module.scss";
 import { getAbrgForPaletteCode } from "@emu/machines/zxNext/palette";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useState, useEffect } from "react";
 
 type Props = {

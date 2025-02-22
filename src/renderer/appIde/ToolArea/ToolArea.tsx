@@ -1,5 +1,5 @@
 import styles from "./ToolArea.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { ToolsHeader } from "./ToolsHeader";
 import { ToolsContainer } from "./ToolsContainer";

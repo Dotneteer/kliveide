@@ -1,18 +1,14 @@
 import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
-import {
-  useDispatch,
-  useRendererContext,
-  useSelector
-} from "@renderer/core/RendererProvider";
+import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import {
   EXPORT_CODE_DIALOG,
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
-  FIRST_STARTUP_DIALOG_IDE,
+  FIRST_STARTUP_DIALOG_IDE
 } from "@messaging/dialog-ids";
 import {
   RequestMessage,
@@ -28,7 +24,6 @@ import {
   activateToolAction,
   displayDialogAction
 } from "@state/actions";
-import styles from "@styles/app.module.scss";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
@@ -106,10 +101,18 @@ import {
   setCachedStore
 } from "../CachedServices";
 import { ResetZ88DkCommand } from "./commands/Z88DkCommands";
-import { ExportCodeCommand, KliveBuildCommand, KliveCompileCommand, KliveDebugCodeCommand, KliveInjectCodeCommand, KliveRunCodeCommand } from "./commands/KliveCompilerCommands";
+import {
+  ExportCodeCommand,
+  KliveBuildCommand,
+  KliveCompileCommand,
+  KliveDebugCodeCommand,
+  KliveInjectCodeCommand,
+  KliveRunCodeCommand
+} from "./commands/KliveCompilerCommands";
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 import { ShellCommand } from "./commands/ShellCommand";
+import { FullPanel } from "@renderer/controls/new/Panels";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -126,27 +129,19 @@ const IdeApp = () => {
 
   // --- Visual state
   const appPath = decodeURI(location.search.split("=")?.[1]);
-  const dimmed = useSelector(s => s.dimMenu ?? false);
-  const isWindows = useSelector(s => s.isWindows ?? false);
-  const showToolbar = useSelector(s => s.ideViewOptions.showToolbar);
-  const showStatusBar = useSelector(s => s.ideViewOptions.showStatusBar);
-  const showSideBar = useSelector(s => s.ideViewOptions.showSidebar);
-  const showToolPanels = useSelector(s => s.ideViewOptions.showToolPanels);
-  const maximizeToolPanels = useSelector(s => s.ideViewOptions.maximizeTools);
-  const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
-  const kliveProjectLoaded = useSelector(
-    s => s.project?.isKliveProject ?? false
-  );
+  const dimmed = useSelector((s) => s.dimMenu ?? false);
+  const isWindows = useSelector((s) => s.isWindows ?? false);
+  const showToolbar = useSelector((s) => s.ideViewOptions.showToolbar);
+  const showStatusBar = useSelector((s) => s.ideViewOptions.showStatusBar);
+  const showSideBar = useSelector((s) => s.ideViewOptions.showSidebar);
+  const showToolPanels = useSelector((s) => s.ideViewOptions.showToolPanels);
+  const maximizeToolPanels = useSelector((s) => s.ideViewOptions.maximizeTools);
+  const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
+  const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
 
-  const activityOrder = useSelector(s => s.ideViewOptions.primaryBarOnRight)
-    ? 3
-    : 0;
-  const primaryBarsPos = useSelector(s => s.ideViewOptions.primaryBarOnRight)
-    ? "right"
-    : "left";
-  const docPanelsPos = useSelector(s => s.ideViewOptions.toolPanelsOnTop)
-    ? "top"
-    : "bottom";
+  const activityOrder = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? 3 : 0;
+  const primaryBarsPos = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? "right" : "left";
+  const docPanelsPos = useSelector((s) => s.ideViewOptions.toolPanelsOnTop) ? "top" : "bottom";
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -174,7 +169,7 @@ const IdeApp = () => {
 
     // --- Set up the IDE state
     dispatch(selectActivityAction(activityRegistry[0].id));
-    const regTools = toolPanelRegistry.map(t => {
+    const regTools = toolPanelRegistry.map((t) => {
       return {
         id: t.id,
         name: t.name,
@@ -182,7 +177,7 @@ const IdeApp = () => {
       } as ToolInfo;
     });
     dispatch(setToolsAction(regTools));
-    dispatch(activateToolAction(regTools.find(t => t.visible ?? true).id));
+    dispatch(activateToolAction(regTools.find((t) => t.visible ?? true).id));
   }, [appServices, store, messenger]);
 
   useEffect(() => {
@@ -197,32 +192,30 @@ const IdeApp = () => {
   }, [isWindows]);
 
   return (
-    <div id='appMain' className={styles.app}>
+    <FullPanel id="appMain">
       <IdeEventsHandler />
-      {showToolbar && (
-        <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />
-      )}
-      <div className={styles.mainContent}>
+      {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
+      <FullPanel orientation="horizontal">
         <ActivityBar activities={activityRegistry} order={activityOrder} />
         <SplitPanel
           primaryLocation={primaryBarsPos}
-          primaryPanel={<SiteBar />}
           primaryVisible={showSideBar}
-          initialPrimarySize='25%'
+          initialPrimarySize="25%"
           minSize={60}
-          secondaryPanel={
-            <SplitPanel
-              primaryLocation={docPanelsPos}
-              primaryPanel={<ToolArea siblingPosition={docPanelsPos} />}
-              primaryVisible={showToolPanels}
-              minSize={160}
-              secondaryPanel={<DocumentArea />}
-              secondaryVisible={!maximizeToolPanels}
-              initialPrimarySize='33%'
-            />
-          }
-        />
-      </div>
+        >
+          <SiteBar />
+          <SplitPanel
+            primaryLocation={docPanelsPos}
+            primaryVisible={showToolPanels}
+            minSize={160}
+            secondaryVisible={!maximizeToolPanels}
+            initialPrimarySize="33%"
+          >
+            <ToolArea siblingPosition={docPanelsPos} />
+            <DocumentArea />
+          </SplitPanel>
+        </SplitPanel>
+      </FullPanel>
       <IdeStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
 
@@ -256,7 +249,7 @@ const IdeApp = () => {
           }}
         />
       )}
-    </div>
+    </FullPanel>
   );
 };
 
@@ -274,11 +267,7 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
 
   let response: ResponseMessage;
   try {
-    response = await processMainToIdeMessages(
-      msg,
-      getCachedStore(),
-      getCachedAppServices()
-    );
+    response = await processMainToIdeMessages(msg, getCachedStore(), getCachedAppServices());
   } catch (err) {
     // --- In case of errors (rejected promises), retrieve an error response
     response = errorResponse(err.toString());
@@ -293,7 +282,7 @@ ipcRenderer.on("MainToIde", async (_ev, msg: RequestMessage) => {
 // --- Register the interactive commands
 let commandsRegistered = false;
 
-function registerCommands (cmdSrv: IIdeCommandService): void {
+function registerCommands(cmdSrv: IIdeCommandService): void {
   if (commandsRegistered) return;
 
   commandsRegistered = true;

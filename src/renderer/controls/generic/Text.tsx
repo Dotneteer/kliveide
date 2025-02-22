@@ -1,6 +1,6 @@
 import styles from "./GeneralControls.module.scss";
 import { TooltipFactory, useTooltipRef } from "../Tooltip";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type Props = {
   text: string;

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import styles from "./DataSection.module.scss";
 import { Icon } from "./Icon";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type DataSectionProps = {
   title: string;
