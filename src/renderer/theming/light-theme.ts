@@ -131,6 +131,7 @@ export const lightTheme: ThemeProperties = {
   "--color-header": "#000000",
   "--color-chevron": "#000000",
   "--color-chevron-selected": "#ffffff",
+  "--color-panel-border": "#a0a0a0",
   "--color-panel-header": "#000000",
   "--color-panel-focused": "#61a4d0",
 

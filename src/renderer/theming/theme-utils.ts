@@ -12,13 +12,23 @@ export function processStyleValue(name: string, defaultValue?: any): string {
 }
 
 export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProperties {
-  const paddingLeft = processStyleValue(props.paddingHorizontal) || 0;
-  const paddingRight = processStyleValue(props.paddingHorizontal) || 0;
+  const padding = processStyleValue(props.padding);
+  const paddingLeft = processStyleValue(props.paddingHorizontal) || padding || 0;
+  const paddingRight = processStyleValue(props.paddingHorizontal) || padding || 0;
   const height = processStyleValue(props.height);
   let width = processStyleValue(props.width) || "100%";
-  width = `calc(${width} - ${paddingLeft} - ${paddingRight})`;
+  if (paddingLeft) {
+    if (paddingRight) {
+      width = `calc(${width} - ${paddingLeft} - ${paddingRight})`;
+    } else {
+      width = `calc(${width} - ${paddingLeft})`;
+    }
+  } else if (paddingRight) {
+    width = `calc(${width} - ${paddingRight})`;
+  }
+  console.log("width", width);
   const elementStyle: CSSProperties = {
-    padding: processStyleValue(props.padding) || 0,
+    padding,
     paddingLeft,
     paddingRight,
     paddingTop: processStyleValue(props.paddingVertical) || 0,

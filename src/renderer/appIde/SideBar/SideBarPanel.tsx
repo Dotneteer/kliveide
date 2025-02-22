@@ -4,9 +4,9 @@ import { useDispatch } from "@renderer/core/RendererProvider";
 import { setSideBarPanelExpandedAction } from "@state/actions";
 import { Icon } from "@controls/Icon";
 import classnames from "classnames";
-import { ScrollViewer } from "@controls/ScrollViewer";
 import { useAppServices } from "../services/AppServicesProvider";
 import { SideBarPanelInfo } from "../../abstractions/SideBarPanelInfo";
+import ScrollViewer from "@renderer/controls/new/ScrollViewer";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;

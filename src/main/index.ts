@@ -408,12 +408,12 @@ async function createAppWindows() {
 
   // --- Sign when EMU is focused
   emuWindow.on("focus", () => {
-    mainStore.dispatch(emuFocusedAction(true));
+    mainStore.dispatch(emuFocusedAction(true), "main");
   });
 
   // --- Sign when EMU loses the focus
   emuWindow.on("blur", () => {
-    mainStore.dispatch(emuFocusedAction(false));
+    mainStore.dispatch(emuFocusedAction(false), "main");
   });
 
   // --- Close the emu window with the IDE window
