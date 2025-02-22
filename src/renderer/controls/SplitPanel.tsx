@@ -46,12 +46,9 @@ export const SplitPanel = ({
   const [primarySize, setPrimarySize] = useState<string | number>(
     secondaryVisible ? resolveSize(initialPrimarySize) : "100%"
   );
-  const [lastPrimarySize, setLastPrimarySize] = useState<string | number>(
-    primarySize
-  );
+  const [lastPrimarySize, setLastPrimarySize] = useState<string | number>(primarySize);
   const [lastPrimaryVisible, setLastPrimaryVisible] = useState(primaryVisible);
-  const [lastSecondaryVisible, setLastSecondaryVisible] =
-    useState(secondaryVisible);
+  const [lastSecondaryVisible, setLastSecondaryVisible] = useState(secondaryVisible);
   const [splitterPosition, setSplitterPosition] = useState(0);
   const [anchorPosition, setAnchorPosition] = useState(0);
   const [splitterSize, setSplitterSize] = useState(0);
@@ -64,10 +61,7 @@ export const SplitPanel = ({
   const primaryClass = horizontal ? styles.vertical : styles.horizontal;
   const primaryDim = horizontal ? "width" : "height";
   const splitterVisible =
-    !!primaryPanel &&
-    !!primaryVisible &&
-    !!secondaryPanel &&
-    !!secondaryVisible;
+    !!primaryPanel && !!primaryVisible && !!secondaryPanel && !!secondaryVisible;
 
   // --- Respond to panel visibility changes
   useLayoutEffect(() => {
@@ -81,24 +75,17 @@ export const SplitPanel = ({
       if (initialPrimarySize !== undefined) {
         mainSize = calculateDim(containerSize, initialPrimarySize);
       } else if (initialSecondarySize) {
-        mainSize =
-          containerSize - calculateDim(containerSize, initialSecondarySize);
+        mainSize = containerSize - calculateDim(containerSize, initialSecondarySize);
       }
       setLastPrimarySize(mainSize);
       initialLayout.current = false;
     }
-    if (
-      (!primaryVisible && lastPrimaryVisible) ||
-      (!secondaryVisible && lastSecondaryVisible)
-    ) {
+    if ((!primaryVisible && lastPrimaryVisible) || (!secondaryVisible && lastSecondaryVisible)) {
       // --- We're hiding the primary panel, store its previous size
       setLastPrimarySize(primarySize);
     }
 
-    if (
-      (primaryVisible && !lastPrimaryVisible) ||
-      (secondaryVisible && !lastSecondaryVisible)
-    ) {
+    if ((primaryVisible && !lastPrimaryVisible) || (secondaryVisible && !lastSecondaryVisible)) {
       // --- We're displaying the primary panel, restore its size
       setPrimarySize(lastPrimarySize);
     }
@@ -145,13 +132,9 @@ export const SplitPanel = ({
     // --- Set the new anchor position of the splitter
     const anchorValue = {
       left: mainContainer.current?.offsetLeft ?? 0,
-      right:
-        (mainContainer.current?.clientWidth ?? 0) +
-        (mainContainer.current?.offsetLeft ?? 0),
+      right: (mainContainer.current?.clientWidth ?? 0) + (mainContainer.current?.offsetLeft ?? 0),
       top: mainContainer.current?.offsetTop ?? 0,
-      bottom:
-        (mainContainer.current?.clientHeight ?? 0) +
-        (mainContainer.current?.offsetTop ?? 0)
+      bottom: (mainContainer.current?.clientHeight ?? 0) + (mainContainer.current?.offsetTop ?? 0)
     }[primaryLocation];
 
     setAnchorPosition(anchorValue);
@@ -160,16 +143,14 @@ export const SplitPanel = ({
     const splitterPosValue =
       {
         left:
-          (mainContainer.current?.offsetLeft ?? 0) +
-          (primaryContainer.current?.clientWidth ?? 0),
+          (mainContainer.current?.offsetLeft ?? 0) + (primaryContainer.current?.clientWidth ?? 0),
         right:
           (primaryContainer.current?.clientWidth ?? 0) +
           window.innerWidth -
           (mainContainer.current?.offsetLeft ?? 0) -
           (mainContainer.current?.clientWidth ?? 0),
         top:
-          (mainContainer.current?.offsetTop ?? 0) +
-          (primaryContainer.current?.clientHeight ?? 0),
+          (mainContainer.current?.offsetTop ?? 0) + (primaryContainer.current?.clientHeight ?? 0),
         bottom:
           (primaryContainer.current?.clientHeight ?? 0) +
           window.innerHeight -
@@ -181,22 +162,13 @@ export const SplitPanel = ({
   });
 
   return (
-    <div
-      className={[styles.splitPanel, containerClass].join(" ")}
-      ref={mainContainer}
-    >
+    <div className={[styles.splitPanel, containerClass].join(" ")} ref={mainContainer}>
       {primaryVisible && (
-        <div
-          className={primaryClass}
-          style={{ [primaryDim]: primarySize }}
-          ref={primaryContainer}
-        >
+        <div className={primaryClass} style={{ [primaryDim]: primarySize }} ref={primaryContainer}>
           {primaryPanel}
         </div>
       )}
-      {secondaryVisible && (
-        <div className={styles.secondary}>{secondaryPanel}</div>
-      )}
+      {secondaryVisible && <div className={styles.secondary}>{secondaryPanel}</div>}
       {splitterVisible && (
         <Splitter
           thickness={splitterThickness}
@@ -206,7 +178,7 @@ export const SplitPanel = ({
           splitterSize={splitterSize}
           minRange={minSize}
           maxRange={splitterRange - minSize}
-          onSplitterMoved={newPos => {
+          onSplitterMoved={(newPos) => {
             setPrimarySize(newPos);
           }}
         />
@@ -238,15 +210,34 @@ const Splitter = ({
 }: SplitterProps) => {
   const { uiService } = useAppServices();
   const horizontal = isHorizontal(location);
-  const [pointed, setPointed] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
-
-  // --- Functions used while moving
+  const [pointed, setPointed] = useState(false);
   const gripPosition = useRef(0);
-  const _move = (e: MouseEvent) => move(e);
-  const _endMove = () => endMove();
 
-  // --- Handle resizing the component
+  const startMove = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    setIsMoving(true);
+    gripPosition.current = horizontal ? e.clientX : e.clientY;
+    document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", endMove);
+  };
+
+  const move = (e: MouseEvent) => {
+    const delta = (horizontal ? e.clientX : e.clientY) - gripPosition.current;
+    const moveDir = location === "left" || location === "top" ? 1 : -1;
+    let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
+    newPrimarySize = resize(newPrimarySize, minRange, maxRange);
+    onSplitterMoved?.(newPrimarySize);
+  };
+
+  const endMove = () => {
+    setIsMoving(false);
+    document.body.style.cursor = "default";
+    window.removeEventListener("mousemove", move);
+    window.removeEventListener("mouseup", endMove);
+  };
+
   return (
     <div
       className={classnames(styles.splitter, {
@@ -256,74 +247,26 @@ const Splitter = ({
         [horizontal ? "width" : "height"]: `${thickness}px`,
         [horizontal ? "height" : "width"]: `${splitterSize}px`,
         [location]: `${position}px`,
-        cursor: !uiService.dragging
-          ? horizontal
-            ? "col-resize"
-            : "row-resize"
-          : "inherit"
+        cursor: !uiService.dragging ? (horizontal ? "col-resize" : "row-resize") : "inherit"
       }}
-      onMouseDown={e => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (e.button === 0) {
-          startMove(e);
-        }
-      }}
-      onMouseUp={() => endMove()}
+      onMouseDown={startMove}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     />
   );
-
-  // --- Sign the start of resizing
-  function startMove (e: React.MouseEvent): void {
-    setIsMoving(true);
-    // --- Store the current grip position
-    gripPosition.current = horizontal ? e.clientX : e.clientY;
-
-    // --- Capture mouse move via window events
-    window.addEventListener("mouseup", _endMove);
-    window.addEventListener("mousemove", _move);
-    document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
-  }
-
-  // --- Move the splitter and notify the splitter panel about size changes
-  function move (e: MouseEvent): void {
-    const delta = (horizontal ? e.clientX : e.clientY) - gripPosition.current;
-    const moveDir = location === "left" || location === "top" ? 1 : -1;
-    let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
-    newPrimarySize = resize(newPrimarySize, minRange, maxRange);
-    if (onSplitterMoved) {
-      onSplitterMoved(newPrimarySize);
-    }
-  }
-
-  // --- End moving the splitter
-  function endMove (): void {
-    setIsMoving(false);
-    // --- Release the captured mouse
-    window.removeEventListener("mouseup", _endMove);
-    window.removeEventListener("mousemove", _move);
-    document.body.style.cursor = "default";
-  }
 };
-
 /**
  * Determines if a particular position is horizontal
  */
-function isHorizontal (pos: Location): boolean {
+function isHorizontal(pos: Location): boolean {
   return pos === "left" || pos === "right";
 }
 
-function resolveSize (size: string | number) {
+function resolveSize(size: string | number) {
   return typeof size === "string" ? size : `${size}px`;
 }
 
-function resize (
-  newPrimarySize: number,
-  minRange: number,
-  maxRange: number
-): number {
+function resize(newPrimarySize: number, minRange: number, maxRange: number): number {
   if (newPrimarySize < minRange) {
     newPrimarySize = minRange;
   }
@@ -333,7 +276,7 @@ function resize (
   return newPrimarySize;
 }
 
-function calculateDim (containerDim: number, dim: string | number): number {
+function calculateDim(containerDim: number, dim: string | number): number {
   if (typeof dim === "number") return dim;
   dim = dim.trim();
   if (dim.endsWith("%")) {
