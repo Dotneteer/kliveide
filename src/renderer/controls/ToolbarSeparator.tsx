@@ -1,5 +1,5 @@
 import styles from "./ToolbarSeparator.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type Props = {
   small?: boolean;

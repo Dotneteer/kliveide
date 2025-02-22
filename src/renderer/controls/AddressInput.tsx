@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./AddressInput.module.scss";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {

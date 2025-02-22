@@ -11,7 +11,7 @@ import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
 import { KeyHandler } from "./generic/KeyHandler";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type Props = {
   palette: number[];

@@ -1,6 +1,6 @@
 import { Icon } from "@renderer/controls/Icon";
 import styles from "./Z88ToolArea.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import {
   MC_Z88_INTRAM,
   MC_Z88_INTROM,

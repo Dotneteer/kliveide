@@ -1,6 +1,6 @@
 import styles from "./LabeledGroup.module.scss";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
-import classNames from "../utils/classnames";
+import classNames from "classnames";
 type Props = {
   label: string;
   title?: string;

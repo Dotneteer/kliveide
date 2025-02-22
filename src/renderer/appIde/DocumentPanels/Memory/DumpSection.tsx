@@ -1,6 +1,6 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { memo, useEffect, useState } from "react";
 import styles from "./DumpSection.module.scss";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";

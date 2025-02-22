@@ -1,7 +1,7 @@
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import React, { useEffect, useRef, useState } from "react";
 import styles from "./CommandPanel.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
   incToolCommandSeqNoAction,

@@ -1,5 +1,5 @@
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { noop } from "@renderer/utils/stablerefs";
 import { useState } from "react";
 import { Icon } from "../../controls/Icon";

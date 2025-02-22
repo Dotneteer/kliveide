@@ -20,7 +20,7 @@ import {
 } from "./BasicLine";
 import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { ErrorBoundary } from "@renderer/controls/ErrorBoundary";
 import { useAppServices } from "../services/AppServicesProvider";

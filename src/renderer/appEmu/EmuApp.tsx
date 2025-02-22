@@ -47,6 +47,7 @@ import {
   setCachedStore
 } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
+import { FullPanel } from "@renderer/controls/new/Panels";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -103,7 +104,7 @@ const EmuApp = () => {
 
 
   return (
-    <div id='appMain' className={styles.app}>
+    <FullPanel id='appMain'>
       {showToolbar && (
         <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
       )}
@@ -163,7 +164,7 @@ const EmuApp = () => {
           }}
         />
       )}
-    </div>
+    </FullPanel>
   );
 };
 

@@ -14,7 +14,7 @@ import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useStateRefresh } from "@renderer/appIde/useStateRefresh";

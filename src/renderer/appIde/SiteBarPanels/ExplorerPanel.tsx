@@ -13,7 +13,7 @@ import { Icon } from "@controls/Icon";
 import { ScrollViewerApi } from "@controls/ScrollViewer";
 import { VirtualizedListApi } from "@controls/VirtualizedList";
 import { LabelSeparator } from "@controls/Labels";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useAppServices } from "../services/AppServicesProvider";
 import { Button } from "@controls/Button";
 import {

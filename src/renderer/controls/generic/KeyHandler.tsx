@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./KeyHandler.module.scss";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 
 type Props = {

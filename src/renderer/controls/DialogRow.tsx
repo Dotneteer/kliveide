@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import styles from "./DialogRow.module.scss";
 import { DialogLabel } from "./DialogLabel";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type DialogRowProps = {
   label?: string;

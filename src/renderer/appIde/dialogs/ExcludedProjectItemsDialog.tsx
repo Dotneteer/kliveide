@@ -1,7 +1,7 @@
 import styles from "./ExcludedProjectItemsDialog.module.scss";
 import { Modal } from "@controls/Modal";
 import { useEffect, useRef, useState } from "react";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { VirtualizedListView } from "@controls/VirtualizedListView";

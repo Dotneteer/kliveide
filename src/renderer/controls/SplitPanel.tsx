@@ -2,7 +2,7 @@ import { useResizeObserver } from "../core/useResizeObserver";
 import React, { useLayoutEffect, useRef, useState } from "react";
 import styles from "./SplitPanel.module.scss";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 
 type Location = "left" | "right" | "top" | "bottom";
 

@@ -1,6 +1,6 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { toHexa4, toHexa2 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";

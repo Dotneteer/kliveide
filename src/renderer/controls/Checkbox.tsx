@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import styles from "./Checkbox.module.scss";
 
 type CheckboxProps = {

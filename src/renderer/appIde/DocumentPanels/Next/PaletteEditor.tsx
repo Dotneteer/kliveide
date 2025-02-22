@@ -10,7 +10,7 @@ import {
 } from "@emu/machines/zxNext/palette";
 import { Label } from "@renderer/controls/generic/Label";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { KeyHandler } from "@renderer/controls/generic/KeyHandler";

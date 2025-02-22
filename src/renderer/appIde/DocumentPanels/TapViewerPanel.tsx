@@ -3,7 +3,7 @@ import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./TapViewerPanel.module.scss";
 import { readTapeFile } from "@renderer/utils/tape-utils";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";

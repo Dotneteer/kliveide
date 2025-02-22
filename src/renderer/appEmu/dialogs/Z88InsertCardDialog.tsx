@@ -5,7 +5,7 @@ import { Modal } from "@renderer/controls/Modal";
 import { CardTypeData, applyCardStateChange, cardTypes } from "../machines/Z88ToolArea";
 import { useState } from "react";
 import { useRendererContext } from "@renderer/core/RendererProvider";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { IconButton } from "@renderer/controls/IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MC_Z88_SLOT0 } from "@common/machines/constants";

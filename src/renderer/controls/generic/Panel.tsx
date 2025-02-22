@@ -1,6 +1,6 @@
 import styles from "./GeneralControls.module.scss";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
-import classnames from "@renderer/utils/classnames";
+import classnames from "classnames";
 import { useRef } from "react";
 import { ScrollViewerApi, ScrollViewer } from "../ScrollViewer";
 

@@ -22,6 +22,7 @@ import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids"
 import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { HStack } from "./new/Panels";
 
 type Props = {
   ide: boolean;
@@ -106,7 +107,13 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   }, [ide, kliveProjectLoaded]);
 
   return (
-    <div className={styles.toolbar}>
+    <HStack
+      height="38px"
+      backgroundColor="--bgcolor-toolbar"
+      paddingHorizontal="--space-1_5"
+      paddingVertical="--space-1"
+      verticalContentAlignment="center"
+    >
       <IconButton
         iconName={startOpt.iconName}
         fill="--color-toolbarbutton-green"
@@ -335,6 +342,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           />
         </>
       )}
-    </div>
+    </HStack>
   );
 };
