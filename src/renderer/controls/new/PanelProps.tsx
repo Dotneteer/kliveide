@@ -1,7 +1,7 @@
 import { CSSProperties } from "react";
 
 export type PanelProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   id?: string;
   orientation?: "vertical" | "horizontal";
   padding?: string;

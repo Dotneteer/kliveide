@@ -3,7 +3,7 @@ import createAppStore from "@state/store";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { MessageSource } from "@messaging/messages-core";
 import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
-import { ForwardActionRequest } from "@messaging/forwarding";
+import { ForwardActionRequest } from "@messaging/messages-core";
 
 /**
  * This instance represents the state store in the EMU renderer
