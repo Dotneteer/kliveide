@@ -8,7 +8,11 @@ export const FullPanel = (props: PanelProps) => {
   return (
     <div
       id={props.id}
-      className={classnames(styles.fullPanel, props.classExt)}
+      className={classnames(
+        styles.fullPanel,
+        { [styles.horizontal]: props.orientation === "horizontal" },
+        props.classExt
+      )}
       style={elementStyle}
     >
       {props.children}

@@ -1,6 +1,7 @@
+import styles from "./SplitPanel.module.scss";
+
 import { useResizeObserver } from "../core/useResizeObserver";
 import React, { useLayoutEffect, useRef, useState } from "react";
-import styles from "./SplitPanel.module.scss";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import classnames from "classnames";
 
@@ -9,14 +10,13 @@ type Location = "left" | "right" | "top" | "bottom";
 /**
  * The properties of the SplitPanel
  */
-type SplitPanelProps = {
-  primaryPanel?: JSX.Element;
+type Props = {
+  children: React.ReactNode;
   primaryLocation?: Location;
   primaryVisible?: boolean;
   initialPrimarySize?: number | string;
   initialSecondarySize?: number | string;
   minSize?: number;
-  secondaryPanel?: JSX.Element;
   secondaryVisible?: boolean;
   splitterThickness?: number;
 };
@@ -26,19 +26,22 @@ type SplitPanelProps = {
  * @returns
  */
 export const SplitPanel = ({
-  primaryPanel,
+  children,
   primaryLocation = "left",
   primaryVisible = true,
   initialPrimarySize,
   initialSecondarySize,
   minSize = 20,
-  secondaryPanel,
   secondaryVisible = true,
   splitterThickness = 4
-}: SplitPanelProps) => {
+}: Props) => {
   // --- Referencies we need to handling the splitter within the panel
   const mainContainer = useRef<HTMLDivElement>(null);
   const primaryContainer = useRef<HTMLDivElement>(null);
+
+  // --- Get the panels
+  const primaryPanel = children?.[0];
+  const secondaryPanel = children?.[1];
 
   const [primarySize, setPrimarySize] = useState<string | number>(
     secondaryVisible ? resolveSize(initialPrimarySize) : "100%"
@@ -236,6 +239,7 @@ const Splitter = ({
   const { uiService } = useAppServices();
   const horizontal = isHorizontal(location);
   const [pointed, setPointed] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   // --- Functions used while moving
   const gripPosition = useRef(0);
@@ -246,7 +250,7 @@ const Splitter = ({
   return (
     <div
       className={classnames(styles.splitter, {
-        [styles.pointed]: pointed && !uiService.dragging
+        [styles.pointed]: (pointed || isMoving) && !uiService.dragging
       })}
       style={{
         [horizontal ? "width" : "height"]: `${thickness}px`,
@@ -273,6 +277,7 @@ const Splitter = ({
 
   // --- Sign the start of resizing
   function startMove (e: React.MouseEvent): void {
+    setIsMoving(true);
     // --- Store the current grip position
     gripPosition.current = horizontal ? e.clientX : e.clientY;
 
@@ -295,6 +300,7 @@ const Splitter = ({
 
   // --- End moving the splitter
   function endMove (): void {
+    setIsMoving(false);
     // --- Release the captured mouse
     window.removeEventListener("mouseup", _endMove);
     window.removeEventListener("mousemove", _move);

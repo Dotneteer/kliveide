@@ -36,10 +36,12 @@
     position: fixed;
     z-index: 10;
     background: transparent;
+    opacity: 0.0;
 
     &.pointed {
         background: var(--bgcolor-splitter);
         opacity: 1.0;
+        transition: opacity 0.2s;
     }
 }
 
