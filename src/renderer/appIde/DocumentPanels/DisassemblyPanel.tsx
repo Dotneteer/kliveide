@@ -32,6 +32,8 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VListHandle } from "virtua";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -119,7 +121,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Internal state values for disassembly
   const cachedItems = useRef<DisassemblyItem[]>([]);
   const breakpoints = useRef<BreakpointInfo[]>();
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VListHandle>(null);
 
   const isRefreshing = useRef(false);
   const [scrollVersion, setScrollVersion] = useState(0);
@@ -500,18 +502,17 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       )}
       <div className={styles.headerSeparator} />
       <div className={styles.disassemblyWrapper}>
-        <VirtualizedListView
+        <VirtualizedList
           items={cachedItems.current}
-          approxSize={20}
-          fixItemHeight={true}
-          vlApiLoaded={(api) => (vlApi.current = api)}
-          scrolled={async () => {
+          apiLoaded={(api) => (vlApi.current = api)}
+          overscan={25}
+          onScroll={async () => {
             if (!vlApi.current || !cachedItems.current) return;
 
-            const range = vlApi.current.getRange();
-            setTopAddress(cachedItems.current[range.startIndex].address);
+            // const range = vlApi.current.getRange();
+            // setTopAddress(cachedItems.current[range.startIndex].address);
           }}
-          itemRenderer={(idx) => {
+          renderItem={(idx) => {
             const address = cachedItems.current?.[idx].address;
             const execPoint = address === pausedPc;
             const breakpoint = breakpoints.current.find(

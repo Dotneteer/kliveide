@@ -1,4 +1,5 @@
-import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
+import { ILiteEvent } from "@abstractions/ILiteEvent";
+import { LiteEvent } from "@emu/utils/lite-event";
 
 /**
  * Available output colors
@@ -126,7 +127,7 @@ export class BasicProgramBuffer {
     }
 
     const newSpan: BasicLineSpan = {
-      text: message.replaceAll(" ", "\xa0"),
+      text: message,
       ink: this._ink,
       paper: this._paper,
       bright: this._bright,

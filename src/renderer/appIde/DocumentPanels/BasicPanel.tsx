@@ -20,11 +20,11 @@ import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { ErrorBoundary } from "@renderer/controls/ErrorBoundary";
 import { useAppServices } from "../services/AppServicesProvider";
 import { FullPanel } from "@renderer/controls/new/Panels";
 import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
 import { VirtualizerHandle } from "virtua";
+import { PanelHeader } from "./helpers/PanelHeader";
 
 type BasicViewState = {
   topIndex?: number;
@@ -355,8 +355,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
     : "Machine OS has not been initialized yet";
 
   return (
-    <FullPanel fontSize="0.8em">
-      <div className={styles.header}>
+    <FullPanel fontSize="0.8em" fontFamily="--monospace-font">
+      <PanelHeader>
         <SmallIconButton
           iconName="refresh"
           title={"Refresh now"}
@@ -395,7 +395,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           title="Use ZX Spectrum font to display the list"
           clicked={setShowSpectrumFont}
         />
-      </div>
+      </PanelHeader>
       {message && (
         <FullPanel
           horizontalContentAlignment="center"
@@ -407,27 +407,25 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
         </FullPanel>
       )}
       {!message && (
-          <ErrorBoundary>
-            <VirtualizedList
-              items={basicLines}
-              overscan={25}
-              onScroll={() => {
-                if (!vlApi.current || cachedLines.current.length === 0) return;
-                storeTopAddress();
-              }}
-              apiLoaded={(api) => (vlApi.current = api)}
-              renderItem={(idx) => {
-                return (
-                  <div className={styles.item}>
-                    <BasicLineDisplay
-                      spans={basicLines[idx]?.spans}
-                      showSpectrumFont={showSpectrumFont}
-                    />
-                  </div>
-                );
-              }}
-            />
-          </ErrorBoundary>
+        <VirtualizedList
+          items={basicLines}
+          overscan={25}
+          onScroll={() => {
+            if (!vlApi.current || cachedLines.current.length === 0) return;
+            storeTopAddress();
+          }}
+          apiLoaded={(api) => (vlApi.current = api)}
+          renderItem={(idx) => {
+            return (
+              <div key={idx} className={styles.item}>
+                <BasicLineDisplay
+                  spans={basicLines[idx]?.spans}
+                  showSpectrumFont={showSpectrumFont}
+                />
+              </div>
+            );
+          }}
+        />
       )}
     </FullPanel>
   );
