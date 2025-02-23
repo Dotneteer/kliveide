@@ -11,6 +11,9 @@ export type PanelProps = {
   horizontalContentAlignment?: string;
   gap?: string;
   backgroundColor?: string;
+  color?: string;
+  fontFamily?: string;
+  fontSize?: string;
   height?: string;
   width?: string;
   style?: CSSProperties;

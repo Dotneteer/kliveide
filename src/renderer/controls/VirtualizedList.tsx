@@ -130,7 +130,7 @@ export const VirtualizedList = ({
         {virtualizer.getVirtualItems().map(virtualRow =>
           fixItemHeight ? (
             <div
-              key={virtualRow.key}
+              key={virtualRow.key as any}
               data-index={virtualRow.index}
               className={virtualRow.index % 2 ? "ListItemOdd" : "ListItemEven"}
               style={{
@@ -145,7 +145,7 @@ export const VirtualizedList = ({
             </div>
           ) : (
             <div
-              key={virtualRow.key}
+              key={virtualRow.key as any}
               data-index={virtualRow.index}
               ref={virtualizer.measureElement}
               className={virtualRow.index % 2 ? "ListItemOdd" : "ListItemEven"}

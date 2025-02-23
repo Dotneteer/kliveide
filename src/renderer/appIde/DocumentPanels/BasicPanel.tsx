@@ -1,8 +1,6 @@
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
-import { VirtualizedListApi } from "@controls/VirtualizedList";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@state/actions";
@@ -24,6 +22,9 @@ import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { ErrorBoundary } from "@renderer/controls/ErrorBoundary";
 import { useAppServices } from "../services/AppServicesProvider";
+import { FullPanel } from "@renderer/controls/new/Panels";
+import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizerHandle } from "virtua";
 
 type BasicViewState = {
   topIndex?: number;
@@ -59,7 +60,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   const programBuffer = useRef(new BasicProgramBuffer());
   const showListing = useRef(false);
   const cachedLines = useRef<BasicLine[]>([]);
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VirtualizerHandle>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
 
   const useCodes = useRef(false);
@@ -344,12 +345,17 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   // --- Save the current top addresds
   const storeTopAddress = () => {
-    const range = vlApi.current.getRange();
-    setTopIndex(range.startIndex);
+    setTopIndex(vlApi.current?.findStartIndex());
   };
 
+  const message = showListing.current
+    ? basicLines && !basicLines.length
+      ? "BASIC program area is empty"
+      : ""
+    : "Machine OS has not been initialized yet";
+
   return (
-    <div className={styles.basicPanel}>
+    <FullPanel fontSize="0.8em">
       <div className={styles.header}>
         <SmallIconButton
           iconName="refresh"
@@ -390,25 +396,27 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           clicked={setShowSpectrumFont}
         />
       </div>
-      {!showListing.current && (
-        <div className={styles.center}>Machine OS has not been initialized yet</div>
+      {message && (
+        <FullPanel
+          horizontalContentAlignment="center"
+          verticalContentAlignment="center"
+          color="--color-secondary-label"
+          fontFamily="--monospace-font"
+        >
+          {message}
+        </FullPanel>
       )}
-      {showListing.current && basicLines && !basicLines.length && (
-        <div className={styles.center}>BASIC program area is empty</div>
-      )}
-      {showListing.current && basicLines && basicLines.length > 0 && (
-        <div className={styles.listWrapper}>
+      {!message && (
           <ErrorBoundary>
-            <VirtualizedListView
+            <VirtualizedList
               items={basicLines}
-              approxSize={20}
-              fixItemHeight={false}
-              scrolled={() => {
+              overscan={25}
+              onScroll={() => {
                 if (!vlApi.current || cachedLines.current.length === 0) return;
                 storeTopAddress();
               }}
-              vlApiLoaded={(api) => (vlApi.current = api)}
-              itemRenderer={(idx) => {
+              apiLoaded={(api) => (vlApi.current = api)}
+              renderItem={(idx) => {
                 return (
                   <div className={styles.item}>
                     <BasicLineDisplay
@@ -420,9 +428,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
               }}
             />
           </ErrorBoundary>
-        </div>
       )}
-    </div>
+    </FullPanel>
   );
 };
 
