@@ -1,6 +1,5 @@
 import { FullPanel, HStack, VStack } from "@renderer/controls/new/Panels";
-import ScrollViewer from "@renderer/controls/new/ScrollViewer";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { renderedItems, VirtualizedList } from "@renderer/controls/new/VirtualizedList";
 import { useRef } from "react";
 import { VirtualizerHandle } from "virtua";
 
@@ -37,10 +36,11 @@ export const EmuApp2 = () => {
       </HStack>
       <VirtualizedList
         items={Array.from({
-          length: 1000
+          length: 100_000
         }).map((_, i) => i)}
         apiLoaded={(api) => (vlApi.current = api)}
         overscan={25}
+        onScroll={() => console.log("Scrolled", renderedItems)}
         renderItem={i => <div key={i} style={{ height: "20px" }}>Item {i}</div>}
       />
     </FullPanel>

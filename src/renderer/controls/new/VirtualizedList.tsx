@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Virtualizer, VListHandle } from "virtua";
 import ScrollViewer from "./ScrollViewer";
 
+export let renderedItems = 0;
+
 type Props = {
   items: any[];
   overscan?: number;
@@ -23,7 +25,10 @@ export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScro
   return (
     <ScrollViewer>
       <Virtualizer ref={ref} overscan={overscan} onScroll={(offset) => onScroll?.(offset)}>
-        {Array.from({ length: items.length }, (_, index) => renderItem?.(index))}
+        {Array.from({ length: items.length }, (_, index) => {
+          renderedItems++;
+          return renderItem?.(index);
+        })}
       </Virtualizer>
     </ScrollViewer>
   );
