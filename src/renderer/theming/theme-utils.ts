@@ -26,7 +26,6 @@ export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProp
   } else if (paddingRight) {
     width = `calc(${width} - ${paddingRight})`;
   }
-  console.log("width", width);
   const elementStyle: CSSProperties = {
     padding,
     paddingLeft,
@@ -34,6 +33,9 @@ export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProp
     paddingTop: processStyleValue(props.paddingVertical) || 0,
     paddingBottom: processStyleValue(props.paddingVertical) || 0,
     backgroundColor: processStyleValue(props.backgroundColor),
+    color: processStyleValue(props.color),
+    fontFamily: processStyleValue(props.fontFamily),
+    fontSize: processStyleValue(props.fontSize),
     gap: processStyleValue(props.gap) || 0,
     height: height,
     width,

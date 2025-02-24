@@ -1,8 +1,6 @@
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
-import { VirtualizedListApi } from "@controls/VirtualizedList";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { setIdeStatusMessageAction } from "@state/actions";
@@ -22,8 +20,11 @@ import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "../services/DocumentServiceProvider";
 import classnames from "classnames";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { ErrorBoundary } from "@renderer/controls/ErrorBoundary";
 import { useAppServices } from "../services/AppServicesProvider";
+import { FullPanel } from "@renderer/controls/new/Panels";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { VirtualizerHandle } from "virtua";
+import { PanelHeader } from "./helpers/PanelHeader";
 
 type BasicViewState = {
   topIndex?: number;
@@ -59,7 +60,7 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   const programBuffer = useRef(new BasicProgramBuffer());
   const showListing = useRef(false);
   const cachedLines = useRef<BasicLine[]>([]);
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VirtualizerHandle>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
 
   const useCodes = useRef(false);
@@ -344,13 +345,18 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   // --- Save the current top addresds
   const storeTopAddress = () => {
-    const range = vlApi.current.getRange();
-    setTopIndex(range.startIndex);
+    setTopIndex(vlApi.current?.findStartIndex());
   };
 
+  const message = showListing.current
+    ? basicLines && !basicLines.length
+      ? "BASIC program area is empty"
+      : ""
+    : "Machine OS has not been initialized yet";
+
   return (
-    <div className={styles.basicPanel}>
-      <div className={styles.header}>
+    <FullPanel fontSize="0.8em" fontFamily="--monospace-font">
+      <PanelHeader>
         <SmallIconButton
           iconName="refresh"
           title={"Refresh now"}
@@ -389,40 +395,39 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
           title="Use ZX Spectrum font to display the list"
           clicked={setShowSpectrumFont}
         />
-      </div>
-      {!showListing.current && (
-        <div className={styles.center}>Machine OS has not been initialized yet</div>
+      </PanelHeader>
+      {message && (
+        <FullPanel
+          horizontalContentAlignment="center"
+          verticalContentAlignment="center"
+          color="--color-secondary-label"
+          fontFamily="--monospace-font"
+        >
+          {message}
+        </FullPanel>
       )}
-      {showListing.current && basicLines && !basicLines.length && (
-        <div className={styles.center}>BASIC program area is empty</div>
+      {!message && (
+        <VirtualizedList
+          items={basicLines}
+          overscan={25}
+          onScroll={() => {
+            if (!vlApi.current || cachedLines.current.length === 0) return;
+            storeTopAddress();
+          }}
+          apiLoaded={(api) => (vlApi.current = api)}
+          renderItem={(idx) => {
+            return (
+              <div key={idx} className={styles.item}>
+                <BasicLineDisplay
+                  spans={basicLines[idx]?.spans}
+                  showSpectrumFont={showSpectrumFont}
+                />
+              </div>
+            );
+          }}
+        />
       )}
-      {showListing.current && basicLines && basicLines.length > 0 && (
-        <div className={styles.listWrapper}>
-          <ErrorBoundary>
-            <VirtualizedListView
-              items={basicLines}
-              approxSize={20}
-              fixItemHeight={false}
-              scrolled={() => {
-                if (!vlApi.current || cachedLines.current.length === 0) return;
-                storeTopAddress();
-              }}
-              vlApiLoaded={(api) => (vlApi.current = api)}
-              itemRenderer={(idx) => {
-                return (
-                  <div className={styles.item}>
-                    <BasicLineDisplay
-                      spans={basicLines[idx]?.spans}
-                      showSpectrumFont={showSpectrumFont}
-                    />
-                  </div>
-                );
-              }}
-            />
-          </ErrorBoundary>
-        </div>
-      )}
-    </div>
+    </FullPanel>
   );
 };
 

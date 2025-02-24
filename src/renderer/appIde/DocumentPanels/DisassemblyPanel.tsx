@@ -5,7 +5,6 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { CT_DISASSEMBLER, CT_DISASSEMBLER_VIEW, MF_BANK, MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { Label, LabelSeparator, Secondary, Value } from "@renderer/controls/Labels";
@@ -25,13 +24,14 @@ import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { Dropdown } from "@renderer/controls/Dropdown";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { VListHandle } from "virtua";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -95,18 +95,16 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
 
   // --- View state
-  const [topAddress, setTopAddress] = useState<number>(viewState.current?.topAddress ?? 0);
-  const [autoRefresh, setAutoRefresh] = useState(viewState.current?.autoRefresh ?? true);
-  const [viewMode, setViewMode] = useState<MemoryViewMode>(viewState.current?.viewMode ?? "full");
-  const [prevViewMode, setPrevViewMode] = useState<MemoryViewMode>(
-    viewState.current?.prevViewMode ?? "ram"
-  );
-  const [romPage, setRomPage] = useState<number>(viewState.current?.romPage ?? 0);
-  const [ramBank, setRamBank] = useState<number>(viewState.current?.ramBank ?? 0);
-  const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
-  const [ram, setRam] = useState(viewState.current?.ram ?? true);
-  const [screen, setScreen] = useState(viewState.current?.screen ?? true);
-  const [disassRange, setDisassRange] = useState((viewState.current?.disassRange ?? 0).toString());
+  const [topAddress, setTopAddress] = useState<number>(0);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [viewMode, setViewMode] = useState<MemoryViewMode>("full");
+  const [prevViewMode, setPrevViewMode] = useState<MemoryViewMode>("ram");
+  const [romPage, setRomPage] = useState<number>(0);
+  const [ramBank, setRamBank] = useState<number>(0);
+  const [bankLabel, setBankLabel] = useState(true);
+  const [ram, setRam] = useState(true);
+  const [screen, setScreen] = useState(true);
+  const [disassRange, setDisassRange] = useState("");
 
   // --- ULA-related state
   const [currentRomPage, setCurrentRomPage] = useState<number>(0);
@@ -119,9 +117,10 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Internal state values for disassembly
   const cachedItems = useRef<DisassemblyItem[]>([]);
   const breakpoints = useRef<BreakpointInfo[]>();
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VListHandle>(null);
 
   const isRefreshing = useRef(false);
+  const [toScroll, setToScroll] = useState<number>(null);
   const [scrollVersion, setScrollVersion] = useState(0);
   const [viewVersion, setViewVersion] = useState(0);
 
@@ -156,6 +155,28 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     };
     documentHubService.saveActiveDocumentState(mergedState);
   };
+
+  useEffect(() => {
+    if (!viewState.current) {
+      return;
+    }
+
+    // --- Refresh the current state from the view state
+    const currentTopAddress = viewState.current.topAddress;
+    setTopAddress(currentTopAddress ?? 0);
+    if (currentTopAddress) {
+      setToScroll(currentTopAddress);
+    }
+    setAutoRefresh(viewState.current.autoRefresh ?? true);
+    setViewMode(viewState.current.viewMode ?? "full");
+    setPrevViewMode(viewState.current.prevViewMode ?? "ram");
+    setRomPage(viewState.current?.romPage ?? 0);
+    setRamBank(viewState.current?.ramBank ?? 0);
+    setBankLabel(viewState.current?.bankLabel ?? true);
+    setRam(viewState.current?.ram ?? true);
+    setScreen(viewState.current?.screen ?? true);
+    setDisassRange((viewState.current?.disassRange ?? 0).toString());
+  }, [viewState.current]);
 
   // --- Save viewState changed
   useEffect(() => {
@@ -264,6 +285,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         const customPlugin = customDisassembly() as ICustomDisassembler;
         disassembler.setCustomDisassembler(customPlugin);
       }
+      console.log("disassembler.disassemble");
       const output = await disassembler.disassemble(
         0x0000,
         viewMode === "full" || autoRefresh ? 0xffff : 0x3fff
@@ -280,7 +302,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       // --- Scroll to the top when following PC
       if (cachedRefreshState.current.autoRefresh && items && items.length > 0) {
         setTopAddress(items[0].address);
-        setScrollVersion(scrollVersion + 1);
       }
     } finally {
       isRefreshing.current = false;
@@ -291,6 +312,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
     (async function () {
+      console.log("machineState")
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:
@@ -303,6 +325,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Obtain available partition labels for the current machine type
   useEffect(() => {
     (async function () {
+      console.log("machineId")
       const labels = await emuApiAlt.getPartitionLabels();
       setPartitionLabels(labels);
     })();
@@ -310,6 +333,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
   // --- Refresh when the follow PC option changes
   useEffect(() => {
+    console.log("option change")
     refreshDisassembly();
   }, [autoRefresh, bpsVersion, injectionVersion, viewMode, disassRange, romPage, ramBank]);
 
@@ -322,15 +346,16 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {
-    if (cachedItems.current) {
-      const idx = cachedItems.current.findIndex((di) => di.address >= (topAddress ?? 0));
+    if (cachedItems.current && cachedItems.current.length > 0 && toScroll !== null) {
+      const idx = cachedItems.current.findIndex((di) => di.address >= (toScroll ?? 0));
       if (idx >= 0) {
         vlApi.current?.scrollToIndex(idx, {
           align: "start"
         });
       }
+      setToScroll(null);
     }
-  }, [scrollVersion]);
+  }, [scrollVersion, toScroll, cachedItems.current]);
 
   const OptionsBar = () => {
     return (
@@ -425,7 +450,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           label="Go To:"
           clearOnEnter={true}
           onAddressSent={async (address) => {
-            setTopAddress(address);
+            setToScroll(address);
             setScrollVersion(scrollVersion + 1);
             if (headerRef.current) headerRef.current.focus();
           }}
@@ -448,7 +473,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             machineState === MachineControllerState.Stopped
           }
           clicked={() => {
-            setTopAddress(pausedPc);
+            setToScroll(pausedPc);
             setScrollVersion(scrollVersion + 1);
           }}
         />
@@ -457,7 +482,13 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           value={autoRefresh}
           label="Follow PC:"
           title="Follow the changes of PC"
-          clicked={setAutoRefresh}
+          clicked={(v) => {
+            setAutoRefresh(v);
+            if (v) {
+              setToScroll(0);
+            }
+            setScrollVersion(scrollVersion + 1);
+          }}
         />
         {allowViews && !autoRefresh && (
           <>
@@ -499,83 +530,91 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         </div>
       )}
       <div className={styles.headerSeparator} />
-      <div className={styles.disassemblyWrapper}>
-        <VirtualizedListView
-          items={cachedItems.current}
-          approxSize={20}
-          fixItemHeight={true}
-          vlApiLoaded={(api) => (vlApi.current = api)}
-          scrolled={async () => {
-            if (!vlApi.current || !cachedItems.current) return;
+      {cachedItems.current && cachedItems.current.length > 0 && (
+        <div className={styles.disassemblyWrapper}>
+          <VirtualizedList
+            items={cachedItems.current}
+            apiLoaded={(api) => (vlApi.current = api)}
+            overscan={25}
+            onScroll={async () => {
+              if (!vlApi.current || !cachedItems.current) return;
 
-            const range = vlApi.current.getRange();
-            setTopAddress(cachedItems.current[range.startIndex].address);
-          }}
-          itemRenderer={(idx) => {
-            const address = cachedItems.current?.[idx].address;
-            const execPoint = address === pausedPc;
-            const breakpoint = breakpoints.current.find(
-              (bp) => bp.address === address || bp.resolvedAddress === address
-            );
-            const item = cachedItems.current?.[idx];
-            return (
-              <div
-                className={classnames(styles.item, {
-                  [styles.even]: idx % 2 == 0
-                })}
-              >
-                <LabelSeparator width={4} />
-                <BreakpointIndicator
-                  partition={
-                    breakpoint?.partition !== undefined
-                      ? partitionLabels[breakpoint.partition] ?? "?"
-                      : undefined
-                  }
-                  address={breakpoint?.resource ? getBreakpointKey(breakpoint) : address}
-                  hasBreakpoint={!!breakpoint}
-                  current={execPoint}
-                  disabled={breakpoint?.disabled ?? false}
-                />
-                {bankLabel && showBanks && (autoRefresh || viewMode === "full") && (
-                  <>
-                    <LabelSeparator width={4} />
-                    <Label text={item?.partition?.toString() ?? ""} width={18} />
-                    <Label text=":" width={6} />
-                  </>
-                )}
-                {bankLabel && showBanks && !autoRefresh && viewMode === "ram" && (
-                  <>
-                    <LabelSeparator width={4} />
-                    <Label text={toHexa2(ramBank ?? 0)} width={18} />
-                    <Label text=":" width={6} />
-                  </>
-                )}
-                {bankLabel && showBanks && !autoRefresh && viewMode === "rom" && (
-                  <>
-                    <LabelSeparator width={4} />
-                    <Label text={"R" + (romPage ?? 0)} width={18} />
-                    <Label text=":" width={6} />
-                  </>
-                )}
-                <LabelSeparator width={4} />
-                <Label text={`${toHexa4(address)}`} width={40} />
-                <Secondary text={item?.opCodes} width={100} />
-                <Label text={item?.hasLabel ? `L${toHexa4(address)}:` : ""} width={80} />
-                <Value text={item?.instruction} width={160} />
-                <Label
-                  text={
-                    item?.tstates
+              const startIndex = vlApi.current.findStartIndex();
+              setTopAddress(cachedItems.current[startIndex].address);
+            }}
+            renderItem={(idx) => {
+              const address = cachedItems.current?.[idx].address;
+              const execPoint = address === pausedPc;
+              const breakpoint = breakpoints.current.find(
+                (bp) => bp.address === address || bp.resolvedAddress === address
+              );
+              const item = cachedItems.current?.[idx];
+              return (
+                <div
+                  key={idx}
+                  className={classnames(styles.item, {
+                    [styles.even]: idx % 2 == 0
+                  })}
+                >
+                  <LabelSeparator width={4} />
+                  <BreakpointIndicator
+                    showType={false}
+                    partition={
+                      breakpoint?.partition !== undefined
+                        ? partitionLabels[breakpoint.partition] ?? "?"
+                        : undefined
+                    }
+                    address={breakpoint?.resource ? getBreakpointKey(breakpoint) : address}
+                    hasBreakpoint={!!breakpoint}
+                    current={execPoint}
+                    disabled={breakpoint?.disabled ?? false}
+                  />
+                  {bankLabel && showBanks && (autoRefresh || viewMode === "full") && (
+                    <>
+                      <LabelSeparator width={4} />
+                      <Label text={item?.partition?.toString() ?? ""} width={18} />
+                      <Label text=":" width={6} />
+                    </>
+                  )}
+                  {bankLabel && showBanks && !autoRefresh && viewMode === "ram" && (
+                    <>
+                      <LabelSeparator width={4} />
+                      <Label text={toHexa2(ramBank ?? 0)} width={18} />
+                      <Label text=":" width={6} />
+                    </>
+                  )}
+                  {bankLabel && showBanks && !autoRefresh && viewMode === "rom" && (
+                    <>
+                      <LabelSeparator width={4} />
+                      <Label text={"R" + (romPage ?? 0)} width={18} />
+                      <Label text=":" width={6} />
+                    </>
+                  )}
+                  <LabelSeparator width={4} />
+                  <Label text={`${toHexa4(address)}`} width={40} />
+                  <Secondary text={item?.opCodes} width={100} />
+                  <Label text={item?.hasLabel ? `L${toHexa4(address)}:` : ""} width={52} />
+                  <div
+                    style={{
+                      width: "36px",
+                      paddingRight: "8px",
+                      fontSize: "0.6rem",
+                      textAlign: "end",
+                      color: "var(--color-doc-inactiveText)"
+                    }}
+                  >
+                    {item?.tstates
                       ? `${item?.tstates}${item?.tstates2 ? `/${item.tstates2}` : ""}`
-                      : ""
-                  }
-                  width={40}
-                />
-                {item.hardComment && <Secondary text={"; " + item?.hardComment} />}
-              </div>
-            );
-          }}
-        />
-      </div>
+                      : ""}
+                  </div>
+                  <Value text={item?.instruction} width={160} />
+                  {item.hardComment && <Secondary text={"; " + item?.hardComment} />}
+                </div>
+              );
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

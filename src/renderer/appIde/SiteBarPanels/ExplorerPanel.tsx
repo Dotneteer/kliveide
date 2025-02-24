@@ -8,10 +8,7 @@ import {
   getFileTypeEntry,
   getNodeDir
 } from "../project/project-node";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { Icon } from "@controls/Icon";
-import { ScrollViewerApi } from "@controls/ScrollViewer";
-import { VirtualizedListApi } from "@controls/VirtualizedList";
 import { LabelSeparator } from "@controls/Labels";
 import classnames from "classnames";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -39,6 +36,8 @@ import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { useMainApi } from "@renderer/core/MainApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { VListHandle } from "virtua";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -91,8 +90,7 @@ const ExplorerPanel = () => {
   const dimmed = useSelector((s) => s.dimMenu);
 
   // --- APIs used to manage the tree view
-  const svApi = useRef<ScrollViewerApi>();
-  const vlApi = useRef<VirtualizedListApi>();
+  const vlApi = useRef<VListHandle>();
 
   // --- State used for tree refresh
   const [lastExpanded, setLastExpanded] = useState<string[]>(null);
@@ -102,7 +100,7 @@ const ExplorerPanel = () => {
   const refreshTree = () => {
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
-    vlApi.current.refresh();
+    //vlApi.current.refresh();
   };
 
   // --- Let's use this context menu when clicking a project tree node
@@ -521,14 +519,10 @@ const ExplorerPanel = () => {
         {deleteDialog}
         {newItemDialog}
 
-        <VirtualizedListView
+        <VirtualizedList
           items={visibleNodes}
-          approxSize={24}
-          fixItemHeight={true}
-          svApiLoaded={(api) => (svApi.current = api)}
-          vlApiLoaded={(api) => (vlApi.current = api)}
-          getItemKey={(index) => tree.getViewNodeByIndex(index).data.fullPath}
-          itemRenderer={(idx) => projectItemRenderer(idx)}
+          apiLoaded={(api) => (vlApi.current = api)}
+          renderItem={(idx) => projectItemRenderer(idx)}
         />
       </div>
     ) : null

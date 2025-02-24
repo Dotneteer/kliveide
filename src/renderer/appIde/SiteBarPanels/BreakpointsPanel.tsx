@@ -1,7 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { LabelSeparator, Label, Value, Secondary } from "@controls/Labels";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
@@ -14,6 +13,7 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
@@ -108,11 +108,9 @@ const BreakpointsPanel = () => {
     <div className={styles.breakpointsPanel}>
       {bps.length === 0 && <div className={styles.center}>No breakpoints defined </div>}
       {bps.length > 0 && (
-        <VirtualizedListView
+        <VirtualizedList
           items={bps}
-          approxSize={20}
-          fixItemHeight={true}
-          itemRenderer={(idx) => {
+          renderItem={(idx) => {
             const bp = bps[idx];
             const addrKey = getBreakpointKey(
               { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },

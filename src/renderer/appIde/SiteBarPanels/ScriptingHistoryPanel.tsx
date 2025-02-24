@@ -2,7 +2,6 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
@@ -12,6 +11,7 @@ import { TabButton } from "@renderer/controls/TabButton";
 import { isScriptCompleted, scriptDocumentId } from "@common/utils/script-utils";
 import { Text } from "@renderer/controls/generic/Text";
 import { useMainApi } from "@renderer/core/MainApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const ScriptingHistoryPanel = () => {
   const { ideCommandsService, projectService } = useAppServices();
@@ -72,11 +72,9 @@ const ScriptingHistoryPanel = () => {
             <Text text={`Scripts displayed: ${scripts.length}`} />
           </div>
           <div className={styles.panel}>
-            <VirtualizedListView
+            <VirtualizedList
               items={scripts}
-              approxSize={24}
-              fixItemHeight={true}
-              itemRenderer={(idx) => {
+              renderItem={(idx) => {
                 const script = scripts[idx];
                 return (
                   <ScriptItem

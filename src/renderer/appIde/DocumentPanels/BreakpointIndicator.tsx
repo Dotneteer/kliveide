@@ -16,6 +16,7 @@ type Props = {
   ioRead?: boolean;
   ioWrite?: boolean;
   ioMask?: number;
+  showType?: boolean;
 };
 
 export const BreakpointIndicator = ({
@@ -28,7 +29,8 @@ export const BreakpointIndicator = ({
   memoryWrite,
   ioRead,
   ioWrite,
-  ioMask
+  ioMask,
+  showType
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const ref = useTooltipRef();
@@ -136,7 +138,7 @@ export const BreakpointIndicator = ({
         showDelay={100}
         content={tooltip}
       />
-      <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />
+      {showType && <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />}
     </div>
   );
 };

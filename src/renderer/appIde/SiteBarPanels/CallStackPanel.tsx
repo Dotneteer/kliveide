@@ -6,8 +6,8 @@ import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CallStackPanel.module.scss";
 import { Icon } from "@renderer/controls/Icon";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const CallStackPanel = () => {
   const emuApi = useEmuApi();
@@ -42,11 +42,9 @@ const CallStackPanel = () => {
   return (
     <div className={styles.callStackPanel}>
       {refreshed && (
-        <VirtualizedListView
+        <VirtualizedList
           items={frames}
-          approxSize={20}
-          fixItemHeight={true}
-          itemRenderer={(idx) => {
+          renderItem={(idx) => {
             return (
               <div key={idx} className={styles.item}>
                 <Secondary text={`${idx ? idx : "Top"}:`} width={32} />

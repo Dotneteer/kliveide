@@ -1,7 +1,11 @@
 import { FullPanel, HStack, VStack } from "@renderer/controls/new/Panels";
-import ScrollViewer from "@renderer/controls/new/ScrollViewer";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { useRef } from "react";
+import { VirtualizerHandle } from "virtua";
 
 export const EmuApp2 = () => {
+  const vlApi = useRef<VirtualizerHandle>(null);
+
   return (
     <FullPanel backgroundColor="--bgcolor-toolbar">
       <VStack
@@ -26,24 +30,18 @@ export const EmuApp2 = () => {
         verticalContentAlignment="center"
         horizontalContentAlignment="center"
       >
-        <div>Child 1</div>
-        <div>Child 2</div>
-        <div>Child 3</div>
+        <button onClick={() => vlApi.current?.scrollToIndex(0)}>Scroll to 0</button>
+        <button onClick={() => vlApi.current?.scrollToIndex(100)}>Scroll to 100</button>
+        <button onClick={() => vlApi.current?.scrollToIndex(5_000_000)}>Scroll to end</button>
       </HStack>
-      <ScrollViewer>
-        <VStack
-          id="myStack"
-          padding="2px"
-          height="2000px"
-          width="2000px"
-          verticalContentAlignment="center"
-          horizontalContentAlignment="end"
-        >
-          <div>Child 1</div>
-          <div>Child 2</div>
-          <div>Child 3</div>
-        </VStack>
-      </ScrollViewer>
+      <VirtualizedList
+        items={Array.from({
+          length: 100_000
+        }).map((_, i) => i)}
+        apiLoaded={(api) => (vlApi.current = api)}
+        overscan={25}
+        renderItem={i => <div key={i} style={{ height: "20px" }}>Item {i}</div>}
+      />
     </FullPanel>
   );
 };

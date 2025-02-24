@@ -8,12 +8,12 @@ import { AddressInput } from "@renderer/controls/AddressInput";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { createElement, useEffect, useRef, useState } from "react";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
-import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { VListHandle } from "virtua";
 
 type MemoryDumpViewState = {
   twoColumns?: boolean;
@@ -33,27 +33,27 @@ const StaticMemoryDump = ({
     document,
     contents,
     viewState,
-    headerRenderer: context => {
+    headerRenderer: (context) => {
       return (
         <Row>
           <AddressInput
-            label='Go to address:'
-            onAddressSent={async address => {
-              context.changeViewState(vs => (vs.topAddress = address));
+            label="Go to address:"
+            onAddressSent={async (address) => {
+              context.changeViewState((vs) => (vs.topAddress = address));
               context.update(address);
             }}
           />
           <LabelSeparator width={8} />
           <LabeledText
-            label='#of bytes:'
+            label="#of bytes:"
             value={`$${toHexa4(contents.length)} (${contents.length})`}
           />
         </Row>
       );
     },
-    renderer: context => {
+    renderer: (context) => {
       const [items, setItems] = useState<number[]>([]);
-      const vlApi = useRef<VirtualizedListApi>();
+      const vlApi = useRef<VListHandle>();
 
       // --- Process the contents when it changes
       useEffect(() => {
@@ -66,10 +66,8 @@ const StaticMemoryDump = ({
 
       useInitializeAsync(async () => {
         if (viewState?.scrollPosition) {
-          await new Promise(resolve => setTimeout(resolve, 40));
-          vlApi.current?.scrollToOffset(
-            viewState.scrollPosition
-          );
+          await new Promise((resolve) => setTimeout(resolve, 40));
+          vlApi.current?.scrollTo(viewState.scrollPosition);
         }
       });
 
@@ -82,17 +80,15 @@ const StaticMemoryDump = ({
       }, [context.version]);
 
       return contents ? (
-        <VirtualizedListView
+        <VirtualizedList
           items={items}
-          approxSize={22}
-          fixItemHeight={true}
-          scrolled={() => {
+          onScroll={() => {
             if (!vlApi.current) return;
-            const topPos = vlApi.current.getScrollTop();
-            context.changeViewState(vs => (vs.scrollPosition = topPos));
+            const topPos = vlApi.current.getItemOffset(0);
+            context.changeViewState((vs) => (vs.scrollPosition = topPos));
           }}
-          vlApiLoaded={api => (vlApi.current = api)}
-          itemRenderer={idx => {
+          apiLoaded={(api) => (vlApi.current = api)}
+          renderItem={(idx) => {
             return (
               <div
                 className={classnames(styles.item, {
@@ -112,19 +108,11 @@ const StaticMemoryDump = ({
   });
 };
 
-export const createStaticMemoryDump = ({
-  document,
-  contents,
-  viewState
-}: DocumentProps) => (
-  <StaticMemoryDump
-    document={document}
-    contents={contents}
-    viewState={viewState}
-  />
+export const createStaticMemoryDump = ({ document, contents, viewState }: DocumentProps) => (
+  <StaticMemoryDump document={document} contents={contents} viewState={viewState} />
 );
 
-export async function openStaticMemoryDump (
+export async function openStaticMemoryDump(
   documentHubService: IDocumentHubService,
   dumpId: string,
   title: string,
