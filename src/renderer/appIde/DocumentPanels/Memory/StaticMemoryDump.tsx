@@ -12,7 +12,7 @@ import classnames from "classnames";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 
 type MemoryDumpViewState = {

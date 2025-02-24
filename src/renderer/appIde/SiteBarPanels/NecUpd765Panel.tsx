@@ -1,7 +1,6 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
 import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
@@ -10,6 +9,7 @@ import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
 import { createEmuApi } from "@common/messaging/EmuApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
@@ -32,11 +32,9 @@ const NecUpd765Panel = () => {
     <div className={styles.necPanel}>
       {log.length === 0 && <div className={styles.center}>No log entries collected </div>}
       {log.length > 0 && (
-        <VirtualizedListView
+        <VirtualizedList
           items={log}
-          approxSize={20}
-          fixItemHeight={true}
-          itemRenderer={(idx) => {
+          renderItem={(idx) => {
             const item = log[idx];
             if (!item) return null;
             let icon: string;

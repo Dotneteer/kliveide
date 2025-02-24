@@ -30,7 +30,7 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";

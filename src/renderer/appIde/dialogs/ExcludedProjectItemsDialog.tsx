@@ -1,10 +1,9 @@
 import styles from "./ExcludedProjectItemsDialog.module.scss";
 import { Modal } from "@controls/Modal";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import classnames from "classnames";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { TabButton } from "@renderer/controls/TabButton";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { setExcludedProjectItemsAction } from "@common/state/actions";
@@ -15,6 +14,7 @@ import {
   excludedItemsFromProject
 } from "../utils/excluded-items-utils";
 import { getNodeFile } from "../project/project-node";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 type Props = {
   onClose: () => void;
@@ -59,11 +59,9 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
     >
       <DialogRow label={`${projectName} Excludes:`}>
         <div className={styles.listWrapper}>
-          <VirtualizedListView
+          <VirtualizedList
             items={excludedItems}
-            approxSize={30}
-            fixItemHeight={true}
-            itemRenderer={(idx) => (
+            renderItem={(idx) => (
               <>
                 <ExcludedItem
                   itemInfo={excludedItems[idx]}
@@ -76,15 +74,9 @@ export const ExcludedProjectItemsDialog = ({ onClose }: Props) => {
       </DialogRow>
       <DialogRow label="Global Excludes:">
         <div className={styles.listWrapper}>
-          <VirtualizedListView
+          <VirtualizedList
             items={globalExcludes}
-            approxSize={30}
-            fixItemHeight={true}
-            itemRenderer={(idx) => (
-              <>
-                <ExcludedItem itemInfo={globalExcludes[idx]} />
-              </>
-            )}
+            renderItem={(idx) => <ExcludedItem itemInfo={globalExcludes[idx]} />}
           />
         </div>
       </DialogRow>

@@ -13,7 +13,7 @@ import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();

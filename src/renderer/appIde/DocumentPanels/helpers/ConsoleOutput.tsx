@@ -7,7 +7,7 @@ import {
 } from "@renderer/appIde/ToolArea/abstractions";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 
 const SCROLL_END = 5_000_000;

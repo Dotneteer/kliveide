@@ -20,7 +20,7 @@ import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 //import Switch from "react-switch";
 

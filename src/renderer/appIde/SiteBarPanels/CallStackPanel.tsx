@@ -7,7 +7,7 @@ import styles from "./CallStackPanel.module.scss";
 import { Icon } from "@renderer/controls/Icon";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const CallStackPanel = () => {
   const emuApi = useEmuApi();

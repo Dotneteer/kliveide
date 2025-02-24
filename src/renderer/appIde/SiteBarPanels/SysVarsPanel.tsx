@@ -2,14 +2,14 @@ import type { SysVar } from "@abstractions/SysVar";
 
 import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import { SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const VAR_WIDTH = 64;
 const VALUE_WIDTH = 40;
@@ -81,11 +81,9 @@ const SysVarsPanel = () => {
     <div className={styles.sysVarsPanel}>
       {sysVars.length === 0 && <div className={styles.center}>No system variables available</div>}
       {sysVars.length > 0 && (
-        <VirtualizedListView
+        <VirtualizedList
           items={sysVars}
-          approxSize={20}
-          fixItemHeight={false}
-          itemRenderer={(idx) => {
+          renderItem={(idx) => {
             const item = sysVars[idx];
             const sysVar = item.sysVar;
             const value = item.value;

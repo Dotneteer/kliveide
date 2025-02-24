@@ -1,5 +1,5 @@
 import { FullPanel, HStack, VStack } from "@renderer/controls/new/Panels";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useRef } from "react";
 import { VirtualizerHandle } from "virtua";
 

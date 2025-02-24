@@ -7,7 +7,7 @@ import styles from "./NextRegPanel.module.scss";
 import {} from "@controls/Tooltip";
 import { NextRegDescriptor, RegValueState } from "@emu/machines/zxNext/NextRegDevice";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
 const VAR_WIDTH = 64;
 const WRITE_VALUE_WIDTH = 60;
