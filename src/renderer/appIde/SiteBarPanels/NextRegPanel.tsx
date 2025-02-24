@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { toHexa2 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
-import { VirtualizedListView } from "@controls/VirtualizedListView";
 import {} from "@controls/Tooltip";
 import { NextRegDescriptor, RegValueState } from "@emu/machines/zxNext/NextRegDevice";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
 
 const VAR_WIDTH = 64;
 const WRITE_VALUE_WIDTH = 60;
@@ -61,11 +61,9 @@ const NextRegPanel = () => {
         <LabelSeparator width={4} />
         <Value text={toHexa2(lastRegIndex ?? 0)} />
       </div>
-      <VirtualizedListView
+      <VirtualizedList
         items={regVals ?? []}
-        approxSize={20}
-        fixItemHeight={true}
-        itemRenderer={(idx) => {
+        renderItem={(idx) => {
           const item = regVals[idx];
           return (
             <div className={styles.regItem}>

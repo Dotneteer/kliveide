@@ -5,12 +5,12 @@ import {
   OutputContentLine,
   OutputSpan
 } from "@renderer/appIde/ToolArea/abstractions";
-import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ConsoleAction } from "@common/utils/output-utils";
+import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VListHandle } from "virtua";
 
-const SCROLL_DELAY = 500;
+const SCROLL_END = 5_000_000;
 
 type Props = {
   buffer: IOutputBuffer;
@@ -31,12 +31,11 @@ export const ConsoleOutput = ({
 }: Props) => {
   // --- Component state
   const mounted = useRef(false);
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VListHandle>(null);
   const [output, setOutput] = useState<OutputContentLine[]>([]);
   const [scrollVersion, setScrollVersion] = useState(0);
 
   // --- Refresh the output
-  const lastRefreshTimestamp = useRef(0);
   const refreshOutput = () => {
     if (!buffer) return;
     setOutput(buffer.getContents().slice());
@@ -44,19 +43,7 @@ export const ConsoleOutput = ({
     if (scrollLocked) return;
 
     // --- Scroll to the end of the output
-    const now = Date.now();
-    if (now - lastRefreshTimestamp.current > SCROLL_DELAY) {
-      lastRefreshTimestamp.current = now;
-      vlApi.current?.scrollToEnd();
-    } else {
-      (async () => {
-        // --- Delay 500ms
-        await new Promise(resolve => setTimeout(resolve, SCROLL_DELAY));
-        if (mounted.current) {
-          vlApi.current?.scrollToEnd();
-        }
-      })();
-    }
+    vlApi.current?.scrollToIndex(SCROLL_END);
   };
 
   // --- Initialize the script output
@@ -82,23 +69,19 @@ export const ConsoleOutput = ({
   return (
     <div className={styles.listWrapper}>
       {output && output.length > 0 && (
-        <VirtualizedListView
+        <VirtualizedList
           items={output ?? []}
-          approxSize={24}
-          fixItemHeight={false}
-          scrolled={() => {
+          onScroll={() => {
             if (!vlApi.current) return;
-            onTopPositionChanged?.(vlApi.current.getScrollTop());
+            onTopPositionChanged?.(vlApi.current.getItemOffset(0));
           }}
-          vlApiLoaded={api => {
+          apiLoaded={api => {
             vlApi.current = api;
             if (initialTopPosition !== undefined) {
-              vlApi.current?.scrollToOffset(initialTopPosition, {
-                align: "start"
-              });
+              vlApi.current?.scrollTo(initialTopPosition);
             }
           }}
-          itemRenderer={idx => {
+          renderItem={idx => {
             return (
               <OutputLine
                 lineNo={idx + 1}

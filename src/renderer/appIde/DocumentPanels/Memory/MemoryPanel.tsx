@@ -12,8 +12,6 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { VirtualizedListView } from "@renderer/controls/VirtualizedListView";
-import { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
@@ -22,6 +20,8 @@ import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { VirtualizedList } from "@renderer/controls/new/VirtualizedList";
+import { VListHandle } from "virtua";
 //import Switch from "react-switch";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
@@ -64,8 +64,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const allowViews = showBanks || showRoms;
   const headerRef = useRef<HTMLDivElement>(null);
 
-  const [chState, setChState] = useState(false);
-
   // --- Create a list of number range
   const range = (start: number, end: number) => {
     return [...Array(end - start + 1).keys()].map((i) => i + start);
@@ -100,7 +98,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
   const cachedItems = useRef<number[]>([]);
-  const vlApi = useRef<VirtualizedListApi>(null);
+  const vlApi = useRef<VListHandle>(null);
   const partitionLabels = useRef<string[]>([]);
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
@@ -285,9 +283,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }}
         />
         <ToolbarSeparator small={true} />
-        {/* <label>Display Options:
-          <Switch onChange={(v) => {setChState(v)}} checked={chState} height={14} width={28} onColor="#000080" onHandleColor="#ff0000"/>
-        </label> */}
         <LabeledSwitch
           value={charDump}
           label="Char Dump:"
@@ -422,16 +417,15 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       )}
       <div className={styles.headerSeparator} />
       <div className={styles.memoryWrapper}>
-        <VirtualizedListView
+        <VirtualizedList
           items={memoryItems}
-          approxSize={20}
-          fixItemHeight={true}
-          scrolled={() => {
+          overscan={25}
+          onScroll={() => {
             if (!vlApi.current || cachedItems.current.length === 0) return;
-            setTopIndex(vlApi.current.getRange().startIndex);
+            setTopIndex(vlApi.current.findStartIndex());
           }}
-          vlApiLoaded={(api) => (vlApi.current = api)}
-          itemRenderer={(idx) => {
+          apiLoaded={(api) => (vlApi.current = api)}
+          renderItem={(idx) => {
             return (
               <div
                 className={classnames(styles.item, {
