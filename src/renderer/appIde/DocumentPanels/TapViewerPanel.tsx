@@ -16,7 +16,7 @@ import {
 } from "../services/DocumentServiceProvider";
 import { DataSection } from "@renderer/controls/DataSection";
 import { toHexa2 } from "../services/ide-commands";
-import ScrollViewer from "@renderer/controls/new/ScrollViewer";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -24,7 +24,6 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const [docState, setDocState] = useState({});
   const contents = data as Uint8Array;
   const fileInfo = readTapeFile(contents);
-  console.log("fi", fileInfo);
 
   useEffect(() => {
     setDocState(documentHubService.getDocumentViewState(document.id));

@@ -21,7 +21,7 @@ import {
 import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { DiskSurface, createDiskSurface } from "@emu/machines/disk/DiskSurface";
-import ScrollViewer from "@renderer/controls/new/ScrollViewer";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
