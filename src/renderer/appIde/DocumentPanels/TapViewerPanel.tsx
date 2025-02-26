@@ -8,7 +8,6 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { TzxBlockBase } from "@emu/machines/tape/TzxBlockBase";
 import { ReactNode, useEffect, useState } from "react";
 import { StaticMemoryView } from "./StaticMemoryView";
-import { ScrollViewer } from "@controls/ScrollViewer";
 import { TzxStandardSpeedBlock } from "@emu/machines/tape/TzxStandardSpeedBlock";
 import { TzxTextDescriptionBlock } from "@emu/machines/tape/TzxTextDescriptionBlock";
 import {
@@ -17,6 +16,7 @@ import {
 } from "../services/DocumentServiceProvider";
 import { DataSection } from "@renderer/controls/DataSection";
 import { toHexa2 } from "../services/ide-commands";
+import ScrollViewer from "@renderer/controls/new/ScrollViewer";
 
 const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();

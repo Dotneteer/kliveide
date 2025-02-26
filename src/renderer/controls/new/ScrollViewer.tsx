@@ -3,9 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from "overlayscrollbars-react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { AttachedShadow } from "../AttachedShadow";
+import classnames from "classnames";
 
 export type ScrollViewerApi = {
-  updateDims: () => void;
   getScrollTop: () => number;
   getScrollLeft: () => number;
   scrollToVertical: (pos: number) => void;
@@ -26,7 +26,8 @@ const ScrollViewer: React.FC<Props> = ({
   style,
   allowHorizontal = true,
   allowVertical = true,
-  thinScrollBar
+  thinScrollBar,
+  className
 }) => {
   const [pointed, setPointed] = useState(false);
   const [customTheme, setCustomTheme] = useState("");
@@ -47,6 +48,13 @@ const ScrollViewer: React.FC<Props> = ({
     );
   }, [themeService.theme]);
 
+  useEffect(() => {
+    const element = osRef.current?.osInstance().elements();
+    if (element) {
+      // ---
+    }
+  }, [osRef.current]);
+
   const handleScroll = () => {
     const element = osRef.current?.osInstance().elements();
     if (element) {
@@ -57,7 +65,7 @@ const ScrollViewer: React.FC<Props> = ({
   return (
     <div
       ref={parentElement}
-      className={styles.scrollViewer}
+      className={classnames(styles.scrollViewer, className)}
       style={style}
       onMouseDown={() => setPointed(true)}
       onMouseMove={() => setPointed(true)}
@@ -66,6 +74,7 @@ const ScrollViewer: React.FC<Props> = ({
     >
       <OverlayScrollbarsComponent
         ref={osRef}
+        style={{ height: "100%" }}
         options={{
           scrollbars: { theme: pointed ? customTheme : "os-theme-not-hovered" },
           overflow: {

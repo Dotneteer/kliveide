@@ -1,10 +1,6 @@
 import styles from "./SpriteEditor.module.scss";
 import { GenericFileEditorContext } from "../../helpers/GenericFileEditorPanel";
-import {
-  SprFileContents,
-  SprFileViewState,
-  SpriteTools
-} from "./sprite-common";
+import { SprFileContents, SprFileViewState, SpriteTools } from "./sprite-common";
 import {
   getCssStringForPaletteCode,
   getLuminanceForPaletteCode,
@@ -14,7 +10,6 @@ import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { LabelSeparator, Value } from "@renderer/controls/Labels";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
-import { ScrollViewer } from "@renderer/controls/ScrollViewer";
 import { Text } from "@renderer/controls/generic/Text";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { Column } from "@renderer/controls/generic/Column";
@@ -23,6 +18,7 @@ import { Row } from "@renderer/controls/generic/Row";
 import { SpriteEditorGrid } from "./SpriteEditorGrid";
 import { SpriteImage } from "./SpriteImage";
 import { memo, useEffect, useRef, useState } from "react";
+import ScrollViewer from "@renderer/controls/new/ScrollViewer";
 
 const defaultPalette: number[] = [];
 for (let i = 0; i < 256; i++) {
@@ -57,9 +53,7 @@ export const SpriteEditor = ({ context }: Props) => {
   // --- Constants used to render the editor
   const palette = defaultPalette.slice(0);
   const rgbParts =
-    currentColorIndex >= 0
-      ? getRgbPartsForPaletteCode(palette[currentColorIndex])
-      : undefined;
+    currentColorIndex >= 0 ? getRgbPartsForPaletteCode(palette[currentColorIndex]) : undefined;
 
   // --- Set the current state according to the initial view state of the context
   useEffect(() => {
@@ -81,7 +75,7 @@ export const SpriteEditor = ({ context }: Props) => {
 
   // --- Update the context view state whenever the internal state changes
   useEffect(() => {
-    context.changeViewState(vs => {
+    context.changeViewState((vs) => {
       vs.zoomFactor = zoomFactor;
       vs.spriteImagesSeparated = spriteImagesSeparated;
       vs.showTrancparencyColor = showTrancparencyColor;
@@ -103,17 +97,13 @@ export const SpriteEditor = ({ context }: Props) => {
   ]);
 
   // --- Update the sprite map whenever the current map changes
-  const updateSpriteMap = async (
-    newSpriteMap: Uint8Array,
-    selectedIndex?: number
-  ) => {
+  const updateSpriteMap = async (newSpriteMap: Uint8Array, selectedIndex?: number) => {
     if (selectedIndex !== undefined) {
       setSelectedSpriteIndex(selectedIndex);
     }
     setSpriteMap(newSpriteMap);
     if (context.fileInfo?.sprites) {
-      context.fileInfo.sprites[selectedIndex ?? selectedSpriteIndex] =
-        newSpriteMap;
+      context.fileInfo.sprites[selectedIndex ?? selectedSpriteIndex] = newSpriteMap;
     }
 
     // --- Save the file to the project
@@ -178,20 +168,20 @@ export const SpriteEditor = ({ context }: Props) => {
   const SpriteFileToolbar = () => (
     <Row>
       <SmallIconButton
-        iconName='undo'
+        iconName="undo"
         title={"Undo"}
         enable={editStackIndex >= 0}
         clicked={() => undo()}
       />
       <SmallIconButton
-        iconName='redo'
+        iconName="redo"
         title={"Redo"}
         enable={editStackIndex < editStack.length - 1}
         clicked={async () => redo()}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
-        iconName='@duplicate'
+        iconName="@duplicate"
         title={"Duplicate sprite"}
         enable={true}
         clicked={async () => {
@@ -215,7 +205,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@cut'
+        iconName="@cut"
         title={"Cut sprite"}
         enable={context.fileInfo?.sprites?.length > 1}
         clicked={async () => {
@@ -245,7 +235,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@move-left'
+        iconName="@move-left"
         title={"Move sprite left"}
         enable={selectedSpriteIndex > 0}
         clicked={async () => {
@@ -271,7 +261,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@move-right'
+        iconName="@move-right"
         title={"Move sprite right"}
         enable={selectedSpriteIndex < context.fileInfo?.sprites?.length - 1}
         clicked={async () => {
@@ -297,7 +287,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@plus'
+        iconName="@plus"
         title={"Add new sprite"}
         enable={true}
         clicked={async () => {
@@ -324,102 +314,95 @@ export const SpriteEditor = ({ context }: Props) => {
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
-        iconName='@separate-vertical'
-        title={`${
-          spriteImagesSeparated ? "Merge" : "Separate"
-        } sprites vertically`}
+        iconName="@separate-vertical"
+        title={`${spriteImagesSeparated ? "Merge" : "Separate"} sprites vertically`}
         selected={spriteImagesSeparated}
         enable={true}
         clicked={async () => setSpriteImagesSeparated(!spriteImagesSeparated)}
       />
       <SmallIconButton
-        iconName='@transparent'
+        iconName="@transparent"
         title={`${showTrancparencyColor ? "Hide" : "Show"} transparency color`}
         selected={showTrancparencyColor}
         enable={true}
         clicked={async () => setShowTrancparencyColor(!showTrancparencyColor)}
       />
-      {selectedSpriteIndex !== undefined &&
-        context?.fileInfo?.sprites?.length > 0 && (
-          <>
-            <ToolbarSeparator small={true} />
-            <LabelSeparator width={8} />
-            <Text
-              text={`Sprite #${selectedSpriteIndex + 1} of ${
-                context.fileInfo.sprites.length
-              }`}
-            />
-          </>
-        )}
+      {selectedSpriteIndex !== undefined && context?.fileInfo?.sprites?.length > 0 && (
+        <>
+          <ToolbarSeparator small={true} />
+          <LabelSeparator width={8} />
+          <Text text={`Sprite #${selectedSpriteIndex + 1} of ${context.fileInfo.sprites.length}`} />
+        </>
+      )}
     </Row>
   );
 
   const SpriteEditorToolbar = () => (
     <Row>
       <SmallIconButton
-        iconName='@zoom-in'
+        iconName="@zoom-in"
         title={"Zoom-in"}
         enable={zoomFactor < 3}
         clicked={() => setZoomFactor(zoomFactor + 1)}
       />
       <SmallIconButton
-        iconName='@zoom-out'
+        iconName="@zoom-out"
         title={"Zoom-out"}
         enable={zoomFactor > 1}
         clicked={() => setZoomFactor(zoomFactor - 1)}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
-        iconName='@pointer'
+        iconName="@pointer"
         title={"Pencil tool"}
         selected={currentTool === "pointer"}
         clicked={() => setCurrentTool("pointer")}
       />
       <SmallIconButton
-        iconName='@pencil'
+        iconName="@pencil"
         title={"Pencil tool"}
         selected={currentTool === "pencil"}
         clicked={() => setCurrentTool("pencil")}
       />
       <SmallIconButton
-        iconName='@line'
+        iconName="@line"
         title={"Line tool"}
         selected={currentTool === "line"}
         clicked={() => setCurrentTool("line")}
       />
       <SmallIconButton
-        iconName='@rectangle'
+        iconName="@rectangle"
         title={"Rectangle tool"}
         selected={currentTool === "rectangle"}
         clicked={() => setCurrentTool("rectangle")}
       />
       <SmallIconButton
-        iconName='@rectangle-filled'
+        iconName="@rectangle-filled"
         title={"Filled rectangle tool"}
         selected={currentTool === "rectangle-filled"}
         clicked={() => setCurrentTool("rectangle-filled")}
       />
       <SmallIconButton
-        iconName='@circle'
+        iconName="@circle"
         title={"Circle tool"}
         selected={currentTool === "circle"}
         clicked={() => setCurrentTool("circle")}
       />
       <SmallIconButton
-        iconName='@circle-filled'
+        iconName="@circle-filled"
         title={"Filled circle tool"}
         selected={currentTool === "circle-filled"}
         clicked={() => setCurrentTool("circle-filled")}
       />
       <SmallIconButton
-        iconName='@paint'
+        iconName="@paint"
         title={"Paint tool"}
         selected={currentTool === "paint"}
         clicked={() => setCurrentTool("paint")}
       />
       <ToolbarSeparator small={true} />
       <SmallIconButton
-        iconName='@rotate'
+        iconName="@rotate"
         title={"Rotate counter-clockwise"}
         clicked={async () => {
           const editInfo: EditInfo = {
@@ -441,7 +424,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@rotate-clockwise'
+        iconName="@rotate-clockwise"
         title={"Rotate clockwise"}
         clicked={async () => {
           const editInfo: EditInfo = {
@@ -463,7 +446,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@flip-vertical'
+        iconName="@flip-vertical"
         title={"Flip vertically"}
         clicked={async () => {
           const editInfo: EditInfo = {
@@ -485,7 +468,7 @@ export const SpriteEditor = ({ context }: Props) => {
         }}
       />
       <SmallIconButton
-        iconName='@flip-horizontal'
+        iconName="@flip-horizontal"
         title={"Flip horizontally"}
         clicked={async () => {
           const editInfo: EditInfo = {
@@ -512,38 +495,36 @@ export const SpriteEditor = ({ context }: Props) => {
   return viewStateInitialized.current ? (
     <>
       <SpriteFileToolbar />
-      <ScrollViewer
-        xclass={styles.spriteScroller}
-        scrollBarWidth={4}
-        allowVertical={false}
-      >
-        {context.fileInfo?.sprites &&
-          context.fileInfo.sprites.map((spr, idx) => {
-            return (
-              <SpriteImage
-                key={idx}
-                title={`Sprite #${idx + 1} of ${
-                  context.fileInfo.sprites.length
-                }`}
-                spriteMap={spr}
-                palette={palette}
-                transparencyIndex={0xe3}
-                separated={spriteImagesSeparated}
-                showTransparencyColor={showTrancparencyColor}
-                selected={selectedSpriteIndex === idx}
-                clicked={() => {
-                  setSelectedSpriteIndex(idx);
-                  setSpriteMap(spr);
-                }}
-              />
-            );
-          })}
-      </ScrollViewer>
+      <div style={{ height: "70px", backgroundColor: "var(--bgcolor-editors)" }}>
+        <ScrollViewer allowVertical={false} thinScrollBar={true}>
+          <div className={styles.spriteScroller}>
+            {context.fileInfo?.sprites &&
+              context.fileInfo.sprites.map((spr, idx) => {
+                return (
+                  <SpriteImage
+                    key={idx}
+                    title={`Sprite #${idx + 1} of ${context.fileInfo.sprites.length}`}
+                    spriteMap={spr}
+                    palette={palette}
+                    transparencyIndex={0xe3}
+                    separated={spriteImagesSeparated}
+                    showTransparencyColor={showTrancparencyColor}
+                    selected={selectedSpriteIndex === idx}
+                    clicked={() => {
+                      setSelectedSpriteIndex(idx);
+                      setSpriteMap(spr);
+                    }}
+                  />
+                );
+              })}
+          </div>
+        </ScrollViewer>
+      </div>
       <SpriteEditorToolbar />
       <Panel xclass={styles.editorPanel}>
         <Row xclass={styles.editorInfo}>
           <LabelSeparator width={8} />
-          <Text text='Pencil color:' />
+          <Text text="Pencil color:" />
           <LabelSeparator width={8} />
           <ColorSample
             color={palette[pencilColorIndex]}
@@ -551,8 +532,8 @@ export const SpriteEditor = ({ context }: Props) => {
           />
           <LabelSeparator width={8} />
           <SmallIconButton
-            iconName='@swap'
-            title='Swap colors'
+            iconName="@swap"
+            title="Swap colors"
             enable={true}
             clicked={async () => {
               setPencilColorIndex(fillColorIndex);
@@ -560,21 +541,16 @@ export const SpriteEditor = ({ context }: Props) => {
             }}
           />
           <LabelSeparator width={4} />
-          <Text text='Fill color:' />
+          <Text text="Fill color:" />
           <LabelSeparator width={8} />
-          <ColorSample
-            color={palette[fillColorIndex]}
-            isTransparency={fillColorIndex === 0xe3}
-          />
+          <ColorSample color={palette[fillColorIndex]} isTransparency={fillColorIndex === 0xe3} />
           <LabelSeparator width={8} />
           <ToolbarSeparator small={true} />
-          <Text text='Position:' />
+          <Text text="Position:" />
           <Value text={`(${currentRow}:${currentColumn})`} width={60} />
-          <Text text='Color:' />
+          <Text text="Color:" />
           <Value
-            text={
-              currentColorIndex >= 0 ? "$" + toHexa2(currentColorIndex) : "-"
-            }
+            text={currentColorIndex >= 0 ? "$" + toHexa2(currentColorIndex) : "-"}
             width={32}
           />
           {currentColorIndex >= 0 && (
@@ -584,11 +560,7 @@ export const SpriteEditor = ({ context }: Props) => {
             />
           )}
           <LabelSeparator width={8} />
-          {rgbParts && (
-            <Value
-              text={`(R: ${rgbParts[0]}, G: ${rgbParts[1]}, B: ${rgbParts[2]})`}
-            />
-          )}
+          {rgbParts && <Value text={`(R: ${rgbParts[0]}, G: ${rgbParts[1]}, B: ${rgbParts[2]})`} />}
         </Row>
         <Row>
           <div className={styles.editorArea}>
@@ -604,9 +576,7 @@ export const SpriteEditor = ({ context }: Props) => {
                 setCurrentRow(row?.toString() ?? "-");
                 setCurrentColumn(col?.toString() ?? "-");
                 setCurrentColorIndex(
-                  row !== undefined && col !== undefined
-                    ? spriteMap[row * 16 + col]
-                    : -1
+                  row !== undefined && col !== undefined ? spriteMap[row * 16 + col] : -1
                 );
               }}
               onSpriteChange={(newSpriteMap: Uint8Array) => {
@@ -620,9 +590,7 @@ export const SpriteEditor = ({ context }: Props) => {
                   newSpriteMap
                 });
               }}
-              onSignEscape={() =>
-                context.changeViewState(vs => (vs.currentTool = "pointer"))
-              }
+              onSignEscape={() => context.changeViewState((vs) => (vs.currentTool = "pointer"))}
             />
             <Column>
               <NextPaletteViewer
@@ -630,8 +598,8 @@ export const SpriteEditor = ({ context }: Props) => {
                 transparencyIndex={0xe3}
                 allowSelection={true}
                 smallDisplay={true}
-                onSelection={idx => setPencilColorIndex(idx)}
-                onRightClick={idx => setFillColorIndex(idx)}
+                onSelection={(idx) => setPencilColorIndex(idx)}
+                onRightClick={(idx) => setFillColorIndex(idx)}
               />
             </Column>
           </div>
@@ -654,7 +622,7 @@ const ColorSample = memo(({ color, isTransparency }: ColorSampleProps) => {
   return (
     <div className={styles.colorSample} style={{ backgroundColor }}>
       {isTransparency && (
-        <svg viewBox='0 0 16 16'>
+        <svg viewBox="0 0 16 16">
           <circle cx={8} cy={8} r={5} fill={midColor} fillOpacity={0.5} />
         </svg>
       )}
