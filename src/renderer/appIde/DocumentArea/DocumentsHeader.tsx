@@ -1,4 +1,3 @@
-import { ScrollViewer, ScrollViewerApi } from "@controls/ScrollViewer";
 import { TabButton, TabButtonSeparator, TabButtonSpace } from "@controls/TabButton";
 import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +14,7 @@ import { incProjectViewStateVersionAction, setRestartTarget } from "@common/stat
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
+import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 
 /**
  * This component represents the header of a document hub
@@ -175,7 +175,7 @@ export const DocumentsHeader = () => {
       <ScrollViewer
         allowHorizontal={true}
         allowVertical={false}
-        scrollBarWidth={4}
+        thinScrollBar={true}
         apiLoaded={(api) => (svApi.current = api)}
       >
         <div className={styles.tabWrapper}>

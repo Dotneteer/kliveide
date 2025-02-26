@@ -6,7 +6,7 @@ import { Icon } from "@controls/Icon";
 import classnames from "classnames";
 import { useAppServices } from "../services/AppServicesProvider";
 import { SideBarPanelInfo } from "../../abstractions/SideBarPanelInfo";
-import ScrollViewer from "@renderer/controls/new/ScrollViewer";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 // --- Size of a single expanded module
 const FULL_EXPANDED_SIZE = 100000;

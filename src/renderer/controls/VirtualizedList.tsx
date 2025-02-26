@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Virtualizer, VListHandle } from "virtua";
-import ScrollViewer from "./new/ScrollViewer";
+import ScrollViewer from "./ScrollViewer";
 
 type Props = {
   items: any[];

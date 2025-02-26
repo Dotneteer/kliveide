@@ -3,7 +3,6 @@ import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
 import classnames from "classnames";
 import { useEffect, useState } from "react";
-import { ScrollViewer } from "@controls/ScrollViewer";
 import {
   useDocumentHubService,
   useDocumentHubServiceVersion
@@ -22,6 +21,7 @@ import {
 import { FloppyDiskFormat } from "@emu/abstractions/FloppyDiskFormat";
 import { DiskDensity } from "@emu/abstractions/DiskDensity";
 import { DiskSurface, createDiskSurface } from "@emu/machines/disk/DiskSurface";
+import ScrollViewer from "@renderer/controls/ScrollViewer";
 
 const DskViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
