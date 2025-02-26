@@ -9,6 +9,7 @@ type Props = {
   eightBit?: boolean;
   initialValue?: number;
   clearOnEnter?: boolean;
+  decimalView: boolean;
   onAddressSent?: (addr: number) => Promise<void>;
 };
 
@@ -17,11 +18,12 @@ export const AddressInput = ({
   eightBit,
   initialValue,
   clearOnEnter = true,
+  decimalView,
   onAddressSent
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>();
   const spanRef = useTooltipRef();
-  const [radix, setRadix] = useState(16);
+  const [radix, setRadix] = useState(decimalView ? 10 : 16);  
   const mounted = useRef(false);
 
   useEffect(() => {

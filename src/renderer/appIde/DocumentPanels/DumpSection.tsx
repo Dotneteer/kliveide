@@ -1,7 +1,7 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "classnames";
-import { toHexa4, toHexa2 } from "../services/ide-commands";
+import { toHexa4, toHexa2, toDecimal5, toDecimal3 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
@@ -13,6 +13,7 @@ type DumpProps = {
   partitionLabel?: string;
   address: number;
   memory: Uint8Array;
+  decimalView: boolean;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
 };
@@ -22,6 +23,7 @@ export const DumpSection = ({
   partitionLabel,
   address,
   memory,
+  decimalView,
   charDump,
   pointedInfo
 }: DumpProps) => {
@@ -32,7 +34,7 @@ export const DumpSection = ({
   if (characterSet === EMPTY_OBJECT) {
     initTooltipCache(machineCharSet);
   }
-  
+
   useEffect(() => {
     initTooltipCache(machineCharSet);
   }, [machineCharSet]);
@@ -44,94 +46,73 @@ export const DumpSection = ({
         <>
           <LabelSeparator width={4} />
           <Label text={partitionLabel} width={18} />
-          <Label text=':' width={6} />
+          <Label text=":" width={6} />
           <LabelSeparator width={4} />
         </>
       )}
-      <Label text={toHexa4(address)} width={40} />
+      <Label
+        text={decimalView ? toDecimal5(address) : toHexa4(address)}
+        width={decimalView ? 48 : 40}
+      />
       <ByteValue
         address={address + 0}
         value={memory[address + 0]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 1}
         value={memory[address + 1]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 2}
         value={memory[address + 2]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 3}
         value={memory[address + 3]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 4}
         value={memory[address + 4]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 5}
         value={memory[address + 5]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 6}
         value={memory[address + 6]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 7}
         value={memory[address + 7]}
+        decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <LabelSeparator width={8} />
       {charDump && (
         <>
-          <CharValue
-            address={address + 0}
-            value={memory[address + 0]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 1}
-            value={memory[address + 1]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 2}
-            value={memory[address + 2]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 3}
-            value={memory[address + 3]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 4}
-            value={memory[address + 4]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 5}
-            value={memory[address + 5]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 6}
-            value={memory[address + 6]}
-            pointedInfo={pointedInfo}
-          />
-          <CharValue
-            address={address + 7}
-            value={memory[address + 7]}
-            pointedInfo={pointedInfo}
-          />
+          <CharValue address={address + 0} value={memory[address + 0]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 1} value={memory[address + 1]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 2} value={memory[address + 2]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 3} value={memory[address + 3]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 4} value={memory[address + 4]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 5} value={memory[address + 5]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 6} value={memory[address + 6]} pointedInfo={pointedInfo} />
+          <CharValue address={address + 7} value={memory[address + 7]} pointedInfo={pointedInfo} />
           <LabelSeparator width={8} />
         </>
       )}
@@ -141,11 +122,12 @@ export const DumpSection = ({
 
 type ByteValueProps = {
   address: number;
+  decimalView?: boolean;
   value?: number;
   pointedInfo?: Record<number, string>;
 };
 
-const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
+const ByteValue = ({ address, decimalView, value, pointedInfo }: ByteValueProps) => {
   // --- Do not display non-existing values
   if (value === undefined) return <div style={{ width: 20 }}></div>;
 
@@ -153,22 +135,24 @@ const ByteValue = ({ address, value, pointedInfo }: ByteValueProps) => {
   const pointedHint = pointedInfo?.[address];
   const pointed = pointedHint !== undefined;
   const pcPointed = pointed && pointedHint.indexOf("PC") >= 0;
-  const title = `Value at $${toHexa4(address)} (${address}):\n${
-    tooltipCache[value]
-  }${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
+  let title =
+    "Value at " +
+    (decimalView ? `${address} ($${toHexa4(address)}):\n` : `$${toHexa4(address)} (${address}):\n`);
+  title += `${tooltipCache[value]}${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
   return (
     <div
       ref={ref}
       className={classnames(styles.value, {
         [styles.pointed]: pointed,
-        [styles.pcPointed]: pcPointed
+        [styles.pcPointed]: pcPointed,
+        [styles.decimal]: decimalView
       })}
     >
-      {toHexa2(value)}
+      {decimalView ? toDecimal3(value) : toHexa2(value)}
       {title && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={8}
           offsetY={32}
           showDelay={100}
@@ -184,9 +168,7 @@ const CharValue = ({ address, value }: ByteValueProps) => {
   const ref = useTooltipRef(value);
   const valueInfo = characterSet[(value ?? 0x20) & 0xff];
   let text = valueInfo.v ?? ".";
-  const title = `Value at $${toHexa4(address)} (${address}):\n${
-    tooltipCache[value]
-  }`;
+  const title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
   value;
   return (
     <div ref={ref} className={styles.char}>
@@ -194,7 +176,7 @@ const CharValue = ({ address, value }: ByteValueProps) => {
       {title && hasValue && (
         <TooltipFactory
           refElement={ref.current}
-          placement='right'
+          placement="right"
           offsetX={8}
           offsetY={32}
           showDelay={100}

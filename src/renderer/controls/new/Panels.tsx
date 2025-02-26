@@ -1,10 +1,17 @@
 import styles from "./Panels.module.scss";
 import classnames from "classnames";
-import { getPanelPropValues } from "@renderer/theming/theme-utils";
+import { getPanelPropValues, processStyleValue } from "@renderer/theming/theme-utils";
 import { PanelProps } from "./PanelProps";
+import { useState } from "react";
 
 export const FullPanel = (props: PanelProps) => {
+  const [hovered, setHovered] = useState(false);
   const elementStyle = getPanelPropValues(props);
+  let backgroundColor = elementStyle.backgroundColor;
+  if (hovered && props.hoverBackgroundColor) {
+    backgroundColor = processStyleValue(props.hoverBackgroundColor);
+  }
+
   return (
     <div
       id={props.id}
@@ -13,7 +20,9 @@ export const FullPanel = (props: PanelProps) => {
         { [styles.horizontal]: props.orientation === "horizontal" },
         props.classExt
       )}
-      style={elementStyle}
+      style={{...elementStyle, backgroundColor}}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {props.children}
     </div>
@@ -21,7 +30,12 @@ export const FullPanel = (props: PanelProps) => {
 };
 
 const Stack = (props: PanelProps) => {
+  const [hovered, setHovered] = useState(false);
   const elementStyle = getPanelPropValues(props);
+  let backgroundColor = elementStyle.backgroundColor;
+  if (hovered && props.hoverBackgroundColor) {
+    backgroundColor = processStyleValue(props.hoverBackgroundColor);
+  }
   return (
     <div
       id={props.id}
@@ -29,7 +43,9 @@ const Stack = (props: PanelProps) => {
         [styles.vstack]: props.orientation === "vertical",
         [styles.hstack]: props.orientation === "horizontal"
       })}
-      style={elementStyle}
+      style={{...elementStyle, backgroundColor}}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {props.children}
     </div>

@@ -11,6 +11,7 @@ export type PanelProps = {
   horizontalContentAlignment?: string;
   gap?: string;
   backgroundColor?: string;
+  hoverBackgroundColor?: string;
   color?: string;
   fontFamily?: string;
   fontSize?: string;

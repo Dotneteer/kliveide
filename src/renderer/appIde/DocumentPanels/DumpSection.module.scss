@@ -16,6 +16,10 @@
   justify-content: center;
   width: 20px;
 
+  &.decimal {
+    width: 30px;
+  } 
+
   &:hover {
     background: #606060;
     opacity: 0.9;

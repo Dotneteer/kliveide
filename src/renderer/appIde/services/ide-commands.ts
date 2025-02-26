@@ -199,6 +199,15 @@ export function toHexa2(value: number): string {
   return value.toString(16).toUpperCase().padStart(2, "0");
 }
 
+export function toDecimal5(value: number): string {
+  return value.toString(10).toUpperCase().padStart(5, "0");
+}
+
+export function toDecimal3(value: number): string {
+  return value.toString(10).toUpperCase().padStart(3, "0");
+}
+
+
 /**
  * Converts a token to an integer value
  * @param token Token to convert

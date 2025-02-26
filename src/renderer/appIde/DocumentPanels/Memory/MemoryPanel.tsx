@@ -1,4 +1,3 @@
-import styles from "./MemoryPanel.module.scss";
 import { useEffect, useRef, useState } from "react";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
@@ -12,16 +11,17 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import classnames from "classnames";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useStateRefresh } from "@renderer/appIde/useStateRefresh";
-import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { Value } from "@renderer/controls/generic/Value";
+import { FullPanel, HStack } from "@renderer/controls/new/Panels";
+import { PanelHeader } from "../helpers/PanelHeader";
 //import Switch from "react-switch";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
@@ -33,6 +33,7 @@ type BankedMemoryPanelViewState = {
   prevViewMode?: MemoryViewMode;
   romPage?: number;
   ramBank?: number;
+  decimalView?: boolean;
   twoColumns?: boolean;
   charDump?: boolean;
   bankLabel?: boolean;
@@ -43,6 +44,7 @@ export type CachedRefreshState = {
   viewMode: MemoryViewMode;
   romPage: number;
   ramBank: number;
+  decimalView: boolean;
 };
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
@@ -90,6 +92,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [currentRamBank, setCurrentRamBank] = useState<number>(0);
 
   // --- Display options
+  const [decimalView, setDecimalView] = useState(viewState.current?.decimalView ?? false);
   const [twoColumns, setTwoColumns] = useState(viewState.current?.twoColumns ?? true);
   const [charDump, setCharDump] = useState(viewState.current?.charDump ?? true);
 
@@ -107,6 +110,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const cachedRefreshState = useRef<CachedRefreshState>({
     autoRefresh,
     viewMode,
+    decimalView,
     romPage,
     ramBank
   });
@@ -120,6 +124,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       prevViewMode,
       romPage,
       ramBank,
+      decimalView,
       twoColumns,
       charDump,
       bankLabel
@@ -166,11 +171,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           machineState === MachineControllerState.Paused ||
           machineState === MachineControllerState.Stopped)
       ) {
-        extendPointedAddress("AF", response.af);
         extendPointedAddress("BC", response.bc);
         extendPointedAddress("DE", response.de);
         extendPointedAddress("HL", response.hl);
-        extendPointedAddress("AF'", response.af_);
         extendPointedAddress("BC'", response.bc_);
         extendPointedAddress("DE'", response.de_);
         extendPointedAddress("HL'", response.hl_);
@@ -209,6 +212,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     cachedRefreshState.current = {
       autoRefresh,
       viewMode,
+      decimalView,
       romPage,
       ramBank
     };
@@ -216,6 +220,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     topIndex,
     autoRefresh,
     viewMode,
+    decimalView,
     prevViewMode,
     romPage,
     ramBank,
@@ -268,8 +273,15 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     return (
       <>
         <LabeledSwitch
+          value={decimalView}
+          label="Decimal:"
+          title="Use decimal numbers?"
+          clicked={(v) => setDecimalView(v)}
+        />
+        <ToolbarSeparator small={true} />
+        <LabeledSwitch
           value={twoColumns}
-          label="Two Columns:"
+          label="2 Columns:"
           title="Use two-column layout?"
           clicked={(v) => {
             setTwoColumns(v);
@@ -285,7 +297,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={charDump}
-          label="Char Dump:"
+          label="Chars:"
           title="Show characters dump?"
           clicked={setCharDump}
         />
@@ -304,15 +316,20 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     );
   };
 
+  const lowerBound = decimalView ? "00000" : "0000";
+  const upperBound =
+    viewMode === "full" ? (decimalView ? "65535" : "FFFF") : decimalView ? "16383" : "3FFF";
+
   return (
-    <div className={styles.panel}>
-      <div ref={headerRef} className={styles.header} tabIndex={-1}>
+    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+      <PanelHeader>
         <LabelSeparator width={4} />
-        <LabeledText label="Display:" value={`0000-${viewMode === "full" ? "FFFF" : "3FFF"}`} />
+        <Value text={`${lowerBound}-${upperBound}`} width={86} />
         <ToolbarSeparator small={true} />
         <AddressInput
           label="Go To:"
           clearOnEnter={true}
+          decimalView={decimalView}
           onAddressSent={async (address) => {
             setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
             setScrollVersion(scrollVersion + 1);
@@ -331,7 +348,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={autoRefresh}
-          label="Auto Refresh:"
+          label="Refresh:"
           title="Refresh the memory view periodically"
           clicked={setAutoRefresh}
         />
@@ -355,6 +372,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   eightBit={true}
                   clearOnEnter={false}
                   initialValue={ramBank}
+                  decimalView={decimalView}
                   onAddressSent={async (bank) => {
                     setViewMode("ram");
                     setPrevViewMode(viewMode);
@@ -363,6 +381,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                     cachedRefreshState.current = {
                       autoRefresh,
                       viewMode: "ram",
+                      decimalView,
                       romPage,
                       ramBank: bank
                     };
@@ -409,14 +428,13 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             <OptionsBar />
           </>
         )}
-      </div>
+      </PanelHeader>
       {allowViews && (
-        <div className={styles.header}>
+        <PanelHeader>
           <OptionsBar />
-        </div>
+        </PanelHeader>
       )}
-      <div className={styles.headerSeparator} />
-      <div className={styles.memoryWrapper}>
+      <FullPanel>
         <VirtualizedList
           items={memoryItems}
           overscan={25}
@@ -427,12 +445,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           apiLoaded={(api) => (vlApi.current = api)}
           renderItem={(idx) => {
             return (
-              <div
-                className={classnames(styles.item, {
-                  [styles.even]: idx % 2 == 0,
-                  [styles.twoSections]: twoColumns
-                })}
-              >
+              <HStack 
+                backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
+                hoverBackgroundColor="--bgcolor-disass-hover">
                 <DumpSection
                   showPartitions={showBanks && bankLabel}
                   partitionLabel={
@@ -444,6 +459,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   memory={memory.current}
                   charDump={charDump}
                   pointedInfo={pointedRegs.current}
+                  decimalView={decimalView}
                 />
                 {twoColumns && (
                   <DumpSection
@@ -453,14 +469,15 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}
                     charDump={charDump}
+                    decimalView={decimalView}
                   />
                 )}
-              </div>
+              </HStack>
             );
           }}
         />
-      </div>
-    </div>
+      </FullPanel>
+    </FullPanel>
   );
 };
 
