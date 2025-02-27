@@ -23,7 +23,6 @@ import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabeledGroup } from "@renderer/controls/LabeledGroup";
-import { Dropdown } from "@renderer/controls/Dropdown";
 import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
@@ -32,6 +31,7 @@ import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import Dropdown from "@renderer/controls/Dropdown";
 
 type MemoryViewMode = "full" | "rom" | "ram" | "bank";
 
@@ -368,11 +368,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             <Dropdown
               placeholder="Size..."
               options={Bank16KOptions}
-              value={disassRange}
+              initialValue={disassRange}
               width={120}
-              iconSize={18}
-              fontSize="0.8rem"
-              onSelectionChanged={async (option) => {
+              onChanged={async (option) => {
                 setDisassRange(option);
               }}
             />
@@ -449,6 +447,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         <AddressInput
           label="Go To:"
           clearOnEnter={true}
+          decimalView={false}
           onAddressSent={async (address) => {
             setToScroll(address);
             setScrollVersion(scrollVersion + 1);
@@ -508,6 +507,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 <AddressInput
                   label="Bank:"
                   eightBit={true}
+                  decimalView={false}
                   clearOnEnter={false}
                   initialValue={ramBank}
                   onAddressSent={async (bank) => {

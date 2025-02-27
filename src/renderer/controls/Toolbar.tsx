@@ -12,7 +12,6 @@ import {
 } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import { Dropdown } from "./Dropdown";
 import { useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -23,6 +22,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { HStack } from "./new/Panels";
+import Dropdown from "./Dropdown";
 
 type Props = {
   ide: boolean;
@@ -32,7 +32,7 @@ type Props = {
 const emuStartOptions = [
   {
     value: "debug",
-    label: "Start with Debugging (Ctrl+F5)",
+    label: "Start Debugging (Ctrl+F5)",
     labelCont: "Continue Debugging (Ctrl+F5)",
     iconName: "debug",
     cmd: null
@@ -138,8 +138,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         <Dropdown
           placeholder={undefined}
           options={[...startOptions]}
-          value={startMode}
-          onSelectionChanged={(option) => setStartMode(option)}
+          initialValue={startMode}
+          width="220px"
+          onChanged={(option) => setStartMode(option)}
         />
       </div>
       <IconButton

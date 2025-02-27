@@ -6,12 +6,13 @@ import {
   setIdeStatusMessageAction
 } from "@state/actions";
 import { useEffect, useRef, useState } from "react";
-import { Dropdown } from "@controls/Dropdown";
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { IOutputBuffer } from "./abstractions";
 import styles from "./OutputPanel.module.scss";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
+import Dropdown from "@renderer/controls/Dropdown";
+import { HStack } from "@renderer/controls/new/Panels";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
@@ -47,8 +48,9 @@ export const outputPanelHeaderRenderer = () => {
       <Dropdown
         placeholder="Select..."
         options={panes}
-        value={activePane}
-        onSelectionChanged={(option) => {
+        initialValue={activePane}
+        width="160px"
+        onChanged={(option) => {
           dispatch(activateOutputPaneAction(option));
         }}
       />

@@ -2,13 +2,13 @@ import styles from "./ExportCodeDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
-import { Dropdown } from "@controls/Dropdown";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { getNodeExtension, getNodeName } from "../project/project-node";
 import { useAppServices } from "../services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { useMainApi } from "@renderer/core/MainApi";
+import Dropdown from "@renderer/controls/Dropdown";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -158,8 +158,8 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={formatIds}
-            value={"tzx"}
-            onSelectionChanged={(option) => setFormatId(option)}
+            initialValue={"tzx"}
+            onChanged={(option) => setFormatId(option)}
           />
         </div>
       </DialogRow>
@@ -210,8 +210,8 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={borderIds}
-            value={"none"}
-            onSelectionChanged={(option) => setBorderId(option)}
+            initialValue={"none"}
+            onChanged={(option) => setBorderId(option)}
           />
         </div>
       </DialogRow>

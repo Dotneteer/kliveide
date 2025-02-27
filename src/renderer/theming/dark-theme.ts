@@ -60,7 +60,7 @@ export const darkTheme: ThemeProperties = {
   "--bgcolor-modal": "#202020",
   "--color-modal": "#cccccc",
   "--border-modal": "1px solid #0076c9",
-  "--radius-modal": "2px",
+  "--radius-modal": "8px",
   "--bgcolor-modal-header": "#303030",
   "--color-modal-header": "#ffffff",
   "--bgcolor-modal-body": "#383838",

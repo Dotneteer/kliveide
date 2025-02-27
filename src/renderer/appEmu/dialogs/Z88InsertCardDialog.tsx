@@ -1,6 +1,5 @@
 import styles from "./Z88InsertCardDialog.module.scss";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { Dropdown } from "@renderer/controls/Dropdown";
 import { Modal } from "@renderer/controls/Modal";
 import { CardTypeData, applyCardStateChange, cardTypes } from "../machines/Z88ToolArea";
 import { useState } from "react";
@@ -13,6 +12,7 @@ import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
 import { MainApi } from "@common/messaging/MainApi";
 import { useMainApi } from "@renderer/core/MainApi";
+import Dropdown from "@renderer/controls/Dropdown";
 
 const Z88_CARDS_FOLDER_ID = "z88CardsFolder";
 
@@ -107,9 +107,9 @@ export const Z88InsertCardDialog = ({ slot, onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={cardOptions}
-            value={cardType?.value}
+            initialValue={cardType?.value}
             width={406}
-            onSelectionChanged={async (option) => {
+            onChanged={async (option) => {
               const cardType = cardTypes.find((ct) => ct.value === option);
               setRom0Changed(true);
               setCardType(cardType);

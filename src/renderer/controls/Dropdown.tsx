@@ -1,109 +1,68 @@
-import React, { useEffect, useState } from "react";
 import styles from "./Dropdown.module.scss";
+import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
-import classnames from "classnames";
+import { useEffect, useState } from "react";
+import { useTheme } from "@renderer/theming/ThemeProvider";
 
-type OptionProps = {
-  label: string;
+type Option = {
   value: string;
+  label: string;
 };
 
 type Props = {
-  placeholder: string;
-  options: OptionProps[];
-  value?: string;
-  width?: number;
-  iconSize?: number;
-  fontSize?: string;
-  onSelectionChanged?: (
-    value: string
-  ) => boolean | void | Promise<boolean | void>;
+  options: Option[];
+  placeholder?: string;
+  initialValue?: string;
+  width?: string | number;
+  maxHeight?: string | number;
+  onChanged?: (value: string) => void;
 };
 
-export const Dropdown = ({
-  placeholder,
+export default function Dropdown({
   options,
-  value,
+  placeholder,
+  initialValue,
   width,
-  iconSize = 20,
-  fontSize,
-  onSelectionChanged
-}: Props) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<OptionProps>(
-    options.find(o => o.value === value)
-  );
-  const [selectedLabel, setSelectedLabel] = useState<string>(
-    options.find(o => o.value === value)?.label
-  );
-
-  useEffect(() => {
-    const handler = () => setShowMenu(false);
-    window.addEventListener("click", handler);
-
-    return () => {
-      window.removeEventListener("click", handler);
-    };
-  });
-
-  useEffect(() => {
-    setSelectedOption(options.find(o => o.value === value));
-    setSelectedLabel(options.find(o => o.value === value)?.label);
-  }, [value, options]);
-
-  const handleInputClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(!showMenu);
+  maxHeight,
+  onChanged,
+}: Props) {
+  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
+  const [selectedValue, setSelectedValue] = useState(initialValue);
+  const theme = useTheme();
+  const handleSelectChange = (value: string) => {
+    setSelectedValue(value);
+    onChanged?.(value);
   };
 
-  const onItemClick = async (option: OptionProps) => {
-    const prevOption = selectedOption;
-    const prevLabel = selectedLabel;
-    setSelectedOption(option);
-    setSelectedLabel(option.label);
-    const cancel = await onSelectionChanged?.(option.value);
-    if (cancel === true) {
-      setSelectedOption(prevOption);
-      setSelectedLabel(prevLabel);
+  useEffect(() => {
+    if (theme ) {
+      setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
     }
-    setShowMenu(false);
-  };
-
-  const isSelected = (option: OptionProps) =>
-    !selectedOption ? false : selectedOption.value === option.value;
+  }, [theme]);
 
   return (
-    <div
-      className={styles.dropdownContainer}
-      style={{ width, fontSize }}
-      tabIndex={-1}
-      onBlur={() => setShowMenu(false)}
-    >
-      <div className={styles.dropdownInput} onClick={handleInputClick}>
-        <div className={styles.dropdownSelectedValue}>
-          {selectedLabel ?? placeholder}
-        </div>
-        <div className={styles.dropdownTools}>
-          <div className={styles.dropdownTool}>
-            <Icon iconName='chevron-down' fill='--color-command-icon' width={iconSize} height={iconSize} />
-          </div>
-        </div>
-      </div>
-      {showMenu && (
-        <div className={styles.dropdownMenu}>
-          {options.map(option => (
-            <div
-              key={`${option.value}|${option.label}`}
-              className={classnames(styles.dropdownItem, {
-                [styles.selected]: isSelected(option)
-              })}
-              onClick={() => onItemClick(option)}
-            >
-              {option.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <Select.Root value={selectedValue} onValueChange={handleSelectChange}>
+      <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
+        <Select.Value placeholder={placeholder ?? "Select..."} />
+        <div style={{ width: "100%" }} />
+        <Icon iconName="chevron-down" fill="--color-command-icon" width={20} height={20} />
+      </Select.Trigger>
+
+      <Select.Portal container={rootElement}>
+        <Select.Content className={styles.SelectContent} position="popper" sideOffset={4}
+          style={{ maxHeight }}>
+          <Select.Viewport className="p-1">
+            {options.map((option) => (
+              <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
+                <Select.ItemText>{option.label}</Select.ItemText>
+                <Select.ItemIndicator style={{ marginLeft: "0.5rem" }}>
+                  <Icon iconName="check" width={12} height={12} />
+                </Select.ItemIndicator>{" "}
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   );
-};
+}

@@ -15,6 +15,8 @@ export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProp
   const padding = processStyleValue(props.padding);
   const paddingLeft = processStyleValue(props.paddingHorizontal) || padding || 0;
   const paddingRight = processStyleValue(props.paddingHorizontal) || padding || 0;
+  const paddingTop = processStyleValue(props.paddingVertical) || padding || 0;
+  const paddingBottom = processStyleValue(props.paddingVertical) || padding || 0;
   const height = processStyleValue(props.height);
   let width = processStyleValue(props.width) || "100%";
   if (paddingLeft) {
@@ -30,8 +32,8 @@ export function getPanelPropValues(props: Omit<PanelProps, "children">): CSSProp
     padding,
     paddingLeft,
     paddingRight,
-    paddingTop: processStyleValue(props.paddingVertical) || 0,
-    paddingBottom: processStyleValue(props.paddingVertical) || 0,
+    paddingTop,
+    paddingBottom,
     backgroundColor: processStyleValue(props.backgroundColor),
     color: processStyleValue(props.color),
     fontFamily: processStyleValue(props.fontFamily),

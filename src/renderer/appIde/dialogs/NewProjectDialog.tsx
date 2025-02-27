@@ -2,13 +2,13 @@ import styles from "./NewProjectDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { TextInput } from "@controls/TextInput";
 import { useEffect, useRef, useState } from "react";
-import { Dropdown } from "@controls/Dropdown";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { useAppServices } from "../services/AppServicesProvider";
 import { getAllMachineModels } from "@common/machines/machine-registry";
 import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
+import Dropdown from "@renderer/controls/Dropdown";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -111,9 +111,9 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={machineIds}
-            value={`${INITIAL_MACHINE_IDE}:${INITIAL_MODEL_ID}`}
+            initialValue={`${INITIAL_MACHINE_IDE}:${INITIAL_MODEL_ID}`}
             width={468}
-            onSelectionChanged={async (option) => {
+            onChanged={async (option) => {
               const [machineId, modelId] = split(option, ":");
               setMachineId(machineId);
               setmodelId(modelId);
@@ -127,9 +127,9 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={templateDirs}
-            value={"default"}
+            initialValue={"default"}
             width={468}
-            onSelectionChanged={(option) => {
+            onChanged={(option) => {
               setTemplateId(option);
             }}
           />

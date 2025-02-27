@@ -1,7 +1,6 @@
 import styles from "./Z88ChangeRamDialog.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { Dropdown } from "@renderer/controls/Dropdown";
 import { Modal } from "@renderer/controls/Modal";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
@@ -9,6 +8,7 @@ import { MC_Z88_INTRAM } from "@common/machines/constants";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { useIdeApi } from "@renderer/core/IdeApi";
+import Dropdown from "@renderer/controls/Dropdown";
 
 // --- These are the RAM sizes available for the Z88 Internal RAM
 const ramSizes = [
@@ -103,9 +103,9 @@ export const Z88ChangeRamDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={ramSizes}
-            value={selectedSize}
+            initialValue={selectedSize}
             width={268}
-            onSelectionChanged={async (option) => {
+            onChanged={async (option) => {
               const emulatorState = store.getState()?.emulatorState;
               const newRamSize = getRamChipMask(option);
               const config = emulatorState?.config ?? {};
