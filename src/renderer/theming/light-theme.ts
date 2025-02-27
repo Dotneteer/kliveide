@@ -59,7 +59,7 @@ export const lightTheme: ThemeProperties = {
   "--bgcolor-backdrop": "#ffffff80",
   "--bgcolor-modal": "#e8e8e8",
   "--border-modal": "1px solid #0076c9",
-  "--radius-modal": "2px",
+  "--radius-modal": "8px",
   "--bgcolor-modal-header": "#d0d0d0",
   "--color-modal-header": "#000000",
   "--bgcolor-modal-body": "#f0f0f0",

@@ -2,7 +2,7 @@ import styles from "./CreateDiskDialog.module.scss";
 import { ModalApi, Modal } from "@controls/Modal";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { DialogRow } from "@renderer/controls/DialogRow";
-import { Dropdown } from "@renderer/controls/Dropdown";
+import Dropdown from "@renderer/controls/Dropdown";
 import { TextInput } from "@renderer/controls/TextInput";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useEffect, useRef, useState } from "react";
@@ -76,9 +76,9 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={diskTypesIds}
-            value={"ss"}
+            initialValue={"ss"}
             width={240}
-            onSelectionChanged={(option) => {
+            onChanged={(option) => {
               setDiskType(option);
             }}
           />

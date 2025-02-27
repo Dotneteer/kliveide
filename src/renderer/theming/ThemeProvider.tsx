@@ -105,6 +105,7 @@ function ThemeProvider({ children }: Props) {
   return (
     <ThemeContext.Provider value={themeValue}>
       <div
+        id="themeRoot"
         ref={rootRef}
         className={classnames("baseRootComponent", `klive-${selectedTheme}`)}
         style={styleProps}

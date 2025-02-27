@@ -12,16 +12,21 @@
   overflow: auto;
   padding: 8px;
   outline: none;
+  border-radius: var(--radius-modal);
 
   header {
     background: var(--bgcolor-modal-header);
     padding: 8px 16px;
     font-size: 1.2em;
+    border-top-left-radius: var(--radius-modal);
+    border-top-right-radius: var(--radius-modal);
   }
 
   footer {
     background: var(--bgcolor-modal-footer);
     padding: 16px;
+    border-bottom-left-radius: var(--radius-modal);
+    border-bottom-right-radius: var(--radius-modal);
   }
 
   &.fullScreen{

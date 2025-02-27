@@ -17,7 +17,6 @@ import {
   emuLoadedAction,
   setAudioSampleRateAction
 } from "@state/actions";
-import styles from "@styles/app.module.scss";
 import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
@@ -25,14 +24,12 @@ import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
-  Z88_CARDS_DIALOG,
   Z88_CHANGE_RAM_DIALOG,
   Z88_EXPORT_CARD_DIALOG,
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG
 } from "@common/messaging/dialog-ids";
 import { FirstStartDialog } from "@renderer/appIde/dialogs/FirstStartDialog";
-import { Z88CardsDialog } from "./dialogs/Z88CardsDialog";
 import { CreateDiskDialog } from "./dialogs/CreateDiskDialog";
 import { Z88RemoveCardDialog } from "./dialogs/Z88RemoveCardDialog";
 import { Z88InsertCardDialog } from "./dialogs/Z88InsertCardDialog";
@@ -114,13 +111,6 @@ const EmuApp = () => {
 
       {dialogId === FIRST_STARTUP_DIALOG_EMU && (
         <FirstStartDialog
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === Z88_CARDS_DIALOG && (
-        <Z88CardsDialog
           onClose={() => {
             store.dispatch(displayDialogAction());
           }}

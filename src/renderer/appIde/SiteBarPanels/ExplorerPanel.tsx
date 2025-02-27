@@ -38,6 +38,7 @@ import { ProjectNode } from "@abstractions/ProjectNode";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
+import { VStack } from "@renderer/controls/new/Panels";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -527,7 +528,7 @@ const ExplorerPanel = () => {
       </div>
     ) : null
   ) : (
-    <>
+    <VStack>
       <div className={styles.noFolder}>You have not yet opened a folder.</div>
       <Button
         text="Open Folder"
@@ -546,7 +547,7 @@ const ExplorerPanel = () => {
           dispatch(displayDialogAction(NEW_PROJECT_DIALOG));
         }}
       />
-    </>
+    </VStack>
   );
 };
 

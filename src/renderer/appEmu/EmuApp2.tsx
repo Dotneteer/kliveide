@@ -1,7 +1,15 @@
 import { FullPanel, HStack, VStack } from "@renderer/controls/new/Panels";
-import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import Dropdown from "@renderer/controls/Dropdown";
 import { useRef } from "react";
 import { VirtualizerHandle } from "virtua";
+
+const options = [
+  { value: "option1", label: "Option 1" },
+  { value: "option2", label: "Option 2" },
+  { value: "option3", label: "Option 3" }
+];
+
+
 
 export const EmuApp2 = () => {
   const vlApi = useRef<VirtualizerHandle>(null);
@@ -34,14 +42,9 @@ export const EmuApp2 = () => {
         <button onClick={() => vlApi.current?.scrollToIndex(100)}>Scroll to 100</button>
         <button onClick={() => vlApi.current?.scrollToIndex(5_000_000)}>Scroll to end</button>
       </HStack>
-      <VirtualizedList
-        items={Array.from({
-          length: 100_000
-        }).map((_, i) => i)}
-        apiLoaded={(api) => (vlApi.current = api)}
-        overscan={25}
-        renderItem={i => <div key={i} style={{ height: "20px" }}>Item {i}</div>}
-      />
+      <HStack width="200px" padding="8px">
+        <Dropdown options={options} initialValue="option2" />
+      </HStack>
     </FullPanel>
   );
 };
