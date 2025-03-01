@@ -312,8 +312,8 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
    * < 0 : ROM pages
    * >= 0: RAM bank with the specified index
    */
-  get16KPartition (index: number): Uint8Array {
-    const flat16 = new Uint8Array(0x1_0000);
+  getMemoryPartition (index: number): Uint8Array {
+    const flat16 = new Uint8Array(0x4000);
     const pageOffs = this.getPartitionOffset(index);
     for (let i = 0; i < 0x4000; i++) {
       flat16[i + 0x0000] = this.memory[pageOffs + i];

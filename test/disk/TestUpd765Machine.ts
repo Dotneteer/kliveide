@@ -18,7 +18,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
    */
   floppyDevice: IFloppyControllerDevice;
 
-  constructor (hasDriveB = false) {
+  constructor(hasDriveB = false) {
     super();
     this.baseClockFrequency = 3_546_900;
     this.clockMultiplier = 1;
@@ -33,19 +33,17 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     this.reset();
   }
 
-  reset (): void {
+  reset(): void {
     super.reset();
     this.screenDevice.reset();
     this.beeperDevice.reset();
     this.tapeDevice.reset();
     this.floppyDevice.reset();
     this._frameCompleted = true;
-    (
-      this.floppyDevice as unknown as IFloppyControllerDeviceTest
-    ).disableRandomSeek = true;
+    (this.floppyDevice as unknown as IFloppyControllerDeviceTest).disableRandomSeek = true;
   }
 
-  getCurrentPartitions (): number[] {
+  getCurrentPartitions(): number[] {
     return [];
   }
 
@@ -53,7 +51,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop
    */
-  executeMachineFrame (): FrameTerminationMode {
+  executeMachineFrame(): FrameTerminationMode {
     // --- Sign that the loop execution is in progress
     this.executionContext.lastTerminationReason = undefined;
 
@@ -66,10 +64,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
 
         // --- Update the CPU's clock multiplier, if the machine's has changed.
         let clockMultiplierChanged = false;
-        if (
-          this.allowCpuClockChange() &&
-          this.clockMultiplier !== this.targetClockMultiplier
-        ) {
+        if (this.allowCpuClockChange() && this.clockMultiplier !== this.targetClockMultiplier) {
           // --- Use the current clock multiplier
           this.clockMultiplier = this.targetClockMultiplier;
           this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
@@ -81,8 +76,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
         this._frameCompleted = false;
 
         // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact =
-          currentFrameStart + this.tactsInFrame * this.clockMultiplier;
+        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
       }
 
       // --- Execute the next CPU instruction entirely
@@ -124,46 +118,45 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
 
     // --- Done
-    return (this.executionContext.lastTerminationReason =
-      FrameTerminationMode.Normal);
+    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
   }
 
-  emulateFrameCompletion (numFrames: number): void {
+  emulateFrameCompletion(numFrames: number): void {
     for (let i = 0; i < numFrames; i++) {
       this.executeMachineFrame();
     }
   }
 
-  onInitNewFrame (_: boolean): void {
+  onInitNewFrame(_: boolean): void {
     this.floppyDevice?.onFrameCompleted();
   }
 
   // --- We do not neet to use these methods in this test
-  readScreenMemory (offset: number): number {
+  readScreenMemory(offset: number): number {
     throw new Error("Method not implemented.");
   }
 
-  get64KFlatMemory (): Uint8Array {
+  get64KFlatMemory(): Uint8Array {
     throw new Error("Method not implemented.");
   }
 
-  get16KPartition (index: number): Uint8Array {
+  getMemoryPartition(index: number): Uint8Array {
     throw new Error("Method not implemented.");
   }
 
-  getAudioSamples (): number[] {
+  getAudioSamples(): number[] {
     throw new Error("Method not implemented.");
   }
 
-  get sysVars (): SysVar[] {
+  get sysVars(): SysVar[] {
     throw new Error("Method not implemented.");
   }
 
-  getCodeInjectionFlow (model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(model: string): CodeInjectionFlow {
     throw new Error("Method not implemented.");
   }
 
-  setup (): Promise<void> {
+  setup(): Promise<void> {
     throw new Error("Method not implemented.");
   }
 
@@ -171,4 +164,10 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     throw new Error("Method not implemented.");
   }
 
+  parsePartitionLabel(_label: string): number | undefined {
+    throw new Error("Method not implemented.");
+  }
+  getPartitionLabels(): Record<number, string> {
+    throw new Error("Method not implemented.");
+  }
 }

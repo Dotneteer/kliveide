@@ -438,7 +438,8 @@ class EmuMessageProcessor {
     if (partition === undefined) {
       memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
     } else {
-      memory = (controller.machine as IZxSpectrumMachine).get16KPartition(partition);
+      console.log("Partition: ", partition);
+      memory = (controller.machine as IZxSpectrumMachine).getMemoryPartition(partition);
     }
     return {
       memory,

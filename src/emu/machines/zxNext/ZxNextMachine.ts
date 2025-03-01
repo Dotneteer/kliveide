@@ -202,8 +202,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return this.memoryDevice.get64KFlatMemory();
   }
 
-  get16KPartition(index: number): Uint8Array {
-    return this.memoryDevice.get16KPartition(index);
+  getMemoryPartition(index: number): Uint8Array {
+    return this.memoryDevice.getMemoryPartition(index);
   }
 
   getCurrentPartitions(): number[] {

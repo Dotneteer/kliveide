@@ -34,6 +34,7 @@ export default function Dropdown({
     onChanged?.(value);
   };
 
+  // --- Use a root element that is the theme root
   useEffect(() => {
     if (theme ) {
       setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
@@ -45,13 +46,13 @@ export default function Dropdown({
       <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />
-        <Icon iconName="chevron-down" fill="--color-command-icon" width={20} height={20} />
+        <Icon iconName="chevron-down" fill="--color-command-icon" width={16} height={16} />
       </Select.Trigger>
 
       <Select.Portal container={rootElement}>
         <Select.Content className={styles.SelectContent} position="popper" sideOffset={4}
           style={{ maxHeight }}>
-          <Select.Viewport className="p-1">
+          <Select.Viewport>
             {options.map((option) => (
               <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
                 <Select.ItemText>{option.label}</Select.ItemText>

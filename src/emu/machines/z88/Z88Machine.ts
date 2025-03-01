@@ -322,8 +322,8 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param index Partition index
    * @returns Bytes of the partition
    */
-  get16KPartition(index: number): Uint8Array {
-    return this.memory.get16KPartition(index);
+  getMemoryPartition(index: number): Uint8Array {
+    return this.memory.getMemoryPartition(index);
   }
 
   /**
