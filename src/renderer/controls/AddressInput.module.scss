@@ -19,36 +19,20 @@
 }
 
 .addressPrompt {
-    outline: none;
-    border: none;
-    font-family: var(--monospace-font);
-    height: 20px;
-    width: 44px;
-    border: 1px solid var(--color-toolbar-separator);
-    background: transparent;
-    margin-left: 4px;
-    font-family: var(--monospace-font);
-    font-size: 1em;
-    color: var(--color-prompt);
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.eightBit {
-  width: 26px;
-}
-
-.radixLabel {
+  outline: none;
+  border: none;
   font-family: var(--monospace-font);
-  font-size: 1em;
-  padding: 4px 2px 0 2px;
-  height: 18px;
+  height: 20px;
+  width: 44px;
   border: 1px solid var(--color-toolbar-separator);
-  border-left: 0px solid transparent;
-  color: var(--color-command-icon);
-  flex-shrink: 0;
-  flex-grow: 0;
-  vertical-align: text-bottom;
-  cursor: pointer;
-}
+  background: var(--bg-color-dropdown-input);
+  margin-left: 4px;
+  font-size: 1em;
+  color: var(--color-dropdown-input);
+  text-transform: uppercase;
+  border-radius: 4px;
 
+  &:focus {
+    border: 1px solid var(--border-color-dropdown-menu);
+  }
+}

@@ -4,13 +4,13 @@ import { Icon } from "./Icon";
 import { useEffect, useState } from "react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 
-type Option = {
+export type DropdownOption = {
   value: string;
   label: string;
 };
 
 type Props = {
-  options: Option[];
+  options: DropdownOption[];
   placeholder?: string;
   initialValue?: string;
   width?: string | number;

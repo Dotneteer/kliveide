@@ -1,9 +1,10 @@
-import { useState } from "react";
-// import { Icon } from "./Icon";
 import styles from "./LabeledSwitch.module.scss";
-import { TooltipFactory, useTooltipRef } from "./Tooltip";
+
+import { useState } from "react";
 import Switch from "react-switch";
+import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import { useTheme } from "@renderer/theming/ThemeProvider";
+import classnames from "classnames";
 
 type Props = {
   label: string;
@@ -14,7 +15,7 @@ type Props = {
 
 export const LabeledSwitch = ({ label, title, value, clicked }: Props) => {
   const ref = useTooltipRef();
-  const [chState, setChState] = useState(value);
+  const [switchState, setSwitchState] = useState(value);
   const themeSrv = useTheme();
   const onColor = themeSrv.getThemeProperty("--bgcolor-switch-on");
   const onHandleColor = themeSrv.getThemeProperty("--color-switch-on");
@@ -22,21 +23,22 @@ export const LabeledSwitch = ({ label, title, value, clicked }: Props) => {
   const offHandleColor = themeSrv.getThemeProperty("--color-switch-off");
 
   return (
-    <div
-      ref={ref}
-      className={styles.labeledSwitch}
-      onClick={async () => {
-        // --- Delay 100ms
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        clicked?.(!value);
-      }}
-    >
-      <span className={styles.headerLabel}>{label}</span>
+    <div ref={ref} className={styles.labeledSwitch}>
+      <span
+        className={classnames(styles.headerLabel, { [styles.active]: switchState })}
+        onClick={() => {
+          setSwitchState(!switchState);
+          clicked?.(!switchState);
+        }}
+      >
+        {label}
+      </span>
       <Switch
         onChange={(v) => {
-          setChState(v);
+          setSwitchState(v);
+          clicked?.(v);
         }}
-        checked={chState}
+        checked={switchState}
         checkedIcon={false}
         uncheckedIcon={false}
         height={14}

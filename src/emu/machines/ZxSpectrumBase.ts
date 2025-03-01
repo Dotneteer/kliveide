@@ -386,8 +386,8 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen
    */
-  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
-    return this.screenDevice.renderShadowScreen(savedPixelBuffer);
+  renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
+    return this.screenDevice.renderInstantScreen(savedPixelBuffer);
   }
 
   /*
