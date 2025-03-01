@@ -240,7 +240,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen
    */
-  abstract renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
+  abstract renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
 
   /**
    * Gets the buffer that stores the rendered pixels

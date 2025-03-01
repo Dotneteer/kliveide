@@ -4,7 +4,28 @@
   padding: 2px 0;
 
   &.fit {
-    width: fit-content
+    width: fit-content;
+  }
+}
+
+@keyframes borderColorChange {
+  0% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  20% {
+    border-color: var(--color-label);
+  }
+  40% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  60% {
+    border-color: var(--color-label);
+  }
+  80% {
+    border-color: var(--border-color-dropdown-menu);
+  }
+  100% {
+    border-color: var(--color-label);
   }
 }
 
@@ -15,10 +36,16 @@
   color: var(--color-value);
   justify-content: center;
   width: 20px;
+  border: 1px solid transparent;
 
   &.decimal {
     width: 30px;
-  } 
+  }
+
+  &.lastJump {
+    animation: borderColorChange 3s alternate;
+    animation-delay: 400ms;
+  }
 
   &:hover {
     background: #606060;

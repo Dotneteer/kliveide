@@ -144,7 +144,7 @@ class EmuApiImpl {
     throw new Error(NO_PROXY_ERROR);
   }
 
-  async getPartitionLabels(): Promise<any> {
+  async getPartitionLabels(): Promise<Record<number, string>> {
     throw new Error(NO_PROXY_ERROR);
   }
 

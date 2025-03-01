@@ -546,6 +546,10 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     return this.screenDevice.getPixelBuffer();
   }
 
+  renderInstantScreen(): Uint32Array {
+    return this.screenDevice.getPixelBuffer();
+  }
+
   /**
    * Gets the key code set used for the machine
    */

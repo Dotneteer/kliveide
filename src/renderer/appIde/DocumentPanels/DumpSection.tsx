@@ -16,6 +16,7 @@ type DumpProps = {
   decimalView: boolean;
   charDump: boolean;
   pointedInfo?: Record<number, string>;
+  lastJumpAddress: number;
 };
 
 export const DumpSection = ({
@@ -25,7 +26,8 @@ export const DumpSection = ({
   memory,
   decimalView,
   charDump,
-  pointedInfo
+  pointedInfo,
+  lastJumpAddress
 }: DumpProps) => {
   if (!memory) return null;
 
@@ -56,48 +58,56 @@ export const DumpSection = ({
       />
       <ByteValue
         address={address + 0}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 0]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 1}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 1]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 2}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 2]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 3}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 3]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 4}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 4]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 5}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 5]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 6}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 6]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
       />
       <ByteValue
         address={address + 7}
+        lastJumpAddress={lastJumpAddress}
         value={memory[address + 7]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
@@ -125,9 +135,10 @@ type ByteValueProps = {
   decimalView?: boolean;
   value?: number;
   pointedInfo?: Record<number, string>;
+  lastJumpAddress?: number;
 };
 
-const ByteValue = ({ address, decimalView, value, pointedInfo }: ByteValueProps) => {
+const ByteValue = ({ address, decimalView, value, pointedInfo, lastJumpAddress }: ByteValueProps) => {
   // --- Do not display non-existing values
   if (value === undefined) return <div style={{ width: 20 }}></div>;
 
@@ -145,7 +156,8 @@ const ByteValue = ({ address, decimalView, value, pointedInfo }: ByteValueProps)
       className={classnames(styles.value, {
         [styles.pointed]: pointed,
         [styles.pcPointed]: pcPointed,
-        [styles.decimal]: decimalView
+        [styles.decimal]: decimalView,
+        [styles.lastJump]: lastJumpAddress === address
       })}
     >
       {decimalView ? toDecimal3(value) : toHexa2(value)}

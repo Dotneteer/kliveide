@@ -75,5 +75,5 @@ export interface IScreenDevice extends IGenericDevice<IZxSpectrumMachine> {
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen
    */
-  renderShadowScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
+  renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array;
 }

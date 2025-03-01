@@ -16,4 +16,8 @@
   flex-shrink: 0;
   flex-grow: 0;
   align-items: center;
+
+  &.active {
+    color: var(--color-text-hilite);
+  }
 }

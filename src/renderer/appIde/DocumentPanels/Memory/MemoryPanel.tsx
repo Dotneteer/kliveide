@@ -1,38 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { SmallIconButton } from "@renderer/controls/IconButton";
-import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
-import { setIdeStatusMessageAction } from "@common/state/actions";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { MF_BANK, MF_ROM, MF_ULA } from "@common/machines/constants";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { MF_BANK, MF_ROM } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
-import { LabeledGroup } from "@renderer/controls/LabeledGroup";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useStateRefresh } from "@renderer/appIde/useStateRefresh";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
-import { Value } from "@renderer/controls/generic/Value";
 import { FullPanel, HStack } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "../helpers/PanelHeader";
-//import Switch from "react-switch";
-
-type MemoryViewMode = "full" | "rom" | "ram" | "bank";
+import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
+import { Text } from "@renderer/controls/generic/Text";
 
 type BankedMemoryPanelViewState = {
   topIndex?: number;
-  autoRefresh?: boolean;
-  viewMode?: MemoryViewMode;
-  prevViewMode?: MemoryViewMode;
-  romPage?: number;
-  ramBank?: number;
+  isFullView?: boolean;
+  currentSegment?: string;
   decimalView?: boolean;
   twoColumns?: boolean;
   charDump?: boolean;
@@ -40,36 +30,21 @@ type BankedMemoryPanelViewState = {
 };
 
 export type CachedRefreshState = {
-  autoRefresh: boolean;
-  viewMode: MemoryViewMode;
-  romPage: number;
-  ramBank: number;
+  isFullView: boolean;
+  currentSegment: string;
   decimalView: boolean;
 };
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
-  const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineId = useSelector((s) => s.emulatorState.machineId);
-  const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
-  const romPages = machineInfo?.features?.[MF_ROM] ?? 0;
-  const hasUla = machineInfo?.features?.[MF_ULA] ?? false;
-  const showRoms = romPages > 0;
-  const ramBanks = machineInfo?.features?.[MF_BANK] ?? 0;
-  const showBanks = ramBanks > 0;
-  const allowBankInput = ramBanks > 8;
-  const allowViews = showBanks || showRoms;
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  // --- Create a list of number range
-  const range = (start: number, end: number) => {
-    return [...Array(end - start + 1).keys()].map((i) => i + start);
-  };
+  const [allowViews, setAllowViews] = useState<boolean>(false);
+  const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -78,18 +53,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   // --- View state variables
   const [topIndex, setTopIndex] = useState<number>(viewState.current?.topIndex ?? 0);
-  const [autoRefresh, setAutoRefresh] = useState(viewState.current?.autoRefresh ?? true);
-  const [viewMode, setViewMode] = useState<MemoryViewMode>(viewState.current?.viewMode ?? "full");
-  const [prevViewMode, setPrevViewMode] = useState<MemoryViewMode>(
-    viewState.current?.prevViewMode ?? "ram"
-  );
-  const [romPage, setRomPage] = useState<number>(viewState.current?.romPage ?? 0);
-  const [ramBank, setRamBank] = useState<number>(viewState.current?.ramBank ?? 0);
+  const [isFullView, setIsFullView] = useState(viewState.current?.isFullView ?? true);
+  const [currentSegment, setCurrentSegment] = useState<string>(null);
   const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
-
-  // --- ULA-related state
-  const [currentRomPage, setCurrentRomPage] = useState<number>(0);
-  const [currentRamBank, setCurrentRamBank] = useState<number>(0);
 
   // --- Display options
   const [decimalView, setDecimalView] = useState(viewState.current?.decimalView ?? false);
@@ -102,28 +68,52 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [memoryItems, setMemoryItems] = useState<number[]>([]);
   const cachedItems = useRef<number[]>([]);
   const vlApi = useRef<VListHandle>(null);
-  const partitionLabels = useRef<string[]>([]);
+  const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
+  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>(null);
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
+  const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
-    autoRefresh,
-    viewMode,
+    isFullView,
     decimalView,
-    romPage,
-    ramBank
+    currentSegment
   });
+
+  // --- Respond to machineId changes
+  useEffect(() => {
+    const machine = machineRegistry.find((mi) => mi.machineId === machineId);
+    const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
+    const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
+    setAllowViews(romPagesValue > 0 || ramBankValue > 0);
+    if (ramBankValue <= 8) {
+      (async () => {
+        const options: DropdownOption[] = [];
+        const labels = await emuApi.getPartitionLabels();
+        setPartitionLabels(labels);
+        const ordered = Object.keys(labels)
+          .map((l) => parseInt(l, 10))
+          .sort((a, b) => (a < 0 && b < 0 ? b - a : a - b));
+        ordered.forEach((key) => {
+          if (key < 0) {
+            options.push({ value: key.toString(), label: `ROM ${-key - 1}` });
+          } else {
+            options.push({ value: key.toString(), label: `BANK ${key}` });
+          }
+        });
+        setSegmentOptions(options);
+        setCurrentSegment("-1");
+      })();
+    }
+  }, [machineId]);
 
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
       topIndex: topIndex,
-      autoRefresh,
-      viewMode,
-      prevViewMode,
-      romPage,
-      ramBank,
+      isFullView,
+      currentSegment,
       decimalView,
       twoColumns,
       charDump,
@@ -151,25 +141,23 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       let partition: number | undefined;
 
       // --- Use partitions when multiple ROMs or Banks available
-      if (cachedRefreshState.current.viewMode === "rom") {
-        partition = -(cachedRefreshState.current.romPage + 1);
-      } else if (cachedRefreshState.current.viewMode === "ram") {
-        partition = cachedRefreshState.current.ramBank ?? 0;
+      if (!cachedRefreshState.current.isFullView) {
+        partition = parseInt(cachedRefreshState.current.currentSegment);
+        if (isNaN(partition)) {
+          partition = -1;
+        }
       }
 
       // --- Get memory information
       const response = await emuApi.getMemoryContents(partition);
-
       memory.current = response.memory;
-      partitionLabels.current = response.partitionLabels;
+      setMem64kLabels(response.partitionLabels);
 
       // --- Calculate tooltips for pointed addresses
       pointedRegs.current = {};
       if (
-        cachedRefreshState.current.viewMode !== "ram" &&
-        (cachedRefreshState.current.autoRefresh ||
-          machineState === MachineControllerState.Paused ||
-          machineState === MachineControllerState.Stopped)
+        machineState === MachineControllerState.Paused ||
+        machineState === MachineControllerState.Stopped
       ) {
         extendPointedAddress("BC", response.bc);
         extendPointedAddress("DE", response.de);
@@ -185,13 +173,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         extendPointedAddress("WZ", response.sp);
       }
       createDumpSections(memory.current.length, twoColumns);
-
-      // --- Obtain ULA information
-      if (hasUla) {
-        const ulaResponse = await emuApi.getUlaState();
-        setCurrentRomPage(ulaResponse.romP);
-        setCurrentRamBank(ulaResponse.ramB);
-      }
     } finally {
       refreshInProgress.current = false;
       setScrollVersion(scrollVersion + 1);
@@ -210,24 +191,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   useEffect(() => {
     saveViewState();
     cachedRefreshState.current = {
-      autoRefresh,
-      viewMode,
+      isFullView,
       decimalView,
-      romPage,
-      ramBank
+      currentSegment
     };
-  }, [
-    topIndex,
-    autoRefresh,
-    viewMode,
-    decimalView,
-    prevViewMode,
-    romPage,
-    ramBank,
-    twoColumns,
-    charDump,
-    bankLabel
-  ]);
+  }, [topIndex, isFullView, decimalView, currentSegment, twoColumns, charDump, bankLabel]);
 
   // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
   useInitializeAsync(async () => {
@@ -254,34 +222,31 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     })();
   }, [machineState]);
 
+  useEffect(() => {
+    refreshMemoryView();
+  }, [currentSegment, isFullView]);
+
   // --- Change the length of the current dump section according to the view mode
   useEffect(
-    () => createDumpSections(viewMode === "full" ? 0x1_0000 : 0x4000, twoColumns),
-    [viewMode]
+    () => createDumpSections(isFullView ? 0x1_0000 : 0x4000, twoColumns),
+    [isFullView, twoColumns]
   );
 
-  const refreshView = () => {
-    if (cachedRefreshState.current.autoRefresh) {
-      refreshMemoryView();
-    }
-  };
-
   // --- Take care of refreshing the screen
-  useStateRefresh(500, refreshView);
+  useStateRefresh(500, refreshMemoryView);
 
   const OptionsBar = () => {
     return (
       <>
         <LabeledSwitch
           value={decimalView}
-          label="Decimal:"
+          label="Decimal"
           title="Use decimal numbers?"
           clicked={(v) => setDecimalView(v)}
         />
-        <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={twoColumns}
-          label="2 Columns:"
+          label="2 Columns"
           title="Use two-column layout?"
           clicked={(v) => {
             setTwoColumns(v);
@@ -294,144 +259,65 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             setScrollVersion(scrollVersion + 1);
           }}
         />
-        <ToolbarSeparator small={true} />
         <LabeledSwitch
           value={charDump}
-          label="Chars:"
+          label="Chars"
           title="Show characters dump?"
           clicked={setCharDump}
         />
-        {allowViews && (
-          <>
-            <ToolbarSeparator small={true} />
-            <LabeledSwitch
-              value={bankLabel}
-              label="Bank Label:"
-              title="Display bank label information?"
-              clicked={setBankLabel}
-            />
-          </>
-        )}
-      </>
-    );
-  };
-
-  const lowerBound = decimalView ? "00000" : "0000";
-  const upperBound =
-    viewMode === "full" ? (decimalView ? "65535" : "FFFF") : decimalView ? "16383" : "3FFF";
-
-  return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
-      <PanelHeader>
-        <LabelSeparator width={4} />
-        <Value text={`${lowerBound}-${upperBound}`} width={86} />
-        <ToolbarSeparator small={true} />
         <AddressInput
-          label="Go To:"
+          label="Go To"
           clearOnEnter={true}
           decimalView={decimalView}
           onAddressSent={async (address) => {
+            setLastJumpAddress(address);
             setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
             setScrollVersion(scrollVersion + 1);
           }}
         />
-        <LabelSeparator width={8} />
-        <ToolbarSeparator small={true} />
-        <SmallIconButton
-          iconName="refresh"
-          title={"Refresh now"}
-          clicked={async () => {
-            refreshMemoryView();
-            dispatch(setIdeStatusMessageAction("Memory view refreshed", true));
-          }}
-        />
-        <ToolbarSeparator small={true} />
-        <LabeledSwitch
-          value={autoRefresh}
-          label="Refresh:"
-          title="Refresh the memory view periodically"
-          clicked={setAutoRefresh}
-        />
-        {allowViews && (
-          <>
-            <ToolbarSeparator small={true} />
-            <LabeledSwitch
-              value={viewMode === "full"}
-              label="64K View"
-              title="Show the full 64K memory"
-              clicked={(v) => {
-                setViewMode(v ? "full" : prevViewMode);
-                setPrevViewMode(v ? viewMode : "full");
-              }}
-            />
-            {allowBankInput && viewMode !== "full" && (
-              <>
-                <ToolbarSeparator small={true} />
-                <AddressInput
-                  label="Bank:"
-                  eightBit={true}
-                  clearOnEnter={false}
-                  initialValue={ramBank}
-                  decimalView={decimalView}
-                  onAddressSent={async (bank) => {
-                    setViewMode("ram");
-                    setPrevViewMode(viewMode);
-                    setRamBank(bank);
-                    if (headerRef.current) headerRef.current.focus();
-                    cachedRefreshState.current = {
-                      autoRefresh,
-                      viewMode: "ram",
-                      decimalView,
-                      romPage,
-                      ramBank: bank
-                    };
-                    await refreshMemoryView();
-                    setScrollVersion(scrollVersion + 1);
-                  }}
-                />
-              </>
-            )}
-            {showRoms && viewMode !== "full" && (
-              <>
-                <ToolbarSeparator small={true} />
-                <LabeledGroup
-                  label="ROM: "
-                  title="Select the ROM to display"
-                  values={range(0, romPages - 1)}
-                  marked={currentRomPage}
-                  selected={viewMode === "rom" ? romPage : -1}
-                  clicked={(v) => {
-                    setViewMode("rom");
-                    setPrevViewMode(viewMode);
-                    setRomPage(v);
-                  }}
-                />
-                <ToolbarSeparator small={true} />
-                <LabeledGroup
-                  label="RAM Bank: "
-                  title="Select the RAM Bank to display"
-                  values={range(0, ramBanks - 1)}
-                  marked={currentRamBank}
-                  selected={viewMode === "ram" ? ramBank : -1}
-                  clicked={(v) => {
-                    setViewMode("ram");
-                    setPrevViewMode(viewMode), setRamBank(v);
-                  }}
-                />
-              </>
-            )}
-          </>
-        )}
-        {!allowViews && (
-          <>
-            <ToolbarSeparator small={true} />
-            <OptionsBar />
-          </>
-        )}
+      </>
+    );
+  };
+
+  return (
+    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+      <PanelHeader>
+        <OptionsBar />
       </PanelHeader>
       {allowViews && (
         <PanelHeader>
-          <OptionsBar />
+          <LabeledSwitch
+            value={isFullView}
+            label="64K View"
+            title="Show the full 64K memory"
+            clicked={(v) => setIsFullView(v)}
+          />
+          {!isFullView && (
+            <>
+              <LabelSeparator width={4} />
+              <Text text="Bank" />
+              <LabelSeparator width={4} />
+              <Dropdown
+                options={segmentOptions}
+                initialValue={currentSegment?.toString()}
+                width="100px"
+                onChanged={async (opt) => {
+                  setCurrentSegment(opt);
+                  setTopIndex(0);
+                  setLastJumpAddress(0);
+                  // --- Delay 3s
+                  await new Promise((resolve) => setTimeout(resolve, 3000));
+                  setLastJumpAddress(-1);
+                }}
+              />
+              <LabeledSwitch
+                value={bankLabel}
+                label="Show bank label"
+                title="Display bank label information?"
+                clicked={setBankLabel}
+              />
+            </>
+          )}
         </PanelHeader>
       )}
       <FullPanel>
@@ -444,32 +330,34 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }}
           apiLoaded={(api) => (vlApi.current = api)}
           renderItem={(idx) => {
+            const partitionLabel = isFullView
+              ? mem64kLabels[memoryItems[idx] >> 13]
+              : partitionLabels?.[parseInt(currentSegment)];
             return (
-              <HStack 
+              <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
-                hoverBackgroundColor="--bgcolor-disass-hover">
+                hoverBackgroundColor="--bgcolor-disass-hover"
+              >
                 <DumpSection
-                  showPartitions={showBanks && bankLabel}
-                  partitionLabel={
-                    viewMode !== "full"
-                      ? toHexa2(ramBank)
-                      : partitionLabels.current?.[memoryItems[idx] >> 13]
-                  }
+                  showPartitions={bankLabel}
+                  partitionLabel={partitionLabel}
                   address={memoryItems[idx]}
                   memory={memory.current}
                   charDump={charDump}
                   pointedInfo={pointedRegs.current}
                   decimalView={decimalView}
+                  lastJumpAddress={lastJumpAddress}
                 />
                 {twoColumns && (
                   <DumpSection
-                    showPartitions={showBanks && bankLabel}
-                    partitionLabel={partitionLabels.current?.[memoryItems[idx] >> 13]}
+                    showPartitions={bankLabel}
+                    partitionLabel={partitionLabel}
                     address={memoryItems[idx] + 0x08}
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}
                     charDump={charDump}
                     decimalView={decimalView}
+                    lastJumpAddress={lastJumpAddress}
                   />
                 )}
               </HStack>

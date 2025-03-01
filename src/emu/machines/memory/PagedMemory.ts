@@ -194,6 +194,7 @@ export class PagedMemory {
   get16KPartition (index: number): Uint8Array {
     const flat16 = new Uint8Array(0x1_0000);
     const pageOffs = this.getPartitionOffset(index);
+    console.log(`get16KPartition: ${index} => ${pageOffs}`);
     for (let i = 0; i < 0x4000; i++) {
       flat16[i + 0x0000] = this.memory[pageOffs + i];
     }

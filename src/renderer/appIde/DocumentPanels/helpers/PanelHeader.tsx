@@ -5,7 +5,8 @@ type Props = {
 };
 export const PanelHeader = ({ children }: Props) => {
   return (
-    <HStack paddingHorizontal="4px" verticalContentAlignment="center">
+    <HStack paddingHorizontal="4px" paddingVertical="2px"
+      verticalContentAlignment="center">
       {children}
     </HStack>
   );

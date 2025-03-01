@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState } from "react";
 import styles from "./AddressInput.module.scss";
+import { useRef } from "react";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
-import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
   label: string;
-  eightBit?: boolean;
-  initialValue?: number;
+  tooltip?: string;
   clearOnEnter?: boolean;
   decimalView: boolean;
   onAddressSent?: (addr: number) => Promise<void>;
@@ -15,107 +13,60 @@ type Props = {
 
 export const AddressInput = ({
   label,
-  eightBit,
-  initialValue,
+  tooltip,
   clearOnEnter = true,
   decimalView,
   onAddressSent
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>();
   const spanRef = useTooltipRef();
-  const [radix, setRadix] = useState(decimalView ? 10 : 16);  
-  const mounted = useRef(false);
+  const radix = decimalView ? 10 : 16;
 
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      if (inputRef.current && initialValue !== undefined) {
-        inputRef.current.value =
-          radix === 16
-            ? eightBit
-              ? toHexa2(initialValue)
-              : toHexa4(initialValue)
-            : initialValue.toString(10);
+  const handleBeforeInput = (e: any) => {
+    const typed = e.data;
+    console.log("typed");
+    if (typed < "0" || typed > "9") {
+      if (decimalView || ((typed < "A" || typed > "F") && (typed < "a" || typed > "f"))) {
+        e.preventDefault();
       }
     }
-  });
+  };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (
-      !(
-        (e.key >= "0" && e.key <= "9") ||
-        (radix === 16 && e.code >= "KeyA" && e.code <= "KeyF") ||
-        e.code === "Backspace" ||
-        e.code === "Delete" ||
-        e.code === "ArrowLeft" ||
-        e.code === "ArrowRight" ||
-        e.code === "Enter" ||
-        e.code === "NumpadEnter"
-      )
-    ) {
-      e.preventDefault();
-    }
-
-    if (
-      (e.code === "Enter" || e.code == "NumpadEnter") &&
-      inputRef.current.value?.trim()
-    ) {
-      setTimeout(async () => {
-        const address = parseInt(inputRef.current.value.trim(), radix);
-        if (!isNaN(address)) {
-          if (onAddressSent) {
-            await onAddressSent(address);
-          }
-          if (clearOnEnter) {
-            inputRef.current.value = "";
-          }
-        }
-      });
+  const handleKeyDown = (e: any) => {
+    if (e.key === "Enter") {
+      if (inputRef.current.value === "") {
+        return;
+      }
+      if (onAddressSent) {
+        onAddressSent(parseInt(inputRef.current.value, radix));
+      }
+      if (clearOnEnter) {
+        inputRef.current.value = "";
+      }
     }
   };
 
   return (
-    <div className={styles.addressInput}>
+    <div ref={spanRef} className={styles.addressInput}>
       <span className={styles.headerLabel}>{label}</span>
       <input
+        tabIndex={0}
         ref={inputRef}
-        className={classnames(styles.addressPrompt, {
-          [styles.eightBit]: eightBit
-        })}
-        maxLength={radix === 10 ? (eightBit ? 3 : 5) : eightBit ? 2 : 4}
-        onKeyDown={handleKeyPress}
+        className={classnames(styles.addressPrompt)}
+        maxLength={radix === 10 ? 5 : 4}
+        onBeforeInput={handleBeforeInput}
+        onKeyDown={handleKeyDown}
       />
-      <span
-        ref={spanRef}
-        className={styles.radixLabel}
-        onClick={() => {
-          if (radix === 16) {
-            const value = parseInt(inputRef.current.value.trim(), 16);
-            if (!isNaN(value)) {
-              inputRef.current.value = value.toString(10);
-            }
-            setRadix(10);
-          } else {
-            const value = parseInt(inputRef.current.value.trim(), 10);
-            if (!isNaN(value))
-              inputRef.current.value = eightBit
-                ? toHexa2(value)
-                : toHexa4(value);
-            setRadix(16);
-          }
-          inputRef.current.focus();
-        }}
-      >
-        {radix === 16 ? "$" : "D"}
+      {tooltip && (
         <TooltipFactory
           refElement={spanRef.current}
-          placement='right'
+          placement="right"
           offsetX={-16}
           offsetY={28}
           showDelay={200}
-          content={`Type in a ${radix === 10 ? "decimal" : "hexadecimal"} address`}
+          content={tooltip}
         />
-      </span>
+      )}
     </div>
   );
 };

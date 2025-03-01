@@ -108,8 +108,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   };
 
   // --- Render shadow screen according to the current state
-  const renderShadowScreen = (savedPixelBuffer?: Uint32Array) => {
-    return controller?.machine?.renderShadowScreen(savedPixelBuffer);
+  const renderInstantScreen = (savedPixelBuffer?: Uint32Array) => {
+    return controller?.machine?.renderInstantScreen(savedPixelBuffer);
   };
 
   // --- Sets the overlay for paused mode
@@ -177,7 +177,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (showShadowScreen) {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        const shadow = renderShadowScreen();
+        const shadow = renderInstantScreen();
         if (!savedPixelBuffer) {
           savedPixelBuffer = new Uint32Array(shadow);
         }
@@ -186,7 +186,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     } else {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        renderShadowScreen(savedPixelBuffer);
+        renderInstantScreen(savedPixelBuffer);
         displayScreenData();
       }
     }
@@ -286,7 +286,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             await beeperRenderer?.current?.suspend();
             const showShadow = store.getState()?.emuViewOptions?.showShadowScreen;
             if (showShadow) {
-              const shadow = renderShadowScreen();
+              const shadow = renderInstantScreen();
               if (!savedPixelBuffer) {
                 savedPixelBuffer = new Uint32Array(shadow);
               }
@@ -319,7 +319,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     if (args.fullFrame) {
-      savedPixelBuffer = renderShadowScreen();
+      savedPixelBuffer = renderInstantScreen();
     }
 
     // --- Stop sound rendering when fast load has been invoked
