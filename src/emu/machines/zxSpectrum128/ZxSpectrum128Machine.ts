@@ -244,8 +244,8 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
    * @param index Partition index
    */
-  get16KPartition(index: number): Uint8Array {
-    return this.memory.get16KPartition(index);
+  getMemoryPartition(index: number): Uint8Array {
+    return this.memory.getMemoryPartition(index);
   }
 
   /**

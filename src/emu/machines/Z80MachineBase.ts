@@ -323,7 +323,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Less than zero: ROM pages
    * 0..7: RAM bank with the specified index
    */
-  abstract get16KPartition(index: number): Uint8Array;
+  abstract getMemoryPartition(index: number): Uint8Array;
 
   /**
    * Gets the current partition values for all 16K/8K partitions

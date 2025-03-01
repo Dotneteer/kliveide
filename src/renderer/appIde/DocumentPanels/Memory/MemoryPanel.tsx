@@ -3,7 +3,7 @@ import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer"
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { MF_BANK, MF_ROM } from "@common/machines/constants";
+import { MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -18,21 +18,25 @@ import { FullPanel, HStack } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "../helpers/PanelHeader";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/generic/Text";
+import BankDropdown from "@renderer/controls/new/BankDropdown";
+import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 
 type BankedMemoryPanelViewState = {
   topIndex?: number;
   isFullView?: boolean;
-  currentSegment?: string;
+  currentSegment?: number;
   decimalView?: boolean;
   twoColumns?: boolean;
   charDump?: boolean;
   bankLabel?: boolean;
+  show8kBanks?: boolean;
 };
 
 export type CachedRefreshState = {
   isFullView: boolean;
-  currentSegment: string;
+  currentSegment: number;
   decimalView: boolean;
+  show8kBanks?: boolean;
 };
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
@@ -43,7 +47,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineId = useSelector((s) => s.emulatorState.machineId);
-  const [allowViews, setAllowViews] = useState<boolean>(false);
+  const [banksView, setBanksView] = useState<boolean>(false);
+  const [displayBankMatrix, setDisplayBankMatrix] = useState<boolean>(false);
   const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
 
   // --- Read the view state of the document
@@ -54,7 +59,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- View state variables
   const [topIndex, setTopIndex] = useState<number>(viewState.current?.topIndex ?? 0);
   const [isFullView, setIsFullView] = useState(viewState.current?.isFullView ?? true);
-  const [currentSegment, setCurrentSegment] = useState<string>(null);
+  const [currentSegment, setCurrentSegment] = useState<number>(null);
   const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
 
   // --- Display options
@@ -86,12 +91,13 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
-    setAllowViews(romPagesValue > 0 || ramBankValue > 0);
-    if (ramBankValue <= 8) {
-      (async () => {
-        const options: DropdownOption[] = [];
-        const labels = await emuApi.getPartitionLabels();
-        setPartitionLabels(labels);
+    setBanksView(romPagesValue > 0 || ramBankValue > 0);
+    setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
+    (async () => {
+      const options: DropdownOption[] = [];
+      const labels = await emuApi.getPartitionLabels();
+      setPartitionLabels(labels);
+      if (ramBankValue <= 8) {
         const ordered = Object.keys(labels)
           .map((l) => parseInt(l, 10))
           .sort((a, b) => (a < 0 && b < 0 ? b - a : a - b));
@@ -103,9 +109,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           }
         });
         setSegmentOptions(options);
-        setCurrentSegment("-1");
-      })();
-    }
+      }
+      setCurrentSegment(romPagesValue ? -1 : 0);
+    })();
   }, [machineId]);
 
   // --- Save the current view state
@@ -142,7 +148,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
       // --- Use partitions when multiple ROMs or Banks available
       if (!cachedRefreshState.current.isFullView) {
-        partition = parseInt(cachedRefreshState.current.currentSegment);
+        partition = cachedRefreshState.current.currentSegment;
         if (isNaN(partition)) {
           partition = -1;
         }
@@ -284,7 +290,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       <PanelHeader>
         <OptionsBar />
       </PanelHeader>
-      {allowViews && (
+      {banksView && (
         <PanelHeader>
           <LabeledSwitch
             value={isFullView}
@@ -297,19 +303,52 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
               <LabelSeparator width={4} />
               <Text text="Bank" />
               <LabelSeparator width={4} />
-              <Dropdown
-                options={segmentOptions}
-                initialValue={currentSegment?.toString()}
-                width="100px"
-                onChanged={async (opt) => {
-                  setCurrentSegment(opt);
-                  setTopIndex(0);
-                  setLastJumpAddress(0);
-                  // --- Delay 3s
-                  await new Promise((resolve) => setTimeout(resolve, 3000));
-                  setLastJumpAddress(-1);
-                }}
-              />
+              {!displayBankMatrix && (
+                <Dropdown
+                  options={segmentOptions}
+                  initialValue={currentSegment?.toString()}
+                  width="100px"
+                  onChanged={async (opt) => {
+                    setCurrentSegment(parseInt(opt));
+                    setTopIndex(0);
+                    setLastJumpAddress(0);
+                    // --- Delay 3s
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                    setLastJumpAddress(-1);
+                  }}
+                />
+              )}
+              {displayBankMatrix && machineId === MI_Z88 && (
+                <BankDropdown
+                  initialValue={currentSegment ?? 0}
+                  width="68px"
+                  onChanged={async (opt) => {
+                    setCurrentSegment(opt);
+                    setTopIndex(0);
+                    setLastJumpAddress(0);
+                    // --- Delay 3s
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                    setLastJumpAddress(-1);
+                  }}
+                />
+              )}
+              {displayBankMatrix && machineId === MI_ZXNEXT && (
+                <NextBankDropdown
+                  banks={224}
+                  initialValue={currentSegment ?? 0}
+                  width="120px"
+                  onChanged={async (opt) => {
+                    console.log("selected", opt);
+                    setCurrentSegment(opt);
+                    setTopIndex(0);
+                    setLastJumpAddress(0);
+                    // --- Delay 3s
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                    setLastJumpAddress(-1);
+                  }}
+                />
+              )}
+
               <LabeledSwitch
                 value={bankLabel}
                 label="Show bank label"
@@ -332,7 +371,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           renderItem={(idx) => {
             const partitionLabel = isFullView
               ? mem64kLabels[memoryItems[idx] >> 13]
-              : partitionLabels?.[parseInt(currentSegment)];
+              : partitionLabels?.[currentSegment];
             return (
               <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}

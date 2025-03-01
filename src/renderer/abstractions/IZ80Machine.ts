@@ -229,7 +229,7 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
    * @param index Partition index
    * @returns Bytes of the partition
    */
-  get16KPartition(index: number): Uint8Array;
+  getMemoryPartition(index: number): Uint8Array;
 
   /**
    * Gets the current partition values for all 16K/8K partitions

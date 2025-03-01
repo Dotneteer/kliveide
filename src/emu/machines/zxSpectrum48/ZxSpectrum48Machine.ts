@@ -146,7 +146,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Get the specified 16K partition (page or bank) of the ZX Spectrum computer
    * @param _index Partition index
    */
-  get16KPartition(_index: number): Uint8Array {
+  getMemoryPartition(_index: number): Uint8Array {
     throw new Error("This operation is not supported in the ZX Spectrum 48K model");
   }
 

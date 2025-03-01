@@ -489,13 +489,31 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * < 0 : ROM pages
    * >= 0: RAM bank with the specified index
    */
-  get16KPartition(index: number): Uint8Array {
-    const flat16 = new Uint8Array(0x1_0000);
-    const pageOffs = this.pageInfo[index * 2].readOffset;
-    for (let i = 0; i < 0x4000; i++) {
-      flat16[i + 0x0000] = this.memory[pageOffs + i];
+  getMemoryPartition(index: number): Uint8Array {
+    let length = 0x2000;
+    let offset = 0;
+    if (index >= -4 && index <= -1) {
+      length = 0x4000;
+      offset = OFFS_NEXT_ROM + 0x4000 * (-index - 1);
+    } else if (index === -5) {
+      length = 0x4000;
+      offset = OFFS_ALT_ROM_0;
+    } else if (index === -6) {
+      length = 0x4000;
+      offset = OFFS_ALT_ROM_1;
+    } else if (index === -7) {
+      length = 0x2000;
+      offset = OFFS_DIVMMC_ROM;
+    } else if (index >= -23 && index <= -8) {
+      offset = OFFS_DIVMMC_RAM + 0x2000 * (-index - 8);
+    } else if (index >= 0 && index < 224) {
+      offset = OFFS_NEXT_RAM + 0x2000 * index;      
     }
-    return flat16;
+    const partContent = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      partContent[i] = this.memory[offset + i];
+    }
+    return partContent;
   }
 
   /**
