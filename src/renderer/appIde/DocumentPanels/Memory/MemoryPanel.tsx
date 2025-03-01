@@ -14,7 +14,6 @@ import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
-import { Value } from "@renderer/controls/generic/Value";
 import { FullPanel, HStack } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "../helpers/PanelHeader";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
@@ -73,6 +72,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>(null);
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
+  const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -270,6 +270,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           clearOnEnter={true}
           decimalView={decimalView}
           onAddressSent={async (address) => {
+            setLastJumpAddress(address);
             setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
             setScrollVersion(scrollVersion + 1);
           }}
@@ -300,8 +301,13 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 options={segmentOptions}
                 initialValue={currentSegment?.toString()}
                 width="100px"
-                onChanged={(opt) => {
+                onChanged={async (opt) => {
                   setCurrentSegment(opt);
+                  setTopIndex(0);
+                  setLastJumpAddress(0);
+                  // --- Delay 3s
+                  await new Promise((resolve) => setTimeout(resolve, 3000));
+                  setLastJumpAddress(-1);
                 }}
               />
               <LabeledSwitch
@@ -340,6 +346,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   charDump={charDump}
                   pointedInfo={pointedRegs.current}
                   decimalView={decimalView}
+                  lastJumpAddress={lastJumpAddress}
                 />
                 {twoColumns && (
                   <DumpSection
@@ -350,6 +357,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                     pointedInfo={pointedRegs.current}
                     charDump={charDump}
                     decimalView={decimalView}
+                    lastJumpAddress={lastJumpAddress}
                   />
                 )}
               </HStack>
