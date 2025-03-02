@@ -230,7 +230,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   useEffect(() => {
     refreshMemoryView();
-  }, [currentSegment, isFullView]);
+  }, [currentSegment, isFullView, decimalView]);
 
   // --- Change the length of the current dump section according to the view mode
   useEffect(
@@ -322,6 +322,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 <BankDropdown
                   initialValue={currentSegment ?? 0}
                   width="68px"
+                  decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
                     setTopIndex(0);
@@ -337,8 +338,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   banks={224}
                   initialValue={currentSegment ?? 0}
                   width="120px"
+                  decimalView={decimalView}
                   onChanged={async (opt) => {
-                    console.log("selected", opt);
                     setCurrentSegment(opt);
                     setTopIndex(0);
                     setLastJumpAddress(0);

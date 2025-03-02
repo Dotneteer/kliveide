@@ -50,6 +50,10 @@
     &.selected {
       background-color: var(--bg-color-dropdown-menu-selected);
     }
+
+    &.decimal {
+      width: 24px;
+    }
   }
   
   .SelectSeparator {
