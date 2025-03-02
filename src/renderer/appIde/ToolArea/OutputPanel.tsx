@@ -49,7 +49,7 @@ export const outputPanelHeaderRenderer = () => {
         placeholder="Select..."
         options={panes}
         initialValue={activePane}
-        width="160px"
+        width={140}
         onChanged={(option) => {
           dispatch(activateOutputPaneAction(option));
         }}

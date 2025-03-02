@@ -139,7 +139,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           placeholder={undefined}
           options={[...startOptions]}
           initialValue={startMode}
-          width="220px"
+          width={200}
           onChanged={(option) => setStartMode(option)}
         />
       </div>

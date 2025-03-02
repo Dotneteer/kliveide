@@ -25,7 +25,7 @@ Klive IDE supports dual monitor mode to place the Emulator and IDE on different 
 
 ### Supported Emulators
 
-Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports these emulators:
+Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports emulation of these computers:
 
 - **ZX Spectrum 48K**
 - **ZX Spectrum 128K**

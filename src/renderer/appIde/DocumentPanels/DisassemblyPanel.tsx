@@ -3,13 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import {
-  CT_DISASSEMBLER,
-  MF_BANK,
-  MF_ROM,
-  MI_Z88,
-  MI_ZXNEXT
-} from "@common/machines/constants";
+import { CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
@@ -29,7 +23,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import { toHexa2, toHexa4 } from "../services/ide-commands";
+import { toDecimal3, toDecimal5, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -71,7 +65,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const machineId = useSelector((s) => s.emulatorState.machineId);
-  const [banksView, setBanksView] = useState<boolean>(false);
   const [displayBankMatrix, setDisplayBankMatrix] = useState<boolean>(false);
   const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
@@ -85,11 +78,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const allowViews = showBanks || showRoms;
 
   const headerRef = useRef<HTMLDivElement>(null);
-
-  // --- Create a list of number range
-  const range = (start: number, end: number) => {
-    return [...Array(end - start + 1).keys()].map((i) => i + start);
-  };
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -125,10 +113,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const [scrollVersion, setScrollVersion] = useState(0);
   const [viewVersion, setViewVersion] = useState(0);
 
-  // --- State of the memory view
-  const [firstAddr, setFirstAddr] = useState(0);
-  const [lastAddr, setLastAddr] = useState(0);
-
   const injectionVersion = useSelector((s) => s.compilation?.injectionVersion);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
 
@@ -147,7 +131,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
-    setBanksView(romPagesValue > 0 || ramBankValue > 0);
     setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
     (async function () {
       const options: DropdownOption[] = [];
@@ -275,12 +258,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       );
       const items = output.outputItems;
       cachedItems.current = items;
-
-      // --- Display the current address range
-      if (items.length > 0) {
-        setFirstAddr(items[0].address);
-        setLastAddr(items[items.length - 1].address);
-      }
 
       // --- Scroll to the top when following PC
       if (cachedRefreshState.current.autoRefresh && items && items.length > 0) {
@@ -442,7 +419,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 <Dropdown
                   options={segmentOptions}
                   initialValue={currentSegment?.toString()}
-                  width={100}
+                  width={80}
                   onChanged={async (opt) => {
                     setCurrentSegment(parseInt(opt));
                     // setTopIndex(0);
@@ -456,7 +433,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               {displayBankMatrix && machineId === MI_Z88 && (
                 <BankDropdown
                   initialValue={currentSegment ?? 0}
-                  width="68px"
+                  width={48}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -472,7 +449,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 <NextBankDropdown
                   banks={224}
                   initialValue={currentSegment ?? 0}
-                  width="120px"
+                  width={80}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -496,7 +473,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               <Dropdown
                 options={bank16KOptions}
                 initialValue={disassOffset.toString(10)}
-                width={88}
+                width={68}
                 onChanged={async (option) => {
                   setDisassOffset(parseInt(option, 10));
                 }}
@@ -518,12 +495,39 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               setTopAddress(cachedItems.current[startIndex].address);
             }}
             renderItem={(idx) => {
+              // --- Prepare the information to display
               const address = cachedItems.current?.[idx].address;
               const execPoint = address === pausedPc;
               const breakpoint = breakpoints.current.find(
                 (bp) => bp.address === address || bp.resolvedAddress === address
               );
               const item = cachedItems.current?.[idx];
+
+              // --- Calculate the partition label
+              let partitionLabel = isFullView
+                ? mem64kLabels[address >> 13]
+                : partitionLabels?.[currentSegment];
+              let useWidePartitions = false;
+              if (showBanks && partitionLabel && decimalView) {
+                const partAsNumber = parseInt(partitionLabel, 16);
+                if (!isNaN(partAsNumber)) {
+                  useWidePartitions = true;
+                  partitionLabel = toDecimal3(partAsNumber);
+                }
+              }
+
+              // --- Prepare the opcodes
+              let opCodes = item?.opCodes;
+              if (decimalView) {
+                const opCodesArray = item?.opCodes.trim().split(" ");
+                opCodes = opCodesArray
+                  .map((oc) => {
+                    const ocValue = parseInt(oc, 16);
+                    return toDecimal3(ocValue);
+                  })
+                  .join(" ");
+              }
+
               return (
                 <div
                   key={idx}
@@ -544,33 +548,28 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                     current={execPoint}
                     disabled={breakpoint?.disabled ?? false}
                   />
-                  {bankLabel && showBanks && (autoRefresh || isFullView) && (
+                  {bankLabel && showBanks && (
                     <>
                       <LabelSeparator width={4} />
-                      <Label text={item?.partition?.toString() ?? ""} width={18} />
-                      <Label text=":" width={6} />
-                    </>
-                  )}
-                  {bankLabel && showBanks && !autoRefresh && isFullView && (
-                    <>
-                      <LabelSeparator width={4} />
-                      <Label text={toHexa2(currentSegment ?? 0)} width={18} />
+                      <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
                       <Label text=":" width={6} />
                     </>
                   )}
                   <LabelSeparator width={4} />
-                  <Label text={`${toHexa4(address)}`} width={40} />
-                  <Secondary text={item?.opCodes} width={100} />
-                  <Label text={item?.hasLabel ? `L${toHexa4(address)}:` : ""} width={52} />
-                  <div
-                    style={{
-                      width: "36px",
-                      paddingRight: "8px",
-                      fontSize: "0.6rem",
-                      textAlign: "end",
-                      color: "var(--color-doc-inactiveText)"
-                    }}
-                  >
+                  <Label
+                    text={decimalView ? toDecimal5(address) : toHexa4(address)}
+                    width={decimalView ? 48 : 40}
+                  />
+                  <Secondary text={opCodes} width={decimalView ? 140 : 100} />
+                  <Label
+                    text={
+                      item?.hasLabel
+                        ? `L${decimalView ? toDecimal5(address) : toHexa4(address)}:`
+                        : ""
+                    }
+                    width={60}
+                  />
+                  <div className={styles.tstates}>
                     {item?.tstates
                       ? `${item?.tstates}${item?.tstates2 ? `/${item.tstates2}` : ""}`
                       : ""}

@@ -56,9 +56,6 @@ export default function Dropdown({
             {options.map((option) => (
               <Select.Item key={option.value} value={option.value} className={styles.SelectItem}>
                 <Select.ItemText>{option.label}</Select.ItemText>
-                <Select.ItemIndicator style={{ marginLeft: "0.5rem" }}>
-                  <Icon iconName="check" width={12} height={12} />
-                </Select.ItemIndicator>{" "}
               </Select.Item>
             ))}
           </Select.Viewport>

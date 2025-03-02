@@ -269,6 +269,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           title="Show characters dump?"
           clicked={setCharDump}
         />
+        {banksView && (
+          <LabeledSwitch
+            value={bankLabel}
+            label="Bank"
+            title="Display bank label information?"
+            clicked={setBankLabel}
+          />
+        )}
         <AddressInput
           label="Go To"
           clearOnEnter={true}
@@ -305,7 +313,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 <Dropdown
                   options={segmentOptions}
                   initialValue={currentSegment?.toString()}
-                  width="100px"
+                  width={80}
                   onChanged={async (opt) => {
                     setCurrentSegment(parseInt(opt));
                     setTopIndex(0);
@@ -319,7 +327,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
               {displayBankMatrix && machineId === MI_Z88 && (
                 <BankDropdown
                   initialValue={currentSegment ?? 0}
-                  width="68px"
+                  width={48}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -335,7 +343,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 <NextBankDropdown
                   banks={224}
                   initialValue={currentSegment ?? 0}
-                  width="120px"
+                  width={80}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -347,13 +355,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   }}
                 />
               )}
-              <LabelSeparator width={8} />
-              <LabeledSwitch
-                value={bankLabel}
-                label="Show bank label"
-                title="Display bank label information?"
-                clicked={setBankLabel}
-              />
             </>
           )}
         </PanelHeader>
