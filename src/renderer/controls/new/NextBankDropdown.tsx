@@ -7,13 +7,14 @@ import classnames from "classnames";
 import { Icon } from "../Icon";
 import { HStack } from "./Panels";
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
   banks?: number;
   width?: string | number;
   maxHeight?: string | number;
   initialValue?: number;
+  decimalView?: boolean;
   onChanged?: (value: number) => void;
 };
 
@@ -23,13 +24,14 @@ type KeyBehavior = {
   down?: number;
   left?: number;
   right?: number;
-}
+};
 
 export default function NextBankDropdown({
   banks = 0x100,
   width,
   maxHeight,
   initialValue = 0,
+  decimalView,
   onChanged
 }: Props) {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
@@ -68,16 +70,16 @@ export default function NextBankDropdown({
   const handleKeyDown = (event: React.KeyboardEvent) => {
     event.preventDefault();
     const prev = selectedIndex;
-    const keyBehavior = keyBehaviors.find(kb => kb.value === prev);
+    const keyBehavior = keyBehaviors.find((kb) => kb.value === prev);
     let next = prev;
     if (event.key === "ArrowRight") {
       next = keyBehavior?.right ?? (prev >= banks ? 0 : prev + 1);
     } else if (event.key === "ArrowLeft") {
       next = keyBehavior?.left ?? (prev < 1 ? banks : prev - 1);
     } else if (event.key === "ArrowDown") {
-      next = keyBehavior?.down ?? ((prev + 16) % banks);
+      next = keyBehavior?.down ?? (prev + 16) % banks;
     } else if (event.key === "ArrowUp") {
-      next = keyBehavior?.up ?? ((prev - 16 + banks) % banks);
+      next = keyBehavior?.up ?? (prev - 16 + banks) % banks;
     } else if (event.key === "Enter") {
       setNewValue(next);
     }
@@ -140,7 +142,8 @@ export default function NextBankDropdown({
                     key={value}
                     value={value.toString()}
                     className={classnames(styles.SelectItem, {
-                      [styles.selected]: value === selectedIndex
+                      [styles.selected]: value === selectedIndex,
+                      [styles.decimal]: !!decimalView
                     })}
                     onMouseEnter={() => setSelectedIndex(value)}
                   >
@@ -158,11 +161,12 @@ export default function NextBankDropdown({
                       key={v}
                       value={toHexa2(v)}
                       className={classnames(styles.SelectItem, {
-                        [styles.selected]: v === selectedIndex
+                        [styles.selected]: v === selectedIndex,
+                        [styles.decimal]: !!decimalView
                       })}
                       onMouseEnter={() => setSelectedIndex(v)}
                     >
-                      <Select.ItemText>{toHexa2(v)}</Select.ItemText>
+                      <Select.ItemText>{decimalView ? toDecimal3(v) : toHexa2(v)}</Select.ItemText>
                     </Select.Item>
                   );
                 })}
@@ -176,7 +180,7 @@ export default function NextBankDropdown({
 }
 
 const keyBehaviors: KeyBehavior[] = [
-  // --- From first RAM banks to DivMMC RAM banks 
+  // --- From first RAM banks to DivMMC RAM banks
   { value: 0, up: -8, left: -23 },
   { value: 1, up: -9 },
   { value: 2, up: -10 },
@@ -195,48 +199,47 @@ const keyBehaviors: KeyBehavior[] = [
   { value: 15, up: -23 },
 
   // --- From DivMMC RAM banks
-  { value: -8, left: -7, up: -5, down: 0, right: -9},
-  { value: -9, left: -8, up: -5, down: 1, right: -10},
-  { value: -10, left: -9, up: -6, down: 2, right: -11},
-  { value: -11, left: -10, up: -6, down: 3, right: -12},
-  { value: -12, left: -11, up: -7, down: 4, right: -13},
-  { value: -13, left: -12, up: -7, down: 5, right: -14},
-  { value: -14, left: -13, up: -4, down: 6, right: -15},
-  { value: -15, left: -14, up: -4, down: 7, right: -16},
-  { value: -16, left: -15, up: 0xd8, down: 8, right: -17},
-  { value: -17, left: -16, up: 0xd9, down: 9, right: -18},
-  { value: -18, left: -17, up: 0xda, down: 10, right: -19},
-  { value: -19, left: -18, up: 0xdb, down: 11, right: -20},
-  { value: -20, left: -19, up: 0xdc, down: 12, right: -21},
-  { value: -21, left: -20, up: 0xdd, down: 13, right: -22},
-  { value: -22, left: -21, up: 0xde, down: 14, right: -23},
-  { value: -23, left: -22, up: 0xdf, down: 15, right: 0},
+  { value: -8, left: -7, up: -5, down: 0, right: -9 },
+  { value: -9, left: -8, up: -5, down: 1, right: -10 },
+  { value: -10, left: -9, up: -6, down: 2, right: -11 },
+  { value: -11, left: -10, up: -6, down: 3, right: -12 },
+  { value: -12, left: -11, up: -7, down: 4, right: -13 },
+  { value: -13, left: -12, up: -7, down: 5, right: -14 },
+  { value: -14, left: -13, up: -4, down: 6, right: -15 },
+  { value: -15, left: -14, up: -4, down: 7, right: -16 },
+  { value: -16, left: -15, up: 0xd8, down: 8, right: -17 },
+  { value: -17, left: -16, up: 0xd9, down: 9, right: -18 },
+  { value: -18, left: -17, up: 0xda, down: 10, right: -19 },
+  { value: -19, left: -18, up: 0xdb, down: 11, right: -20 },
+  { value: -20, left: -19, up: 0xdc, down: 12, right: -21 },
+  { value: -21, left: -20, up: 0xdd, down: 13, right: -22 },
+  { value: -22, left: -21, up: 0xde, down: 14, right: -23 },
+  { value: -23, left: -22, up: 0xdf, down: 15, right: 0 },
 
   // --- From last row to first row
-  { value: 0xd0, down: -1},
-  { value: 0xd1, down: -1},
-  { value: 0xd2, down: -2},
-  { value: 0xd3, down: -2},
-  { value: 0xd4, down: -3},
-  { value: 0xd5, down: -3},
-  { value: 0xd6, down: -4},
-  { value: 0xd7, down: -4},
-  { value: 0xd8, down: -16},
-  { value: 0xd9, down: -17},
-  { value: 0xda, down: -18},
-  { value: 0xdb, down: -19},
-  { value: 0xdc, down: -20},
-  { value: 0xdd, down: -21},
-  { value: 0xde, down: -22},
-  { value: 0xdf, down: -23, right: -1},
+  { value: 0xd0, down: -1 },
+  { value: 0xd1, down: -1 },
+  { value: 0xd2, down: -2 },
+  { value: 0xd3, down: -2 },
+  { value: 0xd4, down: -3 },
+  { value: 0xd5, down: -3 },
+  { value: 0xd6, down: -4 },
+  { value: 0xd7, down: -4 },
+  { value: 0xd8, down: -16 },
+  { value: 0xd9, down: -17 },
+  { value: 0xda, down: -18 },
+  { value: 0xdb, down: -19 },
+  { value: 0xdc, down: -20 },
+  { value: 0xdd, down: -21 },
+  { value: 0xde, down: -22 },
+  { value: 0xdf, down: -23, right: -1 },
 
   // --- From first row to last row
-  { value: -1, left: 0xdf, up: 0xd0, down: -5, right: -2},
-  { value: -2, left: -1, up: 0xd2, down: -6, right: -3},
-  { value: -3, left: -2, up: 0xd4, down: -7, right: -4},
-  { value: -4, left: -3, up: 0xd6, down: -14, right: -5},
-  { value: -5, left: -4, up: -1, down: -8, right: -6},
-  { value: -6, left: -5, up: -2, down: -10, right: -7},
-  { value: -7, left: -6, up: -3, down: -12, right: -8},
-]
-
+  { value: -1, left: 0xdf, up: 0xd0, down: -5, right: -2 },
+  { value: -2, left: -1, up: 0xd2, down: -6, right: -3 },
+  { value: -3, left: -2, up: 0xd4, down: -7, right: -4 },
+  { value: -4, left: -3, up: 0xd6, down: -14, right: -5 },
+  { value: -5, left: -4, up: -1, down: -8, right: -6 },
+  { value: -6, left: -5, up: -2, down: -10, right: -7 },
+  { value: -7, left: -6, up: -3, down: -12, right: -8 }
+];

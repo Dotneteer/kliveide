@@ -41,13 +41,22 @@ export const DumpSection = ({
     initTooltipCache(machineCharSet);
   }, [machineCharSet]);
 
+  let useWidePartitions = false;
+  if (showPartitions && partitionLabel && decimalView) {
+    const partAsNumber = parseInt(partitionLabel, 16);
+    if (!isNaN(partAsNumber)) {
+      useWidePartitions = true;
+      partitionLabel = toDecimal3(partAsNumber);
+    }
+  }
+
   return (
     <div className={classnames(styles.dumpSection)}>
       <LabelSeparator width={8} />
       {showPartitions && partitionLabel && (
         <>
           <LabelSeparator width={4} />
-          <Label text={partitionLabel} width={18} />
+          <Label text={partitionLabel} width={useWidePartitions ? 26 : 18} />
           <Label text=":" width={6} />
           <LabelSeparator width={4} />
         </>

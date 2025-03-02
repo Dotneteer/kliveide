@@ -7,13 +7,14 @@ import classnames from "classnames";
 import { Icon } from "../Icon";
 import { HStack } from "./Panels";
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
   banks?: number;
   width?: string | number;
   maxHeight?: string | number;
   initialValue?: number;
+  decimalView?: boolean;
   onChanged?: (value: number) => void;
 };
 
@@ -22,6 +23,7 @@ export default function BankDropdown({
   width,
   maxHeight,
   initialValue = 0,
+  decimalView,
   onChanged
 }: Props) {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
@@ -94,11 +96,12 @@ export default function BankDropdown({
                       key={v}
                       value={toHexa2(v)}
                       className={classnames(styles.SelectItem, {
-                        [styles.selected]: index === selectedIndex
+                        [styles.selected]: index === selectedIndex,
+                        [styles.decimal]: !!decimalView
                       })}
                       onMouseEnter={() => setSelectedIndex(index)}
                     >
-                      <Select.ItemText>{toHexa2(v)}</Select.ItemText>
+                      <Select.ItemText>{decimalView ? toDecimal3(v) : toHexa2(v)}</Select.ItemText>
                     </Select.Item>
                   );
                 })}
