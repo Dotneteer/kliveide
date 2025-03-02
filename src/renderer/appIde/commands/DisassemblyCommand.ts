@@ -5,7 +5,8 @@ import {
   toHexa4,
   writeSuccessMessage,
   commandSuccess,
-  IdeCommandBase
+  IdeCommandBase,
+  toHexa2
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
@@ -98,7 +99,12 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
       buffer.resetStyle();
       if (!args["-c"]) {
         buffer.write(`${toHexa4(item.address)} `);
-        buffer.write(item.opCodes.padEnd(13, " "));
+        buffer.write(
+          item.opCodes
+            .map((oc) => toHexa2(oc))
+            .join(" ")
+            .padEnd(13, " ")
+        );
       }
       buffer.color("green");
       buffer.write(

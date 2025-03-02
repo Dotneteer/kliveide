@@ -23,7 +23,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import { toDecimal3, toDecimal5, toHexa4 } from "../services/ide-commands";
+import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import { useStateRefresh } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -234,8 +234,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         getMemoryResponse.partitionLabels,
         {
           noLabelPrefix: false,
-          // TODO: Remove it for ZX Spectrum 48K
-          allowExtendedSet: true
+          allowExtendedSet: machineId === MI_ZXNEXT,
+          decimalMode: cachedRefreshState.current.decimalView
         }
       );
 
@@ -280,7 +280,17 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       screen,
       ram
     };
-  }, [topAddress, isFullView, autoRefresh, currentSegment, bankLabel, ram, screen, disassOffset]);
+  }, [
+    topAddress,
+    decimalView,
+    isFullView,
+    autoRefresh,
+    currentSegment,
+    bankLabel,
+    ram,
+    screen,
+    disassOffset
+  ]);
 
   // --- Initial view: refresh the disassembly list and scroll to the last saved top position
   useInitializeAsync(async () => {
@@ -516,17 +526,10 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 }
               }
 
-              // --- Prepare the opcodes
-              let opCodes = item?.opCodes;
-              if (decimalView) {
-                const opCodesArray = item?.opCodes.trim().split(" ");
-                opCodes = opCodesArray
-                  .map((oc) => {
-                    const ocValue = parseInt(oc, 16);
-                    return toDecimal3(ocValue);
-                  })
-                  .join(" ");
-              }
+              // --- Propare opcodes
+              const opCodes = item.opCodes
+                .map((oc) => (decimalView ? toDecimal3(oc) : toHexa2(oc)))
+                .join(" ");
 
               return (
                 <div

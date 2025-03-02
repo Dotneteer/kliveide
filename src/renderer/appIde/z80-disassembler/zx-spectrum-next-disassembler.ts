@@ -6,7 +6,6 @@ import {
 import {
   DisassemblyItem,
   FetchResult,
-  intToX2,
   intToX4,
   MemorySection,
 } from "./disassembly-helper";
@@ -54,7 +53,7 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       this._api.addDisassemblyItem({
         partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
-        opCodes: `${intToX2(lsb)} ${intToX2(msb)}`,
+        opCodes: [lsb, msb],
         instruction: `.defw $${intToX4(routine)}`,
         hardComment: `(invoke: $${intToX4(routine)})`
       });
@@ -77,14 +76,14 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
     }
 
     let rom = 0;
-    switch (item.opCodes.trim()) {
-      case "DF":
+    switch (item.opCodes[0]) {
+      case 0xdf:
         rom = 1;
         break;
-      case "E7":
+      case 0xe7:
         rom = 2;
         break;
-      case "EF":
+      case 0xef:
         rom = 3;
         break;
       default:

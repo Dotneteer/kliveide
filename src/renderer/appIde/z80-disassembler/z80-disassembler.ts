@@ -11,6 +11,7 @@ import {
   FetchResult,
   DisassemblyOptions
 } from "./disassembly-helper";
+import { toDecimal3, toDecimal5 } from "../services/ide-commands";
 
 /**
  * This class implements the Z80 disassembler
@@ -20,10 +21,11 @@ export class Z80Disassembler {
   private _output = new DisassemblyOutput();
   private _offset = 0;
   private _opOffset = 0;
-  private _currentOpCodes = "";
+  private _currentOpCodes: number[] = [];
   private _displacement: number | undefined;
   private _opCode = 0;
   private _indexMode = 0;
+  private _decimalMode = false;
   private _overflow = false;
   private _addressOffset = 0;
   private _nextRegInfo: NextRegInfo[] = [];
@@ -43,6 +45,8 @@ export class Z80Disassembler {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
     this._nextRegInfo = getNextRegisters();
+    this._decimalMode = options?.decimalMode ?? false;
+    console.log("decimalMode", this._decimalMode);
   }
 
   /**
@@ -146,7 +150,8 @@ export class Z80Disassembler {
         if (i + j >= length) {
           break;
         }
-        bytes.push(`$${intToX2(this.memoryContents[section.startAddress + i + j])}`);
+        const byte = this.memoryContents[section.startAddress + i + j];
+        bytes.push(this._decimalMode ? toDecimal3(byte) : `$${intToX2(byte)}`);
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
@@ -176,7 +181,7 @@ export class Z80Disassembler {
         const value =
           this.memoryContents[section.startAddress + i + j * 2] +
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
-        words.push(`$${intToX4(value & 0xffff)}`);
+        words.push(this._decimalMode ? toDecimal5(value & 0xffff) : `$${intToX4(value & 0xffff)}`);
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
@@ -199,7 +204,10 @@ export class Z80Disassembler {
     this._output.addItem({
       partition: this.partitionLabels?.[section.startAddress >> 13] ?? undefined,
       address: section.startAddress,
-      instruction: `.skip $${intToX4(section.endAddress - section.startAddress + 1)}`
+      instruction:
+        ".skip" + this._decimalMode
+          ? toDecimal5(section.endAddress - section.startAddress + 1)
+          : `$${intToX4(section.endAddress - section.startAddress + 1)}`
     });
   }
 
@@ -208,7 +216,7 @@ export class Z80Disassembler {
    */
   private disassembleOperation(): DisassemblyItem {
     this._opOffset = this._offset;
-    this._currentOpCodes = "";
+    this._currentOpCodes = [];
     this._displacement = undefined;
     this._indexMode = 0; // No index
     let decodeInfo: string | undefined;
@@ -273,7 +281,7 @@ export class Z80Disassembler {
       this._opCode = this.fetch();
       if (this._opCode === 0xcb) {
         defaultTstates += 4;
-      }     
+      }
       decodeInfo = this.disassembleIndexedOperation();
     } else if (this._opCode === 0xfd) {
       // --- Decode IY-indexed operations
@@ -283,7 +291,7 @@ export class Z80Disassembler {
       this._opCode = this.fetch();
       if (this._opCode === 0xcb) {
         defaultTstates += 4;
-      }     
+      }
       decodeInfo = this.disassembleIndexedOperation();
     } else {
       // --- Decode standard operations
@@ -357,7 +365,7 @@ export class Z80Disassembler {
       this._overflow = true;
     }
     const value = this.memoryContents[this._offset++];
-    this._currentOpCodes += `${intToX2(value)} `;
+    this._currentOpCodes.push(value);
     return value;
   }
 
@@ -408,14 +416,18 @@ export class Z80Disassembler {
    * @param address Instruction address
    * @param opInfo Operation inforamtion
    */
-  private decodeInstruction(address: number, opInfo: string | undefined, defaultTstates: number): DisassemblyItem {
+  private decodeInstruction(
+    address: number,
+    opInfo: string | undefined,
+    defaultTstates: number
+  ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
       partition: this.partitionLabels?.[address >> 13] ?? undefined,
       address: (address + this._addressOffset) & 0xffff,
       opCodes: this._currentOpCodes,
       instruction: "nop",
-      tstates: defaultTstates,
+      tstates: defaultTstates
     };
 
     const parts = (opInfo ?? "").split("|");
@@ -475,7 +487,7 @@ export class Z80Disassembler {
         var distance = this.fetch();
         var labelAddr = (this._addressOffset + this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
-        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(labelAddr)}`;
+        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(labelAddr) : intToX4(labelAddr)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;
@@ -484,7 +496,7 @@ export class Z80Disassembler {
         // --- #L: absolute label (16 bit address)
         var target = this.fetchWord();
         this._output.createLabel(target, this._opOffset);
-        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(target)}`;
+        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(target) : intToX4(target)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = target;
@@ -497,14 +509,14 @@ export class Z80Disassembler {
       case "B":
         // --- #B: 8-bit value from the code
         var value = this.fetch();
-        replacement = `$${intToX2(value)}`;
+        replacement = this._decimalMode ? toDecimal3(value) : `$${intToX2(value)}`;
         symbolPresent = true;
         symbolValue = value;
         break;
       case "N":
         // --- #N: 8-bit Next Register index from the code
         var value = this.fetch();
-        replacement = `$${intToX2(value)}`;
+        replacement = this._decimalMode ? toDecimal3(value) : `$${intToX2(value)}`;
         const regInfo = this._nextRegInfo.find((n) => n?.id === value);
         if (regInfo) {
           disassemblyItem.hardComment = regInfo.description;
@@ -513,14 +525,14 @@ export class Z80Disassembler {
       case "W":
         // --- #W: 16-bit word from the code
         var word = this.fetchWord();
-        replacement = `$${intToX4(word)}`;
+        replacement = this._decimalMode ? toDecimal5(word) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
       case "w":
         // --- #W: 16-bit word from the code, big endian
         var word = (this.fetch() << 8) | this.fetch();
-        replacement = `$${intToX4(word)}`;
+        replacement = this._decimalMode ? toDecimal5(word) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -541,8 +553,12 @@ export class Z80Disassembler {
         if (this._displacement) {
           replacement =
             toSbyte(this._displacement) < 0
-              ? `-$${intToX2(0x100 - this._displacement)}`
-              : `+$${intToX2(this._displacement)}`;
+              ? this._decimalMode
+                ? `-${toDecimal3(0x100 - this._displacement)}`
+                : `-$${intToX2(0x100 - this._displacement)}`
+              : this._decimalMode
+                ? `+${toDecimal3(this._displacement)}`
+                : `+$${intToX2(this._displacement)}`;
         }
         break;
     }

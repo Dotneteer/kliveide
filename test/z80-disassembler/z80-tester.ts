@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { ICustomDisassembler } from "@appIde/z80-disassembler/custom-disassembly";
 import { intToX2, MemoryMap, MemorySection } from "@appIde/z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "@appIde/z80-disassembler/z80-disassembler";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * Helper class for Z80 Disassembler testing
@@ -29,7 +30,7 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map(oc => toHexa2(oc)).join(" ") : "").toBe(this._joinOpCodes(opCodes));
   }
 
   /**
@@ -56,7 +57,7 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map(oc => toHexa2(oc)).join(" ") : "").toBe(this._joinOpCodes(opCodes));
   }
 
   /**
@@ -107,7 +108,7 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map(oc => toHexa2(oc)).join(" ") : "").toBe(this._joinOpCodes(opCodes));
 
     if (typeof tstates === "number") {
       expect(item.tstates).toBe(tstates);
@@ -145,7 +146,7 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map(oc => toHexa2(oc)).join(" ") : "").toBe(this._joinOpCodes(opCodes));
 
     if (typeof tstates === "number") {
       expect(item.tstates).toBe(tstates);

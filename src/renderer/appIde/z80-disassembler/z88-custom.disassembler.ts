@@ -1,12 +1,14 @@
-import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler, IDisassemblyApi } from "./custom-disassembly";
+import {
+  CUSTOM_Z80_DISASSEMBLY_TOOL,
+  ICustomDisassembler,
+  IDisassemblyApi
+} from "./custom-disassembly";
 import { DisassemblyItem, FetchResult, MemorySection, intToX2 } from "./disassembly-helper";
 
 /**
  * Custom disassembler for the Cambridge Z88 model
  */
-export class Z88CustomDisassembler
-  implements ICustomDisassembler
-{
+export class Z88CustomDisassembler implements ICustomDisassembler {
   private _api: IDisassemblyApi;
 
   readonly toolId = CUSTOM_Z80_DISASSEMBLY_TOOL;
@@ -43,8 +45,8 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
-        opCodes: `${intToX2(peekResult.opcode)} ${intToX2(opByte)}`,
-        instruction: `fpp ${apiName}`,
+        opCodes: [peekResult.opcode, opByte],
+        instruction: `fpp ${apiName}`
       };
       this._api.addDisassemblyItem(newItem);
       return true;
@@ -52,11 +54,11 @@ export class Z88CustomDisassembler
       // --- Handle RST 20H
       this._api.fetch();
       let opByte = this._api.fetch().opcode;
-      let opCodes = `${intToX2(peekResult.opcode)} ${intToX2(opByte)}`;
+      let opCodes = [peekResult.opcode, opByte];
       if (opByte === 6 || opByte === 9 || opByte === 12) {
         const opByte2 = this._api.fetch().opcode;
         opByte = (opByte2 << 8) + opByte;
-        opCodes += ` ${intToX2(opByte2)}`;
+        opCodes.push(opByte2);
       }
       const apiName = z88OzApis[opByte] ?? "<unknown>";
 
@@ -64,7 +66,7 @@ export class Z88CustomDisassembler
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
         opCodes,
-        instruction: `oz ${apiName}`,
+        instruction: `oz ${apiName}`
       };
       this._api.addDisassemblyItem(newItem);
       if (opByte === 0x93) {
@@ -99,8 +101,8 @@ export class Z88CustomDisassembler
         } while (ch);
         const strItem: DisassemblyItem = {
           address: peekResult.offset,
-          opCodes: "",
-          instruction: str,
+          opCodes: [],
+          instruction: str
         };
         this._api.addDisassemblyItem(strItem);
       }
@@ -120,13 +122,8 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
-        opCodes: `${intToX2(peekResult.opcode)} ${intToX2(byte1)} ${intToX2(
-          byte2
-        )} ${intToX2(byte3)}`,
-        instruction: `extcall $${addr
-          .toString(16)
-          .padStart(6, "")
-          .toLowerCase()}`,
+        opCodes: [peekResult.opcode, byte1, byte2, byte3],
+        instruction: `extcall $${addr.toString(16).padStart(6, "").toLowerCase()}`
       };
       this._api.addDisassemblyItem(newItem);
       return true;
@@ -136,8 +133,8 @@ export class Z88CustomDisassembler
       // --- Create the item
       const newItem: DisassemblyItem = {
         address: peekResult.offset,
-        opCodes: `${intToX2(peekResult.opcode)}`,
-        instruction: "rst oz_mbp",
+        opCodes: [peekResult.opcode],
+        instruction: "rst oz_mbp"
       };
       this._api.addDisassemblyItem(newItem);
       return true;
@@ -200,7 +197,7 @@ export const z88FppApis: Record<number, string> = {
   0x96: "FP_FLT",
   0x9c: "FP_CMP",
   0x9f: "FP_NEG",
-  0xa2: "FP_BAS",
+  0xa2: "FP_BAS"
 };
 
 export const z88OzApis: Record<number, string> = {
