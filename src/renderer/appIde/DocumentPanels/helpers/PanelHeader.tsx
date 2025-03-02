@@ -1,7 +1,7 @@
 import { HStack } from "@renderer/controls/new/Panels";
 
 type Props = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 };
 export const PanelHeader = ({ children }: Props) => {
   return (

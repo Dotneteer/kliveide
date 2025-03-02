@@ -29,14 +29,12 @@ type BankedMemoryPanelViewState = {
   twoColumns?: boolean;
   charDump?: boolean;
   bankLabel?: boolean;
-  show8kBanks?: boolean;
 };
 
 export type CachedRefreshState = {
   isFullView: boolean;
   currentSegment: number;
   decimalView: boolean;
-  show8kBanks?: boolean;
 };
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
@@ -117,7 +115,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
-      topIndex: topIndex,
+      topIndex,
       isFullView,
       currentSegment,
       decimalView,
@@ -215,7 +213,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     vlApi.current?.scrollToIndex(Math.floor(topIndex), {
       align: "start"
     });
-  }, [scrollVersion]);
+  }, [scrollVersion, memoryItems, topIndex]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -349,7 +347,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   }}
                 />
               )}
-
+              <LabelSeparator width={8} />
               <LabeledSwitch
                 value={bankLabel}
                 label="Show bank label"
