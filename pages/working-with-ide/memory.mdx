@@ -1,3 +1,61 @@
+import Image from 'next/image'
+import memView from '../../public/images/working-with-ide/mem-view.png'
+import bankedMemView from '../../public/images/working-with-ide/banked-mem-view.png'
+import nextMemView from '../../public/images/working-with-ide/next-mem-view.png'
+
 # Displaying the Memory Contents
 
-_TBD_
+> **Note**: The current Memory View does not allow editing the memory contents.
+
+You can view the contents of the memory with the **IDE | Show Machine Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
+
+<Image src={memView} alt="Memory view" width={512} style={{marginTop: 24}} />
+
+While ZX Spectrum does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:
+
+<Image src={bankedMemView} alt="Banked memory view" width={512} style={{marginTop: 24}} />
+
+Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:
+
+<Image src={nextMemView} alt="Next memory view" width={512} style={{marginTop: 24}} />
+
+## Display Options
+
+The Memory View provides a few options to display and navigate the memory contents:
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **2 Columns**: Depending on this option, you can display one or two columns in a single row (two columns by default).
+- **Chars**: This toggles the display of the character view for a particular memory section (on, by default).
+- **Go To**: Type an address into this box and press Enter to jump to the particular address. Though memory sections are aligned to 8-byte boundaries when jumping to a new address, the designated address's content flashes for about 3 seconds to let you identify the jump target. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+
+## Banked Memory Views
+
+A new switch, **64K View**, is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can select a particular memory section (ROM pages and RAM banks, depending on the machine type) from the dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in.
+
+The **Show bank label** option (on, by default) allows you to turn on or off displaying the bank labels in front of memory addresses.
+
+## Machine-Specific Memory Partitions
+
+### ZX Spectrum 48K
+
+This model supports only the 64K view.
+
+### ZX Spectrum 128K
+
+The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
+
+### ZX Spectrum +2E, +3E
+
+The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
+
+### Cambridge Z88
+
+You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
+
+### ZX Spectrum Next
+
+The dropdown provides these options to access memory segments:
+- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
+- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
+- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
+- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
+- `DivMR`: The DivMMC ROM (8K)
