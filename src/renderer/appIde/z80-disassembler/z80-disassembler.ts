@@ -46,7 +46,6 @@ export class Z80Disassembler {
     this.memoryContents = memoryContents;
     this._nextRegInfo = getNextRegisters();
     this._decimalMode = options?.decimalMode ?? false;
-    console.log("decimalMode", this._decimalMode);
   }
 
   /**
@@ -64,6 +63,7 @@ export class Z80Disassembler {
   setCustomDisassembler(custom: ICustomDisassembler): void {
     this._customDisassembler = custom;
     custom.setDisassemblyApi({
+      decimalMode: this._decimalMode,
       getMemoryContents: () => this.memoryContents,
       getOffset: () => this._offset,
       fetch: () => this.apiFetch(),
@@ -181,7 +181,7 @@ export class Z80Disassembler {
         const value =
           this.memoryContents[section.startAddress + i + j * 2] +
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
-        words.push(this._decimalMode ? toDecimal5(value & 0xffff) : `$${intToX4(value & 0xffff)}`);
+        words.push(this._decimalMode ? (value & 0xffff).toString(10) : `$${intToX4(value & 0xffff)}`);
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
@@ -206,7 +206,7 @@ export class Z80Disassembler {
       address: section.startAddress,
       instruction:
         ".skip" + this._decimalMode
-          ? toDecimal5(section.endAddress - section.startAddress + 1)
+          ? (section.endAddress - section.startAddress + 1).toString(10)
           : `$${intToX4(section.endAddress - section.startAddress + 1)}`
     });
   }
@@ -492,6 +492,10 @@ export class Z80Disassembler {
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;
         break;
+      case "R":
+        const rstAddr = this._opCode - 0xc7;
+        replacement = this._decimalMode ? rstAddr.toString(10) : `$${intToX2(rstAddr)}`;
+        break;
       case "L":
         // --- #L: absolute label (16 bit address)
         var target = this.fetchWord();
@@ -509,14 +513,14 @@ export class Z80Disassembler {
       case "B":
         // --- #B: 8-bit value from the code
         var value = this.fetch();
-        replacement = this._decimalMode ? toDecimal3(value) : `$${intToX2(value)}`;
+        replacement = this._decimalMode ? value.toString(10) : `$${intToX2(value)}`;
         symbolPresent = true;
         symbolValue = value;
         break;
       case "N":
         // --- #N: 8-bit Next Register index from the code
         var value = this.fetch();
-        replacement = this._decimalMode ? toDecimal3(value) : `$${intToX2(value)}`;
+        replacement = this._decimalMode ? value.toString(10) : `$${intToX2(value)}`;
         const regInfo = this._nextRegInfo.find((n) => n?.id === value);
         if (regInfo) {
           disassemblyItem.hardComment = regInfo.description;
@@ -525,14 +529,14 @@ export class Z80Disassembler {
       case "W":
         // --- #W: 16-bit word from the code
         var word = this.fetchWord();
-        replacement = this._decimalMode ? toDecimal5(word) : `$${intToX4(word)}`;
+        replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
       case "w":
         // --- #W: 16-bit word from the code, big endian
         var word = (this.fetch() << 8) | this.fetch();
-        replacement = this._decimalMode ? toDecimal5(word) : `$${intToX4(word)}`;
+        replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -554,10 +558,10 @@ export class Z80Disassembler {
           replacement =
             toSbyte(this._displacement) < 0
               ? this._decimalMode
-                ? `-${toDecimal3(0x100 - this._displacement)}`
+                ? `-${0x100 - this._displacement}`
                 : `-$${intToX2(0x100 - this._displacement)}`
               : this._decimalMode
-                ? `+${toDecimal3(this._displacement)}`
+                ? `+${this._displacement}`
                 : `+$${intToX2(this._displacement)}`;
         }
         break;
@@ -808,7 +812,7 @@ const standardInstructions: string[] = [
   /* 0xc4 */ "call nz,^L|17/10",
   /* 0xc5 */ "push bc|11",
   /* 0xc6 */ "add a,^B|7",
-  /* 0xc7 */ "rst $00|11",
+  /* 0xc7 */ "rst ^R|11",
   /* 0xc8 */ "ret z|11/5",
   /* 0xc9 */ "ret|10",
   /* 0xca */ "jp z,^L|10",
@@ -816,7 +820,7 @@ const standardInstructions: string[] = [
   /* 0xcc */ "call z,^L|17/10",
   /* 0xcd */ "call ^L|17",
   /* 0xce */ "adc a,^B|7",
-  /* 0xcf */ "rst $08|11",
+  /* 0xcf */ "rst ^R|11",
 
   /* 0xd0 */ "ret nc|11/5",
   /* 0xd1 */ "pop de|10",
@@ -825,7 +829,7 @@ const standardInstructions: string[] = [
   /* 0xd4 */ "call nc,^L|17/10",
   /* 0xd5 */ "push de|11",
   /* 0xd6 */ "sub ^B|7",
-  /* 0xd7 */ "rst $10|11",
+  /* 0xd7 */ "rst ^R|11",
   /* 0xd8 */ "ret c|11/5",
   /* 0xd9 */ "exx",
   /* 0xda */ "jp c,^L|10",
@@ -833,7 +837,7 @@ const standardInstructions: string[] = [
   /* 0xdc */ "call c,^L|17/10",
   /* 0xdd */ "",
   /* 0xde */ "sbc a,^B|7",
-  /* 0xdf */ "rst $18|11",
+  /* 0xdf */ "rst ^R|11",
 
   /* 0xe0 */ "ret po|11/5",
   /* 0xe1 */ "pop hl|10",
@@ -842,7 +846,7 @@ const standardInstructions: string[] = [
   /* 0xe4 */ "call po,^L|17/10",
   /* 0xe5 */ "push hl|11",
   /* 0xe6 */ "and ^B|7",
-  /* 0xe7 */ "rst $20|11",
+  /* 0xe7 */ "rst ^R|11",
   /* 0xe8 */ "ret pe|11/5",
   /* 0xe9 */ "jp (hl)",
   /* 0xea */ "jp pe,^L|10",
@@ -850,7 +854,7 @@ const standardInstructions: string[] = [
   /* 0xec */ "call pe,^L|17/10",
   /* 0xed */ "",
   /* 0xee */ "xor ^B|7",
-  /* 0xef */ "rst $28|11",
+  /* 0xef */ "rst ^R|11",
 
   /* 0xf0 */ "ret p|11/5",
   /* 0xf1 */ "pop af|10",
@@ -859,7 +863,7 @@ const standardInstructions: string[] = [
   /* 0xf4 */ "call p,^L|17/10",
   /* 0xf5 */ "push af|11",
   /* 0xf6 */ "or ^B|7",
-  /* 0xf7 */ "rst $30|11",
+  /* 0xf7 */ "rst ^R|11",
   /* 0xf8 */ "ret m|11/5",
   /* 0xf9 */ "ld sp,hl|6",
   /* 0xfa */ "jp m,^L|10",
@@ -867,7 +871,7 @@ const standardInstructions: string[] = [
   /* 0xfc */ "call m,^L|17/10",
   /* 0xfd */ "",
   /* 0xfe */ "cp ^B|7",
-  /* 0xff */ "rst $38|11"
+  /* 0xff */ "rst ^R|11"
 ];
 
 /**

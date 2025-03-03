@@ -26,6 +26,10 @@ export type CustomDisassemblyItem = {
  */
 export interface IDisassemblyApi {
   /**
+   * Use decimal mode?
+   */
+  readonly decimalMode: boolean;
+  /**
    * Represents the contents of the memory to disassemble
    */
   getMemoryContents(): Uint8Array;

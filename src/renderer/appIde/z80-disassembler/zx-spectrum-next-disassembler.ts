@@ -50,12 +50,13 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
       const lsb = this._api.fetch().opcode;
       const msb = this._api.fetch().opcode;
       const routine = (msb << 8) | lsb;
+      const codeValue = this._api.decimalMode ? routine.toString(10) : `$${intToX4(routine)}`;
       this._api.addDisassemblyItem({
         partition: fetchResult.partitionLabel,
         address: fetchResult.offset,
         opCodes: [lsb, msb],
-        instruction: `.defw $${intToX4(routine)}`,
-        hardComment: `(invoke: $${intToX4(routine)})`
+        instruction: `.defw ${codeValue}`,
+        hardComment: `(invoke: ${codeValue})`
       });
       this._inRst182028Mode = false;
       return true;

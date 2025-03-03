@@ -56,10 +56,11 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
       const address = fetchResult.offset;
       const errorCode = this._api.fetch().opcode;
       this._inRst08Mode = false;
+      const codeValue = this._api.decimalMode ? errorCode.toString(10) : `$${intToX2(errorCode)}`;
       this._api.addDisassemblyItem({
         address,
-        instruction: `.defb $${intToX2(errorCode)}`,
-        hardComment: `(error code: $${intToX2(errorCode)})`
+        instruction: `.defb ${codeValue}`,
+        hardComment: `(error code: ${codeValue})`
       });
       return true;
     }
@@ -112,7 +113,8 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
     // --- Create the default disassembly item
     const item: DisassemblyItem = {
       address,
-      instruction: `.defb $${intToX2(calcCode)}`
+      instruction:
+        ".defb " + (this._api.decimalMode ? calcCode.toString(10) : `$${intToX2(calcCode)}`)
     };
     const opCodes: number[] = [calcCode];
 
@@ -131,7 +133,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         if (i > 0) {
           instruction += ", ";
         }
-        instruction += `$${intToX2(opCodes[i])}`;
+        instruction += this._api.decimalMode ? opCodes[i].toString(10) : `$${intToX2(opCodes[i])}`;
       }
       item.instruction = instruction;
       item.hardComment = `(${FloatNumber.FromCompactBytes(opCodes).toFixed(6)})`;
@@ -150,8 +152,12 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         opCodes.push(jump);
         const jumpAddr = (fetchValue.offset - 1 + toSbyte(jump)) & 0xffff;
         this._api.createLabel(jumpAddr);
-        item.instruction = `.defb $${intToX2(calcCode)}, $${intToX2(jump)}`;
-        item.hardComment = `(${calcOps[calcCode]}: L${intToX4(jumpAddr)})`;
+        item.instruction =
+          ".defb " +
+          (this._api.decimalMode
+            ? `${calcCode}, ${jump}`
+            : `$${intToX2(calcCode)}, $${intToX2(jump)}`);
+        item.hardComment = `(${calcOps[calcCode]}: L${this._api.decimalMode ? jumpAddr : intToX4(jumpAddr)})`;
         this._inRst28Mode = calcCode !== 0x33;
         break;
 
@@ -169,7 +175,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
       case 0x88:
       case 0x8c:
         this._seriesCount = calcCode - 0x80;
-        item.hardComment = `(series-0${(calcCode - 0x80).toString(16)})`;
+        item.hardComment = `(series-0${this._api.decimalMode ? calcCode - 0x80 : (calcCode - 0x80).toString(16)})`;
         break;
 
       case 0xa0:
@@ -202,7 +208,9 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         break;
 
       default:
-        const comment = calcOps[calcCode] ?? `calc code: $${intToX2(calcCode)}`;
+        const comment =
+          calcOps[calcCode] ??
+          ("calc code: " + (this._api.decimalMode ? calcCode : `$${intToX2(calcCode)}`));
         item.hardComment = `(${comment})`;
         break;
     }
