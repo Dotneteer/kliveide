@@ -11,7 +11,6 @@
   border: none;
   padding: 2px 4px 2px 8px;
   border-radius: 4px;
-  gap: 8px;
 
   &:focus {
     outline: 1px solid var(--border-color-dropdown-menu);
@@ -34,7 +33,7 @@
 .SelectItem {
   flex-direction: row;
   margin: 2px 2px;
-  padding: 2px 8px;
+  padding: 2px 4px;
   border: none;
   font-size: 0.8em;
 

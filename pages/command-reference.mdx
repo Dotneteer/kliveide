@@ -136,10 +136,10 @@ Available aliases: `rd`
 This command disassembles the specified memory section and displays the disassembly result in a new document pane.
 
 ```
-dis <start> <end> [-c] [-lc]
+dis <start> <end> [-d] [-c] [-lc]
 ```
 
-It requires a `start` and an `end` (inclusive) address. The `-c` option turns on the concise mode (disassembled bytes are omitted from the output). By default, labels do not end with colons; however, you can turn on this mode with the `-lc` option.
+It requires a `start` and an `end` (inclusive) address. Use the `-d` option if you want the disassembly to display addresses, numbers, and instructions with decimal numbers. The `-c` option turns on the concise mode (disassembled bytes are omitted from the output). By default, labels do not end with colons; however, you can turn on this mode with the `-lc` option.
 
 > **Note**: This command does not support bank operations (yet). It can disassemble only the currently paged 64K memory.
 

@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { ICustomDisassembler } from "@appIde/z80-disassembler/custom-disassembly";
 import { intToX2, MemoryMap, MemorySection } from "@appIde/z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "@appIde/z80-disassembler/z80-disassembler";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * Helper class for Z80 Disassembler testing
@@ -29,7 +30,38 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map((oc) => toHexa2(oc)).join(" ") : "").toBe(
+      this._joinOpCodes(opCodes)
+    );
+  }
+
+  /**
+   * Tests if Z80 instruction disassembly works
+   * @param expected Expected disassembly text
+   * @param opCodes Operation codes
+   */
+  static async TestWithDecimal(expected: string, ...opCodes: number[]): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
+      decimalMode: true
+    });
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(1);
+    const item = output.outputItems[0];
+    expect(item.instruction).toBeTruthy();
+    if (!item.instruction) {
+      return;
+    }
+    expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
+    expect(item.opCodes ? item.opCodes.map((oc) => toHexa2(oc)).join(" ") : "").toBe(
+      this._joinOpCodes(opCodes)
+    );
   }
 
   /**
@@ -56,7 +88,9 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map((oc) => toHexa2(oc)).join(" ") : "").toBe(
+      this._joinOpCodes(opCodes)
+    );
   }
 
   /**
@@ -107,7 +141,9 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map((oc) => toHexa2(oc)).join(" ") : "").toBe(
+      this._joinOpCodes(opCodes)
+    );
 
     if (typeof tstates === "number") {
       expect(item.tstates).toBe(tstates);
@@ -145,7 +181,9 @@ export class Z80Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.map((oc) => toHexa2(oc)).join(" ") : "").toBe(
+      this._joinOpCodes(opCodes)
+    );
 
     if (typeof tstates === "number") {
       expect(item.tstates).toBe(tstates);
@@ -192,6 +230,39 @@ export class Z80Tester {
    * @param expected Expected result
    * @param opCodes opcodes to disassemble
    */
+  static async TestCustomWithDecimal(
+    provider: ICustomDisassembler,
+    expected: string[],
+    ...opCodes: number[]
+  ): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
+      decimalMode: true
+    });
+    disassembler.setCustomDisassembler(provider);
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(expected.length);
+    for (let i = 0; i < expected.length; i++) {
+      const instr = output.outputItems[i].instruction;
+      expect(instr).toBeTruthy();
+      if (!instr) {
+        continue;
+      }
+      expect(instr.toLowerCase()).toBe(expected[i]);
+    }
+  }
+
+  /**
+   * Tests custom disassemblers
+   * @provider Custom disassembler provider
+   * @param expected Expected result
+   * @param opCodes opcodes to disassemble
+   */
   static async TestCustomWithComments(
     provider: ICustomDisassembler,
     expected: string[],
@@ -201,6 +272,48 @@ export class Z80Tester {
     const map = new MemoryMap();
     map.add(new MemorySection(0x0000, opCodes.length - 1));
     const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes));
+    disassembler.setCustomDisassembler(provider);
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(expected.length);
+    for (let i = 0; i < expected.length; i++) {
+      const instr = output.outputItems[i].instruction;
+      expect(instr).toBeTruthy();
+      if (!instr) {
+        continue;
+      }
+      expect(instr.toLowerCase()).toBe(expected[i]);
+    }
+    expect(output.outputItems.length).toBe(comments.length);
+    for (let i = 0; i < comments.length; i++) {
+      const comment = output.outputItems[i].hardComment;
+      if (!comment) {
+        continue;
+      }
+      expect(comment.toLowerCase()).toBe(comments[i]);
+    }
+  }
+
+  /**
+   * Tests custom disassemblers
+   * @provider Custom disassembler provider
+   * @param expected Expected result
+   * @param opCodes opcodes to disassemble
+   */
+  static async TestCustomWithCommentsAndDecimal(
+    provider: ICustomDisassembler,
+    expected: string[],
+    comments: string[],
+    opCodes: number[]
+  ): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
+      decimalMode: true
+    });
     disassembler.setCustomDisassembler(provider);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();

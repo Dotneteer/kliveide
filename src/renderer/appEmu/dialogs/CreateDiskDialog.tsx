@@ -77,7 +77,7 @@ export const CreateDiskDialog = ({ onClose }: Props) => {
             placeholder="Select..."
             options={diskTypesIds}
             initialValue={"ss"}
-            width={240}
+            width={200}
             onChanged={(option) => {
               setDiskType(option);
             }}

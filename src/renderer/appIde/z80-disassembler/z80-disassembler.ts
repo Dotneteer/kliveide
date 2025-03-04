@@ -11,6 +11,7 @@ import {
   FetchResult,
   DisassemblyOptions
 } from "./disassembly-helper";
+import { toDecimal3, toDecimal5 } from "../services/ide-commands";
 
 /**
  * This class implements the Z80 disassembler
@@ -20,10 +21,11 @@ export class Z80Disassembler {
   private _output = new DisassemblyOutput();
   private _offset = 0;
   private _opOffset = 0;
-  private _currentOpCodes = "";
+  private _currentOpCodes: number[] = [];
   private _displacement: number | undefined;
   private _opCode = 0;
   private _indexMode = 0;
+  private _decimalMode = false;
   private _overflow = false;
   private _addressOffset = 0;
   private _nextRegInfo: NextRegInfo[] = [];
@@ -43,6 +45,7 @@ export class Z80Disassembler {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
     this._nextRegInfo = getNextRegisters();
+    this._decimalMode = options?.decimalMode ?? false;
   }
 
   /**
@@ -60,6 +63,7 @@ export class Z80Disassembler {
   setCustomDisassembler(custom: ICustomDisassembler): void {
     this._customDisassembler = custom;
     custom.setDisassemblyApi({
+      decimalMode: this._decimalMode,
       getMemoryContents: () => this.memoryContents,
       getOffset: () => this._offset,
       fetch: () => this.apiFetch(),
@@ -146,7 +150,8 @@ export class Z80Disassembler {
         if (i + j >= length) {
           break;
         }
-        bytes.push(`$${intToX2(this.memoryContents[section.startAddress + i + j])}`);
+        const byte = this.memoryContents[section.startAddress + i + j];
+        bytes.push(this._decimalMode ? toDecimal3(byte) : `$${intToX2(byte)}`);
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
@@ -176,7 +181,7 @@ export class Z80Disassembler {
         const value =
           this.memoryContents[section.startAddress + i + j * 2] +
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
-        words.push(`$${intToX4(value & 0xffff)}`);
+        words.push(this._decimalMode ? (value & 0xffff).toString(10) : `$${intToX4(value & 0xffff)}`);
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
@@ -199,7 +204,10 @@ export class Z80Disassembler {
     this._output.addItem({
       partition: this.partitionLabels?.[section.startAddress >> 13] ?? undefined,
       address: section.startAddress,
-      instruction: `.skip $${intToX4(section.endAddress - section.startAddress + 1)}`
+      instruction:
+        ".skip" + this._decimalMode
+          ? (section.endAddress - section.startAddress + 1).toString(10)
+          : `$${intToX4(section.endAddress - section.startAddress + 1)}`
     });
   }
 
@@ -208,7 +216,7 @@ export class Z80Disassembler {
    */
   private disassembleOperation(): DisassemblyItem {
     this._opOffset = this._offset;
-    this._currentOpCodes = "";
+    this._currentOpCodes = [];
     this._displacement = undefined;
     this._indexMode = 0; // No index
     let decodeInfo: string | undefined;
@@ -273,7 +281,7 @@ export class Z80Disassembler {
       this._opCode = this.fetch();
       if (this._opCode === 0xcb) {
         defaultTstates += 4;
-      }     
+      }
       decodeInfo = this.disassembleIndexedOperation();
     } else if (this._opCode === 0xfd) {
       // --- Decode IY-indexed operations
@@ -283,7 +291,7 @@ export class Z80Disassembler {
       this._opCode = this.fetch();
       if (this._opCode === 0xcb) {
         defaultTstates += 4;
-      }     
+      }
       decodeInfo = this.disassembleIndexedOperation();
     } else {
       // --- Decode standard operations
@@ -357,7 +365,7 @@ export class Z80Disassembler {
       this._overflow = true;
     }
     const value = this.memoryContents[this._offset++];
-    this._currentOpCodes += `${intToX2(value)} `;
+    this._currentOpCodes.push(value);
     return value;
   }
 
@@ -408,14 +416,18 @@ export class Z80Disassembler {
    * @param address Instruction address
    * @param opInfo Operation inforamtion
    */
-  private decodeInstruction(address: number, opInfo: string | undefined, defaultTstates: number): DisassemblyItem {
+  private decodeInstruction(
+    address: number,
+    opInfo: string | undefined,
+    defaultTstates: number
+  ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
       partition: this.partitionLabels?.[address >> 13] ?? undefined,
       address: (address + this._addressOffset) & 0xffff,
       opCodes: this._currentOpCodes,
       instruction: "nop",
-      tstates: defaultTstates,
+      tstates: defaultTstates
     };
 
     const parts = (opInfo ?? "").split("|");
@@ -475,16 +487,20 @@ export class Z80Disassembler {
         var distance = this.fetch();
         var labelAddr = (this._addressOffset + this._opOffset + 2 + toSbyte(distance)) & 0xffff;
         this._output.createLabel(labelAddr, this._opOffset);
-        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(labelAddr)}`;
+        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(labelAddr) : intToX4(labelAddr)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = labelAddr;
+        break;
+      case "R":
+        const rstAddr = this._opCode - 0xc7;
+        replacement = this._decimalMode ? rstAddr.toString(10) : `$${intToX2(rstAddr)}`;
         break;
       case "L":
         // --- #L: absolute label (16 bit address)
         var target = this.fetchWord();
         this._output.createLabel(target, this._opOffset);
-        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${intToX4(target)}`;
+        replacement = `${this.options?.noLabelPrefix ?? false ? "$" : "L"}${this._decimalMode ? toDecimal5(target) : intToX4(target)}`;
         symbolPresent = true;
         disassemblyItem.hasLabelSymbol = true;
         symbolValue = target;
@@ -497,14 +513,14 @@ export class Z80Disassembler {
       case "B":
         // --- #B: 8-bit value from the code
         var value = this.fetch();
-        replacement = `$${intToX2(value)}`;
+        replacement = this._decimalMode ? value.toString(10) : `$${intToX2(value)}`;
         symbolPresent = true;
         symbolValue = value;
         break;
       case "N":
         // --- #N: 8-bit Next Register index from the code
         var value = this.fetch();
-        replacement = `$${intToX2(value)}`;
+        replacement = this._decimalMode ? value.toString(10) : `$${intToX2(value)}`;
         const regInfo = this._nextRegInfo.find((n) => n?.id === value);
         if (regInfo) {
           disassemblyItem.hardComment = regInfo.description;
@@ -513,14 +529,14 @@ export class Z80Disassembler {
       case "W":
         // --- #W: 16-bit word from the code
         var word = this.fetchWord();
-        replacement = `$${intToX4(word)}`;
+        replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
       case "w":
         // --- #W: 16-bit word from the code, big endian
         var word = (this.fetch() << 8) | this.fetch();
-        replacement = `$${intToX4(word)}`;
+        replacement = this._decimalMode ? word.toString(10) : `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -541,8 +557,12 @@ export class Z80Disassembler {
         if (this._displacement) {
           replacement =
             toSbyte(this._displacement) < 0
-              ? `-$${intToX2(0x100 - this._displacement)}`
-              : `+$${intToX2(this._displacement)}`;
+              ? this._decimalMode
+                ? `-${0x100 - this._displacement}`
+                : `-$${intToX2(0x100 - this._displacement)}`
+              : this._decimalMode
+                ? `+${this._displacement}`
+                : `+$${intToX2(this._displacement)}`;
         }
         break;
     }
@@ -792,7 +812,7 @@ const standardInstructions: string[] = [
   /* 0xc4 */ "call nz,^L|17/10",
   /* 0xc5 */ "push bc|11",
   /* 0xc6 */ "add a,^B|7",
-  /* 0xc7 */ "rst $00|11",
+  /* 0xc7 */ "rst ^R|11",
   /* 0xc8 */ "ret z|11/5",
   /* 0xc9 */ "ret|10",
   /* 0xca */ "jp z,^L|10",
@@ -800,7 +820,7 @@ const standardInstructions: string[] = [
   /* 0xcc */ "call z,^L|17/10",
   /* 0xcd */ "call ^L|17",
   /* 0xce */ "adc a,^B|7",
-  /* 0xcf */ "rst $08|11",
+  /* 0xcf */ "rst ^R|11",
 
   /* 0xd0 */ "ret nc|11/5",
   /* 0xd1 */ "pop de|10",
@@ -809,7 +829,7 @@ const standardInstructions: string[] = [
   /* 0xd4 */ "call nc,^L|17/10",
   /* 0xd5 */ "push de|11",
   /* 0xd6 */ "sub ^B|7",
-  /* 0xd7 */ "rst $10|11",
+  /* 0xd7 */ "rst ^R|11",
   /* 0xd8 */ "ret c|11/5",
   /* 0xd9 */ "exx",
   /* 0xda */ "jp c,^L|10",
@@ -817,7 +837,7 @@ const standardInstructions: string[] = [
   /* 0xdc */ "call c,^L|17/10",
   /* 0xdd */ "",
   /* 0xde */ "sbc a,^B|7",
-  /* 0xdf */ "rst $18|11",
+  /* 0xdf */ "rst ^R|11",
 
   /* 0xe0 */ "ret po|11/5",
   /* 0xe1 */ "pop hl|10",
@@ -826,7 +846,7 @@ const standardInstructions: string[] = [
   /* 0xe4 */ "call po,^L|17/10",
   /* 0xe5 */ "push hl|11",
   /* 0xe6 */ "and ^B|7",
-  /* 0xe7 */ "rst $20|11",
+  /* 0xe7 */ "rst ^R|11",
   /* 0xe8 */ "ret pe|11/5",
   /* 0xe9 */ "jp (hl)",
   /* 0xea */ "jp pe,^L|10",
@@ -834,7 +854,7 @@ const standardInstructions: string[] = [
   /* 0xec */ "call pe,^L|17/10",
   /* 0xed */ "",
   /* 0xee */ "xor ^B|7",
-  /* 0xef */ "rst $28|11",
+  /* 0xef */ "rst ^R|11",
 
   /* 0xf0 */ "ret p|11/5",
   /* 0xf1 */ "pop af|10",
@@ -843,7 +863,7 @@ const standardInstructions: string[] = [
   /* 0xf4 */ "call p,^L|17/10",
   /* 0xf5 */ "push af|11",
   /* 0xf6 */ "or ^B|7",
-  /* 0xf7 */ "rst $30|11",
+  /* 0xf7 */ "rst ^R|11",
   /* 0xf8 */ "ret m|11/5",
   /* 0xf9 */ "ld sp,hl|6",
   /* 0xfa */ "jp m,^L|10",
@@ -851,7 +871,7 @@ const standardInstructions: string[] = [
   /* 0xfc */ "call m,^L|17/10",
   /* 0xfd */ "",
   /* 0xfe */ "cp ^B|7",
-  /* 0xff */ "rst $38|11"
+  /* 0xff */ "rst ^R|11"
 ];
 
 /**

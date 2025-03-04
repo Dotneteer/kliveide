@@ -28,7 +28,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * @param api API to use for disassembly
    * @param machine The virtual machine instance
    */
-  setDisassemblyApi (api: IDisassemblyApi): void {
+  setDisassemblyApi(api: IDisassemblyApi): void {
     this._api = api;
   }
 
@@ -36,7 +36,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * The disassembler starts disassembling a memory section
    * @param section
    */
-  startSectionDisassembly (_section: MemorySection): void {
+  startSectionDisassembly(_section: MemorySection): void {
     // --- No ZX Spectrum 48 specific code to disassemle
     this._inRst08Mode = false;
     this._inRst28Mode = false;
@@ -50,16 +50,17 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * @returns True, if the custom disassembler wants to disassemble the next instruction(s);
    * otherwise, false
    */
-  beforeInstruction (fetchResult: FetchResult): boolean {
+  beforeInstruction(fetchResult: FetchResult): boolean {
     // --- Handle RST #08 byte code
     if (this._inRst08Mode) {
       const address = fetchResult.offset;
       const errorCode = this._api.fetch().opcode;
       this._inRst08Mode = false;
+      const codeValue = this._api.decimalMode ? errorCode.toString(10) : `$${intToX2(errorCode)}`;
       this._api.addDisassemblyItem({
         address,
-        instruction: `.defb $${intToX2(errorCode)}`,
-        hardComment: `(error code: $${intToX2(errorCode)})`
+        instruction: `.defb ${codeValue}`,
+        hardComment: `(error code: ${codeValue})`
       });
       return true;
     }
@@ -81,9 +82,9 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * details of the disassembled item, or update its internal state accordingly
    * @param item Disassembled item
    */
-  afterInstruction (item: DisassemblyItem): void {
+  afterInstruction(item: DisassemblyItem): void {
     // --- Check for Spectrum 48K RST #08
-    if (item.opCodes && item.opCodes.trim() === "CF") {
+    if (item.opCodes && item.opCodes[0] === 0xcf) {
       this._inRst08Mode = true;
       item.hardComment = "(Report error)";
       return;
@@ -92,9 +93,9 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
     // --- Check for Spectrum 48K RST #28
     if (
       item.opCodes &&
-      (item.opCodes.trim() === "EF" || // --- RST #28
-        item.opCodes.trim() === "CD 5E 33" || // --- CALL 335E
-        item.opCodes.trim() === "CD 62 33")
+      (item.opCodes[0] === 0xef || // --- RST #28
+        (item.opCodes[0] === 0xcd && item.opCodes[1] === 0x5e && item.opCodes[2] === 0x33) || // --- CALL 335E
+        (item.opCodes[0] === 0xcd && item.opCodes[1] === 0x62 && item.opCodes[2] === 0x33)) // --- CALL 3362
     ) {
       // --- CALL 3362
       this._inRst28Mode = true;
@@ -108,11 +109,12 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * @param address Address of calculator entry
    * @param calcCode Calculator entry code
    */
-  private disassembleCalculatorEntry (address: number, calcCode: number): void {
+  private disassembleCalculatorEntry(address: number, calcCode: number): void {
     // --- Create the default disassembly item
     const item: DisassemblyItem = {
       address,
-      instruction: `.defb $${intToX2(calcCode)}`
+      instruction:
+        ".defb " + (this._api.decimalMode ? calcCode.toString(10) : `$${intToX2(calcCode)}`)
     };
     const opCodes: number[] = [calcCode];
 
@@ -131,12 +133,10 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         if (i > 0) {
           instruction += ", ";
         }
-        instruction += `$${intToX2(opCodes[i])}`;
+        instruction += this._api.decimalMode ? opCodes[i].toString(10) : `$${intToX2(opCodes[i])}`;
       }
       item.instruction = instruction;
-      item.hardComment = `(${FloatNumber.FromCompactBytes(opCodes).toFixed(
-        6
-      )})`;
+      item.hardComment = `(${FloatNumber.FromCompactBytes(opCodes).toFixed(6)})`;
       this._seriesCount--;
       this._api.addDisassemblyItem(item);
       return;
@@ -152,8 +152,12 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         opCodes.push(jump);
         const jumpAddr = (fetchValue.offset - 1 + toSbyte(jump)) & 0xffff;
         this._api.createLabel(jumpAddr);
-        item.instruction = `.defb $${intToX2(calcCode)}, $${intToX2(jump)}`;
-        item.hardComment = `(${calcOps[calcCode]}: L${intToX4(jumpAddr)})`;
+        item.instruction =
+          ".defb " +
+          (this._api.decimalMode
+            ? `${calcCode}, ${jump}`
+            : `$${intToX2(calcCode)}, $${intToX2(jump)}`);
+        item.hardComment = `(${calcOps[calcCode]}: L${this._api.decimalMode ? jumpAddr : intToX4(jumpAddr)})`;
         this._inRst28Mode = calcCode !== 0x33;
         break;
 
@@ -171,7 +175,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
       case 0x88:
       case 0x8c:
         this._seriesCount = calcCode - 0x80;
-        item.hardComment = `(series-0${(calcCode - 0x80).toString(16)})`;
+        item.hardComment = `(series-0${this._api.decimalMode ? calcCode - 0x80 : (calcCode - 0x80).toString(16)})`;
         break;
 
       case 0xa0:
@@ -204,7 +208,9 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
         break;
 
       default:
-        const comment = calcOps[calcCode] ?? `calc code: $${intToX2(calcCode)}`;
+        const comment =
+          calcOps[calcCode] ??
+          ("calc code: " + (this._api.decimalMode ? calcCode : `$${intToX2(calcCode)}`));
         item.hardComment = `(${comment})`;
         break;
     }
@@ -216,7 +222,7 @@ export class ZxSpectrum48CustomDisassembler implements ICustomDisassembler {
    * @param opCode operation code
    * @param index operation index
    */
-  private getIndexedCalcOp (opCode: number, index: number): string {
+  private getIndexedCalcOp(opCode: number, index: number): string {
     const ops = calcOps[opCode];
     if (ops) {
       const values = ops.split("|");
@@ -308,7 +314,7 @@ export class FloatNumber {
    * Convert bytes into a ZX Spectrum floating point number
    * @param bytes Bytes of the float number
    */
-  static FromBytes (bytes: number[]): number {
+  static FromBytes(bytes: number[]): number {
     if (bytes.length !== 5) {
       throw new Error("A float number must be exactly 5 bytes");
     }
@@ -330,7 +336,7 @@ export class FloatNumber {
    * Convert compact bytes into a ZX Spectrum floating point number
    * @param bytes Bytes of the float number
    */
-  static FromCompactBytes (bytes: number[]): number {
+  static FromCompactBytes(bytes: number[]): number {
     let copyFrom = 1;
     let exp = bytes[0] & 0x3f;
     if (exp === 0) {

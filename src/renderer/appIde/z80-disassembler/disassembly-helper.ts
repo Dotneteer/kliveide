@@ -26,6 +26,7 @@ export type FetchResult = {
 export type DisassemblyOptions = {
   allowExtendedSet?: boolean;
   noLabelPrefix?: boolean;
+  decimalMode?: boolean;
 }
 
 /**
@@ -45,7 +46,7 @@ export interface DisassemblyItem {
   /**
    * Operation codes used for the disassembly
    */
-  opCodes?: string;
+  opCodes?: number[];
 
   /**
    * Indicates that the disassembly instruction has an associated label

@@ -29,14 +29,12 @@ type BankedMemoryPanelViewState = {
   twoColumns?: boolean;
   charDump?: boolean;
   bankLabel?: boolean;
-  show8kBanks?: boolean;
 };
 
 export type CachedRefreshState = {
   isFullView: boolean;
   currentSegment: number;
   decimalView: boolean;
-  show8kBanks?: boolean;
 };
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
@@ -117,7 +115,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Save the current view state
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
-      topIndex: topIndex,
+      topIndex,
       isFullView,
       currentSegment,
       decimalView,
@@ -215,7 +213,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     vlApi.current?.scrollToIndex(Math.floor(topIndex), {
       align: "start"
     });
-  }, [scrollVersion]);
+  }, [scrollVersion, memoryItems, topIndex]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -271,6 +269,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           title="Show characters dump?"
           clicked={setCharDump}
         />
+        {banksView && (
+          <LabeledSwitch
+            value={bankLabel}
+            label="Bank"
+            title="Display bank label information?"
+            clicked={setBankLabel}
+          />
+        )}
         <AddressInput
           label="Go To"
           clearOnEnter={true}
@@ -301,13 +307,13 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           {!isFullView && (
             <>
               <LabelSeparator width={4} />
-              <Text text="Bank" />
+              <Text text="Selected bank" />
               <LabelSeparator width={4} />
               {!displayBankMatrix && (
                 <Dropdown
                   options={segmentOptions}
                   initialValue={currentSegment?.toString()}
-                  width="100px"
+                  width={80}
                   onChanged={async (opt) => {
                     setCurrentSegment(parseInt(opt));
                     setTopIndex(0);
@@ -321,7 +327,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
               {displayBankMatrix && machineId === MI_Z88 && (
                 <BankDropdown
                   initialValue={currentSegment ?? 0}
-                  width="68px"
+                  width={48}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -337,7 +343,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 <NextBankDropdown
                   banks={224}
                   initialValue={currentSegment ?? 0}
-                  width="120px"
+                  width={80}
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
@@ -349,13 +355,6 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                   }}
                 />
               )}
-
-              <LabeledSwitch
-                value={bankLabel}
-                label="Show bank label"
-                title="Display bank label information?"
-                clicked={setBankLabel}
-              />
             </>
           )}
         </PanelHeader>

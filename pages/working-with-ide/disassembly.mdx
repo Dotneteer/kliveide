@@ -1,3 +1,59 @@
+import Image from 'next/image'
+import disassView from '../../public/images/working-with-ide/disass-view.png'
+import bankedDisassView from '../../public/images/working-with-ide/banked-disass-view.png'
+
 # The Disassembly View
 
-_TBD_
+You can view the Z80 disassembly of the memory with the **IDE | Show Z80 Disassembly** menu command:
+
+<Image src={disassView} alt="Memory view" width={512} style={{marginTop: 24}} />
+
+By default, when you display the Z80 disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code.
+
+Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
+
+<Image src={bankedDisassView} alt="Memory view" width={512} style={{marginTop: 24}} />
+
+## Display Options
+
+The Z80 Disassembly View provides a few options to display and navigate the memory contents:
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
+- **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
+- **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
+- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
+- **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
+
+A little icon (up or down arrow) is before the **Go To** address box. Unless the machine is paused, this icon is disabled. When the machine is in a paused state, clicking the button jumps to the disassembly at the address pointed by the PC. The direction of the arrow indicates where the PC position can be found relative to the current view.
+
+## Banked Disassembly Views
+
+When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Z80 Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
+
+The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
+
+## Machine-Specific Memory Partitions
+
+### ZX Spectrum 48K
+
+This model supports only the 64K view.
+
+### ZX Spectrum 128K
+
+The `ROM 0` and `ROM 1` segments allow you to access the two ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` or `BANK 7` segments.
+
+### ZX Spectrum +2E, +3E
+
+The `ROM 0`... `ROM 3` segments allow you to access the four ROM pages (16K each). The RAM banks (16K each) can be selected with one of the `BANK 0` ... `BANK 7` segments.
+
+### Cambridge Z88
+
+You can access one of the available 256 banks (16K each) by selecting the bank's index from the dropdown.
+
+### ZX Spectrum Next
+
+The dropdown provides these options to access memory segments:
+- IDs from `00` to `DF` (`000` to `224` in decimal view) to select an 8K RAM bank. The view does not support displaying them as 16K banks. 
+- `M0`, `M1` ... `MF`: The 16 DivMMC RAM banks (8K each)
+- `NROM0` ... `NROM3`: The ROM pages of the ZX Next OS (16K each)
+- `ALTR0`, `ALTR1`: The alternate ROM pages (16K each)
+- `DivMR`: The DivMMC ROM (8K)

@@ -71,4 +71,73 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
       0x00
     );
   });
+
+  it("RST 24 work as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 24", ".defw 4660"],
+      0xdf,
+      0x34,
+      0x12
+    );
+  });
+
+  it("RST 24 goes on as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 24", ".defw 4660", "nop"],
+      0xdf,
+      0x34,
+      0x12,
+      0x00
+    );
+  });
+
+  it("RST 32 work as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 32", ".defw 4660"],
+      0xe7,
+      0x34,
+      0x12
+    );
+  });
+
+  it("RST 32 goes on as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 32", ".defw 4660", "nop"],
+      0xe7,
+      0x34,
+      0x12,
+      0x00
+    );
+  });
+
+  it("RST 40 work as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 40", ".defw 4660"],
+      0xef,
+      0x34,
+      0x12
+    );
+  });
+
+  it("RST 40 goes on as expected", async () => {
+    // --- Act
+    await Z80Tester.TestCustomWithDecimal(
+      new ZxSpectrumNextCustomDisassembler(),
+      ["rst 40", ".defw 4660", "nop"],
+      0xef,
+      0x34,
+      0x12,
+      0x00
+    );
+  });
 });
