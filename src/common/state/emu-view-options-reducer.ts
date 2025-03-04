@@ -16,7 +16,7 @@ export function emuViewOptionsReducer(
     case "SHOW_KEYBOARD":
       return { ...state, showKeyboard: payload?.flag };
     case "SHOW_SHADOW_SCREEN":
-      return { ...state, showShadowScreen: payload?.flag };
+      return { ...state, showInstantScreen: payload?.flag };
     case "EMU_SET_KEYBOARD_LAYOUT":
       return { ...state, keyboardLayout: payload?.id };
     default:

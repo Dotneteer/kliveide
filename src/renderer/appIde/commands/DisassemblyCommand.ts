@@ -6,7 +6,9 @@ import {
   writeSuccessMessage,
   commandSuccess,
   IdeCommandBase,
-  toHexa2
+  toHexa2,
+  toDecimal5,
+  toDecimal3
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
@@ -18,6 +20,7 @@ let disassemblyIndex = 1;
 type DisassemblyCommandArgs = {
   startAddress: number;
   endAddress: number;
+  "-d": boolean;
   "-c": boolean;
   "-lc": boolean;
 };
@@ -26,8 +29,8 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
   readonly id = "dis";
   readonly description =
     "Disassembles the specified memory section. " +
-    "Options: '-c': concise output; '-lc': terminate labels with semicolon";
-  readonly usage = "dis <start> <end> [-c] [-lc]";
+    "Options: '-d': use decimal numbers; '-c': concise output; '-lc': terminate labels with semicolon";
+  readonly usage = "dis <start> <end> [-d] [-c] [-lc]";
   readonly aliases = [];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -35,7 +38,7 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
       { name: "startAddress", type: "number" },
       { name: "endAddress", type: "number" }
     ],
-    commandOptions: ["-c", "-lc"]
+    commandOptions: ["-d", "-c", "-lc"]
   };
 
   async execute(
@@ -88,8 +91,10 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
     );
 
     // --- Disassemble the specified memory segments
+    const decimalMode = args["-d"];
     const disassembler = new Z80Disassembler(memSections, memory, partitions, {
-      allowExtendedSet: true
+      allowExtendedSet: true,
+      decimalMode
     });
     const disassItems = (await disassembler.disassemble(args.startAddress, args.endAddress))
       .outputItems;
@@ -98,17 +103,20 @@ export class DisassemblyCommand extends IdeCommandBase<DisassemblyCommandArgs> {
     disassItems.forEach((item) => {
       buffer.resetStyle();
       if (!args["-c"]) {
-        buffer.write(`${toHexa4(item.address)} `);
+        buffer.write((decimalMode ? toDecimal5(item.address) : toHexa4(item.address)) + " ");
         buffer.write(
           item.opCodes
-            .map((oc) => toHexa2(oc))
+            .map((oc) => (decimalMode ? toDecimal3(oc) : toHexa2(oc)))
             .join(" ")
-            .padEnd(13, " ")
+            .padEnd(decimalMode ? 17 : 13, " ")
         );
       }
       buffer.color("green");
       buffer.write(
-        (item.hasLabel ? `L${toHexa4(item.address)}${args["-lc"] ? ":" : ""}` : "").padEnd(12, " ")
+        (item.hasLabel
+          ? `L${decimalMode ? toDecimal5(item.address) : toHexa4(item.address)}${args["-lc"] ? ":" : ""}`
+          : ""
+        ).padEnd(12, " ")
       );
       buffer.color("bright-cyan");
       buffer.writeLine(item.instruction);

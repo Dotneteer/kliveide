@@ -60,7 +60,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
-  const showShadowScreen = useSelector((s) => s.emuViewOptions?.showShadowScreen);
+  const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
@@ -114,7 +114,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Sets the overlay for paused mode
   const setPauseOverlay = () => {
-    const showShadow = store.getState()?.emuViewOptions?.showShadowScreen;
+    const showShadow = store.getState()?.emuViewOptions?.showInstantScreen;
     setOverlay(
       `Paused (PC: $${toHexa4(controller.machine.pc)})${showShadow ? " - Shadow screen" : ""}`
     );
@@ -174,7 +174,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to shadow screen changes
   useEffect(() => {
-    if (showShadowScreen) {
+    if (showInstantScreen) {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
         const shadow = renderInstantScreen();
@@ -190,7 +190,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         displayScreenData();
       }
     }
-  }, [showShadowScreen]);
+  }, [showInstantScreen]);
 
   // --- Respond to resizing the main container
   useResizeObserver(hostElement, () => calculateDimensions());
@@ -284,7 +284,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           case MachineControllerState.Paused:
             setPauseOverlay();
             await beeperRenderer?.current?.suspend();
-            const showShadow = store.getState()?.emuViewOptions?.showShadowScreen;
+            const showShadow = store.getState()?.emuViewOptions?.showInstantScreen;
             if (showShadow) {
               const shadow = renderInstantScreen();
               if (!savedPixelBuffer) {

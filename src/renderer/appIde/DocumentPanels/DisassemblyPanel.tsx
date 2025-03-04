@@ -387,6 +387,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           title="Disassemble screen?"
           clicked={setScreen}
         />
+        <LabeledSwitch
+          value={bankLabel}
+          label="Bank"
+          title="Display bank label information?"
+          clicked={setBankLabel}
+        />
         <SmallIconButton
           iconName={pausedPc < topAddress ? "arrow-circle-up" : "arrow-circle-down"}
           title={"Go to the PC address"}
@@ -423,7 +429,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           {!isFullView && (
             <>
               <LabelSeparator width={4} />
-              <Text text="Bank" />
+              <Text text="Select bank" />
               <LabelSeparator width={4} />
               {!displayBankMatrix && (
                 <Dropdown
@@ -432,11 +438,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   width={80}
                   onChanged={async (opt) => {
                     setCurrentSegment(parseInt(opt));
-                    // setTopIndex(0);
-                    // setLastJumpAddress(0);
-                    // // --- Delay 3s
-                    // await new Promise((resolve) => setTimeout(resolve, 3000));
-                    // setLastJumpAddress(-1);
                   }}
                 />
               )}
@@ -447,11 +448,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
-                    // setTopIndex(0);
-                    // setLastJumpAddress(0);
-                    // // --- Delay 3s
-                    // await new Promise((resolve) => setTimeout(resolve, 3000));
-                    // setLastJumpAddress(-1);
                   }}
                 />
               )}
@@ -463,23 +459,12 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   decimalView={decimalView}
                   onChanged={async (opt) => {
                     setCurrentSegment(opt);
-                    // setTopIndex(0);
-                    // setLastJumpAddress(0);
-                    // // --- Delay 3s
-                    // await new Promise((resolve) => setTimeout(resolve, 3000));
-                    // setLastJumpAddress(-1);
                   }}
                 />
               )}
               <LabelSeparator width={8} />
-              <LabeledSwitch
-                value={bankLabel}
-                label="Show bank label"
-                title="Display bank label information?"
-                clicked={setBankLabel}
-              />
               <Text text="Offset" />
-              <LabelSeparator width={8} />
+              <LabelSeparator width={4} />
               <Dropdown
                 options={bank16KOptions}
                 initialValue={disassOffset.toString(10)}
@@ -527,9 +512,10 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
               }
 
               // --- Propare opcodes
-              const opCodes = item.opCodes
-                .map((oc) => (decimalView ? toDecimal3(oc) : toHexa2(oc)))
-                .join(" ");
+              const opCodes =
+                item.opCodes
+                  ?.map((oc) => (decimalView ? toDecimal3(oc) : toHexa2(oc)))
+                  ?.join(" ") ?? "";
 
               return (
                 <div

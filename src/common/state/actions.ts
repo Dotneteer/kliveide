@@ -104,7 +104,7 @@ export const showKeyboardAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
-export const showShadowScreenAction: ActionCreator = (flag: boolean) => ({
+export const showInstantScreenAction: ActionCreator = (flag: boolean) => ({
   type: "SHOW_SHADOW_SCREEN",
   payload: { flag }
 });

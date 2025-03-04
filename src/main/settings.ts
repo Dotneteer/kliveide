@@ -21,7 +21,7 @@ export type AppSettings = {
   startScreenDisplayed?: boolean;
   theme?: string;
   showKeyboard?: boolean;
-  showShadowScreen?: boolean;
+  showInstantScreen?: boolean;
   keyboardLayout?: string;
   showIdeToolbar?: boolean;
   showIdeStatusBar?: boolean;
@@ -66,7 +66,7 @@ export function saveAppSettings (): void {
     appSettings.startScreenDisplayed = state.startScreenDisplayed;
     appSettings.theme = state.theme;
     appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
-    appSettings.showShadowScreen = state.emuViewOptions?.showShadowScreen ?? false;
+    appSettings.showInstantScreen = state.emuViewOptions?.showInstantScreen ?? false;
     appSettings.keyboardLayout = state.emuViewOptions?.keyboardLayout;
     appSettings.showIdeToolbar = state.ideViewOptions?.showToolbar ?? false;
     appSettings.showIdeStatusBar = state.ideViewOptions?.showStatusBar ?? false;

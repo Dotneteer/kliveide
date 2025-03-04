@@ -25,13 +25,12 @@ The Memory View provides a few options to display and navigate the memory conten
 - **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal.
 - **2 Columns**: Depending on this option, you can display one or two columns in a single row (two columns by default).
 - **Chars**: This toggles the display of the character view for a particular memory section (on, by default).
+- **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
 - **Go To**: Type an address into this box and press Enter to jump to the particular address. Though memory sections are aligned to 8-byte boundaries when jumping to a new address, the designated address's content flashes for about 3 seconds to let you identify the jump target. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
 
 ## Banked Memory Views
 
-A new switch, **64K View**, is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can select a particular memory section (ROM pages and RAM banks, depending on the machine type) from the dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in.
-
-The **Show bank label** option (on, by default) allows you to turn on or off displaying the bank labels in front of memory addresses.
+A new switch, **64K View**, is displayed in the second header row when your model supports memory paging. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Memory View will display only the contents of that memory even if that segment is not paged in.
 
 ## Machine-Specific Memory Partitions
 

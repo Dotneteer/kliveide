@@ -307,7 +307,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           {!isFullView && (
             <>
               <LabelSeparator width={4} />
-              <Text text="Bank" />
+              <Text text="Selected bank" />
               <LabelSeparator width={4} />
               {!displayBankMatrix && (
                 <Dropdown

@@ -7,7 +7,7 @@ import {
   setFastLoadAction,
   setRestartTarget,
   showKeyboardAction,
-  showShadowScreenAction,
+  showInstantScreenAction,
   syncSourceBreakpointsAction
 } from "@state/actions";
 import { IconButton } from "./IconButton";
@@ -73,7 +73,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const state = useSelector((s) => s.emulatorState?.machineState);
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const showKeyboard = useSelector((s) => s.emuViewOptions?.showKeyboard ?? false);
-  const showShadowScreen = useSelector((s) => s.emuViewOptions?.showShadowScreen ?? false);
+  const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen ?? false);
   const syncSourceBps = useSelector((s) => s.ideViewOptions?.syncSourceBreakpoints ?? true);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad ?? false);
@@ -237,10 +237,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="vm"
             fill="--color-toolbarbutton"
-            selected={showShadowScreen}
-            title="Turn on/off shadow screen"
+            selected={showInstantScreen}
+            title="Turn on/off instant screen"
             clicked={async () => {
-              dispatch(showShadowScreenAction(!showShadowScreen));
+              dispatch(showInstantScreenAction(!showInstantScreen));
               await saveProject();
             }}
           />
