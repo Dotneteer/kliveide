@@ -1,3 +1,25 @@
+import Image from 'next/image'
+import cpuView from '../../public/images/working-with-ide/cpu-view.png'
+
 # The CPU View
 
-_TBD_
+You can find this view in the Debug activity tag with the **Z80 CPU** header:
+
+<Image src={cpuView} alt="CPU view" width={256} style={{marginTop: 24}} />
+
+When you hover the mouse over the information items, they display a tooltip with numbers in multiple radixes (whenever that has a meaning).
+
+You can read this information in this panel:
+- **Z80 registers**: All the standard Z80 registers (moving the mouse over the values will display LSB and MSB separately). The `WZ` is an internal Z80 register, often called `MEMPTR`.
+- **`LMR`**: Last value read from memory
+- **`LMW`**: Last value written to memory
+- **`IRV`**: Last value read from an I/O port
+- **`IWV`**: Last value written to an I/O port
+- **`IM`**: Current interrupt mode
+- **`SNZ`**: Is the CPU in snoozed mode (Cambridge Z88 uses this CPU mode)
+- **`IFF1`**:  Interrupt flip-flop #1
+- **`IFF2`**:  Interrupt flip-flop #2
+- **`INT`**: Is the `INT` signal active?
+- **`HLT`**: Is the CPU halted?
+- **`CLK`**: The current clock count since the last machine start
+- **`TSP`**: T-states elapsed since the last pause. You can use this value to check the number of T-states used between two pauses.
