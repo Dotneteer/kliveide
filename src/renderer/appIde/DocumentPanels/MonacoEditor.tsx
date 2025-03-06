@@ -20,6 +20,7 @@ import { getIsWindows } from "@renderer/os-utils";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
+import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 
 let monacoInitialized = false;
 
@@ -417,13 +418,12 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
         const lineContent = editor.current.getModel().getLineContent(lineNo);
         const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
-        if (
-          !parsedLine ||
-          parsedLine.type === "LabelOnlyLine" ||
-          parsedLine.type === "CommentOnlyLine"
-        ) {
-          // --- Mouse is out of margin, remove the breakpoint placeholder
-          editor.current.deltaDecorations(oldHoverDecorations.current, []);
+        if (!parsedLine || restrictedNodes.includes(parsedLine.type)) {
+          const message = "You cannot create a breakpoint here";
+          oldHoverDecorations.current = editor.current.deltaDecorations(
+            oldHoverDecorations.current,
+            [createHoverDisabledBreakpointDecoration(lineNo, message)]
+          );
           return;
         }
       }
@@ -462,15 +462,20 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         if (existingBp) {
           await removeBreakpoint(messenger, existingBp);
         } else {
-          await addBreakpoint(messenger, {
-            resource: resourceName,
-            line: lineNo,
-            exec: true
-          });
-          await refreshSourceCodeBreakpoints(store, messenger);
-          store.dispatch(incBreakpointsVersionAction());
+          // --- Check if this is a valid location for a breakpoint
+          const lineContent = editor.current.getModel().getLineContent(lineNo);
+          const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
+          if (parsedLine && !restrictedNodes.includes(parsedLine.type)) {
+            await addBreakpoint(messenger, {
+              resource: resourceName,
+              line: lineNo,
+              exec: true
+            });
+            await refreshSourceCodeBreakpoints(store, messenger);
+            store.dispatch(incBreakpointsVersionAction());
+            handleEditorMouseLeave(e);
+          }
         }
-        handleEditorMouseLeave(e);
       })();
     }
   }
@@ -612,6 +617,22 @@ function createHoverBreakpointDecoration(lineNo: number, message?: string): Deco
 }
 
 /**
+ * Creates a breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ */
+function createHoverDisabledBreakpointDecoration(lineNo: number, message?: string): Decoration {
+  const hoverMessage: MarkdownString = message ? { value: message } : null;
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: styles.disabledHoverBreakpointMargin,
+      glyphMarginHoverMessage: hoverMessage
+    }
+  };
+}
+
+/**
  * Creates an unreachable breakpoint decoration
  * @param lineNo Line to apply the decoration to
  * @returns
@@ -646,3 +667,64 @@ function createCurrentBreakpointDecoration(
     }
   };
 }
+
+const restrictedNodes: Node["type"][] = [
+  "CommentOnlyLine",
+  "LabelOnlyLine",
+  "OrgPragma",
+  "XorgPragma",
+  "EntPragma",
+  "XentPragma",
+  "DispPragma",
+  "BankPragma",
+  "EquPragma",
+  "VarPragma",
+  "InjectOptPragma",
+  "SkipPragma",
+  "ExternPragma",
+  "ModelPragma",
+  "AlignPragma",
+  "TracePragma",
+  "RndSeedPragma",
+  "ErrorPragma",
+  "IncBinPragma",
+  "CompareBinPragma",
+  "OnSuccessPragma",
+  "MacroStatement",
+  "MacroEndStatement",
+  "MacroParameter",
+  "MacroParameterLine",
+  "LoopStatement",
+  "LoopEndStatement",
+  "WhileStatement",
+  "WhileEndStatement",
+  "RepeatStatement",
+  "UntilStatement",
+  "ProcStatement",
+  "ProcEndStatement",
+  "IfStatement",
+  "IfUsedStatement",
+  "IfNUsedStatement",
+  "ElseStatement",
+  "ElseIfStatement",
+  "EndIfStatement",
+  "BreakStatement",
+  "ContinueStatement",
+  "ModuleStatement",
+  "ModuleEndStatement",
+  "StructStatement",
+  "StructEndStatement",
+  "ForStatement",
+  "NextStatement",
+  "IfDefDirective",
+  "IfNDefDirective",
+  "DefineDirective",
+  "UndefDirective",
+  "IfModDirective",
+  "IfNModDirective",
+  "EndIfDirective",
+  "ElseDirective",
+  "IfDirective",
+  "IncludeDirective",
+  "LineDirective"
+];

@@ -1,32 +1,40 @@
 .codeBreakpointMargin {
   background: var(--color-breakpoint-code);
-  clip-path: circle(25%);
+  clip-path: circle(20%);
   cursor: pointer;
 }
 
 .binaryBreakpointMargin {
   background: var(--color-breakpoint-binary);
-  clip-path: circle(25%);
+  clip-path: circle(20%);
   cursor: pointer;
 }
 
 .mixedBreakpointMargin {
   background: var(--color-breakpoint-mixed);
-  clip-path: circle(25%);
+  clip-path: circle(20%);
   cursor: pointer;
 }
 
 .disabledBreakpointMargin {
   background: var(--color-breakpoint-disabled);
-  clip-path: circle(25%);
+  clip-path: circle(20%);
   cursor: pointer;
 }
 
 .hoverBreakpointMargin {
   background: var(--color-breakpoint-code);
-  clip-path: circle(35%);
+  clip-path: circle(30%);
   cursor: pointer;
 }
+
+.disabledHoverBreakpointMargin {
+  background: var(--color-breakpoint-disabled);
+  clip-path: circle(30%);
+  cursor: pointer;
+}
+
+
 
 .activeBreakpointMargin {
   background: var(--color-breakpoint-current);
@@ -41,6 +49,6 @@
 
 .unreachableBreakpointMargin {
   background: var(--color-debug-unreachable-bp);
-  clip-path: circle(25%);
+  clip-path: circle(20%);
   cursor: pointer;
 }
