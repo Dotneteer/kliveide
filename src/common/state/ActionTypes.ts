@@ -96,4 +96,7 @@ export interface ActionTypes {
   INC_EXPLORER_VIEW_VERSION: null;
 
   SET_SCRIPTS_STATUS: null;
+
+  SET_IDE_DISABLE_AUTO_OPEN_BUILD_ROOT: null;
+  SET_IDE_DISABLE_AUTO_OPEN_PROJECT: null;
 }

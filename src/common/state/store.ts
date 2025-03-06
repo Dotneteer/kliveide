@@ -10,6 +10,7 @@ import { projectReducer } from "./project-reducer";
 import { compilationReducer } from "./compilation-reducer";
 import { mediaReducer } from "./media-reducer";
 import { scriptsReducer } from "./scripts-reducer";
+import { ideSettingsReducer } from "./ide-settings-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -17,32 +18,17 @@ import { scriptsReducer } from "./scripts-reducer";
  * @param action State-changing action
  * @returns New application state
  */
-function appReducer (state: AppState, action: Action): AppState {
+function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
-  invokeReducer(
-    state.ideViewOptions,
-    ideViewOptionsReducer,
-    (a, n) => (a.ideViewOptions = n)
-  );
-  invokeReducer(
-    state.emuViewOptions,
-    emuViewOptionsReducer,
-    (a, n) => (a.emuViewOptions = n)
-  );
+  invokeReducer(state.ideViewOptions, ideViewOptionsReducer, (a, n) => (a.ideViewOptions = n));
+  invokeReducer(state.emuViewOptions, emuViewOptionsReducer, (a, n) => (a.emuViewOptions = n));
   invokeReducer(state.ideView, ideViewReducer, (a, n) => (a.ideView = n));
-  invokeReducer(
-    state.emulatorState,
-    emulatorStateReducer,
-    (a, n) => (a.emulatorState = n)
-  );
+  invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
   invokeReducer(state.project, projectReducer, (a, n) => (a.project = n));
-  invokeReducer(
-    state.compilation,
-    compilationReducer,
-    (a, n) => (a.compilation = n)
-  );
+  invokeReducer(state.compilation, compilationReducer, (a, n) => (a.compilation = n));
   invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
   invokeReducer(state.scripts, scriptsReducer, (a, n) => (a.scripts = n));
+  invokeReducer(state.ideSettings, ideSettingsReducer, (a, n) => (a.ideSettings = n));
   return state;
 
   /**
@@ -51,7 +37,7 @@ function appReducer (state: AppState, action: Action): AppState {
    * @param reducer Reducer managing a particular subtree state
    * @param stateSetter State setter to set the new subtree state
    */
-  function invokeReducer<S> (
+  function invokeReducer<S>(
     subTreeState: S | undefined,
     reducer: Reducer<S, Action>,
     stateSetter: (appState: AppState, newState: S) => void
@@ -70,6 +56,6 @@ function appReducer (state: AppState, action: Action): AppState {
  * @param forwarder
  * @returns Store instance managing the application state
  */
-export default function createAppStore (id: string, forwarder?: ActionForwarder) {
+export default function createAppStore(id: string, forwarder?: ActionForwarder) {
   return createStore(id, appReducer, initialAppState, forwarder);
 }

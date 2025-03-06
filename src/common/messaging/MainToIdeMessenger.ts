@@ -81,6 +81,6 @@ export function sendFromMainToIde<TResp extends ResponseMessage>(
 /**
  * Gets the EmuApi instance
  */
-export function getIdeAltApi(): IdeApi {
+export function getIdeApi(): IdeApi {
   return ideApiAltInstance;
 }

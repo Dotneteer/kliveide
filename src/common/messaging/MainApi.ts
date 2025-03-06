@@ -7,6 +7,7 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { Z80AssemblyLine } from "@main/z80-compiler/assembler-tree-nodes";
+import { AppSettings } from "@main/settings";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -200,6 +201,10 @@ class MainApiImpl {
   }
 
   async parseZ80Line(_line: string): Promise<Z80AssemblyLine> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async getAppSettings(): Promise<AppSettings> {
     throw new Error(NO_PROXY_ERROR);
   }
 }

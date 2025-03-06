@@ -53,14 +53,16 @@ import {
   emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
   setMediaAction,
-  showInstantScreenAction
+  showInstantScreenAction,
+  setIdeDisableAutoOpenBuildRootAction,
+  setIdeDisableAutoOpenProjectAction,
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
-import { getIdeAltApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
+import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
 import { FIRST_STARTUP_DIALOG_EMU } from "@messaging/dialog-ids";
-import { MEDIA_DISK_A, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 
 import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
@@ -76,6 +78,7 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { openFolderByPath } from "./projects";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -220,7 +223,7 @@ async function createAppWindows() {
       contextIsolation: false,
       webSecurity: false
     },
-    show: ideVisibleOnClose || (appSettings.windowStates?.showIdeOnStartup ?? false)
+    show: showIde
   });
   if (displayIdeDevTools && !!appSettings.windowStates?.showIdeOnStartup) {
     ideWindow.webContents.toggleDevTools();
@@ -239,8 +242,7 @@ async function createAppWindows() {
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
     const state = mainStore.getState();
-    const loaded = state.emuLoaded;
-    if (loaded && !machineTypeInitialized) {
+    if (state.emuLoaded && !machineTypeInitialized) {
       // --- Sign machine initialization is done, so we do not run into this code again
       machineTypeInitialized = true;
 
@@ -252,6 +254,14 @@ async function createAppWindows() {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
+      mainStore.dispatch(
+        setIdeDisableAutoOpenBuildRootAction(
+          appSettings.ideSettings?.disableAutoOpenBuildRoot ?? false
+        )
+      );
+      mainStore.dispatch(
+        setIdeDisableAutoOpenProjectAction(appSettings.ideSettings?.disableAutoOpenProject ?? false)
+      );
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
@@ -307,6 +317,17 @@ async function createAppWindows() {
 
     // --- Adjust menu items whenever the app state changes
     setupMenu(emuWindow, ideWindow);
+
+    // // --- Open the last project
+    // if (!state.ideSettings.disableAutoOpenProject && appSettings.recentProjects?.length > 0) {
+    //   const projectPath = appSettings.recentProjects[0];
+    //   ideWindow.show();
+    //   if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+    //     ideWindow.maximize();
+    //   }
+    //   await openFolderByPath(projectPath);
+    //   // mainStore.dispatch(resetCompileAction());
+    // }
   });
 
   // --- We use a little hack here. We pass the application path value in the query parameter
@@ -529,6 +550,6 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
 }
 
 async function saveOnClose() {
-  await getIdeAltApi().saveAllBeforeQuit();
+  await getIdeApi().saveAllBeforeQuit();
   ideSaved = true;
 }

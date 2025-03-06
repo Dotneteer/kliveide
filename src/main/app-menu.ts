@@ -34,11 +34,13 @@ import {
   setVolatileDocStateAction,
   setRestartTarget,
   showKeyboardAction,
-  setKeyMappingsAction
+  setKeyMappingsAction,
+  setIdeDisableAutoOpenBuildRootAction,
+  setIdeDisableAutoOpenProjectAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { getIdeAltApi } from "@messaging/MainToIdeMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
 import {
@@ -101,6 +103,9 @@ const RESET_KEY_MAPPING = "reset_key_mapping";
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
+const IDE_SETTINGS = "ide_settings";
+const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
+const IDE_AUTO_OPEN_BUILD_ROOT = "ide_auto_open_build_root";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -222,7 +227,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         enabled: !!folderOpen,
         click: async () => {
           ensureIdeWindow();
-          await getIdeAltApi().saveAllBeforeQuit();
+          await getIdeApi().saveAllBeforeQuit();
           mainStore.dispatch(closeFolderAction());
           fileChangeWatcher.stopWatching();
           await saveKliveProject();
@@ -818,7 +823,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         type: "checkbox",
         checked: volatileDocs[MEMORY_PANEL_ID],
         click: async () => {
-          await getIdeAltApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
+          await getIdeApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
           mainStore.dispatch(
             setVolatileDocStateAction(MEMORY_PANEL_ID, !volatileDocs[MEMORY_PANEL_ID])
           );
@@ -830,14 +835,42 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         type: "checkbox",
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {
-          await getIdeAltApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
+          await getIdeApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
           mainStore.dispatch(
             setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, !volatileDocs[DISASSEMBLY_PANEL_ID])
           );
         }
       },
       { type: "separator" },
-      ...specificIdeMenus
+      ...specificIdeMenus,
+      { type: "separator" },
+      {
+        type: "submenu",
+        id: IDE_SETTINGS,
+        label: "IDE Settings",
+        submenu: [
+          {
+            id: IDE_AUTO_OPEN_PROJECT,
+            label: "Open the last project when IDE starts",
+            type: "checkbox",
+            checked: !appState.ideSettings?.disableAutoOpenProject,
+            click: async (mi) => {
+              mainStore.dispatch(setIdeDisableAutoOpenProjectAction(!mi.checked));
+              saveAppSettings();
+            }
+          },
+          {
+            id: IDE_AUTO_OPEN_BUILD_ROOT,
+            label: "Open the build root when project opens",
+            type: "checkbox",
+            checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
+            click: async (mi) => {
+              mainStore.dispatch(setIdeDisableAutoOpenBuildRootAction(!mi.checked));
+              saveAppSettings();
+            }
+          }
+        ]
+      }
     ]
   });
 
@@ -1037,7 +1070,7 @@ export async function executeIdeCommand(
   title?: string,
   ignoreSuccess = false
 ): Promise<IdeCommandResult> {
-  const response = await getIdeAltApi().executeCommand(commandText);
+  const response = await getIdeApi().executeCommand(commandText);
   if (response.success) {
     if (!ignoreSuccess) {
       await showMessage(
