@@ -49,6 +49,10 @@ import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { getSdCardHandler } from "./machine-menus/zx-next-menus";
+import { Z80AssemblyLine } from "./z80-compiler/assembler-tree-nodes";
+import { InputStream } from "./z80-compiler/input-stream";
+import { TokenStream } from "./z80-compiler/token-stream";
+import { Z80AsmParser } from "./z80-compiler/z80-asm-parser";
 
 class MainMessageProcessor {
   constructor(
@@ -357,22 +361,18 @@ class MainMessageProcessor {
     sdHandler.writeSector(sectorIndex, data);
   }
 
-  async openWithShell(
-    filename: string,
-  ): Promise<{ path?: string; error?: string }> {
-    let fullPath = filename;
-    if (!path.isAbsolute(filename)) {
-      const projectFolder = mainStore.getState().project?.folderPath ?? "";
-      if (!projectFolder) {
-        fullPath = path.join(app.getPath("home"), filename);
-      }
-      fullPath = path.join(projectFolder, filename);
+  async parseZ80Line(line: string): Promise<Z80AssemblyLine | null> {
+    const is = new InputStream(line);
+    const ts = new TokenStream(is);
+    const parser = new Z80AsmParser(ts);
+    const parsed = await parser.parseProgram();
+    if (parser.errors.length > 0) {
+      return null;
     }
-    const errMsg = await shell.openPath(fullPath);
-    if (errMsg) {
-      return { path: fullPath, error: `Shell error: ${errMsg} while opening file ${fullPath}` };
+    if (parsed.assemblyLines.length === 0) {
+      return null;
     }
-    return { path: fullPath };
+    return parsed.assemblyLines[0];
   }
 }
 

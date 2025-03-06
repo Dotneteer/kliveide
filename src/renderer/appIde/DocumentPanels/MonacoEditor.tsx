@@ -19,6 +19,7 @@ import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentStat
 import { getIsWindows } from "@renderer/os-utils";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
+import { createMainApi } from "@common/messaging/MainApi";
 
 let monacoInitialized = false;
 
@@ -403,13 +404,31 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Handles the editor's mousemove event
    * @param e
    */
-  function handleEditorMouseMove(e: monacoEditor.editor.IEditorMouseEvent): void {
+  async function handleEditorMouseMove(e: monacoEditor.editor.IEditorMouseEvent): Promise<void> {
     if (e.target?.type === 2) {
       // --- Mouse is over the margin, display the breakpoint placeholder
       const lineNo = e.target.position.lineNumber;
+
+      // --- Check if there is an existing breakpoint at this line
       const existingBp = breakpoints.current.find(
         (bp) => bp.resource === resourceName && bp.line === lineNo
       );
+      if (!existingBp) {
+        // --- No existing breakpoint, alllow creating one, if the source code has anything here
+        const lineContent = editor.current.getModel().getLineContent(lineNo);
+        const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
+        if (
+          !parsedLine ||
+          parsedLine.type === "LabelOnlyLine" ||
+          parsedLine.type === "CommentOnlyLine"
+        ) {
+          // --- Mouse is out of margin, remove the breakpoint placeholder
+          editor.current.deltaDecorations(oldHoverDecorations.current, []);
+          return;
+        }
+      }
+
+      // --- Display the message
       const message = `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`;
       oldHoverDecorations.current = editor.current.deltaDecorations(oldHoverDecorations.current, [
         createHoverBreakpointDecoration(lineNo, message)
