@@ -32,14 +32,14 @@ type Props = {
 const emuStartOptions = [
   {
     value: "debug",
-    label: "Start Debugging (Ctrl+F5)",
+    label: "Debug Machine (Ctrl+F5)",
     labelCont: "Continue Debugging (Ctrl+F5)",
     iconName: "debug",
     cmd: null
   },
   {
     value: "start",
-    label: "Start Machine (F5)",
+    label: "Run Machine (F5)",
     labelCont: "Continue (F5)",
     iconName: "play",
     cmd: null
@@ -79,20 +79,25 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad ?? false);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
   const isCompiling = useSelector((s) => s.compilation?.inProgress ?? false);
+  const isStopped =
+    state === MachineControllerState.None || state === MachineControllerState.Stopped;
   const isRunning =
-    state !== MachineControllerState.None && state !== MachineControllerState.Stopped;
-  const canStart = (!ide || kliveProjectLoaded) && !isCompiling && !isRunning;
+    state !== MachineControllerState.None &&
+    state !== MachineControllerState.Stopped &&
+    state !== MachineControllerState.Paused;
+  const canStart = (!ide || kliveProjectLoaded) && !isCompiling && isStopped;
   const canPickStartOption = (!ide || kliveProjectLoaded) && !isRunning;
   const mayInjectCode = ide && kliveProjectLoaded;
-  const [startMode, setStartMode] = useState(ide && kliveProjectLoaded ? "debug" : "start");
+
+  const mode = "start";
+  const startOptions = ide ? ideStartOptions : emuStartOptions;
+  const [startMode, setStartMode] = useState(mode);
+  const [currentStartOption, setCurrentStartOption] = useState(
+    startOptions.find((v) => v.value === mode)
+  );
 
   const storeDispatch = useDispatch();
   const restartTarget = useSelector((s) => s.ideView?.restartTarget ?? "machine");
-
-  const startOptions = ide && kliveProjectLoaded ? ideStartOptions : emuStartOptions;
-  const startOpt = !isRunning
-    ? startOptions.find((v) => v.value === startMode)
-    : startOptions[isDebugging ? 0 : 1];
 
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
@@ -103,8 +108,14 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;
 
   useEffect(() => {
-    setStartMode(ide && kliveProjectLoaded ? "debug" : "start");
-  }, [ide, kliveProjectLoaded]);
+    const mode = isDebugging ? "debug" : "start";
+    setStartMode(mode);
+    console.log(
+      "isDebugging",
+      startOptions.find((v) => v.value === mode)
+    );
+    setCurrentStartOption(startOptions.find((v) => v.value === mode));
+  }, [isDebugging]);
 
   return (
     <HStack
@@ -115,19 +126,19 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       verticalContentAlignment="center"
     >
       <IconButton
-        iconName={startOpt.iconName}
+        iconName={currentStartOption.iconName}
         fill="--color-toolbarbutton-green"
-        title={startOpt.label}
+        title={currentStartOption.label}
         enable={canStart}
         clicked={async () => {
-          if (mayInjectCode && !!startOpt.cmd) {
+          if (mayInjectCode && !!currentStartOption.cmd) {
             storeDispatch(setRestartTarget("project"));
             const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-            await ideCommandsService.executeCommand(startOpt.cmd, buildPane);
+            await ideCommandsService.executeCommand(currentStartOption.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
           } else {
             storeDispatch(setRestartTarget("machine"));
-            await emuApi.issueMachineCommand(startOpt.value as any);
+            await emuApi.issueMachineCommand(currentStartOption.value as any);
           }
         }}
       />
@@ -139,14 +150,21 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           placeholder={undefined}
           options={[...startOptions]}
           initialValue={startMode}
-          width={200}
-          onChanged={(option) => setStartMode(option)}
+          width={184}
+          onChanged={(option) => {
+            setStartMode(option);
+            setCurrentStartOption(startOptions.find((v) => v.value === option));
+          }}
         />
       </div>
       <IconButton
         iconName={state === MachineControllerState.Paused ? "debug-continue" : "pause"}
         fill="--color-toolbarbutton-blue"
-        title={state === MachineControllerState.Running ? "Pause (Shift+F5)" : startOpt.labelCont}
+        title={
+          state === MachineControllerState.Running
+            ? "Pause (Shift+F5)"
+            : currentStartOption.labelCont
+        }
         enable={
           !isCompiling &&
           (state === MachineControllerState.Running ||
@@ -154,7 +172,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             state === MachineControllerState.Paused)
         }
         clicked={async () => {
-          const cmd = state !== MachineControllerState.Running ? startOpt.value : "pause";
+          const cmd = state !== MachineControllerState.Running ? currentStartOption.value : "pause";
           await emuApi.issueMachineCommand(cmd as any);
         }}
       />
