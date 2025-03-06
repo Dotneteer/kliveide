@@ -1,4 +1,14 @@
+import Image from 'next/image'
+import ideCommands from '../../public/images/working-with-ide/ide-commands.png'
+
 # Interactive Commands
 
-_TBD_
+Klive provides an interactive command panel for executing commands such as defining breakpoints, starting, pausing, and stopping the machine, compiling and exporting code, and many others.
 
+<Image src={ideCommands} alt="Commands" width={640} style={{marginTop: 24}} />
+
+The commands panel is displayed in the Tools window, which you can open with the **View | Show Tools Panel** command.
+
+The bottom area of the panel allows you to type a particular command. After pressing Enter, the IDE executes the command. You can type the "?" command (click Enter) to display the list of available commands. You can also type some search characters after "?" to display only matching commands. For example, the "? bp-" prompt will display information about breakpoint-related commands (each of them starts with "bp-").
+
+You can find more information about the available commands in the [Commands Reference](/commands-reference)  section.

@@ -5,6 +5,6 @@ export default {
   howto: "How To",
   "z80-assembly": "Klive Z80 Assembler",
   scripting: "Scripting",
-  "command-reference": "Command Reference",
+  "commands-reference": "Commands Reference",
   "machine-types": "Machine Types"
 };

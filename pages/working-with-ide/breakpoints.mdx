@@ -1,1 +1,47 @@
+import Image from 'next/image'
+import bpView from '../../public/images/working-with-ide/bp-view.png'
+import bpExplain from '../../public/images/working-with-ide/bp-explain.png'
+import bpResolved from '../../public/images/working-with-ide/bp-resolved.png'
+import bpTypes from '../../public/images/working-with-ide/bp-types.png'
+
 # The Breakpoints View
+
+With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the **BreakPoints** header:
+
+<Image src={bpView} alt="Breakpoints" width={256} style={{marginTop: 24}} />
+
+This view displays all breakpoints you created with interactive commands or in the source code. Each line represents a particular breakpoint with this information:
+- A filled circle representing the status of a breakpoint:
+  - cyan: a breakpoint created with an interactive command
+  - red: a breakpoint created in the source code
+  - gray: a disabled breakpoint
+- An icon representing the breakpoint type
+- The breakpoint's address or source code location
+- Other information (such as the disassembly at the location)
+
+## Manipulating Breakpoints
+
+When you hover the mouse over the first two icons, they display additional information:
+
+<Image src={bpExplain} alt="Breakpoints explained" width={256} style={{marginTop: 24}} />
+
+Clicking the left mouse button removes the breakpoint. With the right mouse button, you can toggle between the disabled or enabled state of the breakpoint. When a breakpoint is disabled, the debugger does not stop when reaching it.
+
+## Resolved Source Code Breakpoints
+
+<Image src={bpResolved} alt="Breakpoints resolved" width={300} style={{marginTop: 24}} />
+
+Source code breakpoints are resolved to a CPU address after compilation, and this address is displayed with the breakpoint. The following figure shows that the last two source code breakpoints display their resolved CPU address after the compilation.
+
+## Breakpoint Types
+
+The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:
+
+<Image src={bpTypes} alt="Breakpoints types" width={128} style={{marginTop: 24}} />
+
+These are the available breakpoint types (from top to bottom in the figure):
+- **I/O read**. This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address.
+- **I/O write**. This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address.
+- **Execution**. This breakpoint is triggered when the PC register reaches the specified address.
+- **Memory read**. This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read. 
+- **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written. 
