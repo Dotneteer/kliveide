@@ -39,7 +39,7 @@ const UlaPanel = () => {
       <LabeledValue label="FLO" value={ulaState?.flo} toolTip="Floating bus value" />
       <Separator />
       <LabeledValue label="CON" value={ulaState?.con} toolTip="Accumulated contention tacts" />
-      <LabeledValue label="LCO" value={ulaState?.con} toolTip="Accumulated contention tacts" />
+      <LabeledValue label="LCO" value={ulaState?.lco} toolTip="Contention tacts since last pause" />
       <LabeledFlag label="EAR" value={ulaState?.ear} toolTip="EAR bit value" />
       <LabeledFlag label="MIC" value={ulaState?.mic} toolTip="MIC bit value" />
       <Separator />
@@ -57,7 +57,7 @@ const UlaPanel = () => {
         <KeyboardLine
           lineNo={1}
           value={ulaState?.keyLines?.[1]}
-          titles={["A", "S", "D", "F", "H"]}
+          titles={["A", "S", "D", "F", "G"]}
           clicked={keyClicked}
         />
       </div>
