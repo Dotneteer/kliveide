@@ -7,10 +7,10 @@ import z80_assembly_meta from "../../../pages/z80-assembly/_meta.ts";
 export const pageMap = [{
   data: meta
 }, {
-  name: "command-reference",
-  route: "/command-reference",
+  name: "commands-reference",
+  route: "/commands-reference",
   frontMatter: {
-    "sidebarTitle": "Command Reference"
+    "sidebarTitle": "Commands Reference"
   }
 }, {
   name: "getting-started",
