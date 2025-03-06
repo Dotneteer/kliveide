@@ -151,10 +151,11 @@ const BreakpointsPanel = () => {
                   ioRead={bp.ioRead}
                   ioWrite={bp.ioWrite}
                   ioMask={bp.ioMask}
+                  showType
                 />
                 <LabelSeparator width={4} />
                 {bp.resolvedAddress !== undefined && (
-                  <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={72} />
+                  <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
                 )}
                 <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
                 {bp.address !== undefined && <Label text="" width={40} />}
