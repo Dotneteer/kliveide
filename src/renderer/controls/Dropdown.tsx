@@ -34,6 +34,10 @@ export default function Dropdown({
     onChanged?.(value);
   };
 
+  useEffect(() => {
+    setSelectedValue(initialValue);
+  }, [initialValue]);
+
   // --- Use a root element that is the theme root
   useEffect(() => {
     if (theme ) {

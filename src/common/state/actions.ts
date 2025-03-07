@@ -255,11 +255,6 @@ export const displayDialogAction: ActionCreator = (
   payload: { index, value }
 });
 
-export const setRestartTarget: ActionCreator = (id: string) => ({
-  type: "SET_RESTART_TARGET",
-  payload: { id }
-});
-
 export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
   type: "SET_IDE_FONT_SIZE",
   payload: { numValue }
@@ -405,3 +400,12 @@ export const incBuildFileVersionAction: ActionCreator = () => ({
   type: "INC_BUILD_FILE_VERSION"
 });
 
+export const setIdeDisableAutoOpenBuildRootAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_IDE_DISABLE_AUTO_OPEN_BUILD_ROOT",
+  payload: { flag }
+});
+
+export const setIdeDisableAutoOpenProjectAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_IDE_DISABLE_AUTO_OPEN_PROJECT",
+  payload: { flag }
+});

@@ -24,7 +24,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
-import { appSettings, saveAppSettings } from "./settings";
+import { AppSettings, appSettings, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -373,6 +373,10 @@ class MainMessageProcessor {
       return null;
     }
     return parsed.assemblyLines[0];
+  }
+
+  async getAppSettings(): Promise<AppSettings> {
+    return appSettings;
   }
 }
 

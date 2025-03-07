@@ -6,9 +6,15 @@ import type { WindowState } from "./WindowStateManager";
 import { app } from "electron";
 import { mainStore } from "./main-store";
 import { getRecentProjects, setRecentProjects } from "./projects";
+import { IdeProject } from "@common/state/AppState";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive.settings";
+
+export type IdeSettings = {
+  disableAutoOpenBuildRoot?: boolean;
+  disableAutoOpenProject?: boolean;
+}
 
 export type AppSettings = {
   windowStates?: {
@@ -18,6 +24,7 @@ export type AppSettings = {
     emuZoomFactor?: number;
     ideZoomFactor?: number;
   };
+  ideSettings?: IdeSettings;
   startScreenDisplayed?: boolean;
   theme?: string;
   showKeyboard?: boolean;
@@ -43,6 +50,7 @@ export type AppSettings = {
   excludedProjectItems?: string[];
   keyMappingFile?: string;
   userSettings?: Record<string, any>;
+  project?: IdeProject;
   recentProjects?: string[];
 };
 
@@ -65,6 +73,7 @@ export function saveAppSettings (): void {
     const state = mainStore.getState();
     appSettings.startScreenDisplayed = state.startScreenDisplayed;
     appSettings.theme = state.theme;
+    appSettings.ideSettings = state.ideSettings;
     appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
     appSettings.showInstantScreen = state.emuViewOptions?.showInstantScreen ?? false;
     appSettings.keyboardLayout = state.emuViewOptions?.keyboardLayout;
@@ -84,6 +93,7 @@ export function saveAppSettings (): void {
     appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
     appSettings.media = state.media ?? {};
     appSettings.keyMappingFile = state.keyMappingFile;
+    appSettings.project = { folderPath: state.project?.folderPath };
     appSettings.recentProjects = getRecentProjects();    
   }
 

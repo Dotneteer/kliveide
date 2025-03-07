@@ -364,12 +364,13 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           value={autoRefresh}
           label="Follow PC"
           title="Follow the changes of PC"
-          clicked={(v) => {
+          clicked={async (v) => {
             setAutoRefresh(v);
             if (v) {
               setToScroll(0);
             }
             setScrollVersion(scrollVersion + 1);
+            await refreshDisassembly();
           }}
         />
         <SmallIconButton

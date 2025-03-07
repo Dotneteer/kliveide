@@ -5,6 +5,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { PANE_ID_EMU } from "../../common/integration/constants";
+import { IdeSettings } from "@main/settings";
 
 /**
  * Represents the state of the entire application
@@ -23,6 +24,7 @@ export type AppState = {
   theme?: string;
   ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;
+  ideSettings?: IdeSettings;
   emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   media?: MediaState;
@@ -78,7 +80,6 @@ export type IdeView = {
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
   dialogData?: any;
-  restartTarget?: string;
 };
 
 export type EmulatorState = {
@@ -106,11 +107,11 @@ export type IdeProject = {
   folderPath?: string | null;
   isKliveProject?: boolean;
   buildRoots?: string[];
-  projectFileVersion: number;
-  projectViewStateVersion: number;
+  projectFileVersion?: number;
+  projectViewStateVersion?: number;
   excludedItems?: string[];
-  hasBuildFile?:boolean;
-  buildFileVersion: number;
+  hasBuildFile?: boolean;
+  buildFileVersion?: number;
 };
 
 /**
@@ -176,6 +177,7 @@ export const initialAppState: AppState = {
     showStatusBar: true,
     showKeyboard: false
   },
+  ideSettings: {},
   emulatorState: {
     config: {},
     machineSpecific: {},

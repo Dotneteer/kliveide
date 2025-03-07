@@ -120,12 +120,6 @@ export function ideViewReducer (
         dialogData: payload?.value
       };
 
-    case "SET_RESTART_TARGET":
-      return {
-        ...state,
-        restartTarget: payload?.id
-      };
-
     case "INC_DOC_HUB_SERVICE_VERSION": {
       const versions = { ...state.documentHubState };
       versions[payload!.index!] = (versions[payload!.index!] ?? 0) + 1;

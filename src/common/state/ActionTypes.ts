@@ -83,7 +83,6 @@ export interface ActionTypes {
   INC_INJECTION_VERSION: null;
   SYNC_SOURCE_BREAKPOINTS: null;
 
-  SET_RESTART_TARGET: null;
   APPLY_PROJECT_SETTING: null;
   APPLY_USER_SETTING: null;
   SAVE_USER_SETTINGS: null;
@@ -96,4 +95,7 @@ export interface ActionTypes {
   INC_EXPLORER_VIEW_VERSION: null;
 
   SET_SCRIPTS_STATUS: null;
+
+  SET_IDE_DISABLE_AUTO_OPEN_BUILD_ROOT: null;
+  SET_IDE_DISABLE_AUTO_OPEN_PROJECT: null;
 }

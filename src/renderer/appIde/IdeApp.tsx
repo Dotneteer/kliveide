@@ -22,7 +22,8 @@ import {
   selectActivityAction,
   setToolsAction,
   activateToolAction,
-  displayDialogAction
+  displayDialogAction,
+  resetCompileAction
 } from "@state/actions";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
@@ -113,6 +114,7 @@ import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 import { ShellCommand } from "./commands/ShellCommand";
 import { FullPanel } from "@renderer/controls/new/Panels";
+import { createMainApi } from "@common/messaging/MainApi";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -185,6 +187,25 @@ const IdeApp = () => {
       console.log("App path: ", appPath);
       initializeMonaco(appPath);
     }
+
+    // --- It is time to initialize the IDE
+    (async () => {
+      let state = store.getState();
+      const mainApi = createMainApi(messenger);
+      if (!state.ideSettings.disableAutoOpenProject) {
+        const settings = await mainApi.getAppSettings();
+        const projectPath = settings?.project?.folderPath;
+        if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
+          // --- Let's load the last propject
+          await mainApi.openFolder(projectPath);
+          state = store.getState();
+          const buildRoot = state.project?.buildRoots?.[0];
+          if (!(settings?.ideSettings?.disableAutoOpenBuildRoot ?? false) && buildRoot) {
+            // --- Open the build root file
+          }
+        }
+      }
+    })();
   }, [appPath]);
 
   useEffect(() => {

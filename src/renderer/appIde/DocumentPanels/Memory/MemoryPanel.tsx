@@ -48,6 +48,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [banksView, setBanksView] = useState<boolean>(false);
   const [displayBankMatrix, setDisplayBankMatrix] = useState<boolean>(false);
   const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
+  const allowRefresh = useRef(true);
 
   // --- Read the view state of the document
   const viewState = useRef(
@@ -139,6 +140,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- This function refreshes the memory
   const refreshMemoryView = async () => {
     if (refreshInProgress.current) return;
+    if (!allowRefresh.current) return;
     refreshInProgress.current = true;
     try {
       // --- Obtain the memory contents
@@ -213,7 +215,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     vlApi.current?.scrollToIndex(Math.floor(topIndex), {
       align: "start"
     });
-  }, [scrollVersion, memoryItems, topIndex]);
+  }, [scrollVersion, memoryItems]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -281,10 +283,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           label="Go To"
           clearOnEnter={true}
           decimalView={decimalView}
+          onGotFocus={() => {
+            allowRefresh.current = false;
+          }}
           onAddressSent={async (address) => {
             setLastJumpAddress(address);
             setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
             setScrollVersion(scrollVersion + 1);
+            allowRefresh.current = true;
           }}
         />
       </>
