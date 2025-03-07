@@ -66,6 +66,12 @@ export const pageMap = [{
       "sidebarTitle": "File Extensions"
     }
   }, {
+    name: "ide-startup",
+    route: "/howto/ide-startup",
+    frontMatter: {
+      "sidebarTitle": "Ide Startup"
+    }
+  }, {
     name: "instant-screen",
     route: "/howto/instant-screen",
     frontMatter: {
