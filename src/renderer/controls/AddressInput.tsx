@@ -9,6 +9,7 @@ type Props = {
   clearOnEnter?: boolean;
   decimalView: boolean;
   onAddressSent?: (addr: number) => Promise<void>;
+  onGotFocus?: () => void;
 };
 
 export const AddressInput = ({
@@ -16,7 +17,8 @@ export const AddressInput = ({
   tooltip,
   clearOnEnter = true,
   decimalView,
-  onAddressSent
+  onAddressSent,
+  onGotFocus,
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>();
   const spanRef = useTooltipRef();
@@ -56,6 +58,7 @@ export const AddressInput = ({
         maxLength={radix === 10 ? 5 : 4}
         onBeforeInput={handleBeforeInput}
         onKeyDown={handleKeyDown}
+        onFocus={() => onGotFocus?.()}
       />
       {tooltip && (
         <TooltipFactory
