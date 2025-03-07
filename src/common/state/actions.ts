@@ -255,11 +255,6 @@ export const displayDialogAction: ActionCreator = (
   payload: { index, value }
 });
 
-export const setRestartTarget: ActionCreator = (id: string) => ({
-  type: "SET_RESTART_TARGET",
-  payload: { id }
-});
-
 export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
   type: "SET_IDE_FONT_SIZE",
   payload: { numValue }

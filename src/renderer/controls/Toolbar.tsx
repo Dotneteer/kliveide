@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import {
   muteSoundAction,
   setFastLoadAction,
-  setRestartTarget,
   showKeyboardAction,
   showInstantScreenAction,
   syncSourceBreakpointsAction
@@ -97,7 +96,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   );
 
   const storeDispatch = useDispatch();
-  const restartTarget = useSelector((s) => s.ideView?.restartTarget ?? "machine");
 
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
@@ -132,12 +130,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         enable={canStart}
         clicked={async () => {
           if (mayInjectCode && !!currentStartOption.cmd) {
-            storeDispatch(setRestartTarget("project"));
             const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
             await ideCommandsService.executeCommand(currentStartOption.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
           } else {
-            storeDispatch(setRestartTarget("machine"));
             await emuApi.issueMachineCommand(currentStartOption.value as any);
           }
         }}
@@ -201,20 +197,11 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             state === MachineControllerState.Paused)
         }
         clicked={async () => {
-          switch (restartTarget) {
-            case "project": {
-              if (kliveProjectLoaded) {
-                ideApi.executeCommand("outp build");
-                ideApi.executeCommand(isDebugging ? "debug" : "run");
-                break;
-              }
-            }
-
-            // case 'machine':
-            default: {
-              await emuApi.issueMachineCommand("restart");
-              break;
-            }
+          if (ide && kliveProjectLoaded) {
+            ideApi.executeCommand("outp build");
+            ideApi.executeCommand(isDebugging ? "debug" : "run");
+          } else {
+            await emuApi.issueMachineCommand("restart");
           }
         }}
       />

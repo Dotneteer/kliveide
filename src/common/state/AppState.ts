@@ -80,7 +80,6 @@ export type IdeView = {
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
   dialogData?: any;
-  restartTarget?: string;
 };
 
 export type EmulatorState = {

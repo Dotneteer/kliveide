@@ -32,7 +32,6 @@ import {
   setIdeFontSizeAction,
   dimMenuAction,
   setVolatileDocStateAction,
-  setRestartTarget,
   showKeyboardAction,
   setKeyMappingsAction,
   setIdeDisableAutoOpenBuildRootAction,
@@ -639,7 +638,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machineWaits,
       accelerator: "F5",
       click: async () => {
-        mainStore.dispatch(setRestartTarget("machine"));
         await getEmuApi().issueMachineCommand("start");
       }
     },
@@ -667,8 +665,12 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machineRestartable,
       accelerator: "Shift+F4",
       click: async () => {
-        mainStore.dispatch(setRestartTarget("machine"));
-        await getEmuApi().issueMachineCommand("restart");
+        if (appState.ideFocused && appState.project.isKliveProject) {
+          getIdeApi().executeCommand("outp build");
+          getIdeApi().executeCommand(appState.emulatorState?.isDebugging ? "debug" : "run");
+        } else {
+          await getEmuApi().issueMachineCommand("restart");
+        }
       }
     },
     { type: "separator" },
@@ -678,7 +680,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       enabled: machineWaits,
       accelerator: "Ctrl+F5",
       click: async () => {
-        mainStore.dispatch(setRestartTarget("machine"));
         await getEmuApi().issueMachineCommand("debug");
       }
     },
@@ -851,7 +852,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         submenu: [
           {
             id: IDE_AUTO_OPEN_PROJECT,
-            label: "Open the last project when IDE starts",
+            label: "Open the last project at startup",
             type: "checkbox",
             checked: !appState.ideSettings?.disableAutoOpenProject,
             click: async (mi) => {
@@ -861,7 +862,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           },
           {
             id: IDE_AUTO_OPEN_BUILD_ROOT,
-            label: "Open the build root when project opens",
+            label: "Open the build root with the project",
             type: "checkbox",
             checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
             click: async (mi) => {

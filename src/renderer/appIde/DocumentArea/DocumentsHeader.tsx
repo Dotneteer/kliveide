@@ -10,7 +10,7 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incProjectViewStateVersionAction, setRestartTarget } from "@common/state/actions";
+import { incProjectViewStateVersionAction } from "@common/state/actions";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
@@ -292,7 +292,6 @@ const BuildRootCommandBar = () => {
         title={"Inject code and start\nthe virtual machine"}
         disabled={compiling}
         clicked={async () => {
-          storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           const result = await ideCommandsService.executeCommand("run-build-function runCode", buildPane);
           setScriptId(result?.value);
@@ -305,7 +304,6 @@ const BuildRootCommandBar = () => {
         title={"Inject code and start\ndebugging"}
         disabled={compiling}
         clicked={async () => {
-          storeDispatch(setRestartTarget("project"));
           const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
           const result = await ideCommandsService.executeCommand("run-build-function debugCode", buildPane);
           setScriptId(result?.value);
