@@ -1,8 +1,26 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 export const TBBLUE_DEF_TRANSPARENT_COLOR = 0xe3;
+
+const defaultUlaColors = [
+  0x000, // 000_000_000
+  0x005, // 000_000_101
+  0x140, // 101_000_000
+  0x145, // 101_000_101
+  0x028, // 000_101_000
+  0x02d, // 000_101_101
+  0x168, // 101_101_000
+  0x16d, // 101_101_101
+  0x000, // 000_000_000
+  0x007, // 000_000_111
+  0x1c0, // 111_000_000
+  0x1c7, // 111_000_111
+  0x038, // 000_111_000
+  0x03f, // 000_111_111
+  0x1f8, // 111_111_000
+  0x1ff //  111_111_111
+];
 
 export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   private _paletteIndex: number;
@@ -31,6 +49,12 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   reset(): void {
     this._paletteIndex = 0;
+    this._disablePaletteWriteAutoInc = false;
+    this._selectedPalette = 0;
+    this._secondUlaPalette = false;
+    this._secondLayer2Palette = false;
+    this._secondSpritePalette = false;
+    this._enableUlaNextMode = false;
     this._secondWrite = false;
     this.storedPaletteValue = 0;
     for (let i = 0; i < 256; i++) {
@@ -43,25 +67,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       this.spriteFirst[i] = this.spriteSecond[i] = color;
       this.tilemapFirst[i] = this.tilemapSecond[i] = color;
     }
-
-    const defaultUlaColors = [
-      0x000, // 000_000_000
-      0x005, // 000_000_101
-      0x140, // 101_000_000
-      0x145, // 101_000_101
-      0x028, // 000_101_000
-      0x02d, // 000_101_101
-      0x168, // 101_101_000
-      0x16d, // 101_101_101
-      0x000, // 000_000_000
-      0x007, // 000_000_111
-      0x1c0, // 111_000_000
-      0x1c7, // 111_000_111
-      0x038, // 000_111_000
-      0x03f, // 000_111_111
-      0x1f8, // 111_111_000
-      0x1ff //  111_111_111
-    ];
 
     // --- The ULA palette is a bit more complex, it repeats every 16 colors
     // --- Bright magenta is a transparent color by default (1C7H and 1C6H / 2 = E3H)
@@ -100,6 +105,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       this._paletteIndex = (this._paletteIndex + 1) & 0xff;
     }
     this._secondWrite = false;
+    this.updateUlaPalette();
   }
 
   get nextReg43Value(): number {
@@ -121,6 +127,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this._secondUlaPalette = (value & 0x02) !== 0;
     this._enableUlaNextMode = (value & 0x01) !== 0;
     this._secondWrite = false;
+    this.updateUlaPalette();
   }
 
   get nextReg44Value(): number {
@@ -146,6 +153,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       }
     }
     this._secondWrite = !this._secondWrite;
+    this.updateUlaPalette();
   }
 
   get paletteIndex(): number {
@@ -198,6 +206,22 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
         return this.spriteSecond;
       default:
         return this.tilemapSecond;
+    }
+  }
+
+  private updateUlaPalette(): void {
+    if (this._selectedPalette === 0) {
+      this.machine.screenDevice.setCurrentUlaColorsFromPalette(
+        this.ulaFirst,
+        this._enableUlaNextMode,
+        this.ulaNextByteFormat
+      );
+    } else if (this._selectedPalette === 4) {
+      this.machine.screenDevice.setCurrentUlaColorsFromPalette(
+        this.ulaSecond,
+        this._enableUlaNextMode,
+        this.ulaNextByteFormat
+      );
     }
   }
 }

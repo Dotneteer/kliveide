@@ -532,11 +532,6 @@ export class NextIoPortManager {
   }
 
   writePort(port: number, value: number): void {
-    if (!excluded.some((e) => (port & e.mask) === e.port)) {
-      console.log(
-        `W ${toHexa4(port)}: ${toHexa2(value)} (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedRomMsb})`
-      );
-    }
     const descriptor = this.portMap.get(port);
     if (!descriptor) return;
 

@@ -4,6 +4,8 @@ import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration"
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
+import { zxNext9BitColorCodes } from "./PaletteDevice";
+import { toHexa8 } from "@renderer/appIde/services/ide-commands";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   displayTiming: number;
@@ -90,6 +92,39 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Stores attribute byte #2
   private _attrByte2 = 0;
+
+  // --- Current paper colors
+  currentPaperColors: number[] = [];
+
+  // --- Current ink colors
+  currentInkColors: number[] = [];
+
+  /**
+   * Set the current colors from the palette.
+   * @param palette Palette to set the colors from
+   * @param _ulaNextEnabled ULA Next is enabled
+   * @param _ulaInkColorMask ULA ink color mask
+   */
+  setCurrentUlaColorsFromPalette(
+    palette: number[],
+    _ulaNextEnabled: boolean,
+    _ulaInkColorMask: number
+  ): void {
+    this.currentInkColors.length = 0x100;
+    this.currentPaperColors.length = 0x100;
+    for (let i = 0; i < 0x100; i++) {
+      const bright = !!(i & 0x40);
+      const ink = i & 0x07;
+      const paper = (i & 0x38) >> 3;
+      let color = zxNext9BitColorCodes[palette[bright ? ink | 0x08 : ink]];
+      this.currentInkColors[i] =
+        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
+      color = zxNext9BitColorCodes[palette[bright ? paper | 0x08 : paper]];
+      this.currentPaperColors[i] =
+        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
+    }
+    // TODO: Implement this method for ULA Next
+  }
 
   /**
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
@@ -552,12 +587,19 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    */
   private getPixelColor(pixel: number, attr: number): number {
     return pixel
-      ? this._flashFlag
-        ? this.s_SpectrumColors[this._inkColorFlashOn[attr]]
-        : this.s_SpectrumColors[this._inkColorFlashOff[attr]]
-      : this._flashFlag
-        ? this.s_SpectrumColors[this._paperColorFlashOn[attr]]
-        : this.s_SpectrumColors[this._paperColorFlashOff[attr]];
+      ? attr & 0x80 && this._flashFlag
+        ? this.currentPaperColors[attr]
+        : this.currentInkColors[attr]
+      : attr & 0x80 && this._flashFlag
+        ? this.currentInkColors[attr]
+        : this.currentPaperColors[attr];
+    // return pixel
+    //   ? this._flashFlag
+    //     ? this.s_SpectrumColors[this._inkColorFlashOn[attr]]
+    //     : this.s_SpectrumColors[this._inkColorFlashOff[attr]]
+    //   : this._flashFlag
+    //     ? this.s_SpectrumColors[this._paperColorFlashOn[attr]]
+    //     : this.s_SpectrumColors[this._paperColorFlashOff[attr]];
   }
 
   private readScreenMemory(offset: number): number {
@@ -574,7 +616,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._pixelBuffer[addr + 1] =
       this._pixelBuffer[addr + 2] =
       this._pixelBuffer[addr + 3] =
-        this.s_SpectrumColors[this.borderColor];
+        this.currentPaperColors[this.borderColor << 3];
   }
 
   /**
@@ -587,7 +629,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._pixelBuffer[addr + 1] =
       this._pixelBuffer[addr + 2] =
       this._pixelBuffer[addr + 3] =
-        this.s_SpectrumColors[this.borderColor];
+        this.currentPaperColors[this.borderColor << 3];
     this._pixelByte1 = this.readScreenMemory(rt.pixelAddress);
   }
 
@@ -601,7 +643,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._pixelBuffer[addr + 1] =
       this._pixelBuffer[addr + 2] =
       this._pixelBuffer[addr + 3] =
-        this.s_SpectrumColors[this.borderColor];
+        this.currentPaperColors[this.borderColor << 3];
     this._attrByte1 = this.readScreenMemory(rt.attributeAddress);
   }
 
