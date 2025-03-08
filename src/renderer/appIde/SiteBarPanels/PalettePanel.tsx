@@ -6,6 +6,7 @@ import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useStateRefresh } from "../useStateRefresh";
 import classnames from "classnames";
+import { toHexa2 } from "../services/ide-commands";
 
 const noInfo: number[] = Array.from({ length: 0x100 }, () => 0);
 
@@ -77,17 +78,15 @@ type Props = {
 };
 const Palette = ({ title, palette, intiallyVisible, active }: Props) => {
   const [visible, setVisible] = useState(intiallyVisible);
-  const [showNineBits, setShowNineBits] = useState(false);
   return (
     <div className={styles.rows}>
       <div className={classnames(styles.cols, { [styles.active]: active })}>
         <div style={{ width: "140px" }}>
           <LabeledSwitch label={title} value={visible} clicked={(v) => setVisible(v)} />
         </div>
-        <LabeledSwitch label="Show 9 bits" value={false} clicked={(v) => setShowNineBits(v)} />
       </div>
       {visible && (
-        <NextPaletteViewer palette={palette} smallDisplay={true} use8Bit={!showNineBits} />
+        <NextPaletteViewer palette={palette} smallDisplay={true} />
       )}
     </div>
   );

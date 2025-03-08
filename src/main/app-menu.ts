@@ -862,7 +862,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           },
           {
             id: IDE_AUTO_OPEN_BUILD_ROOT,
-            label: "Open the build root with the project",
+            label: "Open the build root of the project",
             type: "checkbox",
             checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
             click: async (mi) => {
