@@ -235,7 +235,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
 
       default:
         this._commandIndex = 0;
-        console.log(`Unknown MMC command: ${this._lastCommand} at ${toHexa4(this.machine.pc)}`);
         break;
     }
   }

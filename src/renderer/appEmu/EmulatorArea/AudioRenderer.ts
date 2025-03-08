@@ -21,7 +21,7 @@ export async function getBeeperContext (
 ): Promise<AudioRendererInfo> {
   if (!beeperAudioContext) {
     beeperAudioContext = new AudioContext({ latencyHint: 0.01 });
-    beeperAudioContext.suspend();
+    await beeperAudioContext.suspend();
     await beeperAudioContext.audioWorklet.addModule(samplingWorklet);
     beeperWorklet = new AudioWorkletNode(
       beeperAudioContext,

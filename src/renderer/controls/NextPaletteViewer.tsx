@@ -16,7 +16,6 @@ import classnames from "classnames";
 type Props = {
   palette: number[];
   smallDisplay?: boolean;
-  use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
@@ -30,7 +29,6 @@ type Props = {
 export const NextPaletteViewer = ({
   palette,
   smallDisplay = false,
-  use8Bit = false,
   usePriority = false,
   transparencyIndex,
   allowSelection,
@@ -108,7 +106,6 @@ export const NextPaletteViewer = ({
             palette={palette}
             smallDisplay={smallDisplay}
             firstIndex={idx * 0x10}
-            use8Bit={use8Bit}
             usePriority={usePriority}
             transparencyIndex={transparencyIndex}
             allowSelection={allowSelection}
@@ -141,7 +138,6 @@ type PaletteRowProps = {
   firstIndex: number;
   palette: number[];
   smallDisplay?: boolean;
-  use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
@@ -155,7 +151,6 @@ const PaletteRow = ({
   firstIndex,
   palette,
   smallDisplay,
-  use8Bit,
   usePriority,
   transparencyIndex,
   allowSelection,
@@ -184,7 +179,6 @@ const PaletteRow = ({
           index={firstIndex + idx}
           value={palette[firstIndex + idx]}
           smallDisplay={smallDisplay}
-          use8Bit={use8Bit}
           usePriority={usePriority}
           transparencyIndex={transparencyIndex}
           allowSelection={allowSelection}
@@ -202,7 +196,6 @@ type PaletteItemProps = {
   index: number;
   value: number;
   smallDisplay?: boolean;
-  use8Bit?: boolean;
   usePriority?: boolean;
   transparencyIndex?: number;
   allowSelection?: boolean;
@@ -216,7 +209,6 @@ const PaletteItem = ({
   index,
   value,
   smallDisplay,
-  use8Bit,
   usePriority,
   transparencyIndex,
   allowSelection,
@@ -241,13 +233,13 @@ const PaletteItem = ({
     : { x: 7, y: 6, width: 10, height: 10 };
 
   useInitialize(() => {
-    const [rC, gC, bC] = getRgbPartsForPaletteCode(value, use8Bit);
+    const [rC, gC, bC] = getRgbPartsForPaletteCode(value);
     setR(rC);
     setG(gC);
     setB(bC);
   });
 
-  const color = getCssStringForPaletteCode(value, use8Bit);
+  const color = getCssStringForPaletteCode(value);
   const midColor = getLuminanceForPaletteCode(value) < 3.5 ? "white" : "black";
   const hasPriority = usePriority && !!(value & 0x8000);
   return (

@@ -38,7 +38,7 @@ export const LabeledSwitch = ({ label, title, value, clicked }: Props) => {
           setSwitchState(v);
           clicked?.(v);
         }}
-        checked={switchState}
+        checked={switchState ?? false}
         checkedIcon={false}
         uncheckedIcon={false}
         height={14}
