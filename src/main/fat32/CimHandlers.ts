@@ -81,6 +81,7 @@ export class CimHandler {
       const buffer = new Uint8Array(2);
       buffer[0] = currentClusters & 0xff;
       buffer[1] = (currentClusters >> 8) & 0xff;
+      fs.writeSync(fd, buffer, 0, 2, 0x10 + 2 * clusterIndex);
       fs.writeSync(fd, buffer, 0, 2, 0x0c);
 
       const newCluster = new Uint8Array(this._cimInfo.clusterSize * 0x1_0000);

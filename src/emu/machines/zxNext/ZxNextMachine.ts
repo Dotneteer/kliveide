@@ -760,12 +760,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       case "sd-write":
         await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
         this.sdCardDevice.setWriteResponse();
-        //this.sdCardDevice.writeSector(frameCommand.sector, frameCommand.data);
         break;
       case "sd-read":
         const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
         this.sdCardDevice.setReadResponse(sectorData);
-        //this.sdCardDevice.readSector(frameCommand.sector);
         break;
       default:
         console.log("Unknown frame command", frameCommand);

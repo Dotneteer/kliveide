@@ -5,7 +5,6 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { zxNext9BitColorCodes } from "./PaletteDevice";
-import { toHexa8 } from "@renderer/appIde/services/ide-commands";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   displayTiming: number;
@@ -145,28 +144,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     attributeDataPrefetchTime: 1,
     contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
   };
-
-  /**
-   * This table defines the ARGB colors for the 16 available colors on the ZX Spectrum 48K model.
-   */
-  private readonly s_SpectrumColors: number[] = [
-    0xff000000, // Black
-    0xffaa0000, // Blue
-    0xff0000aa, // Red
-    0xffaa00aa, // Magenta
-    0xff00aa00, // Green
-    0xffaaaa00, // Cyan
-    0xff00aaaa, // Yellow
-    0xffaaaaaa, // White
-    0xff000000, // Bright Black
-    0xffff0000, // Bright Blue
-    0xff0000ff, // Bright Red
-    0xffff00ff, // Bright Magenta
-    0xff00ff00, // Bright Green
-    0xffffff00, // Bright Cyan
-    0xff00ffff, // Bright Yellow
-    0xffffffff // Bright White
-  ];
 
   /**
    * Get or set the current border color.
