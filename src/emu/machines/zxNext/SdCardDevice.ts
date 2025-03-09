@@ -2,7 +2,6 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { calculateCRC7 } from "@emu/utils/crc";
 import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 const READ_DELAY = 56;
 
