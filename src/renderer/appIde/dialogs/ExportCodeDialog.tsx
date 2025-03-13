@@ -128,10 +128,10 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         startAddress
       })
     );
-    (async() => {
+    (async () => {
       await mainApi.saveProject();
       dispatch(incProjectFileVersionAction());
-    })()
+    })();
   }, [
     formatId,
     exportFolder,
@@ -152,7 +152,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
       isOpen={true}
       fullScreen={false}
       width={500}
-      translateY={-100}
+      translateY={0}
       onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Export"
       primaryEnabled={true}
@@ -186,7 +186,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
             result.finalMessage ?? "Code successfully exported."
           );
         } else {
-          // --- Analyze the message and 
+          // --- Analyze the message and
           let message = result.finalMessage;
           if (message.includes("-addr")) {
             message = "Code start address must be between 16384 and 65535.";
@@ -258,85 +258,94 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           }}
         />
       </DialogRow>
-      <DialogRow label="Startup border:">
-        <div className={styles.dropdownWrapper}>
-          <Dropdown
-            placeholder="Select..."
-            options={borderIds}
-            initialValue={borderId}
-            width={92}
-            onChanged={(option) => setBorderId(option)}
+      {formatId !== "hex" && (
+        <DialogRow rows={true}>
+          <Checkbox
+            initialValue={startBlock}
+            right={true}
+            label="Create BASIC loader"
+            onChange={(v) => setStartBlock(v)}
           />
-        </div>
-      </DialogRow>
-      <DialogRow label="Screen file:">
-        <TextInput
-          value={screenFilename}
-          isValid={screenFileIsValid}
-          buttonIcon="file-code"
-          buttonTitle="Select the screen file"
-          buttonClicked={async () => {
-            const file = await mainApi.showOpenFileDialog(
-              [
-                { name: "Tape files", extensions: ["tap", "tzx"] },
-                { name: "Screen files", extensions: ["scr"] },
-                { name: "All Files", extensions: ["*"] }
-              ],
-              EXPORT_CODE_FOLDER_ID
-            );
-            if (file) {
-              setScreenFilename(file);
-            }
-            return file;
-          }}
-          valueChanged={(val) => {
-            setScreenFilename(val);
-            return false;
-          }}
-        />
-      </DialogRow>
-      <DialogRow rows={true}>
-        <Checkbox
-          initialValue={startBlock}
-          right={true}
-          label="Create startup block"
-          onChange={(v) => setStartBlock(v)}
-        />
-        <Checkbox
-          initialValue={addClear}
-          right={true}
-          label="Add CLEAR"
-          onChange={(v) => setAddClear(v)}
-          enabled={startBlock}
-        />
-        <Checkbox
-          initialValue={addPause}
-          right={true}
-          label="Add PAUSE 0"
-          onChange={(v) => setAddPause(v)}
-          enabled={startBlock}
-        />
-        <Checkbox
-          initialValue={singleBlock}
-          right={true}
-          label="Use a single code block"
-          onChange={(v) => setSingleBlock(v)}
-          enabled={startBlock}
-        />
-      </DialogRow>
-      <DialogRow label="Code start address:">
-        <TextInput
-          value={startAddress.toString()}
-          maxLength={5}
-          width={60}
-          numberOnly
-          isValid={startAddressIsValid}
-          valueChanged={(val) => {
-            setStartAddress(val);
-            return false;
-          }}
-        />
-      </DialogRow>
+        </DialogRow>
+      )}
+      {formatId !== "hex" && startBlock && (
+        <>
+          <DialogRow label="Startup options:" />
+          <DialogRow rows={true}>
+            <Checkbox
+              initialValue={addClear}
+              right={true}
+              label="Add CLEAR"
+              onChange={(v) => setAddClear(v)}
+              enabled={startBlock}
+            />
+            <Checkbox
+              initialValue={addPause}
+              right={true}
+              label="Add PAUSE 0"
+              onChange={(v) => setAddPause(v)}
+              enabled={startBlock}
+            />
+            <Checkbox
+              initialValue={singleBlock}
+              right={true}
+              label="Use a single code block"
+              onChange={(v) => setSingleBlock(v)}
+              enabled={startBlock}
+            />
+          </DialogRow>
+          <DialogRow label="Set border color:">
+            <div className={styles.dropdownWrapper}>
+              <Dropdown
+                placeholder="Select..."
+                options={borderIds}
+                initialValue={borderId}
+                width={92}
+                onChanged={(option) => setBorderId(option)}
+              />
+            </div>
+          </DialogRow>
+          <DialogRow label="Screen file:">
+            <TextInput
+              value={screenFilename}
+              isValid={screenFileIsValid}
+              buttonIcon="file-code"
+              buttonTitle="Select the screen file"
+              buttonClicked={async () => {
+                const file = await mainApi.showOpenFileDialog(
+                  [
+                    { name: "Tape files", extensions: ["tap", "tzx"] },
+                    { name: "Screen files", extensions: ["scr"] },
+                    { name: "All Files", extensions: ["*"] }
+                  ],
+                  EXPORT_CODE_FOLDER_ID
+                );
+                if (file) {
+                  setScreenFilename(file);
+                }
+                return file;
+              }}
+              valueChanged={(val) => {
+                setScreenFilename(val);
+                return false;
+              }}
+            />
+          </DialogRow>
+          <DialogRow label="Code start address:">
+            <TextInput
+              value={startAddress.toString()}
+              maxLength={5}
+              width={60}
+              numberOnly
+              isValid={startAddressIsValid}
+              valueChanged={(val) => {
+                setStartAddress(val);
+                return false;
+              }}
+            />
+          </DialogRow>
+        </>
+      )}
     </Modal>
   );
 };

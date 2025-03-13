@@ -193,7 +193,6 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         screenFile,
         true
       )) as Uint8Array;
-      console.log("scrContent", scrContent);
       context.service.projectService.forgetFile(screenFile);
       screenFileType = checkScreenFileType(scrContent);
       if (!screenFileType) {
@@ -234,11 +233,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     if (args["-as"]) {
       const autoStartBlocks = createAutoStartBlock(output as CompilerOutput);
       blocksToSave.push(...autoStartBlocks);
-    }
 
-    // --- Step #8: Save all the blocks
-    if (screenBlocks) {
-      blocksToSave.push(...screenBlocks);
+      // --- Step #8: Save all the blocks
+      if (screenBlocks) {
+        blocksToSave.push(...screenBlocks);
+      }
     }
 
     blocksToSave.push(...codeBlocks);

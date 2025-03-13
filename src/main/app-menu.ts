@@ -778,12 +778,14 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               true
             );
             if (commandResult.success && commandResult.value) {
-              await executeIdeCommand(
-                ideWindow,
-                `script-output ${commandResult.value}`,
-                undefined,
-                true
-              );
+              if (task.id !== "exportCode") {
+                await executeIdeCommand(
+                  ideWindow,
+                  `script-output ${commandResult.value}`,
+                  undefined,
+                  true
+                );
+              }
             }
           }
         });

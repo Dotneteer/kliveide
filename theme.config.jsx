@@ -6,9 +6,7 @@ export default {
   </div>,
   
   logoLink: "https://dotneteer.github.io/kliveide",
-  editLink: {
-    text: null
-  },
+  editLink: false,
   feedback: {
     content: null
   },

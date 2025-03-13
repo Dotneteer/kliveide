@@ -75,7 +75,6 @@ class ScriptService implements IScriptService {
     filename: string,
     speciality: string
   ): Promise<number> {
-    console.log("Running script text", scriptText);
     const scriptInfo = await createMainApi(this.messenger).startScript(
       filename,
       scriptFunction,
