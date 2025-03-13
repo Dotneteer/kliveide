@@ -11,7 +11,8 @@ import { outputPaneRegistry } from "@renderer/registry";
 import {
   activateOutputPaneAction,
   activateToolAction,
-  setVolatileDocStateAction
+  setVolatileDocStateAction,
+  showToolPanelsAction
 } from "@state/actions";
 import {
   MEMORY_EDITOR,
@@ -40,8 +41,10 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
     }
 
     // --- Select the panel
-    context.store.dispatch(activateOutputPaneAction(args.paneId));
-    context.store.dispatch(activateToolAction("output"));
+    const dispatch = context.store.dispatch;
+    dispatch(showToolPanelsAction(true));
+    dispatch(activateOutputPaneAction(args.paneId));
+    dispatch(activateToolAction("output"));
 
     // --- Done.
     writeSuccessMessage(context.output, `Output panel ${args.paneId} is displayed.`);

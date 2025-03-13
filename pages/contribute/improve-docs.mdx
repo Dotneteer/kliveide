@@ -1,0 +1,56 @@
+# Improve the Documentation
+
+Though I try to make high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems.
+
+You can help me by fixing these issues or submitting new content.
+
+Klive generates its documentation using [Nextra](https://nextra.site/). In this article, I help you contribute to improving documentation. 
+
+Follow the steps to [get the source code](./get-source).
+
+## Running the Documentation Site Locally
+
+Start the documentation site locally on your development machine with the `npm run doc:dev` command, then visit http://localhost:3000 in your browser.
+
+This site uses hot module reloading (HMR), so as you modify the documentation, updates are displayed live in your browser. When you have completed all modifications, create a GitHub Pull Request from your working branch to Klive's `master` branch to let me review and merge your changes.
+
+## Documentation Structure
+
+You can find these documentation-related folders within the project's root:
+- **`pages`**: The source documentation files using Nextra and the `.mdx` (extended markdown) format. Documentation lives in `.mdx` files. The content of this folder represents the hierarchy of the documentation. Each folder describes its content in a `_meta.ts` file (you'll understand them; they map the individual files with the table of contents).
+- **`public/images`**: The image resources of the documentation pages (organized hierarchically). 
+The project contains some other Nextra-related files; please do not touch them. If you have to do so, please add some comments to your submitted PR so that I can understand your intention.
+
+## Common Documentation Tasks
+
+### Adding a New Page
+
+1. Create a new `.mdx` page in the appropriate folder. Use a short name representing the contents you intend to describe.
+2. Optionally, you can create a new folder and add documentation files there.
+3. Ensure you update the `_meta.ts` file in the new article folder with a suitable title. Place the new article in the location where it fits the best among the already existing articles.
+
+You can consider existing articles as examples.
+
+### Adding images
+
+You can add images following these steps:
+
+1. Add the following line to the top of the `.mdx` file:
+```js
+import Image from 'next/image'
+```
+
+2. Copy the image to add into the right folder within `public/images` (under the project's root folder).
+Import the image from that folder into your `.mdx` file like in this sample:
+
+```js
+import memView from '../../public/images/working-with-ide/mem-view.png'
+```
+
+3. Use the `<Image>` tag to place your image in an article:
+
+```xml
+<Image src={memView} alt="Memory view" width={512} style={{marginTop: 24}} />
+```
+
+If you want to change the default 24px margin, update the `style` attribute accordingly. To set the image's display dimensions, use the `width` or `height` (or both) attributes.

@@ -187,6 +187,7 @@ export class RunBuildScriptCommand extends IdeCommandBase<RunBuildScriptCommandA
 
       let id = 0;
       try {
+        context.output.clear();
         id = await context.service.scriptService.runScriptText(
           script,
           functionName,
