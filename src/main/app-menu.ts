@@ -443,6 +443,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: TOGGLE_PRIMARY_BAR_RIGHT,
         label: "Move Primary Side Bar Right",
         type: "checkbox",
+        enabled: !!appState.ideViewOptions.showSidebar,
         checked: appState.ideViewOptions.primaryBarOnRight,
         visible: ideTraits.isFocused,
         click: async (mi) => {
@@ -450,9 +451,10 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           await saveKliveProject();
         }
       },
+      { type: "separator" },
       {
         id: TOGGLE_TOOL_PANELS,
-        label: "Show Tool Panels",
+        label: "Show Commands and Output",
         type: "checkbox",
         checked: appState.ideViewOptions.showToolPanels,
         visible: ideTraits.isFocused,
@@ -467,8 +469,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       {
         id: TOGGLE_TOOLS_TOP,
-        label: "Move Tool Panels Top",
+        label: "Move Commands and Output to the top",
         type: "checkbox",
+        enabled: !!appState.ideViewOptions.showToolPanels,
         checked: appState.ideViewOptions.toolPanelsOnTop,
         visible: ideTraits.isFocused,
         click: async (mi) => {
@@ -478,8 +481,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       {
         id: MAXIMIZE_TOOLS,
-        label: "Maximize Tool Panels",
+        label: "Maximize Commands and Output",
         type: "checkbox",
+        enabled: !!appState.ideViewOptions.showToolPanels,
         checked: appState.ideViewOptions.maximizeTools,
         visible: ideTraits.isFocused,
         click: async (mi) => {
@@ -491,11 +495,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           await saveKliveProject();
         }
       },
-      {
-        type: "separator",
-        visible: ideTraits.isFocused
-      },
-      ...toolMenus,
       { type: "separator" },
       {
         id: THEMES,
