@@ -162,6 +162,12 @@ export const pageMap = [{
       "sidebarTitle": "Editing Code"
     }
   }, {
+    name: "exporting-code",
+    route: "/working-with-ide/exporting-code",
+    frontMatter: {
+      "sidebarTitle": "Exporting Code"
+    }
+  }, {
     name: "ide-settings",
     route: "/working-with-ide/ide-settings",
     frontMatter: {
