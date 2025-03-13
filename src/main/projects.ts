@@ -99,7 +99,9 @@ export async function createKliveProject(
     const projectFile = path.join(fullProjectFolder, PROJECT_FILE);
 
     // --- Set up the initial project structure
-    const project = { ...(await getKliveProjectStructure()), ...mergedProps };
+    const projectStructure = await getKliveProjectStructure();
+    projectStructure.debugger = { breakpoints: [] };
+    const project = { ...projectStructure, ...mergedProps };
     project.machineType = machineId;
     project.modelId = modelId;
     project.config = getModelConfig(machineId, modelId);
@@ -186,7 +188,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
-      disp(setExportDialogInfoAction(projectStruct.exportDialog))
+      disp(setExportDialogInfoAction(projectStruct.exportDialog));
 
       // --- Restore breakpoints
       await getEmuApi().eraseAllBreakpoints();

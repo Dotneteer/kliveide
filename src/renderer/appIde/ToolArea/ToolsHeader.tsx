@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { toolPanelRegistry } from "@renderer/registry";
 import {
   incToolCommandSeqNoAction,
+  maximizeToolsAction,
   showToolPanelsAction,
   toolPanelsOnTopAction
 } from "@state/actions";
@@ -20,6 +21,7 @@ type Props = {
 export const ToolsHeader = ({ tool, topPosition }: Props) => {
   const tools = useSelector(s => s.ideView?.tools);
   const activeTool = useSelector(s => s.ideView?.activeTool);
+  const maximized = useSelector(s => s.ideViewOptions.maximizeTools);
   const panelRenderer = toolPanelRegistry.find(p => p.id === tool?.id);
   const headerElement = panelRenderer?.headerRenderer
     ? createElement(panelRenderer.headerRenderer)
@@ -54,9 +56,10 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
           }}
         />
         <TabButton
-          iconName='close'
+          iconName={maximized ? "chevron-down" : 'chevron-up'}
+          title={(maximized ? "Restore" : "Maximize") + " Command and Output"}
           useSpace={true}
-          clicked={() => dispatch(showToolPanelsAction(false))}
+          clicked={() => dispatch(maximizeToolsAction(!maximized))}
         />
       </div>
     </div>
