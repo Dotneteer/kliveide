@@ -26,7 +26,6 @@ export const AddressInput = ({
 
   const handleBeforeInput = (e: any) => {
     const typed = e.data;
-    console.log("typed");
     if (typed < "0" || typed > "9") {
       if (decimalView || ((typed < "A" || typed > "F") && (typed < "a" || typed > "f"))) {
         e.preventDefault();

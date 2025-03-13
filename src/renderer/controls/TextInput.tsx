@@ -11,6 +11,7 @@ type Props = {
   focusOnInit?: boolean;
   buttonIcon?: string;
   buttonTitle?: string;
+  numberOnly?: boolean;
   keyPressed?: (e: React.KeyboardEvent) => void;
   valueChanged?: (newValue: string) => boolean | undefined;
   buttonClicked?: (value: string) => Promise<string>;
@@ -24,6 +25,7 @@ export const TextInput = ({
   focusOnInit,
   buttonIcon,
   buttonTitle,
+  numberOnly,
   keyPressed,
   valueChanged,
   buttonClicked
@@ -52,6 +54,12 @@ export const TextInput = ({
           value={inputValue}
           maxLength={maxLength}
           spellCheck={false}
+          onBeforeInput={(e: any) => {
+            const typed = e.data;
+            if (numberOnly && (typed < "0" || typed > "9")) {
+              e.preventDefault();
+            }
+          }}
           onKeyDown={e => keyPressed?.(e)}
           onChange={e => {
             const newValue = e.target.value;

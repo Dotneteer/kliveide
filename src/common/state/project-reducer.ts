@@ -80,6 +80,12 @@ export function projectReducer(state: IdeProject, { type, payload }: Action): Id
         buildFileVersion: state.buildFileVersion + 1
       };
 
+    case "SET_IDE_EXPORT_DIALOG":
+      return {
+        ...state,
+        exportSettings: payload?.value
+      };
+
     default:
       return state;
   }

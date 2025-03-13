@@ -3,6 +3,7 @@ import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import { ExportDialogSettings as ExportDialogSettings, IdeSettings } from "@main/settings";
 
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"
@@ -114,10 +115,7 @@ export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
-export const setSideBarPanelExpandedAction: ActionCreator = (
-  id: string,
-  flag: boolean
-) => ({
+export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: boolean) => ({
   type: "SET_SIDEBAR_PANEL_EXPANDED",
   payload: { id, flag }
 });
@@ -144,10 +142,7 @@ export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   payload: { tools }
 });
 
-export const changeToolVisibilityAction: ActionCreator = (
-  id: string,
-  flag: boolean
-) => ({
+export const changeToolVisibilityAction: ActionCreator = (id: string, flag: boolean) => ({
   type: "CHANGE_TOOL_VISIBILITY",
   payload: { id, flag }
 });
@@ -177,9 +172,7 @@ export const setMachineConfigAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-export const setMachineStateAction: ActionCreator = (
-  state: MachineControllerState
-) => ({
+export const setMachineStateAction: ActionCreator = (state: MachineControllerState) => ({
   type: "SET_MACHINE_STATE",
   payload: { state }
 });
@@ -219,10 +212,7 @@ export const activateOutputPaneAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const setIdeStatusMessageAction: ActionCreator = (
-  text: string,
-  flag?: boolean
-) => ({
+export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: boolean) => ({
   type: "SET_IDE_STATUS_MESSAGE",
   payload: { text, flag }
 });
@@ -235,10 +225,7 @@ export const incToolCommandSeqNoAction: ActionCreator = () => ({
   type: "INC_TOOL_CMD_SEQ"
 });
 
-export const openFolderAction: ActionCreator = (
-  file: string,
-  flag: boolean
-) => ({
+export const openFolderAction: ActionCreator = (file: string, flag: boolean) => ({
   type: "OPEN_FOLDER",
   payload: { file, flag }
 });
@@ -247,10 +234,7 @@ export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
 
-export const displayDialogAction: ActionCreator = (
-  index?: number,
-  value?: any
-) => ({
+export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
   type: "DISPLAY_DIALOG",
   payload: { index, value }
 });
@@ -260,10 +244,7 @@ export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
   payload: { numValue }
 });
 
-export const setBuildRootAction: ActionCreator = (
-  files: string[],
-  flag: boolean
-) => ({
+export const setBuildRootAction: ActionCreator = (files: string[], flag: boolean) => ({
   type: "SET_BUILD_ROOT",
   payload: { files, flag }
 });
@@ -276,16 +257,12 @@ export const incProjectViewStateVersionAction: ActionCreator = () => ({
   type: "INC_PROJECT_VIEWSTATE_VERSION"
 });
 
-export const addExcludedProjectItemsAction: ActionCreator = (
-  files: string[]
-) => ({
+export const addExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
   type: "ADD_EXCLUDED_PROJECT_ITEMS",
   payload: { files }
 });
 
-export const setExcludedProjectItemsAction: ActionCreator = (
-  files: string[]
-) => ({
+export const setExcludedProjectItemsAction: ActionCreator = (files: string[]) => ({
   type: "SET_EXCLUDED_PROJECT_ITEMS",
   payload: { files }
 });
@@ -315,7 +292,7 @@ export const incInjectionVersionAction: ActionCreator = () => ({
   type: "INC_INJECTION_VERSION"
 });
 
-export const incDocHubServiceVersionAction: ActionCreator = index => ({
+export const incDocHubServiceVersionAction: ActionCreator = (index) => ({
   type: "INC_DOC_HUB_SERVICE_VERSION",
   payload: { index }
 });
@@ -329,12 +306,12 @@ export const incEditorVersionAction: ActionCreator = () => ({
   type: "INC_EDITOR_VERSION"
 });
 
-export const syncSourceBreakpointsAction: ActionCreator = flag => ({
+export const syncSourceBreakpointsAction: ActionCreator = (flag) => ({
   type: "SYNC_SOURCE_BREAKPOINTS",
   payload: { flag }
 });
 
-export const setDebuggingAction: ActionCreator = flag => ({
+export const setDebuggingAction: ActionCreator = (flag) => ({
   type: "SET_DEBUGGING",
   payload: { flag }
 });
@@ -349,12 +326,12 @@ export const applyUserSettingAction: ActionCreator = (id, value) => ({
   payload: { id, value }
 });
 
-export const saveUserSettingAction: ActionCreator = value => ({
+export const saveUserSettingAction: ActionCreator = (value) => ({
   type: "SAVE_USER_SETTINGS",
   payload: { value }
 });
 
-export const saveProjectSettingAction: ActionCreator = value => ({
+export const saveProjectSettingAction: ActionCreator = (value) => ({
   type: "SAVE_PROJECT_SETTINGS",
   payload: { value }
 });
@@ -391,7 +368,7 @@ export const setScriptsStatusAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-export const setProjectBuildFileAction: ActionCreator = flag => ({
+export const setProjectBuildFileAction: ActionCreator = (flag) => ({
   type: "SET_PROJECT_BUILD_FILE",
   payload: { flag }
 });
@@ -408,4 +385,9 @@ export const setIdeDisableAutoOpenBuildRootAction: ActionCreator = (flag: boolea
 export const setIdeDisableAutoOpenProjectAction: ActionCreator = (flag: boolean) => ({
   type: "SET_IDE_DISABLE_AUTO_OPEN_PROJECT",
   payload: { flag }
+});
+
+export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSettings) => ({
+  type: "SET_IDE_EXPORT_DIALOG",
+  payload: { value }
 });

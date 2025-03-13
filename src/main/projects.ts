@@ -25,11 +25,12 @@ import {
   showInstantScreenAction,
   showSideBarAction,
   showToolPanelsAction,
-  toolPanelsOnTopAction
+  toolPanelsOnTopAction,
+  setExportDialogInfoAction
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
-import { KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
+import { ExportDialogSettings, KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
 import {
   PROJECT_TEMPLATES,
   PROJECT_FILE,
@@ -185,6 +186,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
+      disp(setExportDialogInfoAction(projectStruct.exportDialog))
 
       // --- Restore breakpoints
       await getEmuApi().eraseAllBreakpoints();
@@ -360,7 +362,8 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     builder: {
       roots: state.project?.buildRoots ?? []
     },
-    settings: state.projectSettings
+    settings: state.projectSettings,
+    exportDialog: state.project?.exportSettings
   };
 }
 
@@ -421,6 +424,7 @@ type KliveProjectStructure = {
   debugger?: DebuggerState;
   builder?: BuilderState;
   settings?: Record<string, any>;
+  exportDialog?: ExportDialogSettings;
 };
 
 interface ViewOptions {

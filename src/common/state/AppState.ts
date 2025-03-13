@@ -5,7 +5,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { PANE_ID_EMU } from "../../common/integration/constants";
-import { IdeSettings } from "@main/settings";
+import { ExportDialogSettings, IdeSettings } from "@main/settings";
 
 /**
  * Represents the state of the entire application
@@ -112,6 +112,7 @@ export type IdeProject = {
   excludedItems?: string[];
   hasBuildFile?: boolean;
   buildFileVersion?: number;
+  exportSettings?: ExportDialogSettings;
 };
 
 /**

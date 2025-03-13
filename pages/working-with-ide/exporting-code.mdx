@@ -1,0 +1,27 @@
+import Image from 'next/image'
+import exportDialog from '../../public/images/working-with-ide/export-dialog.png'
+
+# Exporting Code
+
+When your code is ready to be tested on actual hardware or with another emulator, you can export it with the **Build | Export code** menu command. This command pops up a dialog:
+
+<Image src={exportDialog} alt="Export code" width={384} style={{marginTop: 24}} />
+
+
+Before exporting the code, you can specify several parameters:
+- **Export format**. You can select one of these file formats from the dropdown to export your code:
+  - **`TAP format`: Standard `.tap` file format
+  - **`TZX format`: Standard `.tzx` file format
+  - **`Intel HEX format`: Standard text file format you can use with classic tools (e.g., EPROM burners).
+- **Export folder**. An optional folder to save the exported file. If you do not specify this folder, the IDE will save the exported file into the `KliveExports` folder under your home directory.
+- **Export file name**. The filename for the export is mandatory. If you do not specify a file name extension, Klive will add it according to the selected export format.
+- **Program name**. The name to add to the tape file header. If you leave it empty, the export infers the program name from the export file name.
+- **Startup border**. You can specify a color name for the border during the load operation (while loading the app's code files).
+- **Screen file**. You can optionally add a screen file for your code. The IDE accepts these formats:
+  - A `.tap` or `.tzx` file that is created when saving a screen (with the `SAVE "<name>" SCREEN$` command)
+  - A standard 6912 bytes long `.scr` file with the raw screen contents.
+  - A standard 7040 bytes long `.scr` file with 128 bytes +3DOS header and the raw screen contents. Klive does not test the +3DOS header; it just uses the raw screen bytes.
+- **Create startup block**. If you check this option, the export creates a startup loader for your code; otherwise, it creates a simple file you can load as a port of your custom loader. If this option is checked, the other options are enabled to customize the startup loader.
+- **Add CLEAR**. Adds a `CLEAR` statement to the loader.
+- **Add PAUSE 0**. Adds a PAUSE 0 statement to the loader. When your code has been completely loaded, it waits for a keypress before running.
+- **Use a single code block**. If this option is checked, your separate code segments (according to their `ORG` directives) are merged in a single block, gaps filled with zeros. Otherwise, the export creates a separate code file for each code block.

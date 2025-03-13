@@ -46,6 +46,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       id: "rewind_tape",
       label: "Rewind Tape",
       click: async () => {
+        console.log("tape", appState.media?.[MEDIA_TAPE]);
         await getEmuApi().issueMachineCommand("rewind");
       }
     });

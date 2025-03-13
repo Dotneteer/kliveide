@@ -207,6 +207,10 @@ class MainApiImpl {
   async getAppSettings(): Promise<AppSettings> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async reloadTapeFile(): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 export type MainApi = MainApiImpl;
