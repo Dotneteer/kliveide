@@ -1,4 +1,5 @@
 import meta from "../../../pages/_meta.ts";
+import contribute_meta from "../../../pages/contribute/_meta.ts";
 import getting_started_meta from "../../../pages/getting-started/_meta.ts";
 import howto_meta from "../../../pages/howto/_meta.ts";
 import scripting_meta from "../../../pages/scripting/_meta.ts";
@@ -12,6 +13,24 @@ export const pageMap = [{
   frontMatter: {
     "sidebarTitle": "Commands Reference"
   }
+}, {
+  name: "contribute",
+  route: "/contribute",
+  children: [{
+    data: contribute_meta
+  }, {
+    name: "get-source",
+    route: "/contribute/get-source",
+    frontMatter: {
+      "sidebarTitle": "Get Source"
+    }
+  }, {
+    name: "improve-docs",
+    route: "/contribute/improve-docs",
+    frontMatter: {
+      "sidebarTitle": "Improve Docs"
+    }
+  }]
 }, {
   name: "getting-started",
   route: "/getting-started",
