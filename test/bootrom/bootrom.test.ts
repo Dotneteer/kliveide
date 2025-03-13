@@ -69,10 +69,27 @@ describe("Bootrom", () => {
     // );
   });
 
-  it("Fix xa0", () => {
-    const filename = "/Users/dotneteer/source/kliveide/src/emu/machines/zxNext/disassembly/rom0.kz80.asm";
-    const contents = fs.readFileSync(filename, "utf8");
-    const updated = contents.replaceAll("\xa0", " ");
-    fs.writeFileSync(filename, updated);
-  });
+  // it("Generate .scr file #1", () => {
+  //   const filename = "/Users/dotneteer/screen1.scr";
+  //   const contents = new Uint8Array(0x1b00);
+  //   for (let i = 0; i < 0x1800; i++) {
+  //     contents[i] = 0x55;
+  //   }
+  //   for (let i = 0x1800; i < 0x1b00; i++) {
+  //     contents[i] = 0x02;
+  //   }
+  //   fs.writeFileSync(filename, contents);
+  // });
+
+  // it("Generate .scr file #2", () => {
+  //   const filename = "/Users/dotneteer/screen2.scr";
+  //   const contents = new Uint8Array(0x1b00 + 128);
+  //   for (let i = 0; i < 0x1800; i++) {
+  //     contents[i + 128] = 0xc0;
+  //   }
+  //   for (let i = 0x1800; i < 0x1b00; i++) {
+  //     contents[i + 128] = 0x03;
+  //   }
+  //   fs.writeFileSync(filename, contents);
+  // });
 });

@@ -44,6 +44,7 @@ export function useStateRefresh (
         // --- The machine is running, set up periodic status refresh
         timerHandler = setInterval(() => {
           handler(machineState);
+          console.log("Refreshed");
         }, refreshInterval);
         break;
 
@@ -51,6 +52,8 @@ export function useStateRefresh (
       case MachineControllerState.Paused:
       case MachineControllerState.Stopped:
         handler(machineState);
+        console.log("Refreshed");
+        // releaseTimer();
         break;
     }
 

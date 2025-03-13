@@ -32,5 +32,8 @@
   },
   "[yaml]": {
     "editor.defaultFormatter": "numso.prettier-standard-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
   }
 }

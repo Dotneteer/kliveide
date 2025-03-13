@@ -95,8 +95,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
     startOptions.find((v) => v.value === mode)
   );
 
-  const storeDispatch = useDispatch();
-
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
     await new Promise((r) => setTimeout(r, 100));
@@ -301,7 +299,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               iconName="reverse-tape"
               fill="--color-toolbarbutton"
               title="Rewind the tape"
-              clicked={async () => await emuApi.issueMachineCommand("rewind")}
+              clicked={async () => {
+                await mainApi.reloadTapeFile();
+                await emuApi.issueMachineCommand("rewind");
+              }}
             />
           )}
         </>

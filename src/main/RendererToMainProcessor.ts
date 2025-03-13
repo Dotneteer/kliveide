@@ -38,7 +38,7 @@ import { getCompiler } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
-import { MEDIA_DISK_A, MEDIA_DISK_B, PROJECT_TEMPLATES } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE, PROJECT_TEMPLATES } from "@common/structs/project-const";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
@@ -53,6 +53,7 @@ import { Z80AssemblyLine } from "./z80-compiler/assembler-tree-nodes";
 import { InputStream } from "./z80-compiler/input-stream";
 import { TokenStream } from "./z80-compiler/token-stream";
 import { Z80AsmParser } from "./z80-compiler/z80-asm-parser";
+import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 
 class MainMessageProcessor {
   constructor(
@@ -377,6 +378,13 @@ class MainMessageProcessor {
 
   async getAppSettings(): Promise<AppSettings> {
     return appSettings;
+  }
+
+  async reloadTapeFile() {
+    const tapeFile = mainStore.getState().media?.[MEDIA_TAPE];
+    if (tapeFile) {
+      await setSelectedTapeFile(tapeFile);
+    }
   }
 }
 

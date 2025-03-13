@@ -6,7 +6,7 @@ import type {
   KliveCompilerOutput
 } from "@main/compiler-integration/compiler-registry";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
@@ -140,14 +140,14 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filename" }],
-    commandOptions: ["-as", "-p", "-c", "-sb", "-scr"],
+    commandOptions: ["-as", "-p", "-c", "-sb"],
     namedOptions: [
       { name: "-n" },
       { name: "-f" },
       { name: "-as" },
       { name: "-b", type: "number", minValue: 0, maxValue: 7 },
       { name: "-addr", type: "number", minValue: 16384, maxValue: 65535 },
-      { name: "-scr" }
+      { name: "-scr", type: "string" }
     ]
   };
 
@@ -167,7 +167,6 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    console.log("result", result);
     if (!isInjectableCompilerOutput(result)) {
       return commandError("Compiled code is not injectable.");
     }
@@ -187,14 +186,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     // --- Check for screen file error
     let scrContent: Uint8Array;
     const screenFile = args["-scr"];
+    let screenFileType = 0;
     if (screenFile) {
       // --- Check the validity of the screen file
-      const scrContent = (await context.service.projectService.readFileContent(
+      scrContent = (await context.service.projectService.readFileContent(
         screenFile,
         true
       )) as Uint8Array;
       context.service.projectService.forgetFile(screenFile);
-      if (!isScreenFile(scrContent)) {
+      screenFileType = checkScreenFileType(scrContent);
+      if (!screenFileType) {
         return commandError(`File '${screenFile}' is not a valid screen file`);
       }
     }
@@ -203,9 +204,19 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     const codeBlocks = createTapeBlocks(output as InjectableOutput);
     let screenBlocks: Uint8Array[] | undefined;
     if (screenFile) {
-      const blocks = readTapeData(scrContent);
-      if (blocks) {
-        screenBlocks = [blocks[0].data, blocks[1].data];
+      switch (screenFileType) {
+        case 1:
+          screenBlocks = createScreenDataBlocks(screenFile, scrContent);
+          break;
+        case 2:
+          screenBlocks = createScreenDataBlocks(screenFile, scrContent.slice(128));
+          break;
+        case 3:
+          const blocks = readTapeData(scrContent);
+          if (blocks) {
+            screenBlocks = [blocks[0].data, blocks[1].data];
+          }
+          break;
       }
     }
 
@@ -222,11 +233,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     if (args["-as"]) {
       const autoStartBlocks = createAutoStartBlock(output as CompilerOutput);
       blocksToSave.push(...autoStartBlocks);
-    }
 
-    // --- Step #8: Save all the blocks
-    if (screenBlocks) {
-      blocksToSave.push(...screenBlocks);
+      // --- Step #8: Save all the blocks
+      if (screenBlocks) {
+        blocksToSave.push(...screenBlocks);
+      }
     }
 
     blocksToSave.push(...codeBlocks);
@@ -258,31 +269,68 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
 
-    function isScreenFile(contents: Uint8Array): boolean {
+    function checkScreenFileType(contents: Uint8Array): number {
+      // --- Check for 6912 bytes
+      if (contents.length === 6912) {
+        // --- Standard screen file
+        return 1;
+      }
+
+      if (contents.length === 7040) {
+        return 2;
+      }
+
       // --- Try to read a .TZX file
       const dataBlocks = readTapeData(contents);
       if (!dataBlocks) {
-        return false;
+        return 0;
       }
 
       // --- Block lenghts should be 19 and 6914
       var header = dataBlocks[0].data;
       if (header.length !== 19 || dataBlocks[1].data.length != 6914) {
         // --- Problem with block length
-        return false;
+        return 0;
       }
 
       // --- Test header bytes
-      return (
-        header[0] === 0x00 &&
+      return header[0] === 0x00 &&
         header[1] == 0x03 && // --- Code header
         header[12] == 0x00 &&
         header[13] == 0x1b && // --- Length: 0x1B00
         header[14] == 0x00 &&
-        header[15] == 0x40 && // --- Address: 0x4000
-        header[16] == 0x00 &&
-        header[17] == 0x80
-      ); // --- Param2: 0x8000
+        header[15] == 0x40 // --- Address: 0x4000
+        ? 3
+        : 0;
+    }
+
+    function createScreenDataBlocks(filename: string, contents: Uint8Array): Uint8Array[] {
+      // --- Create a ZX Spectrum Tape header
+      const segments = filename.split("/");
+      const header = new Uint8Array(19);
+      header[0] = 0x00; // --- Header ID
+      header[1] = 0x03; // --- Code block
+
+      // --- Copy the first (up to 10) characters of the filename into the tape header
+      const name = segments[segments.length - 1].slice(0, 10).padEnd(10, " ");
+      for (let i = 0; i < 10; i++) {
+        header[2 + i] = name.charCodeAt(i);
+      }
+      header[12] = 0x00; // --- Length LSB
+      header[13] = 0x1b; // --- Length MSB
+      header[14] = 0x00; // --- Param1 LSB
+      header[15] = 0x40; // --- Param1 MSB
+      header[16] = 0x00; // --- Param2 LSB
+      header[17] = 0x80; // --- Param2 MSB
+      setTapeCheckSum(header);
+
+      // --- Create a new Uint8Array starting with 0xff and followed by the contents
+      const screenData = new Uint8Array(contents.length + 2);
+      screenData[0] = 0xff;
+      screenData.set(contents, 1);
+      setTapeCheckSum(screenData);
+
+      return [header, screenData];
     }
 
     // --- Create tap blocks

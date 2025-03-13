@@ -9,6 +9,8 @@ import { useAppServices } from "../services/AppServicesProvider";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
+import { useDispatch, useRendererContext } from "@renderer/core/RendererProvider";
+import { incProjectFileVersionAction, setExportDialogInfoAction } from "@common/state/actions";
 
 const EXPORT_CODE_FOLDER_ID = "exportCodeFolder";
 const VALID_INTEGER = /^\d+$/;
@@ -35,35 +37,35 @@ const borderIds = [
   },
   {
     value: "0",
-    label: "black"
+    label: "Black"
   },
   {
     value: "1",
-    label: "blue"
+    label: "Blue"
   },
   {
     value: "2",
-    label: "red"
+    label: "Red"
   },
   {
     value: "3",
-    label: "magenta"
+    label: "Magenta"
   },
   {
     value: "4",
-    label: "green"
+    label: "Green"
   },
   {
     value: "5",
-    label: "cyan"
+    label: "Cyan"
   },
   {
     value: "6",
-    label: "yellow"
+    label: "Yellow"
   },
   {
     value: "7",
-    label: "white"
+    label: "White"
   }
 ];
 
@@ -73,24 +75,27 @@ type Props = {
 };
 
 export const ExportCodeDialog = ({ onClose }: Props) => {
+  const dispatch = useDispatch();
+  const { store } = useRendererContext();
+  const exportSettings = store.getState()?.project?.exportSettings ?? {};
   const mainApi = useMainApi();
   const { outputPaneService, ideCommandsService, validationService } = useAppServices();
   const modalApi = useRef<ModalApi>(null);
-  const [formatId, setFormatId] = useState("tzx");
-  const [exportFolder, setExportFolder] = useState("");
+  const [formatId, setFormatId] = useState(exportSettings.formatId ?? "tzx");
+  const [exportFolder, setExportFolder] = useState(exportSettings?.exportFolder ?? "");
   const [folderIsValid, setFolderIsValid] = useState(true);
-  const [exportName, setExportName] = useState("");
+  const [exportName, setExportName] = useState(exportSettings?.exportName ?? "");
   const [exportIsValid, setExportIsValid] = useState(true);
-  const [programName, setProgramName] = useState("");
-  const [borderId, setBorderId] = useState("none");
-  const [screenFilename, setScreenFilename] = useState("");
+  const [programName, setProgramName] = useState(exportSettings?.programName ?? "");
+  const [borderId, setBorderId] = useState(exportSettings?.border?.toString() ?? "none");
+  const [screenFilename, setScreenFilename] = useState(exportSettings?.screenFilename ?? "");
   const [screenFileIsValid, setScreenFileIsValid] = useState(true);
-  const [startAddress, setStartAddress] = useState("");
+  const [startAddress, setStartAddress] = useState(exportSettings?.startAddress?.toString() ?? "");
   const [startAddressIsValid, setStartAddressIsValid] = useState(true);
-  const [startBlock, setStartBlock] = useState(true);
-  const [addPause, setAddPause] = useState(false);
-  const [addClear, setAddClear] = useState(true);
-  const [singleBlock, setSingleBlock] = useState(false);
+  const [startBlock, setStartBlock] = useState(exportSettings?.startBlock ?? true);
+  const [addPause, setAddPause] = useState(exportSettings?.addPause ?? false);
+  const [addClear, setAddClear] = useState(exportSettings?.addClear ?? true);
+  const [singleBlock, setSingleBlock] = useState(exportSettings?.singleBlock ?? false);
 
   useEffect(() => {
     const fValid = validationService.isValidPath(exportFolder);
@@ -104,13 +109,50 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
     modalApi.current.enablePrimaryButton(fValid && nValid && addressValid && scrValid);
   }, [exportFolder, exportName, startAddress, screenFilename]);
 
+  // --- Save the dialog data whenever it changes
+  useEffect(() => {
+    let border: number | undefined = parseInt(borderId, 10);
+    if (isNaN(border)) border = undefined;
+    dispatch(
+      setExportDialogInfoAction({
+        formatId,
+        exportName,
+        exportFolder,
+        programName,
+        border,
+        screenFilename,
+        startBlock,
+        addClear,
+        addPause,
+        singleBlock,
+        startAddress
+      })
+    );
+    (async () => {
+      await mainApi.saveProject();
+      dispatch(incProjectFileVersionAction());
+    })();
+  }, [
+    formatId,
+    exportFolder,
+    exportName,
+    programName,
+    borderId,
+    screenFilename,
+    startAddress,
+    startBlock,
+    addPause,
+    addClear,
+    singleBlock
+  ]);
+
   return (
     <Modal
       title="Export Code"
       isOpen={true}
       fullScreen={false}
       width={500}
-      translateY={-100}
+      translateY={0}
       onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Export"
       primaryEnabled={true}
@@ -122,7 +164,10 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
         if (!exportExt || exportExt === ".") {
           filename += `.${formatId}`;
         }
-        const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll("\\", "/");
+        const fullFilename = (exportFolder ? `${exportFolder}/${filename}` : filename).replaceAll(
+          "\\",
+          "/"
+        );
         const name = programName ? programName : getNodeName(exportName);
         const command = `expc "${fullFilename}" -n ${name} -f ${formatId}${
           startBlock ? " -as" : ""
@@ -130,7 +175,7 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           borderId !== "none" ? ` -b ${borderId}` : ""
         }${singleBlock ? " -sb" : ""}${
           startAddress ? ` -addr ${startAddress}` : ""
-        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${(screenFilename).replaceAll("\\", "/")}"` : ""}`;
+        }${addClear ? " -c" : ""}${screenFilename ? ` -scr "${screenFilename.replaceAll("\\", "/")}"` : ""}`;
         const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
         console.log("export command:", command);
         const result = await ideCommandsService.executeCommand(command, buildPane);
@@ -141,10 +186,17 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
             result.finalMessage ?? "Code successfully exported."
           );
         } else {
+          // --- Analyze the message and
+          let message = result.finalMessage;
+          if (message.includes("-addr")) {
+            message = "Code start address must be between 16384 and 65535.";
+          } else {
+            // --- Other messages
+          }
           await mainApi.displayMessageBox(
             "error",
             "Exporting code",
-            result.finalMessage ?? "Code export failed."
+            message ?? result.finalMessage ?? "Code export failed"
           );
         }
         return !result.success;
@@ -158,7 +210,8 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           <Dropdown
             placeholder="Select..."
             options={formatIds}
-            initialValue={"tzx"}
+            initialValue={formatId}
+            width={140}
             onChanged={(option) => setFormatId(option)}
           />
         </div>
@@ -205,83 +258,94 @@ export const ExportCodeDialog = ({ onClose }: Props) => {
           }}
         />
       </DialogRow>
-      <DialogRow label="Startup border:">
-        <div className={styles.dropdownWrapper}>
-          <Dropdown
-            placeholder="Select..."
-            options={borderIds}
-            initialValue={"none"}
-            onChanged={(option) => setBorderId(option)}
+      {formatId !== "hex" && (
+        <DialogRow rows={true}>
+          <Checkbox
+            initialValue={startBlock}
+            right={true}
+            label="Create BASIC loader"
+            onChange={(v) => setStartBlock(v)}
           />
-        </div>
-      </DialogRow>
-      <DialogRow label="Screen file:">
-        <TextInput
-          value={screenFilename}
-          isValid={screenFileIsValid}
-          buttonIcon="file-code"
-          buttonTitle="Select the screen file"
-          buttonClicked={async () => {
-            const file = await mainApi.showOpenFileDialog(
-              [
-                { name: "Tape files", extensions: ["tap", "tzx"] },
-                { name: "All Files", extensions: ["*"] }
-              ],
-              EXPORT_CODE_FOLDER_ID
-            );
-            console.log("file:", file);
-            if (file) {
-              setScreenFilename(file);
-            }
-            return file;
-          }}
-          valueChanged={(val) => {
-            setScreenFilename(val);
-            return false;
-          }}
-        />
-      </DialogRow>
-      <DialogRow rows={true}>
-        <Checkbox
-          initialValue={startBlock}
-          right={true}
-          label="Create startup block"
-          onChange={(v) => setStartBlock(v)}
-        />
-        <Checkbox
-          initialValue={addClear}
-          right={true}
-          label="Add CLEAR"
-          onChange={(v) => setAddClear(v)}
-          enabled={startBlock}
-        />
-        <Checkbox
-          initialValue={addPause}
-          right={true}
-          label="Add PAUSE 0"
-          onChange={(v) => setAddPause(v)}
-          enabled={startBlock}
-        />
-        <Checkbox
-          initialValue={singleBlock}
-          right={true}
-          label="Use a single code block"
-          onChange={(v) => setSingleBlock(v)}
-          enabled={startBlock}
-        />
-      </DialogRow>
-      <DialogRow label="Code start address:">
-        <TextInput
-          value={startAddress.toString()}
-          maxLength={5}
-          width={60}
-          isValid={startAddressIsValid}
-          valueChanged={(val) => {
-            setStartAddress(val);
-            return false;
-          }}
-        />
-      </DialogRow>
+        </DialogRow>
+      )}
+      {formatId !== "hex" && startBlock && (
+        <>
+          <DialogRow label="Startup options:" />
+          <DialogRow rows={true}>
+            <Checkbox
+              initialValue={addClear}
+              right={true}
+              label="Add CLEAR"
+              onChange={(v) => setAddClear(v)}
+              enabled={startBlock}
+            />
+            <Checkbox
+              initialValue={addPause}
+              right={true}
+              label="Add PAUSE 0"
+              onChange={(v) => setAddPause(v)}
+              enabled={startBlock}
+            />
+            <Checkbox
+              initialValue={singleBlock}
+              right={true}
+              label="Use a single code block"
+              onChange={(v) => setSingleBlock(v)}
+              enabled={startBlock}
+            />
+          </DialogRow>
+          <DialogRow label="Set border color:">
+            <div className={styles.dropdownWrapper}>
+              <Dropdown
+                placeholder="Select..."
+                options={borderIds}
+                initialValue={borderId}
+                width={92}
+                onChanged={(option) => setBorderId(option)}
+              />
+            </div>
+          </DialogRow>
+          <DialogRow label="Screen file:">
+            <TextInput
+              value={screenFilename}
+              isValid={screenFileIsValid}
+              buttonIcon="file-code"
+              buttonTitle="Select the screen file"
+              buttonClicked={async () => {
+                const file = await mainApi.showOpenFileDialog(
+                  [
+                    { name: "Tape files", extensions: ["tap", "tzx"] },
+                    { name: "Screen files", extensions: ["scr"] },
+                    { name: "All Files", extensions: ["*"] }
+                  ],
+                  EXPORT_CODE_FOLDER_ID
+                );
+                if (file) {
+                  setScreenFilename(file);
+                }
+                return file;
+              }}
+              valueChanged={(val) => {
+                setScreenFilename(val);
+                return false;
+              }}
+            />
+          </DialogRow>
+          <DialogRow label="Code start address:">
+            <TextInput
+              value={startAddress.toString()}
+              maxLength={5}
+              width={60}
+              numberOnly
+              isValid={startAddressIsValid}
+              valueChanged={(val) => {
+                setStartAddress(val);
+                return false;
+              }}
+            />
+          </DialogRow>
+        </>
+      )}
     </Modal>
   );
 };

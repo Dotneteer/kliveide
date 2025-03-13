@@ -195,7 +195,7 @@ class IdeCommandService implements IIdeCommandService {
         }));
       } else if (commandInfo.validateCommandArgs) {
         // --- Argument parsing successful, carry out additional validation
-        validationMessages = await commandInfo.validateCommandArgs(context, args)
+        validationMessages = await commandInfo.validateCommandArgs(context, args);
       }
 
       // --- Argument validation successful?
@@ -205,7 +205,8 @@ class IdeCommandService implements IIdeCommandService {
         context.service.ideCommandsService.displayTraceMessages(validationMessages, context);
         // --- Sign validation error
         return {
-          success: false
+          success: false,
+          finalMessage: validationMessages[0].message
         };
       } else {
         // --- Check if this command requires an open Klive project
@@ -215,7 +216,7 @@ class IdeCommandService implements IIdeCommandService {
           buffer.resetStyle();
           return { success: false };
         }
-        
+
         // --- Arguments, ok; execute the command
         commandResult = await commandInfo.execute(context, args);
       }

@@ -56,6 +56,7 @@ import {
   showInstantScreenAction,
   setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
+  setExportDialogInfoAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -254,14 +255,16 @@ async function createAppWindows() {
         mainStore.dispatch(startScreenDisplayedAction());
       }
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
+
+      // --- Update IDE Settings
+      const ideSettings = appSettings.ideSettings;
       mainStore.dispatch(
-        setIdeDisableAutoOpenBuildRootAction(
-          appSettings.ideSettings?.disableAutoOpenBuildRoot ?? false
-        )
+        setIdeDisableAutoOpenBuildRootAction(ideSettings?.disableAutoOpenBuildRoot ?? false)
       );
       mainStore.dispatch(
-        setIdeDisableAutoOpenProjectAction(appSettings.ideSettings?.disableAutoOpenProject ?? false)
+        setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
       );
+
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));

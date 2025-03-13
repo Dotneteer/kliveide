@@ -11,6 +11,20 @@ import { IdeProject } from "@common/state/AppState";
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive.settings";
 
+export type ExportDialogSettings = {
+  formatId?: string;
+  exportName?: string;
+  exportFolder?: string;
+  programName?: string;
+  border?: number;
+  screenFilename?: string;
+  startBlock?: boolean;
+  addClear?: boolean;
+  addPause?: boolean;
+  singleBlock?: boolean;
+  startAddress?: number;
+}
+
 export type IdeSettings = {
   disableAutoOpenBuildRoot?: boolean;
   disableAutoOpenProject?: boolean;
