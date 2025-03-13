@@ -162,7 +162,8 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return commandError(message);
       }
       if (errorNo > 0) {
-        const message = "Code compilation failed, no program to export.";
+        const message = "Compile error: check the Output panel for details";
+        await context.service.ideCommandsService.executeCommand("outp build");
         return commandError(message);
       }
     }
@@ -1034,13 +1035,13 @@ async function injectCode(
       return commandError(message);
     }
     if (errorNo > 0) {
-      const returnMessage = "Code compilation failed, no program to inject.";
+      const returnMessage = "Compile error: check the Output panel for details";
       await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
-      return commandError(returnMessage);
+      await context.service.ideCommandsService.executeCommand("outp build");
+      return commandError("Code compilation failed. No code injected.");
     }
   }
 
-  console.log("result", result);
   if (!isInjectableCompilerOutput(result)) {
     return commandError("Compiled code is not injectable.");
   }

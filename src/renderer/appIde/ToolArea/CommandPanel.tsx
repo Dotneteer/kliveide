@@ -116,6 +116,7 @@ export const commandPanelHeaderRenderer = () => {
   const { ideCommandsService: interactiveCommandsService } = useAppServices();
   return (
     <>
+      <TabButtonSpace />
       <TabButton
         iconName='clear-all'
         title='Clear'

@@ -12,7 +12,6 @@ import styles from "./OutputPanel.module.scss";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 import Dropdown from "@renderer/controls/Dropdown";
-import { HStack } from "@renderer/controls/new/Panels";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
