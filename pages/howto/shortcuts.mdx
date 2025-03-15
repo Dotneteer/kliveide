@@ -1,0 +1,55 @@
+import { Callout } from 'nextra/components';
+
+# Changing Keyboard Shortcuts
+
+<Callout type="info" emoji="💡">
+You can change the shortcuts for a few menu commands and other actions in Klive. This feature is experimental and may change in the future.
+</Callout>
+
+You can change a few shortcut keys when using Klive IDE with the `set` in the interactive command panel:
+
+```text
+set -u shortcuts.<actionId> "<keyId>"
+```
+
+Here, `<actionId>` is one of the following values (case-sensitive):
+
+- **`fullScreen`**. Toggle Full Screen
+- **`stepInto`**. Debug: Step Into
+- **`stepOver`**. Debug: Step Over
+- **`stepOut`**. Debug: Step Out
+
+The `<keyId>` value must be a valid shortcut description using this syntax:
+
+You can define custom shortcut keys using the following syntax, compatible with Windows, macOS, and Linux.
+
+```text
+"modifier+key"
+```
+
+Use `CmdOrCtrl` to define `Cmd` on macOS and `Ctrl` on Windows/Linux. Modifiers and keys are case-insensitive.
+
+**Modifiers**:
+
+| Modifier | Windows/Linux | MacOS |
+|-|-|-|
+| `CmdOrCtrl` | Ctrl | ⌘ (Command) |
+| `Ctrl` | Ctrl | ⌃ (Control) |
+| `Cmd` | N/A | ⌘ (Command) |
+| `Alt` | Alt | ⌥ (Option) |
+| `Option` | N/A | ⌥ (Option) |
+| `Shift` | Shift | ⇧ (Shift) |
+
+**Keys**:
+
+- Letters: `A` to `Z` (e.g., `"CmdOrCtrl+S"` for Save)
+- Numbers: `0`-`9`
+- Function Keys: `F1` to `F24`
+- Special Keys:
+  - `Enter`, `Backspace`, `Delete`, `Esc`, `Tab`, `Space`
+  - `Up`, `Down`, `Left`, `Right`
+
+<Callout type="info" emoji="💡">
+Your OS may override the key combination that you define. In this case, the OS-assigned shortcut key function will prevail.
+</Callout>
+

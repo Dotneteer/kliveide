@@ -1,3 +1,4 @@
+import { Callout } from 'nextra/components'
 import Image from 'next/image'
 import emuToolbar from '../../public/images/working-with-ide/emu-toolbar-startup.png'
 import selectStartMode from '../../public/images/working-with-ide/select-start-mode.png'
@@ -19,7 +20,9 @@ The leftmost button starts the machine in the selected mode (running with or wit
 
 <Image src={selectStartMode} alt="Emulator toolbar" width={256} style={{marginTop: 24}} />
 
-> **Note**: The IDE displays **Run Project (F5)** and **Debug Project (Ctrl+F5)** options.
+<Callout type="info" emoji="💡">
+The IDE displays **Run Project (F5)** and **Debug Project (Ctrl+F5)** options.
+</Callout>
 
 Starting the machine has a different meaning for the Emulator and IDE windows. 
 - In the emulator, you start the machine and let it run.

@@ -1,10 +1,14 @@
+import { Callout } from 'nextra/components'
+
 # Loading from Tape
 
 Klive can emulate playing back tape files with `.tap` and `.tzx` extensions. Before utilizing them with the `LOAD` Basic command, select them with the **Machine | Select Tape File** function. This command opens a file selection dialog where you can select a `.tap` or `.tzx` file. You can select files with other extensions. In that case, the Emulator tries to read them as tape files, trying to parse them.
 
 On successful read, you can issue a `LOAD` Basic command (or use the Tape Loader from the startup menu of ZX Spectrum 128/+2E/+3E). The running `LOAD` command will playback the selected file.
 
-> **Note**: You can change the tape file any time, even when the machine is stopped, paused, or running. The effect of such a change is similar to ejecting a tape from a physical tape player and inserting a new one.
+<Callout type="info" emoji="💡">
+You can change the tape file any time, even when the machine is stopped, paused, or running. The effect of such a change is similar to ejecting a tape from a physical tape player and inserting a new one.
+</Callout>
 
 ## Normal and Fast Load
 
@@ -14,7 +18,9 @@ You can turn on or off fast load with the **Machine | Fast Load** command or by 
 
 You can change the Fast Load mode even while loading a game. However, the change will take effect only when you start loading a program next time.
 
-> **Note**: By default, fast load is turned on.
+<Callout type="info" emoji="💡">
+By default, fast load is turned on.
+</Callout>
 
 ## Revinding the Tape
 
@@ -22,7 +28,9 @@ When the loading completes or gets interrupted, the tape position stays as if yo
 
 You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Rewind Tape** command.
 
-> **Note**: Klive allows you to examine the contents of a particular tape file. You can learn about it in the IDE documentation.
+<Callout type="info" emoji="💡">
+Klive allows you to examine the contents of a particular tape file. You can learn about it in the IDE documentation.
+</Callout>
 
 ## How Fast Load Works
 

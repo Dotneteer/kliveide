@@ -1,3 +1,4 @@
+import { Callout } from 'nextra/components'
 import Image from 'next/image'
 import newProject from '../../public/images/getting-started/new-klive-project.png'
 import projectInExplorer from '../../public/images/getting-started/project-in-explorer.png'
@@ -15,7 +16,9 @@ import kliveProjectInEditor from '../../public/images/getting-started/klive-proj
 
 The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
 
-> **Note**: In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
+<Callout type="info" emoji="💡">
+In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
+</Callout>
 
 ## The New Project Dialog
 
@@ -58,7 +61,9 @@ You can change the build root any time by right-clicking on a file and selecting
 
 <Image src={promoteBuildRoot} alt="BuildRootSign" width="320" height="277" style={{marginTop: 24}} />
 
-> **Note**: The Promote to Build Root command is available only for particular file types Klive supports.
+<Callout type="info" emoji="💡">
+The Promote to Build Root command is available only for particular file types Klive supports.
+</Callout>
 
 ## Build Root commands
 
@@ -91,7 +96,9 @@ The project file uses JSON format. When you click it in the Explorer, you can lo
 
 <Image src={kliveProjectInEditor} alt="KliveProjectInEditor" width="675" height="310" style={{marginTop: 24}} />
 
-> **Note**: Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
+<Callout type="info" emoji="💡">
+Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.
+</Callout>
 
 ## Updating Old Projects
 

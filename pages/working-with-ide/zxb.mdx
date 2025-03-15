@@ -1,3 +1,4 @@
+import { Callout } from 'nextra/components'
 import Image from 'next/image'
 import zxbReset from '../../public/images/working-with-ide/zxb-reset.png'
 import zxbActions from '../../public/images/working-with-ide/zxb-actions.png'
@@ -7,7 +8,9 @@ import zxbRunning from '../../public/images/working-with-ide/zxb-running.png'
 
 Klive IDE supports ZXBASIC out-of-the-box. After setting up ZXBASIC integration, you can use Klive IDE to edit and run ZXBASIC programs.
 
-> **Note**: The current version of ZXBASIC does not provide debug information, so source code debugging is not available with the IDE yet.
+<Callout type="info" emoji="💡">
+The current version of ZXBASIC does not provide debug information, so source code debugging is not available with the IDE yet.
+</Callout>
 
 As Klive IDE does not know where to find the ZXBASIC compiler on your machine, you must set it up before using it.
 
@@ -24,9 +27,13 @@ The command expects one to three parameters:
 - The path to access the Python interpreter (optional; you may need it on Mac and Linux)
 - The machine code origin address (optional, `$8000`, if omitted)
 
-> **Note #1**: The ZXBASIC compiler is a Python script, so you need to have Python installed on your machine. On Windows, the IDE can find the Python interpreter automatically. On Mac and Linux, you must provide the path to the Python interpreter.
+<Callout type="info" emoji="💡">
+The ZXBASIC compiler is a Python script, so you need to have Python installed on your machine. On Windows, the IDE can find the Python interpreter automatically. On Mac and Linux, you must provide the path to the Python interpreter.
+</Callout>
 
-> **Note #2**: You can learn more about how [settings](./ide-settings) are stored.
+<Callout type="info" emoji="💡">
+You can learn more about how [settings](./ide-settings) are stored.
+</Callout>
 
 ### Windows Integration
 
@@ -62,7 +69,9 @@ Most of the time, you must also specify the Python interpreter path:
 zxb-reset /Users/joe/zxbasic/zxbc.py /opt/homebrew/bin
 ```
 
-> **Note**: You can find the path of the Python installation with the `which python3` command. Do not forget that the last segment is the `python3` executable; you should omit it from the path specification.
+<Callout type="info" emoji="💡">
+You can find the path of the Python installation with the `which python3` command. Do not forget that the last segment is the `python3` executable; you should omit it from the path specification.
+</Callout>
 
 ### Linux Integration
 
