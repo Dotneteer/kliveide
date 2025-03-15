@@ -41,7 +41,7 @@ const CpuPanel = () => {
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
   // --- Take care of refreshing the screen
-  useStateRefresh(250, async () => {
+  useStateRefresh(1000, async () => {
     setCpuState(await emuApi.getCpuState());
   });
 

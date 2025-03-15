@@ -62,4 +62,10 @@ class SamplingGenerator extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor("sampling-generator", SamplingGenerator);
+// --- Let's register the worklet (only once)
+let registered = false;
+
+if (!registered) {
+  registered = true;
+  registerProcessor("sampling-generator", SamplingGenerator);
+}

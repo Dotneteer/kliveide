@@ -6,7 +6,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
@@ -497,19 +496,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       return;
     }
 
-    // --- Refresh the information only during paused state
-    if (
-      execState !== MachineControllerState.Paused ||
-      !compilation.result ||
-      compilation.failed ||
-      compilation.result.errors.length > 0
-    ) {
-      oldExecPointDecoration.current = editor.current.deltaDecorations(
-        oldExecPointDecoration.current,
-        []
-      );
-      return;
-    }
+    oldExecPointDecoration.current = editor.current.deltaDecorations(
+      oldExecPointDecoration.current,
+      []
+    );
 
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;

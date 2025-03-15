@@ -101,7 +101,6 @@ const ExplorerPanel = () => {
   const refreshTree = () => {
     tree.buildIndex();
     setVisibleNodes(tree.getVisibleNodes());
-    //vlApi.current.refresh();
   };
 
   // --- Let's use this context menu when clicking a project tree node

@@ -100,7 +100,7 @@ const BreakpointsPanel = () => {
   }, [machineId]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, async () => {
+  useStateRefresh(1000, async () => {
     await refreshBreakpoints();
   });
 

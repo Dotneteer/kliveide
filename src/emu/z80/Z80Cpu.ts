@@ -2,6 +2,9 @@ import type { IZ80Cpu } from "../abstractions/IZ80Cpu";
 
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
+import { M } from "vite/dist/node/types.d-aGj9QkWt";
+
+const MAX_STEP_OUT_STACK_SIZE = 256;
 
 /**
  * This class implements the emulation of the Z80 CPU
@@ -531,6 +534,27 @@ export class Z80Cpu implements IZ80Cpu {
   retExecuted: boolean;
 
   /**
+   * We keep subroutine return addresses in this stack to implement the step-over debugger function
+   */
+  stepOutStack: number[];
+
+  /**
+   * We store the step out depth in this variable to implement the step-out debugger function
+   */
+  stepOutAddress: number;
+
+  /**
+   * Invoke this method to mark the current depth of the call stack when the step-out operation starts.
+   */
+  markStepOutAddress(): void {
+    if (this.stepOutStack.length > 0) {
+      this.stepOutAddress = this.stepOutStack[this.stepOutStack.length - 1];
+    } else {
+      this.stepOutAddress = -1;
+    }
+  }
+
+  /**
    * This flag is reserved for future extension. The ZX Spectrum Next computer uses additional Z80 instructions.
    * This flag indicates if those are allowed.
    */
@@ -634,6 +658,8 @@ export class Z80Cpu implements IZ80Cpu {
     this.prefix = OpCodePrefix.None;
     this.eiBacklog = 0;
     this.retExecuted = false;
+    this.stepOutStack = [];
+    this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
 
@@ -674,6 +700,8 @@ export class Z80Cpu implements IZ80Cpu {
     this.prefix = OpCodePrefix.None;
     this.eiBacklog = 0;
     this.retExecuted = false;
+    this.stepOutStack = [];
+    this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
 
@@ -761,6 +789,9 @@ export class Z80Cpu implements IZ80Cpu {
    * Call this method to execute a CPU instruction cycle.
    */
   executeCpuCycle(): void {
+    // --- No RET executed yet
+    this.retExecuted = false;
+
     // --- Modify the EI interrupt backlog value
     if (this.eiBacklog > 0) {
       this.eiBacklog--;
@@ -1065,6 +1096,7 @@ export class Z80Cpu implements IZ80Cpu {
    * The core of the CALL instruction
    */
   callCore(): void {
+    this.pushToStepOutStack(this.pc);
     this.tactPlus1WithAddress(this.pc);
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
@@ -1078,12 +1110,20 @@ export class Z80Cpu implements IZ80Cpu {
    * @param addr Restart address to call
    */
   rstCore(addr: number): void {
+    this.pushToStepOutStack(this.pc);
     this.tactPlus1WithAddress(this.ir);
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
     this.writeMemory(this.sp, this.pc);
     this.pc = this.wz = addr;
+  }
+
+  pushToStepOutStack(returnAddress: number): void {
+    this.stepOutStack.push(returnAddress);
+    if (this.stepOutStack.length > MAX_STEP_OUT_STACK_SIZE) {
+      this.stepOutStack.shift();
+    }
   }
 
   /**
@@ -1405,7 +1445,7 @@ export class Z80Cpu implements IZ80Cpu {
   readMemory(address: number): number {
     this.delayMemoryRead(address);
     this.lastMemoryReads.push(address);
-    return this.lastMemoryReadValue = this.doReadMemory(address);
+    return (this.lastMemoryReadValue = this.doReadMemory(address));
   }
 
   /**
@@ -1490,7 +1530,7 @@ export class Z80Cpu implements IZ80Cpu {
   readPort(address: number): number {
     this.delayPortRead(address);
     this.lastIoReadPort = address;
-    return this.lastIoReadValue = this.doReadPort(address);
+    return (this.lastIoReadValue = this.doReadPort(address));
   }
 
   /**
@@ -4183,6 +4223,7 @@ function ret(cpu: Z80Cpu) {
   cpu.wh = cpu.readMemory(cpu.sp);
   cpu.sp++;
   cpu.pc = cpu.wz;
+  cpu.retExecuted = true;
 }
 
 // 0xca: JP Z,nn

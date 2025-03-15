@@ -22,7 +22,6 @@ import {
   toolPanelsOnTopAction,
   maximizeToolsAction,
   setThemeAction,
-  changeToolVisibilityAction,
   setClockMultiplierAction,
   setSoundLevelAction,
   showIdeToolbarAction,
@@ -77,7 +76,6 @@ const TOGGLE_IDE_STATUS_BAR = "toggle_ide_status_bar";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
 const TOGGLE_TOOLS_TOP = "tool_panels_top";
 const MAXIMIZE_TOOLS = "tools_maximize";
-const TOOL_PREFIX = "tool_panel_";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
@@ -124,7 +122,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // --- Extract values from the current state. We'll use it to assemble the menu according to the
   // --- current state
   const appState = mainStore.getState();
-  const tools = appState.ideView?.tools ?? [];
   const execState = appState?.emulatorState?.machineState;
   const machineWaits =
     execState === MachineControllerState.None ||
@@ -146,6 +143,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   const settingsReader = createSettingsReader(mainStore);
   const allowDevTools = settingsReader.readSetting("devTools.allow");
+  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F8";
+  const stepIntoShortcut =
+    settingsReader.readSetting("shortcuts.stepInto") ?? (__DARWIN__ ? "F12" : "F11");
+  const stepOverShortcut =
+    settingsReader.readSetting("shortcuts.stepOver") ?? "F10";
+    const stepOutShortcut =
+    settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
 
   const getWindowTraits = (w?: BrowserWindow) => {
     return {
@@ -273,21 +277,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   // ==========================================================================
   // View menu
 
-  // --- Use the menu to put together tool-related menus
-  const toolMenus: MenuItemConstructorOptions[] = tools.map((t) => {
-    return {
-      id: `${TOOL_PREFIX}${t.id}`,
-      label: `Show ${t.name} Panel`,
-      type: "checkbox",
-      checked: t.visible,
-      visible: ideTraits.isFocused,
-      click: (mi) => {
-        const panelId = mi.id.substring(TOOL_PREFIX.length);
-        mainStore.dispatch(changeToolVisibilityAction(panelId, mi.checked));
-      }
-    };
-  });
-
   // --- Prepare the view menu
   // --- Font size option
   const editorFontOptions = [
@@ -346,7 +335,17 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       { role: "zoomIn" },
       { role: "zoomOut" },
       { type: "separator" },
-      { role: "togglefullscreen" },
+      {
+        label: "Toggle Full Screen",
+        accelerator: fullScreenShortcut,
+        click: () => {
+          if (ideFocus) {
+            ideWindow.setFullScreen(!ideWindow.isFullScreen());
+          } else {
+            emuWindow.setFullScreen(!emuWindow.isFullScreen());
+          }
+        }
+      },
       {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",
@@ -686,7 +685,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
-      accelerator: "F10",
+      accelerator: stepIntoShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepInto");
       }
@@ -695,7 +694,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
-      accelerator: "Shift+F11",
+      accelerator: stepOverShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOver");
       }
@@ -704,7 +703,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
-      accelerator: "Ctrl+F11",
+      accelerator: stepOutShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOut");
       }

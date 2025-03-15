@@ -50,7 +50,7 @@ export const ConsoleOutput = ({
   useEffect(() => {
     refreshOutput();
     setScrollVersion(scrollVersion + 1);
-  }, [buffer]);
+  }, [buffer?.getContents()?.length]);
 
   // --- Subscribe to output changes
   useEffect(() => {

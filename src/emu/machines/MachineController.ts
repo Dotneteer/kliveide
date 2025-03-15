@@ -251,6 +251,7 @@ export class MachineController implements IMachineController {
       `Step-out (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
       "cyan"
     );
+    this.machine.markStepOutAddress();
     this.run(FrameTerminationMode.DebugEvent, DebugStepMode.StepOut);
   }
 

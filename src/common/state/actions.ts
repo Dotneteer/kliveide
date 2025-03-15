@@ -3,7 +3,7 @@ import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { ExportDialogSettings as ExportDialogSettings, IdeSettings } from "@main/settings";
+import { ExportDialogSettings } from "@main/settings";
 
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"
@@ -140,16 +140,6 @@ export const setSideBarPanelSizeAction: ActionCreator = (
 export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   type: "SET_TOOLS",
   payload: { tools }
-});
-
-export const changeToolVisibilityAction: ActionCreator = (id: string, flag: boolean) => ({
-  type: "CHANGE_TOOL_VISIBILITY",
-  payload: { id, flag }
-});
-
-export const changeToolStateAction: ActionCreator = (tool: ToolInfo) => ({
-  type: "CHANGE_TOOL_STATE",
-  payload: { tool }
 });
 
 export const activateToolAction: ActionCreator = (id: string) => ({

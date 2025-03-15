@@ -1,3 +1,4 @@
+import { Callout } from 'nextra/components'
 import Image from 'next/image'
 import memView from '../../public/images/working-with-ide/mem-view.png'
 import bankedMemView from '../../public/images/working-with-ide/banked-mem-view.png'
@@ -5,7 +6,9 @@ import nextMemView from '../../public/images/working-with-ide/next-mem-view.png'
 
 # Displaying the Memory Contents
 
-> **Note**: The current Memory View does not allow editing the memory contents.
+<Callout type="info" emoji="💡">
+The current Memory View does not allow editing the memory contents.
+</Callout>
 
 You can view the contents of the memory with the **IDE | Show Machine Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
 

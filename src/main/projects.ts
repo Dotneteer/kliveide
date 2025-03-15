@@ -220,7 +220,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   const projectState = mainStore.getState().project;
   const buildRoot = projectState.buildRoots?.[0];
   if (!appSettings?.ideSettings?.disableAutoOpenBuildRoot && buildRoot) {
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 400));
     await getIdeApi().executeCommand(`nav "${buildRoot}"`);
   }
 

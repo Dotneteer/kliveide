@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components'
+
 # Changing default file extensions
 
 Klive ships with file extensions associated with particular build systems (languages). You can change the default file extensions and use your own in your projects. In this document, you can learn how to do that.
@@ -31,15 +33,17 @@ set languages.kz80-asm ".asm|.kasm"
 4. Set the renamed file as the build root (if not the build root).
 5. Now, you can use the compile, inject, and run commands.
 
-> **Note**: In the current Klive release, you must close and reopen the project to let the file association settings work. In the future, Klive will not require this extra step.
+<Callout type="info" emoji="💡">
+In the current Klive release, you must close and reopen the project to let the file association settings work. In the future, Klive will not require this extra step.
+</Callout>
 
 You should use the `set` command with these parameters:
 
 ```text
-set languages.<language-identifier> "<file-extension-1>|<file-extension-2>|...|<file-extension-n>"
+set languages.<language-id> "<file-ext-1>|<file-ext-2>|...|<file-ext-n>"
 ```
 
-Use the language identifiers described above and the file extensions you want to associate with them. The file extensions must be separated by the `|` character. Do not forget to start the file extension with a dot.
+Use the language IDs described above and the file extensions you want to associate with them. The file extensions must be separated by the `|` character. Do not forget to start the file extension with a dot.
 
 When you open the `klive.project` file, you can see the effect of the `set` command:
 
