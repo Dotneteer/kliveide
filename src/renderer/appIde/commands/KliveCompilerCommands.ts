@@ -624,7 +624,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       return result;
     }
 
-    // --- Auto start block for ZX Spectrum 48
+    // --- Auto start block for ZX Spectrum 128
     function createSpectrum128StartBlock(output: CompilerOutput, clearAddr?: number): Uint8Array[] {
       const result: Uint8Array[] = [];
 

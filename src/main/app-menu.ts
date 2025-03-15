@@ -37,7 +37,7 @@ import {
   setIdeDisableAutoOpenProjectAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getEmuApi, sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
@@ -57,6 +57,8 @@ import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import { createEmuApi } from "@common/messaging/EmuApi";
+import { EmuToMainMessenger } from "@common/messaging/EmuToMainMessenger";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -232,6 +234,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           ensureIdeWindow();
           await getIdeApi().saveAllBeforeQuit();
           mainStore.dispatch(closeFolderAction());
+          await getEmuApi().eraseAllBreakpoints();
           fileChangeWatcher.stopWatching();
           await saveKliveProject();
         }

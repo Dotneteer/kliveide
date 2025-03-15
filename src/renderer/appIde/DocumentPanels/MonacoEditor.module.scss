@@ -38,7 +38,7 @@
   cursor: pointer;
 
   /* Use the provided SVG as a background image */
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="yellow"><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>');
+  background-image: var(--image-breakpoint-current);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -48,7 +48,7 @@
 
 .activeBreakpointOnExistingMargin {
   cursor: pointer;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="yellow"><circle cx="12" cy="12" r="4" fill="red"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>');
+  background-image: var(--image-breakpoint-current-existing);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -58,7 +58,7 @@
 
 .activeBinBreakpointOnExistingMargin {
   cursor: pointer;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="yellow"><circle cx="12" cy="12" r="4" fill="cyan"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>');
+  background-image: var(--image-breakpoint-current-existing-bin);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

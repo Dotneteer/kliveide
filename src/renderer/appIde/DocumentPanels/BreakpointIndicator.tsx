@@ -4,6 +4,7 @@ import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { toHexa4 } from "../services/ide-commands";
 import styles from "./BreakpointIndicator.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
+import { Checkbox } from "@renderer/controls/Checkbox";
 
 type Props = {
   address: number | string;
@@ -17,6 +18,7 @@ type Props = {
   ioWrite?: boolean;
   ioMask?: number;
   showType?: boolean;
+  resolvedAddress?: number;
 };
 
 export const BreakpointIndicator = ({
@@ -30,11 +32,14 @@ export const BreakpointIndicator = ({
   ioRead,
   ioWrite,
   ioMask,
-  showType
+  showType,
+  resolvedAddress
 }: Props) => {
   const { ideCommandsService } = useAppServices();
+  const cbkRef = useTooltipRef();
   const ref = useTooltipRef();
   const [pointed, setPointed] = useState(false);
+  const [isDisabled] = useState(disabled);
 
   // --- Calculate tooltip text
   let addrLabel =
@@ -64,11 +69,14 @@ export const BreakpointIndicator = ({
     typeIcon = "bp-io-write";
     typeColor = "--console-ansi-bright-magenta";
   }
+
+  const tooltipCommon = `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})`;
   const tooltip =
-    `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})\n` +
-    (hasBreakpoint
-      ? `Left-click to remove\nRight-click to ${disabled ? "enable" : "disable"}`
-      : "Click to set a breakpoint");
+    `${tooltipCommon})\n` +
+    (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint");
+  const tooltipCheckbox =
+    `${tooltipCommon})\n` +
+    (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
 
   // --- Select the icon to show
   let iconName = "";
@@ -82,14 +90,16 @@ export const BreakpointIndicator = ({
       ? "--color-breakpoint-disabled"
       : typeof address === "number"
         ? "--color-breakpoint-binary"
-        : "--color-breakpoint-code";
+        : resolvedAddress
+          ? "--color-breakpoint-code"
+          : "--color-debug-unreachable-bp";
   } else if (pointed) {
     iconName = "circle-large-outline";
     fill = "--color-breakpoint-disabled";
   }
 
   // --- Handle adding/removing a breakpoint
-  const handleLeftClick = async () => {
+  const handleRemove = async () => {
     let command =
       `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
@@ -101,7 +111,7 @@ export const BreakpointIndicator = ({
   };
 
   // --- Handle enabling/disabling a breakpoint
-  const handleRightClick = async () => {
+  const enableOrDisable = async () => {
     let command =
       `bp-en ${addrLabel} ${disabled ? "" : "-d"} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
@@ -116,29 +126,45 @@ export const BreakpointIndicator = ({
 
   return (
     <div
-      ref={ref}
       className={styles.breakpointWrapper}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
-      onClick={handleLeftClick}
-      onContextMenu={handleRightClick}
     >
-      {iconName ? (
-        <div className={styles.breakpointIndicator}>
-          <Icon width={16} height={16} iconName={iconName} fill={fill} />
+      {showType && (
+        <div ref={cbkRef} style={{ zoom: 0.8 }}>
+          <Checkbox initialValue={!isDisabled} right={true} onChange={enableOrDisable} />
+          <TooltipFactory
+            refElement={cbkRef.current}
+            placement="right"
+            offsetX={0}
+            offsetY={40}
+            showDelay={100}
+            content={tooltipCheckbox}
+          />
         </div>
-      ) : (
-        <div className={styles.iconPlaceholder} />
       )}
-      <TooltipFactory
-        refElement={ref.current}
-        placement="right"
-        offsetX={0}
-        offsetY={40}
-        showDelay={100}
-        content={tooltip}
-      />
-      {showType && <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />}
+      <div
+        ref={ref}
+        style={{ display: "flex", flexDirection: "row", justifyContent: "center" }}
+        onContextMenu={handleRemove}
+      >
+        {iconName ? (
+          <div className={styles.breakpointIndicator}>
+            <Icon width={16} height={16} iconName={iconName} fill={fill} />
+          </div>
+        ) : (
+          <div className={styles.iconPlaceholder} />
+        )}
+        <TooltipFactory
+          refElement={ref.current}
+          placement="right"
+          offsetX={0}
+          offsetY={40}
+          showDelay={100}
+          content={tooltip}
+        />
+        {showType && <Icon iconName={typeIcon} fill={typeColor} width={16} height={16} />}
+      </div>
     </div>
   );
 };

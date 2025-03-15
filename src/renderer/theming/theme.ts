@@ -117,6 +117,7 @@ export type ThemeProperties = {
   "--color-toolbarbutton"?: string;
   "--color-toolbarbutton-green"?: string;
   "--color-toolbarbutton-blue"?: string;
+  "--color-toolbarbutton-orange"?: string;
   "--color-toolbarbutton-red"?: string;
   "--color-toolbar-separator"?: string;
   "--color-toolbarbutton-selected"?: string;
@@ -199,6 +200,9 @@ export type ThemeProperties = {
   "--color-breakpoint-mixed"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
+  "--image-breakpoint-current"?: string;
+  "--image-breakpoint-current-existing"?: string;
+  "--image-breakpoint-current-existing-bin"?: string;
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row"?: string;

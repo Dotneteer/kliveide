@@ -247,7 +247,6 @@ export const DocumentsHeader = () => {
 // --- Encapsulates the command bar to use with the build root document
 const BuildRootCommandBar = () => {
   const { outputPaneService, ideCommandsService } = useAppServices();
-  const storeDispatch = useDispatch();
   const compiling = useSelector((s) => s.compilation?.inProgress ?? false);
   const [startedHere, setStartedHere] = useState(false);
   const [scriptId, setScriptId] = useState<number>();

@@ -142,6 +142,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
         clicked={async () => {
           if (mayInjectCode && !!currentStartOption.cmd) {
             const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+            buildPane.clear();
             await ideCommandsService.executeCommand(currentStartOption.cmd, buildPane);
             await ideCommandsService.executeCommand("outp build");
           } else {
@@ -326,7 +327,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="sync-ignored"
             selected={syncSourceBps}
-            fill="orange"
+            fill="--color-toolbarbutton-orange"
             title="Stop sync with current source code breakpoint"
             enable={kliveProjectLoaded}
             clicked={() => {
@@ -336,7 +337,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           <ToolbarSeparator />
           <IconButton
             iconName="memory-icon"
-            fill="orange"
+            fill="--color-toolbarbutton-orange"
             title="Show Memory Panel"
             selected={volatileDocs?.[MEMORY_PANEL_ID]}
             clicked={async () => {
@@ -349,7 +350,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           />
           <IconButton
             iconName="disassembly-icon"
-            fill="orange"
+            fill="--color-toolbarbutton-orange"
             title="Show Z80 Disassembly Panel"
             selected={volatileDocs?.[DISASSEMBLY_PANEL_ID]}
             clicked={async () => {

@@ -376,14 +376,16 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (editorLines !== null) {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
-          if (unreachable) {
+          if (bp.disabled) {
+            decoration = createCodeBreakpointDecoration(bp.line, true)
+          } else if (unreachable) {
             decoration = createUnreachableBreakpointDecoration(bp.line);
           } else {
             // --- Check if there is a binary breakpoint
             const binBp = bps.find((b) => b.address === bp.resolvedAddress);
             decoration = binBp
-              ? createMixedBreakpointDecoration(bp.line, bp.disabled)
-              : createCodeBreakpointDecoration(bp.line, bp.disabled);
+              ? createBinaryBreakpointDecoration(bp.line, false)
+              : createCodeBreakpointDecoration(bp.line, false);
           }
           decorations.push(decoration);
         } else if (bp.resource && bp.resource === document.node.projectPath) {
@@ -572,22 +574,6 @@ function createBinaryBreakpointDecoration(lineNo: number, disabled: boolean): De
       glyphMarginClassName: disabled
         ? styles.disabledBreakpointMargin
         : styles.binaryBreakpointMargin
-    }
-  };
-}
-
-/**
- * Creates a mixed breakpoint decoration
- * @param lineNo Line to apply the decoration to
- */
-function createMixedBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
-  return {
-    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
-    options: {
-      isWholeLine: true,
-      glyphMarginClassName: disabled
-        ? styles.disabledBreakpointMargin
-        : styles.mixedBreakpointMargin
     }
   };
 }

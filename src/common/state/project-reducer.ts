@@ -19,7 +19,8 @@ export function projectReducer(state: IdeProject, { type, payload }: Action): Id
         projectFileVersion: 1,
         projectViewStateVersion: 1,
         buildFileVersion: 1,
-        folderPath: null
+        folderPath: null,
+        
       };
 
     case "SET_BUILD_ROOT":
