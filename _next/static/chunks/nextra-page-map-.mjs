@@ -96,6 +96,12 @@ export const pageMap = [{
     frontMatter: {
       "sidebarTitle": "Instant Screen"
     }
+  }, {
+    name: "shortcuts",
+    route: "/howto/shortcuts",
+    frontMatter: {
+      "sidebarTitle": "Shortcuts"
+    }
   }]
 }, {
   name: "index",
