@@ -144,6 +144,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const settingsReader = createSettingsReader(mainStore);
   const allowDevTools = settingsReader.readSetting("devTools.allow");
   const f11ShorcutOnMac = settingsReader.readSetting("shortcuts.f11ShortcutOnMac");
+  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F8";
 
   const getWindowTraits = (w?: BrowserWindow) => {
     return {
@@ -329,7 +330,17 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       { role: "zoomIn" },
       { role: "zoomOut" },
       { type: "separator" },
-      { role: "togglefullscreen" },
+      {
+        label: 'Toggle Full Screen',
+        accelerator: fullScreenShortcut,
+        click: () => {
+          if (ideFocus) {
+            ideWindow.setFullScreen(!ideWindow.isFullScreen());
+          } else {
+            emuWindow.setFullScreen(!emuWindow.isFullScreen());
+          }
+        },
+      },
       {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",

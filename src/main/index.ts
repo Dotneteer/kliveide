@@ -56,7 +56,6 @@ import {
   showInstantScreenAction,
   setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
-  setExportDialogInfoAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -79,7 +78,6 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
-import { openFolderByPath } from "./projects";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
