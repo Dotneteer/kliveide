@@ -3,14 +3,7 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { Action } from "@state/Action";
 import { AppState } from "@state/AppState";
 import { Dispatch, Store } from "@state/redux-light";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useState
-} from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 
 // The renderer app's context
 type RendererAppContext = {
@@ -26,35 +19,35 @@ const RendererContext = createContext<RendererAppContext>(undefined);
 /**
  * This React hook makes the current renderer context available within any component logic using the hook.
  */
-export function useRendererContext (): RendererAppContext {
+export function useRendererContext(): RendererAppContext {
   return useContext(RendererContext);
 }
 
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
  */
-export function useStore (): Store<AppState> {
+export function useStore(): Store<AppState> {
   return useContext(RendererContext)?.store;
 }
 
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
  */
-export function useMessenger (): MessengerBase {
+export function useMessenger(): MessengerBase {
   return useContext(RendererContext)?.messenger;
 }
 
 /**
  * This React hook makes the current message source information available within any component logic using the hook.
  */
-export function useMessageSource (): MessageSource {
+export function useMessageSource(): MessageSource {
   return useContext(RendererContext)?.messageSource;
 }
 
 /**
  * This React hook makes the current dispatcher function available within any component logic using the hook.
  */
-export function useDispatch (): Dispatch<Action> {
+export function useDispatch(): Dispatch<Action> {
   const { store, messageSource } = useRendererContext();
 
   const dispatcher = ((action: Action, _: MessageSource) => {
@@ -66,20 +59,25 @@ export function useDispatch (): Dispatch<Action> {
 /**
  * This React hook makes the a mapped state value available within any component logic using the hook.
  */
-export function useSelector<Selected> (
-  stateMapper: (state: AppState) => Selected
-): Selected {
+export function useSelector<Selected>(stateMapper: (state: AppState) => Selected): Selected {
   const store = useStore();
   const storeState = store.getState();
-  const [state, setState] = useState(
-    storeState ? stateMapper(store.getState()) : undefined
-  );
+  const [state, setState] = useState(storeState ? stateMapper(store.getState()) : undefined);
 
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
       const storeState = store.getState();
       if (!storeState) return;
-      setState({...stateMapper(storeState)});
+      const mappedState = stateMapper(storeState);
+      if (typeof mappedState === "object" && mappedState != undefined) {
+        if (Array.isArray(mappedState)) {
+          setState(mappedState.slice(0) as any);
+        } else {
+          setState({ ...mappedState });
+        }
+      } else {
+        setState(mappedState);
+      }
     });
 
     return () => unsubscribe();
@@ -96,12 +94,7 @@ type Props = {
   children: ReactNode;
 };
 
-const RendererProvider = ({
-  store,
-  messenger,
-  messageSource,
-  children
-}: Props) => (
+const RendererProvider = ({ store, messenger, messageSource, children }: Props) => (
   <RendererContext.Provider value={{ store, messenger, messageSource }}>
     {children}
   </RendererContext.Provider>
