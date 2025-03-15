@@ -235,6 +235,29 @@ describe("Z80 standard ops c0-cf", () => {
     expect(cpu.tacts).toBe(25);
   });
 
+  it("0xC4: CALL NZ,nn #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xc4, // CALL NZ,0002H
+      0x10,
+      0x00
+    ]);
+    m.cpu.sp = 0;
+    m.cpu.f = 0x00;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("SP");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.pc).toBe(0x0010);
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
+  });
+
   it("0xC5: PUSH BC", () => {
     // --- Arrange
     const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -291,7 +314,7 @@ describe("Z80 standard ops c0-cf", () => {
     expect(cpu.tacts).toBe(14);
   });
 
-  it("0xC7: RST 00", () => {
+  it("0xC7: RST 00 #1", () => {
     // --- Arrange
     const m = new Z80TestMachine(RunMode.OneInstruction);
     m.initCode([
@@ -316,6 +339,9 @@ describe("Z80 standard ops c0-cf", () => {
 
     expect(cpu.pc).toBe(0x0000);
     expect(cpu.tacts).toBe(18);
+
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
   });
 
   it("0xC8: RET Z #1", () => {
@@ -523,6 +549,62 @@ describe("Z80 standard ops c0-cf", () => {
     expect(cpu.pc).toBe(0x0006);
     expect(cpu.tacts).toBe(25);
   });
+  
+  it("0xCC: CALL Z,nn #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xcc, // CALL Z,0002H
+      0x10,
+      0x00
+    ]);
+    m.cpu.sp = 0;
+    m.cpu.f = 0x40;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("SP");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.pc).toBe(0x0010);
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
+  });
+
+  it("0xCD: CALL nn", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.UntilHalt);
+    m.initCode([
+      0x3e,
+      0x16, // LD A,16H
+      0xb7, // OR A
+      0xcd,
+      0x07,
+      0x00, // CALL Z,0007H
+      0x76, // HALT
+      0x3e,
+      0x24, // LD A,24H
+      0xc9 // RET
+    ]);
+    m.cpu.sp = 0;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("AF");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.a).toBe(0x24);
+
+    expect(cpu.pc).toBe(0x0006);
+    expect(cpu.tacts).toBe(49);
+
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0006);
+  });
 
   it("0xCE: ADC A,N", () => {
     // --- Arrange
@@ -581,5 +663,8 @@ describe("Z80 standard ops c0-cf", () => {
 
     expect(cpu.pc).toBe(0x0008);
     expect(cpu.tacts).toBe(18);
+
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
   });
 });

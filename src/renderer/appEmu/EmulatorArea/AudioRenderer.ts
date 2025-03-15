@@ -16,19 +16,18 @@ export type AudioRendererInfo = {
 };
 
 // --- Initialize the audio context of the beeper (or use the cached instance)
-export async function getBeeperContext (
-  samplesPerFrame: number
-): Promise<AudioRendererInfo> {
+export async function getBeeperContext(samplesPerFrame: number): Promise<AudioRendererInfo> {
   if (!beeperAudioContext) {
     beeperAudioContext = new AudioContext({ latencyHint: 0.01 });
     await beeperAudioContext.suspend();
     await beeperAudioContext.audioWorklet.addModule(samplingWorklet);
-    beeperWorklet = new AudioWorkletNode(
-      beeperAudioContext,
-      "sampling-generator"
-    );
-    beeperWorklet.connect(beeperAudioContext.destination);
-    beeperWorklet.port.postMessage({ initialize: samplesPerFrame });
+    try {
+      beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator");
+      beeperWorklet.connect(beeperAudioContext.destination);
+      beeperWorklet.port.postMessage({ initialize: samplesPerFrame });
+    } catch (err) {
+      // --- Ignore this error intentionally
+    }
   }
   return {
     context: beeperAudioContext,
@@ -57,7 +56,7 @@ export class AudioRenderer {
    * Initializes the renderer
    * @param _samplesPerFrame Samples in a single frame
    */
-  constructor (audioRenderer: AudioRendererInfo) {
+  constructor(audioRenderer: AudioRendererInfo) {
     this.context = audioRenderer.context;
     this.worklet = audioRenderer.worklet;
     this.samplesPerFrame = audioRenderer.samplesPerFrame;
@@ -66,14 +65,14 @@ export class AudioRenderer {
     });
   }
 
-  async play (): Promise<void> {
+  async play(): Promise<void> {
     if (this.suspended) {
       this.suspended = false;
       await this.context.resume();
     }
   }
 
-  async suspend (): Promise<void> {
+  async suspend(): Promise<void> {
     if (this.suspended) return;
     this.suspended = true;
     await this.context.suspend();
@@ -84,7 +83,7 @@ export class AudioRenderer {
    * Stores the samples to render
    * @param samples Next batch of samples to store
    */
-  storeSamples (samples: number[]): void {
+  storeSamples(samples: number[]): void {
     if (this.suspended) return;
     if (this.worklet) {
       this.worklet.port.postMessage({ samples });

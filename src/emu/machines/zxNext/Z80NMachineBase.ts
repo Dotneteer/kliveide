@@ -479,6 +479,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
         }
       } while (this.prefix !== OpCodePrefix.None);
 
+      // --- Maintain the step-out stack
+      if (this.retExecuted) {
+        this.retExecuted = false;
+        this.stepOutStack.pop();
+      }
+
       // --- Execute the queued event
       if (this._queuedEvents) {
         const currentEvent = this._queuedEvents[0];
@@ -577,6 +583,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
         }
         instructionsExecuted++;
       } while (this.prefix !== OpCodePrefix.None);
+
+      // --- Maintain the step-out stack
+      if (this.retExecuted) {
+        this.retExecuted = false;
+        this.stepOutStack.pop();
+      }
 
       // --- Execute the queued event
       this.consumeEvents();
@@ -703,6 +715,10 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
           break;
 
         case DebugStepMode.StepOut:
+          if (z80Machine.stepOutAddress === z80Machine.pc) {
+            // --- We reached the step-out address
+            return true;
+          }
           break;
       }
       return false;

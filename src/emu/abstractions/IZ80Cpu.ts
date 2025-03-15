@@ -268,6 +268,21 @@ export interface IZ80Cpu {
   retExecuted: boolean;
 
   /**
+   * We keep subroutine return addresses in this stack to implement the step-over debugger function
+   */
+  stepOutStack: number[];
+
+  /**
+   * We store the step out address in this variable to implement the step-out debugger function
+   */
+  stepOutAddress: number;
+
+  /**
+   * Invoke this method to mark the current depth of the call stack when the step-out operation starts.
+   */
+  markStepOutAddress(): void;
+
+  /**
    * This flag is reserved for future extension. The ZX Spectrum Next computer uses additional Z80 instructions.
    * This flag indicates if those are allowed.
    */

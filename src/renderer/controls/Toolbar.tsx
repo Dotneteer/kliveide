@@ -106,10 +106,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   useEffect(() => {
     const mode = isDebugging ? "debug" : "start";
     setStartMode(mode);
-    console.log(
-      "isDebugging",
-      startOptions.find((v) => v.value === mode)
-    );
     setCurrentStartOption(startOptions.find((v) => v.value === mode));
   }, [isDebugging]);
 

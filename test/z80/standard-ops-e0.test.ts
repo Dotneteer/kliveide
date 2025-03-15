@@ -236,6 +236,29 @@ describe("Z80 standard ops e0-ef", () => {
     expect(cpu.tacts).toBe(25);
   });
 
+  it("0xE4: CALL PO,nn #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xe4, // CALL PO,0010H
+      0x10,
+      0x00
+    ]);
+    m.cpu.sp = 0;
+    m.cpu.f = 0x00;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("SP");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.pc).toBe(0x0010);
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
+  });
+
   it("0xE5: PUSH HL", () => {
     // --- Arrange
     const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -317,6 +340,9 @@ describe("Z80 standard ops e0-ef", () => {
 
     expect(cpu.pc).toBe(0x0020);
     expect(cpu.tacts).toBe(18);
+
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
   });
 
   it("0xE8: RET PE #1", () => {
@@ -548,6 +574,29 @@ describe("Z80 standard ops e0-ef", () => {
     expect(cpu.tacts).toBe(25);
   });
 
+  it("0xEC: CALL PE,nn #3", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction);
+    m.initCode([
+      0xcc, // CALL Z,0002H
+      0x10,
+      0x00
+    ]);
+    m.cpu.sp = 0;
+    m.cpu.f = 0xff;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    m.shouldKeepRegisters("SP");
+    m.shouldKeepMemory("fffe-ffff");
+    expect(cpu.pc).toBe(0x0010);
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
+  });
+
   it("0xEE: XOR A,N", () => {
     // --- Arrange
     const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -604,5 +653,8 @@ describe("Z80 standard ops e0-ef", () => {
 
     expect(cpu.pc).toBe(0x0028);
     expect(cpu.tacts).toBe(18);
+
+    expect(cpu.stepOutStack.length).toBe(1);
+    expect(cpu.stepOutStack[0]).toBe(0x0003);
   });
 });

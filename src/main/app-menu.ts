@@ -686,7 +686,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
-      accelerator: "F10",
+      accelerator: "F12",
       click: async () => {
         await getEmuApi().issueMachineCommand("stepInto");
       }
@@ -695,7 +695,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
-      accelerator: "Shift+F11",
+      accelerator: "F10",
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOver");
       }
@@ -704,7 +704,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
-      accelerator: "Ctrl+F11",
+      accelerator: "Shift+F11",
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOut");
       }
