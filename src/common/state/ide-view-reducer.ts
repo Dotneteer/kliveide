@@ -58,36 +58,6 @@ export function ideViewReducer (
         tools: payload?.tools
       };
 
-    case "CHANGE_TOOL_STATE": {
-      const changedTools = state?.tools?.splice(0) ?? [];
-      const existingToolIndex = changedTools.findIndex(
-        t => t.id === payload?.tool?.id
-      );
-      if (existingToolIndex >= 0) {
-        changedTools[existingToolIndex] = payload!.tool!;
-        return {
-          ...state,
-          tools: changedTools
-        };
-      }
-      return state;
-    }
-
-    case "CHANGE_TOOL_VISIBILITY": {
-      const changedTools = state?.tools?.splice(0) ?? [];
-      const existingToolIndex = changedTools.findIndex(
-        t => t.id === payload?.id
-      );
-      if (existingToolIndex >= 0) {
-        changedTools[existingToolIndex].visible = payload?.flag;
-        return {
-          ...state,
-          tools: changedTools
-        };
-      }
-      return state;
-    }
-
     case "ACTIVATE_TOOL":
       return {
         ...state,

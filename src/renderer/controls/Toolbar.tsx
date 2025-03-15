@@ -68,6 +68,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const ideApi = useIdeApi();
   const mainApi = useMainApi();
   const machineId = useSelector((s) => s.emulatorState.machineId);
+  const isWindows = useSelector((s) => s.isWindows);
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const state = useSelector((s) => s.emulatorState?.machineState);
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
@@ -95,6 +96,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
     startOptions.find((v) => v.value === mode)
   );
 
+  // --- Use shortcut according to the current platform
+  const [keyShortcut, setKeyShortcut] = useState("F11");
+
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
     await new Promise((r) => setTimeout(r, 100));
@@ -108,6 +112,15 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
     setStartMode(mode);
     setCurrentStartOption(startOptions.find((v) => v.value === mode));
   }, [isDebugging]);
+
+  useEffect(() => {
+    if (!mainApi) return;
+
+    (async () => {
+      const settings = await mainApi.getUserSettings();
+      setKeyShortcut(isWindows || settings?.shortcuts?.f11ShortcutOnMac ? "F11" : "F12");
+    })();
+  }, [mainApi, isWindows]);
 
   return (
     <HStack
@@ -213,7 +226,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-over"
         fill="--color-toolbarbutton-blue"
-        title="Step Over (F11)"
+        title={`Step Over (${keyShortcut})`}
         enable={
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
@@ -223,7 +236,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-out"
         fill="--color-toolbarbutton-blue"
-        title="Step Out (Ctrl+F11)"
+        title={`Step Out (Shift+${keyShortcut})`}
         enable={
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
