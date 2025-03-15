@@ -175,7 +175,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {
-    console.log("exectState", execState)
     if (editor.current) {
       refreshBreakpoints();
       refreshCurrentBreakpoint();
@@ -498,19 +497,22 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       return;
     }
 
+    console.log("RefreshCurrentBreakpoint")
+    //const lastState = store.getState().emulatorState.machineState
     // --- Refresh the information only during paused state
-    if (
-      execState !== MachineControllerState.Paused ||
-      !compilation.result ||
-      compilation.failed ||
-      compilation.result.errors.length > 0
-    ) {
+    //if (
+      //lastState !== MachineControllerState.Paused ||
+      //!compilation.result ||
+      //compilation.failed ||
+      //compilation.result.errors.length > 0
+    //) {
+      console.log("remove old")
       oldExecPointDecoration.current = editor.current.deltaDecorations(
         oldExecPointDecoration.current,
         []
       );
-      return;
-    }
+      //return;
+    //}
 
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
