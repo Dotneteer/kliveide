@@ -497,22 +497,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       return;
     }
 
-    console.log("RefreshCurrentBreakpoint")
-    //const lastState = store.getState().emulatorState.machineState
-    // --- Refresh the information only during paused state
-    //if (
-      //lastState !== MachineControllerState.Paused ||
-      //!compilation.result ||
-      //compilation.failed ||
-      //compilation.result.errors.length > 0
-    //) {
-      console.log("remove old")
-      oldExecPointDecoration.current = editor.current.deltaDecorations(
-        oldExecPointDecoration.current,
-        []
-      );
-      //return;
-    //}
+    oldExecPointDecoration.current = editor.current.deltaDecorations(
+      oldExecPointDecoration.current,
+      []
+    );
 
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;

@@ -23,7 +23,7 @@ const BlinkPanel = () => {
   const emuApi = useEmuApi();
   const [blinkState, setBlinkState] = useState<BlinkState>(null);
 
-  useStateRefresh(250, async () => setBlinkState(await emuApi.getBlinkState()));
+  useStateRefresh(1000, async () => setBlinkState(await emuApi.getBlinkState()));
 
   return (
     <div className={styles.blinkPanel}>

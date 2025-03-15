@@ -239,7 +239,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, refreshMemoryView);
+  useStateRefresh(1000, refreshMemoryView);
 
   const OptionsBar = () => {
     return (
