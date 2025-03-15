@@ -97,7 +97,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   );
 
   // --- Use shortcut according to the current platform
-  const [keyShortcut, setKeyShortcut] = useState("F11");
+  const [stepIntoKey, setStepIntoKey] = useState<string>(null);
+  const [stepOverKey, setStepOverKey] = useState<string>(null);
+  const [stepOutKey, setStepOutKey] = useState<string>(null);
 
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
@@ -118,7 +120,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
 
     (async () => {
       const settings = await mainApi.getUserSettings();
-      setKeyShortcut(isWindows || settings?.shortcuts?.f11ShortcutOnMac ? "F11" : "F12");
+      setStepIntoKey(settings?.shortcuts?.stepInto ?? (isWindows ? "F11" : "F12"));
+      setStepOverKey(settings?.shortcuts?.stepOver ?? "F10");
+      setStepOutKey(settings?.shortcuts?.stepOut ?? (isWindows ? "Shift+F11" : "Shift+F12"));
     })();
   }, [mainApi, isWindows]);
 
@@ -216,7 +220,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-into"
         fill="--color-toolbarbutton-blue"
-        title={`Step Into (${keyShortcut})`}
+        title={`Step Into (${stepIntoKey})`}
         enable={
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
@@ -226,7 +230,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-over"
         fill="--color-toolbarbutton-blue"
-        title={`Step Over (F10)`}
+        title={`Step Over (${stepOverKey})`}
         enable={
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
@@ -236,7 +240,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       <IconButton
         iconName="step-out"
         fill="--color-toolbarbutton-blue"
-        title={`Step Out (Shift+${keyShortcut})`}
+        title={`Step Out (${stepOutKey})`}
         enable={
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)

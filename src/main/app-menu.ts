@@ -143,8 +143,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   const settingsReader = createSettingsReader(mainStore);
   const allowDevTools = settingsReader.readSetting("devTools.allow");
-  const f11ShorcutOnMac = settingsReader.readSetting("shortcuts.f11ShortcutOnMac");
   const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F8";
+  const stepIntoShortcut =
+    settingsReader.readSetting("shortcuts.stepInto") ?? (__DARWIN__ ? "F12" : "F11");
+  const stepOverShortcut =
+    settingsReader.readSetting("shortcuts.stepOver") ?? "F10";
+    const stepOutShortcut =
+    settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
 
   const getWindowTraits = (w?: BrowserWindow) => {
     return {
@@ -331,7 +336,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       { role: "zoomOut" },
       { type: "separator" },
       {
-        label: 'Toggle Full Screen',
+        label: "Toggle Full Screen",
         accelerator: fullScreenShortcut,
         click: () => {
           if (ideFocus) {
@@ -339,7 +344,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           } else {
             emuWindow.setFullScreen(!emuWindow.isFullScreen());
           }
-        },
+        }
       },
       {
         id: TOGGLE_DEVTOOLS,
@@ -680,7 +685,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_INTO,
       label: "Step Into",
       enabled: machinePaused,
-      accelerator: (__DARWIN__ && f11ShorcutOnMac || !__DARWIN__) ? "F11" : "F12",
+      accelerator: stepIntoShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepInto");
       }
@@ -689,7 +694,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OVER,
       label: "Step Over",
       enabled: machinePaused,
-      accelerator: "F10",
+      accelerator: stepOverShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOver");
       }
@@ -698,7 +703,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: STEP_OUT,
       label: "Step Out",
       enabled: machinePaused,
-      accelerator: (__DARWIN__ && f11ShorcutOnMac || !__DARWIN__) ? "Shift+F11" : "Shift+F12",
+      accelerator: stepOutShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOut");
       }

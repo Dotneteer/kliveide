@@ -6,7 +6,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
