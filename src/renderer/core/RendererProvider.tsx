@@ -79,12 +79,11 @@ export function useSelector<Selected> (
     const unsubscribe = store.subscribe(() => {
       const storeState = store.getState();
       if (!storeState) return;
-
-      setState(stateMapper(storeState));
+      setState({...stateMapper(storeState)});
     });
 
     return () => unsubscribe();
-  }, [store]);
+  }, [store, storeState]);
 
   return state;
 }

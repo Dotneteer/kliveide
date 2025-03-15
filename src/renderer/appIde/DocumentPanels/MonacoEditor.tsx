@@ -175,6 +175,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {
+    console.log("exectState", execState)
     if (editor.current) {
       refreshBreakpoints();
       refreshCurrentBreakpoint();
