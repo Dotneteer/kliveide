@@ -568,7 +568,6 @@ export class MachineController implements IMachineController {
   ): Promise<void> {
     this.state = beforeState;
     this._cancelRequested = true;
-    await delay(20);
     if (this._machineTask) {
       await this._machineTask;
       this._machineTask = undefined;
