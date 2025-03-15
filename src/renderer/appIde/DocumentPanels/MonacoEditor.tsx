@@ -2,7 +2,7 @@ import Editor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
@@ -142,14 +142,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
   }, [activationVersion]);
 
-  // --- Refresh breakpoints whenever the documentation hub is refreshed
-  useLayoutEffect(() => {
-    if (editor.current) {
-      refreshBreakpoints();
-      refreshCurrentBreakpoint();
-    }
-  }, [hubVersion]);
-
   // --- Respond to theme changes
   useEffect(() => {
     // --- Set the Monaco editor theme according to the document language
@@ -175,10 +167,12 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     if (editor.current) {
-      refreshBreakpoints();
-      refreshCurrentBreakpoint();
+      (async () => {
+        const bps = await refreshBreakpoints();
+        await refreshCurrentBreakpoint(bps);
+      })();
     }
-  }, [breakpointsVersion, compilation, execState]);
+  }, [breakpointsVersion, compilation, execState, hubVersion]);
 
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
@@ -228,8 +222,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
 
     // --- Show breakpoinst and other decorations when initially displaying the editor
-    refreshBreakpoints();
-    refreshCurrentBreakpoint();
+    (async () => {
+      const bps = await refreshBreakpoints();
+      await refreshCurrentBreakpoint(bps);
+    })();
 
     // --- Sign the document has been activated (again)
     setActivationVersion(activationVersion + 1);
@@ -330,7 +326,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param breakpoints Current breakpoints
    * @param compilation Current compilations
    */
-  async function refreshBreakpoints(): Promise<void> {
+  async function refreshBreakpoints(): Promise<BreakpointInfo[]> {
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
@@ -398,6 +394,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
 
     oldDecorations.current = editor.current.deltaDecorations(oldDecorations.current, decorations);
+    return bps;
   }
 
   /**
@@ -491,7 +488,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Refreshes the current breakpoint
    * @returns
    */
-  async function refreshCurrentBreakpoint(): Promise<void> {
+  async function refreshCurrentBreakpoint(bps: BreakpointInfo[]): Promise<void> {
     if (!editor.current) {
       return;
     }
@@ -523,6 +520,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       // --- Get source map information
       const sourceMapInfo = compilation.result.sourceMap[pc];
       if (lineInfo) {
+        const resName = getResourceName()?.slice(1);
+        const activeBp = bps.find(
+          (bp) => (bp.line === lineInfo.lineNumber && bp.resource === resName) || bp.address === pc
+        );
         oldExecPointDecoration.current = editor.current.deltaDecorations(
           oldExecPointDecoration.current,
           [
@@ -530,7 +531,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               languageInfo.fullLineBreakpoints,
               lineInfo.lineNumber,
               sourceMapInfo?.startColumn,
-              sourceMapInfo?.endColumn
+              sourceMapInfo?.endColumn,
+              activeBp
             )
           ]
         );
@@ -646,14 +648,19 @@ function createCurrentBreakpointDecoration(
   fullLine: boolean,
   lineNo: number,
   startColumn?: number,
-  endColumn?: number
+  endColumn?: number,
+  activeBp?: BreakpointInfo
 ): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, startColumn ?? 1, lineNo, (endColumn ?? 1) + 1),
     options: {
       isWholeLine: fullLine,
       className: styles.activeBreakpointLine,
-      glyphMarginClassName: styles.activeBreakpointMargin
+      glyphMarginClassName: activeBp
+        ? activeBp.address !== undefined
+          ? styles.activeBinBreakpointOnExistingMargin
+          : styles.activeBreakpointOnExistingMargin
+        : styles.activeBreakpointMargin
     }
   };
 }
