@@ -117,6 +117,7 @@ export const darkTheme: ThemeProperties = {
   "--color-toolbarbutton": "white",
   "--color-toolbarbutton-green": "lightgreen",
   "--color-toolbarbutton-blue": "cyan",
+  "--color-toolbarbutton-orange": "orange",
   "--color-toolbarbutton-red": "red",
   "--color-toolbar-separator": "#686868",
   "--color-toolbarbutton-selected": "#007acc",
@@ -198,7 +199,11 @@ export const darkTheme: ThemeProperties = {
   "--color-breakpoint-binary": "#29b8db",
   "--color-breakpoint-mixed": "#d670d6",
   "--color-breakpoint-disabled": "#606060",
-  "--color-breakpoint-current": "yellow",
+  "--color-breakpoint-current": "rgb(245, 245, 67)",
+  "--image-breakpoint-current": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
+  "--image-breakpoint-current-existing": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><circle cx="12" cy="12" r="4" fill="red"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
+  "--image-breakpoint-current-existing-bin": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><circle cx="12" cy="12" r="4" fill="rgb(41, 184, 219)"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
+
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row": "#282828",

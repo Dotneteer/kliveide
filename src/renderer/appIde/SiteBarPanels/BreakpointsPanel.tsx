@@ -143,6 +143,7 @@ const BreakpointsPanel = () => {
                     bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
                   }
                   address={addr ?? addrKey}
+                  resolvedAddress={bp.resolvedAddress}
                   current={isCurrent}
                   hasBreakpoint={true}
                   disabled={disabled}

@@ -2,7 +2,7 @@ import Editor, { loader } from "@monaco-editor/react";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
@@ -11,7 +11,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction, resetCompileAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -25,6 +25,7 @@ let monacoInitialized = false;
 
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
+type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
 type MarkdownString = monacoEditor.IMarkdownString;
 
 // --- We need to invoke this function while initializing the app. This is required to
@@ -123,7 +124,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Store Monaco editor decorations to display breakpoint information
   const oldDecorations = useRef<string[]>([]);
-  const oldHoverDecorations = useRef<string[]>([]);
+  const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const oldExecPointDecoration = useRef<string[]>([]);
 
   // --- The name of the resource this editor displays
@@ -141,14 +142,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       editor.current?.focus();
     });
   }, [activationVersion]);
-
-  // --- Refresh breakpoints whenever the documentation hub is refreshed
-  useLayoutEffect(() => {
-    if (editor.current) {
-      refreshBreakpoints();
-      refreshCurrentBreakpoint();
-    }
-  }, [hubVersion]);
 
   // --- Respond to theme changes
   useEffect(() => {
@@ -175,10 +168,12 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     if (editor.current) {
-      refreshBreakpoints();
-      refreshCurrentBreakpoint();
+      (async () => {
+        const bps = await refreshBreakpoints();
+        await refreshCurrentBreakpoint(bps);
+      })();
     }
-  }, [breakpointsVersion, compilation, execState]);
+  }, [breakpointsVersion, compilation, execState, hubVersion]);
 
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
@@ -228,8 +223,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
 
     // --- Show breakpoinst and other decorations when initially displaying the editor
-    refreshBreakpoints();
-    refreshCurrentBreakpoint();
+    (async () => {
+      const bps = await refreshBreakpoints();
+      await refreshCurrentBreakpoint(bps);
+    })();
 
     // --- Sign the document has been activated (again)
     setActivationVersion(activationVersion + 1);
@@ -330,7 +327,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param breakpoints Current breakpoints
    * @param compilation Current compilations
    */
-  async function refreshBreakpoints(): Promise<void> {
+  async function refreshBreakpoints(): Promise<BreakpointInfo[]> {
     // --- Filter for source code breakpoint belonging to this resoure
     const state = store.getState();
     const bps = (breakpoints.current = await getBreakpoints(messenger));
@@ -380,14 +377,16 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (editorLines !== null) {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
-          if (unreachable) {
+          if (bp.disabled) {
+            decoration = createCodeBreakpointDecoration(bp.line, true);
+          } else if (unreachable) {
             decoration = createUnreachableBreakpointDecoration(bp.line);
           } else {
             // --- Check if there is a binary breakpoint
             const binBp = bps.find((b) => b.address === bp.resolvedAddress);
             decoration = binBp
-              ? createMixedBreakpointDecoration(bp.line, bp.disabled)
-              : createCodeBreakpointDecoration(bp.line, bp.disabled);
+              ? createBinaryBreakpointDecoration(bp.line, false)
+              : createCodeBreakpointDecoration(bp.line, false);
           }
           decorations.push(decoration);
         } else if (bp.resource && bp.resource === document.node.projectPath) {
@@ -398,6 +397,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
 
     oldDecorations.current = editor.current.deltaDecorations(oldDecorations.current, decorations);
+    return bps;
   }
 
   /**
@@ -419,22 +419,23 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
         if (!parsedLine || restrictedNodes.includes(parsedLine.type)) {
           const message = "You cannot create a breakpoint here";
-          oldHoverDecorations.current = editor.current.deltaDecorations(
-            oldHoverDecorations.current,
-            [createHoverDisabledBreakpointDecoration(lineNo, message)]
-          );
+          hoverDecorations.current?.clear();
+          hoverDecorations.current = editor.current.createDecorationsCollection([
+            createHoverDisabledBreakpointDecoration(lineNo, message)
+          ]);
           return;
         }
       }
 
       // --- Display the message
+      hoverDecorations.current?.clear();
       const message = `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`;
-      oldHoverDecorations.current = editor.current.deltaDecorations(oldHoverDecorations.current, [
+      hoverDecorations.current = editor.current.createDecorationsCollection([
         createHoverBreakpointDecoration(lineNo, message)
       ]);
     } else {
       // --- Mouse is out of margin, remove the breakpoint placeholder
-      editor.current.deltaDecorations(oldHoverDecorations.current, []);
+      hoverDecorations.current?.clear();
     }
   }
 
@@ -443,7 +444,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param e
    */
   function handleEditorMouseLeave(_e: monacoEditor.editor.IEditorMouseEvent): void {
-    editor.current.deltaDecorations(oldHoverDecorations.current, []);
+    hoverDecorations.current?.clear();
   }
 
   /**
@@ -491,7 +492,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Refreshes the current breakpoint
    * @returns
    */
-  async function refreshCurrentBreakpoint(): Promise<void> {
+  async function refreshCurrentBreakpoint(bps: BreakpointInfo[]): Promise<void> {
     if (!editor.current) {
       return;
     }
@@ -523,6 +524,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       // --- Get source map information
       const sourceMapInfo = compilation.result.sourceMap[pc];
       if (lineInfo) {
+        const resName = getResourceName()?.slice(1);
+        const activeBp = bps.find(
+          (bp) => (bp.line === lineInfo.lineNumber && bp.resource === resName) || bp.address === pc
+        );
         oldExecPointDecoration.current = editor.current.deltaDecorations(
           oldExecPointDecoration.current,
           [
@@ -530,7 +535,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               languageInfo.fullLineBreakpoints,
               lineInfo.lineNumber,
               sourceMapInfo?.startColumn,
-              sourceMapInfo?.endColumn
+              sourceMapInfo?.endColumn,
+              activeBp
             )
           ]
         );
@@ -570,22 +576,6 @@ function createBinaryBreakpointDecoration(lineNo: number, disabled: boolean): De
       glyphMarginClassName: disabled
         ? styles.disabledBreakpointMargin
         : styles.binaryBreakpointMargin
-    }
-  };
-}
-
-/**
- * Creates a mixed breakpoint decoration
- * @param lineNo Line to apply the decoration to
- */
-function createMixedBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
-  return {
-    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
-    options: {
-      isWholeLine: true,
-      glyphMarginClassName: disabled
-        ? styles.disabledBreakpointMargin
-        : styles.mixedBreakpointMargin
     }
   };
 }
@@ -646,14 +636,19 @@ function createCurrentBreakpointDecoration(
   fullLine: boolean,
   lineNo: number,
   startColumn?: number,
-  endColumn?: number
+  endColumn?: number,
+  activeBp?: BreakpointInfo
 ): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, startColumn ?? 1, lineNo, (endColumn ?? 1) + 1),
     options: {
       isWholeLine: fullLine,
       className: styles.activeBreakpointLine,
-      glyphMarginClassName: styles.activeBreakpointMargin
+      glyphMarginClassName: activeBp
+        ? activeBp.address !== undefined
+          ? styles.activeBinBreakpointOnExistingMargin
+          : styles.activeBreakpointOnExistingMargin
+        : styles.activeBreakpointMargin
     }
   };
 }

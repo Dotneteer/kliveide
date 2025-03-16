@@ -34,13 +34,38 @@
   cursor: pointer;
 }
 
-
-
 .activeBreakpointMargin {
-  background: var(--color-breakpoint-current);
-  clip-path: polygon(25% 25%, 50% 25%, 75% 50%, 50% 75%, 75% 75%, 25% 75%);
   cursor: pointer;
+
+  /* Use the provided SVG as a background image */
+  background-image: var(--image-breakpoint-current);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
 }
+
+.activeBreakpointOnExistingMargin {
+  cursor: pointer;
+  background-image: var(--image-breakpoint-current-existing);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
+}
+
+.activeBinBreakpointOnExistingMargin {
+  cursor: pointer;
+  background-image: var(--image-breakpoint-current-existing-bin);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
+}
+
 
 .activeBreakpointLine {
   background: var(--bgcolor-debug-active-bp);
