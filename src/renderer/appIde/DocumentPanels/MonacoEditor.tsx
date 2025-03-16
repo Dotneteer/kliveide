@@ -11,7 +11,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction, resetCompileAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -25,6 +25,7 @@ let monacoInitialized = false;
 
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
+type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
 type MarkdownString = monacoEditor.IMarkdownString;
 
 // --- We need to invoke this function while initializing the app. This is required to
@@ -123,7 +124,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Store Monaco editor decorations to display breakpoint information
   const oldDecorations = useRef<string[]>([]);
-  const oldHoverDecorations = useRef<string[]>([]);
+  const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const oldExecPointDecoration = useRef<string[]>([]);
 
   // --- The name of the resource this editor displays
@@ -377,7 +378,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
           if (bp.disabled) {
-            decoration = createCodeBreakpointDecoration(bp.line, true)
+            decoration = createCodeBreakpointDecoration(bp.line, true);
           } else if (unreachable) {
             decoration = createUnreachableBreakpointDecoration(bp.line);
           } else {
@@ -418,22 +419,23 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
         if (!parsedLine || restrictedNodes.includes(parsedLine.type)) {
           const message = "You cannot create a breakpoint here";
-          oldHoverDecorations.current = editor.current.deltaDecorations(
-            oldHoverDecorations.current,
-            [createHoverDisabledBreakpointDecoration(lineNo, message)]
-          );
+          hoverDecorations.current?.clear();
+          hoverDecorations.current = editor.current.createDecorationsCollection([
+            createHoverDisabledBreakpointDecoration(lineNo, message)
+          ]);
           return;
         }
       }
 
       // --- Display the message
+      hoverDecorations.current?.clear();
       const message = `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`;
-      oldHoverDecorations.current = editor.current.deltaDecorations(oldHoverDecorations.current, [
+      hoverDecorations.current = editor.current.createDecorationsCollection([
         createHoverBreakpointDecoration(lineNo, message)
       ]);
     } else {
       // --- Mouse is out of margin, remove the breakpoint placeholder
-      editor.current.deltaDecorations(oldHoverDecorations.current, []);
+      hoverDecorations.current?.clear();
     }
   }
 
@@ -442,7 +444,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @param e
    */
   function handleEditorMouseLeave(_e: monacoEditor.editor.IEditorMouseEvent): void {
-    editor.current.deltaDecorations(oldHoverDecorations.current, []);
+    hoverDecorations.current?.clear();
   }
 
   /**
