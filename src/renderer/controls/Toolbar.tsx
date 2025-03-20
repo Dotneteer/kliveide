@@ -7,7 +7,8 @@ import {
   setFastLoadAction,
   showKeyboardAction,
   showInstantScreenAction,
-  syncSourceBreakpointsAction
+  syncSourceBreakpointsAction,
+  setEmuStayOnTopAction
 } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
@@ -74,6 +75,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const showKeyboard = useSelector((s) => s.emuViewOptions?.showKeyboard ?? false);
   const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen ?? false);
+  const stayOnTop = useSelector((s) => s.emuViewOptions?.stayOnTop ?? false);
   const syncSourceBps = useSelector((s) => s.ideViewOptions?.syncSourceBreakpoints ?? true);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad ?? false);
@@ -250,6 +252,17 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
       />
       {!ide && (
         <>
+          <ToolbarSeparator />
+          <IconButton
+            iconName={stayOnTop ? "pinned" : "pin"}
+            fill="--color-toolbarbutton"
+            selected={stayOnTop}
+            title={"Stay on top"}
+            clicked={async () => {
+              dispatch(setEmuStayOnTopAction(!stayOnTop));
+              await saveProject();
+            }}
+          />
           <ToolbarSeparator />
           <IconButton
             iconName="vm"

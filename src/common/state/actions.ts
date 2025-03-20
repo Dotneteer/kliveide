@@ -386,3 +386,8 @@ export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any
   type: "SET_WORKSPACE_SETTINGS",
   payload: { id, value }
 });
+
+export const setEmuStayOnTopAction: ActionCreator = (flag: boolean) => ({
+  type: "EMU_STAY_ON_TOP",
+  payload: { flag }
+});
