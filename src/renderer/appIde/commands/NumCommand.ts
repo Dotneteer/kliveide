@@ -1,7 +1,7 @@
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
-import { writeSuccessMessage, commandSuccess, IdeCommandBase } from "../services/ide-commands";
+import { writeSuccessMessage, commandSuccess, IdeCommandBase, toBin16 } from "../services/ide-commands";
 
 type NumCommandArgs = {
   num: number;
@@ -21,7 +21,7 @@ export class NumCommand extends IdeCommandBase<NumCommandArgs> {
   async execute(context: IdeCommandContext, args: NumCommandArgs): Promise<IdeCommandResult> {
     writeSuccessMessage(
       context.output,
-      `Number: ${args.num}, $${args.num.toString(16).toUpperCase()}, %${args.num.toString(2)}`
+      `Number: ${args.num}, $${args.num.toString(16).toUpperCase()}, ${toBin16(args.num)}`
     );
     return commandSuccess;
   }

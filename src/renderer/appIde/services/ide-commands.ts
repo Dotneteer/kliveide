@@ -207,6 +207,16 @@ export function toDecimal3(value: number): string {
   return value.toString(10).toUpperCase().padStart(3, "0");
 }
 
+export function toBin8(value: number): string {
+  const binValue =  value.toString(2).toUpperCase().padStart(8, "0");
+  return `%${binValue.substring(0, 4)} ${binValue.substring(4)}`;
+}
+
+export function toBin16(value: number): string {
+  const binValue =  value.toString(2).toUpperCase().padStart(16, "0");
+  return `%${binValue.substring(0, 4)} ${binValue.substring(4, 8)}\xa0\xa0${binValue.substring(8, 12)} ${binValue.substring(12)}`;
+}
+
 
 /**
  * Converts a token to an integer value

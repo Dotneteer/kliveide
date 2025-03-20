@@ -16,7 +16,7 @@
 // the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide`
 // parameter).
 // ====================================================================================================================
-import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, shell, BrowserWindow, ipcMain, Menu, globalShortcut } from "electron";
 
 import fs from "fs";
 import { release } from "os";

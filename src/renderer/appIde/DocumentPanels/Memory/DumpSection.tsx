@@ -3,7 +3,7 @@ import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "classnames";
 import { memo, useEffect, useState } from "react";
 import styles from "./DumpSection.module.scss";
-import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { toBin8, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
@@ -134,7 +134,7 @@ function initTooltipCache(charset: Record<number, CharDescriptor>) {
       description = valueInfo.t ?? "";
     }
     tooltipCache[i] =
-      `$${toHexa2(i)} (${i}, %${i.toString(2)})\n` +
+      `$${toHexa2(i)} (${i}, ${toBin8(i)})\n` +
       `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
   }
 }

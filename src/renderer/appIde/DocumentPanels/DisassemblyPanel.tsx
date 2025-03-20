@@ -9,7 +9,11 @@ import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { Label, LabelSeparator, Secondary, Value } from "@renderer/controls/Labels";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { setIdeStatusMessageAction } from "@common/state/actions";
+import {
+  incProjectFileVersionAction,
+  setIdeStatusMessageAction,
+  setWorkspaceSettingsAction
+} from "@common/state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
   DisassemblyItem,
@@ -34,6 +38,8 @@ import { PanelHeader } from "./helpers/PanelHeader";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
+import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type BankedMemoryPanelViewState = {
   topAddress?: number;
@@ -61,6 +67,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApiAlt = useEmuApi();
+  const mainApi = useMainApi();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -85,19 +92,32 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
 
   // --- View state variables
-  const [topAddress, setTopAddress] = useState<number>(viewState.current?.topAddress ?? 0);
-  const [isFullView, setIsFullView] = useState(viewState.current?.isFullView ?? true);
-  const [autoRefresh, setAutoRefresh] = useState(viewState.current?.autoRefresh ?? true);
-  const [currentSegment, setCurrentSegment] = useState<number>(
-    viewState.current?.currentSegment ?? 0
+  const workspace = useSelector((s) => s.workspaceSettings?.[DISASSEMBLY_EDITOR]);
+  const [topAddress, setTopAddress] = useState<number>(
+    viewState.current?.topAddress ?? workspace?.topAddress ?? 0
   );
-  const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
+  const [isFullView, setIsFullView] = useState(
+    viewState.current?.isFullView ?? workspace?.isFullView ?? true
+  );
+  const [autoRefresh, setAutoRefresh] = useState(
+    viewState.current?.autoRefresh ?? workspace?.autoRefresh ?? true
+  );
+  const [currentSegment, setCurrentSegment] = useState<number>(
+    viewState.current?.currentSegment ?? workspace?.currentSegment ?? 0
+  );
+  const [bankLabel, setBankLabel] = useState(
+    viewState.current?.bankLabel ?? workspace?.bankLabel ?? true
+  );
 
   // --- Display options
-  const [decimalView, setDecimalView] = useState(viewState.current?.decimalView ?? false);
-  const [ram, setRam] = useState(viewState.current?.ram ?? true);
-  const [screen, setScreen] = useState(viewState.current?.screen ?? false);
-  const [disassOffset, setDisassOffset] = useState(viewState.current?.disassOffset ?? 0);
+  const [decimalView, setDecimalView] = useState(
+    viewState.current?.decimalView ?? workspace?.decimalView ?? false
+  );
+  const [ram, setRam] = useState(viewState.current?.ram ?? workspace?.ram ?? true);
+  const [screen, setScreen] = useState(viewState.current?.screen ?? workspace?.screen ?? false);
+  const [disassOffset, setDisassOffset] = useState(
+    viewState.current?.disassOffset ?? workspace?.disassOffset ?? 0
+  );
 
   const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
 
@@ -149,7 +169,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         });
         setSegmentOptions(options);
       }
-      setCurrentSegment(romPagesValue ? -1 : 0);
     })();
   }, [machineId]);
 
@@ -161,11 +180,17 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       currentSegment,
       decimalView,
       bankLabel,
+      autoRefresh,
       ram,
       screen,
-      disassOffset: disassOffset
+      disassOffset
     };
     documentHubService.saveActiveDocumentState(mergedState);
+    dispatch(setWorkspaceSettingsAction(DISASSEMBLY_EDITOR, mergedState));
+    (async () => {
+      await mainApi.saveProject();
+      dispatch(incProjectFileVersionAction());
+    })();
   };
 
   // --- Refresh the disassembly view
@@ -314,7 +339,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
     (async function () {
-      console.log("machineState");
       switch (machineState) {
         case MachineControllerState.Paused:
         case MachineControllerState.Stopped:

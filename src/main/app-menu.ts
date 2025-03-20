@@ -145,7 +145,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   const settingsReader = createSettingsReader(mainStore);
   const allowDevTools = settingsReader.readSetting("devTools.allow");
-  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F8";
+  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F9";
   const stepIntoShortcut =
     settingsReader.readSetting("shortcuts.stepInto") ?? (__DARWIN__ ? "F12" : "F11");
   const stepOverShortcut =
@@ -201,6 +201,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: RECENT_PROJECTS,
         label: "Recent Folders",
         submenu: recentProjects
+      },
+      {
+        label: 'My Action',
+        accelerator: 'F8',
+        click: () => {
+          console.log('F8 pressed');
+        }
       }
     );
   }
