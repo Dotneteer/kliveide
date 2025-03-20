@@ -11,7 +11,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction, resetCompileAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
