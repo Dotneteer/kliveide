@@ -11,7 +11,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction, resetCompileAction } from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -20,6 +20,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
+import { useMainApi } from "@renderer/core/MainApi";
 
 let monacoInitialized = false;
 
@@ -89,6 +90,58 @@ export type EditorApi = DocumentApi & {
   setPosition(lineNo: number, column: number): void;
 };
 
+// --- Key to re-bind
+const keysToRebind = [
+  { key: monacoEditor.KeyCode.F1, shortCut: "F1" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F1, shortCut: "Shift+F1" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F1, shortCut: "Ctrl+F1" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F1, shortCut: "Alt+F1" },
+  { key: monacoEditor.KeyCode.F2, shortCut: "F2" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F2, shortCut: "Shift+F2" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F2, shortCut: "Ctrl+F2" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F2, shortCut: "Alt+F2" },
+  { key: monacoEditor.KeyCode.F3, shortCut: "F3" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F3, shortCut: "Shift+F3" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F3, shortCut: "Ctrl+F3" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F3, shortCut: "Alt+F3" },
+  { key: monacoEditor.KeyCode.F4, shortCut: "F4" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F4, shortCut: "Shift+F4" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F4, shortCut: "Ctrl+F4" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F4, shortCut: "Alt+F4" },
+  { key: monacoEditor.KeyCode.F5, shortCut: "F5" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F5, shortCut: "Shift+F5" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F5, shortCut: "Ctrl+F5" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F5, shortCut: "Alt+F5" },
+  { key: monacoEditor.KeyCode.F6, shortCut: "F6" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F6, shortCut: "Shift+F6" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F6, shortCut: "Ctrl+F6" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F6, shortCut: "Alt+F6" },
+  { key: monacoEditor.KeyCode.F7, shortCut: "F7" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F7, shortCut: "Shift+F7" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F7, shortCut: "Ctrl+F7" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F7, shortCut: "Alt+F7" },
+  { key: monacoEditor.KeyCode.F8, shortCut: "F8" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F8, shortCut: "Shift+F8" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F8, shortCut: "Ctrl+F8" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F8, shortCut: "Alt+F8" },
+  { key: monacoEditor.KeyCode.F9, shortCut: "F9" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F9, shortCut: "Shift+F9" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F9, shortCut: "Ctrl+F9" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F9, shortCut: "Alt+F9" },
+  { key: monacoEditor.KeyCode.F10, shortCut: "F10" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F10, shortCut: "Shift+F10" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F10, shortCut: "Ctrl+F10" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F10, shortCut: "Alt+F10" },
+  { key: monacoEditor.KeyCode.F11, shortCut: "F11" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F11, shortCut: "Shift+F11" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F11, shortCut: "Ctrl+F11" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F11, shortCut: "Alt+F11" },
+  { key: monacoEditor.KeyCode.F12, shortCut: "F12" },
+  { key: monacoEditor.KeyMod.Shift | monacoEditor.KeyCode.F12, shortCut: "Shift+F12" },
+  { key: monacoEditor.KeyMod.WinCtrl | monacoEditor.KeyCode.F12, shortCut: "Ctrl+F12" },
+  { key: monacoEditor.KeyMod.Alt | monacoEditor.KeyCode.F12, shortCut: "Alt+F12" }
+];
+
 // --- Monaco editor component properties
 type EditorProps = {
   document: ProjectDocumentState;
@@ -103,6 +156,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
+  const mainApi = useMainApi();
   const [monacoTheme, setMonacoTheme] = useState("");
 
   // --- Respond to editor font size change requests
@@ -159,6 +213,36 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
     setMonacoTheme(themeName);
   }, [theme, document.language]);
+
+  useEffect(() => {
+    (async () => {
+      const settings = (await mainApi.getUserSettings())?.shortcuts ?? {};
+      if (settings.stepInto) {
+        bindKey(settings.stepInto, async () => {
+          await emuApi.issueMachineCommand("stepInto");
+        });
+      }
+      if (settings.stepOver) {
+        bindKey(settings.stepOver, async () => {
+          await emuApi.issueMachineCommand("stepOver");
+        });
+      }
+      if (settings.stepOut) {
+        bindKey(settings.stepOut, async () => {
+          await emuApi.issueMachineCommand("stepOut");
+        });
+      }
+
+      function bindKey(shortcut: string, action: () => Promise<void>) {
+        const mappingKey = keysToRebind.find((key) => key.shortCut === shortcut);
+        if (mappingKey) {
+          editor.current?.addCommand(mappingKey.key, async () => {
+            await action();
+          });
+        }
+      }
+    })();
+  }, [editor.current]);
 
   // --- Respond to editor font size changes
   useEffect(() => {

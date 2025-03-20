@@ -223,7 +223,7 @@ function initTooltipCache(charset: Record<number, CharDescriptor>) {
       description = valueInfo.t ?? "";
     }
     tooltipCache[i] =
-      `$${toHexa2(i)} (${i}, %${i.toString(2)})\n` +
+      `$${toHexa2(i)} (${i}, %${i.toString(2).padStart(8, "0")})\n` +
       `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
   }
 }

@@ -5,6 +5,7 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 import { incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointKey } from "@common/utils/breakpoints";
+import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 // --- Breakpoint flags
 // --- Execution breakpoint
@@ -397,6 +398,7 @@ export class DebugSupport implements IDebugSupport {
           }
         } else {
           // --- Set (disabled) or reset the flag
+          console.log()
           if (enabled) {
             this.breakpointFlags[address] &= ~flag;
           } else {
@@ -491,6 +493,11 @@ export class DebugSupport implements IDebugSupport {
     }
     bp.resolvedAddress = address;
     this.breakpointFlags[address] = EXEC_BP;
+    if (bp.disabled) {
+      this.breakpointFlags[address] |= DIS_EXEC_BP;
+    } else {
+      this.breakpointFlags[address] &= ~DIS_EXEC_BP;
+    }
   }
 
   // --- Get the breakpoint flags from the definition

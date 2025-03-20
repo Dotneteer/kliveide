@@ -103,7 +103,7 @@ abstract class BreakpointWithAddressCommand extends IdeCommandBase<BreakpointWit
     ]
   };
 
-  partitionLabels: string[];
+  partitionLabels: Record<number, string> = {};
 
   async validateCommandArgs(
     context: IdeCommandContext,

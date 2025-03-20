@@ -97,4 +97,5 @@ export interface ActionTypes {
   SET_IDE_DISABLE_AUTO_OPEN_BUILD_ROOT: null;
   SET_IDE_DISABLE_AUTO_OPEN_PROJECT: null;
   SET_IDE_EXPORT_DIALOG: null;
+  SET_WORKSPACE_SETTINGS: null;
 }

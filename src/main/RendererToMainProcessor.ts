@@ -54,6 +54,7 @@ import { InputStream } from "./z80-compiler/input-stream";
 import { TokenStream } from "./z80-compiler/token-stream";
 import { Z80AsmParser } from "./z80-compiler/z80-asm-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { globalShortcut } from "electron/main";
 
 class MainMessageProcessor {
   constructor(
@@ -386,6 +387,7 @@ class MainMessageProcessor {
       await setSelectedTapeFile(tapeFile);
     }
   }
+
 }
 
 /**

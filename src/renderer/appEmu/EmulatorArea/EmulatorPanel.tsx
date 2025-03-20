@@ -193,7 +193,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }, [showInstantScreen]);
 
   // --- Respond to resizing the main container
-  useResizeObserver(hostElement, () => calculateDimensions());
+  useResizeObserver(hostElement, () => {
+    calculateDimensions();
+    displayScreenData();
+  });
 
   return (
     <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>

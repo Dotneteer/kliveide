@@ -6,6 +6,8 @@ import { Callout } from 'nextra/components';
 You can change the shortcuts for a few menu commands and other actions in Klive. This feature is experimental and may change in the future.
 </Callout>
 
+## Update Shortcuts
+
 You can change a few shortcut keys when using Klive IDE with the `set` in the interactive command panel:
 
 ```text
@@ -50,6 +52,22 @@ Use `CmdOrCtrl` to define `Cmd` on macOS and `Ctrl` on Windows/Linux. Modifiers 
   - `Up`, `Down`, `Left`, `Right`
 
 <Callout type="info" emoji="💡">
-Your OS may override the key combination that you define. In this case, the OS-assigned shortcut key function will prevail.
+You must restart Klive to use to use the new accelerator keys. Though it may work with the new keys immediately in some environments, the proper reassignment requires a restart.
+
 </Callout>
 
+## Reset Shortcuts
+
+To reset a particular shortcut (let Klive forget about a previously set shortcut), run this command:
+
+```text
+set -u shortcuts.<actionId>
+```
+
+## Conflicts with Other Keys
+
+The Monaco Editor (your code editor) may already use one of your new accelerator keys. If Klive experiences a conflict between a Monaco Editor key and your `stepInto,` `stepOver,` or `stepOut` keys, it will force your keys and oppress the initial Monaco functionality.
+
+<Callout type="info" emoji="💡">
+Your OS may override the key combination that you define. In this case, the OS-assigned shortcut key function will prevail.
+</Callout>

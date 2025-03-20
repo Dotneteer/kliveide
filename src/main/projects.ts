@@ -26,7 +26,8 @@ import {
   showSideBarAction,
   showToolPanelsAction,
   toolPanelsOnTopAction,
-  setExportDialogInfoAction
+  setExportDialogInfoAction,
+  setWorkspaceSettingsAction
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -189,6 +190,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
+      disp(setWorkspaceSettingsAction(undefined, projectStruct.workspaceSettings));
 
       // --- Restore breakpoints
       await getEmuApi().eraseAllBreakpoints();
@@ -366,7 +368,8 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
       roots: state.project?.buildRoots ?? []
     },
     settings: state.projectSettings,
-    exportDialog: state.project?.exportSettings
+    exportDialog: state.project?.exportSettings,
+    workspaceSettings: state.workspaceSettings
   };
 }
 
@@ -428,6 +431,7 @@ type KliveProjectStructure = {
   builder?: BuilderState;
   settings?: Record<string, any>;
   exportDialog?: ExportDialogSettings;
+  workspaceSettings?: Record<string, any>;
 };
 
 interface ViewOptions {

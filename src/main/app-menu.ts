@@ -37,7 +37,7 @@ import {
   setIdeDisableAutoOpenProjectAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { getEmuApi, sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, saveKliveProject } from "./projects";
@@ -57,8 +57,6 @@ import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { createEmuApi } from "@common/messaging/EmuApi";
-import { EmuToMainMessenger } from "@common/messaging/EmuToMainMessenger";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -145,7 +143,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   const settingsReader = createSettingsReader(mainStore);
   const allowDevTools = settingsReader.readSetting("devTools.allow");
-  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F8";
+  const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F9";
   const stepIntoShortcut =
     settingsReader.readSetting("shortcuts.stepInto") ?? (__DARWIN__ ? "F12" : "F11");
   const stepOverShortcut =
@@ -201,6 +199,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: RECENT_PROJECTS,
         label: "Recent Folders",
         submenu: recentProjects
+      },
+      {
+        label: 'My Action',
+        accelerator: 'F8',
+        click: () => {
+          console.log('F8 pressed');
+        }
       }
     );
   }

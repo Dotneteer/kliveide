@@ -381,3 +381,8 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
   type: "SET_IDE_EXPORT_DIALOG",
   payload: { value }
 });
+
+export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_WORKSPACE_SETTINGS",
+  payload: { id, value }
+});

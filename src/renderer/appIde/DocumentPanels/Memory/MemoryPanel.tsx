@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
@@ -20,6 +20,9 @@ import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
+import { incProjectFileVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
+import { MEMORY_EDITOR } from "@common/state/common-ids";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type BankedMemoryPanelViewState = {
   topIndex?: number;
@@ -39,8 +42,10 @@ export type CachedRefreshState = {
 
 const BankedMemoryPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
+  const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
+  const mainApi = useMainApi();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -56,15 +61,28 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- View state variables
-  const [topIndex, setTopIndex] = useState<number>(viewState.current?.topIndex ?? 0);
-  const [isFullView, setIsFullView] = useState(viewState.current?.isFullView ?? true);
+  const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
+  const [topIndex, setTopIndex] = useState<number>(
+    viewState.current?.topIndex ?? workspace?.topIndex ?? 0
+  );
+  const [isFullView, setIsFullView] = useState(
+    viewState.current?.isFullView ?? workspace?.isFullView ?? true
+  );
   const [currentSegment, setCurrentSegment] = useState<number>(null);
-  const [bankLabel, setBankLabel] = useState(viewState.current?.bankLabel ?? true);
+  const [bankLabel, setBankLabel] = useState(
+    viewState.current?.bankLabel ?? workspace?.bankLabel ?? true
+  );
 
   // --- Display options
-  const [decimalView, setDecimalView] = useState(viewState.current?.decimalView ?? false);
-  const [twoColumns, setTwoColumns] = useState(viewState.current?.twoColumns ?? true);
-  const [charDump, setCharDump] = useState(viewState.current?.charDump ?? true);
+  const [decimalView, setDecimalView] = useState(
+    viewState.current?.decimalView ?? workspace?.decimalView ?? false
+  );
+  const [twoColumns, setTwoColumns] = useState(
+    viewState.current?.twoColumns ?? workspace?.twoColumns ?? true
+  );
+  const [charDump, setCharDump] = useState(
+    viewState.current?.charDump ?? workspace?.charDump ?? true
+  );
 
   // --- State of the memory view
   const refreshInProgress = useRef(false);
@@ -125,6 +143,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       bankLabel
     };
     documentHubService.saveActiveDocumentState(mergedState);
+    dispatch(setWorkspaceSettingsAction(MEMORY_EDITOR, mergedState));
+    (async () => {
+      await mainApi.saveProject();
+      dispatch(incProjectFileVersionAction());
+    })();
   };
 
   // --- Creates the addresses to represent dump sections

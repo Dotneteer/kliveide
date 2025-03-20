@@ -11,6 +11,7 @@ import { compilationReducer } from "./compilation-reducer";
 import { mediaReducer } from "./media-reducer";
 import { scriptsReducer } from "./scripts-reducer";
 import { ideSettingsReducer } from "./ide-settings-reducer";
+import { workspaceSettingsReducer } from "./workspace-settings-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -29,6 +30,11 @@ function appReducer(state: AppState, action: Action): AppState {
   invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
   invokeReducer(state.scripts, scriptsReducer, (a, n) => (a.scripts = n));
   invokeReducer(state.ideSettings, ideSettingsReducer, (a, n) => (a.ideSettings = n));
+  invokeReducer(
+    state.workspaceSettings,
+    workspaceSettingsReducer,
+    (a, n) => (a.workspaceSettings = n)
+  );
   return state;
 
   /**

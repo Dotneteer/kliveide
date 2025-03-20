@@ -3,7 +3,11 @@ import { LabeledSwitch } from "@controls/LabeledSwitch";
 import { ToolbarSeparator } from "@controls/ToolbarSeparator";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { setIdeStatusMessageAction } from "@state/actions";
+import {
+  incProjectFileVersionAction,
+  setIdeStatusMessageAction,
+  setWorkspaceSettingsAction
+} from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
@@ -25,6 +29,8 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VirtualizerHandle } from "virtua";
 import { PanelHeader } from "./helpers/PanelHeader";
+import { BASIC_EDITOR } from "@common/state/common-ids";
+import { useMainApi } from "@renderer/core/MainApi";
 
 type BasicViewState = {
   topIndex?: number;
@@ -37,11 +43,13 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
+  const mainApi = useMainApi();
 
   const documentHubService = useDocumentHubService();
 
   // --- Read the view state of the document
-  const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? 0);
+  const workspace = useSelector((s) => s.workspaceSettings?.[BASIC_EDITOR]);
+  const [topIndex, setTopIndex] = useState(viewState?.topIndex ?? workspace?.topIndex ?? 0);
 
   // --- Use these app state variables
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -50,9 +58,13 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
 
   // --- Use these options to set memory options. As memory view is async, we sometimes
   // --- need to use state changes not yet committed by React.
-  const [autoRefresh, setAutoRefresh] = useState(viewState?.autoRefresh ?? true);
-  const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? false);
-  const [showSpectrumFont, setShowSpectrumFont] = useState(viewState?.showSpectrumFont ?? true);
+  const [autoRefresh, setAutoRefresh] = useState(
+    viewState?.autoRefresh ?? workspace?.autoRefresh ?? true
+  );
+  const [showCodes, setShowCodes] = useState(viewState?.showCodes ?? workspace?.showCodes ?? false);
+  const [showSpectrumFont, setShowSpectrumFont] = useState(
+    viewState?.showSpectrumFont ?? workspace?.showSpectrumFont ?? true
+  );
 
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
@@ -313,6 +325,11 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
       showSpectrumFont
     };
     documentHubService.saveActiveDocumentState(mergedState);
+    dispatch(setWorkspaceSettingsAction(BASIC_EDITOR, mergedState));
+    (async () => {
+      await mainApi.saveProject();
+      dispatch(incProjectFileVersionAction());
+    })();
   }, [topIndex, autoRefresh, showCodes, showSpectrumFont]);
   // --- Scroll to the desired position whenever the scroll index changes
   useEffect(() => {

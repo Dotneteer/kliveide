@@ -659,7 +659,7 @@ export async function processMainToEmuMessages(
           };
         } catch (err) {
           // --- Report the error
-          console.error(`Error processing message: ${err}`);
+          console.error(`Error processing message: ${err}`, err);
           return errorResponse(err.toString());
         }
       }

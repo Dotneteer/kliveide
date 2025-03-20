@@ -36,6 +36,7 @@ export type AppState = {
   userSettings?: Record<string, any>;
   menuVersion?: number;
   scripts?: ScriptRunInfo[];
+  workspaceSettings?: Record<string, any>;
 };
 
 /**
@@ -199,5 +200,6 @@ export const initialAppState: AppState = {
     inProgress: false,
     injectionVersion: 0
   },
-  scripts: []
+  scripts: [],
+  workspaceSettings: {}
 };
