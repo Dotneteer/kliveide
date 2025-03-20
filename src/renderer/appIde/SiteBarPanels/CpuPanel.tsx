@@ -4,6 +4,7 @@ import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
+import { toBin16, toBin8 } from "../services/ide-commands";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 36;
@@ -24,16 +25,16 @@ const CpuPanel = () => {
     const valL = value & 0xff;
     const isNegL = valL > 127;
     return value !== undefined
-      ? `${reg16 ? reg16 + ":" : ""} ${value.toString()}, %${value.toString(2)}` +
+      ? `${reg16 ? reg16 + ":" : ""} ${value.toString()}, ${toBin16(value)}` +
           (regH
             ? `\n${regH}: ${valH.toString()}${
                 isNegH ? ` (${valH - 256})` : ""
-              }, %${valH.toString(2)}`
+              }, ${toBin8(valH)}`
             : "") +
           (regL
             ? `\n${regL}: ${valL.toString()}${
                 isNegL ? ` (${valL - 256})` : ""
-              }, %${valL.toString(2)}`
+              }, ${toBin8(valL)}`
             : "")
       : "n/a";
   };

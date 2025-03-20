@@ -1,7 +1,7 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "classnames";
-import { toHexa4, toHexa2, toDecimal5, toDecimal3 } from "../services/ide-commands";
+import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
@@ -223,7 +223,7 @@ function initTooltipCache(charset: Record<number, CharDescriptor>) {
       description = valueInfo.t ?? "";
     }
     tooltipCache[i] =
-      `$${toHexa2(i)} (${i}, %${i.toString(2).padStart(8, "0")})\n` +
+      `$${toHexa2(i)} (${i}, ${toBin8(i)})\n` +
       `${valueInfo.v ? valueInfo.v + " " : ""}${description}`;
   }
 }
