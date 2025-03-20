@@ -11,6 +11,7 @@ export interface ActionTypes {
   SET_THEME: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
+  EMU_STAY_ON_TOP
   DIM_MENU: null,
   INC_MENU_VERSION: null;
 

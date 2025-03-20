@@ -48,6 +48,7 @@ export type AppSettings = {
   showIdeStatusBar?: boolean;
   showEmuToolbar?: boolean;
   showEmuStatusBar?: boolean;
+  emuStayOnTop?: boolean;
   primaryBarRight?: boolean;
   toolPanelsTop?: boolean;
   maximizeTools?: boolean;
@@ -95,6 +96,7 @@ export function saveAppSettings (): void {
     appSettings.showIdeStatusBar = state.ideViewOptions?.showStatusBar ?? false;
     appSettings.showEmuToolbar = state.emuViewOptions?.showToolbar ?? false;
     appSettings.showEmuStatusBar = state.emuViewOptions?.showStatusBar ?? false;
+    appSettings.emuStayOnTop = state.emuViewOptions?.stayOnTop ?? false;
     appSettings.primaryBarRight = state.ideViewOptions?.primaryBarOnRight ?? false;
     appSettings.toolPanelsTop = state.ideViewOptions?.toolPanelsOnTop ?? false;
     appSettings.maximizeTools = state.ideViewOptions?.maximizeTools ?? false;

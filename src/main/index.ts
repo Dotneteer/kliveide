@@ -56,6 +56,7 @@ import {
   showInstantScreenAction,
   setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
+  setEmuStayOnTopAction,
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -271,6 +272,7 @@ async function createAppWindows() {
       mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
       mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
       mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
+      mainStore.dispatch(setEmuStayOnTopAction(appSettings.emuStayOnTop ?? false));
       mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
       mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
       mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
@@ -316,19 +318,15 @@ async function createAppWindows() {
       (async () => await processBuildFile())();
     }
 
+    // --- Manage the Stay on top for the emu window
+    if (!!state.emuViewOptions?.stayOnTop && !emuWindow.isAlwaysOnTop()) {
+      emuWindow.setAlwaysOnTop(true);
+    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow.isAlwaysOnTop()) {
+      emuWindow.setAlwaysOnTop(false);
+    }
+
     // --- Adjust menu items whenever the app state changes
     setupMenu(emuWindow, ideWindow);
-
-    // // --- Open the last project
-    // if (!state.ideSettings.disableAutoOpenProject && appSettings.recentProjects?.length > 0) {
-    //   const projectPath = appSettings.recentProjects[0];
-    //   ideWindow.show();
-    //   if (appSettings?.windowStates?.ideWindow?.isMaximized) {
-    //     ideWindow.maximize();
-    //   }
-    //   await openFolderByPath(projectPath);
-    //   // mainStore.dispatch(resetCompileAction());
-    // }
   });
 
   // --- We use a little hack here. We pass the application path value in the query parameter

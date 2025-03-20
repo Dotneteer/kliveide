@@ -64,6 +64,7 @@ export type EmuViewOptions = {
   showStatusBar?: boolean;
   showInstantScreen?: boolean;
   keyboardLayout?: string;
+  stayOnTop?: boolean;
 };
 
 export type IdeView = {
@@ -177,7 +178,8 @@ export const initialAppState: AppState = {
   emuViewOptions: {
     showToolbar: true,
     showStatusBar: true,
-    showKeyboard: false
+    showKeyboard: false,
+    stayOnTop: false
   },
   ideSettings: {},
   emulatorState: {
