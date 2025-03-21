@@ -163,6 +163,15 @@ class EmuApiImpl {
   async setRegisterValue(_register: string, _value: number): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async setMemoryContent(
+    _address: number,
+    _value: number,
+    _size: number,
+    _bigEndian: boolean
+  ): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 // --- The response with the CPU state information

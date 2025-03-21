@@ -61,6 +61,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
   const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen);
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
@@ -197,6 +198,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     calculateDimensions();
     displayScreenData();
   });
+
+  useEffect(() => {
+    if (showInstantScreen) {
+      renderInstantScreen();
+      displayScreenData();
+    }
+  }, [emuViewVersion]);
 
   return (
     <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>
@@ -412,18 +420,22 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Displays the screen
   function displayScreenData(): void {
     if (!pixelData.current) {
+      console.log("No pixel data");
       return;
     }
     const screenEl = screenElement.current;
     const shadowScreenEl = shadowScreenElement.current;
     if (!screenEl || !shadowScreenEl) {
+      console.log("No screen");
       return;
     }
 
     const shadowCtx = shadowScreenEl.getContext("2d", {
       willReadFrequently: true
     });
-    if (!shadowCtx) return;
+    if (!shadowCtx) {
+      console.log("No shadowCtx");
+      return;}
 
     shadowCtx.imageSmoothingEnabled = false;
     const shadowImageData = shadowCtx.getImageData(
@@ -439,7 +451,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
-    if (!screenData) return;
+    if (!screenData) {
+      console.log("No pixel data");
+      return;
+    }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
     for (let i = startIndex; i < endIndex; i++) {
@@ -451,6 +466,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       screenCtx.imageSmoothingEnabled = false;
       screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
     }
+    console.log("Display updated");
   }
 
   // --- Hanldles key events

@@ -35,7 +35,6 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
-import { incEmuViewVersionAction } from "@common/state/actions";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -46,7 +45,6 @@ function noController() {
 
 class EmuMessageProcessor {
   constructor(
-    private readonly store: Store<AppState>,
     private readonly mainMessenger: MessengerBase,
     private readonly machineService: IMachineService
   ) {}
@@ -716,6 +714,57 @@ class EmuMessageProcessor {
         break;
     }
   }
+
+  async setMemoryContent(
+    address: number,
+    value: number,
+    size: number,
+    bigEndian: boolean
+  ): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    switch (size) {
+      case 8:
+        machine.doWriteMemory(address, value);
+        break;
+      case 16:
+        if (bigEndian) {
+          machine.doWriteMemory((address + 1) & 0xffff, value & 0xff);
+          machine.doWriteMemory(address, (value >> 8) & 0xff);
+        } else {
+          machine.doWriteMemory(address, value & 0xff);
+          machine.doWriteMemory((address + 1) & 0xffff, (value >> 8) & 0xff);
+        }
+        break;
+      case 24:
+        if (bigEndian) {
+          machine.doWriteMemory((address + 2) & 0xffff, value & 0xff);
+          machine.doWriteMemory((address + 1) & 0xffff, (value >> 8) & 0xff);
+          machine.doWriteMemory(address, (value >> 16) & 0xff);
+        } else {
+          machine.doWriteMemory(address, value & 0xff);
+          machine.doWriteMemory((address + 1) & 0xffff, (value >> 8) & 0xff);
+          machine.doWriteMemory((address + 2) & 0xffff, (value >> 16) & 0xff);
+        }
+        break;
+      case 32:
+        if (bigEndian) {
+          machine.doWriteMemory((address + 3) & 0xffff, value & 0xff);
+          machine.doWriteMemory((address + 2) & 0xffff, (value >> 8) & 0xff);
+          machine.doWriteMemory((address + 1) & 0xffff, (value >> 16) & 0xff);
+          machine.doWriteMemory(address, (value >> 24) & 0xff);
+        } else {
+          machine.doWriteMemory(address, value & 0xff);
+          machine.doWriteMemory((address + 1) & 0xffff, (value >> 8) & 0xff);
+          machine.doWriteMemory((address + 2) & 0xffff, (value >> 16) & 0xff);
+          machine.doWriteMemory((address + 3) & 0xffff, (value >> 24) & 0xff);
+        }
+        break;
+    }
+  }
 }
 
 /**
@@ -729,10 +778,11 @@ export async function processMainToEmuMessages(
   emuToMain: MessengerBase,
   { machineService }: AppServices
 ): Promise<ResponseMessage> {
-  const emuMessageProcessor = new EmuMessageProcessor(store, emuToMain, machineService);
+  const emuMessageProcessor = new EmuMessageProcessor(emuToMain, machineService);
 
   switch (message.type) {
     case "ForwardAction":
+      console.log("Forwarding action", message.action, message.sourceId);
       // --- The emu sent a state change action. Replay it in the main store without formarding it
       store.dispatch(message.action, message.sourceId);
       break;
