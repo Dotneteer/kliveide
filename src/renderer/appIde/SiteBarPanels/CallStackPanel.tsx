@@ -15,6 +15,7 @@ const CallStackPanel = () => {
   const [spValue, setSpValue] = useState<number>();
   const [frames, setFrames] = useState<number[]>();
   const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
 
   // --- This function queries the breakpoints from the emulator
   const refreshMemoryMappingState = async () => {
@@ -32,7 +33,7 @@ const CallStackPanel = () => {
     (async function () {
       await refreshMemoryMappingState();
     })();
-  }, [machineState]);
+  }, [machineState, emuViewVersion]);
 
   // --- Take care of refreshing the screen
   useStateRefresh(1000, async () => {

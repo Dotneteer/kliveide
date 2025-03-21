@@ -1,10 +1,11 @@
 import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
 import { toBin16, toBin8 } from "../services/ide-commands";
+import { useSelector } from "@renderer/core/RendererProvider";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 36;
@@ -14,6 +15,7 @@ const TACT_WIDTH = 72;
 const CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<CpuState>(null);
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
 
   const toHexa2 = (value?: number) =>
     value !== undefined ? value.toString(16).toUpperCase().padStart(2, "0") : "--";
@@ -27,14 +29,10 @@ const CpuPanel = () => {
     return value !== undefined
       ? `${reg16 ? reg16 + ":" : ""} ${value.toString()}, ${toBin16(value)}` +
           (regH
-            ? `\n${regH}: ${valH.toString()}${
-                isNegH ? ` (${valH - 256})` : ""
-              }, ${toBin8(valH)}`
+            ? `\n${regH}: ${valH.toString()}${isNegH ? ` (${valH - 256})` : ""}, ${toBin8(valH)}`
             : "") +
           (regL
-            ? `\n${regL}: ${valL.toString()}${
-                isNegL ? ` (${valL - 256})` : ""
-              }, ${toBin8(valL)}`
+            ? `\n${regL}: ${valL.toString()}${isNegL ? ` (${valL - 256})` : ""}, ${toBin8(valL)}`
             : "")
       : "n/a";
   };
@@ -45,6 +43,12 @@ const CpuPanel = () => {
   useStateRefresh(1000, async () => {
     setCpuState(await emuApi.getCpuState());
   });
+
+  useEffect(() => {
+    (async () => {
+      setCpuState(await emuApi.getCpuState());
+    })();
+  }, [emuViewVersion]);
 
   return (
     <div className={styles.cpuPanel}>

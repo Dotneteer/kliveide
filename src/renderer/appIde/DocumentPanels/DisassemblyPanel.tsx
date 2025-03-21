@@ -92,6 +92,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   );
 
   // --- View state variables
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const workspace = useSelector((s) => s.workspaceSettings?.[DISASSEMBLY_EDITOR]);
   const [topAddress, setTopAddress] = useState<number>(
     viewState.current?.topAddress ?? workspace?.topAddress ?? 0
@@ -151,6 +152,10 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
+    if (romPagesValue === 0 && ramBankValue === 0) {
+      setIsFullView(true);
+      setScrollVersion(scrollVersion + 1);
+    }
     setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
     (async function () {
       const options: DropdownOption[] = [];
@@ -359,7 +364,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     screen,
     ram,
     currentSegment,
-    disassOffset
+    disassOffset,
+    emuViewVersion
   ]);
 
   // --- Take care of refreshing the screen

@@ -391,3 +391,7 @@ export const setEmuStayOnTopAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_STAY_ON_TOP",
   payload: { flag }
 });
+
+export const incEmuViewVersionAction: ActionCreator = () => ({
+  type: "INC_EMU_VIEW_VERSION"
+});

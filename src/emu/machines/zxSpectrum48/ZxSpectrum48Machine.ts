@@ -147,7 +147,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * @param _index Partition index
    */
   getMemoryPartition(_index: number): Uint8Array {
-    throw new Error("This operation is not supported in the ZX Spectrum 48K model");
+    return new Uint8Array(0x4000);
   }
 
   /**

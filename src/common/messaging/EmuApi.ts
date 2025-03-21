@@ -159,6 +159,10 @@ class EmuApiImpl {
   async getPalettedDeviceInfo(): Promise<PaletteDeviceInfo> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async setRegisterValue(_register: string, _value: number): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 // --- The response with the CPU state information
