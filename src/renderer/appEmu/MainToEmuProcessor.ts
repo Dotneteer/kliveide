@@ -35,6 +35,7 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { incEmuViewVersionAction } from "@common/state/actions";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -45,6 +46,7 @@ function noController() {
 
 class EmuMessageProcessor {
   constructor(
+    private readonly store: Store<AppState>,
     private readonly mainMessenger: MessengerBase,
     private readonly machineService: IMachineService
   ) {}
@@ -438,7 +440,6 @@ class EmuMessageProcessor {
     if (partition === undefined) {
       memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
     } else {
-      console.log("Partition: ", partition);
       memory = (controller.machine as IZxSpectrumMachine).getMemoryPartition(partition);
     }
     return {
@@ -624,6 +625,97 @@ class EmuMessageProcessor {
       reg6bValue: machine.tilemapDevice.nextReg6bValue
     };
   }
+
+  async setRegisterValue(register: string, value: number): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    switch (register.toUpperCase()) {
+      case "A":
+        machine.a = value;
+        break;
+      case "F":
+        machine.f = value;
+        break;
+      case "B":
+        machine.b = value;
+        break;
+      case "C":
+        machine.c = value;
+        break;
+      case "D":
+        machine.d = value;
+        break;
+      case "E":
+        machine.e = value;
+        break;
+      case "H":
+        machine.h = value;
+        break;
+      case "L":
+        machine.l = value;
+        break;
+      case "AF":
+        machine.af = value;
+        break;
+      case "BC":
+        machine.bc = value;
+        break;
+      case "DE":
+        machine.de = value;
+        break;
+      case "HL":
+        machine.hl = value;
+        break;
+      case "AF'":
+        machine.af_ = value;
+        break;
+      case "BC'":
+        machine.bc_ = value;
+        break;
+      case "DE'":
+        machine.de_ = value;
+        break;
+      case "HL'":
+        machine.hl_ = value;
+        break;
+      case "IX":
+        machine.ix = value;
+        break;
+      case "IY":
+        machine.iy = value;
+        break;
+      case "SP":
+        machine.sp = value;
+        break;
+      case "PC":
+        machine.pc = value;
+        break;
+      case "I":
+        machine.i = value;
+        break;
+      case "R":
+        machine.r = value;
+        break;
+      case "XL":
+        machine.xl = value;
+        break;
+      case "XH":
+        machine.xh = value;
+        break;
+      case "YL":
+        machine.yl = value;
+        break;
+      case "YH":
+        machine.yh = value;
+        break;
+      case "WZ":
+        machine.wz = value;
+        break;
+    }
+  }
 }
 
 /**
@@ -637,7 +729,7 @@ export async function processMainToEmuMessages(
   emuToMain: MessengerBase,
   { machineService }: AppServices
 ): Promise<ResponseMessage> {
-  const emuMessageProcessor = new EmuMessageProcessor(emuToMain, machineService);
+  const emuMessageProcessor = new EmuMessageProcessor(store, emuToMain, machineService);
 
   switch (message.type) {
     case "ForwardAction":

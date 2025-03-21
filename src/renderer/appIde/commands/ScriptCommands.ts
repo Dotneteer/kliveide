@@ -15,7 +15,7 @@ export class RunScriptCommand extends IdeCommandBase<RunScriptCommandArgs> {
   readonly id = "script-run";
   readonly description = "Runs the specified script";
   readonly usage = "script-run <script file path>";
-  readonly aliases = ["sr"];
+  readonly aliases = ["scr"];
 
   readonly argumentInfo: CommandArgumentInfo = {
     mandatory: [{ name: "filePath" }]

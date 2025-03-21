@@ -115,6 +115,7 @@ import { setIsWindows } from "@renderer/os-utils";
 import { ShellCommand } from "./commands/ShellCommand";
 import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
+import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -366,6 +367,7 @@ function registerCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new DisplayScriptOutputCommand());
 
   cmdSrv.registerCommand(new ResetZ88DkCommand());
-
   cmdSrv.registerCommand(new DisplayDialogCommand());
+
+  cmdSrv.registerCommand(new SetZ80RegisterCommand());
 }

@@ -411,6 +411,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Displays the screen
   function displayScreenData(): void {
+    if (!pixelData.current) {
+      return;
+    }
     const screenEl = screenElement.current;
     const shadowScreenEl = shadowScreenElement.current;
     if (!screenEl || !shadowScreenEl) {
@@ -436,6 +439,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
+    if (!screenData) return;
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
     for (let i = startIndex; i < endIndex; i++) {

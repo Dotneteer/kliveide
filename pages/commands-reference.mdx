@@ -422,7 +422,7 @@ This command runs the script file specified in the argument.
 script-run <script-file-path>
 ```
 
-Available aliases: `sr`
+Available aliases: `scr`
 
 Provide the full file name (including the `.ksx` file extension) relative to the project's root folder. For example, if your script is in the `scripts` folder and named `myScript.ksx`, use the `scripts/myScript.ksx` parameter.
 
@@ -466,6 +466,21 @@ setl [-pull] [-push] [-c]
 This command moves settings from the user setting file to the current project file (`-pull`) or vice versa (`push`). The additional `-c` option copies the settings instead of moving them.
 
 > **Note**: You can use either `-pull` or `push`. This command works only when a Klive project is open in the IDE. 
+
+## `setz80Reg`
+
+Use this command to set one of these Z80 registers: 
+- 8-bit: `A`, `F`, `B`, `C`, `D`, `E`, `H`, `L˙, `XH`, `XL`, `YH`, `YL`, `I`, and `R`
+- 16-bit: `AF`, `BC`, `DE`, `HL`, `AF'`, `BC'`, `DE'`, `HL'`, `IX`, `IY`, `PC`, `SP`, and `WZ` (memptr).
+
+```
+setz80Reg <register> <value> 
+```
+
+Available aliases: `sr`
+
+When the value is outside the register's valid range, the command will give you a warning and keep only the last 8 or 16 bits.
+
 
 ## `show-disassembly`
 

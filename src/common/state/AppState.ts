@@ -98,6 +98,7 @@ export type EmulatorState = {
   clockMultiplier?: number;
   audioSampleRate?: number;
   breakpointsVersion: number;
+  emuViewVersion: number;
 };
 
 export type FloppyDiskState = {
@@ -190,7 +191,8 @@ export const initialAppState: AppState = {
     savedSoundLevel: 0.8,
     fastLoad: true,
     clockMultiplier: 1,
-    breakpointsVersion: 0
+    breakpointsVersion: 0,
+    emuViewVersion: 0
   },
   media: {},
   project: {
