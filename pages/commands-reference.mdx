@@ -467,6 +467,32 @@ This command moves settings from the user setting file to the current project fi
 
 > **Note**: You can use either `-pull` or `push`. This command works only when a Klive project is open in the IDE. 
 
+## `setmem`
+
+This command sets the memory contents at the specified address with the provided value. When you set the content, you can use 8-bit, 16-bit, 24-bit, and 32-bit values using little-endian or big-endian assignment.
+
+```
+setmem <address> <value> [-b8] [-b16] [-b24] [-b32] [-be]
+```
+
+The `-b8` (default), `-b16`, `-b24`, and `-b32` options determine the data size (1, 2, 3, or 4 bytes, respectively) to write into the memory. These options are exclusive.
+
+The `-be` option specifies the big-endian mode; the most significant byte of the value is written to the address specified in the command.
+
+Lets assume you execute this command: 
+
+```text
+setmem $4000 $010203 -b24
+```
+It will store $03 at address $4000, $02 at $4001, and $01 at $4002 (little-endian mode). However, adding the `-be` options like this:
+
+```text
+setmem $4000 $010203 -b24 -be
+```
+
+Will reverse the order of bytes: It will store $01 at address $4000, $02 at $4001, and $03 at $4002 (big-endian mode).
+
+
 ## `setz80Reg`
 
 Use this command to set one of these Z80 registers: 

@@ -61,6 +61,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- View state variables
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
   const [topIndex, setTopIndex] = useState<number>(
     viewState.current?.topIndex ?? workspace?.topIndex ?? 0
@@ -253,7 +254,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   useEffect(() => {
     refreshMemoryView();
-  }, [currentSegment, isFullView, decimalView]);
+  }, [currentSegment, isFullView, decimalView, emuViewVersion]);
 
   // --- Change the length of the current dump section according to the view mode
   useEffect(

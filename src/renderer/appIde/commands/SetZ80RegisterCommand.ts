@@ -50,8 +50,6 @@ const registerInfo = [
 ];
 
 export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandArgs> {
-  protected minValue = -(2 ** 32);
-  protected maxValue = 2 ** 32;
   readonly id = "setz80reg";
   readonly description = "Sets the value of the specified Z80 register";
   readonly usage = "setz80reg <register> <value>";
@@ -96,7 +94,7 @@ export class SetZ80RegisterCommand extends IdeCommandBase<SetZ80RegisterCommandA
     outp.resetStyle();
 
     await context.emuApi.setRegisterValue(args.register, args.value);
-    context.store.dispatch(incEmuViewVersionAction());
+    context.store.dispatch(incEmuViewVersionAction(), "ide");
 
     writeSuccessMessage(
       context.output,
