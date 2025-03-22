@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import classnames from "classnames";
 import styles from "./Checkbox.module.scss";
 
@@ -18,6 +18,10 @@ export const Checkbox = ({
   onChange
 }: CheckboxProps) => {
   const [value, setvalue] = useState(initialValue);
+
+  useEffect(() => {
+    setvalue(initialValue);
+  }, [initialValue]);
 
   const onInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
