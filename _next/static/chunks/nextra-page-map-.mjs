@@ -79,6 +79,12 @@ export const pageMap = [{
   children: [{
     data: howto_meta
   }, {
+    name: "always-on-top",
+    route: "/howto/always-on-top",
+    frontMatter: {
+      "sidebarTitle": "Always on Top"
+    }
+  }, {
     name: "file-extensions",
     route: "/howto/file-extensions",
     frontMatter: {
