@@ -11,11 +11,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import {
-  incBreakpointsVersionAction,
-  incEditorVersionAction,
-  resetCompileAction
-} from "@common/state/actions";
+import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -224,21 +220,21 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       const settings = (await mainApi.getUserSettings())?.shortcuts ?? {};
       if (settings.stepInto) {
         bindKey(settings.stepInto, async () => {
-          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+          if (isPaused()) {
             await emuApi.issueMachineCommand("stepInto");
           }
         });
       }
       if (settings.stepOver) {
         bindKey(settings.stepOver, async () => {
-          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+          if (isPaused()) {
             await emuApi.issueMachineCommand("stepOver");
           }
         });
       }
       if (settings.stepOut) {
         bindKey(settings.stepOut, async () => {
-          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+          if (isPaused()) {
             await emuApi.issueMachineCommand("stepOut");
           }
         });
@@ -253,6 +249,14 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         }
       }
     })();
+
+    function isPaused() {
+      const state = store.getState();
+      return (
+        !state?.compilation?.inProgress &&
+        state?.emulatorState?.machineState === MachineControllerState.Paused
+      );
+    }
   }, [editor.current]);
 
   // --- Respond to editor font size changes
